@@ -1,5 +1,9 @@
-import VerifiedGarbageTest.Aes
-import VerifiedGarbage.Spec.Cmac
+module
+
+public import VerifiedGarbageTest.Aes
+public meta import VerifiedGarbageTest.Aes
+public import VerifiedGarbage.Spec.Cmac
+public meta import VerifiedGarbage.Spec.Cmac
 
 /-!
 # Known-answer tests for the CMAC specification
@@ -21,6 +25,8 @@ Read from the unmodified published files under `vectors/` (provenance in
   vectors of every message and MAC length, checking `VG.Spec.Cmac.verify`;
   they include both outcomes.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Cmac
 

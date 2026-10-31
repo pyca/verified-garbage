@@ -1,9 +1,17 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.RsaPkcs1Enc
+meta import VerifiedGarbage.Spec.RsaPkcs1Enc
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
+meta import VerifiedGarbageTest.Memo
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: known-answer tests

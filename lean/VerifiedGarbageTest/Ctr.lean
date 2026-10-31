@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.Ctr
+meta import VerifiedGarbage.Spec.Ctr
 
 /-!
 # Known-answer tests for the CTR specification

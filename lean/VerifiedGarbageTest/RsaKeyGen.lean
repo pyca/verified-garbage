@@ -1,7 +1,13 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaKeyGen
+meta import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+meta import VerifiedGarbage.TCB.Audit
 
 /-!
 # RSA key generation specification tests

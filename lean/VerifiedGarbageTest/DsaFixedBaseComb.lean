@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbage.Spec.Dsa.FixedBaseComb
+meta import VerifiedGarbage.Spec.Dsa.FixedBaseComb
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+meta import VerifiedGarbage.TCB.Audit
 
 /-! Algebraic checks of the new contract's representation and frame policy.
 These are synthetic small-field identities, not cryptographic known-answer

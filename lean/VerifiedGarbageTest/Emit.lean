@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.Emit
+meta import VerifiedGarbage.TCB.Emit
 
 /-!
 # Golden tests for the emitter's driver

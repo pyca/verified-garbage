@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 
 /-!
 # The addresses of statics, in the ARMv7 taint analysis

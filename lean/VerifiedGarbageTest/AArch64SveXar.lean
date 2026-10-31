@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbageTest.AArch64Simd
+meta import VerifiedGarbageTest.AArch64Simd
 
 /-!
 # Semantics tests for SVE2 XAR (`xarS`)

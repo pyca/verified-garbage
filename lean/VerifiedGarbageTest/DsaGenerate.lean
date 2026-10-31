@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Spec.Dsa.Generate
+meta import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbageTest.Dsa
+meta import VerifiedGarbageTest.Dsa
 
 /-! Tests for the byte-level generation contracts. Key-generation known
 answers come from the NIST signing vectors' published x and y components.

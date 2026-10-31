@@ -16,7 +16,7 @@ import lean_cache
 
 # A stand-in for leantar: `-p -` writes each job's files, by base, into its
 # `out` as JSON (and logs the job); `-x -j -` writes them back under each
-# record's bases.
+# record's bases, with `--empty-private` each `.olean.private` empty.
 STUB = r'''#!/usr/bin/env python3
 import json, os, sys
 args = sys.argv[1:]
@@ -41,6 +41,8 @@ else:
             files = json.load(f)
         for key, text in files.items():
             base, name = key.split("/", 1)
+            if "--empty-private" in args and name.endswith(".olean.private"):
+                text = ""
             path = os.path.join(record["base"][int(base)], name)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w") as f:
@@ -250,6 +252,37 @@ class LeanArchiveTests(unittest.TestCase):
         self.log.write_text("")
         lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
         self.assertEqual(self.log.read_text(), "")
+
+    def test_restore_empty_private(self):
+        build = self.lean / ".lake/build"
+        module(build, "VerifiedGarbage/TCB/Mem")
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*") if p.is_file()}
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        (self.lean / ".lake/ltar").rename(target / ".lake/ltar")
+        lean_cache.restore(target, 2, str(self.stub), empty_private=True)
+        restored = {p.relative_to(target): p.read_bytes()
+                    for p in (target / ".lake/build").rglob("*") if p.is_file()}
+        expected = as_restored(original)
+        for path in expected:
+            if path.name.endswith(".olean.private") and "TCB" not in path.parts:
+                expected[path] = b""
+        self.assertEqual(restored, expected)
+        # The trusted base's private data is real; the others' are placeholders.
+        lib = Path(".lake/build/lib/lean")
+        self.assertNotEqual(restored[lib / "VerifiedGarbage/TCB/Mem.olean.private"], b"")
+        self.assertEqual(restored[lib / "A/B.olean.private"], b"")
+        # Nothing changed: the next store packs nothing.
+        self.log.write_text("")
+        lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
+        self.assertEqual(self.log.read_text(), "")
+        # A module rebuilt but for its placeholder: never packed.
+        trace = target / lib / "A/B.trace"
+        trace.write_text(trace.read_text().replace('"1"', '"2"'))
+        with self.assertRaisesRegex(SystemExit, "placeholder"):
+            lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
 
     def test_restore_some_modules_then_the_others(self):
         lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))

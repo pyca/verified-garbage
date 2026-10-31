@@ -1,4 +1,7 @@
-import VerifiedGarbage.Proof.Framework.TacticTemplate
+module
+
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # `tactic_template`
@@ -7,6 +10,10 @@ The arguments of a use replace the template's antiquotations (a splice of
 simp lemmas, empty or not, before or after the template's own; a term), and
 the template's names mean what they meant where it was defined.
 -/
+
+-- Public, as where the project defines its templates (a template is private
+-- to a private scope, where its elaborator could not use it).
+public section
 
 namespace VG.Test.TacticTemplate
 

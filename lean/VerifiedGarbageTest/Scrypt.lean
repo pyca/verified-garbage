@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Scrypt
+meta import VerifiedGarbage.Spec.Scrypt
 
 /-!
 # Known-answer tests for the scrypt specification

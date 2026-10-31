@@ -1,4 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Print
+module
+
+public import VerifiedGarbage.TCB.AArch64.Print
+public meta import VerifiedGarbage.TCB.AArch64.Print
 
 /-!
 # Semantics tests for the AArch64 AdvSIMD and cryptographic instructions
@@ -17,6 +20,8 @@ ARM's pseudocode (which lane is which, the operand roles of the SHA
 instructions, the zeroing by a scalar write), which review of the TCB would
 otherwise have to catch by eye.
 -/
+
+@[expose] public section
 
 namespace VG.Test.AArch64Simd
 

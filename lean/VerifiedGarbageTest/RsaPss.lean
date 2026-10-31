@@ -1,8 +1,15 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaPss
+meta import VerifiedGarbage.Spec.RsaPss
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
+meta import VerifiedGarbageTest.Memo
 
 /-!
 # RSASSA-PSS and MGF1 specification tests

@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Poly1305
+meta import VerifiedGarbageTest.Poly1305
 import VerifiedGarbage.Spec.ChaCha20Poly1305
+meta import VerifiedGarbage.Spec.ChaCha20Poly1305
 
 /-!
 # Known-answer tests for the ChaCha20-Poly1305 specification

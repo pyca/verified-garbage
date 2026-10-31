@@ -1,5 +1,9 @@
-import VerifiedGarbageTest.Sha256
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbageTest.Sha256
+public meta import VerifiedGarbageTest.Sha256
+public import VerifiedGarbage.Spec.Aes
+public meta import VerifiedGarbage.Spec.Aes
 
 /-!
 # Known-answer tests for the AES specification
@@ -14,6 +18,8 @@ that a transcription error in the spec fails the build. Every `GFSbox` and
 vectors of each file, in each direction. (Evaluating the spec is slow; the Rust tests run the full
 Wycheproof suite against the implementation.)
 -/
+
+@[expose] public section
 
 namespace VG.Test.Aes
 
@@ -119,16 +125,16 @@ namespace Cached
 open Spec.Aes
 
 -- Compute the 256 specification values once for all blocks in this test.
-private def sboxTable : Vector Byte 256 := Vector.ofFn fun i => sbox (BitVec.ofNat 8 i.val)
+def sboxTable : Vector Byte 256 := Vector.ofFn fun i => sbox (BitVec.ofNat 8 i.val)
 
-private def sboxCached (b : Byte) : Byte := sboxTable[b.toNat]
+def sboxCached (b : Byte) : Byte := sboxTable[b.toNat]
 
-private theorem sboxCached_eq (b : Byte) : sboxCached b = sbox b := by
+theorem sboxCached_eq (b : Byte) : sboxCached b = sbox b := by
   simp only [sboxCached, sboxTable, Vector.getElem_ofFn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-private def subBytesCached (s : Spec.Aes.State) : Spec.Aes.State := s.map sboxCached
+def subBytesCached (s : Spec.Aes.State) : Spec.Aes.State := s.map sboxCached
 
-private theorem subBytesCached_eq : subBytesCached = subBytes := by
+theorem subBytesCached_eq : subBytesCached = subBytes := by
   funext s
   simp only [subBytesCached, subBytes, show sboxCached = sbox from funext sboxCached_eq]
 

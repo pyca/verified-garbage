@@ -1,5 +1,9 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Ed25519.Point64
+meta import VerifiedGarbage.Spec.Ed25519.Point64
 
 /-!
 # RFC 8032's doubling formula (`Spec/Ed25519/Point64.lean`)

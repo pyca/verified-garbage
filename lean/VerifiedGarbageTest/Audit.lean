@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.Audit
+meta import VerifiedGarbage.TCB.Audit
 
 /-!
 # Tests for the environment audit
@@ -13,6 +16,9 @@ definition declared outside `Spec/` (here, in this module).
 -- the lakefile's profile of it (`ci/lean_profile.py`), different on every
 -- machine.
 set_option profiler false
+
+-- Public: `#assert_spec_origin` concerns the names other modules can use.
+@[expose] public section
 
 namespace VG.Test.Audit
 

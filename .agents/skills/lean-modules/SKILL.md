@@ -84,6 +84,11 @@ and [the evidence and verification guide](../../../ci/IMPORT_NARROWING.md).
 
 ## Files that are not modules, and the audit records
 
+Every file under `VerifiedGarbage/` and `VerifiedGarbageTest/` is a module
+(`ci/check_lean_modules.py`); only Lake's scripts (`Emit.lean`,
+`EmitOne.lean`) and the check of the audit's base
+(`VerifiedGarbageAuditBase.lean`) are not.
+
 A module sees the theorems it imports as axioms, without their proofs, so
 the audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
 `#assert_spec_origin`) do not read proofs: they read the records each module
@@ -94,6 +99,7 @@ names, `initialize` and `csimp` declarations it declares. A module built
 without the plugin has no records, and the audits reject what depends on
 it. For Lean's and Mathlib's constants they read `TCB/AuditBase.lean`,
 which `ci/audit_base.py generate` writes after a toolchain or Mathlib
-update. So the audits run in modules too, such as the emitter's drivers,
-which never read the private part (`.olean.private`) of this project's
-modules.
+update. So the emitter's drivers are modules too, which never read the
+private part (`.olean.private`) of this project's modules, and a restored
+build cache leaves those parts empty (`ci/lean_cache.py restore
+--empty-private`).

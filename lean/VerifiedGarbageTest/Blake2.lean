@@ -1,6 +1,11 @@
+module
+
 import Lean.Data.Json
+meta import Lean.Data.Json
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Blake2
+meta import VerifiedGarbage.Spec.Blake2
 
 /-!
 # Known-answer tests for the BLAKE2b and BLAKE2s specification

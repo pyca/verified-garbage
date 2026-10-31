@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Print
+meta import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Golden tests for stack buffer frames (`alloc`/`free`) on x86-64. -/
 namespace VG.Test.X86_64Stack

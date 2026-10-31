@@ -1,4 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Print
+module
+
+public import VerifiedGarbage.TCB.X86_64.Print
+public meta import VerifiedGarbage.TCB.X86_64.Print
 
 /-!
 # Semantics tests for the x86-64 AVX-512 instructions
@@ -22,6 +25,8 @@ embedded-broadcast VPADDD, in C inline assembly on an Intel Xeon with
 AVX512_FP16 and AMX (Sapphire Rapids or later)), and is compared with the
 model's result on the same inputs.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Avx512
 

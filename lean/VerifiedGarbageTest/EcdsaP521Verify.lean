@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.SigVer
+meta import VerifiedGarbageTest.Ec.SigVer
 import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 
 /-!
 # ECDSA P-521 signature verification specification tests

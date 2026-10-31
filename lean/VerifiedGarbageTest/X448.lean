@@ -1,5 +1,9 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.X448
+meta import VerifiedGarbage.Spec.X448
 
 /-!
 # Known-answer tests for the X448 specification

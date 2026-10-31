@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 
 /-!
 # Public values through memory, in the PPC64LE slot taint analysis

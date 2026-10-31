@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import Lean.Data.Json
-import VerifiedGarbageTest.Sha256
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import Lean.Data.Json
+public meta import Lean.Data.Json
+public import VerifiedGarbageTest.Sha256
+public meta import VerifiedGarbageTest.Sha256
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public meta import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # Known-answer tests for the ML-DSA specification: the checks
@@ -28,12 +34,14 @@ test groups are skipped. (Only these are checked here; the Rust tests run
 the implementation on every vector.)
 -/
 
+@[expose] public section
+
 namespace VG.Test.MlDsa
 
 open Lean Elab Command Spec.MlDsa
 
 /-- A successful iteration returns the commitment it computed. -/
-private theorem iteration_commit (p : Params) (b : Bounds) (a : List (List Poly))
+theorem iteration_commit (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) (k : Nat)
     (r : List Byte × Option (List Poly × List (Vector Bool n)))
     (h : signIteration p b a s1 s2 t0 mu rho k = some r) :
@@ -52,7 +60,7 @@ private theorem iteration_commit (p : Params) (b : Bounds) (a : List (List Poly)
     · split at h <;> (cases h; rfl)
 
 /-- Test evaluator that reuses the iteration's commitment. -/
-private def leakLoopCached (p : Params) (b : Bounds) (a : List (List Poly))
+def leakLoopCached (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) : Nat → Nat → List Nat
   | 0, _ => []
   | iters + 1, k =>
@@ -62,7 +70,7 @@ private def leakLoopCached (p : Params) (b : Bounds) (a : List (List Poly))
     | some (ct, some (_, h)) => leakBytes ct ++ 1 :: h.flatMap (fun hi => hi.toList.map Bool.toNat)
     | none => leakBytes (signCommit p a mu rho k).2.2
 
-private theorem leakLoopCached_eq (p : Params) (b : Bounds) (a : List (List Poly))
+theorem leakLoopCached_eq (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) (iters k : Nat) :
     leakLoopCached p b a s1 s2 t0 mu rho iters k = signLeakLoop p b a s1 s2 t0 mu rho iters k := by
   induction iters generalizing k with
@@ -79,7 +87,7 @@ private theorem leakLoopCached_eq (p : Params) (b : Bounds) (a : List (List Poly
       | none => simp only [h, ih]
       | some r => rcases r with ⟨z, hh⟩; simp only [h]
 
-private def leakCached (p : Params) (sk mu rnd : List Byte) : List Nat :=
+def leakCached (p : Params) (sk mu rnd : List Byte) : List Nat :=
   let (rho, key, _tr, s1, s2, t0) := skDecode p sk
   leakBytes rho ++
     match expandA p maxBounds rho with
@@ -88,12 +96,12 @@ private def leakCached (p : Params) (sk mu rnd : List Byte) : List Nat :=
       leakLoopCached p maxBounds a (s1.map fun s => ntt (toRq s)) (s2.map fun s => ntt (toRq s))
         (t0.map fun t => ntt (toRq t)) mu (H (key ++ rnd ++ mu) 64) maxBounds.sign 0
 
-private theorem leakCached_eq (p : Params) (sk mu rnd : List Byte) :
+theorem leakCached_eq (p : Params) (sk mu rnd : List Byte) :
     leakCached p sk mu rnd = signLeak p sk mu rnd := by
   simp only [leakCached, signLeak, leakLoopCached_eq]
   rfl
 
-private theorem iteration_mono (p : Params) (a : List (List Poly))
+theorem iteration_mono (p : Params) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) (k : Nat)
     (r : List Byte × Option (List Poly × List (Vector Bool n)))
     (h : signIteration p minBounds a s1 s2 t0 mu rho k = some r) :
@@ -109,11 +117,11 @@ private theorem iteration_mono (p : Params) (a : List (List Poly))
       VG.Proof.MlDsa.Sign.minBounds_le_max.2.1 he
     simpa only [he, he', Option.bind_eq_bind, Option.bind_some] using h
 
-private abbrev SignedParts := List Byte × List Poly × List (Vector Bool n)
+abbrev SignedParts := List Byte × List Poly × List (Vector Bool n)
 
 /-- Record the exact leakage while finding the first accepted signature
 (each rejection's tag as the contract's bounds compute it). -/
-private def traceLoop (p : Params) (b : Bounds) (a : List (List Poly))
+def traceLoop (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) : Nat → Nat → Option (SignedParts × List Nat)
   | 0, _ => none
   | iters + 1, k => do
@@ -124,7 +132,7 @@ private def traceLoop (p : Params) (b : Bounds) (a : List (List Poly))
       let (sig, leak) ← traceLoop p b a s1 s2 t0 mu rho iters (k + p.ℓ)
       return (sig, leakBytes ct ++ signRejectTag p maxBounds a s1 s2 t0 mu rho k :: leak)
 
-private theorem traceLoop_sig (p : Params) (b : Bounds) (a : List (List Poly))
+theorem traceLoop_sig (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) (iters k : Nat) :
     (traceLoop p b a s1 s2 t0 mu rho iters k).map Prod.fst =
       signLoop p b a s1 s2 t0 mu rho iters k := by
@@ -143,7 +151,7 @@ private theorem traceLoop_sig (p : Params) (b : Bounds) (a : List (List Poly))
         rw [← ih]
         cases traceLoop p b a s1 s2 t0 mu rho iters (k + p.ℓ) <;> rfl
 
-private theorem traceLoop_leak (p : Params) (a : List (List Poly))
+theorem traceLoop_leak (p : Params) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) (iters more k : Nat)
     (hbound : iters ≤ more) (sig : SignedParts) (leak : List Nat)
     (h : traceLoop p minBounds a s1 s2 t0 mu rho iters k = some (sig, leak)) :
@@ -180,7 +188,7 @@ private theorem traceLoop_leak (p : Params) (a : List (List Poly))
             simp only [Option.some.injEq, Prod.mk.injEq] at h
             rw [← h.2, ih more (k + p.ℓ) hb sig' leak' ht]
 
-private def traceMu (p : Params) (sk mu rnd : List Byte) : Option (List Byte × List Nat) := do
+def traceMu (p : Params) (sk mu rnd : List Byte) : Option (List Byte × List Nat) := do
   let (rho, key, _tr, s1, s2, t0) := skDecode p sk
   let s1Hat := s1.map fun s => ntt (toRq s)
   let s2Hat := s2.map fun s => ntt (toRq s)
@@ -190,7 +198,7 @@ private def traceMu (p : Params) (sk mu rnd : List Byte) : Option (List Byte × 
   let ((ct, z, h), leak) ← traceLoop p minBounds a s1Hat s2Hat t0Hat mu rho' minBounds.sign 0
   return (sigEncode p ct (z.map fun zi => zi.map fun c => modPm c.val q) h, leakBytes rho ++ leak)
 
-private theorem traceMu_sig (p : Params) (sk mu rnd : List Byte) :
+theorem traceMu_sig (p : Params) (sk mu rnd : List Byte) :
     (traceMu p sk mu rnd).map Prod.fst = signMu p minBounds sk mu rnd := by
   rcases hd : skDecode p sk with ⟨rho, key, tr, s1, s2, t0⟩
   simp only [traceMu, signMu, hd]
@@ -205,7 +213,7 @@ private theorem traceMu_sig (p : Params) (sk mu rnd : List Byte) :
     | none => rfl
     | some r => rcases r with ⟨⟨ct, z, h⟩, leak⟩; rfl
 
-private theorem traceMu_leak (p : Params) (sk mu rnd sig : List Byte) (leak : List Nat)
+theorem traceMu_leak (p : Params) (sk mu rnd sig : List Byte) (leak : List Nat)
     (h : traceMu p sk mu rnd = some (sig, leak)) : leak = signLeak p sk mu rnd := by
   rcases hd : skDecode p sk with ⟨rho, key, tr, s1, s2, t0⟩
   simp only [traceMu, hd] at h

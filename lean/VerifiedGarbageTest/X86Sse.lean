@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.X86.Print
+meta import VerifiedGarbage.TCB.X86.Print
 
 /-!
 # IA-32 legacy SIMD transcription tests

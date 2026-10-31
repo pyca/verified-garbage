@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 
 /-!
 # The addresses of statics, in the RISC-V taint analysis

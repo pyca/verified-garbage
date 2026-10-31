@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.GcmSiv
+meta import VerifiedGarbage.Spec.GcmSiv
 
 /-!
 # Known-answer tests for the AES-GCM-SIV specification

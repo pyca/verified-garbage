@@ -1,5 +1,11 @@
+module
+
+import VerifiedGarbage.Proof.Dsa.Random
+meta import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.RandomSign
+meta import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbageTest.Dsa
+meta import VerifiedGarbageTest.Dsa
 
 /-! Regression checks for the randomized-signing contract. Small scalars are
 sampler boundary cases, not cryptographic known-answer vectors. Signing's

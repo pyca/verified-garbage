@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Sha512
+meta import VerifiedGarbage.Spec.Sha512
 
 /-!
 # Known-answer tests for the SHA-512 family specification

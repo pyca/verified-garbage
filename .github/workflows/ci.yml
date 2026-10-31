@@ -278,7 +278,7 @@ jobs:
       # what this shard built over it.
       - name: Unpack the rest of the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
-        run: python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules"
+        run: python3 ../ci/lean_cache.py restore . --empty-private --except "$RUNNER_TEMP/lean-modules"
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:

@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-!
 # The contract of `Spec/Weierstrass/CheckPoint.lean`

@@ -1,6 +1,11 @@
-import VerifiedGarbageTest.Ec.Common
-import VerifiedGarbageTest.Memo
-import VerifiedGarbage.Spec.Ecdh
+module
+
+public import VerifiedGarbageTest.Ec.Common
+public meta import VerifiedGarbageTest.Ec.Common
+public import VerifiedGarbageTest.Memo
+public meta import VerifiedGarbageTest.Memo
+public import VerifiedGarbage.Spec.Ecdh
+public meta import VerifiedGarbage.Spec.Ecdh
 
 /-!
 # Public keys and ECDH, against NIST CAVP's ECC CDH primitive test
@@ -11,6 +16,8 @@ for byte): each vector gives the peer's public key `QCAVS`, the private key
 `publicKey`, `encodePoint`, `decodePublicKey` and `exchange`. The invalid
 public keys are derived from them and from the curve's parameters.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec.Cdh
 

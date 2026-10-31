@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # Public values through SSE registers, in the x86-64 taint analysis

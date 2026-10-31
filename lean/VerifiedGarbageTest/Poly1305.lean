@@ -1,5 +1,9 @@
-import VerifiedGarbageTest.ChaCha20
-import VerifiedGarbage.Spec.Poly1305
+module
+
+public import VerifiedGarbageTest.ChaCha20
+public meta import VerifiedGarbageTest.ChaCha20
+public import VerifiedGarbage.Spec.Poly1305
+public meta import VerifiedGarbage.Spec.Poly1305
 
 /-!
 # Known-answer tests for the Poly1305 specification
@@ -12,6 +16,8 @@ Appendices A.1 and A.2); #5–#11, which exercise the edge cases of the
 modular reduction, give `R` and `S` (the two halves of the key), the data
 and the tag as rows of hex bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Poly1305
 

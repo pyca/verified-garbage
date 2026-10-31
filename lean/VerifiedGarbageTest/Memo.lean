@@ -1,3 +1,6 @@
+module
+
+
 /-!
 # Looking up what a test computed before
 
@@ -8,6 +11,8 @@ up rather than computed, and is `f` itself when `table` pairs each argument
 with `f` of it (`memo_eq`): a test evaluates a check with `memo table f` in
 place of `f`, and checks what it would have with `f`.
 -/
+
+@[expose] public section
 
 namespace VG.Test
 

@@ -1,5 +1,9 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Ed25519
+meta import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # RFC 8032 Ed25519 specification tests

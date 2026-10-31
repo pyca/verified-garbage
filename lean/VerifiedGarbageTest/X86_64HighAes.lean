@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Print
+meta import VerifiedGarbage.TCB.X86_64.Print
 
 /-!
 # High-register EVEX.512 AES semantics

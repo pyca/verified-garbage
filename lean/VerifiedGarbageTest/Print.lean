@@ -1,11 +1,21 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Print
+meta import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.TCB.Rust
+meta import VerifiedGarbage.TCB.Rust
 import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.TCB.X86.Print
+meta import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.TCB.Arm.Print
+meta import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.TCB.PPC64LE.Print
+meta import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.TCB.RISCV64.Print
+meta import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Artifacts.Ct.RISCV64
+meta import VerifiedGarbage.Artifacts.Ct.RISCV64
 
 /-!
 # Golden tests for the trusted printers

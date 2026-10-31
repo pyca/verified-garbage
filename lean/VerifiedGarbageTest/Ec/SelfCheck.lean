@@ -1,8 +1,15 @@
-import VerifiedGarbageTest.Ec.Cdh
-import VerifiedGarbageTest.Ec.RfcSign
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.Spec.Ecdsa.Verify
-import VerifiedGarbage.Spec.Sha256
+module
+
+public import VerifiedGarbageTest.Ec.Cdh
+public meta import VerifiedGarbageTest.Ec.Cdh
+public import VerifiedGarbageTest.Ec.RfcSign
+public meta import VerifiedGarbageTest.Ec.RfcSign
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public meta import VerifiedGarbage.Spec.Ecdsa.Verify
+public import VerifiedGarbage.Spec.Sha256
+public meta import VerifiedGarbage.Spec.Sha256
 
 /-!
 # Elliptic curves without published test vectors
@@ -21,6 +28,8 @@ run Wycheproof's vectors against the implementation):
   which verify with the signer's public key, and no longer once the hash,
   the signature or the key changes.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec.SelfCheck
 

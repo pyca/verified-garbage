@@ -1,9 +1,17 @@
+module
+
 import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.PPC64LE.Isa
+meta import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.TCB.RISCV64.Isa
+meta import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
 # Golden tests for the push and pop of frames

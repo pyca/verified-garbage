@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.Ocb
+meta import VerifiedGarbage.Spec.Ocb
 
 /-!
 # Known-answer tests for the OCB specification

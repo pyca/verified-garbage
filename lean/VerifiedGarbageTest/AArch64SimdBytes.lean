@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 
 /-!
 # Semantics tests for AArch64 byte-lane AdvSIMD instructions

@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Sm3.Contract
+meta import VerifiedGarbage.Spec.Sm3.Contract
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Known-answer tests for the SM3 specification

@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.Arm.Print
+meta import VerifiedGarbage.TCB.Arm.Print
 
 /-!
 # Semantics tests for the ARMv7 `mul`

@@ -1,9 +1,17 @@
-import VerifiedGarbageTest.Ec.Common
-import VerifiedGarbageTest.Memo
-import VerifiedGarbage.Spec.Ecdsa
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Spec.Sha512
+module
+
+public import VerifiedGarbageTest.Ec.Common
+public meta import VerifiedGarbageTest.Ec.Common
+public import VerifiedGarbageTest.Memo
+public meta import VerifiedGarbageTest.Memo
+public import VerifiedGarbage.Spec.Ecdsa
+public meta import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Sha1
+public meta import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
+public meta import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha512
+public meta import VerifiedGarbage.Spec.Sha512
 
 /-!
 # ECDSA signing, against RFC 6979's signatures
@@ -16,6 +24,8 @@ curve, its group law, scalar multiplication, `hashToInt` for hashes shorter
 and longer than `n` and the computation of `(r, s)`. The other checks derive
 their inputs from the curve's parameters.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec.RfcSign
 

@@ -1,7 +1,21 @@
+module
+
 import VerifiedGarbage.Proof.Md5.Arm.Shared
+meta import VerifiedGarbage.Proof.Md5.Arm.Shared
 import VerifiedGarbage.Proof.Md5.Stream
+meta import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+meta import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Md5.Arm.Compress
+meta import VerifiedGarbage.Proof.Md5.Arm.Compress
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! `Verified.stackScratch` and `Verified.regScratch` on real functions, with
 their code and proofs as they are, without their scratch argument: MD5's

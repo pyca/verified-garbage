@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.Ccm
+meta import VerifiedGarbage.Spec.Ccm
 
 /-!
 # Known-answer tests for the CCM specification

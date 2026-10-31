@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Spec.MlDsa.Montgomery
+meta import VerifiedGarbage.Spec.MlDsa.Montgomery
 
 /-!
 # Algebraic consistency checks for ML-DSA's Montgomery contracts

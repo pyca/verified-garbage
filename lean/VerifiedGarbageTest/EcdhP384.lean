@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.Cdh
+meta import VerifiedGarbageTest.Ec.Cdh
 import VerifiedGarbage.Spec.Ecdh.P384
+meta import VerifiedGarbage.Spec.Ecdh.P384
 
 /-!
 # P-384 public key and ECDH specification tests

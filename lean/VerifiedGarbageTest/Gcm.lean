@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.Gcm
+meta import VerifiedGarbage.Spec.Gcm
 
 /-!
 # Known-answer tests for the GCM specification

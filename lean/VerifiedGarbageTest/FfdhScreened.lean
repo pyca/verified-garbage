@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Proof.Ffdh.ScreenedSemantics
+meta import VerifiedGarbage.Proof.Ffdh.ScreenedSemantics
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Audit preservation of both complete witness policies and immediate rejection. -/
 

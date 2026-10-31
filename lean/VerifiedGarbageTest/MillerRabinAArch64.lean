@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Core
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Core
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Audit the shared round's AArch64 core proofs before their callable artifacts land. -/
 

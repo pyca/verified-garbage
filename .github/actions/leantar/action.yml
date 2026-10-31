@@ -6,7 +6,9 @@ description: >
   and dictionary kept across archives: a third of the CPU time to unpack)
   then `ci/leantar/batch.patch` (digama0/leangz#13: `-p -` packs many
   archives in one process, and `--level` sets the zstd level), and puts it
-  on PATH as `leantar-batch`. The toolchain's own `leantar` packs one
+  on PATH as `leantar-batch`; and `ci/leantar/empty-private.patch`
+  (`-x --empty-private`: each module's `.olean.private` as an empty file,
+  for `lean_cache.py restore --empty-private`). The toolchain's own `leantar` packs one
   archive per process, about half a CPU-second each; this one packs a
   build's 16,000 modules in seconds. `ci/lean_cache.py` packs (`store`) and
   restores (`restore`) with it; the archives' format is unchanged, so the
@@ -35,6 +37,7 @@ runs:
         git -C "$src" checkout -q FETCH_HEAD
         git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/unpack.patch"
         git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/batch.patch"
+        git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/empty-private.patch"
         rustup toolchain install stable --profile minimal
         cargo +stable build --manifest-path "$src/Cargo.toml" --release --locked --bin leantar
         mkdir -p "$RUNNER_TEMP/leantar-batch"

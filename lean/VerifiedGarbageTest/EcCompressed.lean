@@ -1,14 +1,27 @@
+module
+
 import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+meta import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 import VerifiedGarbage.Spec.P192
+meta import VerifiedGarbage.Spec.P192
 import VerifiedGarbage.Spec.P224
+meta import VerifiedGarbage.Spec.P224
 import VerifiedGarbage.Spec.P256
+meta import VerifiedGarbage.Spec.P256
 import VerifiedGarbage.Spec.P384
+meta import VerifiedGarbage.Spec.P384
 import VerifiedGarbage.Spec.P521
+meta import VerifiedGarbage.Spec.P521
 import VerifiedGarbage.Spec.Secp256k1
+meta import VerifiedGarbage.Spec.Secp256k1
 import VerifiedGarbage.Spec.BrainpoolP256r1
+meta import VerifiedGarbage.Spec.BrainpoolP256r1
 import VerifiedGarbage.Spec.BrainpoolP384r1
+meta import VerifiedGarbage.Spec.BrainpoolP384r1
 import VerifiedGarbage.Spec.BrainpoolP512r1
+meta import VerifiedGarbage.Spec.BrainpoolP512r1
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Checks of the compressed public-point specification

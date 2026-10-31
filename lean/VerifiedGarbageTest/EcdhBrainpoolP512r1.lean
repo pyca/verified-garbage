@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.Rfc7027
+meta import VerifiedGarbageTest.Ec.Rfc7027
 import VerifiedGarbage.Spec.Ecdh.BrainpoolP512r1
+meta import VerifiedGarbage.Spec.Ecdh.BrainpoolP512r1
 
 /-!
 # brainpoolP512r1 public key and ECDH specification tests

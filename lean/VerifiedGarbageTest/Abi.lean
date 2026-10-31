@@ -1,9 +1,17 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.TCB.PPC64LE.Target
+meta import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.TCB.RISCV64.Target
+meta import VerifiedGarbage.TCB.RISCV64.Target
 
 /-!
 # Golden tests for signatures and calling conventions
