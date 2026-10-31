@@ -66,12 +66,13 @@ def schedule (t : Nat) : List Instr :=
     .li .r0 (8 * t),
     .loadRev .d T0 .r4 .r0,
     .store .d T0 .r6 (slot t)]
-  else [.load .d T1 .r6 (slot (t + 14))] ++
-    Impl.Vector.PPC64LE.shaSigma true false true T0 T1 ++
-    [.load .d T2 .r6 (slot (t + 9)), .add T0 T0 T2,
-     .load .d T1 .r6 (slot (t + 1))] ++
-    Impl.Vector.PPC64LE.shaSigma true false false T2 T1 ++
-    [.add T0 T0 T2, .load .d T2 .r6 (slot t), .add T0 T0 T2, .store .d T0 .r6 (slot t)]
+  else [
+    .load .d T1 .r6 (slot (t + 14)), .mtvsrd .v0 T1,
+    .load .d T2 .r6 (slot (t + 1)), .mtvsrd .v1 T2,
+    .vop (.sha512 .v0 .v0 false 8), .vop (.sha512 .v1 .v1 false 0),
+    .load .d T0 .r6 (slot (t + 9)), .mfvsrd T1 .v0, .add T0 T1 T0,
+    .mfvsrd T2 .v1, .add T0 T0 T2,
+    .load .d T2 .r6 (slot t), .add T0 T0 T2, .store .d T0 .r6 (slot t)]
 
 /-- Round `t`, with `Wₜ` in `T0`. Form `h + (Kₜ + Wₜ)` independently
 of the state-dependent sigma and choice functions, shortening the serial
@@ -79,15 +80,14 @@ addition chain without adding instructions. -/
 def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
+  ([.mtvsrd .v2 e, .mtvsrd .v3 a,
+    .vop (.sha512 .v2 .v2 true 8), .vop (.sha512 .v3 .v3 true 0)] : List Instr) ++
   movImm64 T1 (K t) ++
-  [.add T1 T1 T0, .add h h T1] ++
-  Impl.Vector.PPC64LE.shaSigma true true true T1 e ++
-  [.add h h T1,
-   .logic .xor T1 f g, .logic .and T1 T1 e, .logic .xor T1 T1 g, .add h h T1,
-   .add d d h] ++
-  Impl.Vector.PPC64LE.shaSigma true true false T1 a ++
-  [.logic .or T2 a b, .logic .and T2 T2 c, .logic .and T3 a b, .logic .or T2 T2 T3,
-   .add T1 T1 T2, .add h h T1]
+  [.add T1 T1 T0, .add h h T1,
+   .logic .xor T2 f g, .logic .and T2 T2 e, .logic .xor T2 T2 g,
+   .mfvsrd T1 .v2, .add h h T1, .add h h T2, .add d d h,
+   .logic .or T2 a b, .logic .and T2 T2 c, .logic .and T3 a b, .logic .or T2 T2 T3,
+   .mfvsrd T1 .v3, .add T1 T1 T2, .add h h T1]
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa

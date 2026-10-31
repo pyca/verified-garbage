@@ -105,7 +105,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha512.PPC64LE.round, movImm64, Impl.Vector.PPC64LE.shaSigma, ite_true, ite_false, Bool.false_eq_true, List.cons_append, List.nil_append]
+  simp only [Impl.Sha512.PPC64LE.round, movImm64, List.cons_append, List.nil_append]
   generalize var t 0 = a at *
   generalize var t 1 = b at *
   generalize var t 2 = c at *
@@ -118,7 +118,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hs hs'
-  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some, vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some, vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword,
     Nat.sub_zero, Nat.mul_one, high64_append,
     show (8 : Nat) &&& 5 = 0 by decide, show (0 : Nat) &&& 5 = 0 by decide,
     show (8 : Nat).testBit 3 = true by decide, show (8 : Nat).testBit 1 = false by decide,
@@ -126,7 +126,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     and_self, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write,
     hs, hs', h0, h1, h2, h3, h4, h5, h6, h7, hw,
-    Option.some.injEq, exists_eq_left', Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, true_and]
+    Option.some.injEq, exists_eq_left', Nat.reduceAdd, Nat.reduceLT, reduceCtorEq, ↓reduceIte, true_and]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
   rotate_right
   · obtain ⟨n3, n7, n17, n18, n19⟩ := hpw r hr
@@ -176,11 +176,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 7) = slot (t + 9) by simp only [slot]; omega] at e7
     rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega] at e15
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
-    simp only [Impl.Sha512.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3,
-      Impl.Vector.PPC64LE.shaSigma, ite_true, Bool.false_eq_true, List.cons_append, List.nil_append]
+    simp only [Impl.Sha512.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_d, exec_store_d, slot_ok,
       exec_add, reduceExec, reduceVOpEval, Option.map_some,
-      vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword, Nat.sub_zero, Nat.mul_one,
+      vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword, Nat.sub_zero, Nat.mul_one,
       high64_append, VG.PPC64LE.sigma512, Bool.false_eq_true,
       show (8 : Nat) &&& 5 = 0 by decide, show (0 : Nat) &&& 5 = 0 by decide,
       show (8 : Nat).testBit 3 = true by decide, show (8 : Nat).testBit 1 = false by decide,
