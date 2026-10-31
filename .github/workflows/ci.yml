@@ -498,7 +498,7 @@ jobs:
           cargo test --locked --no-run
           if [ "$TESTS" = true ]; then
             wait "$clone"
-            cargo test --locked -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
+            cargo test --locked -- -Z unstable-options --report-time | vg_hide_zero_times
           fi
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
@@ -515,7 +515,7 @@ jobs:
           LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
         run: |
           source ci/rust_test_timing.sh
-          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
+          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time | vg_hide_zero_times
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
@@ -603,7 +603,7 @@ jobs:
         shell: bash
         run: |
           source ci/rust_test_timing.sh
-          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | vg_hide_zero_times
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
