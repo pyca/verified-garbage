@@ -14,7 +14,7 @@ The function is proven as ML-KEM's top-level functions on x86 are
 (`Proof/MlKem/X86/Top*.lean`), piece by piece (`Piece`), from the layout of
 its arguments (`Y`: `sk`, `mu`, `rnd`, `sig`, `scratch`, and 96 bytes of
 stack), with `Ctx` holding between the pieces. Two runs are related (`SPub`)
-by the pointers and what signing may leak (`signLeakT`, which is `signLeak`);
+by the pointers and what signing may leak (`signLeak`, which is `signLeak`);
 a piece of ML-KEM's, whose runs are related by the pointers alone, is one of
 these (`lift`).
 
@@ -62,7 +62,12 @@ end
 
 /-- Two runs with the same pointers and the same leakage. -/
 def SPub (p : Params) (s₀ s₀' : State) : Prop :=
-  TPub (Y p) lk0 s₀ s₀' ∧ signLeakT p (skOf p s₀) (muOf s₀) (rndOf s₀) = signLeakT p (skOf p s₀') (muOf s₀') (rndOf s₀')
+  TPub (Y p) lk0 s₀ s₀' ∧ signLeak p (skOf p s₀) (muOf s₀) (rndOf s₀) = signLeak p (skOf p s₀') (muOf s₀') (rndOf s₀')
+
+/-- The full rejection leakage determines the older group-only leakage. -/
+theorem SPub.coarse {p : Params} {x y : State} (h : SPub p x y) :
+    signLeakT p (skOf p x) (muOf x) (rndOf x) = signLeakT p (skOf p y) (muOf y) (rndOf y) :=
+  signLeakT_congr p (by simp only [skOf, VG.Proof.MlKem.bytesAt_length]) h.2
 
 /-- The pieces of the proof. -/
 abbrev SP (p : Params) (A B : State → State → Prop) (c : Prog isa) : Prop := Piece (TPre (Y p)) (SPub p) A B c

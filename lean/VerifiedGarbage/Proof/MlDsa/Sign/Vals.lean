@@ -322,6 +322,48 @@ theorem leak_iter (hp : ParamsOk p) (hb : BallF ballF) (h : leakV p sk mu rnd = 
       simp only [contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not]
       exact ⟨by rw [← ect]; exact c1.1, hpass⟩
 
+/-- The loop leakage including the first failing polynomial. -/
+def leakVF (p : Params) (sk mu rnd : List Byte) : List Nat :=
+  signLeakLoop p maxBounds (amat p (Av sk)) ((List.range p.ℓ).map (s1F p sk))
+    ((List.range p.k).map (s2F p sk)) ((List.range p.k).map (t0F p sk)) mu (rppV sk mu rnd) maxBounds.sign 0
+
+theorem leak_iterF (hp : ParamsOk p) (hb : BallF ballF) (h : leakVF p sk mu rnd = leakVF p sk' mu' rnd') :
+    ∀ {t : Nat}, t < maxBounds.sign → (∀ j < t, contV p sk mu rnd ballF j = true) →
+      (∀ j < t, contV p sk' mu' rnd' ballF j = true) ∧
+      signLeakLoop p maxBounds (amat p (Av sk)) ((List.range p.ℓ).map (s1F p sk)) ((List.range p.k).map (s2F p sk))
+          ((List.range p.k).map (t0F p sk)) mu (rppV sk mu rnd) (maxBounds.sign - t) (p.ℓ * t) =
+        signLeakLoop p maxBounds (amat p (Av sk')) ((List.range p.ℓ).map (s1F p sk'))
+          ((List.range p.k).map (s2F p sk')) ((List.range p.k).map (t0F p sk')) mu' (rppV sk' mu' rnd')
+          (maxBounds.sign - t) (p.ℓ * t)
+  | 0, _, _ => ⟨fun _ h => absurd h (Nat.not_lt_zero _), by simpa only [leakVF, Nat.sub_zero, Nat.mul_zero] using h⟩
+  | t + 1, ht, hc => by
+    obtain ⟨hc', ih⟩ := leak_iterF hp hb h (t := t) (by omega) fun j hj => hc j (by omega)
+    rw [show maxBounds.sign - t = (maxBounds.sign - (t + 1)) + 1 by
+      have : maxBounds.sign = 1000 := rfl; omega] at ih
+    obtain ⟨_, hrej, _⟩ := leakF_step ih
+    have c1 := hc t (by omega)
+    simp only [contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not] at c1
+    obtain ⟨hr', hnext⟩ := hrej ⟨_, iterV_rej hp (hb _ _ c1.1) c1.2⟩
+    refine ⟨fun j hj => ?_, by rw [show p.ℓ * (t + 1) = p.ℓ * t + p.ℓ by rw [Nat.mul_succ]]; exact hnext⟩
+    rcases (by omega : j < t ∨ j = t) with hj | rfl
+    · exact hc' j hj
+    · obtain ⟨ct, hct⟩ := hr'
+      change iterV p sk' mu' rnd' maxBounds (p.ℓ * j) = some (ct, none) at hct
+      have hct' := hct
+      rw [iterV_eq hp] at hct'
+      obtain ⟨c, hcs, hc2⟩ := Option.map_eq_some_iff.mp hct'
+      simp only [Prod.mk.injEq] at hc2
+      have hpass : ¬ passV p sk' mu' rnd' (p.ℓ * j) := by
+        intro hq
+        rw [iterV_pass hp (by rw [hcs]; rfl) hq] at hct
+        cases (Prod.mk.inj (Option.some.inj hct)).2
+      -- `ballF` agrees, as `c̃` does.
+      have ect : ctV p sk mu rnd (p.ℓ * j) = ctV p sk' mu' rnd' (p.ℓ * j) := by
+        have := (leakF_step ih).1
+        simpa [signCommit_eq] using this
+      simp only [contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not]
+      exact ⟨by rw [← ect]; exact c1.1, hpass⟩
+
 /-- At an iteration both runs reach: the same `c̃`, the same outcome of
 `SampleInBall`, and, if it succeeded, the same outcome of the checks, and
 then the same hint. -/

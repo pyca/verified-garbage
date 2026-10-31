@@ -213,4 +213,9 @@ def hintBitPackAt (h : Buf) (omega : Nat) (y : Buf) : Prog isa :=
 
 end
 
+/-- Run checks in order until the first polynomial fails. -/
+def seqOk (f : Nat → Prog isa) (a : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (f a) (ifOk (seqOk f (a + 1) n))
+
 end VG.Impl.MlDsa.X86.Sign

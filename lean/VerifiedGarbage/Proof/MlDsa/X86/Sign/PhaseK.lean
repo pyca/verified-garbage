@@ -73,6 +73,151 @@ theorem pass_iff {s₀ : State} {κ : Nat} :
   simp only [Bool.and_eq_true, okZ, okR, okT, all_range_iff, onesS, passV, passF, and_assoc]
   exact ⟨fun ⟨a, b, c, d⟩ => ⟨a, b, c, decide_eq_true d⟩, fun ⟨a, b, c, d⟩ => ⟨a, b, c, of_decide_eq_true d⟩⟩
 
+section
+variable (p : Params)
+abbrev PassV (σ : State) (κ : Nat) : Prop :=
+  passF p (Am p σ) (S1 p σ) (S2 p σ) (T0 p σ) (rppS p σ) κ (Cv p σ κ)
+abbrev ZOk (σ : State) (κ : Nat) : Prop := ∀ j < p.ℓ, normRq [Zv p σ κ j] < p.γ₁-p.β
+abbrev R0Ok (σ : State) (κ : Nat) : Prop := ∀ j < p.k, normRq [R0v p σ κ j] < p.γ₂-p.β
+abbrev iterF (σ : State) (b : Bounds) (κ : Nat) := iterV p (skOf p σ) (muOf σ) (rndOf σ) b κ
+abbrev leakL (σ : State) (n κ : Nat) :=
+  signLeakLoop p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1 p σ))
+    ((List.range p.k).map (S2 p σ)) ((List.range p.k).map (T0 p σ)) (muOf σ) (rppS p σ) n κ
+abbrev LeakEq (t : Nat) (σ₁ σ₂ : State) : Prop := leakL p σ₁ (1000-t) (p.ℓ*t) = leakL p σ₂ (1000-t) (p.ℓ*t)
+end
+
+/-- What the branches of the checks need two runs to agree on: whether the
+first `r` polynomials of `z` passed, for each `r` (the checks stop at the
+first that fails), whether `z` and the first `i` polynomials of `r₀` passed,
+for each `i`, and whether the iteration passed. -/
+abbrev ChecksAgree (p : Params) (t : Nat) (σ₁ σ₂ : State) : Prop :=
+  (∀ r ≤ p.ℓ, (∀ j < r, normRq [Zv p σ₁ (p.ℓ * t) j] < p.γ₁ - p.β) ↔
+    (∀ j < r, normRq [Zv p σ₂ (p.ℓ * t) j] < p.γ₁ - p.β)) ∧
+  (∀ i ≤ p.k, (ZOk p σ₁ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₁ (p.ℓ * t) j] < p.γ₂ - p.β) ↔
+    (ZOk p σ₂ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₂ (p.ℓ * t) j] < p.γ₂ - p.β)) ∧
+  (PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t))
+
+theorem iterF_eq {p : Params} (hp : ParamsOk p) {σ : State} {b : Bounds} {κ : Nat} :
+    iterF p σ b κ = (sampleInBall p.τ b.ball (CTv p σ κ)).map fun c =>
+      (CTv p σ κ, if passF p (Am p σ) (S1 p σ) (S2 p σ) (T0 p σ) (rppS p σ) κ c then
+        some ((List.range p.ℓ).map (zF p (S1 p σ) (rppS p σ) κ c),
+          (List.range p.k).map (hF p (Am p σ) (S2 p σ) (T0 p σ) (rppS p σ) κ c)) else none) :=
+  iterV_eq hp b
+
+theorem iter_rej {p : Params} {σ : State} {κ : Nat} (hp : ParamsOk p)
+    (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) (hn : ¬ PassV p σ κ) :
+    iterF p σ maxBounds κ = some (CTv p σ κ, none) := iterV_rej hp hs hn
+
+section
+variable {p : Params} {σ₁ σ₂ : State} {t : Nat}
+theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
+    signLeakLoop p maxBounds (amat p (Am p σ₁)) ((List.range p.ℓ).map (S1 p σ₁)) ((List.range p.k).map (S2 p σ₁))
+      ((List.range p.k).map (T0 p σ₁)) (muOf σ₁) (rppS p σ₁) ((999 - t) + 1) (p.ℓ * t) =
+    signLeakLoop p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1 p σ₂)) ((List.range p.k).map (S2 p σ₂))
+      ((List.range p.k).map (T0 p σ₂)) (muOf σ₂) (rppS p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
+  rw [show 999 - t + 1 = 1000 - t by omega]; exact h
+
+theorem leq_ct (h : LeakEq p t σ₁ σ₂) (ht : t < 814) : CTv p σ₁ (p.ℓ * t) = CTv p σ₂ (p.ℓ * t) := by
+  have := (leakF_step (leq_step h ht)).1
+  rwa [signCommit_eq, signCommit_eq] at this
+
+theorem leq_succ (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
+    (hr : ∃ ct, iterF p σ₁ maxBounds (p.ℓ * t) = some (ct, none)) : LeakEq p (t + 1) σ₁ σ₂ := by
+  have := ((leakF_step (leq_step h ht)).2.1 hr).2
+  unfold LeakEq
+  rw [show 1000 - (t + 1) = 999 - t by omega, Nat.mul_succ]
+  exact this
+
+theorem outTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat} (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
+    outTag (iterF p σ maxBounds κ) = if PassV p σ κ then
+      1 :: ((List.range p.k).map (Hv p σ κ)).flatMap (fun hi => hi.toList.map Bool.toNat) else [0] := by
+  rw [iterF_eq hp, cV_eq hs, Option.map_some]
+  by_cases hv : PassV p σ κ
+  · rw [ifp hv, ifp hv]; rfl
+  · rw [ifn hv, ifn hv]; rfl
+
+theorem leq_pass (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
+    (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
+    (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome) :
+    PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t) := by
+  have e := (leakF_step (leq_step h ht)).2.2
+  rw [outTag_eq hp hs₁, outTag_eq hp hs₂] at e
+  by_cases h1 : PassV p σ₁ (p.ℓ * t) <;> by_cases h2 : PassV p σ₂ (p.ℓ * t)
+  · exact iff_of_true h1 h2
+  · rw [ifp h1, ifn h2] at e; cases e
+  · rw [ifn h1, ifp h2] at e; cases e
+  · exact iff_of_false h1 h2
+
+/-- `signRejectTag`'s value: which check failed, and for those of `z` and
+`r₀` the first polynomial that failed it. -/
+def tagFn (a b c : Prop) [Decidable a] [Decidable b] [Decidable c] (x y : Nat) : Nat :=
+  if ¬ a then 5 * x else if ¬ b then 2 + 5 * y else if ¬ c then 3 else 4
+
+theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable c] [Decidable a'] [Decidable b']
+    [Decidable c'] {x y x' y' : Nat} (h : tagFn a b c x y = tagFn a' b' c' x' y') :
+    (a ↔ a') ∧ (¬ a → x = x') ∧ (a ∧ b ↔ a' ∧ b') ∧ (a → ¬ b → y = y') := by
+  unfold tagFn at h
+  by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
+    by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
+      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega)
+
+/-- The first polynomial of `z` that fails its check, or `ℓ`. -/
+abbrev zFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
+  (List.range p.ℓ).findIdx fun r => decide (normRq [Zv p σ κ r] ≥ p.γ₁ - p.β)
+
+/-- The first polynomial of `r₀` that fails its check, or `k`. -/
+abbrev rFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
+  (List.range p.k).findIdx fun i => decide (normRq [R0v p σ κ i] ≥ p.γ₂ - p.β)
+
+theorem tag_eq (hp : ParamsOk p) {σ : State} {κ : Nat}
+    (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
+    signRejectTag p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1 p σ)) ((List.range p.k).map (S2 p σ))
+      ((List.range p.k).map (T0 p σ)) (muOf σ) (rppS p σ) κ =
+      tagFn (ZOk p σ κ) (R0Ok p σ κ) (∀ j < p.k, normRq [CT0v p σ κ j] < p.γ₂) (zFirst p σ κ) (rFirst p σ κ) := by
+  rw [signRejectTag_eqF hp, show ctF p (Am p σ) (muOf σ) (rppS p σ) κ = CTv p σ κ from rfl, cV_eq hs]
+  rfl
+
+/-- The first `r ≤ n` polynomials pass a check exactly when the first that
+fails it comes at `r` or later. -/
+theorem prefix_ok {n B : Nat} (f : Nat → Poly) {r : Nat} (hr : r ≤ n) :
+    (∀ j < r, normRq [f j] < B) ↔ r ≤ (List.range n).findIdx fun j => decide (normRq [f j] ≥ B) := by
+  rw [← prefix_findIdx n _ hr]
+  simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le]
+
+/-- Two runs that agree on what the iterations from `t` leak agree on the
+checks of iteration `t` that pass, polynomial by polynomial. -/
+theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
+    (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
+    (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome) : ChecksAgree p t σ₁ σ₂ := by
+  have hpass := leq_pass hp h ht hs₁ hs₂
+  by_cases h1 : PassV p σ₁ (p.ℓ * t)
+  · have h2 := hpass.mp h1
+    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega)) (fun j hj => h2.1 j (by omega)),
+      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega)⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega)⟩, hpass⟩
+  · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
+    have e := leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
+    rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
+    obtain ⟨ea, ex, eab, ey⟩ := tagFn_eq e
+    refine ⟨fun r hr => ?_, fun i hi => ?_, hpass⟩
+    · by_cases hz : ZOk p σ₁ (p.ℓ * t)
+      · exact iff_of_true (fun j hj => hz j (by omega)) (fun j hj => ea.mp hz j (by omega))
+      · rw [prefix_ok _ hr, prefix_ok _ hr]; exact iff_of_eq (congrArg (r ≤ ·) (ex hz))
+    · by_cases hz : ZOk p σ₁ (p.ℓ * t)
+      · have hz' := ea.mp hz
+        by_cases hr0 : R0Ok p σ₁ (p.ℓ * t)
+        · have hr0' := (eab.mp ⟨hz, hr0⟩).2
+          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega)⟩ ⟨hz', fun j hj => hr0' j (by omega)⟩
+        · rw [and_iff_right hz, and_iff_right hz', prefix_ok _ hi, prefix_ok _ hi]
+          exact iff_of_eq (congrArg (i ≤ ·) (ey hz hr0))
+      · exact iff_of_false (fun h => hz h.1) (fun h => hz (ea.mpr h.1))
+
+end
+
+theorem run_agree {F : PrimsOk P} {t : Nat} {x y : State} (ps : PS p) (hq : SPub p x y)
+    (h : Run p F t x) (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p x (p.ℓ*t))).isSome)
+    (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p y (p.ℓ*t))).isSome) : ChecksAgree p t x y :=
+  leq_agree ps.hok (run_leak ps hq h) h.lt hs₁ hs₂
+
 /-! ## The hint -/
 
 /-- The first `nh` polynomials of the hint, in the slots from 5. -/
@@ -656,42 +801,53 @@ theorem CS.ofMem {t nh : Nat} {fY fW : State → Nat → Poly} {okb : State → 
     (hm : s.mem = s'.mem) : CS p t fY fW nh okb ones s₀ s :=
   h.keep hp ps c (N := 0) (bs := []) (by decide) (by rw [hm]; exact Frame.refl _ _) (by simp)
 
-/-- The state after the checks. -/
-abbrev CE (p : Params) (F : PrimsOk P) (t : Nat) (s₀ s : State) : Prop :=
-  CS p t (zY p t p.ℓ) (hW p t p.k) p.k (okAll p t) (fun s₀ => onesS p s₀ (p.ℓ * t) p.k) s₀ s ∧
-    (Run p F t s₀ ∧ F.ballF p.τ (CTv p s₀ (p.ℓ * t)) = true)
+/-- Only an accepted candidate needs complete response and hint buffers. -/
+structure CE (p : Params) (F : PrimsOk P) (t : Nat) (s₀ s : State) : Prop where
+  it : IT p t s₀ s
+  run : Run p F t s₀
+  ball : F.ballF p.τ (CTv p s₀ (p.ℓ*t)) = true
+  ok : scw s₀ s oOK = if decide (passS p t s₀) then 1 else 0
+  out : passS p t s₀ → Fam s₀ s.mem (yB p) p.ℓ (Zv p s₀ (p.ℓ*t)) ∧
+    HF s₀ s.mem p.k (Hv p s₀ (p.ℓ*t)) ∧
+    bytesAt s.mem (Buf.addr s₀ (sc oCT (cLen p))) (cLen p) = CTv p s₀ (p.ℓ*t)
+
+theorem CE.ofMem {F : PrimsOk P} {t : Nat} {s₀ s s' : State} (hp : TPre (Y p) s₀) (ps : PS p)
+    (h : CE p F t s₀ s') (ctx : Ctx (Y p) s₀ s) (hm : s.mem=s'.mem) : CE p F t s₀ s := by
+  have fr : Frame (FR s₀ [] 0) s'.mem s.mem := by rw [hm]; exact Frame.refl _ _
+  exact ⟨h.it.keep hp ps ctx (by decide) fr (by simp), h.run, h.ball,
+    by rw [scw, hm]; exact h.ok, fun hp => by rw [hm]; exact h.out hp⟩
 
 /-- `CNT ← 1` if the checks passed, and `κ ← κ + ℓ` otherwise. -/
 theorem checksEnd_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     SP p (CE p F t) (ED p F t) (ifOkElse (.block (st32 oCNT 1)) (.block (nextKappa p))) := by
-  refine okIte_piece (sc_ok' ps (by decide) (by decide)) (passB p F t) (fun s₀ s hp h => ⟨h.1.it.kd.ctx, ?_⟩)
+  refine okIte_piece (sc_ok' ps (by decide) (by decide)) (passB p F t) (fun s₀ s hp h => ⟨h.it.kd.ctx, ?_⟩)
     (fun s₀ s₀' _ _ hq => passB_eq ps hq) ?_ ?_
-  · rw [h.1.ok, okAll_eq]
-    simp only [passB, h.2.1, h.2.2, true_and]
+  · rw [h.ok]
+    simp only [passB, h.run, h.ball, true_and]
   · refine blk_piece (fun _ _ _ h => h.1.choose_spec.2.1) (fun s₀ s₁ hp h => ?_) rfl
     obtain ⟨⟨s, ha, c₁, m₁⟩, hb⟩ := h
-    have h₁ := ha.1.ofMem hp ps c₁ m₁
+    have h₁ := ha.ofMem hp ps c₁ m₁
     simp only [passB, decide_eq_true_iff] at hb
     rw [← List.append_nil (st32 oCNT 1)]
     refine wp_st32 hp c₁ (sc_ok ps (by decide) (by decide)) 1 fun s' c' fr v => WP.block_nil_iff.mpr ?_
     have fr' := fr0 hp (N := 80) (by decide) fr
     have hc : contS p F t s₀ = false := by
       simp only [contS, contV, hb.2.2, decide_true, Bool.not_true, Bool.and_false]
-    have hk := h₁.nh
+    obtain ⟨hz, hh, hct⟩ := h₁.out hb.2.2
     refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr' (by ofsd), hb.1, by rw [hc, v]; rfl, (fun e => by rw [hc] at e; cases e),
-      ?_, fun _ _ => ⟨?_, h₁.fh.keep hp ps (by decide) fr' (by simp only [nS]; omega_arith) (by ofsd),
-        h₁.ct_keep hp ps (by decide) fr' (by ofsd)⟩, (fun e => by rw [hb.2.1] at e; cases e)⟩
-    · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.ok, okAll_eq,
+      ?_, fun _ _ => ⟨?_, hh.keep hp ps (by decide) fr' (by simp only [nS]; omega_arith) (by ofsd),
+        by rw [keepB hp (by decide) fr' (sc_ok' ps (by ofsd) (by ofsd)) (by ofsd)]; exact hct⟩, (fun e => by rw [hb.2.1] at e; cases e)⟩
+    · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.ok,
         hb.2.1, Bool.true_and]
-    · exact (h₁.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega_arith) (by ofsd)).congr fun j hj => zY_lt hj
+    · exact hz.keep hp ps (by decide) fr' (by simp only [nS,yB]; omega_arith) (by ofsd)
   · refine blk_piece (fun _ _ _ h => h.1.choose_spec.2.1) (fun s₀ s₁ hp h => ?_) rfl
     obtain ⟨⟨s, ha, c₁, m₁⟩, hb⟩ := h
-    have h₁ := ha.1.ofMem hp ps c₁ m₁
+    have h₁ := ha.ofMem hp ps c₁ m₁
     have hpass : ¬ passS p t s₀ := fun hq => by
-      simp only [passB, decide_eq_false_iff_not] at hb; exact hb ⟨ha.2.1, ha.2.2, hq⟩
+      simp only [passB, decide_eq_false_iff_not] at hb; exact hb ⟨ha.run, ha.ball, hq⟩
     have hc : contS p F t s₀ = true := by
       simp only [contS, contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not]
-      exact ⟨ha.2.2, hpass⟩
+      exact ⟨ha.ball, hpass⟩
     unfold nextKappa
     refine wp_ldsc hp c₁ (sc_ok' ps (by decide) (by decide)) fun s₂ o₂ v₂ => wp_addi fun s₃ o₃ v₃ => ?_
     have o := o₂.trans o₃
@@ -699,12 +855,180 @@ theorem checksEnd_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     refine wp_stsc hp c₃ (sc_ok ps (by decide) (by decide)) fun s' c' g' m' => WP.block_nil_iff.mpr ?_
     have fr : Frame (FR s₀ [sc oKAP 4] 80) s₁.mem s'.mem := fr0 hp (by decide) (by
       rw [m', o.mem]; exact frW32 (Y := Y p))
-    refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr (by ofsd), ha.2.1, ?_, fun _ => ?_, ?_,
-      (fun _ e => absurd e hpass), (fun e => by rw [ha.2.2] at e; cases e)⟩
+    refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr (by ofsd), ha.run, ?_, fun _ => ?_, ?_,
+      (fun _ e => absurd e hpass), (fun e => by rw [ha.ball] at e; cases e)⟩
     · rw [hc, scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.it.cnt]; rfl
     · rw [scw, m', Mem.readW_writeW_self32, v₃, v₂, h₁.it.kap, ← BitVec.ofNat_add, Nat.mul_succ]
-    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.ok, okAll_eq,
+    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.ok,
         decide_eq_false hpass, Bool.and_false]
+
+/-- A sequence of checks stops at its first false public prefix predicate. -/
+theorem seqOk_piece {I : Nat → State → State → Prop} {f : Nat → Prog isa} (b : Nat → State → Bool) (limit : Nat)
+    (hc : (Y p).ok (sc oOK 4) = true)
+    (hctx : ∀ k s₀ s, TPre (Y p) s₀ → I k s₀ s → Ctx (Y p) s₀ s)
+    (hok : ∀ k s₀ s, I k s₀ s → scw s₀ s oOK = if b k s₀ then 1 else 0)
+    (hmem : ∀ k s₀ s s', TPre (Y p) s₀ → I k s₀ s → Ctx (Y p) s₀ s' → s'.mem=s.mem → I k s₀ s')
+    (hpub : ∀ k, k≤limit → ∀ x y, TPre (Y p) x → TPre (Y p) y → SPub p x y → b k x=b k y) :
+    ∀ (a n : Nat), (∀ k, a≤k → k<a+n → SP p (I k) (I (k+1)) (f k)) → a+n≤limit →
+      SP p (I a) (fun s₀ s => ∃ k, a≤k ∧ k≤a+n ∧ I k s₀ s ∧ (k=a+n ∨ b k s₀=false)) (seqOk f a n)
+  | a, 0, _, _ => nil_piece fun _ _ _ h => ⟨a, Nat.le_refl _, by omega, h, .inl (by omega)⟩
+  | a, n+1, h, hbound => by
+    rw [seqOk]
+    refine Piece.seq (h a (Nat.le_refl _) (by omega)) ?_
+    refine okIte_piece hc (b (a+1)) (fun s₀ s hp hi => ⟨hctx _ _ _ hp hi, hok _ _ _ hi⟩) (hpub (a+1) (by omega)) ?_ ?_
+    · refine (seqOk_piece b limit hc hctx hok hmem hpub (a+1) n (fun k hk hk' => h k (by omega) (by omega)) (by omega)).mono
+        (fun s₀ s hp h => ?_) (fun s₀ s hp ⟨k,ha,hb,hi,hd⟩ => ⟨k,by omega,by omega,hi,hd.imp (fun _ => by omega) id⟩)
+      obtain ⟨⟨s',hi,ctx,hm⟩,_⟩ := h
+      exact hmem _ _ _ _ hp hi ctx hm
+    · refine nil_piece fun s₀ s hp h => ?_
+      obtain ⟨⟨s',hi,ctx,hm⟩,hb⟩ := h
+      exact ⟨a+1,by omega,by omega,hmem _ _ _ _ hp hi ctx hm,.inr hb⟩
+
+/-- A complete phase continues only when every polynomial passed. -/
+theorem until_piece {B : State → State → Prop} {J : Nat → State → State → Prop}
+    {f : Nat → Prog isa} {cont : Prog isa} (b : Nat → State → Bool) (n : Nat)
+    (hc : (Y p).ok (sc oOK 4)=true)
+    (hctx : ∀ k s₀ s, TPre (Y p) s₀ → J k s₀ s → Ctx (Y p) s₀ s)
+    (hok : ∀ k s₀ s, J k s₀ s → scw s₀ s oOK=if b k s₀ then 1 else 0)
+    (hmem : ∀ k s₀ s s', TPre (Y p) s₀ → J k s₀ s → Ctx (Y p) s₀ s' → s'.mem=s.mem → J k s₀ s')
+    (hpub : ∀ k, k≤n → ∀ x y, TPre (Y p) x → TPre (Y p) y → SPub p x y → b k x=b k y)
+    (hmono : ∀ k s₀ s, k≤n → J k s₀ s → b n s₀=true → b k s₀=true)
+    (hfail : ∀ k s₀ s, TPre (Y p) s₀ → k≤n → J k s₀ s → b k s₀=false → B s₀ s)
+    (hstep : ∀ k, k<n → SP p (J k) (J (k+1)) (f k))
+    (hcont : SP p (J n) B cont) :
+    SP p (J 0) B (.seq (seqOk f 0 n) (ifOk cont)) := by
+  refine Piece.seq (seqOk_piece b n hc hctx hok hmem hpub 0 n (fun k _ hk => hstep k (by omega)) (by omega)) ?_
+  refine okIte_piece hc (b n) (fun s₀ s hp ⟨k,_,hk,hj,hd⟩ => ⟨hctx k _ _ hp hj,?_⟩) (hpub n (Nat.le_refl _)) ?_ ?_
+  · rw [hok k _ _ hj]
+    rcases hd with he|hb
+    · simpa only [Nat.zero_add] using congrArg (fun k => if b k s₀ then (1 : BitVec 32) else 0) he
+    · have hn : b n s₀=false := Bool.eq_false_iff.mpr (fun h => by
+        have := hmono k _ _ (by omega) hj h; rw [hb] at this; cases this)
+      rw [hb,hn]
+  · refine hcont.mono (fun s₀ s hp h => ?_) (fun _ _ _ h => h)
+    obtain ⟨⟨s',⟨k,_,hk,hj,hd⟩,ctx,hm⟩,hb⟩ := h
+    have hk' : k=n := by
+      rcases hd with hd|hd
+      · omega
+      · have := hmono k _ _ (by omega) hj hb; rw [hd] at this; cases this
+    subst hk'
+    exact hmem _ _ _ _ hp hj ctx hm
+  · refine nil_piece fun s₀ s hp h => ?_
+    obtain ⟨⟨s',⟨k,_,hk,hj,hd⟩,ctx,hm⟩,hb⟩ := h
+    have hj' := hmem _ _ _ _ hp hj ctx hm
+    apply hfail k _ _ hp (by omega) hj'
+    rcases hd with hd|hd
+    · simpa only [Nat.zero_add,hd] using hb
+    · exact hd
+
+/-- Prefix outcomes made total by requiring a reached iteration and a sampled challenge. -/
+def prefixB (p : Params) (F : PrimsOk P) (t : Nat) (r0 : Bool) (k : Nat) (s₀ : State) : Bool :=
+  decide (Run p F t s₀ ∧ F.ballF p.τ (CTv p s₀ (p.ℓ*t))=true) &&
+    (if r0 then okZ p s₀ (p.ℓ*t) p.ℓ && okR p s₀ (p.ℓ*t) k else okZ p s₀ (p.ℓ*t) k)
+
+theorem prefixB_eq {F : PrimsOk P} {t k : Nat} {r0 : Bool} (ps : PS p)
+    (hk : k ≤ if r0 then p.k else p.ℓ) {x y : State} (hq : SPub p x y) :
+    prefixB p F t r0 k x = prefixB p F t r0 k y := by
+  unfold prefixB
+  by_cases hr : Run p F t x
+  · have hr' := (run_iff ps hq).mp hr
+    have ect := (run_at ps hq hr).1
+    by_cases hb : F.ballF p.τ (CTv p x (p.ℓ*t))=true
+    · have hb' : F.ballF p.τ (CTv p y (p.ℓ*t))=true := by rw [←ect]; exact hb
+      simp only [hr,hr',hb,hb',and_self,decide_true,Bool.true_and]
+      have ha := run_agree ps hq hr (F.ballMax _ _ hb) (F.ballMax _ _ hb')
+      apply Bool.eq_iff_iff.mpr
+      cases r0 <;> simp only [Bool.false_eq_true, ite_false, ite_true]
+      · exact (all_range_iff.trans ((ha.1 k hk).trans all_range_iff.symm))
+      · simp only [Bool.and_eq_true,okZ,okR,all_range_iff]
+        exact ha.2.1 k hk
+    · have hb' : ¬ F.ballF p.τ (CTv p y (p.ℓ*t))=true := by rw [←ect]; exact hb
+      simp [hr,hr',hb,hb']
+  · have hr' : ¬ Run p F t y := fun h => hr ((run_iff ps hq).mpr h)
+    simp only [hr,hr',false_and,decide_false,Bool.false_and]
+
+abbrev Reached (p : Params) (F : PrimsOk P) (t : Nat) (s₀ : State) : Prop :=
+  Run p F t s₀ ∧ F.ballF p.τ (CTv p s₀ (p.ℓ*t))=true
+abbrev ZCS (p : Params) (F : PrimsOk P) (t r : Nat) (s₀ s : State) : Prop :=
+  CS p t (zY p t r) (fun s₀=>Wv p s₀ (p.ℓ*t)) 0 (fun s₀=>okZ p s₀ (p.ℓ*t) r) (fun _=>0) s₀ s ∧ Reached p F t s₀
+abbrev RCS (p : Params) (F : PrimsOk P) (t i : Nat) (s₀ s : State) : Prop :=
+  CS p t (zY p t p.ℓ) (rW p t i) 0 (fun s₀=>okZ p s₀ (p.ℓ*t) p.ℓ && okR p s₀ (p.ℓ*t) i) (fun _=>0) s₀ s ∧ Reached p F t s₀
+
+/-- Full passing prefixes imply each earlier prefix passes. -/
+theorem prefixB_mono {F : PrimsOk P} {t k n : Nat} {r0 : Bool} {s₀ : State} (hk : k≤n) :
+    prefixB p F t r0 n s₀=true → prefixB p F t r0 k s₀=true := by
+  simp only [prefixB,Bool.and_eq_true]
+  rintro ⟨hr,hb⟩
+  refine ⟨hr,?_⟩
+  cases r0 <;> simp only [Bool.false_eq_true,ite_false,ite_true] at hb ⊢
+  · exact all_range_iff.mpr (fun j hj => all_range_iff.mp hb j (by omega))
+  · obtain ⟨hz,hb⟩ := Bool.and_eq_true_iff.mp hb
+    exact Bool.and_eq_true_iff.mpr ⟨hz,all_range_iff.mpr fun j hj=>all_range_iff.mp hb j (by omega)⟩
+
+theorem rejectedCE {F : PrimsOk P} {t nh : Nat} {fy fw : State→Nat→Poly} {okb : State→Bool} {ones : State→Nat}
+    {s₀ s : State} (h : CS p t fy fw nh okb ones s₀ s) (hr : Reached p F t s₀)
+    (hno : ¬ passS p t s₀) (hb : okb s₀=false) : CE p F t s₀ s :=
+  ⟨h.it,hr.1,hr.2,by rw [h.ok,hb,decide_eq_false hno],fun hp=>absurd hp hno⟩
+
+theorem hints_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
+    SP p (RCS p F t p.k) (CE p F t) (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))) := by
+  have hk := ps.hk
+  have hl := ps.hl
+  let φ := Reached p F t
+  refine Piece.seq (B := fun s₀ s=>CS p t (zY p t p.ℓ) (hW p t p.k) p.k (okH p t p.k)
+    (fun s₀=>onesS p s₀ (p.ℓ*t) p.k) s₀ s ∧ φ s₀) (sp_pure φ ?_) ?_
+  · have h := seqR_piece (p:=p) (I:=fun i=>CS p t (zY p t p.ℓ) (hW p t i) i (okH p t i)
+      (fun s₀=>onesS p s₀ (p.ℓ*t) i)) 0 p.k fun i _ hi=>hR_piece F ps t i (by omega)
+    simp only [Nat.zero_add] at h
+    refine h.mono (fun s₀ s _ h=>?_) (fun _ _ _ h=>h)
+    have h' := h.congr (fY':=zY p t p.ℓ) (fW':=hW p t 0) (okb':=okH p t 0) (fun _ _=>rfl)
+      (fun j hj=>by rw [rW_lt hj,hW_ge (Nat.not_lt_zero j)]) (by simp [okH,okT])
+    exact {h' with fh:=fun j hj=>absurd hj (Nat.not_lt_zero _),ones:=by rw [h'.ones];rfl,nh:=Nat.zero_le _}
+  · refine (sp_pure φ (onesOk_piece ps t)).mono (fun _ _ _ h=>h) (fun s₀ s _ h=>?_)
+    exact ⟨h.1.it,h.2.1,h.2.2,by rw [h.1.ok,okAll_eq],fun _=>
+      ⟨h.1.fy.congr (fun j hj=>zY_lt hj),h.1.fh,h.1.ct⟩⟩
+
+theorem r0checks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
+    SP p (RCS p F t 0) (CE p F t) (checksR0 P p) := by
+  have hk := ps.hk
+  have hl := ps.hl
+  unfold checksR0
+  apply until_piece (J:=RCS p F t) (prefixB p F t true) p.k (sc_ok' ps (by decide) (by decide))
+    (fun _ _ _ _ h=>h.1.it.kd.ctx)
+    (fun k s₀ s h=>by rw [h.1.ok]; simp only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,ite_true])
+    (fun _ _ _ _ hp h ctx hm=>⟨h.1.ofMem hp ps ctx hm,h.2⟩)
+    (fun k hk _ _ _ _ hq=>prefixB_eq ps (by simpa using hk) hq)
+    (fun k _ _ hk _ hb=>prefixB_mono hk hb) ?_ ?_ (hints_piece F ps t)
+  · intro k s₀ s hp hk h hb
+    have raw : (okZ p s₀ (p.ℓ*t) p.ℓ && okR p s₀ (p.ℓ*t) k)=false := by
+      simpa only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,ite_true] using hb
+    refine rejectedCE h.1 h.2 (fun hpass=>?_) raw
+    have hz : okZ p s₀ (p.ℓ*t) p.ℓ=true := all_range_iff.mpr hpass.1
+    have hr : okR p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.2.1 j (by omega))
+    rw [hz,hr] at raw; cases raw
+  · intro i hi
+    exact sp_pure (Reached p F t) (r0R_piece F ps t i hi)
+
+theorem zchecks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
+    SP p (ZCS p F t 0) (CE p F t) (.seq (seqOk (zR P p) 0 p.ℓ) (ifOk (checksR0 P p))) := by
+  have hk := ps.hk
+  have hl := ps.hl
+  apply until_piece (J:=ZCS p F t) (prefixB p F t false) p.ℓ (sc_ok' ps (by decide) (by decide))
+    (fun _ _ _ _ h=>h.1.it.kd.ctx)
+    (fun k s₀ s h=>by rw [h.1.ok]; simp only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,Bool.false_eq_true,ite_false])
+    (fun _ _ _ _ hp h ctx hm=>⟨h.1.ofMem hp ps ctx hm,h.2⟩)
+    (fun k hk _ _ _ _ hq=>prefixB_eq ps (by simpa using hk) hq)
+    (fun k _ _ hk _ hb=>prefixB_mono hk hb) ?_ ?_ ?_
+  · intro k s₀ s hp hk h hb
+    have raw : okZ p s₀ (p.ℓ*t) k=false := by
+      simpa only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,Bool.false_eq_true,ite_false] using hb
+    refine rejectedCE h.1 h.2 (fun hpass=>?_) raw
+    have hz : okZ p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.1 j (by omega))
+    rw [hz] at raw; cases raw
+  · intro i hi
+    exact sp_pure (Reached p F t) (zR_piece F ps t i hi)
+  · refine (r0checks_piece F ps t).mono (fun s₀ s _ h=>⟨?_,h.2⟩) (fun _ _ _ h=>h)
+    exact h.1.congr (fun _ _=>rfl) (fun j _=>(rW_ge (Nat.not_lt_zero j)).symm) (by simp [okR])
 
 /-! ## The checks -/
 
@@ -723,28 +1047,6 @@ theorem checks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
         fun _ _ _ h => h) ?_
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t 0) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) 0) (fun _ => 0) s₀ s ∧ φ s₀) (sp_pure φ (checksInit_piece ps t)) ?_
-  refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0
-      (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ) (fun _ => 0) s₀ s ∧ φ s₀) (sp_pure φ ?_) ?_
-  · have := seqR_piece (p := p) (I := fun r => CS p t (zY p t r) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0
-      (fun s₀ => okZ p s₀ (p.ℓ * t) r) (fun _ => 0)) 0 p.ℓ fun r _ hr => zR_piece F ps t r (by omega_arith)
-    simpa using this
-  refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (rW p t p.k) 0
-      (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ && okR p s₀ (p.ℓ * t) p.k) (fun _ => 0) s₀ s ∧ φ s₀) (sp_pure φ ?_) ?_
-  · have := seqR_piece (p := p) (I := fun i => CS p t (zY p t p.ℓ) (rW p t i) 0
-      (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ && okR p s₀ (p.ℓ * t) i) (fun _ => 0)) 0 p.k fun i _ hi =>
-        r0R_piece F ps t i (by omega_arith)
-    simp only [Nat.zero_add] at this
-    exact this.mono (fun s₀ s _ h => h.congr (fun _ _ => rfl) (fun j _ => (rW_ge (Nat.not_lt_zero j)).symm)
-      (by simp [okR])) fun _ _ _ h => h
-  refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (hW p t p.k) p.k (okH p t p.k)
-      (fun s₀ => onesS p s₀ (p.ℓ * t) p.k) s₀ s ∧ φ s₀) (sp_pure φ ?_) ?_
-  · have := seqR_piece (p := p) (I := fun i => CS p t (zY p t p.ℓ) (hW p t i) i (okH p t i)
-      (fun s₀ => onesS p s₀ (p.ℓ * t) i)) 0 p.k fun i _ hi => hR_piece F ps t i (by omega_arith)
-    simp only [Nat.zero_add] at this
-    refine this.mono (fun s₀ s _ h => ?_) fun _ _ _ h => h
-    have h' := h.congr (fY' := zY p t p.ℓ) (fW' := hW p t 0) (okb' := okH p t 0) (fun _ _ => rfl)
-      (fun j hj => by rw [rW_lt hj, hW_ge (Nat.not_lt_zero j)]) (by simp [okH, okT])
-    exact { h' with fh := fun j hj => absurd hj (Nat.not_lt_zero _), ones := by rw [h'.ones]; rfl, nh := Nat.zero_le _ }
-  refine Piece.seq (B := CE p F t) (sp_pure φ (onesOk_piece ps t)) (checksEnd_piece F ps t)
+  exact Piece.seq (zchecks_piece F ps t) (checksEnd_piece F ps t)
 
 end VG.Proof.MlDsa.X86.Sign

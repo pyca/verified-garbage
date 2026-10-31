@@ -4841,6 +4841,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 215f
+jmp 216f
+215:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -4883,6 +4888,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 217f
+jmp 218f
+217:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -4925,6 +4935,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 219f
+jmp 220f
+219:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -4967,6 +4982,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 221f
+jmp 222f
+221:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5009,6 +5029,21 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 223f
+jmp 224f
+223:
+224:
+222:
+220:
+218:
+216:
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 225f
+jmp 226f
+225:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5063,6 +5098,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 227f
+jmp 228f
+227:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5117,6 +5157,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 229f
+jmp 230f
+229:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5171,6 +5216,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 231f
+jmp 232f
+231:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5225,6 +5275,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 233f
+jmp 234f
+233:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5279,6 +5334,11 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 235f
+jmp 236f
+235:
 mov eax, esi
 add eax, 6144
 mov ecx, esi
@@ -5333,6 +5393,22 @@ pop ecx
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 237f
+jmp 238f
+237:
+238:
+236:
+234:
+232:
+230:
+228:
+mov eax, DWORD PTR [esi+840]
+test eax, eax
+jne 239f
+jmp 240f
+239:
 mov eax, esi
 add eax, 8192
 mov ecx, esi
@@ -5371,13 +5447,13 @@ add edi, 26624
 mov ebp, esi
 add ebp, 9216
 mov ecx, 256
-215:
+241:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 215b
+jne 241b
 mov eax, esi
 add eax, 26624
 mov ecx, esi
@@ -5453,13 +5529,13 @@ add edi, 27648
 mov ebp, esi
 add ebp, 9216
 mov ecx, 256
-216:
+242:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 216b
+jne 242b
 mov eax, esi
 add eax, 27648
 mov ecx, esi
@@ -5535,13 +5611,13 @@ add edi, 28672
 mov ebp, esi
 add ebp, 9216
 mov ecx, 256
-217:
+243:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 217b
+jne 243b
 mov eax, esi
 add eax, 28672
 mov ecx, esi
@@ -5617,13 +5693,13 @@ add edi, 29696
 mov ebp, esi
 add ebp, 9216
 mov ecx, 256
-218:
+244:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 218b
+jne 244b
 mov eax, esi
 add eax, 29696
 mov ecx, esi
@@ -5699,13 +5775,13 @@ add edi, 30720
 mov ebp, esi
 add ebp, 9216
 mov ecx, 256
-219:
+245:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 219b
+jne 245b
 mov eax, esi
 add eax, 30720
 mov ecx, esi
@@ -5781,13 +5857,13 @@ add edi, 31744
 mov ebp, esi
 add ebp, 9216
 mov ecx, 256
-220:
+246:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 220b
+jne 246b
 mov eax, esi
 add eax, 31744
 mov ecx, esi
@@ -5831,17 +5907,19 @@ shr eax, 31
 mov ecx, DWORD PTR [esi+840]
 and ecx, eax
 mov DWORD PTR [esi+840], ecx
+240:
+226:
 mov eax, DWORD PTR [esi+840]
 test eax, eax
-jne 221f
+jne 247f
 mov eax, DWORD PTR [esi+848]
 add eax, 5
 mov DWORD PTR [esi+848], eax
-jmp 222f
-221:
+jmp 248f
+247:
 mov eax, 1
 mov DWORD PTR [esi+844], eax
-222:
+248:
 214:
 mov eax, DWORD PTR [esi+844]
 sub eax, 1
@@ -5849,21 +5927,21 @@ mov DWORD PTR [esi+844], eax
 jne 26b
 mov eax, DWORD PTR [esi+840]
 test eax, eax
-jne 223f
-jmp 224f
-223:
+jne 249f
+jmp 250f
+249:
 mov edi, esi
 add edi, 1040
 mov ebp, DWORD PTR [esp+32]
 add ebp, 0
 mov ecx, 12
-225:
+251:
 mov eax, DWORD PTR [edi]
 mov DWORD PTR [ebp], eax
 add edi, 4
 add ebp, 4
 sub ecx, 1
-jne 225b
+jne 251b
 mov eax, esi
 add eax, 16384
 mov ecx, 524287
@@ -5972,7 +6050,7 @@ pop eax
 pop eax
 pop eax
 pop eax
-224:
+250:
 22:
 mov eax, DWORD PTR [esi+840]
 mov esi, DWORD PTR [esp+8]

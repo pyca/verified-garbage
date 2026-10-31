@@ -82,7 +82,7 @@ theorem expandA_good {F : PrimsOk P} {s₀ : State} (h : Good p F s₀) :
 theorem leakV_eq {F : PrimsOk P} {s₀ s₀' : State} (ps : PS p) (h : Good p F s₀) (h' : Good p F s₀')
     (hq : SPub p s₀ s₀') :
     leakV p (skOf p s₀) (muOf s₀) (rndOf s₀) = leakV p (skOf p s₀') (muOf s₀') (rndOf s₀') :=
-  leakV_of_leak (skOf_len ps s₀) (skOf_len ps s₀') (expandA_good h) (expandA_good h') hq.2
+  leakV_of_leak (skOf_len ps s₀) (skOf_len ps s₀') (expandA_good h) (expandA_good h') hq.coarse
 
 theorem good_iff {F : PrimsOk P} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') : Good p F s₀ ↔ Good p F s₀' := by
   simp only [Good, okE_eq ps hq]
@@ -122,5 +122,22 @@ theorem run_at {F : PrimsOk P} {t : Nat} {s₀ s₀' : State} (ps : PS p) (hq : 
         (passV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) →
           hbitsV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) = hbitsV p (skOf p s₀') (muOf s₀') (rndOf s₀') (p.ℓ * t))) :=
   leak_at ps.hok F.ballMax (leakV_eq ps h.1 ((good_iff ps hq).mp h.1) hq) (by show t < 1000; have := h.lt; omega) h.cont
+
+/-- The full rejection leakage at an iteration both runs reach. -/
+theorem run_leak {F : PrimsOk P} {t : Nat} {x y : State} (ps : PS p) (hq : SPub p x y) (h : Run p F t x) :
+    signLeakLoop p maxBounds (amat p (Am p x)) ((List.range p.ℓ).map (S1 p x))
+      ((List.range p.k).map (S2 p x)) ((List.range p.k).map (T0 p x)) (muOf x) (rppS p x)
+      (maxBounds.sign-t) (p.ℓ*t) =
+    signLeakLoop p maxBounds (amat p (Am p y)) ((List.range p.ℓ).map (S1 p y))
+      ((List.range p.k).map (S2 p y)) ((List.range p.k).map (T0 p y)) (muOf y) (rppS p y)
+      (maxBounds.sign-t) (p.ℓ*t) := by
+  have h' := (good_iff ps hq).mp h.1
+  have e := hq.2
+  rw [signLeak_eq (expandA_good h.1), signLeak_eq (expandA_good h')] at e
+  have hr : (skOf p x).take 32 = (skOf p y).take 32 := rhoS_eq ps hq
+  rw [hr] at e
+  have e' : leakVF p (skOf p x) (muOf x) (rndOf x) = leakVF p (skOf p y) (muOf y) (rndOf y) :=
+    List.append_cancel_left e
+  exact (leak_iterF ps.hok F.ballMax e' (by have := h.lt; show t < 1000; omega) h.cont).2
 
 end VG.Proof.MlDsa.X86.Sign
