@@ -9,36 +9,40 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::ecdh::{Error, PrivateKey, Secp256k1};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-struct Group {
-    curve: String,
+json_struct! {
+    struct Group {
+        curve: String,
+    }
 }
 
-#[derive(Deserialize)]
-struct Public {
-    crv: String,
-    x: String,
-    y: String,
+json_struct! {
+    struct Public {
+        crv: String,
+        x: String,
+        y: String,
+    }
 }
 
-#[derive(Deserialize)]
-struct Private {
-    d: String,
-    #[serde(flatten)]
-    public: Public,
+json_struct! {
+    struct Private {
+        d: String,
+        #[json(flatten)]
+        public: Public,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    public: Public,
-    private: Private,
-    shared: Hex,
+json_struct! {
+    struct Case {
+        public: Public,
+        private: Private,
+        shared: Hex,
+    }
 }
 
 // The published JWK strings use unpadded base64url.

@@ -14,25 +14,28 @@
     target_arch = "riscv64"
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::aes_xts::AesXts;
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    key_size: usize,
-    iv_size: usize,
+json_struct! {
+    struct Group {
+        #[json(rename = "keySize")]
+        key_size: usize,
+        #[json(rename = "ivSize")]
+        iv_size: usize,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: Hex,
-    iv: Hex,
-    msg: Hex,
-    ct: Hex,
+json_struct! {
+    struct Case {
+        key: Hex,
+        iv: Hex,
+        msg: Hex,
+        ct: Hex,
+    }
 }
 
 #[test]

@@ -13,26 +13,28 @@
     target_arch = "riscv64"
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    iv_size: usize,
+json_struct! {
+    struct Group {
+        #[json(rename = "ivSize")]
+        iv_size: usize,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: Hex,
-    iv: Hex,
-    aad: Hex,
-    msg: Hex,
-    ct: Hex,
-    tag: Hex,
+json_struct! {
+    struct Case {
+        key: Hex,
+        iv: Hex,
+        aad: Hex,
+        msg: Hex,
+        ct: Hex,
+        tag: Hex,
+    }
 }
 
 #[test]

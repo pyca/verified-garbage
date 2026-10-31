@@ -7,6 +7,8 @@
 //! own as well, so a directory that is not listed here does not run:
 //! `ci/check_arch_gates.py` checks that every one is.
 
+mod json;
+
 #[path = "acvp/main.rs"]
 mod acvp;
 #[path = "blake2_kat/main.rs"]

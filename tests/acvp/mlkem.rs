@@ -14,41 +14,46 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json::FromJson;
+use crate::json_struct;
 
-#[derive(Deserialize)]
-struct File<T> {
-    #[serde(rename = "testGroups")]
-    groups: Vec<Group<T>>,
+json_struct! {
+    struct File<T> {
+        #[json(rename = "testGroups")]
+        groups: Vec<Group<T>>,
+    }
 }
 
-#[derive(Deserialize)]
-struct Group<T> {
-    #[serde(rename = "parameterSet")]
-    parameter_set: String,
-    function: Option<String>,
-    tests: Vec<T>,
+json_struct! {
+    struct Group<T> {
+        #[json(rename = "parameterSet")]
+        parameter_set: String,
+        function: Option<String>,
+        tests: Vec<T>,
+    }
 }
 
-#[derive(Deserialize)]
-pub struct KeyGen {
-    pub d: String,
-    pub z: String,
-    pub ek: String,
-    pub dk: String,
+json_struct! {
+    pub struct KeyGen {
+        pub d: String,
+        pub z: String,
+        pub ek: String,
+        pub dk: String,
+    }
 }
 
-#[derive(Deserialize)]
-pub struct EncapDecap {
-    pub ek: String,
-    #[serde(default)]
-    pub m: String,
-    #[serde(default)]
-    pub c: String,
-    #[serde(default)]
-    pub k: String,
-    #[serde(rename = "testPassed")]
-    pub passed: Option<bool>,
+json_struct! {
+    pub struct EncapDecap {
+        pub ek: String,
+        #[json(default)]
+        pub m: String,
+        #[json(default)]
+        pub c: String,
+        #[json(default)]
+        pub k: String,
+        #[json(rename = "testPassed")]
+        pub passed: Option<bool>,
+    }
 }
 
 pub fn unhex(s: &str) -> Vec<u8> {
@@ -65,8 +70,8 @@ pub fn array<const N: usize>(s: &str) -> [u8; N] {
 
 /// The tests of the groups of a file for the parameter set `name`, with the
 /// function `function` (if any).
-fn tests<T: for<'a> Deserialize<'a>>(text: &str, name: &str, function: Option<&str>) -> Vec<T> {
-    let file: File<T> = serde_json::from_str(text).unwrap();
+fn tests<T: FromJson>(text: &str, name: &str, function: Option<&str>) -> Vec<T> {
+    let file: File<T> = crate::json::parse(name, text);
     let groups: Vec<_> = file
         .groups
         .into_iter()

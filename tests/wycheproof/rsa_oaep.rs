@@ -22,7 +22,7 @@
     feature = "alloc"
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_oaep::{Error, Hash, decrypt, encrypt};
@@ -31,46 +31,53 @@ use verified_garbage::{rsa_pkcs1_sig, rsa_pss};
 use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Key {
-    modulus: Hex,
-    private_exponent: Hex,
-    public_exponent: Hex,
-    prime1: Hex,
-    prime2: Hex,
-    exponent1: Hex,
-    exponent2: Hex,
-    coefficient: Hex,
+json_struct! {
+    struct Key {
+        modulus: Hex,
+        #[json(rename = "privateExponent")]
+        private_exponent: Hex,
+        #[json(rename = "publicExponent")]
+        public_exponent: Hex,
+        prime1: Hex,
+        prime2: Hex,
+        exponent1: Hex,
+        exponent2: Hex,
+        coefficient: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    sha: String,
-    mgf_sha: String,
-    private_key: Key,
+json_struct! {
+    struct Group {
+        sha: String,
+        #[json(rename = "mgfSha")]
+        mgf_sha: String,
+        #[json(rename = "privateKey")]
+        private_key: Key,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    ct: Hex,
-    label: Hex,
+json_struct! {
+    struct Case {
+        msg: Hex,
+        ct: Hex,
+        label: Hex,
+    }
 }
 
-/// A group of the RSAES-PKCS1-v1_5 decryption vectors (`rsa_pkcs1_*_test.json`),
-/// for its CRT key.
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Pkcs1Group {
-    private_key: Key,
+json_struct! {
+    /// A group of the RSAES-PKCS1-v1_5 decryption vectors (`rsa_pkcs1_*_test.json`),
+    /// for its CRT key.
+    struct Pkcs1Group {
+        #[json(rename = "privateKey")]
+        private_key: Key,
+    }
 }
 
-/// A case of those vectors, for its message.
-#[derive(Deserialize)]
-struct MsgCase {
-    msg: Hex,
+json_struct! {
+    /// A case of those vectors, for its message.
+    struct MsgCase {
+        msg: Hex,
+    }
 }
 
 /// `x` without its leading zero bytes (the vectors write numbers in DER's
