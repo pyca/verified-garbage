@@ -16,7 +16,8 @@ AArch64 implementation (`Impl/Gcm/AArch64.lean`) computes it:
   `lo`.
 * `Y ⊕ X` is in `r8:r9`. Each step takes its most significant bit `xᵢ`
   (`srdi` by 63), turns it into the mask `m = 0 − xᵢ`, and shifts it left
-  by one bit.
+  by one bit with `addc`/`adde` (doubling the low half, then the high half
+  with its carry).
 * `Z` (in `r10:r11`) accumulates `V & m`, so `Z := Z ⊕ V` exactly when
   `xᵢ = 1`.
 * `V` (in `r12:r14`, starting at `H`) is shifted right by one bit, and the
@@ -81,10 +82,8 @@ def step : List Instr := [
   -- M := −xᵢ, and X := X << 1
   .lsr .d T XH 63,
   .sub M ZERO T,
-  .lsl XH XH 1,
-  .lsr .d T XL 63,
-  .logic .or XH XH T,
-  .lsl XL XL 1,
+  .addc XL XL XL,
+  .adde XH XH XH,
   -- Z := Z ⊕ (V ∧ M)
   .logic .and T VH M,
   .logic .xor ZH ZH T,
