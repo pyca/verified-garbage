@@ -41,7 +41,7 @@ def T3 : Reg := .r19
 /-- The nonvolatile registers used, in the order they are saved. -/
 def saved (i : Nat) : Reg := [.r14, .r15, .r16, .r17, .r19].getD i .r14
 
-/-- Save them in `scratch[128..168)`. -/
+/-- Save them in `scratch[64..104)`. -/
 def save : List Instr := (List.range 5).flatMap fun i => [.store .d (saved i) .r6 (64 + 8 * i)]
 
 /-- Restore them. -/
