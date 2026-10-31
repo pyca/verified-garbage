@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Proof.Framework.X86.Call
 import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+meta import Mathlib.Tactic.Set
 
 /-!
 # A verified call on x86 (32-bit)
