@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Rounds
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Rounds
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
@@ -558,7 +561,7 @@ theorem compress_verified :
   · obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
     exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.lr he (by decide +kernel)
       (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h₂⟩
-  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
+  · refine VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

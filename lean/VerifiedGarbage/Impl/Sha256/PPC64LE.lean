@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha256
-public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.Vector.PPC64LE
 
 /-!
 # SHA-256 compression function: PPC64LE implementation
@@ -60,28 +60,12 @@ def schedule (t : Nat) : List Instr :=
     .loadRev .w T0 .r4 .r0,
     .store .w T0 .r6 (slot t)]
   else [
-    -- T0 := σ₁(Wₜ₋₂)
-    .load .w T1 .r6 (slot (t + 14)),
-    .rotr .w T0 T1 17,
-    .rotr .w T2 T1 19,
-    .logic .xor T0 T0 T2,
-    .lsr .w T2 T1 10,
-    .logic .xor T0 T0 T2,
-    -- T0 := T0 + Wₜ₋₇
-    .load .w T2 .r6 (slot (t + 9)),
-    .add T0 T0 T2,
-    -- T0 := T0 + σ₀(Wₜ₋₁₅)
-    .load .w T1 .r6 (slot (t + 1)),
-    .rotr .w T2 T1 7,
-    .rotr .w T3 T1 18,
-    .logic .xor T2 T2 T3,
-    .lsr .w T3 T1 3,
-    .logic .xor T2 T2 T3,
-    .add T0 T0 T2,
-    -- T0 := T0 + Wₜ₋₁₆
-    .load .w T2 .r6 (slot t),
-    .add T0 T0 T2,
-    .store .w T0 .r6 (slot t)]
+    .load .w T1 .r6 (slot (t + 14)), .mtvsrd .v0 T1,
+    .load .w T2 .r6 (slot (t + 1)), .mtvsrd .v1 T2,
+    .vop (.sha256 .v0 .v0 false 4), .vop (.sha256 .v1 .v1 false 0),
+    .load .w T0 .r6 (slot (t + 9)), .mfvsrd T1 .v0, .add T0 T1 T0,
+    .mfvsrd T2 .v1, .add T0 T0 T2,
+    .load .w T2 .r6 (slot t), .add T0 T0 T2, .store .w T0 .r6 (slot t)]
 
 /-- Round `t`, with `Wₜ` in `T0`. Form `h + (Kₜ + Wₜ)` independently
 of the state-dependent sigma and choice functions, shortening the serial
@@ -89,39 +73,14 @@ addition chain without adding instructions. -/
 def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
-  [ -- h := h + (Kₜ + Wₜ)
-    .lis T1 ((K t).extractLsb' 16 16),
-    .ori T1 T1 ((K t).extractLsb' 0 16),
-    .add T1 T1 T0,
-    .add h h T1,
-    -- h := h + Σ₁(e)
-    .rotr .w T1 e 6,
-    .rotr .w T2 e 11,
-    .logic .xor T1 T1 T2,
-    .rotr .w T2 e 25,
-    .logic .xor T1 T1 T2,
-    .add h h T1,
-    -- h := h + Ch(e, f, g), as ((f ⊕ g) ∧ e) ⊕ g
-    .logic .xor T1 f g,
-    .logic .and T1 T1 e,
-    .logic .xor T1 T1 g,
-    .add h h T1,
-    -- e' := d + T₁
-    .add d d h,
-    -- T1 := Σ₀(a)
-    .rotr .w T1 a 2,
-    .rotr .w T2 a 13,
-    .logic .xor T1 T1 T2,
-    .rotr .w T2 a 22,
-    .logic .xor T1 T1 T2,
-    -- T₂ := Σ₀(a) + Maj(a, b, c), independently of T₁ in h
-    .logic .or T2 a b,
-    .logic .and T2 T2 c,
-    .logic .and T3 a b,
-    .logic .or T2 T2 T3,
-    .add T1 T1 T2,
-    -- a' := T₁ + T₂
-    .add h h T1]
+  ([.mtvsrd .v2 e, .mtvsrd .v3 a,
+    .vop (.sha256 .v2 .v2 true 4), .vop (.sha256 .v3 .v3 true 0)] : List Instr) ++
+  [.lis T1 ((K t).extractLsb' 16 16), .ori T1 T1 ((K t).extractLsb' 0 16),
+   .add T1 T1 T0, .add h h T1,
+   .logic .xor T2 f g, .logic .and T2 T2 e, .logic .xor T2 T2 g,
+   .mfvsrd T1 .v2, .add h h T1, .add h h T2, .add d d h,
+   .logic .or T2 a b, .logic .and T2 T2 c, .logic .and T3 a b, .logic .or T2 T2 T3,
+   .mfvsrd T1 .v3, .add T1 T1 T2, .add h h T1]
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa

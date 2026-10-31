@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Proof.Sha256.Spec
 public import VerifiedGarbage.Impl.Sha256.PPC64LE
 import all Init.Data.Nat.Bitwise.Basic
@@ -25,6 +26,35 @@ namespace VG.Proof.Sha256.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Sha256.PPC64LE
 open VG.Spec.Sha256 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
+
+theorem packed_word1 (f : Nat → BitVec 32) :
+    ((List.range 4).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (32*(3-i)))) (0 : BitVec 128)).extractLsb' 64 32 = f 1 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [show List.range 4 = [0, 1, 2, 3] from rfl, List.foldl_cons, List.foldl_nil,
+    BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_setWidth, BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero,
+    Nat.reduceSub, Nat.reduceMul, hj, decide_true, Bool.true_and]
+  simp only [show 64+j < 128 by omega, show 64+j < 96 by omega,
+    show ¬64+j < 64 by omega, show ¬64+j < 32 by omega, Nat.not_lt_zero,
+    decide_true, decide_false, Bool.not_true, Bool.not_false, Bool.false_and, Bool.true_and,
+    show 64+j-64 = j by omega, show 64+j-32 = 32+j by omega, Nat.sub_zero,
+    show j < 128 by omega, show 32+j < 128 by omega,
+    BitVec.getLsbD_of_ge (f 2) (32+j) (by omega), BitVec.getLsbD_of_ge (f 3) (64+j) (by omega),
+    Bool.false_or, Bool.or_false]
+
+
+theorem packed_low32 (f : Nat → BitVec 32) :
+    (((List.range 4).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (32*(3-i)))) (0 : BitVec 128)).extractLsb' 64 64).setWidth 32 = f 1 := by
+  rw [BitVec.setWidth_extractLsb'_of_le (show 32 ≤ 64 by decide), packed_word1]
+
+theorem word1_append (a b : BitVec 64) : vword (a ++ b) 1 = a.setWidth 32 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [vword, Nat.reduceSub, Nat.reduceMul, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
+    BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
+  rw [ite_eq_right (show ¬64+j < 64 by omega)]
+  simp only [Nat.add_sub_cancel_left]
 
 /-- The working variables `v` are in the registers of round `t`. -/
 def Vars (t : Nat) (s : State) (v : HashValue) : Prop :=
@@ -82,7 +112,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha256.PPC64LE.round]
+  simp only [Impl.Sha256.PPC64LE.round, List.cons_append, List.nil_append]
   generalize var t 0 = a at *
   generalize var t 1 = b at *
   generalize var t 2 = c at *
@@ -95,19 +125,22 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hs hs'
-  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some, vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    vdword, Nat.sub_zero, Nat.mul_one, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write,
-    Size.bits, Size.ext, hs, hs', Option.some.injEq, exists_eq_left',
+    hs, hs', Option.some.injEq, exists_eq_left',
     Nat.reduceAdd, 
-    Nat.reduceLT, ↓reduceIte, 
+    Nat.reduceLT, reduceCtorEq, ↓reduceIte, 
     true_and]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
   rotate_right
   · obtain ⟨n3, n7, n17, n18, n19⟩ := hpw r hr
     simp only [n3, n7, n17, n18, n19, ↓reduceIte]
   all_goals
-    simp only [lo32_add, BitVec.setWidth_xor, BitVec.setWidth_and, BitVec.setWidth_or,
-      BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, lis_ori', h0, h1, h2, h3, h4, h5, h6, h7,
+    simp only [lo32_add, packed_low32, word1_append, Nat.reduceSub,
+      show (4 : Nat).testBit 2 = true by decide, show (0 : Nat).testBit 2 = false by decide,
+      VG.PPC64LE.sigma256, ite_true, ite_false, Bool.false_eq_true, BitVec.setWidth_xor, BitVec.setWidth_and, BitVec.setWidth_or,
+      BitVec.setWidth_setWidth_of_le, lis_ori', h0, h1, h2, h3, h4, h5, h6, h7,
       hw, 
       Nat.reduceLeDiff
       ]
@@ -160,18 +193,22 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
     simp only [Impl.Sha256.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_w, exec_store_w, slot_ok,
-      exec_add, exec_logic, exec_rotr_w, exec_lsr_w, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, 
+      exec_add, reduceExec, reduceVOpEval, Option.map_some,
+      vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword, Nat.sub_zero, Nat.mul_one, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, 
       Option.some.injEq, exists_eq_left', 
       Nat.reduceLT, reduceCtorEq,
       ↓reduceIte, ne_eq, not_false_eq_true, true_and
       ]
-    simp only [lo32_add, BitVec.setWidth_xor, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+    simp only [lo32_add, packed_low32, word1_append, Nat.reduceSub,
+      show (4 : Nat).testBit 2 = true by decide, show (0 : Nat).testBit 2 = false by decide,
+      VG.PPC64LE.sigma256, ite_true, ite_false, Bool.false_eq_true,
+      BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
       e2, e7, e15, e16, 
       Nat.reduceLeDiff
       ]
     have hW := W_ge M (t := t) (by omega)
     refine ⟨by rw [hW]; rfl, by rw [hW]; rfl, fun r h0 h1 h2 h3 _ => ?_⟩
-    simp [h0, h1, h2, h3]
+    simp [h0, h1, h2]
 
 /-! ## The 64 rounds -/
 
