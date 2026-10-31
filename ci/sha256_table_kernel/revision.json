@@ -1,0 +1,5 @@
+{
+  "source_revision": "db682c2552d1e9db72f62042361a8381555b85a2",
+  "baseline_sha256": "VG.Impl.Sha256.PPC64LE.compress",
+  "experiment": "SHA-256 adaptation of SHA-512 table-loop, currently unverified"
+}
