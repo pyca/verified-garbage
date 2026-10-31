@@ -1,3 +1,4 @@
+// UNPROVED prepared-key experiment; AArch64 only. Do not ship.
 //! What ML-DSA-44, ML-DSA-65 and ML-DSA-87 (`crate::mldsa44`,
 //! `crate::mldsa65`, `crate::mldsa87`) share: their API, defined once by
 //! `ml_dsa!` for each parameter set's verified functions and sizes.
@@ -52,6 +53,8 @@ impl Backend {
 /// which takes the hash `tr` of the public key the `VerifyingKey` keeps), its
 /// `sign` and `verify` functions (which take a precomputed `μ`)
 /// and its sizes.
+pub(crate) const CACHE_NTT: bool = true;
+
 macro_rules! ml_dsa {
     (
         name: $name:literal,
@@ -73,7 +76,10 @@ macro_rules! ml_dsa {
         verify_avx2: ($verify_avx2:path, $verify_avx2_features:path),
         sign_message_avx2: ($sign_message_avx2:path, $sign_message_avx2_features:path),
         verify_message_cached_avx2: ($verify_message_cached_avx2:path, $verify_message_cached_avx2_features:path),
-        pk: $pk:literal,
+        k: $k:literal,
+    l: $l:literal,
+    eta: $eta:literal,
+    pk: $pk:literal,
         sk: $sk:literal,
         sig: $sig:literal,
         scratch: $scratch:literal,
@@ -140,8 +146,9 @@ macro_rules! ml_dsa {
 
         #[doc = concat!("An ", $name, " public key.")]
         #[derive(Clone, PartialEq, Eq)]
+        #[repr(C, align(16))]
         pub struct $VerifyingKey {
-            bytes: [u8; $pk],
+            bytes: [u8; $pk + 1024 * $k],
             // Constructors maintain tr = SHAKE256(bytes, 64).
             #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
             tr: [u8; 64],
@@ -162,20 +169,38 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
-                $VerifyingKey {
-                    bytes: *bytes,
+                let mut result = $VerifyingKey {
+                    bytes: [0; $pk + 1024 * $k],
                     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                     tr: {
                         let mut tr = [0; 64];
                         $crate::hashes::sha3::Shake256::digest(bytes, &mut tr);
                         tr
                     },
+                };
+                result.bytes[..$pk].copy_from_slice(bytes);
+                result.prepare_polynomials();
+                result
+            }
+
+            fn prepare_polynomials(&mut self) {
+                let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
+                for i in 0..$k {
+                    unsafe {
+                        let input = self.bytes.as_ptr().add(32 + 320 * i).cast();
+                        let output = self.bytes.as_mut_ptr().add($pk + 1024 * i).cast();
+                        $crate::arch::mldsa::vg_mldsa_unpack_t1(input, output);
+                        if $crate::mldsa_common::CACHE_NTT {
+                            $crate::arch::mldsa::vg_mldsa_ntt(output, work.as_mut_ptr());
+                        }
+                    }
                 }
+                unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), 1024); }
             }
 
             /// The bytes of the key.
             pub fn as_bytes(&self) -> &[u8; $pk] {
-                &self.bytes
+                self.bytes[..$pk].try_into().unwrap()
             }
 
             /// `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3):
@@ -197,15 +222,15 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-                        Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $verify_message(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
                         // Both constructors establish tr = SHAKE256(bytes, 64);
                         // the key and digest remain private and immutable.
                         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Scalar => $verify_message_cached(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Sha3 => $verify_message_cached_sha3(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Avx2 => $verify_message_cached_avx2(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
                 };
                 match r {
@@ -233,11 +258,11 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $verify(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $verify(self.bytes.as_ptr().cast(), mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $verify_sha3(self.bytes.as_ptr().cast(), mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $verify_avx2(self.bytes.as_ptr().cast(), mu, sig, scratch.as_mut_ptr()),
                     }
                 };
                 if r == 1 { Ok(()) } else { Err(Error::InvalidSignature) }
@@ -249,10 +274,11 @@ macro_rules! ml_dsa {
             (FIPS 204 §3.6.3), with the keys it expands to. The seed and the expanded key are \
             destroyed when it is dropped."
         )]
+        #[repr(C, align(16))]
         pub struct $SigningKey {
             seed: [u8; 32],
             vk: $VerifyingKey,
-            sk: [u8; $sk],
+            sk: [u8; $sk + 1024 * ($l + 2 * $k)],
         }
 
         impl core::fmt::Debug for $SigningKey {
@@ -280,11 +306,11 @@ macro_rules! ml_dsa {
                 let mut key = $SigningKey {
                     seed: *seed,
                     vk: $VerifyingKey {
-                        bytes: [0; $pk],
+                        bytes: [0; $pk + 1024 * $k],
                         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                         tr: [0; 64],
                     },
-                    sk: [0; $sk],
+                    sk: [0; $sk + 1024 * ($l + 2 * $k)],
                 };
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -297,11 +323,11 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Scalar => $keygen(seed, key.vk.bytes.as_mut_ptr().cast(), key.sk.as_mut_ptr().cast(), scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $keygen_sha3(seed, key.vk.bytes.as_mut_ptr().cast(), key.sk.as_mut_ptr().cast(), scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $keygen_avx2(seed, key.vk.bytes.as_mut_ptr().cast(), key.sk.as_mut_ptr().cast(), scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -318,7 +344,30 @@ macro_rules! ml_dsa {
                 // Initialize the cache only after successful key generation.
                 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                 key.vk.tr.copy_from_slice(&key.sk[64..128]);
+                key.vk.prepare_polynomials();
+                key.prepare_polynomials();
                 Ok(key)
+            }
+
+            fn prepare_polynomials(&mut self) {
+                let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
+                let slen = if $eta == 2 { 96 } else { 128 };
+                for i in 0..($l + 2 * $k) {
+                    let (offset, len, a, b) = if i < $l + $k {
+                        (128 + slen * i, slen, $eta, $eta)
+                    } else {
+                        (128 + slen * ($l + $k) + 416 * (i - $l - $k), 416, 4095, 4096)
+                    };
+                    unsafe {
+                        let input = self.sk.as_ptr().add(offset);
+                        let output = self.sk.as_mut_ptr().add($sk + 1024 * i).cast();
+                        $crate::arch::mldsa::vg_mldsa_bit_unpack(input, len, a, b, output);
+                        if $crate::mldsa_common::CACHE_NTT {
+                            $crate::arch::mldsa::vg_mldsa_ntt(output, work.as_mut_ptr());
+                        }
+                    }
+                }
+                unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), 1024); }
             }
 
             /// The seed `ξ`.
@@ -367,15 +416,15 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => {
-                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message(self.sk.as_ptr().cast(), m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
-                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_sha3(self.sk.as_ptr().cast(), m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => {
-                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_avx2(self.sk.as_ptr().cast(), m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                     }
                 };
@@ -422,11 +471,11 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $sign(self.sk.as_ptr().cast(), mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $sign_sha3(self.sk.as_ptr().cast(), mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $sign_avx2(self.sk.as_ptr().cast(), mu, rnd, &mut sig, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
