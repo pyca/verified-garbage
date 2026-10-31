@@ -10,6 +10,8 @@ import asm_layout
 
 class Paths(unittest.TestCase):
     def test_logical(self):
+        self.assertEqual(asm_layout.logical("crates/verified-garbage-asm-x86_64/asm/md5.rs"),
+                         "src/asm/x86_64/md5.rs")
         self.assertEqual(asm_layout.logical("crates/verified-garbage-asm-x86_64/src/md5.rs"),
                          "src/asm/x86_64/md5.rs")
         self.assertEqual(asm_layout.logical("crates/verified-garbage-asm-x86_64/src/lib.rs"),
@@ -23,7 +25,8 @@ class Paths(unittest.TestCase):
 
     def test_physical(self):
         self.assertEqual(asm_layout.physical("src/asm/x86_64/mod.rs"),
-                         ["crates/verified-garbage-asm-x86_64/src/lib.rs", "src/asm/x86_64/mod.rs"])
+                         ["crates/verified-garbage-asm-x86_64/asm/lib.rs",
+                          "crates/verified-garbage-asm-x86_64/src/lib.rs", "src/asm/x86_64/mod.rs"])
         self.assertEqual(asm_layout.physical("src/lib.rs"), ["src/lib.rs"])
         for path in ["src/asm/aarch64/sha256.rs", "src/asm/x86/consts/mod.rs"]:
             self.assertEqual(asm_layout.logical(asm_layout.physical(path)[0]), path)
@@ -46,7 +49,7 @@ class Trees(unittest.TestCase):
         self.assertEqual(list(asm_layout.generated_files(root)),
                          ["src/asm/mod.rs", "src/asm/x86_64/md5.rs", "src/asm/x86_64/mod.rs"])
 
-    def test_crates(self):
+    def test_crates_src(self):
         root = self.tree(["crates/verified-garbage-asm-x86_64/Cargo.toml",
                           "crates/verified-garbage-asm-x86_64/src/lib.rs",
                           "crates/verified-garbage-asm-x86_64/src/md5.rs",
@@ -55,6 +58,24 @@ class Trees(unittest.TestCase):
         self.assertEqual(asm_layout.target_dir(root, "x86_64"), crate)
         self.assertEqual(asm_layout.target_dirs(root), {"x86_64": crate})
         self.assertEqual(asm_layout.generated_files(root), {
+            "src/asm/x86_64/md5.rs": crate / "md5.rs", "src/asm/x86_64/mod.rs": crate / "lib.rs"})
+
+    def test_crates(self):
+        # A crate's `asm/`, and not its `src/` beside it.
+        root = self.tree(["crates/verified-garbage-asm-x86_64/Cargo.toml",
+                          "crates/verified-garbage-asm-x86_64/asm/lib.rs",
+                          "crates/verified-garbage-asm-x86_64/asm/md5.rs",
+                          "crates/verified-garbage-asm-x86_64/src/lib.rs",
+                          "crates/verified-garbage-asm-x86_64/src/md5.rs",
+                          "crates/verified-garbage-asm-arm/asm/lib.rs",
+                          "crates/verified-garbage-asm-mips/Cargo.toml",
+                          "crates/verified-garbage-cpu/src/lib.rs"])
+        crate = root / "crates/verified-garbage-asm-x86_64/asm"
+        arm = root / "crates/verified-garbage-asm-arm/asm"
+        self.assertEqual(asm_layout.target_dir(root, "x86_64"), crate)
+        self.assertEqual(asm_layout.target_dirs(root), {"arm": arm, "x86_64": crate})
+        self.assertEqual(asm_layout.generated_files(root), {
+            "src/asm/arm/mod.rs": arm / "lib.rs",
             "src/asm/x86_64/md5.rs": crate / "md5.rs", "src/asm/x86_64/mod.rs": crate / "lib.rs"})
 
 
