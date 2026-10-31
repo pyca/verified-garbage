@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.CopyFast
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
+import VerifiedGarbage.Proof.Sm4.RISCV64.KeyFill
+import VerifiedGarbage.Proof.Framework.Interleave
 
 /-!
 # The table of bitsliced round keys on RISCV64
@@ -60,30 +62,50 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
       sep := fun k hk j hj => by
         simp only [keyCfg] at hk hj ⊢; obtain rfl : j = 0 := by omega_arith
         rw [hb]; exact hsep k hk }
-  have hchk : check (lanes 64 7) keyCfg (linExt 0) (keyLoad h) keyEnv
-      (linPostG 7 (qOuts (keyBsG h)) [] keyMaskSlots keyEnv) = true := by
+  have hchk : check (lanes 64 7) keyCfg (linExt 0) (keyPre h) keyEnv
+      (linPostG 7 (qOuts (keyBsG0 h)) [] keyMaskSlots keyEnv) = true := by
     rcases hh with rfl | rfl
-    · exact keyLoad0_check
-    · exact keyLoad1_check
+    · exact keyPre0_check
+    · exact keyPre1_check
   unfold keyEnv at hchk
-  obtain ⟨s₁, e₁, ho₁, -, hkr₁, rd₁, wr₁, -, o₁, f₁, hb₁, -⟩ := linG_ok hchk hok
+  obtain ⟨s₀, e₀, ho₀, -, hkr₀, rd₀, wr₀, -, o₀, f₀, hb₀, -⟩ := linG_ok hchk hok
     (fun k => s.mem.readW (wordAddr (s.gpr .a0) k) 64)
     (fun r i hri => by simp at hri) (fun j i hji => by simp at hji)
     (fun kv hkv => ⟨by simp only [keyCfg]; exact mask_lt hkv, by simp only [keyCfg]; exact hm kv hkv⟩)
     (fun j hj => ⟨by simp only [keyCfg] at hj; omega_arith, by simp only [keyCfg, Nat.zero_add]⟩)
-  simp only [keyCfg] at hb₁ hkr₁ f₁
-  have hall₁ : ∀ r, r ∉ sboxWrites → ((keyLoad h).all fun i => dst i != some r) = true := fun r hr => by
-    have : (restRegs.all fun r => (keyLoad h).all fun i => dst i != some r) =
+  simp only [keyCfg] at hb₀ hkr₀ f₀
+  have hall₁ : ∀ r, r ∉ sboxWrites → ((keyPre h).all fun i => dst i != some r) = true := fun r hr => by
+    have : (restRegs.all fun r => (keyPre h).all fun i => dst i != some r) =
         true := by rcases hh with rfl | rfl <;> decide +kernel
     exact List.all_eq_true.mp this r (not_sboxWrites r hr)
-  have k₁ : ∀ r, r ∉ sboxWrites → s₁.gpr r = s.gpr r := fun r hr => o₁ r (hall₁ r hr)
+  -- The fill.
+  obtain ⟨s₁, e₁', v₁, o₁', m₁, rd₁', wr₁'⟩ := keyFill_ok s₀
+  have hqW : ∀ j < 8, q j ∈ sboxWrites := by decide
+  have k₁' : ∀ r, r ∉ sboxWrites → s₁.gpr r = s₀.gpr r := fun r hr =>
+    o₁' r (fun j hj h => hr (h ▸ hqW j hj)) (fun h => hr (h ▸ by decide))
+  have k₁ : ∀ r, r ∉ sboxWrites → s₁.gpr r = s.gpr r := fun r hr => (k₁' r hr).trans (o₀ r (hall₁ r hr))
+  have e₁ : runBlock isa (keyLoad h) s = some s₁ := by
+    rw [keyLoad, Interleave.runBlock_append, e₀, Option.bind_some, e₁']
+  have rd₁ : s₁.rd = s.rd := by rw [rd₁', rd₀]
+  have wr₁ : s₁.wr = s.wr := by rw [wr₁', wr₀]
+  have hb₁ : s₁.gpr sb = s.gpr sb := (k₁' sb (by decide)).trans hb₀
+  have hkr₁ : ∀ k ∈ keyMaskSlots, k < 64 → s₁.mem.readW (wordAddr (s.gpr sb) k) 64 =
+      s.mem.readW (wordAddr (s.gpr sb) k) 64 := fun k hk hk' => by
+    rw [m₁]; exact hkr₀ k hk hk'
+  have f₁ : Frame [slotRegion keyCfg s] s.mem s₁.mem := by rw [m₁]; exact f₀
   -- The planes of the round key.
   have hQ : WordRel (Qs s₁) (fun _ => rkWord (s.mem.readW (wordAddr (s.gpr .a0) 0) 64) h) := by
     intro b' hb' i hi j hj
     have hp : 16 * i + b' < 64 := by omega_arith
-    rw [Qs, ho₁ (q j) (keyBsG h j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
-      _ hp, keyBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-      show 32 * h + 8 * (3 - (16 * i + b') / 16) + j = 64 * 0 + (32 * h + 8 * (3 - i) + j) by omega_arith,
+    have hmem : (q j, keyBsG0 h j) ∈ qOuts (keyBsG0 h) := by
+      simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩
+    have hz : ∀ p < 64, p % 16 ≠ 0 → (s₀.gpr (q j)).getLsbD p = false := fun p hp' h0 => by
+      rw [ho₀ (q j) (keyBsG0 h j) hmem _ hp']; simp only [keyBsG0, h0, ↓reduceIte, xorBits_nil]
+    have hb16 : keyBsG0 h j (16 * i) = keyBsG h j (16 * i) := by simp [keyBsG0]
+    rw [Qs, v₁ j hj, getLsbD_fill hz hp, show (16 * i + b') / 16 = i by omega_arith,
+      ho₀ (q j) (keyBsG0 h j) hmem _ (by omega_arith), hb16, keyBsG,
+      xorBits_cons, xorBits_nil, Bool.xor_false,
+      show 32 * h + 8 * (3 - 16 * i / 16) + j = 64 * 0 + (32 * h + 8 * (3 - i) + j) by omega_arith,
       bitOf_word _ _ _ (by rcases hh with rfl | rfl <;> omega_arith), rkWord, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_ushiftRight]
     simp only [show 8 * (3 - i) + j < 32 by omega_arith, decide_true, Bool.true_and]
@@ -131,7 +153,7 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
     rw [k₂, hb₁, h2, hkr₁ kv.1 (List.mem_map_of_mem hkv) hk]
     exact hm kv hkv
   · refine (f₁.mono fun r hr => ?_).trans (f₂.mono fun r hr => ?_)
-    · simp only [slotRegion, List.mem_singleton] at hr; subst hr; simp [hb]
+    · simp only [slotRegion, List.mem_singleton] at hr; subst hr; simp [hb, keyCfg]
     · simp only [slotRegion, List.mem_singleton] at hr; subst hr
       simp [hkr₁', hkr]
 
