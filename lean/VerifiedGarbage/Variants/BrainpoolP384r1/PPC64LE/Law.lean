@@ -12,16 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 
-/-!
-# brainpoolP384r1's group law, on PPC64LE
-
-The variant of `BrainpoolP384r1` on PPC64LE (see `TCB/Emit.lean`): not an implementation
-but the fact the proofs of brainpoolP384r1's functions take, `Proof.BrainpoolP384r1.law`, whose
-proof needs Mathlib's algebra. Their registration files are generic over it
-(`Generic/BrainpoolP384r1/PPC64LE/`, and `Generic/<Iface>/BrainpoolP384r1/PPC64LE/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # brainpoolP384r1's group law, on PPC64LE -/
 
 @[expose] public section
 

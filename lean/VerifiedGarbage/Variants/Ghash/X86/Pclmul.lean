@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 
-/-!
-# The implementation of `vg_ghash` on x86: Pclmul
-
-A variant of `Ghash` on x86 (see `TCB/Emit.lean`): PCLMULQDQ: `vg_ghash_pclmul`.
--/
+/-! # The implementation of `vg_ghash` on x86: Pclmul -/
 
 @[expose] public section
 

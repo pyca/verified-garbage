@@ -7,8 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Key.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
-/-! DSA signing with a supplied or a sampled nonce, verification, domain checks, key derivation
-and key generation, on ARMv7. -/
+/-! # DSA on ARMv7 -/
 
 @[expose] public section
 

@@ -6,14 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulLit
 
-/-!
-# P-521's point multiplication on x86 (32-bit)
-
-`vg_p521_mul` (`Spec/Weierstrass/Mul.lean`), which the signature, the
-public key derivation, verification and ECDH call. A generic file (see
-`TCB/Emit.lean`) over P-521's group law `h`, the variant
-`Variants/P521/X86/Law.lean`.
--/
+/-! # P-521's point multiplication on x86 (32-bit) -/
 
 @[expose] public section
 

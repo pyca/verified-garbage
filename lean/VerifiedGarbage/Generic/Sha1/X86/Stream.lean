@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 
-/-! SHA-1's compression and streaming functions on x86, registered for every x86 SHA-1
-backend (`Proof/Sha1/X86/Variants/Interface.lean`). -/
+/-! # SHA-1 (FIPS 180-4) streaming on x86, for each SHA-1 implementation -/
 
 @[expose] public section
 

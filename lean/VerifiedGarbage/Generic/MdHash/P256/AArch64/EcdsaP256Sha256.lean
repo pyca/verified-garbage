@@ -9,22 +9,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_ecdsa_p256_sha256_sign`, calling
-HMAC-SHA-256's `init` and `finalize` and SHA-256's streaming `update` made
-with the variant's SHA-256 compression function, and `vg_ecdsa_p256_sign`,
-is emitted for every SHA-256 variant carried by `MdHash.sha256`, named with
-its suffix (e.g. `vg_ecdsa_p256_sha256_sign_sha2`), and needs its CPU
-features. Other hash functions emit no artifact here.
-
-The stack is 256 bytes: 16 saving `x30`, a 224-byte frame, and the 16 bytes
-below it that HMAC's functions use (`vg_ecdsa_p256_sign` uses none).
-
-It is generic over P-256's group law `h` too, the variant
-`Variants/P256/AArch64/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on AArch64 -/
 
 @[expose] public section
 

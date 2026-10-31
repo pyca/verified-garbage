@@ -7,22 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over brainpoolP256r1 with HMAC-SHA-256 on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_ecdsa_brainpoolp256r1_sha256_sign`, calling
-HMAC-SHA-256's `init` and `finalize` and SHA-256's streaming `update` made
-with the variant's SHA-256 compression function, and `vg_ecdsa_brainpoolp256r1_sign`,
-is emitted for every SHA-256 variant carried by `MdHash.sha256`, named with
-its suffix (e.g. `vg_ecdsa_brainpoolp256r1_sha256_sign_shani`), and needs its CPU
-features. Other hash functions emit no artifact here.
-
-The stack is 240 bytes: a 216-byte frame, and the 24 bytes below it that the
-calls use (`vg_ecdsa_brainpoolp256r1_sign` only its return address).
-
-It is generic over brainpoolP256r1's group law and inversions `h` too, the variant
-`Variants/BrainpoolP256r1/X86_64/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over brainpoolP256r1 with HMAC-SHA-256 on x86-64 -/
 
 @[expose] public section
 

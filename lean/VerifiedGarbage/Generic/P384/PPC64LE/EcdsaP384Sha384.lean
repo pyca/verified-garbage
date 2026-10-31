@@ -6,17 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P384Sha384
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on PPC64LE
-
-`vg_ecdsa_p384_sha384_sign`, calling HMAC-SHA-384's `init` and `finalize`,
-SHA-384's streaming `update`, and `vg_ecdsa_p384_sign`. The stack is 400
-bytes: the 48-byte frame saving the link register, a 256-byte frame, and the
-96 bytes below it that the calls use.
-
-A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
-`Variants/P384/PPC64LE/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on PPC64LE -/
 
 @[expose] public section
 

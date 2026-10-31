@@ -7,15 +7,7 @@ public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.MulBaseVerified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 
-/-!
-# P-224's base point multiplication on x86-64
-
-`vg_p224_mul_base` (`Spec/Weierstrass/MulBase.lean`), which the signature
-and the public key derivation call. A generic file (see `TCB/Emit.lean`)
-over P-224's group law and inversions `h`, the variant
-`Variants/P224/X86_64/Law.lean`: the comb's proof takes the group law, and
-the curve's facts (`p224_ok`) its inversions.
--/
+/-! # P-224's base point multiplication on x86-64 -/
 
 @[expose] public section
 

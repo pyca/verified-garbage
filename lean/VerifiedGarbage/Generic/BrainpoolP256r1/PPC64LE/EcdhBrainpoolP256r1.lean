@@ -8,12 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Lit
 
-/-!
-# ECDH over brainpoolP256r1 (SP 800-56A §5.7.1.2) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the variant
-`Variants/BrainpoolP256r1/PPC64LE/Law.lean`.
--/
+/-! # ECDH over brainpoolP256r1 (SP 800-56A §5.7.1.2) on PPC64LE -/
 
 @[expose] public section
 

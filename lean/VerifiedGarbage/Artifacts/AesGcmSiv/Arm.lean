@@ -8,20 +8,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-GCM-SIV (RFC 8452) on ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there.
-
-Both functions run in a frame of 3792 bytes holding their working space
-(`Proof/AesGcmSiv/Arm/Verified.lean`). In it they call `vg_aes_ctr32` and
-`vg_ghash` in frames that push their two stack arguments
-(`vg_aes_expand_key` takes no stack arguments): 3800 bytes of stack in all.
--/
+/-! # AES-GCM-SIV (RFC 8452) on ARMv7 -/
 
 @[expose] public section
 

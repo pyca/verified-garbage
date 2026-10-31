@@ -100,17 +100,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
-/-!
-# P-256's base point multiplication on x86-64
-
-`vg_p256_mul_base_adx` (`Spec/Weierstrass/MulBase.lean`'s `vg_p256_mul_base`
-with BMI2's and ADX's products and AVX2's selection), which the signature and
-the public key derivation call with those features; without them their comb
-stays inline, where the call measured slower. A generic file (see `TCB/Emit.lean`)
-over P-256's group law and inversions `h`, the variant
-`Variants/P256/X86_64/Law.lean`: the comb's proof takes the group law, and
-the curve's facts (`p256_ok`) its inversions.
--/
+/-! # P-256's base point multiplication on x86-64 -/
 
 @[expose] public section
 

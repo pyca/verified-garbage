@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.Compress
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Argon2 block compression on baseline ARM64. -/
+/-! # Argon2 block compression on baseline ARM64 -/
 
 @[expose] public section
 

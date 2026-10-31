@@ -89,12 +89,7 @@ import VerifiedGarbage.Proof.Weierstrass.CoZTable
 import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
-/-!
-# ECDSA over P-384 (FIPS 186-5) on AArch64
-
-A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
-`Variants/P384/AArch64/Law.lean`.
--/
+/-! # ECDSA over P-384 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
 

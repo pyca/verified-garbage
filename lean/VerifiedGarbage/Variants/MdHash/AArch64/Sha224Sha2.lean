@@ -3,11 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha224
 public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2Backend
 
-/-!
-# SHA-224 on AArch64 with the SHA-256 instructions
-
-A variant of `MdHash` on AArch64 (see `TCB/Emit.lean`): SHA-224, with `vg_sha256_compress_sha2`, using FEAT_SHA256.
--/
+/-! # SHA-224 on AArch64 with the SHA-256 instructions -/
 
 @[expose] public section
 

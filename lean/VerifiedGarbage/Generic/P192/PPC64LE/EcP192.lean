@@ -8,12 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P192
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P192.Lit
 
-/-!
-# P-192 public keys (FIPS 186-5 §A.2) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over P-192's group law `h`, the variant
-`Variants/P192/PPC64LE/Law.lean`.
--/
+/-! # P-192 public keys (FIPS 186-5 §A.2) on PPC64LE -/
 
 @[expose] public section
 

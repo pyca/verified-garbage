@@ -4,31 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
-/-!
-# ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64
-
-A generic caller (see `TCB/Emit.lean`), emitted for every ChaCha20 stream
-backend. With 64 to 256 bytes of data (1 to 256 with SVE2), one pass of the five-block kernel (four
-blocks in NEON lanes and one in the integer registers) computes the one-time
-Poly1305 key and the data's keystream together
-(`Impl/ChaCha20Poly1305/AArch64/Short.lean`); otherwise the one-time key uses
-the scalar block function. The code
-uses no stack: its calls (`bl`) keep the return address in `x30`, which it
-saves in its working space. Each function keeps its working space (1280
-bytes, `work`) in a frame of 1280 bytes on the stack
-(`withStackScratchWiped`), whose first 760 bytes are zeroed after the code,
-as they hold the one-time Poly1305 key and keystream; the code for 257 to 511
-bytes zeroes the keystream it keeps in the rest itself. Every backend's `open`
-(the scalar one's too) decrypts 449 to 511 bytes with one chunk of the
-eight-block NEON kernel, whose integer units absorb the first 448 bytes into
-Poly1305 while it computes the keystream (`OpenPad.openMain`,
-`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`). With the eight-block stream
-(`XorImpl.stitched`), the same kernel computes the keystream of the data's
-whole chunks of 512 bytes while the integer units absorb them, and `seal`
-also absorbs the last chunk while it computes the keystream of the four
-blocks after it. `seal_gather` gathers its
-slices to its output and calls this `seal` on them there.
--/
+/-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64 -/
 
 @[expose] public section
 

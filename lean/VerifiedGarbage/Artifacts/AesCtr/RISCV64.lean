@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.AesCtr.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCtr.RISCV64.Lit
 
-/-!
-# AES-CTR (NIST SP 800-38A §6.5) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. RISC-V has one implementation of `vg_aes_ctr32`, so this is not
-generic over it. A call (`jal`) stores nothing in memory, and the return
-address is saved in the scratch buffer, so no stack is used.
--/
+/-! # AES-CTR (NIST SP 800-38A §6.5) on RISC-V -/
 
 @[expose] public section
 

@@ -4,22 +4,7 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 
-/-!
-# TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there. The emitter adds the `# Safety` items that depend on the target
-(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
-the contract.
-
-The functions call nothing. They keep their working space in a frame of
-their own on the stack (`Proof/CmacTripleDes/Stream/Arm/Frame.lean`): they
-save our caller's registers in the working space, and the return address
-stays in `lr`.
--/
+/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7 -/
 
 @[expose] public section
 

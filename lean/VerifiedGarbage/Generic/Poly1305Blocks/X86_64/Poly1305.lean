@@ -29,20 +29,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Poly1305.Stream
 public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
 
-/-!
-# Streaming Poly1305 (RFC 8439 §2.5) on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which absorb the
-whole blocks of the data with an implementation `v` of `vg_poly1305_blocks`,
-are emitted once for each implementation (`Variants/Poly1305Blocks/X86_64/`),
-named with its suffix (e.g. `vg_poly1305_update_avx2`), and need its CPU
-features. `init` and `finalize` call no implementation of it, and are in the
-registration file.
-
-The stack is 160 bytes for every implementation: the frame of 136 bytes
-holding the working space, the return address of the call of
-`vg_poly1305_blocks`, and up to 16 bytes for its own calls.
--/
+/-! # Streaming Poly1305 (RFC 8439 §2.5) on x86-64 -/
 
 @[expose] public section
 

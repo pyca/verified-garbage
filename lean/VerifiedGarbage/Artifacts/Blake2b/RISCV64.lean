@@ -7,12 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Blake2.RISCV64.Lit
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 
-/-!
-# BLAKE2b (RFC 7693) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
--/
+/-! # BLAKE2b (RFC 7693) on RISC-V -/
 
 @[expose] public section
 

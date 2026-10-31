@@ -3,17 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-CMAC's chaining with AES-NI on x86-64
-
-`vg_cmac_aes_update_aesni_cbc`, the variant of `vg_cmac_aes_update` that
-keeps the round keys and the chaining value in registers across blocks.
-The other x86-64 CMAC functions are generic over `vg_aes_ctr32`
-(`Generic/AesCtr32/X86_64/CmacAes.lean`), and the callers of
-`vg_cmac_aes_update` over its implementations
-(`Generic/CmacAesUpdate/X86_64/`), this one among them
-(`Variants/CmacAesUpdate/X86_64/AesNiCbc.lean`).
--/
+/-! # AES-CMAC's chaining with AES-NI on x86-64 -/
 
 @[expose] public section
 

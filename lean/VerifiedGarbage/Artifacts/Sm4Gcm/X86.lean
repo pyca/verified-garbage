@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.Frame
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 
-/-! # SM4-GCM on baseline x86 (32-bit): its counter mode and key setup
-
-The functions that call GHASH are registered for each of its
-implementations in `Generic/Ghash/X86/Sm4Gcm.lean`. -/
+/-! # SM4-GCM on baseline x86 (32-bit): its counter mode and key setup -/
 
 @[expose] public section
 

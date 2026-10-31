@@ -88,14 +88,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.X448.X86_64.Main
 
-/-!
-# Ed448 verification on x86-64
-
-The signature and documentation come from the reviewed Ed448 API. The proof
-of `vg_ed448_verify_equation` is passed to the caller's here, so that only
-this file imports it, with the reference computations' agreement with the
-specification (`Proof/Ed448/Facts.lean`).
--/
+/-! # Ed448 verification on x86-64 -/
 
 @[expose] public section
 

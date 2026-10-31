@@ -35,22 +35,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 
-/-!
-# RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64
-
-A generic file of two interfaces (see `TCB/Emit.lean`):
-`vg_rsa_pkcs1_decrypt` calls SHA-256's streaming functions and
-HMAC-SHA-256's `init` and `finalize`, made with the SHA-256 compression
-function of an `MdHash` variant `v` (other hash functions emit nothing
-here), and `vg_rsa_private_checked` calling an implementation `c` of
-`vg_rsa_private_crt` (`Variants/RsaPrivateCrt/X86_64/`). It is emitted once
-for each pair, named by `Emit.qualifiedName` with the tags `sha256` and
-`crt` (e.g. `vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx`), and needs both's
-CPU features.
-
-Its stack is its frame, a return address and `vg_rsa_private_checked`'s
-3256 bytes, which are more than the hash functions use.
--/
+/-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64 -/
 
 @[expose] public section
 

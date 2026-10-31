@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P256.Comb -- shake: keep (p
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ECDSA over P-256 (FIPS 186-5) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/Arm/Law.lean`.
--/
+/-! # ECDSA over P-256 (FIPS 186-5) on 32-bit ARM -/
 
 @[expose] public section
 

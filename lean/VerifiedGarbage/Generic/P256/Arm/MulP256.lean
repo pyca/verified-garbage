@@ -8,14 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P256.MulLit
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 
-/-!
-# P-256's point multiplication on 32-bit ARM
-
-`vg_p256_mul` (`Spec/Weierstrass/Mul.lean`), which the signature, the
-public key derivation, verification and ECDH call. A generic file (see
-`TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/Arm/Law.lean`.
--/
+/-! # P-256's point multiplication on 32-bit ARM -/
 
 @[expose] public section
 

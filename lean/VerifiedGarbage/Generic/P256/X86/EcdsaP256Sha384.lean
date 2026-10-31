@@ -5,18 +5,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-384 on x86 (32-bit)
-
-`vg_ecdsa_p256_sha384_sign`, calling HMAC-SHA-384's `init` and `finalize`,
-SHA-384's streaming `update`, and `vg_ecdsa_p256_sign`. The stack is 272
-bytes: a 196-byte frame, and the 76 bytes below it that the calls use (up
-to 24 bytes of arguments and the return address, and 48 bytes of stack for
-HMAC's functions).
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/X86/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-384 on x86 (32-bit) -/
 
 @[expose] public section
 

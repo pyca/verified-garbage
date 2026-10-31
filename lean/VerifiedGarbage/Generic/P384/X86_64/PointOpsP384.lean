@@ -5,15 +5,7 @@ public import VerifiedGarbage.Proof.P384.X86_64.PointOpsContract
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
 
-/-!
-# P-384's Jacobian point operations on x86-64
-
-`vg_p384_jac_add_cached` and `vg_p384_jac_add_affine`
-(`Spec/Weierstrass/PointOps.lean`), and their `_adx` forms, which the joint
-verifier calls. A generic file (see `TCB/Emit.lean`) over P-384's group law
-`h`, the variant `Variants/P384/X86_64/Law.lean`, which gives Fermat's
-little theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # P-384's Jacobian point operations on x86-64 -/
 
 @[expose] public section
 

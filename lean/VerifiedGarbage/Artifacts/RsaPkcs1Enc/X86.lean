@@ -4,13 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcVerified
 
-/-!
-# RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86
-
-It uses 1132 bytes of stack: the push of the registers (16 bytes), its
-frame (1072 bytes) and the 44 bytes of the call of
-`vg_rsa_public_precomputed_checked`.
--/
+/-! # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86 -/
 
 @[expose] public section
 namespace VG.Artifacts.RsaPkcs1Enc.X86

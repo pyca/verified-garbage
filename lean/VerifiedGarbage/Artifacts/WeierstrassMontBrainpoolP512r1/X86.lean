@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 
-/-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on x86 (32-bit)
-
-The functions of `Artifacts/WeierstrassMont/X86.lean` for brainpoolP512r1's moduli,
-in eight 64-bit words. -/
+/-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on x86 (32-bit) -/
 
 @[expose] public section
 

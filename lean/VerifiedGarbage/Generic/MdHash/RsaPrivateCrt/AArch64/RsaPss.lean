@@ -6,21 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
-/-!
-# RSASSA-PSS signing on AArch64
-
-A generic file of two interfaces (see `TCB/Emit.lean`):
-`vg_rsa_pss_<H>_mgf1_<H>_sign`, for the hash function of an `MdHash` variant
-`v` with MGF1 over the same hash function, calling `v`'s
-`vg_rsa_pss_<H>_mgf1_<H>_encode` (`Generic/MdHash/AArch64/RsaPss.lean`), and
-`vg_rsa_private_checked` calling an implementation `c` of
-`vg_rsa_private_crt`. It is emitted once for each pair, named by
-`Emit.qualifiedName` with the hash function's name and `crt` as tags, and
-needs both's CPU features.
-
-Its stack is its frame and `vg_rsa_private_checked`'s 3248 bytes, more than
-`encode`'s.
--/
+/-! # RSASSA-PSS signing on AArch64 -/
 
 @[expose] public section
 

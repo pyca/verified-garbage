@@ -5,13 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 
-/-!
-# TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64
-
-The functions call nothing: the return address stays in `x30`. They keep
-their working space in a frame of their own on the stack
-(`Proof/CmacTripleDes/Stream/AArch64/Frame.lean`).
--/
+/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64 -/
 
 @[expose] public section
 

@@ -52,19 +52,7 @@ import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Sha3.AArch64.Call
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 
-/-!
-# Ed448 verification on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_ed448_verify` calls the SHA-3
-sponge functions with an implementation `v` of the Keccak permutation
-(`Variants/Keccak/AArch64/`), so it is emitted once for each implementation,
-named with its suffix, and needs its CPU features. The signature and
-documentation come from the reviewed Ed448 API. The correctness of
-`vg_ed448_verify_equation` (`Proof/Ed448/AArch64/Sparse/Verified.lean`), given
-decoding's agreement with the specification (`Proof/Ed448/Facts.lean`), is
-passed to the proof here, so that only registration and generic files import
-its algebra.
--/
+/-! # Ed448 verification on AArch64 -/
 
 @[expose] public section
 

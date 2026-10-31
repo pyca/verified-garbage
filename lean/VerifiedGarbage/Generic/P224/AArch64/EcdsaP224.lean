@@ -61,12 +61,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Spec.Weierstrass.Mul
 
-/-!
-# ECDSA over P-224 (FIPS 186-5) on AArch64
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/AArch64/Law.lean`.
--/
+/-! # ECDSA over P-224 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
 

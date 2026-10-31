@@ -10,11 +10,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 base-point multiplication on AArch64
-
-The signature and documentation come from the reviewed Ed448 API.
--/
+/-! # Ed448 base-point multiplication on AArch64 -/
 
 @[expose] public section
 

@@ -7,12 +7,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombVerified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ECDSA over secp256k1 (FIPS 186-5) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
-`Variants/Secp256k1/Arm/Law.lean`.
--/
+/-! # ECDSA over secp256k1 (FIPS 186-5) on 32-bit ARM -/
 
 @[expose] public section
 

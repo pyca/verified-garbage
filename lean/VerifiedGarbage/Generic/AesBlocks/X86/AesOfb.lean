@@ -3,17 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOfb.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-OFB (NIST SP 800-38A §6.4) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifact it lists, calling an
-implementation `v` of `vg_aes_encrypt_blocks`, is emitted once for each
-implementation (`Variants/AesBlocks/X86/`), named with its suffix (e.g.
-`vg_aes_ofb_aesni`), and needs its CPU features.
-
-The stack is 24 bytes: the five arguments of the block function and the
-return address of its call.
--/
+/-! # AES-OFB (NIST SP 800-38A §6.4) on x86 -/
 
 @[expose] public section
 

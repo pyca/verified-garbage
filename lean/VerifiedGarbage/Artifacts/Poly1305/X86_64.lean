@@ -11,13 +11,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 
-/-!
-# Poly1305 (RFC 8439 §2.5) on x86-64
-
-`vg_poly1305_update` calls an implementation of `vg_poly1305_blocks`, and is
-in the generic file `Generic/Poly1305Blocks/X86_64/Poly1305.lean`, emitted
-once for each.
--/
+/-! # Poly1305 (RFC 8439 §2.5) on x86-64 -/
 
 @[expose] public section
 

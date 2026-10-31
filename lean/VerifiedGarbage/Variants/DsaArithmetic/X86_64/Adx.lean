@@ -2,13 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Adx
 
-/-! # BMI2/ADX Montgomery arithmetic for DSA
-
-Reuse RSA's shared `vg_rsa_mont_mul_adx` kernel, including tiled products
-and triangular squaring for aligned widths. Calls avoid duplicating those
-kernels at each arithmetic site; their return address uses eight stack bytes.
-The secret-exponent windows square by `vg_rsa_lazy_mont_mul_adx`.
--/
+/-! # BMI2/ADX Montgomery arithmetic for DSA -/
 
 @[expose] public section
 

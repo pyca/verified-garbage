@@ -99,14 +99,7 @@ import VerifiedGarbage.Proof.X448.Arm.Setup
 import VerifiedGarbage.Proof.X448.Arm.Step
 import VerifiedGarbage.Proof.X448.Bytes
 
-/-!
-# Ed448 verification on ARMv7
-
-The signature and documentation come from the reviewed Ed448 API. The proof
-of `vg_ed448_verify_equation` is passed to the caller's here, so that only
-this file imports it, with the reference computations' agreement with the
-specification (`Proof/Ed448/Facts.lean`).
--/
+/-! # Ed448 verification on ARMv7 -/
 
 @[expose] public section
 

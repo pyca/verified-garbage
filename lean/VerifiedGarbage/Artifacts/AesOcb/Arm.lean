@@ -4,23 +4,7 @@ public import VerifiedGarbage.Proof.AesOcb.Arm.Init
 public import VerifiedGarbage.Proof.AesOcb.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-OCB (RFC 7253) on ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there.
-
-An AES-OCB key context is an AES-GCM one (the key schedule, then the
-encrypted zero block at byte 240), so `init` is AES-GCM's code, in a frame of
-2560 bytes holding its working space (`Proof/AesOcb/Arm/Init.lean`). `seal`
-and `open` run in a frame of 2592 bytes holding theirs
-(`Proof/AesOcb/Arm/Frame.lean`), and call `vg_aes_encrypt_blocks` and
-`vg_aes_decrypt_blocks` in frames that push their stack argument and `lr`:
-2600 bytes of stack in all.
--/
+/-! # AES-OCB (RFC 7253) on ARMv7 -/
 
 @[expose] public section
 

@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! FFDH's domain and key checks, exchange, key generation and parameter candidates on baseline i686. -/
+/-! # FFDH's domain and key checks, exchange, key generation and parameter candidates on baseline i686 -/
 
 @[expose] public section
 

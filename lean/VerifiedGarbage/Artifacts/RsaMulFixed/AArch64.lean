@@ -100,10 +100,7 @@ public import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
-/-! # Fixed-index RSA Montgomery products on AArch64
-
-The products DSA and RSA's CRT repeat (`MulFixedCall.shared`), each shared
-by one helper that runs the eight-limb product. -/
+/-! # Fixed-index RSA Montgomery products on AArch64 -/
 
 @[expose] public section
 

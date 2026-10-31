@@ -6,12 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
 
-/-!
-# TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86-64
-
-The functions call nothing. They keep their working space in a frame of
-their own on the stack (`Proof/CmacTripleDes/Stream/X86_64/Frame.lean`).
--/
+/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86-64 -/
 
 @[expose] public section
 

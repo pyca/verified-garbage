@@ -69,12 +69,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Spec.Weierstrass.Mul
 
-/-!
-# ECDH over P-224 (SP 800-56A) on AArch64
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/AArch64/Law.lean`.
--/
+/-! # ECDH over P-224 (SP 800-56A) on AArch64 -/
 
 @[expose] public section
 

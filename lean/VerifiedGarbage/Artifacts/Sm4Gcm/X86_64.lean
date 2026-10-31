@@ -6,17 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 
-/-!
-# SM4-GCM on baseline x86-64: its counter mode and key setup
-
-`vg_sm4_ctr32`, and `vg_sm4_gcm_init`, which calls it and
-`vg_sm4_expand_key` and no implementation of `vg_ghash`, so that it is
-registered once; the SM4-GCM functions that hash are generic over the
-implementations of `vg_ghash` (`Generic/Ghash/X86_64/Sm4Gcm.lean`).
-`vg_sm4_gcm_init` keeps its working space in a frame of 2568 bytes
-(`Verified.stackScratch`), below which its calls use 3224, those of
-`vg_sm4_ctr32`, whose frame takes 3208.
--/
+/-! # SM4-GCM on baseline x86-64: its counter mode and key setup -/
 
 @[expose] public section
 

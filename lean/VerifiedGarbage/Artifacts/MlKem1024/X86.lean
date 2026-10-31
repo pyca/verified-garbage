@@ -9,16 +9,7 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ML-KEM-1024 (FIPS 203) on x86
-
-The functions that call no other one save their caller's registers in a
-frame of 16 bytes below the return address (`stack := 16`).
-`vg_mlkem1024_keygen`, `vg_mlkem1024_encaps` and `vg_mlkem1024_decaps` save
-their caller's registers in 16 bytes, and call `vg_mlkem_sample_ntt` in a
-frame of its 3 arguments (12 bytes), with the return address and the
-callee's 56 bytes below it (`stack := 88`); their other calls use less.
--/
+/-! # ML-KEM-1024 (FIPS 203) on x86 -/
 
 @[expose] public section
 

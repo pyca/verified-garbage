@@ -8,15 +8,7 @@ import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# P-256's inversions modulo `p` and `n` on x86-64
-
-`vg_p256_inv_mod_p` and `vg_p256_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`),
-which the signature, the public key derivation, verification and ECDH call,
-and their `_adx` forms with BMI2's and ADX's products. A generic file (see
-`TCB/Emit.lean`) over P-256's group law and inversions `h`, the variant
-`Variants/P256/X86_64/Law.lean`, whose inversions' soundness the proofs take.
--/
+/-! # P-256's inversions modulo `p` and `n` on x86-64 -/
 
 @[expose] public section
 

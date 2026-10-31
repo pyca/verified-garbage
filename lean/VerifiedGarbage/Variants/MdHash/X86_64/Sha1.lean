@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 
-/-!
-# SHA-1 on x86-64: the scalar compression function
-
-A variant of `MdHash` on x86-64 (see `TCB/Emit.lean`): SHA-1, with `vg_sha1_compress`, in the baseline ISA.
--/
+/-! # SHA-1 on x86-64: the scalar compression function -/
 
 @[expose] public section
 

@@ -5,18 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86.SgSat
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha512
 
-/-!
-# RSASSA-PSS signing with SHA-512/256 on x86, for each implementation of the CRT
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_pss_sha512_256_mgf1_sha512_256_sign`, calling
-`vg_rsa_private_checked` over an implementation `c` of `vg_rsa_private_crt`
-(`Variants/RsaPrivateCrt/X86/`), is emitted once for each, named with its
-suffix, and needs its CPU features.
-
-It uses 3552 bytes of stack: the push of the registers (16 bytes), its
-frame (144 bytes) and the 3392 bytes of `vg_rsa_private_checked`'s, which
-are more than the hash function's calls use.
--/
+/-! # RSASSA-PSS signing with SHA-512/256 on x86, for each implementation of the CRT -/
 
 @[expose] public section
 

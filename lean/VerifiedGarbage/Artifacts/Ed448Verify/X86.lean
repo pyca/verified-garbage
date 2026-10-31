@@ -96,14 +96,7 @@ import VerifiedGarbage.Proof.X448.X86.Select
 import VerifiedGarbage.Proof.X448.X86.Small
 import VerifiedGarbage.Proof.X448.X86.Step
 
-/-!
-# Ed448 verification on x86 (32-bit)
-
-The signature and documentation come from the reviewed Ed448 API. The proof
-of `vg_ed448_verify_equation` is passed to the caller's here, so that only
-this file imports it, with the reference computations' agreement with the
-specification (`Proof/Ed448/Facts.lean`).
--/
+/-! # Ed448 verification on x86 (32-bit) -/
 
 @[expose] public section
 

@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256ShaNi
 
-/-!
-# SHA-256 on x86-64 with the SHA extensions
-
-A variant of `MdHash` on x86-64 (see `TCB/Emit.lean`): SHA-256, with `vg_sha256_compress_shani`, which needs the SHA extensions and SSSE3.
--/
+/-! # SHA-256 on x86-64 with the SHA extensions -/
 
 @[expose] public section
 

@@ -7,20 +7,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha224
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Verified
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Sat
 
-/-!
-# RSAES-OAEP with SHA-224 and MGF1 with SHA-1 on x86: decryption, for each Sha256 backend, Sha1 backend and implementation of the CRT
-
-A generic file of three interfaces (see `TCB/Emit.lean`):
-`vg_rsa_oaep_sha224_mgf1_sha1_decrypt` hashes with the streaming functions of
-a Sha256 backend `v` (`Variants/Sha256/X86/`) and a Sha1 backend `w` (`Variants/Sha1/X86/`), and calls `vg_rsa_private_checked` over an implementation `c` of
-`vg_rsa_private_crt` (`Variants/RsaPrivateCrt/X86/`). It is emitted once for
-each combination, named by `Emit.qualifiedName` with the tags `sha256`, `sha1` and `crt`, and needs
-their CPU features.
-
-It uses 3552 bytes of stack: the push of the registers (16 bytes), its
-frame (144 bytes) and the 3392 bytes of `vg_rsa_private_checked`'s, which
-are more than the hash functions' calls use.
--/
+/-! # RSAES-OAEP with SHA-224 and MGF1 with SHA-1 on x86: decryption, for each Sha256 backend, Sha1 backend and implementation of the CRT -/
 
 @[expose] public section
 

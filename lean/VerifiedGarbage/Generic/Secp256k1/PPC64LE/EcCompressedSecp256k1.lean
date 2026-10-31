@@ -8,13 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Secp256k1.Lit
 
-/-!
-# secp256k1 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
-`Variants/Secp256k1/PPC64LE/Law.lean`, which decompression's proof of its square
-root uses.
--/
+/-! # secp256k1 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/
 
 @[expose] public section
 

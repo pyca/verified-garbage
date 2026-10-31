@@ -3,21 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesXts.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) of whole blocks on AArch64
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. They are the two implementations of `vg_aes_xts_encrypt` and
-`vg_aes_xts_decrypt` (the variants of `AesXts` on AArch64, which
-`Generic/AesXts/AArch64/Unit.lean` calls): the baseline, which calls the
-bitsliced `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on all the
-blocks, and `_aes`, the variant for `vg_aes_encrypt_blocks_aes` and
-`vg_aes_decrypt_blocks_aes`, which does their work itself, in one pass with
-the AES instructions, and calls nothing.
-
-No stack is used: the baseline's call keeps the return address in `x30`,
-which it saves in the scratch buffer.
--/
+/-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) of whole blocks on AArch64 -/
 
 @[expose] public section
 

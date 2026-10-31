@@ -11,17 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 public-key derivation on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_ed448_public_key` calls the SHA-3
-sponge functions with an implementation `v` of the Keccak permutation
-(`Variants/Keccak/AArch64/`), so it is emitted once for each implementation,
-named with its suffix, and needs its CPU features. The signature and
-documentation come from the reviewed Ed448 API. The correctness of
-`vg_ed448_scalar_base` (`Proof/Ed448/AArch64/BaseVerified.lean`) is passed to
-the proof here, so that only registration and generic files import its algebra.
--/
+/-! # Ed448 public-key derivation on AArch64 -/
 
 @[expose] public section
 

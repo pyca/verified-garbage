@@ -38,15 +38,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointP256Umaal
 
-/-!
-# P-256's point addition and doubling on 32-bit ARM
-
-`vg_p256_point_add` and `vg_p256_point_double`
-(`Spec/Weierstrass/Point.lean`), calling the Montgomery functions of
-P-256's prime. A generic file (see `TCB/Emit.lean`) over P-256's group law
-`h`, the variant `Variants/P256/Arm/Law.lean`, which gives Fermat's little
-theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # P-256's point addition and doubling on 32-bit ARM -/
 
 @[expose] public section
 

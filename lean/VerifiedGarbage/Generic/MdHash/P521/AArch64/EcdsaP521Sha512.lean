@@ -9,24 +9,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_ecdsa_p521_sha512_sign`, calling
-HMAC-SHA-512's `init` and `finalize` and SHA-512's streaming `update` made
-with the variant's SHA-512 compression function, and `vg_ecdsa_p521_sign`,
-is emitted for every SHA-512 variant carried by `MdHash.sha512`, named with
-its suffix (e.g. `vg_ecdsa_p521_sha512_sign_sha3`), and needs its CPU
-features. Other hash functions emit no artifact here.
-
-The stack is 400 bytes: 16 saving `x30`, a 368-byte frame (P-384's 224
-bytes, and 144 for the candidate and the digest shifted into 66 bytes), and
-the 16 bytes below it that HMAC's functions use (`vg_ecdsa_p521_sign` uses
-none).
-
-It is generic over P-521's group law `h` too, the variant
-`Variants/P521/AArch64/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on AArch64 -/
 
 @[expose] public section
 

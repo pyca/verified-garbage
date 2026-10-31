@@ -3,15 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on RISC-V
-
-The functions call the verified key expansion and ECB encryption on one
-block, keeping the return address in their working space, which is in a
-frame of their own on the stack
-(`Proof/CmacTripleDes/Stream/RISCV64/Frame.lean`): their `stack` is that
-frame and the 944 bytes ECB's frame uses below it.
--/
+/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on RISC-V -/
 
 @[expose] public section
 

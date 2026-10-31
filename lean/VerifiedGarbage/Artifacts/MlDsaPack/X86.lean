@@ -14,12 +14,7 @@ import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackLoop
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackMain
 
-/-!
-# ML-DSA (FIPS 204) on x86: the encodings
-
-The functions call no other one, and save their caller's registers in a
-frame of 16 bytes below the return address (`stack := 16`).
--/
+/-! # ML-DSA (FIPS 204) on x86: the encodings -/
 
 @[expose] public section
 

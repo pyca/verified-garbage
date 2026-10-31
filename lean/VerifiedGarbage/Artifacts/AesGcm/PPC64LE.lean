@@ -4,17 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-GCM (NIST SP 800-38D) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. Each function keeps its working space in a frame of its own, of
-2592 bytes, or 2672 for `seal` and 2688 for `open`, whose frames also copy
-their stack arguments (`Proof/AesGcm/PPC64LE/Frame.lean`); the functions it
-calls use no stack. `seal_gather` copies the slices to `dst` and calls
-`seal` on them, from a frame of 160 bytes below which `seal` keeps its own
-(`Proof/AesGcm/PPC64LE/Gather/`).
--/
+/-! # AES-GCM (NIST SP 800-38D) on PPC64LE -/
 
 @[expose] public section
 

@@ -93,24 +93,7 @@ import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 
-/-!
-# AES-CCM (NIST SP 800-38C) on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_cmac_aes_update` for the CBC-MAC, and the
-implementation of `vg_aes_ctr32` that goes with it (`v.ctr`) for counter
-mode, are emitted once for each implementation
-(`Variants/CmacAesUpdate/X86_64/`), named with its suffix (e.g.
-`vg_aes_ccm_seal_aesni_cbc`), and need the CPU features of both.
-
-The code of each uses at most 16 bytes of stack: the return addresses of
-the call of `vg_cmac_aes_update` (or of `vg_aes_ctr32`) and of its call of
-`vg_aes_ctr32`, if it makes one; both also read their arguments after the
-sixth, from the data to the tag's length, from the stack above their return
-address. Each keeps its working space, its last argument, in a frame of
-2608 bytes on the stack that also holds a copy of its four other stack
-arguments (`Verified.stackArgScratch`).
--/
+/-! # AES-CCM (NIST SP 800-38C) on x86-64 -/
 
 @[expose] public section
 

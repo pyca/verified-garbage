@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaMont.Arm.Base
 
-/-! The Base callable ARMv7 Montgomery arithmetic backend. -/
+/-! # The Base callable ARMv7 Montgomery arithmetic backend -/
 
 @[expose] public section
 namespace VG.Variants.RsaMont.Arm.Base

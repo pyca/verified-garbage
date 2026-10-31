@@ -113,10 +113,7 @@ import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 
-/-! # DSA's exponentiations on baseline i686
-
-One function for each (modulus, exponent) width pair that `vg_dsa_sign` and
-`vg_dsa_verify` exponentiate at (`Impl.Dsa.X86.Core.power`). -/
+/-! # DSA's exponentiations on baseline i686 -/
 
 @[expose] public section
 

@@ -13,14 +13,7 @@ import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 verification's equation on x86-64
-
-The signature and documentation come from the reviewed Ed448 API. The
-reference computations' agreement with the specification
-(`Proof/Ed448/Facts.lean`) is passed to the proof here, so that only
-registration files import it.
--/
+/-! # Ed448 verification's equation on x86-64 -/
 
 @[expose] public section
 

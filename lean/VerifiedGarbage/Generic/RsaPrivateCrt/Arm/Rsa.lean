@@ -205,18 +205,7 @@ public import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Rsa.ZeroTest32
 public import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# The checked RSA private-key operation on ARMv7
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_private_checked`, calling an
-implementation `v` of `vg_rsa_private_crt` and the public operation it
-comes with, is emitted once for each implementation
-(`Variants/RsaPrivateCrt/Arm/`), named with its suffix, and needs its
-CPU features.
-
-It uses 3440 bytes of stack: its frame, the registers it saves and the
-largest frame of its callees.
--/
+/-! # The checked RSA private-key operation on ARMv7 -/
 
 @[expose] public section
 

@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Comb -- shake: keep (p
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ECDSA over P-384 (FIPS 186-5) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
-`Variants/P384/Arm/Law.lean`.
--/
+/-! # ECDSA over P-384 (FIPS 186-5) on 32-bit ARM -/
 
 @[expose] public section
 

@@ -19,20 +19,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
 import VerifiedGarbage.Proof.Rsa.Octets
 
-/-!
-# The checked RSA private-key operation on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_private_checked`, calling an
-implementation `v` of `vg_rsa_private_crt` and the public operation it
-comes with, is emitted once for each implementation
-(`Variants/RsaPrivateCrt/AArch64/`), named with its suffix, and needs its
-CPU features.
-
-It uses 3248 bytes of stack: a 16-byte frame saving `x30` and one of 3232
-bytes, which holds the CRT's result, the precomputed values of `n`, the
-arguments kept across the calls and the stack arguments of the calls,
-whose callees use no stack.
--/
+/-! # The checked RSA private-key operation on AArch64 -/
 
 @[expose] public section
 

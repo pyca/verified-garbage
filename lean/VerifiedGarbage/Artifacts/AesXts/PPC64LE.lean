@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.AesXts.PPC64LE.Verified
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. PPC64LE has one implementation of the block functions, so these are
-not generic over them. A call (`bl`) stores nothing in memory, so no stack is
-used.
--/
+/-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on PPC64LE -/
 
 @[expose] public section
 

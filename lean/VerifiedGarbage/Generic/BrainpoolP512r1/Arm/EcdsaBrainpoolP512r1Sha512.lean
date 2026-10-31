@@ -4,18 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1Sha512
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over brainpoolP512r1 with HMAC-SHA-512 on ARMv7
-
-`vg_ecdsa_brainpoolp512r1_sha512_sign`, calling HMAC-SHA-512's `init` and `finalize`,
-SHA-512's streaming `update`, and `vg_ecdsa_brainpoolp512r1_sign`. The stack is 304
-bytes: a 280-byte frame (P-384's 216 bytes, and `h` in the 64 at its top),
-and the 24 bytes below it that the calls use (a call's 8 or 16 bytes of
-stack arguments, and the stack of the function it calls below them).
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP512r1's group law `h`, the variant
-`Variants/BrainpoolP512r1/Arm/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over brainpoolP512r1 with HMAC-SHA-512 on ARMv7 -/
 
 @[expose] public section
 

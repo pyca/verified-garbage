@@ -83,16 +83,7 @@ import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# secp256k1's group law, on x86 (32-bit)
-
-The variant of `Secp256k1` on x86 (32-bit) (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of secp256k1's functions take, `Proof.Secp256k1.law` and
-the soundness of the inversions by divsteps modulo a prime, whose proofs need Mathlib's algebra. Their registration files are generic over it
-(`Generic/Secp256k1/X86/`, and `Generic/<Iface>/Secp256k1/X86/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # secp256k1's group law, on x86 (32-bit) -/
 
 @[expose] public section
 

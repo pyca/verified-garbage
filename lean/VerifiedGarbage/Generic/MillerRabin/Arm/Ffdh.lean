@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Verified
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
-/-! Emit complete native FFDH parameter generation for every shared ARMv7 Miller–Rabin backend. -/
+/-! # Emit complete native FFDH parameter generation for every shared ARMv7 Miller–Rabin backend -/
 
 @[expose] public section
 namespace VG.Generic.MillerRabin.Arm.Ffdh

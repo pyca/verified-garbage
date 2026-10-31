@@ -6,14 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.MulVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.MulLit
 
-/-!
-# P-256's point multiplication on PPC64LE
-
-`vg_p256_mul` (`Spec/Weierstrass/Mul.lean`), which the signature, the
-public key derivation, verification and ECDH call. A generic file (see
-`TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/PPC64LE/Law.lean`.
--/
+/-! # P-256's point multiplication on PPC64LE -/
 
 @[expose] public section
 

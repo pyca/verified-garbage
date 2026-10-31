@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1Umaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery arithmetic modulo secp256k1's `p` and `n` on ARMv7
-
-The functions of `Artifacts/WeierstrassMont/Arm.lean` for secp256k1's moduli,
-in four 64-bit words. -/
+/-! # Montgomery arithmetic modulo secp256k1's `p` and `n` on ARMv7 -/
 
 @[expose] public section
 

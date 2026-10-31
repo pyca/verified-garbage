@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Baseline ARMv7 Ed25519 primitive with register saves in the reviewed scratch buffer. -/
+/-! # Baseline ARMv7 Ed25519 primitive with register saves in the reviewed scratch buffer -/
 
 @[expose] public section
 

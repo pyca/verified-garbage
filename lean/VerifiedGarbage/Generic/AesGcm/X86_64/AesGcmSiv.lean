@@ -23,30 +23,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Ocb.Spec
 
-/-!
-# AES-GCM-SIV (RFC 8452) on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`
-(those of AES-GCM), and the implementation of `vg_aes_encrypt_blocks` that
-goes with `v`'s `vg_aes_ctr32` (`ecbOf`), are emitted once for each combination
-(`Variants/AesGcm/X86_64/`), named with its suffix (e.g.
-`vg_aes_gcm_siv_seal_aesni_pclmul`), and need the CPU features of the four.
-They do not call AES-GCM's interleaved loops, so the instances of
-combinations differing only in those are the same code under other names,
-which keeps every instance of a combination callable together.
-
-`open` deciphers and computes POLYVAL in one interleaved loop
-(`Impl.AesGcmSiv.X86_64Stitch`) from 256 bytes of data on with
-the implementations whose `vg_aes_ctr32` uses VAES and whose `vg_ghash` uses
-VPCLMULQDQ (`sivStitch`), whose CPU features that loop needs; with them,
-`seal` computes POLYVAL and enciphers the data's 256-byte groups in loops of
-its own.
-
-Each keeps its working space in a frame of 3848 bytes on the stack
-(`Proof/AesGcmSiv/X86_64/Verified.lean`), below which its calls use 8 bytes:
-the return address of a call of one of the four, which make no calls.
--/
+/-! # AES-GCM-SIV (RFC 8452) on x86-64 -/
 
 @[expose] public section
 

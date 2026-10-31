@@ -10,12 +10,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.PcCCt
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PcCVerified
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 
-/-!
-# RSASSA-PSS verification using cached public-key values
-
-Every hash compression variant combines with every precomputed RSA public
-operation variant. The digest, signature and recovered encoding stay secret.
--/
+/-! # RSASSA-PSS verification using cached public-key values -/
 
 @[expose] public section
 

@@ -33,22 +33,7 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 
-/-!
-# RSAES-OAEP decryption on AArch64
-
-A generic file of three interfaces (see `TCB/Emit.lean`):
-`vg_rsa_oaep_<H>_mgf1_<G>_decrypt` calls the streaming functions of `H`,
-made with the compression function of its `MdHash` variant `v` (for
-`lHash`), and of `G`, made with that of its variant `v2` (for MGF1), and
-`vg_rsa_private_checked` calling an implementation `c` of
-`vg_rsa_private_crt` (`Variants/RsaPrivateCrt/AArch64/`). It is emitted for
-the pairs of hash functions `Inst.emitted` says, with each `c`, named by
-`Emit.qualifiedName` (`Inst.parts`, then `crt`), and needs all three's CPU
-features.
-
-Its stack is its frames, 288 bytes, and `vg_rsa_private_checked`'s 3248
-bytes, which are more than the hash functions use.
--/
+/-! # RSAES-OAEP decryption on AArch64 -/
 
 @[expose] public section
 

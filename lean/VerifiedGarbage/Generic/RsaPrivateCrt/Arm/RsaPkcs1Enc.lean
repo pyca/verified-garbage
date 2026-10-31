@@ -12,20 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
 
-/-!
-# RSAES-PKCS1-v1_5 decryption with implicit rejection on ARMv7, for each implementation of the CRT
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_pkcs1_decrypt`, calling
-`vg_rsa_private_checked` over an implementation `v` of `vg_rsa_private_crt`
-(`Variants/RsaPrivateCrt/Arm/`), is emitted once for each, named with its
-suffix, and needs its CPU features. It calls the ARMv7 SHA-256 and
-HMAC-SHA-256 functions (`Artifacts/Sha256/Arm.lean`,
-`Artifacts/HmacSha256/Arm.lean`), which have no variants on ARMv7.
-
-It uses 3584 bytes of stack: the push of the registers (56 bytes), its
-frame (88 bytes) and the 3440 bytes of `vg_rsa_private_checked`'s, which
-are more than the hash functions use.
--/
+/-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on ARMv7, for each implementation of the CRT -/
 
 @[expose] public section
 

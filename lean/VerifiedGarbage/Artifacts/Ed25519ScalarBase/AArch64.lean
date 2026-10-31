@@ -11,7 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
+/-! # Complete unsigned scalar multiplication by the Ed25519 base point -/
 
 @[expose] public section
 

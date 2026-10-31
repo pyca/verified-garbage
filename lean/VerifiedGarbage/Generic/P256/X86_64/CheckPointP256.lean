@@ -7,15 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# P-256's check of a public point on x86-64
-
-`vg_p256_check_point` (`Spec/Weierstrass/CheckPoint.lean`), which ECDH and
-verification call, and its `_adx` form with BMI2's and ADX's products. A
-generic file (see `TCB/Emit.lean`) over P-256's group law and inversions
-`h`, the variant `Variants/P256/X86_64/Law.lean`, whose inversions'
-soundness the proofs of the configuration take.
--/
+/-! # P-256's check of a public point on x86-64 -/
 
 @[expose] public section
 

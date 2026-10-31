@@ -6,15 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# brainpoolP512r1's inversions modulo `p` and `n` on AArch64
-
-`vg_brainpoolp512r1_inv_mod_p` and `vg_brainpoolp512r1_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`),
-which the signature, the public key derivation, verification and ECDH call.
-A generic file (see `TCB/Emit.lean`) over brainpoolP512r1's group law and inversions
-`h`, the variant `Variants/BrainpoolP512r1/AArch64/Law.lean`, whose inversions'
-soundness the proofs take.
--/
+/-! # brainpoolP512r1's inversions modulo `p` and `n` on AArch64 -/
 
 @[expose] public section
 

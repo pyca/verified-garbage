@@ -4,22 +4,7 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
 
-/-!
-# RSAES-PKCS1-v1_5 decryption with implicit rejection on x86
-
-A generic file of two interfaces (see `TCB/Emit.lean`):
-`vg_rsa_pkcs1_decrypt` calls SHA-256's streaming functions and
-HMAC-SHA-256's `init` and `finalize`, made with a SHA-256 backend `v`
-(`Variants/Sha256/X86/`), and `vg_rsa_private_checked` calling an
-implementation `c` of `vg_rsa_private_crt` (`Variants/RsaPrivateCrt/X86/`).
-It is emitted once for each pair, named by `Emit.qualifiedName` with the
-tags `sha256` and `crt` (e.g. `vg_rsa_pkcs1_decrypt_sha256_shani`), and
-needs both's CPU features.
-
-It uses 3512 bytes of stack: the push of the registers (16 bytes), its
-frame (104 bytes) and the 3392 bytes of `vg_rsa_private_checked`'s, which
-are more than the hash functions use.
--/
+/-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86 -/
 
 @[expose] public section
 

@@ -4,21 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Verified
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SM4-GCM on baseline ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-Each artifact is made from its function's `Api` (in `Spec/`, reviewed with the
-contract).
-
-The AEAD functions are AES-GCM's code with SM4 in place of AES: they call
-`vg_sm4_ctr32` for the block cipher (in a frame of 1520 bytes, the most stack
-any of their calls uses) and `vg_ghash` for GHASH, and `init` calls
-`vg_sm4_expand_key` for the key schedule. Every function also keeps its
-768-byte working space in a frame of its own (768 bytes for `init`, 784 for
-`stream_init` and `stream_aad`, 800 for the others,
-`Proof/Sm4Gcm/Arm/Frame.lean`).
--/
+/-! # SM4-GCM on baseline ARMv7 -/
 
 @[expose] public section
 

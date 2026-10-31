@@ -5,16 +5,7 @@ public import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsContract
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsLit
 
-/-!
-# secp256k1's Jacobian point operations on x86-64
-
-`vg_secp256k1_jac_double`, `vg_secp256k1_jac_add_cached` and
-`vg_secp256k1_jac_add_affine` (`Spec/Weierstrass/PointOps.lean`), which the
-joint verifier calls. A
-generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the
-variant `Variants/Secp256k1/X86_64/Law.lean`, which gives Fermat's little
-theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # secp256k1's Jacobian point operations on x86-64 -/
 
 @[expose] public section
 

@@ -5,14 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ML-DSA (FIPS 204) on x86: rounding and hints
-
-The functions call no other one, and save their caller's registers in a
-frame of 16 bytes below the return address (`stack := 16`).
-`vg_mldsa_make_hint` and `vg_mldsa_use_hint` overwrite the argument `gamma2`
-on the stack (which their contracts allow).
--/
+/-! # ML-DSA (FIPS 204) on x86: rounding and hints -/
 
 @[expose] public section
 

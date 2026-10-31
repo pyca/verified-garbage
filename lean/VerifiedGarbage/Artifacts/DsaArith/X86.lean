@@ -7,11 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.RedCall
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # DSA's reductions and products on baseline i686
-
-One reduction for each width of q, and one product for each width of p and
-q, that the DSA functions use (`Impl.Dsa.X86.Core.reduce`,
-`Impl.Dsa.X86.Core.productMod`). -/
+/-! # DSA's reductions and products on baseline i686 -/
 
 @[expose] public section
 

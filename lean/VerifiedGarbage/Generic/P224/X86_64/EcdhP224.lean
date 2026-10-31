@@ -87,13 +87,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
-/-!
-# ECDH over P-224 (SP 800-56A) on x86-64
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law and
-inversions `h`, the variant
-`Variants/P224/X86_64/Law.lean`.
--/
+/-! # ECDH over P-224 (SP 800-56A) on x86-64 -/
 
 @[expose] public section
 

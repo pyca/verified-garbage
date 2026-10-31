@@ -48,11 +48,7 @@ import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Mont.Read
 
-/-! # DSA's exponentiations on ARMv7
-
-One function for each (modulus, exponent) width pair that `vg_dsa_sign` and
-`vg_dsa_verify` exponentiate at (`Impl.Dsa.Arm.Core.power`), and that
-`vg_dsa_generate_parameters` finds `g` at, `(p − 1) / q` wide. -/
+/-! # DSA's exponentiations on ARMv7 -/
 
 @[expose] public section
 

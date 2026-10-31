@@ -19,8 +19,7 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.TaintSum
 
-/-! Ed25519 public-key derivation from the seed's SHA-512 digest, for each base-point
-multiplication: the baseline's, BMI2's and ADX's (`_adx`), and AVX512_IFMA's (`_ifma`). -/
+/-! # Ed25519 public-key derivation from the seed's SHA-512 digest on x86-64 -/
 
 @[expose] public section
 

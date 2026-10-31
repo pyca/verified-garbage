@@ -12,17 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgVerified
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgSat
 
-/-!
-# RSASSA-PSS signing with MD5 on ARMv7, for each implementation of the CRT
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_pss_md5_mgf1_md5_sign`, calling
-`vg_rsa_private_checked` over an implementation `v` of `vg_rsa_private_crt`
-(`Variants/RsaPrivateCrt/Arm/`), is emitted once for each, named with its
-suffix, and needs its CPU features.
-
-It uses 3624 bytes of stack: the push of the registers (56 bytes), its
-frame (128 bytes) and the 3440 bytes of the call's.
--/
+/-! # RSASSA-PSS signing with MD5 on ARMv7, for each implementation of the CRT -/
 
 @[expose] public section
 

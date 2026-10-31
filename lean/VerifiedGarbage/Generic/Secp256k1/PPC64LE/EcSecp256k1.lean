@@ -8,12 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.Lit
 
-/-!
-# secp256k1 public keys (FIPS 186-5 §A.2) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
-`Variants/Secp256k1/PPC64LE/Law.lean`.
--/
+/-! # secp256k1 public keys (FIPS 186-5 §A.2) on PPC64LE -/
 
 @[expose] public section
 

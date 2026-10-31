@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 
-/-! Curve448's scalar field backend, propagated to every generic caller. -/
+/-! # Curve448's scalar field backend, propagated to every generic caller -/
 
 @[expose] public section
 

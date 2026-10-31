@@ -98,19 +98,7 @@ import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 import VerifiedGarbage.Proof.Weierstrass.Words
 
-/-!
-# P-384's group law, on AArch64
-
-The variant of `P384` on AArch64 (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of P-384's functions take, `Proof.P384.law` and the
-soundness of the inversions by divsteps modulo a prime (`InvSounds`) and that
-it has prime order (`Proof.P384.primeOrder`), whose proofs need Mathlib's
-algebra.
-Their registration files are generic over them
-(`Generic/P384/AArch64/`, and `Generic/<Iface>/P384/AArch64/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-384's group law, on AArch64 -/
 
 @[expose] public section
 

@@ -13,7 +13,10 @@ chooses and bind proofs made under `Proof/`:
     `by sp_safe <;> decide`), which a builder of artifacts may also give
     its own arguments: a side condition a registration would decide is an
     `autoParam` of the lemma that needs it, or the algorithm's proofs state
-    the instance as a theorem.
+    the instance as a theorem;
+  * a module docstring of one line, its title (`/-! # SHA-256 on x86-64 -/`),
+    if any: prose on the implementation restates what the code states, and
+    goes stale.
 """
 
 import pathlib
@@ -30,6 +33,8 @@ DEFAULTS = {"sp_safe", "of_sig"}
 
 THEOREM = re.compile(r"(?<![\w.'])(theorem|lemma)\s")
 BY = re.compile(r"(?<![\w.'])by(?![\w'])\s*([\w.']*)")
+MODULE_DOC = re.compile(r"/-!.*?-/", re.S)
+TITLE = re.compile(r"/-! # [^\n]+ -/")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
 
 
@@ -108,8 +113,14 @@ def problems(lean: pathlib.Path) -> list[str]:
     for d in DIRS:
         for f in sorted((lean / "VerifiedGarbage" / d).rglob("*.lean")):
             rel = f.relative_to(lean).as_posix()
-            code = code_only(f.read_text())
+            text = f.read_text()
+            code = code_only(text)
             line = lambda i: code.count("\n", 0, i) + 1
+            for m in MODULE_DOC.finditer(text):
+                if not TITLE.fullmatch(m.group(0)):
+                    out.append(f"lean/{rel}:{line(m.start())}: a module docstring of more than its "
+                               "title in a file reviewed by hand; keep only the title, "
+                               "`/-! # … -/` (.agents/skills/adding-a-primitive/SKILL.md)")
             for m in THEOREM.finditer(code):
                 out.append(f"lean/{rel}:{line(m.start())}: a {m.group(1)} in a file reviewed by hand; "
                            "prove it under `Proof/` (.agents/skills/adding-a-primitive/SKILL.md)")

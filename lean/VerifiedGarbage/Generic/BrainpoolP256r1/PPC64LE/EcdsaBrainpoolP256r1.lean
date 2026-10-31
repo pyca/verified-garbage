@@ -12,12 +12,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.Lit
 
-/-!
-# ECDSA signatures over brainpoolP256r1 (FIPS 186-5 §6.4.1) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the variant
-`Variants/BrainpoolP256r1/PPC64LE/Law.lean`.
--/
+/-! # ECDSA signatures over brainpoolP256r1 (FIPS 186-5 §6.4.1) on PPC64LE -/
 
 @[expose] public section
 

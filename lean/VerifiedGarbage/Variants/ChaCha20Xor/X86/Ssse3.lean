@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 
-/-!
-# `vg_chacha20_xor` on x86: with SSSE3
-
-A variant of `ChaCha20Xor` on x86 (see `TCB/Emit.lean`):
-`vg_chacha20_xor_ssse3`, which needs SSSE3.
--/
+/-! # `vg_chacha20_xor` on x86: with SSSE3 -/
 
 @[expose] public section
 

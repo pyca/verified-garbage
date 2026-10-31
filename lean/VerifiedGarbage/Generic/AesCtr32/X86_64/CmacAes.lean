@@ -50,26 +50,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 
-/-!
-# AES-CMAC (NIST SP 800-38B) on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
-(`Variants/AesCtr32/X86_64/`), named with its suffix (e.g.
-`vg_cmac_aes_update_aesni`), and need its CPU features.
-
-The stack is 8 bytes for every implementation of the first three: the
-return address of the call of `vg_aes_ctr32`, which makes no calls. The
-streaming functions `init` and `finish` call those, so their stack is 16
-bytes; `init` also calls the implementation of `vg_aes_expand_key_scratch`
-that goes with `v`. `vg_cmac_aes_absorb`, which calls only
-`vg_cmac_aes_update`, follows its implementations instead
-(`Generic/CmacAesUpdate/X86_64/Absorb.lean`).
-
-The streaming functions keep their working space in a frame of their own
-on the stack (`Proof/CmacAes/Stream/X86_64/Frame.lean`): their `stack` is that
-frame and the stack their code uses below it.
--/
+/-! # AES-CMAC (NIST SP 800-38B) on x86-64 -/
 
 @[expose] public section
 

@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Lit
 
-/-! # SM4-GCM on baseline AArch64: its counter mode and key setup
-
-The functions that call GHASH are generic over its implementations
-(`Generic/Sm4Gcm/AArch64/Sm4Gcm.lean`). -/
+/-! # SM4-GCM on baseline AArch64: its counter mode and key setup -/
 
 @[expose] public section
 

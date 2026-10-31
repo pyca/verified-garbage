@@ -6,18 +6,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha1
 
-/-!
-# RSASSA-PSS verification with SHA-1 on x86, for each SHA-1 backend
-
-A generic file (see `TCB/Emit.lean`):
-`vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed` hashes with the streaming and
-compression functions of a backend `v` (`Variants/Sha1/X86/`), is emitted
-once for each, named with its suffix, and needs its CPU features.
-
-It uses 208 bytes of stack: the push of the registers (16 bytes), its frame
-(144 bytes) and the 48 bytes of its calls': the hash function's, and the 44
-of `vg_rsa_public_precomputed_checked`.
--/
+/-! # RSASSA-PSS verification with SHA-1 on x86, for each SHA-1 backend -/
 
 @[expose] public section
 

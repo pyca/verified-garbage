@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 
-/-!
-# `vg_aes_ctr32` on AArch64: with the Cryptographic Extension
-
-A variant of `AesCtr32` on AArch64 (see `TCB/Emit.lean`): `vg_aes_ctr32_aes`,
-which needs the AES instructions (`FEAT_AES`).
--/
+/-! # `vg_aes_ctr32` on AArch64: with the Cryptographic Extension -/
 
 @[expose] public section
 

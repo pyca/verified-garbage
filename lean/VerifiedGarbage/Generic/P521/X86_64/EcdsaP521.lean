@@ -123,14 +123,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
-/-!
-# ECDSA over P-521 (FIPS 186-5) on x86-64
-
-A generic file (see `TCB/Emit.lean`) over P-521's group law and
-inversions `h`, the variant
-`Variants/P521/X86_64/Law.lean`, for each multiplication modulo `p`: the
-baseline's, and BMI2's and ADX's (`_adx`).
--/
+/-! # ECDSA over P-521 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
 

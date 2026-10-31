@@ -4,12 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha1.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SHA-1 (FIPS 180-4) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
--/
+/-! # SHA-1 (FIPS 180-4) on RISC-V -/
 
 @[expose] public section
 

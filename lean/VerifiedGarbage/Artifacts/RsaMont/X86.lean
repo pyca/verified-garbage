@@ -5,11 +5,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery multiplication on i686 with SSE2
-
-`vg_rsa_mont_mul_at`, at offsets of a working space, which the RSA functions
-call, and `vg_rsa_mont_mul`, in the prepared working space, which the
-Miller–Rabin rounds call: one kernel, each with its own parameters. -/
+/-! # Montgomery multiplication on i686 with SSE2 -/
 
 @[expose] public section
 

@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Comb -- sha
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ECDSA over brainpoolP256r1 (FIPS 186-5) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the variant
-`Variants/BrainpoolP256r1/Arm/Law.lean`.
--/
+/-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on 32-bit ARM -/
 
 @[expose] public section
 

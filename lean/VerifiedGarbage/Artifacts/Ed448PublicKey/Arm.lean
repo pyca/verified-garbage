@@ -11,13 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 public-key derivation on ARMv7
-
-The signature and documentation come from the reviewed Ed448 API. The
-reference ladder's agreement with the specification (`Proof/Ed448/Facts.lean`)
-is passed to the proof here, so that only registration files import it.
--/
+/-! # Ed448 public-key derivation on ARMv7 -/
 
 @[expose] public section
 

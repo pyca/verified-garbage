@@ -4,12 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Variant
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 
-/-!
-# `vg_poly1305_blocks` on x86-64: with AVX-512 IFMA
-
-A variant of `Poly1305Blocks` on x86-64 (see `TCB/Emit.lean`):
-`vg_poly1305_blocks_ifma`, which needs AVX, AVX-512F, AVX2 and AVX512_IFMA.
--/
+/-! # `vg_poly1305_blocks` on x86-64: with AVX-512 IFMA -/
 
 @[expose] public section
 

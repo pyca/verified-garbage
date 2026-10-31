@@ -8,14 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P224.MulLit
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 
-/-!
-# P-224's point multiplication on 32-bit ARM
-
-`vg_p224_mul` (`Spec/Weierstrass/Mul.lean`), which the signature, the
-public key derivation, verification and ECDH call. A generic file (see
-`TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/Arm/Law.lean`.
--/
+/-! # P-224's point multiplication on 32-bit ARM -/
 
 @[expose] public section
 

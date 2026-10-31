@@ -25,23 +25,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Spec
 
-/-!
-# AES-CMAC (NIST SP 800-38B) on AArch64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
-(`Variants/AesCtr32/AArch64/`), named with its suffix (e.g.
-`vg_cmac_aes_update_aes`), and need its CPU features.
-
-The functions use no stack: their calls (`bl`) keep the return address in
-`x30`, which they save in the scratch buffer. The streaming functions
-(`init`, `absorb`, `finish`) call the first three; `init` also calls the
-implementation of `vg_aes_expand_key_scratch` that goes with `v`.
-
-The streaming functions keep their working space in a frame of their own
-on the stack (`Proof/CmacAes/Stream/AArch64/Frame.lean`): their `stack` is that
-frame and the stack their code uses below it.
--/
+/-! # AES-CMAC (NIST SP 800-38B) on AArch64 -/
 
 @[expose] public section
 

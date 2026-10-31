@@ -8,13 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P384
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P384.Lit
 
-/-!
-# P-384 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
-`Variants/P384/PPC64LE/Law.lean`, which decompression's proof of its square
-root uses.
--/
+/-! # P-384 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/
 
 @[expose] public section
 

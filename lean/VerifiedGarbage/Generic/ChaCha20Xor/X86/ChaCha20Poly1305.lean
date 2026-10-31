@@ -4,28 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
-/-!
-# ChaCha20-Poly1305 (RFC 8439 §2.8) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_chacha20_xor`, are emitted once for each
-implementation (`Variants/ChaCha20Xor/X86/`), named with its suffix (e.g.
-`vg_chacha20_poly1305_seal_ssse3`), and need its CPU features. **Review
-note**: `sig` and `doc` are trusted, as they tie the Rust caller to the
-contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there. The emitter adds the `# Safety` items that depend on the target
-(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
-the contract.
-
-The code uses 32 bytes of stack for every implementation. Each function
-keeps its working space (704 bytes, `work`) in a frame of 740 bytes on the
-stack (`withStackScratchWiped`, with a copy of the seven other arguments),
-zeroed after the code, as it holds the one-time Poly1305 key and keystream:
-772 bytes in all. `seal_gather` gathers its slices to its output and calls
-the instance of `seal` on them there, in a frame of 48 bytes: 824 bytes in
-all.
--/
+/-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86 -/
 
 @[expose] public section
 

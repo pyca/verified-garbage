@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 
-/-!
-# `vg_chacha20_xor` on x86-64: the scalar implementation
-
-A variant of `ChaCha20Xor` on x86-64 (see `TCB/Emit.lean`):
-`vg_chacha20_xor`, in the baseline ISA.
--/
+/-! # `vg_chacha20_xor` on x86-64: the scalar implementation -/
 
 @[expose] public section
 

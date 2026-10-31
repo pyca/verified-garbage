@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Native FFDH on little-endian AAPCS ARMv7, including baseline and UMAAL arithmetic. -/
+/-! # Native FFDH on little-endian AAPCS ARMv7, including baseline and UMAAL arithmetic -/
 
 @[expose] public section
 namespace VG.Artifacts.Ffdh.Arm

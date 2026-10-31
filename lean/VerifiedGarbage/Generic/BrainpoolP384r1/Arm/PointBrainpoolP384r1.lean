@@ -38,15 +38,7 @@ import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 
-/-!
-# brainpoolP384r1's point addition and doubling on 32-bit ARM
-
-`vg_brainpoolp384r1_point_add` and `vg_brainpoolp384r1_point_double`
-(`Spec/Weierstrass/Point.lean`), calling the Montgomery functions of
-brainpoolP384r1's prime. A generic file (see `TCB/Emit.lean`) over brainpoolP384r1's group law
-`h`, the variant `Variants/BrainpoolP384r1/Arm/Law.lean`, which gives Fermat's little
-theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # brainpoolP384r1's point addition and doubling on 32-bit ARM -/
 
 @[expose] public section
 

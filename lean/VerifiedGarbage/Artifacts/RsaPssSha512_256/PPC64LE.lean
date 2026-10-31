@@ -4,18 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Inst
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# RSASSA-PSS with SHA-512/256 on PPC64LE: verification and signing
-
-Verification uses 304 bytes of stack: its frame (256 bytes) and the 48 bytes
-below it that the hash functions' calls use; `vg_rsa_public_precomputed_checked`
-uses none.
-
-Signing uses 3776 bytes: the same frame, the 192 bytes of the frame from which
-it calls `vg_rsa_private_checked` (which hold that function's stack arguments
-and the 48 bytes the hash functions' calls use), and `vg_rsa_private_checked`'s
-3328 bytes.
--/
+/-! # RSASSA-PSS with SHA-512/256 on PPC64LE: verification and signing -/
 
 @[expose] public section
 

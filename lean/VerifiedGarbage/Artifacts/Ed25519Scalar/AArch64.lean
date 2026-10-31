@@ -3,13 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed25519 scalar reduction on AArch64
-
-The signature and documentation come from the reviewed Ed25519 API.
-This primitive reduces a 64-bit word at a time using baseline integer
-instructions as part of the complete AArch64 signing and verification implementation.
--/
+/-! # Ed25519 scalar reduction on AArch64 -/
 
 @[expose] public section
 

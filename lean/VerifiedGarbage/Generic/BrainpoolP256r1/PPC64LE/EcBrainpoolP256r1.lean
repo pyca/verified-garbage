@@ -8,12 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP256r1.Lit
 
-/-!
-# brainpoolP256r1 public keys (FIPS 186-5 §A.2) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the variant
-`Variants/BrainpoolP256r1/PPC64LE/Law.lean`.
--/
+/-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on PPC64LE -/
 
 @[expose] public section
 

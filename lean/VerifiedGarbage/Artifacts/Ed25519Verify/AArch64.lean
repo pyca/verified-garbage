@@ -60,7 +60,7 @@ import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 
-/-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
+/-! # Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge -/
 
 @[expose] public section
 

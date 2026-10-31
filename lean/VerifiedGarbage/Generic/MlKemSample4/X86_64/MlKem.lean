@@ -6,17 +6,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.Written
 public import VerifiedGarbage.Proof.MlKem.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (hashing the key, or with `H(ek)` given) and decapsulation
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which sample the
-matrix `Â` four entries at a time with an implementation `v` of
-`vg_mlkem_sample_ntt4` (and compute the outputs of `PRF` as goes with it), are
-emitted once for each implementation (`Variants/MlKemSample4/X86_64/`), named
-with its suffix (e.g. `vg_mlkem768_keygen_avx2`), and need its CPU features.
-Both parameter sets are the same code and proofs for their layouts
-(`Impl/MlKem/X86_64/Kem.lean`).
--/
+/-! # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (hashing the key, or with `H(ek)` given) and decapsulation -/
 
 @[expose] public section
 

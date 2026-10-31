@@ -88,7 +88,9 @@ instructions in an ISA model) go in their own PR before either.
    Registration files (`Artifacts/`, `Generic/`) and variant files
    (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
    tactic proofs beyond the defaults (not even a `(by decide)` argument),
-   and no definitions but the artifacts and the variant. A lemma
+   no definitions but the artifacts and the variant, and no module
+   docstring but its title (`/-! # SHA-256 (FIPS 180-4) on x86-64 -/`):
+   what the code does is in the code and its proofs. A lemma
    whose side conditions a registration would decide takes them as
    `autoParam`s (`(hd : stackUse c ≤ 48 := by lit_decide)`), or the
    algorithm's proofs state the instance as a theorem

@@ -6,15 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 
-/-!
-# RSASSA-PSS verification using cached public-key values, on AArch64
-
-Every hash compression variant combines with every precomputed RSA public
-operation variant. The digest, signature and recovered encoding stay secret.
-
-Its stack is its frame and `vg_rsa_pss_<H>_mgf1_<H>_check_encoding`'s 352
-bytes, more than the public operation's.
--/
+/-! # RSASSA-PSS verification using cached public-key values, on AArch64 -/
 
 @[expose] public section
 

@@ -3,22 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P192Sha256
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over P-192 with HMAC-SHA-256 on x86, for every x86 SHA-256 backend
-
-`vg_ecdsa_p192_sha256_sign`, calling HMAC-SHA-256's `init` and `finalize`
-and SHA-256's streaming `update` made with the backend's compression
-function, and `vg_ecdsa_p192_sign`, is emitted for every backend, named with
-its suffix (e.g. `vg_ecdsa_p192_sha256_sign_shani`), and needs its CPU
-features.
-
-The stack is 272 bytes: a 196-byte frame, and the 76 bytes below it that the
-calls use (up to 24 bytes of arguments and the return address, and 48 bytes
-of stack for HMAC's functions).
-
-It is generic over P-192's group law `h` too, the variant
-`Variants/P192/X86/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over P-192 with HMAC-SHA-256 on x86, for every x86 SHA-256 backend -/
 
 @[expose] public section
 

@@ -12,16 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.P192.Point
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 
-/-!
-# P-192's group law, on PPC64LE
-
-The variant of `P192` on PPC64LE (see `TCB/Emit.lean`): not an implementation
-but the fact the proofs of P-192's functions take, `Proof.P192.law`, whose
-proof needs Mathlib's algebra. Their registration files are generic over it
-(`Generic/P192/PPC64LE/`, and `Generic/<Iface>/P192/PPC64LE/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-192's group law, on PPC64LE -/
 
 @[expose] public section
 

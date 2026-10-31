@@ -4,23 +4,7 @@ public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
 public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-SIV (RFC 5297) on ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there.
-
-`init` calls `vg_cmac_aes_subkeys`, which uses 8 bytes of stack, and keeps
-its 2560-byte working space in a frame of its own
-(`Proof/AesSiv/Arm/Verified.lean`). `encrypt` and `decrypt` run in a frame
-of 2608 bytes holding their working space (`Proof/AesSiv/Arm/Frame.lean`).
-In it they call `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
-`vg_aes_ctr32` in frames that push their two stack arguments, and the CMAC
-functions' own frames push two more: 2624 bytes of stack in all.
--/
+/-! # AES-SIV (RFC 5297) on ARMv7 -/
 
 @[expose] public section
 

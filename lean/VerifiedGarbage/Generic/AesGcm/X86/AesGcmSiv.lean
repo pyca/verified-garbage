@@ -71,23 +71,7 @@ import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.GcmSiv.Words32
 import VerifiedGarbage.Proof.Siv.Spec
 
-/-!
-# AES-GCM-SIV (RFC 8452) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`
-(those of AES-GCM), are emitted once for each combination
-(`Variants/AesGcm/X86/`), named with its suffix (e.g.
-`vg_aes_gcm_siv_seal_aesni_pclmul`), and need the CPU features of the three.
-
-Each runs in a frame of 2856 bytes holding its working space and a copy of
-its eight stack arguments (`Proof/AesGcmSiv/X86/Frame.lean`), below which it
-uses 28 bytes: a call of `vg_aes_ctr32` (six arguments and the return
-address; the calls of the other two push fewer), which makes no calls;
-2884 bytes in all. The proofs take the tag input computed with GHASH to be
-RFC 8452's (`Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`), which this file
-imports, with its algebra, so that the proofs need not.
--/
+/-! # AES-GCM-SIV (RFC 8452) on x86 -/
 
 @[expose] public section
 

@@ -19,7 +19,7 @@ def tree(files: dict) -> tempfile.TemporaryDirectory:
 class Registrations(unittest.TestCase):
     def test_bindings(self):
         with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
-                    "module\n/-! Proven by `lit_decide` -/\n-- by decide\n"
+                    "module\n/-! # Proven by `lit_decide` -/\n-- by decide\n"
                     "def artifacts : List Artifact := [\n"
                     "  api.artifact X86_64.target {\n"
                     "    suffix := \"_found by a mask\"\n"
@@ -73,6 +73,20 @@ class Registrations(unittest.TestCase):
                     "module\ntheorem ok : 1 = 1 := rfl\ndef variant := v\n"}) as d:
             [p] = check_registrations.problems(pathlib.Path(d))
             self.assertIn(":2: a theorem", p)
+
+    def test_a_module_docstring(self):
+        # Only a title: prose on the implementation goes stale.
+        with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
+                    "module\n/-! # A on x86-64 -/\ndef artifacts := []\n",
+                    "VerifiedGarbage/Generic/A/X86_64/B.lean":
+                    "module\n/-!\n# B on x86-64\n\nCalls `f` from a frame of 8 bytes.\n-/\n"
+                    "def artifacts := []\n",
+                    "VerifiedGarbage/Variants/A/X86_64/C.lean":
+                    "module\n/-! Uses AVX2. -/\ndef variant := v\n"}) as d:
+            ps = check_registrations.problems(pathlib.Path(d))
+            self.assertEqual(len(ps), 2)
+            self.assertIn("Generic/A/X86_64/B.lean:2: a module docstring", ps[0])
+            self.assertIn("Variants/A/X86_64/C.lean:2: a module docstring", ps[1])
 
 
 if __name__ == "__main__":

@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SHA-3 and SHAKE (FIPS 202) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
--/
+/-! # SHA-3 and SHAKE (FIPS 202) on RISC-V -/
 
 @[expose] public section
 

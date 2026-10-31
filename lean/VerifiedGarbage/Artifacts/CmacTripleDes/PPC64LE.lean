@@ -5,14 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
-/-!
-# TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on baseline PPC64LE
-
-The functions call the verified key expansion and block function, keeping
-the return address in the link register, and keep their working space in a
-frame of their own on the stack
-(`Proof/CmacTripleDes/Stream/PPC64LE/Frame.lean`).
--/
+/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on baseline PPC64LE -/
 
 @[expose] public section
 

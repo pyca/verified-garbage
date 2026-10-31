@@ -4,14 +4,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SHA-224 (FIPS 180-4) on PPC64LE
-
-SHA-224 is SHA-256 from another initial hash value, and its digest the first
-28 bytes of the final hash value: its `init` and `finalize` are registered
-here, and its `update` is SHA-256's (`Artifacts/Sha256/`). `finalize` keeps
-its working space in a frame of its own, as SHA-256's does.
--/
+/-! # SHA-224 (FIPS 180-4) on PPC64LE -/
 
 @[expose] public section
 

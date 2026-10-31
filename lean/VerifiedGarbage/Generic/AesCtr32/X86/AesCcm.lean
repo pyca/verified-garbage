@@ -63,20 +63,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# AES-CCM (NIST SP 800-38C) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_ctr32` (through `vg_cmac_aes_update` made with
-it, for the CBC-MAC, and directly for counter mode), are emitted once for
-each implementation (`Variants/AesCtr32/X86/`), named with its suffix
-(e.g. `vg_aes_ccm_seal_aesni`), and need its CPU features.
-
-Each runs in a frame of 2608 bytes holding its working space and a copy of
-its ten stack arguments (`Proof/AesCcm/X86/Frame.lean`), below which it uses
-56 bytes: a call of `vg_cmac_aes_update` (its six arguments and return
-address) and its own calls of `vg_aes_ctr32`; 2664 bytes in all.
--/
+/-! # AES-CCM (NIST SP 800-38C) on x86 -/
 
 @[expose] public section
 

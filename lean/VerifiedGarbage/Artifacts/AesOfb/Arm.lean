@@ -3,16 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOfb.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-OFB (NIST SP 800-38A §6.4) on ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifact it lists is
-emitted. ARMv7 has one implementation of the block functions, so it is not
-generic over them.
-
-The function calls `vg_aes_encrypt_blocks` in a frame that pushes its stack
-argument and `lr`, so uses 8 bytes of stack.
--/
+/-! # AES-OFB (NIST SP 800-38A §6.4) on ARMv7 -/
 
 @[expose] public section
 

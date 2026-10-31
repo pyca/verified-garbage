@@ -8,19 +8,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCt
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCt
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 
-/-!
-# EMSA-PSS's encoding and its check on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_pss_<H>_mgf1_<H>_encode` and
-`vg_rsa_pss_<H>_mgf1_<H>_check_encoding`, for the hash function of an
-`MdHash` variant `v` with MGF1 over the same hash function, calling `v`'s
-compression function, are emitted once for each variant, named with its
-suffix (e.g. `vg_rsa_pss_sha256_mgf1_sha256_encode_shani`). RSASSA-PSS's
-signing and verification call them (`Generic/MdHash/RsaPrivateCrt/X86_64/RsaPss.lean`,
-`Generic/MdHash/RsaPublicPrecomputed/X86_64/RsaPss.lean`).
-
-Each one's stack is its frame and a return address: its calls use none.
--/
+/-! # EMSA-PSS's encoding and its check on x86-64 -/
 
 @[expose] public section
 

@@ -41,12 +41,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
 import VerifiedGarbage.Spec.Weierstrass.Mul
 
-/-!
-# ECDH over P-384 (SP 800-56A) on AArch64
-
-A generic file (see `TCB/Emit.lean`) over P-384's group law and prime order `h`, the variant
-`Variants/P384/AArch64/Law.lean`.
--/
+/-! # ECDH over P-384 (SP 800-56A) on AArch64 -/
 
 @[expose] public section
 

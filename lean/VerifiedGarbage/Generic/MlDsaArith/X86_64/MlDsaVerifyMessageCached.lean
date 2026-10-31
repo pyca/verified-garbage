@@ -15,20 +15,7 @@ public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
 
-/-!
-# ML-DSA (FIPS 204) on x86-64: verifying messages
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which call
-`vg_mldsa*_verify` with an implementation `v` of the polynomial arithmetic
-(`Variants/MlDsaArith/X86_64/`), are emitted once for each implementation,
-named with its suffix (e.g. `vg_mldsa44_verify_message_cached_avx2`), and need
-its CPU features. **Review note**: `sig` and `doc` are trusted, as they tie
-the Rust caller to the contract; check them against the contract's
-`pre`/`post`. Each artifact is made from its function's `Api` (in
-`Spec/MlDsa/CachedVerify.lean`, reviewed with the contract). The emitter adds
-the `# Safety` items that depend on the target (`Sig.layoutDoc`), from `stack`
-and `writeArgs`, which `ofSig` checks against the contract.
--/
+/-! # ML-DSA (FIPS 204) on x86-64: verifying messages -/
 
 @[expose] public section
 

@@ -60,23 +60,7 @@ import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Proof.Siv.Spec
 
-/-!
-# AES-GCM-SIV (RFC 8452) on AArch64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`
-(those of AES-GCM), are emitted once for each combination
-(`Variants/AesGcm/AArch64/`), named with its suffix (e.g.
-`vg_aes_gcm_siv_seal_aes`), and need the CPU features of the three. **Review
-note**: `sig` and `doc` are trusted, as they tie the Rust caller to the
-contract; these artifacts are made from each function's `Api` (in `Spec/`,
-reviewed with the contract).
-
-Each keeps its working space in a frame of 3824 bytes on the stack
-(`Proof/AesGcmSiv/AArch64/Verified.lean`); their calls (`bl`) keep the return
-address in `x30`, which they save in the working space, with our caller's
-registers, so no other stack is used.
--/
+/-! # AES-GCM-SIV (RFC 8452) on AArch64 -/
 
 @[expose] public section
 

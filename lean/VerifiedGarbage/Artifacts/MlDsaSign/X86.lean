@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 
-/-!
-# ML-DSA (FIPS 204) signing on x86
-
-Each function saves its caller's registers in a frame of 16 bytes below the
-return address, and calls the primitives with their arguments pushed below
-it: at most 5 arguments and the return address (24 bytes), and the 56 bytes
-the samplers use (`stack := 96`).
--/
+/-! # ML-DSA (FIPS 204) signing on x86 -/
 
 @[expose] public section
 

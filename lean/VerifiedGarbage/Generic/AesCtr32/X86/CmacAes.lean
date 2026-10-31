@@ -34,23 +34,7 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# AES-CMAC (NIST SP 800-38B) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
-(`Variants/AesCtr32/X86/`), named with its suffix (e.g.
-`vg_cmac_aes_update_aesni`), and need its CPU features.
-
-The stack is 28 bytes for the first three functions: their six AES arguments
-and the return address. Streaming `init` uses 48 bytes; `absorb` and
-`finish` use 56 bytes; `init` also calls the implementation of `vg_aes_expand_key_scratch`
-that goes with `v`.
-
-The streaming functions keep their working space in a frame of their own
-on the stack (`Proof/CmacAes/Stream/X86/Frame.lean`): their `stack` is that
-frame and the stack their code uses below it.
--/
+/-! # AES-CMAC (NIST SP 800-38B) on x86 -/
 
 @[expose] public section
 

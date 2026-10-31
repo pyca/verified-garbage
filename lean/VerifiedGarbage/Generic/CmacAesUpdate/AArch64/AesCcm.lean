@@ -29,25 +29,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 
-/-!
-# AES-CCM (NIST SP 800-38C) on AArch64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_cmac_aes_update` for the CBC-MAC, and the
-implementation of `vg_aes_ctr32` that goes with it (`v.ctr`) for counter mode,
-are emitted once for each implementation (`Variants/CmacAesUpdate/AArch64/`),
-named with its suffix (e.g. `vg_aes_ccm_seal_aes_cbc`), and need its CPU
-features. **Review note**: `sig` and `doc` are trusted, as they tie the Rust
-caller to the contract; these artifacts are made from each function's `Api`
-(in `Spec/`, reviewed with the contract).
-
-The functions' calls (`bl`) keep the return address in `x30`, which they
-save in the working space, so their code uses no stack; it reads its last
-three arguments, `tag`, `tag_len` and `work`, from the stack. Each function
-keeps its working space, its last argument, in a frame of 2592 bytes on the
-stack that also holds a copy of `tag` and `tag_len`
-(`Verified.stackArgScratch`).
--/
+/-! # AES-CCM (NIST SP 800-38C) on AArch64 -/
 
 @[expose] public section
 

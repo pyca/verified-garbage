@@ -69,18 +69,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# Argon2 on x86-64, for every BLAKE2b backend and every implementation of G
-
-A generic file of two interfaces (see `TCB/Emit.lean`): `vg_argon2` calls
-both the BLAKE2b streaming functions of a backend `v`
-(`Variants/Blake2b/X86_64/`), through H₀ and `vg_argon2_hprime`, and an
-implementation `c` of the compression function G
-(`Variants/Argon2Compress/X86_64/`), and is emitted once for each pair,
-named by `Emit.qualifiedName` with the tags `blake2b` and `g` (e.g.
-`vg_argon2_g_avx2` for G with AVX2 and BLAKE2b's baseline backend),
-needing both's CPU features.
--/
+/-! # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G -/
 
 @[expose] public section
 

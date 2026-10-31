@@ -33,22 +33,7 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 
-/-!
-# RSAES-OAEP encryption with a precomputed public key on AArch64
-
-A generic file of three interfaces (see `TCB/Emit.lean`):
-`vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` calls the streaming functions
-of `H`, made with the compression function of its `MdHash` variant `v` (for
-`lHash`), and of `G`, made with that of its variant `v2` (for MGF1), and an
-implementation `c` of `vg_rsa_public_precomputed_checked`
-(`Variants/RsaPublicPrecomputed/AArch64/`). It is emitted for the pairs of
-hash functions `Inst.emitted` says, with each `c`, named by
-`Emit.qualifiedName` (`Inst.parts`, then `rsa`), and needs all three's CPU
-features.
-
-Its stack is its frames, 288 bytes, and 16 bytes below them for the calls,
-whose callees use no more.
--/
+/-! # RSAES-OAEP encryption with a precomputed public key on AArch64 -/
 
 @[expose] public section
 

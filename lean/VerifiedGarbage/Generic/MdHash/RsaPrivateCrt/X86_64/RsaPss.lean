@@ -10,22 +10,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCt
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCVerified
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 
-/-!
-# RSASSA-PSS signing on x86-64
-
-A generic file of two interfaces (see `TCB/Emit.lean`):
-`vg_rsa_pss_<H>_mgf1_<H>_sign`, for the hash function of an `MdHash` variant
-`v` with MGF1 over the same hash function, calling `v`'s
-`vg_rsa_pss_<H>_mgf1_<H>_encode` (`Generic/MdHash/X86_64/RsaPss.lean`), and
-`vg_rsa_private_checked` calling an implementation `c` of
-`vg_rsa_private_crt` (`Variants/RsaPrivateCrt/X86_64/`). It is emitted once
-for each pair, named by `Emit.qualifiedName` with the hash function's name
-and `crt` as tags (e.g. `vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_adx`),
-and needs both's CPU features.
-
-Its stack is its frame, a return address and `vg_rsa_private_checked`'s
-3256 bytes, more than `encode`'s.
--/
+/-! # RSASSA-PSS signing on x86-64 -/
 
 @[expose] public section
 

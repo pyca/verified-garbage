@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.AesCfb8.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCfb8.RISCV64.Lit
 
-/-!
-# AES-CFB8 (NIST SP 800-38A §6.3) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. RISC-V has one implementation of the block functions, so these are
-not generic over them. A call (`jal`) stores nothing in memory, and the
-return address is saved in the scratch buffer, so no stack is used.
--/
+/-! # AES-CFB8 (NIST SP 800-38A §6.3) on RISC-V -/
 
 @[expose] public section
 

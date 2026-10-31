@@ -65,12 +65,7 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.X25519.Arm.Limbs
 import VerifiedGarbage.Proof.X25519.Field
 
-/-!
-# ECDSA over P-521 (FIPS 186-5) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
-`Variants/P521/Arm/Law.lean`.
--/
+/-! # ECDSA over P-521 (FIPS 186-5) on 32-bit ARM -/
 
 @[expose] public section
 

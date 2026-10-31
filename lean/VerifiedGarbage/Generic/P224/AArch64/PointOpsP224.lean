@@ -6,16 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# P-224's complete projective addition on AArch64
-
-`vg_p224_proj_add` (`Spec/Weierstrass/PointOps.lean`), which P-224's
-signature, public key derivation, ECDH and verification call for their
-complete additions. A generic file (see `TCB/Emit.lean`) over P-224's group
-law and inversions `h`, the variant `Variants/P224/AArch64/Law.lean`, which
-gives Fermat's little theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the
-contract.
--/
+/-! # P-224's complete projective addition on AArch64 -/
 
 @[expose] public section
 

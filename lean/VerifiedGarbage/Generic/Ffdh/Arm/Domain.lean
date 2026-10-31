@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Emit every native ARMv7 FFDH backend and propagate its exact CPU features. -/
+/-! # Emit every native ARMv7 FFDH backend and propagate its exact CPU features -/
 
 @[expose] public section
 namespace VG.Generic.Ffdh.Arm.Domain

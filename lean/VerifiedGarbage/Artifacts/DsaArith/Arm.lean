@@ -61,11 +61,7 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
 import VerifiedGarbage.Spec.Dsa.SignVerify
 
-/-! # DSA's reductions and products on ARMv7
-
-One reduction for each width of q, and one product for each width of p and
-q, that `vg_dsa_sign` and `vg_dsa_verify` use (`Impl.Dsa.Arm.Core.reduce`,
-`Impl.Dsa.Arm.Core.productMod`). -/
+/-! # DSA's reductions and products on ARMv7 -/
 
 @[expose] public section
 

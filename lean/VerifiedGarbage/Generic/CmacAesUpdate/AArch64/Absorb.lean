@@ -25,8 +25,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Spec
 
-/-! Streaming absorb is emitted for every verified whole-block CMAC update
-variant. Its buffering proof depends on the update contract, not on CTR. -/
+/-! # Streaming CMAC absorb on AArch64, for each CMAC update -/
 
 @[expose] public section
 

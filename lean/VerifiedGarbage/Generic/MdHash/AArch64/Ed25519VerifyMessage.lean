@@ -11,8 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Whole-message Ed25519 verification follows every SHA-512 backend carried
-by MdHash. The signature and contract come from the reviewed Ed25519 API. -/
+/-! # Ed25519 whole-message verification on AArch64, for each SHA-512 implementation -/
 
 @[expose] public section
 

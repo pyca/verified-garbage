@@ -7,14 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 
-/-!
-# ML-DSA (FIPS 204) on x86: the sampling primitives
-
-Each function saves its caller's registers in a frame of 16 bytes below the
-return address, and calls the Keccak functions, each in a frame of its 5 or
-6 arguments (at most 24 bytes), with the return address and the callee's 12
-bytes below it (`stack := 56`), as `vg_mlkem_sample_ntt` does.
--/
+/-! # ML-DSA (FIPS 204) on x86: the sampling primitives -/
 
 @[expose] public section
 

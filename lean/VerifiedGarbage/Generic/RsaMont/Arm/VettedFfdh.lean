@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! ARM key-generation artifacts are emitted by CachedFfdh. -/
+/-! # ARM key-generation artifacts are emitted by CachedFfdh -/
 
 @[expose] public section
 namespace VG.Generic.RsaMont.Arm.VettedFfdh

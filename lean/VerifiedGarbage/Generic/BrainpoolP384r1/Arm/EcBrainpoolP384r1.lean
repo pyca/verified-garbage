@@ -59,12 +59,7 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.X25519.Arm.Limbs
 import VerifiedGarbage.Proof.X25519.Field
 
-/-!
-# brainpoolP384r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP384r1's group law `h`, the variant
-`Variants/BrainpoolP384r1/Arm/Law.lean`.
--/
+/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
 @[expose] public section
 
