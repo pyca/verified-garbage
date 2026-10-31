@@ -37,7 +37,7 @@ syntax "c5run" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| c5run) => `(tactic| c5run [])
   | `(tactic| c5run [$ls,*]) => `(tactic|
-      crun [List.cons_append, List.nil_append, false_implies, tbl, ep, tmp, wd, vI, vKr, msk, mov,
+      crun [List.cons_append, List.nil_append, false_implies, tbl, ep, tmp, wd, vI, vKr, mov,
         sch, rnd, dat, cnt, wkE, xL, xR, km, left, typ, key, klen, out, wkK, dst, stp, hlv, accReg_0,
         accReg_1, accReg_2, accReg_3, idxReg_0, idxReg_1, idxReg_2, idxReg_3, $ls,*])
 

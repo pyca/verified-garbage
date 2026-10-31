@@ -30,9 +30,10 @@ in a loop whose body is one round, choosing the round's type (its number
 modulo 3, as `Spec.Cast5.f` does) by a branch; key expansion runs each half
 of §2.4 as a loop of 40 steps, each one scan, choosing the step's bytes and
 what it does with the four values by a chain of branches on the step's
-number. The rotation by the secret amount `Kr` (§2.2) is five rotations by
-1, 2, 4, 8 and 16 (each two word shifts and an `or`: RV64I has no
-rotation), each kept or not by a mask made from a bit of `Kr`.
+number. The rotation by the secret amount `Kr` (§2.2) is two word shifts by
+registers and an `or` (RV64I has no rotation): `sllw` by `Kr` and `srlw` by
+`32 - Kr`, each by the low five bits of its register; for `Kr` 0 both
+shift by 0.
 
 The model faults on misaligned accesses, and the contracts state no
 alignment for the buffers, so the subkeys, the blocks and the key are read
@@ -63,9 +64,8 @@ abbrev tmp : Reg := .t0
 abbrev wd : Reg := .t1
 /-- `I`, then `f`, of a round, or the value of a line of key expansion. -/
 abbrev vI : Reg := .t5
-/-- `Kr` of a round and the rotation's mask. -/
+/-- `Kr` of a round. -/
 abbrev vKr : Reg := .t6
-abbrev msk : Reg := .a5
 
 /-- `mv d, n` (`addi d, n, 0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
@@ -215,16 +215,12 @@ def byType (f : Nat → List Instr) : Prog isa :=
   .ite (.zero typ) (.block (f 0))
     (.seq (.block [.addi tmp typ (-1)]) (.ite (.zero tmp) (.block (f 1)) (.block (f 2))))
 
-/-- One of the five steps of the rotation of `vI` left by the low 5 bits of
-`vKr`: `msk` := 0 if bit `b` of `vKr` is set, all ones if not; the rotation
-by `2 ^ b` is in `tmp`. -/
-def rotateStep (b : Nat) : List Instr :=
-  [.shift .sll .d msk vKr (63 - b), .shift .srl .d msk msk 63, .addi msk msk (-1),
-   .shift .srl .w wd vI (32 - 2 ^ b), .shift .sll .w tmp vI (2 ^ b), .logic .or tmp tmp wd,
-   .logic .xor wd vI tmp, .logic .and wd wd msk, .logic .xor vI tmp wd]
-
-/-- `vI` rotated left by the low 5 bits of `Krᵢ` (of its low byte). -/
-def rotate : List Instr := [.load .b vKr km 64] ++ (List.range 5).flatMap rotateStep
+/-- `vI` rotated left by the low 5 bits of `Krᵢ` (of its low byte, in
+`vKr`): `vI` shifted left by them, ORed with `vI` shifted right by those of
+`32 - Krᵢ` (in `wd`). -/
+def rotate : List Instr :=
+  [.load .b vKr km 64, .li wd 32, .sub wd wd vKr, .shiftReg .srl .w wd vI wd, .shiftReg .sll .w vI vI vKr,
+   .logic .or vI vI wd]
 
 /-- The bytes `Id, Ic, Ib, Ia` of `I` in `vI` into `s0`–`s3`. -/
 def spread : List Instr :=
