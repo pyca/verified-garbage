@@ -1779,8 +1779,6 @@ pub(crate) const VG_ECDH_SECP256K1_UMAAL_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// `vg_ecdh_secp256k1`'s code, but for its calls of `vg_secp256k1_point_a0_double_umaal` and `vg_secp256k1_point_a0_add_affine_umaal`. Field multiplications are calls of `vg_secp256k1_mul_mod_p_umaal` (and `vg_secp256k1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.

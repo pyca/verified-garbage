@@ -1621,8 +1621,6 @@ pub(crate) const VG_EC_SECP256K1_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// `vg_ec_secp256k1_public_key`'s code, but for its calls of `vg_secp256k1_point_add_umaal` in the comb. Field multiplications are calls of `vg_secp256k1_mul_mod_p_umaal` (and `vg_secp256k1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.
