@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP256r1.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# brainpoolP256r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the variant
-`Variants/BrainpoolP256r1/Arm/Law.lean`.
--/
+/-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
 @[expose] public section
 

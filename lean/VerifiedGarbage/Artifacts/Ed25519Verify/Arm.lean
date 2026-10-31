@@ -39,7 +39,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
-/-! Baseline ARMv7 Ed25519 primitive with register saves in the reviewed scratch buffer. -/
+/-! # Baseline ARMv7 Ed25519 primitive with register saves in the reviewed scratch buffer -/
 
 @[expose] public section
 

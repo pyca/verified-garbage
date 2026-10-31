@@ -12,9 +12,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Ed25519 signing from the seed's cached SHA-512 digest, for each SHA-512 implementation.
-Key derivation from the digest hashes nothing, so it is not generic
-(`Artifacts/Ed25519PublicKeyExpanded/AArch64.lean`). -/
+/-! # Ed25519 signing from the seed's SHA-512 digest on AArch64, for each SHA-512 implementation -/
 
 @[expose] public section
 

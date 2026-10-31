@@ -7,12 +7,7 @@ public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ChaCha20 (RFC 8439) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
--/
+/-! # ChaCha20 (RFC 8439) on RISC-V -/
 
 @[expose] public section
 

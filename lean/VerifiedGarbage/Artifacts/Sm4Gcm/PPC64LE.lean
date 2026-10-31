@@ -7,24 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
-/-!
-# SM4-GCM (NIST SP 800-38D, RFC 8998) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-Each artifact is made from its function's `Api` (in `Spec/`, reviewed with the
-contract).
-
-The AEAD functions are AES-GCM's code (`Impl/AesGcm/PPC64LE.lean`) with SM4's
-counter mode and key expansion inlined in place of AES's. They keep
-AES-GCM's 2560-byte working space and SM4's 3264-byte one each in a frame of
-its own (a frame is less than a page): 2592 and 3296 bytes, or 2672 and 3376
-for `seal` and 2672 and 3392 for `open`, whose frames also copy their stack
-arguments (`Proof/Sm4Gcm/PPC64LE/Frame.lean`). `stream_init` and
-`stream_aad`, which only hash, are AES-GCM's functions themselves, whose
-contracts theirs are. `vg_sm4_ctr32` is SM4's counter mode with GCM's
-increment, in a frame of 3296 bytes that holds its working space, wiped
-before it returns.
--/
+/-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on PPC64LE -/
 
 @[expose] public section
 

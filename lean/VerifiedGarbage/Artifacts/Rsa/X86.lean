@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.X86.RtShape
 
-/-! Public and private CRT RSA on baseline i686. -/
+/-! # Public and private CRT RSA on baseline i686 -/
 
 @[expose] public section
 namespace VG.Artifacts.Rsa.X86

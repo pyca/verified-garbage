@@ -6,15 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# brainpoolP384r1's check of a public point on AArch64
-
-`vg_brainpoolp384r1_check_point` (`Spec/Weierstrass/CheckPoint.lean`), which brainpoolP384r1's ECDH and
-signature verification call to check the public point. A generic file (see
-`TCB/Emit.lean`) over brainpoolP384r1's group law and inversions `h`, the variant
-`Variants/BrainpoolP384r1/AArch64/Law.lean`, whose inversions' soundness the proof of the
-configuration takes.
--/
+/-! # brainpoolP384r1's check of a public point on AArch64 -/
 
 @[expose] public section
 

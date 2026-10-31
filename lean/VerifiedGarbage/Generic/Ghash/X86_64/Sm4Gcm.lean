@@ -8,33 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
-/-!
-# SM4-GCM (NIST SP 800-38D, RFC 8998) on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementation `n` of `vg_ghash`, are emitted once for each
-(`Variants/Ghash/X86_64/`), named with its suffix (e.g.
-`vg_sm4_gcm_seal_pclmul`), and need its CPU features; they encrypt with
-`vg_sm4_ctr32`, in the baseline ISA. `vg_sm4_gcm_init`, which does not hash,
-is registered once (`Artifacts/Sm4Gcm/X86_64.lean`). `stream_init` and
-`stream_aad`, which only hash, are AES-GCM's code (and proofs), whose
-contracts theirs are. The proofs take AES-GCM's callees (`GcmImpl`), here with
-the implementation `n` of `vg_ghash` and the baseline AES, which no SM4-GCM
-function calls. **Review note**: `sig` and `doc` are trusted, as they tie the
-Rust caller to the contract; these artifacts are made from each function's
-`Api` (in `Spec/`, reviewed with the contract).
-
-Every function keeps its working space in a frame on the stack
-(`Proof/Sm4Gcm/X86_64/Frame.lean`): 2568 bytes for `stream_init`,
-`stream_aad` and `stream_finish` (`Verified.stackScratch`), and for the
-others, whose working space is their last argument passed on the stack, a
-frame that also holds a copy of their other stack arguments
-(`Verified.stackArgScratch`): 2576 bytes for `stream_encrypt`,
-`stream_decrypt` and `stream_verify`, 2592 for `seal` and 2600 for `open`.
-Below it, `stream_init` and `stream_aad` use 8 bytes, the return address of
-their calls of `vg_ghash`, which makes none; the others 3224, those of their
-calls of `vg_sm4_ctr32`, whose frame takes 3208.
--/
+/-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on x86-64 -/
 
 @[expose] public section
 

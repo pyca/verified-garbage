@@ -2,16 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64.Ifma
 
-/-!
-# `vg_rsa_private_crt` on x86-64: with AVX512_IFMA
-
-A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
-`vg_rsa_private_crt_ifma`, checked with `vg_rsa_public_precompute_adx` and
-`vg_rsa_public_precomputed_checked_adx` (there is no public operation with
-AVX512_IFMA), which need AVX512_IFMA, AVX512F, AVX512VL, AVX, BMI2 and ADX;
-its Montgomery multiplications outside the vector code are calls of
-`vg_rsa_mont_mul_adx`.
--/
+/-! # `vg_rsa_private_crt` on x86-64: with AVX512_IFMA -/
 
 @[expose] public section
 

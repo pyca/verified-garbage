@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Proof.X448.X86_64.Instances
 
-/-! X448 and Ed448 share the selected Curve448 exponentiation backend. -/
+/-! # X448 and Ed448 share the selected Curve448 exponentiation backend -/
 
 @[expose] public section
 

@@ -43,22 +43,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 
-/-!
-# AES-SIV (RFC 5297) key setup on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_aes_siv_init`, calling an
-implementation `v` of `vg_aes_ctr32` (through the CMAC subkeys made with it)
-and the implementation of `vg_aes_expand_key_scratch` that goes with it, is emitted
-once for each implementation (`Variants/AesCtr32/AArch64/`), named with its
-suffix (e.g. `vg_aes_siv_init_aes`), and needs its CPU features.
-`vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, which also call
-`vg_cmac_aes_update`, follow its implementations instead
-(`Generic/CmacAesUpdate/AArch64/AesSiv.lean`).
-
-`init` keeps its working space in a frame of its own
-(`Proof/AesSiv/AArch64/Frame.lean`): its `stack` is that frame. Its calls
-(`bl`) keep the return address in `x30`, which it saves in the working space.
--/
+/-! # AES-SIV (RFC 5297) key setup on AArch64 -/
 
 @[expose] public section
 

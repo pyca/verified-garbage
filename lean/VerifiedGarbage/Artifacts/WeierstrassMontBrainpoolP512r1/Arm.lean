@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1Umaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on ARMv7
-
-The functions of `Artifacts/WeierstrassMont/Arm.lean` for brainpoolP512r1's moduli,
-in eight 64-bit words. -/
+/-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on ARMv7 -/
 
 @[expose] public section
 

@@ -71,23 +71,7 @@ public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Spec.Ccm.Contract
 
-/-!
-# AES-SIV (RFC 5297) encryption and decryption on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_aes_siv_encrypt` and
-`vg_aes_siv_decrypt`, calling an implementation `v` of `vg_cmac_aes_update`,
-and the CMAC functions and `vg_aes_ctr32` made with the implementation of
-AES that goes with it (`v.ctr`), are emitted once for each implementation
-of the update (`Variants/CmacAesUpdate/X86_64/`), named with its suffix
-(e.g. `vg_aes_siv_encrypt_aesni_cbc`), and need the CPU features of both.
-
-Each function keeps its working space in a frame of its own
-(`Proof/AesSiv/X86_64/Frame.lean`) of 2600 bytes, which also holds a copy of
-`siv`, its seventh argument, passed on the stack; below it its calls use at
-most 16 bytes: the return addresses of the call of a CMAC function (or of
-`vg_aes_ctr32`) and of its call of `vg_aes_ctr32` (2616 bytes of stack in
-all).
--/
+/-! # AES-SIV (RFC 5297) encryption and decryption on x86-64 -/
 
 @[expose] public section
 

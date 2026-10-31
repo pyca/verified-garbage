@@ -104,12 +104,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# P-192 public keys (FIPS 186-5 §A.2) on x86 (32-bit)
-
-A generic file (see `TCB/Emit.lean`) over P-192's group law `h`, the variant
-`Variants/P192/X86/Law.lean`.
--/
+/-! # P-192 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
 
 @[expose] public section
 

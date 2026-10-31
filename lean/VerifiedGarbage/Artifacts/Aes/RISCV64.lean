@@ -8,12 +8,7 @@ public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
-/-!
-# AES (FIPS 197) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
--/
+/-! # AES (FIPS 197) on RISC-V -/
 
 @[expose] public section
 

@@ -4,21 +4,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Verified
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-GCM-SIV (RFC 8452) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. PPC64LE has one implementation of `vg_aes_ctr32`,
-`vg_aes_expand_key_scratch` and `vg_ghash`, so these are not generic over
-them.
-
-Both functions run in a frame of 3936 bytes holding their working space
-(`Proof/AesGcmSiv/PPC64LE/Verified.lean`). A call (`bl`) stores nothing in
-memory, and the functions they call use no stack: their `stack` is that
-frame. The proofs take the tag input computed with GHASH to be RFC 8452's
-(`TagInputEq`), bound here to `Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`,
-so that only this file imports the algebra of its proof.
--/
+/-! # AES-GCM-SIV (RFC 8452) on PPC64LE -/
 
 @[expose] public section
 

@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontP192
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery arithmetic modulo P-192's `p` and `n` on PPC64LE
-
-The functions of `Artifacts/WeierstrassMont/PPC64LE.lean` for P-192's moduli, in three 64-bit words. -/
+/-! # Montgomery arithmetic modulo P-192's `p` and `n` on PPC64LE -/
 
 @[expose] public section
 

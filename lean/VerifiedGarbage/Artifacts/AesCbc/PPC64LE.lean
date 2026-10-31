@@ -3,14 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-CBC (NIST SP 800-38A §6.2) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. PPC64LE has one implementation of the block functions, so these are
-not generic over them. A call (`bl`) stores nothing in memory, so no stack is
-used.
--/
+/-! # AES-CBC (NIST SP 800-38A §6.2) on PPC64LE -/
 
 @[expose] public section
 

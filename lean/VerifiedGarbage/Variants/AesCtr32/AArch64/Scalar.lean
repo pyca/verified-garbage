@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 
-/-!
-# `vg_aes_ctr32` on AArch64: the bitsliced implementation
-
-A variant of `AesCtr32` on AArch64 (see `TCB/Emit.lean`): `vg_aes_ctr32`, in
-the baseline ISA.
--/
+/-! # `vg_aes_ctr32` on AArch64: the bitsliced implementation -/
 
 @[expose] public section
 

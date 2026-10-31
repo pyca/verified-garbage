@@ -98,18 +98,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
-/-!
-# P-384's group law and inversions, on x86-64
-
-The variant of `P384` on x86-64 (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of P-384's functions take, `Proof.P384.law`, the
-soundness of the inversions by divsteps modulo a prime (`InvSounds`) and that
-it has prime order (`Proof.P384.primeOrder`), whose proofs need Mathlib's
-algebra. Their registration files are generic over it
-(`Generic/P384/X86_64/`, and `Generic/<Iface>/P384/X86_64/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-384's group law and inversions, on x86-64 -/
 
 @[expose] public section
 

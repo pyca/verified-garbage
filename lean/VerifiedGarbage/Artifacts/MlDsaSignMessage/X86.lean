@@ -45,22 +45,7 @@ import VerifiedGarbage.Proof.MlKem.X86.EncV
 import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Table
 
-/-!
-# ML-DSA (FIPS 204) on x86 (32-bit): signing messages
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. Each artifact is
-made from its function's `Api` (in `Spec/MlDsa/Contract.lean`, reviewed with
-the contract). The emitter adds the `# Safety` items that depend on the target
-(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
-the contract.
-
-The function saves its caller's registers in a frame of 16 bytes below the
-return address; below that, its calls push at most 5 arguments and the return
-address, and the signing function on `μ` uses 96 bytes
-(`stack := 16 + 20 + 4 + 96 = 136`).
--/
+/-! # ML-DSA (FIPS 204) on x86 (32-bit): signing messages -/
 
 @[expose] public section
 

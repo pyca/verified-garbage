@@ -5,15 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointP384
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# P-384's point addition and doubling on PPC64LE
-
-`vg_p384_point_add` and `vg_p384_point_double`
-(`Spec/Weierstrass/Point.lean`), calling the Montgomery functions of
-P-384's prime. A generic file (see `TCB/Emit.lean`) over P-384's group law
-`h`, the variant `Variants/P384/PPC64LE/Law.lean`, which gives Fermat's
-little theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # P-384's point addition and doubling on PPC64LE -/
 
 @[expose] public section
 

@@ -6,13 +6,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
-/-!
-# SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86-64
-
-`update` and `finalize`, which call the compression function, are emitted
-once for each implementation of it, by SHA-512's variants of `MdHash`
-(`Variants/MdHash/X86_64/Sha512*.lean`, `Generic/MdHash/X86_64/Stream.lean`).
--/
+/-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86-64 -/
 
 @[expose] public section
 

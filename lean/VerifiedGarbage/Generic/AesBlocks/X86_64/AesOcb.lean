@@ -110,24 +110,7 @@ public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Spec.Ccm.Contract
 
-/-!
-# AES-OCB (RFC 7253) on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and
-`vg_aes_expand_key_scratch`, are emitted once for each implementation
-(`Variants/AesBlocks/X86_64/`), named with its suffix (e.g.
-`vg_aes_ocb_seal_aesni`), and need its CPU features.
-
-The code of each uses 8 bytes of stack: the return address of its calls,
-whose callees use no stack; `seal` and `open` also read their arguments
-after the sixth, from the data to the working space, from the stack above
-their return address. Each keeps its working space, its last argument, in a
-frame on the stack: of 2568 bytes for `init` (`Verified.stackScratch`), and
-of 3632 bytes for `seal` and `open` (3584 bytes of working space, which
-includes the table of `L_j`), which also holds a copy of their four other
-stack arguments (`Verified.stackArgScratch`).
--/
+/-! # AES-OCB (RFC 7253) on x86-64 -/
 
 @[expose] public section
 

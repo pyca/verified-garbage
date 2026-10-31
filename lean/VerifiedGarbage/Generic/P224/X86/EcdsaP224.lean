@@ -109,12 +109,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# ECDSA over P-224 (FIPS 186-5) on x86 (32-bit)
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/X86/Law.lean`.
--/
+/-! # ECDSA over P-224 (FIPS 186-5) on x86 (32-bit) -/
 
 @[expose] public section
 

@@ -51,23 +51,7 @@ import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Ocb.State
 
-/-!
-# AES-OCB (RFC 7253) on AArch64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and
-`vg_aes_expand_key_scratch`, are emitted once for each implementation
-(`Variants/AesBlocks/AArch64/`), named with its suffix (e.g.
-`vg_aes_ocb_seal_aes`), and need its CPU features.
-
-The functions' calls (`bl`) keep the return address in `x30`, which they
-save, with the registers they use, in their working space (`work` or
-`scratch`), so their code uses no stack; `seal` and `open` read their last
-three arguments, `tag`, `tag_len` and `work`, from the stack. Each keeps its
-working space, its last argument, in a frame on the stack: of 2560 bytes for
-`init` (`Verified.stackScratch`), and of 2592 bytes for `seal` and `open`,
-which also holds a copy of `tag` and `tag_len` (`Verified.stackArgScratch`).
--/
+/-! # AES-OCB (RFC 7253) on AArch64 -/
 
 @[expose] public section
 

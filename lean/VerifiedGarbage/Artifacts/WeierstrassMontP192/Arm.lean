@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery arithmetic modulo P-192's `p` and `n` on ARMv7
-
-The functions of `Artifacts/WeierstrassMont/Arm.lean` for P-192's moduli,
-in three 64-bit words. -/
+/-! # Montgomery arithmetic modulo P-192's `p` and `n` on ARMv7 -/
 
 @[expose] public section
 

@@ -99,16 +99,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
-/-!
-# P-384's base point multiplication on x86-64
-
-`vg_p384_mul_base` (`Spec/Weierstrass/MulBase.lean`), which the signature
-and the public key derivation call, and its `_adx` form with BMI2's and
-ADX's products and AVX2's selection. A generic file (see `TCB/Emit.lean`)
-over P-384's group law and inversions `h`, the variant
-`Variants/P384/X86_64/Law.lean`: the comb's proof takes the group law, and
-the curve's facts (`p384_ok`) its inversions.
--/
+/-! # P-384's base point multiplication on x86-64 -/
 
 @[expose] public section
 

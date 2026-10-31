@@ -6,14 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# brainpoolP256r1's check of a public point on x86-64
-
-`vg_brainpoolp256r1_check_point` (`Spec/Weierstrass/CheckPoint.lean`), which ECDH and
-verification call. A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law and inversions
-`h`, the variant `Variants/BrainpoolP256r1/X86_64/Law.lean`, whose inversions'
-soundness the proofs of the configuration take.
--/
+/-! # brainpoolP256r1's check of a public point on x86-64 -/
 
 @[expose] public section
 

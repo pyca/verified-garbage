@@ -15,19 +15,7 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed25519 (RFC 8032) on x86-64, over SHA-512
-
-Signing with the cached SHA-512 digest of the seed and public key, and verification, are
-emitted for every SHA-512 compression backend carried by `MdHash.sha512`, and for
-each field multiplication of the Ed25519 functions they call (the baseline's,
-and BMI2's and ADX's, `_adx`), and with AVX512_IFMA (`_ifma`): verification for
-its windows, signing for its comb (`vg_ed25519_scalar_base_ifma`). Each operation includes
-its streaming hash calls and carries the backend's suffix and CPU features, then the field's.
-Key derivation, which hashes no more than the seed, takes its digest
-(`Artifacts/Ed25519PublicKeyExpanded/X86_64.lean`).
-Other hash families emit no Ed25519 artifacts.
--/
+/-! # Ed25519 (RFC 8032) on x86-64, over SHA-512 -/
 
 @[expose] public section
 

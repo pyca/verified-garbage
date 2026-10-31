@@ -63,15 +63,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
 import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
 
-/-!
-# brainpoolP384r1's point addition and doubling on x86 (32-bit)
-
-`vg_brainpoolp384r1_point_add` and `vg_brainpoolp384r1_point_double`
-(`Spec/Weierstrass/Point.lean`), calling the Montgomery functions of
-brainpoolP384r1's prime. A generic file (see `TCB/Emit.lean`) over brainpoolP384r1's group law
-`h`, the variant `Variants/BrainpoolP384r1/X86/Law.lean`, which gives Fermat's little
-theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # brainpoolP384r1's point addition and doubling on x86 (32-bit) -/
 
 @[expose] public section
 

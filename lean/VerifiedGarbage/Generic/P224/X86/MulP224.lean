@@ -6,14 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.P224.MulVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.X86.P224.MulLit
 
-/-!
-# P-224's point multiplication on x86 (32-bit)
-
-`vg_p224_mul` (`Spec/Weierstrass/Mul.lean`), which the signature, the
-public key derivation, verification and ECDH call. A generic file (see
-`TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/X86/Law.lean`.
--/
+/-! # P-224's point multiplication on x86 (32-bit) -/
 
 @[expose] public section
 

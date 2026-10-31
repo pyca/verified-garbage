@@ -5,9 +5,7 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 
-/-!
-# scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on x86-64
--/
+/-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on x86-64 -/
 
 @[expose] public section
 

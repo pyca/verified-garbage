@@ -59,22 +59,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
-/-!
-# RSAES-OAEP decryption on x86-64
-
-A generic file of three interfaces (see `TCB/Emit.lean`):
-`vg_rsa_oaep_<H>_mgf1_<G>_decrypt` calls the streaming functions of `H`,
-made with the compression function of its `MdHash` variant `v` (for
-`lHash`), and of `G`, made with that of its variant `v2` (for MGF1), and
-`vg_rsa_private_checked` calling an implementation `c` of
-`vg_rsa_private_crt` (`Variants/RsaPrivateCrt/X86_64/`). It is emitted for
-the pairs of hash functions `Inst.emitted` says, with each `c`, named by
-`Emit.qualifiedName` (`Inst.parts`, then `crt`), and needs all three's CPU
-features.
-
-Its stack is its frame, a return address and `vg_rsa_private_checked`'s
-3256 bytes, which are more than the hash functions use.
--/
+/-! # RSAES-OAEP decryption on x86-64 -/
 
 @[expose] public section
 

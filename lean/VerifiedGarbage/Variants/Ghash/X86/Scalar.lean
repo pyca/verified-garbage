@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 
-/-!
-# The implementation of `vg_ghash` on x86: Scalar
-
-A variant of `Ghash` on x86 (see `TCB/Emit.lean`): the baseline ISA: `vg_ghash`.
--/
+/-! # The implementation of `vg_ghash` on x86: Scalar -/
 
 @[expose] public section
 

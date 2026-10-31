@@ -3,14 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 scalar arithmetic on PPC64LE
-
-The signatures and documentation come from the reviewed Ed448 API. These
-building blocks reduce and combine scalars modulo the subgroup order with
-baseline integer instructions; they neither hash messages nor implement
-signing by themselves.
--/
+/-! # Ed448 scalar arithmetic on PPC64LE -/
 
 @[expose] public section
 

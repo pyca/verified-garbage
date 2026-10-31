@@ -40,31 +40,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Gcm.SealGather
 
-/-!
-# AES-GCM (NIST SP 800-38D) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_ctr32` with its `vg_aes_expand_key_scratch` and
-of `vg_ghash`, are emitted once for each combination (`Variants/AesGcm/X86/`),
-named with its suffix (e.g. `vg_aes_gcm_seal_aesni_pclmul`), and need its CPU
-features: `init` only AES's, `stream_init` and `stream_aad` only GHASH's.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there. The emitter adds the `# Safety` items that depend on the target
-(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
-the contract.
-
-Each function calls `vg_aes_ctr32` (six stack arguments) or `vg_ghash`
-(five) in a frame of its own, so uses 28 bytes of stack with the return
-address (24 for `stream_init` and `stream_aad`, which call only
-`vg_ghash`). Every function also keeps its working space in a frame of its own, which
-copies its arguments passed on the stack: 2580 bytes for `init`, 2584 for
-`stream_init`, 2592 for `stream_aad`, 2600 for `stream_finish`, 2604 for
-`stream_encrypt`, `stream_decrypt`, `stream_verify` and `seal`, and 2608 for
-`open`. `seal_gather` copies the slices to `dst` and calls `seal` on them
-there, from a frame of 48 bytes (`Proof/AesGcm/X86/Gather/`).
--/
+/-! # AES-GCM (NIST SP 800-38D) on x86 -/
 
 @[expose] public section
 

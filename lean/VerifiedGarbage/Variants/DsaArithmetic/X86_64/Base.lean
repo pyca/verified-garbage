@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Base
 
-/-! # Baseline x86-64 Montgomery arithmetic for DSA
-
-Reuse RSA's shared Montgomery kernel to avoid duplicating it at each
-arithmetic site, including the squarings in R² setup. The secret-exponent
-windows square by `vg_rsa_lazy_mont_mul`.
--/
+/-! # Baseline x86-64 Montgomery arithmetic for DSA -/
 
 @[expose] public section
 

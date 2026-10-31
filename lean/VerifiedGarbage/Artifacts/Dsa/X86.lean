@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.Registration
 
-/-! DSA signing with a supplied or a sampled nonce, and verification, on baseline i686. -/
+/-! # DSA signing with a supplied or a sampled nonce, and verification, on baseline i686 -/
 
 @[expose] public section
 

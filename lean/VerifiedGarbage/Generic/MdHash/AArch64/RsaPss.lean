@@ -6,20 +6,7 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.Rust
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Instances
 
-/-!
-# EMSA-PSS's encoding and its check on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_pss_<H>_mgf1_<H>_encode` and
-`vg_rsa_pss_<H>_mgf1_<H>_check_encoding`, for the hash function of an
-`MdHash` variant `v` with MGF1 over the same hash function, calling `v`'s
-compression function, are emitted once for each variant, named with its
-suffix (e.g. `vg_rsa_pss_sha256_mgf1_sha256_encode_sha2`). RSASSA-PSS's
-signing and verification call them (`Generic/MdHash/RsaPrivateCrt/AArch64/RsaPss.lean`,
-`Generic/MdHash/RsaPublicPrecomputed/AArch64/RsaPss.lean`).
-
-Each one's stack is its frame and 16 bytes below it, for the hash
-function's `init` (its compression function has no frame).
--/
+/-! # EMSA-PSS's encoding and its check on AArch64 -/
 
 @[expose] public section
 

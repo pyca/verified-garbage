@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontSecp256k1
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery arithmetic modulo secp256k1's `p` and `n` on PPC64LE
-
-The functions of `Artifacts/WeierstrassMont/PPC64LE.lean` for secp256k1's moduli, in four 64-bit words. -/
+/-! # Montgomery arithmetic modulo secp256k1's `p` and `n` on PPC64LE -/
 
 @[expose] public section
 

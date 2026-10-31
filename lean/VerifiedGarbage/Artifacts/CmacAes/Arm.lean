@@ -4,20 +4,7 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
 public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-CMAC (NIST SP 800-38B) on ARMv7
-
-Each function calls `vg_aes_ctr32` in a frame that pushes its two stack
-arguments, so uses 8 bytes of stack. The streaming functions call those:
-`init` calls `vg_cmac_aes_subkeys` (and `vg_aes_expand_key_scratch`, which uses no
-stack), so uses 8 bytes; `absorb` and `finish` call `vg_cmac_aes_update`
-and `vg_cmac_aes_finalize` in a frame that pushes their two stack arguments,
-so use 16.
-
-The streaming functions keep their working space in a frame of their own
-on the stack (`Proof/CmacAes/Stream/Arm/Frame.lean`): their `stack` is that
-frame and the stack their code uses below it.
--/
+/-! # AES-CMAC (NIST SP 800-38B) on ARMv7 -/
 
 @[expose] public section
 

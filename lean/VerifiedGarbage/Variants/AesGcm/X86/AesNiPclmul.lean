@@ -3,11 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 
-/-!
-# The functions AES-GCM calls on x86: AesNiPclmul
-
-A variant of `AesGcm` on x86 (see `TCB/Emit.lean`): AES-NI for the cipher (`vg_aes_ctr32_aesni`, `vg_aes_expand_key_scratch_aesni`) and PCLMULQDQ for the hash (`vg_ghash_pclmul`).
--/
+/-! # The functions AES-GCM calls on x86: AesNiPclmul -/
 
 @[expose] public section
 

@@ -141,13 +141,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
-/-!
-# ECDH over P-256 (SP 800-56A) on x86-64
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law,
-inversions and prime order `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
-multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
--/
+/-! # ECDH over P-256 (SP 800-56A) on x86-64 -/
 
 @[expose] public section
 

@@ -83,16 +83,7 @@ import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# brainpoolP256r1's group law, on x86 (32-bit)
-
-The variant of `BrainpoolP256r1` on x86 (32-bit) (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of brainpoolP256r1's functions take, `Proof.BrainpoolP256r1.law` and
-the soundness of the inversions by divsteps modulo a prime, whose proofs need Mathlib's algebra. Their registration files are generic over it
-(`Generic/BrainpoolP256r1/X86/`, and `Generic/<Iface>/BrainpoolP256r1/X86/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # brainpoolP256r1's group law, on x86 (32-bit) -/
 
 @[expose] public section
 

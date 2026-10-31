@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.Ffdh.Arm.Umaal
 
-/-! The Umaal implementation of native ARMv7 FFDH. -/
+/-! # The Umaal implementation of native ARMv7 FFDH -/
 
 @[expose] public section
 namespace VG.Variants.Ffdh.Arm.Umaal

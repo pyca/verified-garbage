@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Deriving an imported scalar's public value inherits every shared RSA Montgomery backend. -/
+/-! # Deriving an imported scalar's public value inherits every shared RSA Montgomery backend -/
 
 @[expose] public section
 namespace VG.Generic.RsaMont.Arm.DerivePublic

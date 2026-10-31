@@ -4,14 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Ed448.RISCV64.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 scalar arithmetic on RISC-V
-
-The signatures and documentation come from the reviewed Ed448 API. These
-building blocks reduce and combine scalars modulo the subgroup order with
-baseline integer instructions; they neither hash messages nor implement
-signing by themselves.
--/
+/-! # Ed448 scalar arithmetic on RISC-V -/
 
 @[expose] public section
 

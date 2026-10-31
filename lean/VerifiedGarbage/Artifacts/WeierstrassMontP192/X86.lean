@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 
-/-! # Montgomery arithmetic modulo P-192's `p` and `n` on x86 (32-bit)
-
-The functions of `Artifacts/WeierstrassMont/X86.lean` for P-192's moduli,
-in three 64-bit words. -/
+/-! # Montgomery arithmetic modulo P-192's `p` and `n` on x86 (32-bit) -/
 
 @[expose] public section
 

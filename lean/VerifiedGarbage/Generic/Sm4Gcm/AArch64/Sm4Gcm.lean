@@ -6,28 +6,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SM4-GCM (NIST SP 800-38D with SM4, RFC 8998) on AArch64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementation `v` of `vg_ghash`, are emitted once for each
-(`Variants/Sm4Gcm/AArch64/`), named with its suffix (e.g.
-`vg_sm4_gcm_seal_aes`), and need its CPU features. `vg_sm4_gcm_init`, which
-calls no GHASH, is in `Artifacts/Sm4Gcm/AArch64.lean`. **Review note**: `sig`
-and `doc` are trusted, as they tie the Rust caller to the contract; these
-artifacts are made from each function's `Api` (in `Spec/`, reviewed with the
-contract). The emitter adds the `# Safety` items that depend on the target
-(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
-the contract.
-
-The functions encrypt with `vg_sm4_ctr32` (baseline AArch64, no CPU
-features). Their calls (`bl`) keep the return address in `x30`, which they
-save in the working space; `vg_sm4_ctr32` uses 3264 bytes of stack below
-theirs. `seal` and `open` read their last arguments from the stack. Every
-function keeps its working space in a frame of 768 bytes, or, for `seal` and
-`open`, 784 bytes that also hold a copy of their stack arguments. `stream_init` and
-`stream_aad` are AES-GCM's code and proofs, under SM4-GCM's names.
--/
+/-! # SM4-GCM (NIST SP 800-38D with SM4, RFC 8998) on AArch64 -/
 
 @[expose] public section
 

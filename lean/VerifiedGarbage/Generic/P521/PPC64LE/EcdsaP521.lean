@@ -12,12 +12,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P521.Lit
 
-/-!
-# ECDSA signatures over P-521 (FIPS 186-5 §6.4.1) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
-`Variants/P521/PPC64LE/Law.lean`.
--/
+/-! # ECDSA signatures over P-521 (FIPS 186-5 §6.4.1) on PPC64LE -/
 
 @[expose] public section
 

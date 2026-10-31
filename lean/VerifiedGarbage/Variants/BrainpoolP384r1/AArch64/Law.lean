@@ -93,17 +93,7 @@ import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Weierstrass.Words
 
-/-!
-# brainpoolP384r1's group law and inversions, on AArch64
-
-The variant of `BrainpoolP384r1` on AArch64 (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of brainpoolP384r1's functions take, `Proof.BrainpoolP384r1.law` and the
-soundness of the inversions by divsteps modulo a prime (`InvSounds`), whose
-proofs need Mathlib's algebra. Their registration files are generic over it
-(`Generic/BrainpoolP384r1/AArch64/`, and `Generic/<Iface>/BrainpoolP384r1/AArch64/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # brainpoolP384r1's group law and inversions, on AArch64 -/
 
 @[expose] public section
 

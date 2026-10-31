@@ -57,7 +57,7 @@ import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 
-/-! The complete strict verification equation on baseline i686. -/
+/-! # The complete strict verification equation on baseline i686 -/
 
 @[expose] public section
 

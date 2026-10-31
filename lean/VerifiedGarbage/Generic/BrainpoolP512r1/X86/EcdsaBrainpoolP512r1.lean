@@ -115,12 +115,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# ECDSA over brainpoolP512r1 (FIPS 186-5) on x86 (32-bit)
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP512r1's group law `h`, the variant
-`Variants/BrainpoolP512r1/X86/Law.lean`.
--/
+/-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on x86 (32-bit) -/
 
 @[expose] public section
 

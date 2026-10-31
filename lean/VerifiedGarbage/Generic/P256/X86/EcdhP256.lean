@@ -114,12 +114,7 @@ import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# ECDH over P-256 (SP 800-56A) on x86 (32-bit)
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/X86/Law.lean`.
--/
+/-! # ECDH over P-256 (SP 800-56A) on x86 (32-bit) -/
 
 @[expose] public section
 

@@ -4,12 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Variant
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 
-/-!
-# `vg_poly1305_blocks` on x86-64: with AVX-512
-
-A variant of `Poly1305Blocks` on x86-64 (see `TCB/Emit.lean`):
-`vg_poly1305_blocks_avx512`, which needs AVX, AVX-512F and AVX2.
--/
+/-! # `vg_poly1305_blocks` on x86-64: with AVX-512 -/
 
 @[expose] public section
 

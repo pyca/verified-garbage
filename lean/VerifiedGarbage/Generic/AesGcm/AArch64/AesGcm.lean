@@ -95,31 +95,7 @@ import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Proof.Gcm.SealGather
 
-/-!
-# AES-GCM (NIST SP 800-38D) on AArch64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and
-`vg_ghash`, are emitted once for each combination
-(`Variants/AesGcm/AArch64/`), named with its suffix (e.g.
-`vg_aes_gcm_seal_aes`), and need its CPU features. **Review note**: `sig` and
-`doc` are trusted, as they tie the Rust caller to the contract; these
-artifacts are made from each function's `Api` (in `Spec/`, reviewed with the
-contract). The emitter adds the `# Safety` items that depend on the target
-(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
-the contract.
-
-Each function needs the CPU features of the implementations it calls:
-`init` calls only AES's, `stream_init` and `stream_aad` only GHASH's. With
-the interleaved loops (`GcmImpl.stitch`), the functions with the powers also
-need `FEAT_SHA3`.
-
-The functions' calls (`bl`) keep the return address in `x30`, which they
-save in the working space. `seal` and `open` read their last arguments from
-the stack. Every function keeps its working space in a frame of 2560 bytes,
-or, for `seal` and `open`, 2576 and 2592 bytes that also hold a copy of
-their stack arguments.
--/
+/-! # AES-GCM (NIST SP 800-38D) on AArch64 -/
 
 @[expose] public section
 

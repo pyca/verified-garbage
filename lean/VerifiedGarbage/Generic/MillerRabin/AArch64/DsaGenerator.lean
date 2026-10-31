@@ -3,11 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # DSA's generator stages call every shared AArch64 Miller–Rabin implementation
-
-One function for each width of p DSA parameter generation produces: 1024,
-2048 and 3072 bits. Every hash backend's parameter generation calls them,
-rather than inlining the generator search and the domain check. -/
+/-! # DSA's generator stages call every shared AArch64 Miller–Rabin implementation -/
 
 @[expose] public section
 namespace VG.Generic.MillerRabin.AArch64.DsaGenerator

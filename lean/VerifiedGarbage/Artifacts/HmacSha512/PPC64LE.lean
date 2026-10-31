@@ -4,23 +4,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# HMAC-SHA-512 (RFC 2104) on PPC64LE
-
-The code for every Merkle–Damgård hash function with verified PPC64LE
-streaming functions (`Impl/Hmac/Stream/PPC64LE.lean`), calling SHA-512's.
-`init_scratch` sets both states' hash values with the streaming `init` and
-absorbs `K₀ ⊕ ipad` and `K₀ ⊕ opad` with `update`; `finalize_scratch`
-finalizes the inner state, makes it represent the outer block, absorbs the
-inner digest and finalizes again. Both take their working space as an
-argument. `init` takes a key of any length (`initAnyKeyApi`), and chooses on
-entry by its public length: a key of at most a block goes to
-`init_scratch`'s code in a frame of its own holding its working space; a
-longer key is first hashed with the streaming functions into the working
-space of a frame that it zeroes before returning, and `init_scratch` is
-called with its digest. Both paths take the same stack. `finalize` keeps its
-working space in a frame of its own too.
--/
+/-! # HMAC-SHA-512 (RFC 2104) on PPC64LE -/
 
 @[expose] public section
 

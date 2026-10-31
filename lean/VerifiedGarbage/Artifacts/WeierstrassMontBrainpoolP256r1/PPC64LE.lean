@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontBrainpoolP256r1
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # Montgomery arithmetic modulo brainpoolP256r1's `p` and `n` on PPC64LE
-
-The functions of `Artifacts/WeierstrassMont/PPC64LE.lean` for brainpoolP256r1's moduli, in four 64-bit words. -/
+/-! # Montgomery arithmetic modulo brainpoolP256r1's `p` and `n` on PPC64LE -/
 
 @[expose] public section
 

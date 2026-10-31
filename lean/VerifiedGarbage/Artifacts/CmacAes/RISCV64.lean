@@ -4,20 +4,7 @@ public import VerifiedGarbage.Proof.CmacAes.RISCV64.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-CMAC (NIST SP 800-38B) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. RISC-V has one implementation of the block functions, so these are
-not generic over them. A call (`jal`) stores nothing in memory, and the
-return address is saved in the scratch buffer, so
-`vg_cmac_aes_subkeys`, `vg_cmac_aes_update` and `vg_cmac_aes_finalize` use
-no stack.
-
-The streaming functions keep their working space in a frame of their own
-on the stack (`Proof/CmacAes/Stream/RISCV64/Frame.lean`): their `stack` is
-that frame.
--/
+/-! # AES-CMAC (NIST SP 800-38B) on RISC-V -/
 
 @[expose] public section
 

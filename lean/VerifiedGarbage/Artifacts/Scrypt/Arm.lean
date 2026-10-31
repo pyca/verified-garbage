@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on 32-bit ARM
-
-`vg_scrypt` calls `vg_pbkdf2_hmac_sha256_scratch` (registered in
-`Artifacts/Pbkdf2Sha256/Arm.lean`), the one implementation of PBKDF2-HMAC-SHA256
-on this target, and `vg_scrypt_romix`. Its `stack` is the 40 bytes the frame
-of PBKDF2's stack arguments and PBKDF2's own frames use.
--/
+/-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on 32-bit ARM -/
 
 @[expose] public section
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Fused internal ML-DSA arithmetic with explicit signed output contracts. -/
+/-! # Fused internal ML-DSA arithmetic with explicit signed output contracts -/
 
 @[expose] public section
 

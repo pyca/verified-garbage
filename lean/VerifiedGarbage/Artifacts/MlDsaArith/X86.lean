@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ML-DSA (FIPS 204) on x86: the arithmetic of polynomials
-
-The functions call no other one, and save their caller's registers in a
-frame of 16 bytes below the return address (`stack := 16`).
--/
+/-! # ML-DSA (FIPS 204) on x86: the arithmetic of polynomials -/
 
 @[expose] public section
 

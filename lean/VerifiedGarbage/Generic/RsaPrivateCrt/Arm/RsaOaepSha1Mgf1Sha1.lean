@@ -167,17 +167,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.VfPass
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfY
 
-/-!
-# RSAES-OAEP decryption with SHA-1 and MGF1 with SHA-1 on ARMv7, for each implementation of the CRT
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_oaep_sha1_mgf1_sha1_decrypt`, calling
-`vg_rsa_private_checked` over an implementation `v` of `vg_rsa_private_crt`
-(`Variants/RsaPrivateCrt/Arm/`), is emitted once for each, named with its
-suffix, and needs its CPU features.
-
-It uses 3624 bytes of stack: the push of the registers (56 bytes), its
-frame (128 bytes) and the 3440 bytes of the call's.
--/
+/-! # RSAES-OAEP decryption with SHA-1 and MGF1 with SHA-1 on ARMv7, for each implementation of the CRT -/
 
 @[expose] public section
 

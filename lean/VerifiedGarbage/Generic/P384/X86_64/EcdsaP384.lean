@@ -126,14 +126,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
-/-!
-# ECDSA over P-384 (FIPS 186-5) on x86-64
-
-A generic file (see `TCB/Emit.lean`) over P-384's group law and
-inversions `h`, the variant `Variants/P384/X86_64/Law.lean`, for each
-multiplication: the baseline's, and BMI2's and ADX's, with the comb's
-selection by AVX2 in signing (`_adx`).
--/
+/-! # ECDSA over P-384 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
 

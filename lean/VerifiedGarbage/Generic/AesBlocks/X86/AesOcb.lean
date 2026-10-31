@@ -75,20 +75,7 @@ import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# AES-OCB (RFC 7253) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and
-`vg_aes_expand_key_scratch`, are emitted once for each implementation
-(`Variants/AesBlocks/X86/`), named with its suffix (e.g.
-`vg_aes_ocb_seal_aesni`), and need its CPU features.
-
-Each runs in a frame holding its working space and a copy of its stack
-arguments (`Proof/AesOcb/X86/Frame.lean`): 2608 bytes for `seal` and `open`
-(ten arguments), 2580 bytes for `init` (three), below which its calls use 24
-bytes (their five arguments and return address; the callees use no stack).
--/
+/-! # AES-OCB (RFC 7253) on x86 -/
 
 @[expose] public section
 

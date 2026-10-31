@@ -250,12 +250,7 @@ import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
-/-!
-# ECDSA over P-256 (FIPS 186-5) on AArch64
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/AArch64/Law.lean`.
--/
+/-! # ECDSA over P-256 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
 

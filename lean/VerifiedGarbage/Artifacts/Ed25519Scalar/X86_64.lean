@@ -3,13 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed25519 scalar reduction on x86-64
-
-The signature and documentation come from the reviewed Ed25519 API.
-This building block reduces a 64-bit word at a time using baseline integer
-instructions; it neither hashes messages nor implements signing by itself.
--/
+/-! # Ed25519 scalar reduction on x86-64 -/
 
 @[expose] public section
 

@@ -50,25 +50,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
-/-!
-# HMAC (RFC 2104) over a Merkle–Damgård hash function on x86-64
-
-A generic file (see `TCB/Emit.lean`): HMAC's `init` and `finalize`, the one
-implementation for every Merkle–Damgård hash function
-(`Impl/Pbkdf2/Md/X86_64.lean`), calling the variant's compression function
-(each once or twice), the hash function's streaming `init` and, in
-`finalize`, its streaming `finalize` made with that compression function, are
-emitted once for each variant (`Variants/MdHash/X86_64/`), named with its
-suffix (e.g. `vg_hmac_sha256_init_shani`). `init_scratch` and
-`finalize_scratch`, with their working space as an argument, are what
-PBKDF2's and ECDSA's code calls; `finalize` keeps its working space in a frame
-of its own. `init` takes a key of any length (`Impl/Pbkdf2/Md/AnyKey/X86_64.lean`):
-it runs `init_scratch` in a frame of its own for a key of at most a block,
-and for a longer key hashes it with the streaming functions, as `pbkdf2`
-hashes a long password, and calls `init_scratch` with its digest, in a larger
-frame of its own that it zeroes before returning (`initCode`). `stack` is
-that of the larger.
--/
+/-! # HMAC (RFC 2104) over a Merkle–Damgård hash function on x86-64 -/
 
 @[expose] public section
 

@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha1ShaNi
 
-/-!
-# SHA-1 on x86-64 with the SHA extensions
-
-A variant of `MdHash` on x86-64 (see `TCB/Emit.lean`): SHA-1, with `vg_sha1_compress_shani`, which needs the SHA extensions and SSSE3.
--/
+/-! # SHA-1 on x86-64 with the SHA extensions -/
 
 @[expose] public section
 

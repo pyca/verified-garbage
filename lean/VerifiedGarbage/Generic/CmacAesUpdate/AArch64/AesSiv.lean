@@ -43,21 +43,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 
-/-!
-# AES-SIV (RFC 5297) encryption and decryption on AArch64
-
-A generic file (see `TCB/Emit.lean`): `vg_aes_siv_encrypt` and
-`vg_aes_siv_decrypt`, calling an implementation `v` of `vg_cmac_aes_update`,
-and the CMAC functions and `vg_aes_ctr32` made with the implementation of
-AES that goes with it (`v.ctr`), are emitted once for each implementation
-of the update (`Variants/CmacAesUpdate/AArch64/`), named with its suffix
-(e.g. `vg_aes_siv_encrypt_aes_cbc`), and need its CPU features.
-
-Each function keeps its working space, 2576 bytes, in a frame of its own
-(`Proof/AesSiv/AArch64/Frame.lean`): its `stack` is that frame. Their calls
-(`bl`) keep the return address in `x30`, which they save in the working
-space.
--/
+/-! # AES-SIV (RFC 5297) encryption and decryption on AArch64 -/
 
 @[expose] public section
 

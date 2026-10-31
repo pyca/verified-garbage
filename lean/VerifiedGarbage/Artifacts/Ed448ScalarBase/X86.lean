@@ -12,13 +12,7 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 base-point multiplication on x86 (32-bit)
-
-The signature and documentation come from the reviewed Ed448 API. The
-reference ladder's agreement with the specification (`Proof/Ed448/Facts.lean`)
-is passed to the proof here, so that only registration files import it.
--/
+/-! # Ed448 base-point multiplication on x86 (32-bit) -/
 
 @[expose] public section
 

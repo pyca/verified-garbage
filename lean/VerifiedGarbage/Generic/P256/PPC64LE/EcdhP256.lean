@@ -8,12 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P256
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Lit
 
-/-!
-# ECDH over P-256 (SP 800-56A §5.7.1.2) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/PPC64LE/Law.lean`.
--/
+/-! # ECDH over P-256 (SP 800-56A §5.7.1.2) on PPC64LE -/
 
 @[expose] public section
 

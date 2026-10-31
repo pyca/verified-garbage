@@ -12,12 +12,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Lit
 
-/-!
-# ECDSA over P-256 (FIPS 186-5) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/PPC64LE/Law.lean`.
--/
+/-! # ECDSA over P-256 (FIPS 186-5) on PPC64LE -/
 
 @[expose] public section
 

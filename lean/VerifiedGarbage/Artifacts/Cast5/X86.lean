@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Cast5.X86.KeyVerified
 public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! CAST5 key expansion and ECB on baseline 32-bit x86. -/
+/-! # CAST5 key expansion and ECB on baseline 32-bit x86 -/
 
 @[expose] public section
 

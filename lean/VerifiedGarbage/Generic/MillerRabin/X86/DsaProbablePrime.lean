@@ -14,10 +14,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # DSA's probable-prime tests call every shared i686 Miller–Rabin implementation
-
-One function for each candidate size DSA parameter generation tests: q of
-160 and 256 bits, p of 1024, 2048 and 3072 bits. -/
+/-! # DSA's probable-prime tests call every shared i686 Miller–Rabin implementation -/
 
 @[expose] public section
 namespace VG.Generic.MillerRabin.X86.DsaProbablePrime

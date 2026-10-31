@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Shared-secret exponentiation inherits every shared RSA Montgomery backend. -/
+/-! # Shared-secret exponentiation inherits every shared RSA Montgomery backend -/
 
 @[expose] public section
 namespace VG.Generic.RsaMont.Arm.Exchange

@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P224.Comb -- shake: keep (p
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ECDSA over P-224 (FIPS 186-5) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/Arm/Law.lean`.
--/
+/-! # ECDSA over P-224 (FIPS 186-5) on 32-bit ARM -/
 
 @[expose] public section
 

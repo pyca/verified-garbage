@@ -3,13 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha1.X86.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SHA-1 (FIPS 180-4) on x86
-
-`init`. The compression function, and the streaming `update` and `finalize`
-made with it, are registered for each of its implementations
-(`Variants/Sha1/X86/`, `Generic/Sha1/X86/Stream.lean`).
--/
+/-! # SHA-1 (FIPS 180-4) on x86 -/
 
 @[expose] public section
 

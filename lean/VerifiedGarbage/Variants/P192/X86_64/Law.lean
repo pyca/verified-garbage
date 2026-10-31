@@ -94,17 +94,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
-/-!
-# p192's group law and inversions, on x86-64
-
-The variant of `P192` on x86-64 (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of p192's functions take, `Proof.P192.law` and the
-soundness of the inversions by divsteps modulo a prime (`InvSounds`), whose
-proofs need Mathlib's algebra. Their registration files are generic over it
-(`Generic/P192/X86_64/`, and `Generic/<Iface>/P192/X86_64/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # p192's group law and inversions, on x86-64 -/
 
 @[expose] public section
 

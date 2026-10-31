@@ -11,7 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Ed25519 public-key derivation from the seed's SHA-512 digest. -/
+/-! # Ed25519 public-key derivation from the seed's SHA-512 digest -/
 
 @[expose] public section
 

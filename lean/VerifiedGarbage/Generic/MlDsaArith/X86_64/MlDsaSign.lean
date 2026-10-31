@@ -31,14 +31,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
-/-!
-# ML-DSA (FIPS 204) on x86-64: signing
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which call an
-implementation `v` of the polynomial arithmetic (`vg_mldsa_ntt`, …), are
-emitted once for each implementation (`Variants/MlDsaArith/X86_64/`), named
-with its suffix (e.g. `vg_mldsa44_sign_avx2`), and need its CPU features.
--/
+/-! # ML-DSA (FIPS 204) on x86-64: signing -/
 
 @[expose] public section
 

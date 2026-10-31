@@ -4,19 +4,7 @@ public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-CMAC (NIST SP 800-38B) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. PPC64LE has one implementation of the block functions, so these are
-not generic over them. A call (`bl`) stores nothing in memory, so
-`vg_cmac_aes_subkeys`, `vg_cmac_aes_update` and `vg_cmac_aes_finalize` use
-no stack.
-
-The streaming functions keep their working space in a frame of their own
-on the stack (`Proof/CmacAes/Stream/PPC64LE/Frame.lean`): their `stack` is
-that frame.
--/
+/-! # AES-CMAC (NIST SP 800-38B) on PPC64LE -/
 
 @[expose] public section
 

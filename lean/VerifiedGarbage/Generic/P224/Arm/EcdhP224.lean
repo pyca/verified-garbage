@@ -63,12 +63,7 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.X25519.Arm.Limbs
 import VerifiedGarbage.Proof.X25519.Field
 
-/-!
-# ECDH over P-224 (SP 800-56A) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/Arm/Law.lean`.
--/
+/-! # ECDH over P-224 (SP 800-56A) on 32-bit ARM -/
 
 @[expose] public section
 

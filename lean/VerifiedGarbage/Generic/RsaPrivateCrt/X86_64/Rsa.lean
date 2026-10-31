@@ -91,19 +91,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 
-/-!
-# The checked RSA private-key operation on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_private_checked`, calling an
-implementation `v` of `vg_rsa_private_crt`, is emitted once for each
-implementation (`Variants/RsaPrivateCrt/X86_64/`), named with its suffix
-(e.g. `vg_rsa_private_checked_adx`), and needs its CPU features.
-
-It uses 3256 bytes of stack: a frame of 3240 bytes, which holds the CRT's
-result, the precomputed values of `n` and the stack arguments of its calls,
-the return address of its calls, and that of their calls of Montgomery
-multiplication, which uses no stack.
--/
+/-! # The checked RSA private-key operation on x86-64 -/
 
 @[expose] public section
 

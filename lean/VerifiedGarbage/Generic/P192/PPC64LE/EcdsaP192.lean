@@ -12,12 +12,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Lit
 
-/-!
-# ECDSA signatures over P-192 (FIPS 186-5 §6.4.1) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over P-192's group law `h`, the variant
-`Variants/P192/PPC64LE/Law.lean`.
--/
+/-! # ECDSA signatures over P-192 (FIPS 186-5 §6.4.1) on PPC64LE -/
 
 @[expose] public section
 

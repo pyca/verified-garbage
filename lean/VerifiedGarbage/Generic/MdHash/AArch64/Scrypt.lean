@@ -3,18 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# scrypt (RFC 7914 §6) on AArch64, over SHA-256
-
-A generic file (see `TCB/Emit.lean`): `vg_scrypt`, calling the
-`vg_pbkdf2_hmac_sha256_scratch` made with the variant's SHA-256 compression function
-(and `vg_scrypt_romix`), is emitted for every SHA-256 variant carried by
-`MdHash.sha256`, named with its suffix (e.g. `vg_scrypt_sha2`), and needs its
-CPU features. Other hash functions emit no scrypt artifact.
-
-The stack is 96 bytes: a 16-byte frame saving `x30`, a 64-byte one, and the
-16 bytes the frames of the functions called may use.
--/
+/-! # scrypt (RFC 7914 §6) on AArch64, over SHA-256 -/
 
 @[expose] public section
 

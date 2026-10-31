@@ -72,12 +72,7 @@ import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 
-/-!
-# secp256k1 public keys (FIPS 186-5 §A.2) on x86 (32-bit)
-
-A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
-`Variants/Secp256k1/X86/Law.lean`.
--/
+/-! # secp256k1 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
 
 @[expose] public section
 

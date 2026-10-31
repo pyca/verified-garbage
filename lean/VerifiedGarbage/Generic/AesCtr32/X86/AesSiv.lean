@@ -65,23 +65,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# AES-SIV (RFC 5297) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_ctr32` (through the CMAC functions made with
-it, and directly for CTR), are emitted once for each implementation
-(`Variants/AesCtr32/X86/`), named with its suffix (e.g.
-`vg_aes_siv_encrypt_aesni`), and need its CPU features.
-
-`init` keeps its working space in a frame of 2580 bytes holding a copy of
-its three stack arguments (`Proof/AesSiv/X86/Verified.lean`), below which
-its calls use 48 bytes; 2628 bytes in all. `encrypt` and `decrypt` keep
-theirs in a frame of 2612 bytes holding a copy of their seven stack
-arguments, below which they use 56 bytes (a call of a CMAC function, its six
-arguments and return address, and its own calls of `vg_aes_ctr32`); 2668
-bytes in all.
--/
+/-! # AES-SIV (RFC 5297) on x86 -/
 
 @[expose] public section
 

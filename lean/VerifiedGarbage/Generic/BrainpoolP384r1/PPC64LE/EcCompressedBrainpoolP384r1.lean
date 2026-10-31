@@ -8,13 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.Lit
 
-/-!
-# brainpoolP384r1 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE
-
-A generic file (see `TCB/Emit.lean`) over brainpoolP384r1's group law `h`, the variant
-`Variants/BrainpoolP384r1/PPC64LE/Law.lean`, which decompression's proof of its square
-root uses.
--/
+/-! # brainpoolP384r1 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/
 
 @[expose] public section
 

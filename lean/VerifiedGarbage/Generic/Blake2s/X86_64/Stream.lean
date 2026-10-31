@@ -29,13 +29,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-!
-# Streaming BLAKE2s on x86-64, for every compression backend
-
-The reviewed APIs supply signatures and contracts. Names carry the backend's
-suffix, and every streaming caller calls that backend's compression function.
-Initialization is backend-independent and stays in the registration file.
--/
+/-! # Streaming BLAKE2s on x86-64, for every compression backend -/
 
 @[expose] public section
 

@@ -88,15 +88,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 
-/-!
-# RSASSA-PKCS1-v1_5 signing on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_rsa_pkcs1_sign`, calling
-`vg_rsa_private_checked` for an implementation `v` of `vg_rsa_private_crt`,
-is emitted once for each implementation (`Variants/RsaPrivateCrt/X86_64/`),
-named with its suffix (e.g. `vg_rsa_pkcs1_sign_adx`), and needs its CPU
-features.
--/
+/-! # RSASSA-PKCS1-v1_5 signing on x86-64 -/
 
 @[expose] public section
 

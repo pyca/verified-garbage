@@ -16,19 +16,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.NttInv
 public import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# ML-KEM (FIPS 203) on x86
-
-The functions that call no other one save their caller's registers in a
-frame of 16 bytes below the return address (`stack := 16`).
-`vg_mlkem_sample_ntt` also calls the Keccak functions, each in a frame of its
-6 arguments (24 bytes), with the return address and the callee's 12 bytes
-below it (`stack := 56`). `vg_mlkem768_keygen`, `vg_mlkem768_encaps` and
-`vg_mlkem768_decaps` save their caller's registers in 16 bytes, and call
-`vg_mlkem_sample_ntt` in a frame of its 3 arguments (12 bytes), with the
-return address and the callee's 56 bytes below it (`stack := 88`); their
-other calls use less.
--/
+/-! # ML-KEM (FIPS 203) on x86 -/
 
 @[expose] public section
 

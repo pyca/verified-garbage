@@ -43,17 +43,7 @@ import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 
-/-!
-# secp256k1's point functions on 32-bit ARM
-
-`vg_secp256k1_point_add` (`Spec/Weierstrass/Point.lean`), which the comb
-calls, and `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`
-(`Spec/Weierstrass/Point0.lean`), which the ladders call (secp256k1's `a` is
-zero), calling the Montgomery functions of
-secp256k1's prime. A generic file (see `TCB/Emit.lean`) over secp256k1's group law
-`h`, the variant `Variants/Secp256k1/Arm/Law.lean`, which gives Fermat's little
-theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # secp256k1's point functions on 32-bit ARM -/
 
 @[expose] public section
 

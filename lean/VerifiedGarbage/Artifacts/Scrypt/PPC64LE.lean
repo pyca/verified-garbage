@@ -5,9 +5,7 @@ public import VerifiedGarbage.Proof.Scrypt.PPC64LE.RoMix
 public import VerifiedGarbage.Proof.Scrypt.PPC64LE.Whole.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on PPC64LE
--/
+/-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on PPC64LE -/
 
 @[expose] public section
 

@@ -45,17 +45,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
-/-!
-# ML-DSA (FIPS 204) on x86-64: verification
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which call an
-implementation `v` of the polynomial arithmetic (`vg_mldsa_ntt`, …), are
-emitted once for each implementation (`Variants/MlDsaArith/X86_64/`), named
-with its suffix (e.g. `vg_mldsa44_verify_avx2`), and need its CPU features.
-
-The stack is 32 bytes: the return address of a call of a primitive, and up
-to 24 bytes for its own calls (`vg_mldsa_rej_ntt_poly4`'s).
--/
+/-! # ML-DSA (FIPS 204) on x86-64: verification -/
 
 @[expose] public section
 

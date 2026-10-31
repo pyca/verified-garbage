@@ -4,20 +4,7 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64, in one pass
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. They are the variants `_vaes_vpclmul` and `_aesni_pclmul` of
-`vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` (whose instances for each
-implementation of the block functions are in
-`Generic/AesBlocks/X86_64/AesXts.lean`): they call nothing, and compute the
-tweaks of eight blocks at a time with a carry-less multiplication, keeping
-them in registers (`_vaes_vpclmul`) or in the scratch buffer
-(`_aesni_pclmul`).
-
-They write no stack; the 8 bytes are those of the shared precondition.
--/
+/-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64, in one pass -/
 
 @[expose] public section
 

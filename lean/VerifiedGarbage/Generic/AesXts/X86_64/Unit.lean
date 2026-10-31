@@ -3,18 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) of whole data units on x86-64
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt`, are
-emitted once for each implementation (`Variants/AesXts/X86_64/`), named
-with its suffix (e.g. `vg_aes_xts_encrypt_unit_vaes_vpclmul`), and need its
-CPU features.
-
-The stack is 16 bytes: the return addresses of the call of the whole-block
-function and of its call of a block function, if it makes one.
--/
+/-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) of whole data units on x86-64 -/
 
 @[expose] public section
 

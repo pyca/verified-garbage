@@ -148,21 +148,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
-/-!
-# RSAES-OAEP encryption with a precomputed public key on x86-64
-
-A generic file of three interfaces (see `TCB/Emit.lean`):
-`vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` calls the streaming functions
-of `H`, made with the compression function of its `MdHash` variant `v` (for
-`lHash`), and of `G`, made with that of its variant `v2` (for MGF1), and an
-implementation `c` of `vg_rsa_public_precomputed_checked`
-(`Variants/RsaPublicPrecomputed/X86_64/`). It is emitted for the pairs of hash
-functions `Inst.emitted` says, with each `c`, named by `Emit.qualifiedName`
-(`Inst.parts`, then `rsa`), and needs all three's CPU features.
-
-Its stack is its frame, a return address and what the hash functions'
-calls use, as `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`'s.
--/
+/-! # RSAES-OAEP encryption with a precomputed public key on x86-64 -/
 
 @[expose] public section
 

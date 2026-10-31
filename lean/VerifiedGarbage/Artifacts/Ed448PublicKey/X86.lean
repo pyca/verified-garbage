@@ -5,14 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 
-/-!
-# Ed448 public-key derivation on x86 (32-bit)
-
-The signature and documentation come from the reviewed Ed448 API. The proof
-of `vg_ed448_scalar_base` is passed to the caller's here, so that only this
-file imports it, with the reference ladder's agreement with the
-specification (`Proof/Ed448/Facts.lean`).
--/
+/-! # Ed448 public-key derivation on x86 (32-bit) -/
 
 @[expose] public section
 

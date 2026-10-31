@@ -4,12 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sm3.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SM3 (GB/T 32905-2016) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
--/
+/-! # SM3 (GB/T 32905-2016) on RISC-V -/
 
 @[expose] public section
 

@@ -12,16 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 
-/-!
-# P-521's group law, on x86 (32-bit)
-
-The variant of `P521` on x86 (32-bit) (see `TCB/Emit.lean`): not an implementation
-but the fact the proofs of P-521's functions take, `Proof.P521.law`, whose
-proof needs Mathlib's algebra. Their registration files are generic over it
-(`Generic/P521/X86/`, and `Generic/<Iface>/P521/X86/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-521's group law, on x86 (32-bit) -/
 
 @[expose] public section
 

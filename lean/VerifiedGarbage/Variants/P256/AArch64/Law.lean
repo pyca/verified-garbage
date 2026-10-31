@@ -101,18 +101,7 @@ import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 import VerifiedGarbage.Proof.Weierstrass.Words
 
-/-!
-# P-256's group law, on AArch64
-
-The variant of `P256` on AArch64 (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of P-256's functions take, `Proof.P256.law` and the
-soundness of the inversions by divsteps modulo a prime (`InvSounds`), whose
-proofs need Mathlib's algebra.
-Their registration files are generic over them
-(`Generic/P256/AArch64/`, and `Generic/<Iface>/P256/AArch64/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-256's group law, on AArch64 -/
 
 @[expose] public section
 

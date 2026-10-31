@@ -143,7 +143,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Inv
 import VerifiedGarbage.Proof.X25519.X86_64.Invert
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 
-/-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
+/-! # Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge -/
 
 @[expose] public section
 

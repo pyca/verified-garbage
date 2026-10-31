@@ -7,18 +7,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Enc.Verified
 public import VerifiedGarbage.Proof.RsaOaep.X86.Enc.Sat
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 
-/-!
-# RSAES-OAEP with SHA-512/224 and MGF1 with SHA-1 on x86: encryption, for each Sha1 backend
-
-A generic file (see `TCB/Emit.lean`):
-`vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_precomputed` hashes with the streaming and
-compression functions of a backend `v` (`Variants/Sha1/X86/`), is emitted
-once for each, named with its suffix, and needs its CPU features.
-
-It uses 208 bytes of stack: the push of the registers (16 bytes), its frame
-(144 bytes) and the 48 bytes of its calls': the hash functions', and the 44
-of `vg_rsa_public_precomputed_checked`.
--/
+/-! # RSAES-OAEP with SHA-512/224 and MGF1 with SHA-1 on x86: encryption, for each Sha1 backend -/
 
 @[expose] public section
 

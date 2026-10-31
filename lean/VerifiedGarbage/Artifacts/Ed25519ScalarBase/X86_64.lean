@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
+/-! # Complete unsigned scalar multiplication by the Ed25519 base point -/
 
 @[expose] public section
 

@@ -98,18 +98,7 @@ import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 import VerifiedGarbage.Proof.Weierstrass.Words
 
-/-!
-# P-521's group law, on AArch64
-
-The variant of `P521` on AArch64 (see `TCB/Emit.lean`): not an implementation
-but the facts the proofs of P-521's functions take, `Proof.P521.law` and the
-soundness of the inversions by divsteps modulo a prime (`InvSounds`) and
-its prime order (`Proof.P521.primeOrder`), whose proofs need Mathlib's algebra.
-Their registration files are generic over them
-(`Generic/P521/AArch64/`, and `Generic/<Iface>/P521/AArch64/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-521's group law, on AArch64 -/
 
 @[expose] public section
 

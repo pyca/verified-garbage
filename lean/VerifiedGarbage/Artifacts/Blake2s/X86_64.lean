@@ -4,13 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# BLAKE2s (RFC 7693) on x86-64
-
-The backend-independent initialization function. Compression and streaming
-callers are registered through `Variants/Blake2s/X86_64/` and
-`Generic/Blake2s/X86_64/Stream.lean`.
--/
+/-! # BLAKE2s (RFC 7693) on x86-64 -/
 
 @[expose] public section
 

@@ -4,22 +4,7 @@ public import VerifiedGarbage.Proof.AesXts.X86.Verified
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
-implementation `v` of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`,
-are emitted once for each implementation (`Variants/AesBlocks/X86/`), named
-with its suffix (e.g. `vg_aes_xts_encrypt_aesni`), and need its CPU
-features. The functions on whole data units call the whole-block functions
-with the same suffix (e.g. `vg_aes_xts_encrypt_unit_aesni` calls
-`vg_aes_xts_encrypt_aesni`).
-
-The stack of the whole-block functions is 24 bytes: the five arguments of
-the block function and the return address of its call. That of the
-functions on whole data units is 52: the six arguments of a whole-block
-function, the return address of its call, and its 24.
--/
+/-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86 -/
 
 @[expose] public section
 

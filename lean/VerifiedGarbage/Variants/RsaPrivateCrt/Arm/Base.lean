@@ -2,13 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Base
 
-/-!
-# `vg_rsa_private_crt` on ARMv7: the baseline
-
-A variant of `RsaPrivateCrt` on ARMv7 (see `TCB/Emit.lean`):
-`vg_rsa_private_crt`, checked with `vg_rsa_public_precompute` and
-`vg_rsa_public_precomputed_checked`. Its callers keep their plain names.
--/
+/-! # `vg_rsa_private_crt` on ARMv7: the baseline -/
 
 @[expose] public section
 

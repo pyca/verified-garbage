@@ -7,12 +7,7 @@ import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Argon2 compression on x86-64
-
-Registration for the scalar compression primitive. The API and contract
-come from the reviewed specification; the code and proof are untrusted.
--/
+/-! # Argon2 compression on x86-64 -/
 
 @[expose] public section
 

@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 
-/-!
-# The functions AES-GCM calls on x86-64: Vaes
-
-A variant of `AesGcm` on x86-64 (see `TCB/Emit.lean`): VAES for the cipher (`vg_aes_ctr32_vaes`, with `vg_aes_expand_key_scratch_aesni`) and `vg_ghash`.
--/
+/-! # The functions AES-GCM calls on x86-64: Vaes -/
 
 @[expose] public section
 

@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.Arm.P224.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# P-224 public keys (FIPS 186-5 §A.2) on 32-bit ARM
-
-A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
-`Variants/P224/Arm/Law.lean`.
--/
+/-! # P-224 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
 @[expose] public section
 

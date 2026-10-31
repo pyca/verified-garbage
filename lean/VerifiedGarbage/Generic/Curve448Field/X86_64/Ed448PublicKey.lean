@@ -16,13 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 
-/-!
-# Ed448 public-key derivation on x86-64
-
-The signature and documentation come from the reviewed Ed448 API. The
-reference ladder's agreement with the specification (`Proof/Ed448/Facts.lean`)
-is passed to the proof here, so that only registration files import it.
--/
+/-! # Ed448 public-key derivation on x86-64 -/
 
 @[expose] public section
 

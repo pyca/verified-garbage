@@ -50,20 +50,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 
-/-!
-# Streaming AES-CMAC's `absorb` on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_cmac_aes_absorb`, calling an
-implementation `v` of `vg_cmac_aes_update`, is emitted once for each
-implementation (`Variants/CmacAesUpdate/X86_64/`), named with its suffix
-(e.g. `vg_cmac_aes_absorb_aesni_cbc`), and needs its CPU features. Its
-buffering proof depends on the update's contract, not on how it chains.
-
-It keeps its working space in a frame of its own on the stack
-(`Proof/CmacAes/Stream/X86_64/Frame.lean`), below which its calls use at
-most 16 bytes: the return addresses of the call of `vg_cmac_aes_update` and
-of its call of `vg_aes_ctr32`.
--/
+/-! # Streaming AES-CMAC's `absorb` on x86-64 -/
 
 @[expose] public section
 

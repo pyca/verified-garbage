@@ -3,11 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # DSA's probable-prime tests call every shared AArch64 Miller–Rabin implementation
-
-One function for each candidate size DSA parameter generation tests: q of
-160 and 256 bits, p of 1024, 2048 and 3072 bits. Every hash backend's
-parameter generation calls them, rather than inlining the test. -/
+/-! # DSA's probable-prime tests call every shared AArch64 Miller–Rabin implementation -/
 
 @[expose] public section
 namespace VG.Generic.MillerRabin.AArch64.DsaProbablePrime

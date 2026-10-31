@@ -3,17 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCfb.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-CFB128 (NIST SP 800-38A §6.3) on ARMv7
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted. ARMv7 has one implementation of the block functions, so these are
-not generic over them.
-
-Each function calls `vg_aes_encrypt_blocks` (both directions use the
-forward cipher) in a frame that pushes its stack argument and `lr`, so uses
-8 bytes of stack.
--/
+/-! # AES-CFB128 (NIST SP 800-38A §6.3) on ARMv7 -/
 
 @[expose] public section
 

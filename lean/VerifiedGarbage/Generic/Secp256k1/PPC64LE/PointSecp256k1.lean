@@ -7,17 +7,7 @@ public import VerifiedGarbage.Impl.Secp256k1.Point
 public import VerifiedGarbage.Spec.Weierstrass.Point0
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# secp256k1's point doubling and affine addition on PPC64LE
-
-`vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`
-(`Spec/Weierstrass/Point0.lean`), which secp256k1's ladders call (its `a` is
-zero, so it needs no `vg_secp256k1_point_add` or `vg_secp256k1_point_double`
-here), calling the Montgomery functions of
-secp256k1's prime. A generic file (see `TCB/Emit.lean`) over secp256k1's group law
-`h`, the variant `Variants/Secp256k1/PPC64LE/Law.lean`, which gives Fermat's
-little theorem in `Fin p`, so that `R⁻¹ = R^(p-2)` in the contracts.
--/
+/-! # secp256k1's point doubling and affine addition on PPC64LE -/
 
 @[expose] public section
 

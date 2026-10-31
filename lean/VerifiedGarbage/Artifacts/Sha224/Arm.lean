@@ -3,14 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha256.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SHA-224 (FIPS 180-4) on ARMv7
-
-SHA-224 is SHA-256 from another initial hash value, and its digest the first
-28 bytes of the final hash value: its `init` and its `finalize`, which writes
-its digest, are its own, and it continues with SHA-256's `update`
-(`Artifacts/Sha256/`).
--/
+/-! # SHA-224 (FIPS 180-4) on ARMv7 -/
 
 @[expose] public section
 

@@ -20,16 +20,7 @@ import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.Group
 import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 
-/-!
-# P-256's group law, on PPC64LE
-
-The variant of `P256` on PPC64LE (see `TCB/Emit.lean`): not an implementation
-but the fact the proofs of P-256's functions take, `Proof.P256.law`, whose
-proof needs Mathlib's algebra. Their registration files are generic over it
-(`Generic/P256/PPC64LE/`, and `Generic/<Iface>/P256/PPC64LE/` for those generic over an
-implementation too), so that this file alone, of those that emit them,
-imports that algebra.
--/
+/-! # P-256's group law, on PPC64LE -/
 
 @[expose] public section
 

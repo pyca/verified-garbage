@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Ed448 scalar arithmetic on x86-64
-
-The signatures and documentation come from the reviewed Ed448 API. These
-building blocks reduce and combine scalars modulo the subgroup order with
-baseline integer instructions; they neither hash messages nor implement
-signing by themselves.
--/
+/-! # Ed448 scalar arithmetic on x86-64 -/
 
 @[expose] public section
 

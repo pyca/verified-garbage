@@ -6,15 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# P-192's point multiplication on AArch64
-
-`vg_p192_mul` (`Spec/Weierstrass/Mul.lean`), which the signature, the
-public key derivation, verification and ECDH call. A generic file (see
-`TCB/Emit.lean`) over P-192's group law and inversions `h`, the variant
-`Variants/P192/AArch64/Law.lean`: the ladder's proof takes the group law,
-and the curve's facts (`p192_ok`) its inversions.
--/
+/-! # P-192's point multiplication on AArch64 -/
 
 @[expose] public section
 

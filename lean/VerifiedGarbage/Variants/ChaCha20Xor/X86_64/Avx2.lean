@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 
-/-!
-# `vg_chacha20_xor` on x86-64: with AVX2
-
-A variant of `ChaCha20Xor` on x86-64 (see `TCB/Emit.lean`):
-`vg_chacha20_xor_avx2`, which needs AVX and AVX2.
--/
+/-! # `vg_chacha20_xor` on x86-64: with AVX2 -/
 
 @[expose] public section
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaMont.Arm.Umaal
 
-/-! The Umaal callable ARMv7 Montgomery arithmetic backend. -/
+/-! # The Umaal callable ARMv7 Montgomery arithmetic backend -/
 
 @[expose] public section
 namespace VG.Variants.RsaMont.Arm.Umaal

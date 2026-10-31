@@ -3,21 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# AES-SIV (RFC 5297) on PPC64LE
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; check them against the contract's `pre`/`post`. An artifact made
-from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there.
-
-`init` keeps its 2560-byte working space in a frame of 2592 bytes, and
-`encrypt` and `decrypt` theirs, of 2576 bytes, in a frame of 2608
-(`Proof/AesSiv/PPC64LE/Verified.lean`). A call (`bl`) stores nothing in
-memory, and the functions they call use no stack: their `stack` is that
-frame.
--/
+/-! # AES-SIV (RFC 5297) on PPC64LE -/
 
 @[expose] public section
 

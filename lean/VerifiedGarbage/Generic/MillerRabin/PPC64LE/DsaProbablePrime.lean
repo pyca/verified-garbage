@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Satisfiable
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # DSA's probable-prime tests call every shared PPC64LE Miller–Rabin round
-
-One function for each candidate size DSA parameter generation tests: q of
-160 and 256 bits, p of 1024, 2048 and 3072 bits. -/
+/-! # DSA's probable-prime tests call every shared PPC64LE Miller–Rabin round -/
 
 @[expose] public section
 namespace VG.Generic.MillerRabin.PPC64LE.DsaProbablePrime

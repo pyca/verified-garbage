@@ -39,28 +39,7 @@ import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
-/-!
-# HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64
-
-A generic file (see `TCB/Emit.lean`): HMAC's `init` and `finalize`, the one
-implementation for every Merkle–Damgård hash function
-(`Impl/Pbkdf2/Md/AArch64.lean`), calling the variant's compression function
-(each once or twice), the hash function's streaming `init` and, in
-`finalize`, its streaming `finalize` made with that compression function, are
-emitted once for each variant (`Variants/MdHash/AArch64/`), named with its
-suffix.
-
-`stack` is the 16 bytes below the stack pointer that the streaming
-functions may use for a frame saving `x30`. `init_scratch` and
-`finalize_scratch`, with their working space as an argument, are what
-PBKDF2's code calls; `finalize` keeps its working space in a frame of its own,
-above those. `init` takes a key of any length
-(`Impl/Pbkdf2/Md/AnyKey/AArch64.lean`): it runs `init_scratch` in a frame of
-its own for a key of at most a block, and for a longer key hashes it with the
-streaming functions, as `pbkdf2` hashes a long password, and calls
-`init_scratch` with its digest, in a larger frame of its own that it zeroes
-before returning (`initCode`). `stack` is that of the larger.
--/
+/-! # HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64 -/
 
 @[expose] public section
 

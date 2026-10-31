@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
 public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on AArch64
--/
+/-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on AArch64 -/
 
 @[expose] public section
 

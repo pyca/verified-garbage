@@ -4,23 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# PBKDF2-HMAC-SHA-1 (RFC 8018) on RISC-V: the iteration and the whole derivation
-
-The iteration is SHA-1's own (`Impl/Pbkdf2/Sha1/RISCV64.lean`): each step
-is two compressions inlined, of a block held in registers as words, since
-`U`'s 20 bytes and the padding of a `64 + 20`-byte message fill one block,
-and SHA-1's output words are the next block's first five; the key's hash
-values and `T` are kept in `scratch` as words. It keeps our caller's
-registers in `scratch` and uses no stack.
-
-The whole derivation, `pbkdf2`, is the one for every streaming hash function
-(`Impl/Pbkdf2/Whole/RISCV64.lean`), calling SHA-1's streaming `update`,
-HMAC's `init` and `finalize` and the iteration above, in two frames of its
-own: `iterate`'s working space, then our caller's registers, the key's
-states, `U`, `T` and `INT (i)`. `stack` adds the stack HMAC's functions use
-below them.
--/
+/-! # PBKDF2-HMAC-SHA-1 (RFC 8018) on RISC-V: the iteration and the whole derivation -/
 
 @[expose] public section
 

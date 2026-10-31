@@ -9,14 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! `keygen`, `encaps` and `decaps` of ML-KEM-768 and ML-KEM-1024, generic over
-a two-state Keccak permutation `x2` (`KeccakX2`) and a Keccak backend `v`
-(`Keccak`), as `Inst` says: with `vg_keccak_f1600_x2_sha3`, the paired
-sampling and fused arithmetic, with 16-bit coefficients, of `pairedArtifacts`, hashing one state at a
-time with `v`'s single-state permutation (`_x2_sha3`, and
-`_x2_sha3_keccak_sha3` with the SHA-3 backend's); with the baseline of both
-(the scalar backend), the code of `spongeArtifacts`, over the sponge functions
-of the backend; nothing for the baseline `x2` with the SHA-3 backend. -/
+/-! # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on AArch64, for each Keccak implementation -/
 
 @[expose] public section
 

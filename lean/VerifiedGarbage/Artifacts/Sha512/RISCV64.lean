@@ -4,15 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on RISC-V
-
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
-each made from its function's `Api` (in `Spec/`, reviewed with the contract).
-The members of the family share the compression function and `update`; each
-has its own `init` and, but for SHA-512, its own `finalize`, writing its
-digest.
--/
+/-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on RISC-V -/
 
 @[expose] public section
 

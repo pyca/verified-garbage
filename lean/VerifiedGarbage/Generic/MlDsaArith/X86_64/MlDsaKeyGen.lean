@@ -22,14 +22,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
 
-/-!
-# ML-DSA (FIPS 204) on x86-64: key generation
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which call an
-implementation `v` of the polynomial arithmetic (`vg_mldsa_ntt`, …), are
-emitted once for each implementation (`Variants/MlDsaArith/X86_64/`), named
-with its suffix (e.g. `vg_mldsa44_keygen_avx2`), and need its CPU features.
--/
+/-! # ML-DSA (FIPS 204) on x86-64: key generation -/
 
 @[expose] public section
 

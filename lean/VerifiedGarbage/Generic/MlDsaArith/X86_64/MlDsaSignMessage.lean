@@ -41,20 +41,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
-/-!
-# ML-DSA (FIPS 204) on x86-64: signing messages
-
-A generic file (see `TCB/Emit.lean`): the artifacts it lists, which call
-`vg_mldsa*_sign` with an implementation `v` of the polynomial arithmetic
-(`Variants/MlDsaArith/X86_64/`), are emitted once for each implementation,
-named with its suffix (e.g. `vg_mldsa44_sign_message_avx2`), and need its CPU
-features. **Review note**: `sig` and `doc` are trusted, as they tie the Rust
-caller to the contract; check them against the contract's `pre`/`post`. Each
-artifact is made from its function's `Api` (in `Spec/MlDsa/Contract.lean`,
-reviewed with the contract). The emitter adds the `# Safety` items that depend
-on the target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig`
-checks against the contract.
--/
+/-! # ML-DSA (FIPS 204) on x86-64: signing messages -/
 
 @[expose] public section
 

@@ -7,22 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-!
-# Deterministic ECDSA (RFC 6979) over brainpoolP384r1 with HMAC-SHA-384 on x86-64
-
-A generic file (see `TCB/Emit.lean`): `vg_ecdsa_brainpoolp384r1_sha384_sign`, calling
-HMAC-SHA-384's `init` and `finalize` and SHA-512's streaming `update` made
-with the variant's SHA-512 compression function, and `vg_ecdsa_brainpoolp384r1_sign`,
-is emitted for every SHA-384 variant carried by `MdHash.sha384`, named with
-its suffix (e.g. `vg_ecdsa_brainpoolp384r1_sha384_sign_avx2`), and needs its CPU
-features. Other hash functions emit no artifact here.
-
-The stack is 240 bytes: a 216-byte frame, and the 24 bytes below it that the
-calls use (`vg_ecdsa_brainpoolp384r1_sign` only its return address).
-
-It is generic over brainpoolP384r1's group law and inversions `h` too, the variant
-`Variants/BrainpoolP384r1/X86_64/Law.lean`.
--/
+/-! # Deterministic ECDSA (RFC 6979) over brainpoolP384r1 with HMAC-SHA-384 on x86-64 -/
 
 @[expose] public section
 

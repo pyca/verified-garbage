@@ -6,13 +6,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha512
 
-/-!
-# RSASSA-PSS verification with SHA-512/256 on x86
-
-It uses 208 bytes of stack: the push of the registers (16 bytes), its frame
-(144 bytes) and the 48 bytes of its calls': the hash function's, and the 44
-of `vg_rsa_public_precomputed_checked`.
--/
+/-! # RSASSA-PSS verification with SHA-512/256 on x86 -/
 
 @[expose] public section
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! The merged scalar multiply-add API, implemented with baseline integer instructions. -/
+/-! # The merged scalar multiply-add API, implemented with baseline integer instructions -/
 
 @[expose] public section
 
