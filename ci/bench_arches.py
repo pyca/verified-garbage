@@ -165,9 +165,10 @@ PLATFORMS = {
         "os": "ubuntu-24.04-ppc64le",
         "image": "ghcr.io/pyca/verified-garbage-runner:ppc64le",
     },
-    # The test image deliberately omits the C compiler and OpenSSL headers.
-    # Benchmark on the native host, with dependencies installed by bench.yml.
-    "riscv64": {"os": "ubuntu-24.04-riscv"},
+    "riscv64": {
+        "os": "ubuntu-24.04-riscv",
+        "image": "ghcr.io/pyca/verified-garbage-runner:riscv64",
+    },
 }
 
 # The directory of an architecture's verified functions, `src/asm/<dir>/`,

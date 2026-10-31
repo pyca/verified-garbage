@@ -8,7 +8,8 @@
 #   none, and can start no 32-bit container at all), and ARMv7's
 #   benchmarks, cross-compiled and run natively;
 # * linux/ppc64le (ppc64le), on a ppc64le runner: PPC64LE's tests, natively;
-# * linux/riscv64 (riscv64), on a riscv64 runner: RISC-V's tests, natively;
+# * linux/riscv64 (riscv64), on a riscv64 runner: RISC-V's tests and
+#   benchmarks, natively;
 # * linux/amd64 (lint), on an x86-64 runner: rustfmt and Clippy for every
 #   target the other jobs build (`rust-lint`, ci/rust_lint.py), with each
 #   Linux target's C cross compiler and OpenSSL, which the benchmarks' build
@@ -60,66 +61,19 @@ RUN printf '%s\n' \
 #   (see ci/arm32-run);
 # * in lint, the cross-compiler, libc and OpenSSL of each other Linux
 #   target's architecture;
-# * gcc and libc6-dev, rustc's linker (with binutils' readelf), but in
-#   riscv64 not what only compiling C uses: its jobs only link, and the
-#   benchmarks, whose build scripts compile C, are not built for riscv64
-#   (ci/bench_arches.py's PLATFORMS). So riscv64 leaves out gcc's C compiler
-#   (cc1, and the libraries only cc1 loads), the headers, the static
-#   runtime libraries rustc does not link (OpenMP, transactional memory,
-#   backtrace, gcov), binutils' programs but the linker, readelf, ar and
-#   strip, the linker's scripts (ld has them built in), glibc's character
-#   set converters, git's programs that actions/checkout does not run and
-#   the perl that only those need (perl-base, which is essential, stays);
+# * gcc and libc6-dev, rustc's linker and the benchmarks' C build scripts
+#   (with binutils' readelf);
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
 # * zstd, for actions/cache (through Swatinem/rust-cache);
 # * openssl, with which the benchmarks record OpenSSL's version (and which
 #   ca-certificates depends on);
 # * libssl-dev and pkg-config, for the benchmarks, which link OpenSSL
-#   (rust-openssl), but not in riscv64.
-RUN bench="libssl-dev pkg-config" && \
-    case "$(dpkg --print-architecture)" in \
+#   (rust-openssl).
+RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
-        ppc64el) foreign=; packages= ;; \
-        riscv64) foreign=; packages=; bench=; \
-            printf '%s\n' \
-                'path-exclude=/usr/libexec/gcc/*/*/cc1' \
-                'path-exclude=/usr/libexec/gcc/*/*/cc1plus' \
-                'path-exclude=/usr/lib/*/libisl.so*' \
-                'path-exclude=/usr/lib/*/libmpfr.so*' \
-                'path-exclude=/usr/include/*' \
-                'path-exclude=/usr/lib/gcc/*/*/include/*' \
-                'path-exclude=/usr/lib/gcc/*/*/libgomp*' \
-                'path-exclude=/usr/lib/*/libgomp*' \
-                'path-exclude=/usr/lib/gcc/*/*/libitm*' \
-                'path-exclude=/usr/lib/gcc/*/*/libbacktrace*' \
-                'path-exclude=/usr/lib/gcc/*/*/libgcov*' \
-                'path-exclude=/usr/bin/*gcov*' \
-                'path-exclude=/usr/lib/*/ldscripts/*' \
-                'path-exclude=/usr/bin/*-as' \
-                'path-exclude=/usr/bin/as' \
-                'path-exclude=/usr/bin/*objdump' \
-                'path-exclude=/usr/bin/*objcopy' \
-                'path-exclude=/usr/bin/*gprof*' \
-                'path-exclude=/usr/bin/*-nm' \
-                'path-exclude=/usr/bin/nm' \
-                'path-exclude=/usr/lib/*/libgprofng*' \
-                'path-exclude=/usr/lib/*/gconv/*' \
-                'path-exclude=/usr/lib/git-core/git-http-push' \
-                'path-exclude=/usr/lib/git-core/git-imap-send' \
-                'path-exclude=/usr/lib/git-core/git-http-fetch' \
-                'path-exclude=/usr/lib/git-core/git-http-backend' \
-                'path-exclude=/usr/lib/git-core/git-daemon' \
-                'path-exclude=/usr/lib/git-core/git-shell' \
-                'path-exclude=/usr/bin/git-shell' \
-                'path-exclude=/usr/lib/git-core/scalar' \
-                'path-exclude=/usr/bin/scalar' \
-                'path-exclude=/usr/share/gitweb/*' \
-                'path-exclude=/usr/lib/*/perl/*' \
-                'path-exclude=/usr/share/perl/*' \
-                'path-exclude=/usr/lib/*/libperl.so*' \
-                > /etc/dpkg/dpkg.cfg.d/excludes-riscv64 ;; \
+        ppc64el|riscv64) foreign=; packages= ;; \
         amd64) foreign="i386 arm64 armhf ppc64el riscv64"; \
             packages="gcc-i686-linux-gnu gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu"; \
             for a in $foreign; do packages="$packages libc6-dev:$a libssl-dev:$a"; done ;; \
@@ -134,7 +88,8 @@ RUN bench="libssl-dev pkg-config" && \
         ca-certificates \
         python3 \
         openssl \
-        $bench \
+        libssl-dev \
+        pkg-config \
         zstd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists
