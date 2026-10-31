@@ -67,8 +67,33 @@ def pack (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcHash where
   hWb := Nat.le_of_ble_eq_true rfl
   hQ := Nat.le_of_ble_eq_true rfl
 
+/-- `pack`, calling `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
+def packU (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcHash where
+  R := brainpoolp384r1U hL
+  I := Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384.inst
+  F := Proof.Pbkdf2.Whole.Arm.sha384F
+  ok := Proof.Pbkdf2.Whole.Arm.sha384OKF
+  ecdsa := rfl
+  hash := rfl
+  len := rfl
+  macLen x := by
+    show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
+    rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
+  hDB := .inr (.inl ⟨rfl, rfl⟩)
+  hS := Nat.le_of_ble_eq_true rfl
+  hWi := Nat.le_of_ble_eq_true rfl
+  hWf := Nat.le_of_ble_eq_true rfl
+  hWb := Nat.le_of_ble_eq_true rfl
+  hQ := Nat.le_of_ble_eq_true rfl
+
 theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
     Verified Arm.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384.inst.signContract Arm.abi 240) :=
   Arm.sign_verified (pack hL) implies
+
+theorem signU_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target (cfgOf (packU hL)).sign (Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384.inst.signContract Arm.abi 240) :=
+  Arm.sign_verified (packU hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP384r1Sha384

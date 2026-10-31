@@ -243,6 +243,12 @@ codec!(
     vg_ec_brainpoolp384r1_compress_public_key,
     vg_ec_brainpoolp384r1_decompress_public_key,
     []
+    [
+        vg_ec_brainpoolp384r1_compress_public_key_umaal,
+        vg_ec_brainpoolp384r1_decompress_public_key_umaal,
+        VG_EC_BRAINPOOLP384R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES,
+        VG_EC_BRAINPOOLP384R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
+    ]
 );
 codec!(
     BrainpoolP512r1,

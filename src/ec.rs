@@ -14,6 +14,7 @@
 ))]
 
 pub(crate) mod brainpoolp256r1;
+pub(crate) mod brainpoolp384r1;
 mod compressed;
 pub(crate) mod p224;
 pub(crate) mod p256;

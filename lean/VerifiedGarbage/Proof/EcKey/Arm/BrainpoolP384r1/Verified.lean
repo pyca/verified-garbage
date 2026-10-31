@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
@@ -19,6 +20,7 @@ meta import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
@@ -46,11 +48,11 @@ namespace VG.Proof.EcKey.Arm.BrainpoolP384r1
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.BrainpoolP384r1 Spec.Weierstrass
 
-theorem pre_of {s : State} (h : pkArm.pre s) : PkPre brainpoolp384r1 s := by
+theorem pre_of {u : Bool} {s : State} (h : pkArm.pre s) : PkPre (brainpoolp384r1With u) s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem post_of {s s' : State} (h : PkPost brainpoolp384r1 s s') : pkArm.post s s' := by
+theorem post_of {u : Bool} {s s' : State} (h : PkPost (brainpoolp384r1With u) s s') : pkArm.post s s' := by
   unfold PkPost at h
   show match pk s.mem (State.addr (s.gpr .r1)) with
     | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
@@ -60,13 +62,13 @@ theorem post_of {s s' : State} (h : PkPost brainpoolp384r1 s s') : pkArm.post s 
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : pk s.mem (State.addr (s.gpr .r1)) = q
-  rw [show Spec.EcKey.publicKey brainpoolp384r1.C (dk brainpoolp384r1 s) = pk s.mem (State.addr (s.gpr .r1)) from rfl, hq]
+  rw [show Spec.EcKey.publicKey (brainpoolp384r1With u).C (dk (brainpoolp384r1With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_arm (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State) (hs : pkArm.pre s) :
-    ∃ t s', Exec isa Impl.EcKey.Arm.publicKeyBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ pkArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok brainpoolp384r1_ok hL hp
+theorem pk_arm (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (u : Bool) (s : State) (hs : pkArm.pre s) :
+    ∃ t s', Exec isa (Impl.EcKey.Arm.publicKeyBrainpoolP384r1With u) s t s' ∧ abiPreserved s s' ∧ pkArm.post s s' := by
+  have hp := pre_of (u := u) hs
+  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok (brainpoolp384r1With_ok u) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -83,9 +85,10 @@ theorem pk_arm (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State) (hs
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
-theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBrainpoolP384r1 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (_hs : pkArm.pre s) (_ht : pkArm.pre t) (h : pkArm.pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -98,6 +101,12 @@ theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBra
   · exact h0
   · exact h1
   · exact h2
+
+theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBrainpoolP384r1 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by native_taint_decide)
+
+theorem pkU_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBrainpoolP384r1U :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -112,9 +121,10 @@ def satState : State where
   rd := [⟨0x2000, 48⟩]
   wr := [⟨0x1000, 97⟩, ⟨0x8000, 8192⟩]
 
-theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
-    Verified Arm.target Impl.EcKey.Arm.publicKeyBrainpoolP384r1 (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract Arm.abi) :=
-  Verified.of_correct (pk_arm hL) pk_ct
+theorem pkWith_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (u : Bool)
+    (hct : ConstantTime isa pkArm.pre pkArm.pub (Impl.EcKey.Arm.publicKeyBrainpoolP384r1With u)) :
+    Verified Arm.target (Impl.EcKey.Arm.publicKeyBrainpoolP384r1With u) (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract Arm.abi) :=
+  Verified.of_correct (pk_arm hL u) hct
     { pre := by
         sig_implies_pre [Spec.EcKey.BrainpoolP384r1.inst, Spec.EcKey.Instance.publicKeyContract,
           Spec.EcKey.Instance.publicKeySig, Spec.BrainpoolP384r1.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
@@ -137,5 +147,13 @@ theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
           Spec.EcKey.Instance.publicKeySig, Spec.BrainpoolP384r1.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
+
+theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target Impl.EcKey.Arm.publicKeyBrainpoolP384r1 (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract Arm.abi) :=
+  pkWith_verified hL false pk_ct
+
+theorem pkU_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target Impl.EcKey.Arm.publicKeyBrainpoolP384r1U (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract Arm.abi) :=
+  pkWith_verified hL true pkU_ct
 
 end VG.Proof.EcKey.Arm.BrainpoolP384r1

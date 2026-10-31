@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1Umaal
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -12,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1Umaal
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -58,6 +60,16 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List A
     verified := brainpoolp384r1_add_verified (fermat_of_law h.law) },
   Spec.Weierstrass.Point.brainpoolp384r1.doubleApi.artifact Arm.target {
     code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.brainpoolp384r1
-    verified := brainpoolp384r1_double_verified (fermat_of_law h.law) }]
+    verified := brainpoolp384r1_double_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.brainpoolp384r1.addApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointAdd Spec.Weierstrass.Point.brainpoolp384r1 true
+    verified := brainpoolp384r1_addU_verified (fermat_of_law h.law)
+    features := ["umaal"] },
+  Spec.Weierstrass.Point.brainpoolp384r1.doubleApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.brainpoolp384r1 true
+    verified := brainpoolp384r1_doubleU_verified (fermat_of_law h.law)
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP384r1.Arm.PointBrainpoolP384r1
