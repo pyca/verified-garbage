@@ -78,6 +78,11 @@ namespace VG.Generic.BrainpoolP512r1.Arm.EcdhBrainpoolP512r1
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
   Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.exchangeBrainpoolP512r1
-    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdh_verified h.law }]
+    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdh_verified h.law },
+  Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdh.Arm.exchangeBrainpoolP512r1U
+    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdhU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP512r1.Arm.EcdhBrainpoolP512r1

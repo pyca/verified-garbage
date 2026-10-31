@@ -10,10 +10,20 @@ namespace VG.Impl.Ecdsa.Arm
 
 open VG.Arm
 
+/-- brainpoolP512r1 as the code has it, its field multiplications by
+`vg_brainpoolp512r1_mul_mod_<p|n>_umaal` if `u`. -/
+def brainpoolp512r1With (u : Bool) : Cfg :=
+  ⟨8, Spec.BrainpoolP512r1.curve, Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, none, u⟩
+
 /-- brainpoolP512r1 as the code has it. -/
-def brainpoolp512r1 : Cfg := ⟨8, Spec.BrainpoolP512r1.curve, Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, none, false⟩
+def brainpoolp512r1 : Cfg := brainpoolp512r1With false
 
 /-- `vg_ecdsa_brainpoolp512r1_sign`. -/
-def signBrainpoolP512r1 : Prog isa := brainpoolp512r1.sign
+def signBrainpoolP512r1With (u : Bool) : Prog isa := (brainpoolp512r1With u).sign
+
+def signBrainpoolP512r1 : Prog isa := signBrainpoolP512r1With false
+
+/-- `vg_ecdsa_brainpoolp512r1_sign_umaal`. -/
+def signBrainpoolP512r1U : Prog isa := signBrainpoolP512r1With true
 
 end VG.Impl.Ecdsa.Arm
