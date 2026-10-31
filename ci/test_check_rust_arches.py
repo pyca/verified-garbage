@@ -144,7 +144,7 @@ class Output(unittest.TestCase):
             with self.subTest(event=event):
                 for e in out["rust"]:
                     self.assertEqual(e["bench"], e["arch"] in bench_arches.PLATFORMS, e["name"])
-                self.assertEqual({e["arch"] for e in out["rust"] if not e["bench"]}, {"riscv64"})
+                self.assertEqual({e["arch"] for e in out["rust"] if not e["bench"]}, set())
                 self.assertTrue(all("bench" not in e for job in ("thumb", "cpu") for e in out[job]))
 
     def test_push_builds_one_job_per_cache(self):
