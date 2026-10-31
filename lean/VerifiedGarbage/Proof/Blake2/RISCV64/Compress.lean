@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
@@ -44,6 +45,12 @@ theorem wal (z : Size) {p : Addr} (hp : p.toNat % 8 = 0) {d : Nat} (hd : d % zB 
 theorem dal {p : Addr} (hp : p.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
     (p + BitVec.ofNat 64 d).toNat % 8 = 0 :=
   al_add hp (by decide) hd
+
+/-- Native message loads remain aligned as the word index advances. -/
+theorem word_al (z : Size) {p : Addr} (hp : p.toNat % zB z = 0) (k : Nat) :
+    (p + BitVec.ofNat 64 (zB z * k)).toNat % zB z = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  cases z <;> simp_all [zB, Width.bytes, Nat.add_mod, Nat.mul_mod]
 
 /-- A word of the scratch space is unchanged by a write to another. -/
 theorem cell_sep (p : Addr) (m : Mem) {w w' : Nat} (v : BitVec w') {d e : Nat}
@@ -624,11 +631,13 @@ theorem ctrF_ok (s : State) (p : Addr) (hp : s.gpr SB = p) (hal : p.toNat % 8 = 
 
 /-- Word `j` from `src` to offset `o` of the scratch space: the shape of
 `cpIn` and `cpBlk`. -/
-def cpGen (w : Nat) (src : Reg) (o j : Nat) : List Instr :=
-  ldLE w T (wreg 0) (wreg 1) src (ws w * j) ++ ([.store (wd w) T SB (o + ws w * j)] : List Instr)
+def cpGen (w : Nat) (src : Reg) (o j : Nat) (aligned : Bool := false) : List Instr :=
+  (if aligned then [.load (wd w) T src (ws w * j)]
+   else ldLE w T (wreg 0) (wreg 1) src (ws w * j)) ++ ([.store (wd w) T SB (o + ws w * j)] : List Instr)
 
 theorem cpIn_eq (w : Nat) : Impl.Blake2.RISCV64.cpIn (w := w) = cpGen w .a0 hOff := rfl
-theorem cpBlk_eq (w : Nat) : Impl.Blake2.RISCV64.cpBlk (w := w) = cpGen w .a1 mOff := rfl
+theorem cpBlk_eq (w : Nat) (j : Nat) (aligned : Bool) :
+    Impl.Blake2.RISCV64.cpBlk (w := w) j aligned = cpGen w .a1 mOff j aligned := rfl
 
 /-- After copying words `0 … k-1` from `src` to offset `o` of the scratch space. -/
 structure CpI (z : Size) (src : Reg) (o : Nat) (s₁ : State) (k : Nat) (s : State) : Prop where
@@ -645,8 +654,9 @@ theorem cp_ok {z : Size} {src : Reg} (hsT : src ≠ T) (hs0 : src ≠ wreg 0) (h
     (hin : ∀ j < N, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr src + BitVec.ofNat 64 (zB z * j)) (zB z))
     (hout : ∀ j < N, InRegions s₁.wr (s₁.gpr SB + BitVec.ofNat 64 (o + zB z * j)) (zB z))
     (hdis : ∀ j < N, Region.Disjoint ⟨s₁.gpr src + BitVec.ofNat 64 (zB z * j), zB z⟩
-      ⟨s₁.gpr SB + BitVec.ofNat 64 o, 16 * zB z⟩) :
-    WP isa (.block ((List.range N).flatMap (cpGen z.bits src o))) s₁ (CpI z src o s₁ N) := by
+      ⟨s₁.gpr SB + BitVec.ofNat 64 o, 16 * zB z⟩)
+    (aligned : Bool := false) (has : aligned = true → (s₁.gpr src).toNat % zB z = 0 := by simp) :
+    WP isa (.block ((List.range N).flatMap fun j => cpGen z.bits src o j aligned)) s₁ (CpI z src o s₁ N) := by
   refine wp_range_flatMap (M := isa) (CpI z src o s₁) (fun k s hk h => ?_) N (Nat.le_refl _) s₁
     ⟨fun _ _ _ _ => rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   have hsrc : s.gpr src = s₁.gpr src := h.other _ hsT hs0 hs1
@@ -655,9 +665,26 @@ theorem cp_ok {z : Size} {src : Reg} (hsT : src ≠ T) (hs0 : src ≠ wreg 0) (h
   have h8 := zB_le z
   unfold cpGen
   rw [ws_bits, WP.block_append_iff]
-  refine WP.mono (ldLE_ok (z := z) (d := T) (tmp := wreg 0) (tmp2 := wreg 1) (Ne.symm hsT)
-    (Ne.symm hs0) (by decide) (Ne.symm hs1) (by decide) (by decide) (by omega)
-    (by rw [h.rd, h.wr, hsrc]; exact hin k hk)) fun s₂ ⟨hv₂, ho₂, hm₂, hrd₂, hwr₂⟩ => ?_
+  have hload : WP isa (.block (if aligned then [.load (wd z.bits) T src (zB z * k)]
+      else ldLE z.bits T (wreg 0) (wreg 1) src (zB z * k))) s fun s₂ =>
+      (s₂.gpr T).setWidth z.bits = s.mem.readW (s.gpr src + BitVec.ofNat 64 (zB z * k)) z.bits ∧
+      (∀ q, q ≠ T → q ≠ wreg 0 → q ≠ wreg 1 → s₂.gpr q = s.gpr q) ∧
+      s₂.mem = s.mem ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr := by
+    cases he : aligned with
+    | false =>
+      simpa only [he, Bool.false_eq_true, ↓reduceIte, Keeps3] using
+        (ldLE_ok (z := z) (d := T) (tmp := wreg 0) (tmp2 := wreg 1) (Ne.symm hsT)
+          (Ne.symm hs0) (by decide) (Ne.symm hs1) (by decide) (by decide) (by omega)
+          (by rw [h.rd, h.wr, hsrc]; exact hin k hk))
+    | true =>
+      have ha : (s.gpr src + BitVec.ofNat 64 (zB z * k)).toNat % zB z = 0 := by
+        rw [hsrc]
+        exact word_al z (has he) k
+      simpa only [he, ↓reduceIte] using
+        (ld_ok (z := z) (t := T) (n := src) (off := zB z * k)
+          (by omega) ha (by rw [h.rd, h.wr, hsrc]; exact hin k hk)).mono
+            (fun s₂ ⟨hv, hg, hm, hr, hw⟩ => ⟨hv, fun q hq _ _ => hg q hq, hm, hr, hw⟩)
+  refine WP.mono hload fun s₂ ⟨hv₂, ho₂, hm₂, hrd₂, hwr₂⟩ => ?_
   have hsb₂ : s₂.gpr SB = s₁.gpr SB := (ho₂ _ (by decide) (by decide) (by decide)).trans hsb
   have hoff : (o + zB z * k) % zB z = 0 := by
     rw [Nat.add_mul_mod_self_left]; cases z <;> simp only [zB, Width.bytes] at * <;> omega
@@ -682,6 +709,56 @@ theorem cp_ok {z : Size} {src : Reg} (hsT : src ≠ T) (hs0 : src ≠ wreg 0) (h
         (by rw [bits_div]; omega)]
       exact h.words j hj
     · rw [readW_writeW_self, hv₂, hsrc, hval]
+
+/-- One alignment test selects the loads for the entire message block. -/
+theorem copyBlock_ok {z : Size} (s₁ : State)
+    (hal : (s₁.gpr SB).toNat % 8 = 0)
+    (hin : ∀ j < 16, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .a1 + BitVec.ofNat 64 (zB z * j)) (zB z))
+    (hout : ∀ j < 16, InRegions s₁.wr (s₁.gpr SB + BitVec.ofNat 64 (mOff + zB z * j)) (zB z))
+    (hdis : ∀ j < 16, Region.Disjoint ⟨s₁.gpr .a1 + BitVec.ofNat 64 (zB z * j), zB z⟩
+      ⟨s₁.gpr SB + BitVec.ofNat 64 mOff, 16 * zB z⟩) :
+    WP isa (Impl.Blake2.RISCV64.copyBlock (w := z.bits)) s₁ (CpI z .a1 mOff s₁ 16) := by
+  unfold Impl.Blake2.RISCV64.copyBlock
+  apply WP.seq
+  have ht : WP isa (.block [.logicImm .and T .a1 (Int.ofNat (ws z.bits - 1))]) s₁
+      (· = s₁.write T (s₁.gpr .a1 &&& BitVec.ofInt 64 (Int.ofNat (zB z - 1)))) := by
+    apply WP.of_runBlock
+    simp only [ws_bits, runBlock_cons, exec_logicImm (show imm12 (Int.ofNat (zB z - 1)) by cases z <;> decide), runStep_some, runBlock_nil,
+      Option.some.injEq, exists_eq_left']
+  refine ht.mono fun a ea => ?_
+  subst ea
+  let a := s₁.write T (s₁.gpr .a1 &&& BitVec.ofInt 64 (Int.ofNat (zB z - 1)))
+  have ha : a.gpr .a1 = s₁.gpr .a1 := RegUpd.gpr_write_of_ne _ _ (by decide)
+  have hb : a.gpr SB = s₁.gpr SB := RegUpd.gpr_write_of_ne _ _ (by decide)
+  have ham : a.mem = s₁.mem := RegUpd.mem_write ..
+  have hc (aligned : Bool) (hs : aligned = true → (s₁.gpr .a1).toNat % zB z = 0) :
+      WP isa (.block ((List.range 16).flatMap fun j => Impl.Blake2.RISCV64.cpBlk (w := z.bits) j aligned))
+        a (CpI z .a1 mOff s₁ 16) := by
+    simp only [cpBlk_eq]
+    refine (cp_ok (z := z) (src := .a1) (by decide) (by decide) (by decide) (N := 16)
+      (Nat.le_refl _) (by decide) (by have := zB_le z; simp only [mOff]; omega) a
+      (by rw [hb]; exact hal)
+      (fun j hj => by rw [ha]; exact hin j hj)
+      (fun j hj => by rw [hb]; exact hout j hj)
+      (fun j hj => by rw [ha, hb]; exact hdis j hj) aligned (by rw [ha]; exact hs)).mono fun b h => ?_
+    exact ⟨fun q h1 h2 h3 => (h.other q h1 h2 h3).trans (RegUpd.gpr_write_of_ne _ _ h1),
+      h.rd, h.wr, by simpa only [hb, ham] using h.frame, by simpa only [ha, hb, ham] using h.words⟩
+  have he : isa.eval (.zero T) a = some (decide ((s₁.gpr .a1).toNat % zB z = 0)) := by
+    rw [Steps.eval_zero, RegUpd.gpr_write_self]
+    have hv : (s₁.gpr .a1 &&& BitVec.ofInt 64 (Int.ofNat (zB z - 1))).toNat = (s₁.gpr .a1).toNat % zB z := by
+      rw [BitVec.toNat_and]
+      cases z
+      · rw [show (BitVec.ofInt 64 (Int.ofNat (zB .w - 1))).toNat = 2 ^ 2 - 1 from rfl,
+          Nat.and_two_pow_sub_one_eq_mod]
+      · rw [show (BitVec.ofInt 64 (Int.ofNat (zB .d - 1))).toNat = 2 ^ 3 - 1 from rfl,
+          Nat.and_two_pow_sub_one_eq_mod]
+    by_cases hz : (s₁.gpr .a1).toNat % zB z = 0
+    · simp only [hz, decide_true, Option.some.injEq, beq_iff_eq]
+      exact BitVec.eq_of_toNat_eq (by rw [hv, hz]; rfl)
+    · simp only [hz, decide_false, Option.some.injEq, beq_eq_false_iff_ne]
+      intro hz'
+      exact hz (by rw [← hv, hz']; rfl)
+  refine WP.ite _ he (fun h => hc true (fun _ => of_decide_eq_true h)) (fun _ => hc false (by simp))
 
 /-- After copying words `0 … k-1` of the hash value from offset `hOff` of the
 scratch space to `a0`. -/
@@ -952,8 +1029,7 @@ theorem body_ok (hR : ROk P) {s₀ : State} (hp : Pre z s₀) {i : Nat} (hi : i 
   have h16 : mOff + 16 * zB z ≤ 2040 := by simp only [mOff]; omega
   have hmR : 16 * zB z ≤ 16 * 8 := Nat.mul_le_mul_left _ h8
   -- Copy the block.
-  refine WP.seq (WP.mono (cp_ok (z := z) (src := .a1) (by decide) (by decide) (by decide)
-    (N := 16) (Nat.le_refl _) (by decide) h16 s (by rw [hC.base]; exact sb_al s₀)
+  refine WP.seq (WP.mono (copyBlock_ok s (by rw [hC.base]; exact sb_al s₀)
     (fun j hj => by rw [hC.rd, hC.wr, hL.a1]; exact hp.in_blk hi hj)
     (fun j hj => by rw [hC.wr, hC.base]; exact hp.out_cell (by have := mcell_bound z hj; omega))
     (fun j hj => by rw [hC.base, hL.a1]; exact hp.blk_cell hi hj (by simp only [mOff]; omega)))

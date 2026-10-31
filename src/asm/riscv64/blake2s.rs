@@ -128,6 +128,8 @@ or t6, t6, a3
 sw t6, 108(a5)
 beqz a2, 20f
 22:
+andi t6, a1, 3
+beqz t6, 23f
 lbu t6, 0(a1)
 lbu a3, 1(a1)
 slli a3, a3, 8
@@ -304,6 +306,41 @@ lbu a3, 63(a1)
 slli a3, a3, 24
 or t6, t6, a3
 sw t6, 204(a5)
+j 24f
+23:
+lwu t6, 0(a1)
+sw t6, 144(a5)
+lwu t6, 4(a1)
+sw t6, 148(a5)
+lwu t6, 8(a1)
+sw t6, 152(a5)
+lwu t6, 12(a1)
+sw t6, 156(a5)
+lwu t6, 16(a1)
+sw t6, 160(a5)
+lwu t6, 20(a1)
+sw t6, 164(a5)
+lwu t6, 24(a1)
+sw t6, 168(a5)
+lwu t6, 28(a1)
+sw t6, 172(a5)
+lwu t6, 32(a1)
+sw t6, 176(a5)
+lwu t6, 36(a1)
+sw t6, 180(a5)
+lwu t6, 40(a1)
+sw t6, 184(a5)
+lwu t6, 44(a1)
+sw t6, 188(a5)
+lwu t6, 48(a1)
+sw t6, 192(a5)
+lwu t6, 52(a1)
+sw t6, 196(a5)
+lwu t6, 56(a1)
+sw t6, 200(a5)
+lwu t6, 60(a1)
+sw t6, 204(a5)
+24:
 lwu a3, 80(a5)
 lwu a4, 84(a5)
 lwu a6, 88(a5)

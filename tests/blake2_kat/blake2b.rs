@@ -31,7 +31,14 @@ fn blake2b_kat() {
             assert_eq!(v.key.len(), 64);
             keyed += 1;
         }
-        assert_eq!(Blake2b512::digest_keyed(&v.key, &v.input)[..], v.out[..]);
+        // Exercise every alignment with the published answers, including direct
+        // full-block input and the buffered final block, with and without a key.
+        let mut input = vec![0; v.input.len() + 7];
+        for offset in 0..8 {
+            let input = &mut input[offset..offset + v.input.len()];
+            input.copy_from_slice(&v.input);
+            assert_eq!(Blake2b512::digest_keyed(&v.key, input)[..], v.out[..]);
+        }
     }
     assert_eq!(keyed, 256);
 }

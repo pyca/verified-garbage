@@ -17,7 +17,8 @@ and faults on misaligned accesses:
   argument buffers, whose alignment the contract does not state: the
   prologue copies the hash value, a byte at a time, to `scratch` (`hOff`),
   where the blocks update it, and the epilogue copies it back; each block is
-  copied, a byte at a time, to `scratch` (`mOff`) before its rounds, whose
+  copied to `scratch` (`mOff`) with aligned word loads when possible and
+  byte loads otherwise before its rounds, whose
   `G`s load their message words from there.
 * The sixteen words of the work vector `v` live in registers throughout
   (`wreg`); the rounds are fully unrolled. A rotation right by `r` is a
@@ -137,8 +138,17 @@ def rounds : Nat → Prog isa
 /-! ## One block -/
 
 /-- Word `j` of the block at `a1` to `scratch`. -/
-def cpBlk (j : Nat) : List Instr :=
-  ldLE w T (wreg 0) (wreg 1) .a1 (ws w * j) ++ ([.store (wd w) T SB (mOff + ws w * j)] : List Instr)
+def cpBlk (j : Nat) (aligned : Bool := false) : List Instr :=
+  (if aligned then [.load (wd w) T .a1 (ws w * j)]
+   else ldLE w T (wreg 0) (wreg 1) .a1 (ws w * j)) ++ ([.store (wd w) T SB (mOff + ws w * j)] : List Instr)
+
+/-- Copy a block using native loads when its address is aligned, retaining
+byte loads for arbitrary input alignment. The scratch buffer is aligned. -/
+def copyBlock : Prog isa :=
+  .seq (.block [.logicImm .and T .a1 (Int.ofNat (ws w - 1))])
+    (.ite (.zero T)
+      (.block ((List.range 16).flatMap fun j => cpBlk (w := w) j true))
+      (.block ((List.range 16).flatMap (cpBlk (w := w)))))
 
 /-- Load words `0 … n-1` of the hash value into words `0 … n-1` of the work vector. -/
 def lds : Nat → Prog isa
@@ -188,7 +198,7 @@ def init : Prog isa :=
   .seq (.block (hiW (w := w))) (.block ctrHi)
 
 def body : Prog isa :=
-  .seq (.block ((List.range 16).flatMap (cpBlk (w := w)))) <| .seq (init P) <|
+  .seq (copyBlock (w := w)) <| .seq (init P) <|
   .seq (rounds P P.r) <| .seq (fin (w := w) 8) (.block (advance (w := w)))
 
 /-! ## The whole function -/

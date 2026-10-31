@@ -224,6 +224,8 @@ or t6, t6, a4
 sd t6, 136(a5)
 beqz a2, 20f
 22:
+andi t6, a1, 7
+beqz t6, 23f
 lbu t6, 0(a1)
 lbu a3, 1(a1)
 slli a3, a3, 8
@@ -592,6 +594,41 @@ or a4, a4, a3
 slli a4, a4, 32
 or t6, t6, a4
 sd t6, 264(a5)
+j 24f
+23:
+ld t6, 0(a1)
+sd t6, 144(a5)
+ld t6, 8(a1)
+sd t6, 152(a5)
+ld t6, 16(a1)
+sd t6, 160(a5)
+ld t6, 24(a1)
+sd t6, 168(a5)
+ld t6, 32(a1)
+sd t6, 176(a5)
+ld t6, 40(a1)
+sd t6, 184(a5)
+ld t6, 48(a1)
+sd t6, 192(a5)
+ld t6, 56(a1)
+sd t6, 200(a5)
+ld t6, 64(a1)
+sd t6, 208(a5)
+ld t6, 72(a1)
+sd t6, 216(a5)
+ld t6, 80(a1)
+sd t6, 224(a5)
+ld t6, 88(a1)
+sd t6, 232(a5)
+ld t6, 96(a1)
+sd t6, 240(a5)
+ld t6, 104(a1)
+sd t6, 248(a5)
+ld t6, 112(a1)
+sd t6, 256(a5)
+ld t6, 120(a1)
+sd t6, 264(a5)
+24:
 ld a3, 80(a5)
 ld a4, 88(a5)
 ld a6, 96(a5)
