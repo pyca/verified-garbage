@@ -1477,7 +1477,7 @@ yours to keep:
 
 <td>✅ AES-NI, PCLMULQDQ</td>
 
-<td>✅ GHASH shifts with carry instructions</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -1557,7 +1557,7 @@ yours to keep:
 
 <td>✅ PCLMULQDQ</td>
 
-<td>✅ GHASH shifts with carry instructions</td>
+<td>✅</td>
 
 <td>❌</td>
 
