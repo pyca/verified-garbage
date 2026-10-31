@@ -251,7 +251,7 @@ CPU_FEATURES = {
 BENCHMARKS_PER_JOB = 40
 
 # Changes to this script choose benchmarks but are not measured by any:
-# `ci/test_check_benchmarks.py` tests it.
+# `ci/test_check_bench_arches.py` tests it.
 SHARED = re.compile(
     r"src/|bench/|Cargo\.(toml|lock)$|ci/bench_compare\.py$"
     r"|\.github/workflows/bench\.yml$"

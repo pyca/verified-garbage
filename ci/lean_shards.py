@@ -525,12 +525,6 @@ def estimate(work: float, path: float) -> float:
     return max(work / PARALLELISM, path)
 
 
-def wall_time(imps: dict[str, list[str]], cost: dict[str, float]) -> float:
-    """The estimated time of a build of the modules of `cost`, each taking
-    its time there."""
-    return build_time(imps, cost)
-
-
 def build_time(imps: dict[str, list[str]], cost: dict[str, float]) -> float:
     """List-schedule a build, imports first, prioritizing the longest
     remaining chain. At most ceil(PARALLELISM) modules run concurrently;
