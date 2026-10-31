@@ -11,7 +11,7 @@ description: >
   build's 16,000 modules in seconds. `ci/lean_cache.py` packs (`store`) and
   restores (`restore`) with it; the archives' format is unchanged, so the
   toolchain's `leantar` unpacks them too (`unpack`, outside CI). The binary
-  is cached until the revision or the patches change.
+  is cached, saved from main, until the revision or the patches change.
 
 runs:
   using: composite
@@ -39,8 +39,10 @@ runs:
         cargo +stable build --manifest-path "$src/Cargo.toml" --release --locked --bin leantar
         mkdir -p "$RUNNER_TEMP/leantar-batch"
         cp "$src/target/release/leantar" "$RUNNER_TEMP/leantar-batch/leantar-batch"
+    # Only main saves: a save from a pull request or the merge queue is
+    # visible to that ref alone, and main's to every branch.
     - name: Save leantar
-      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      if: ${{ steps.cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/leantar-batch
