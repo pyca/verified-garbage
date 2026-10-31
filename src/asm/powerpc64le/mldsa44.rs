@@ -2569,6 +2569,10 @@ ori %r4, %r4, 65458
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 212f
+b 213f
+212:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2601,6 +2605,10 @@ ori %r4, %r4, 65458
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 214f
+b 215f
+214:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2633,6 +2641,10 @@ ori %r4, %r4, 65458
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 216f
+b 217f
+216:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2665,6 +2677,18 @@ ori %r4, %r4, 65458
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 218f
+b 219f
+218:
+219:
+217:
+215:
+213:
+cmpldi %cr0, %r24, 0
+bne %cr0, 220f
+b 221f
+220:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2706,6 +2730,10 @@ ori %r4, %r4, 29618
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 222f
+b 223f
+222:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2747,6 +2775,10 @@ ori %r4, %r4, 29618
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 224f
+b 225f
+224:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2788,6 +2820,10 @@ ori %r4, %r4, 29618
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 226f
+b 227f
+226:
 lis %r3, 0
 ori %r3, %r3, 6144
 add %r3, %r31, %r3
@@ -2829,6 +2865,18 @@ ori %r4, %r4, 29618
 bl {vg_mldsa_norm_lt}
 rlwinm %r3, %r3, 0, 0, 31
 and %r24, %r24, %r3
+cmpldi %cr0, %r24, 0
+bne %cr0, 228f
+b 229f
+228:
+229:
+227:
+225:
+223:
+cmpldi %cr0, %r24, 0
+bne %cr0, 230f
+b 231f
+230:
 lis %r3, 0
 ori %r3, %r3, 8192
 add %r3, %r31, %r3
@@ -2857,14 +2905,14 @@ and %r24, %r24, %r3
 addi %r3, %r31, 8192
 addi %r4, %r31, 9216
 li %r5, 1024
-212:
+232:
 lbz %r6, 0(%r3)
 stb %r6, 0(%r4)
 addi %r3, %r3, 1
 addi %r4, %r4, 1
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
-bne %cr0, 212b
+bne %cr0, 232b
 lis %r3, 0
 ori %r3, %r3, 9216
 add %r3, %r31, %r3
@@ -2928,14 +2976,14 @@ and %r24, %r24, %r3
 addi %r3, %r31, 8192
 addi %r4, %r31, 9216
 li %r5, 1024
-213:
+233:
 lbz %r6, 0(%r3)
 stb %r6, 0(%r4)
 addi %r3, %r3, 1
 addi %r4, %r4, 1
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
-bne %cr0, 213b
+bne %cr0, 233b
 lis %r3, 0
 ori %r3, %r3, 9216
 add %r3, %r31, %r3
@@ -2999,14 +3047,14 @@ and %r24, %r24, %r3
 addi %r3, %r31, 8192
 addi %r4, %r31, 9216
 li %r5, 1024
-214:
+234:
 lbz %r6, 0(%r3)
 stb %r6, 0(%r4)
 addi %r3, %r3, 1
 addi %r4, %r4, 1
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
-bne %cr0, 214b
+bne %cr0, 234b
 lis %r3, 0
 ori %r3, %r3, 9216
 add %r3, %r31, %r3
@@ -3070,14 +3118,14 @@ and %r24, %r24, %r3
 addi %r3, %r31, 8192
 addi %r4, %r31, 9216
 li %r5, 1024
-215:
+235:
 lbz %r6, 0(%r3)
 stb %r6, 0(%r4)
 addi %r3, %r3, 1
 addi %r4, %r4, 1
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
-bne %cr0, 215b
+bne %cr0, 235b
 lis %r3, 0
 ori %r3, %r3, 9216
 add %r3, %r31, %r3
@@ -3116,32 +3164,34 @@ add %r26, %r26, %r3
 addi %r3, %r26, -81
 rldicl %r3, %r3, 1, 63
 and %r24, %r24, %r3
+231:
+221:
 cmpldi %cr0, %r24, 0
-bne %cr0, 216f
+bne %cr0, 236f
 addi %r27, %r27, 4
-b 217f
-216:
+b 237f
+236:
 li %r25, 1
-217:
+237:
 211:
 addi %r25, %r25, -1
 cmpldi %cr0, %r25, 0
 bne %cr0, 25b
 cmpldi %cr0, %r24, 0
-bne %cr0, 218f
-b 219f
-218:
+bne %cr0, 238f
+b 239f
+238:
 addi %r3, %r31, 1040
 addi %r4, %r28, 0
 li %r5, 32
-220:
+240:
 lbz %r6, 0(%r3)
 stb %r6, 0(%r4)
 addi %r3, %r3, 1
 addi %r4, %r4, 1
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
-bne %cr0, 220b
+bne %cr0, 240b
 lis %r3, 0
 ori %r3, %r3, 14336
 add %r3, %r31, %r3
@@ -3207,7 +3257,7 @@ add %r6, %r28, %r6
 lis %r7, 0
 ori %r7, %r7, 84
 bl {vg_mldsa_hint_bit_pack}
-219:
+239:
 22:
 addi %r3, %r24, 0
 ld %r0, 904(%r31)

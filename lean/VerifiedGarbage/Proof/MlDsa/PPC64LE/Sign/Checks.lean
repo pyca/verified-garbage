@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -612,12 +613,69 @@ abbrev KN (p : Params) (STK t : Nat) (σ s : State) : Prop :=
   (ICd p STK t σ s ∧ (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome) ∧
     PolyIs s.mem (SL p STK σ 0) (chF (cV p σ (p.ℓ * t)))
 
+/-- What the branches of the checks need two runs to agree on: whether the
+first `r` polynomials of `z` passed, for each `r` (the checks stop at the
+first that fails), whether `z` and the first `i` polynomials of `r₀` passed,
+for each `i`, and whether the iteration passed. -/
+abbrev ChecksAgree (p : Params) (t : Nat) (σ₁ σ₂ : State) : Prop :=
+  (∀ r ≤ p.ℓ, (∀ j < r, normRq [Zv p σ₁ (p.ℓ * t) j] < p.γ₁ - p.β) ↔
+    (∀ j < r, normRq [Zv p σ₂ (p.ℓ * t) j] < p.γ₁ - p.β)) ∧
+  (∀ i ≤ p.k, (ZOk p σ₁ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₁ (p.ℓ * t) j] < p.γ₂ - p.β) ↔
+    (ZOk p σ₂ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₂ (p.ℓ * t) j] < p.γ₂ - p.β)) ∧
+  (PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t))
+
 /-- The checks done: whether the iteration passes in `r24`. -/
 structure KO (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
   b : KB p STK σ t s
-  z : ∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
-  h : ∀ i < p.k, HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]
+  z : PassV p σ (p.ℓ*t) → ∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
+  h : PassV p σ (p.ℓ*t) → ∀ i < p.k, HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]
   r24 : s.gpr .r24 = bit (PassV p σ (p.ℓ * t))
+
+theorem bit_zero {a : Prop} [Decidable a] : bit a=0 ↔ ¬a := by
+  by_cases h:a
+  · rw [show bit a=1 from VG.Proof.MlDsa.KeyGen.ifp h _ _]; simp only [h,not_true_eq_false]; decide
+  · rw [show bit a=0 from VG.Proof.MlDsa.KeyGen.ifn h _ _]; exact ⟨fun _=>h,fun _=>rfl⟩
+
+theorem bit_ne {a : Prop} [Decidable a] : bit a≠0 ↔ a := by
+  rw [ne_eq,bit_zero]
+  exact Decidable.not_not
+
+theorem seqOk_ok {f : Nat→Prog isa} {I : Nat→State→Prop} :
+    ∀ (n a : Nat), (∀ k, a≤k → k<a+n → ∀ s, I k s → WP isa (f k) s (I (k+1))) →
+      ∀ s, I a s → WP isa (seqOk f a n) s fun s'=>∃k,a≤k ∧ k≤a+n ∧ I k s' ∧ (k=a+n ∨ s'.gpr .r24=0)
+  | 0,a,_,s,h=>WP.block_nil ⟨a,Nat.le_refl _,by omega,h,.inl (by omega)⟩
+  | n+1,a,h,s,hs=>by
+    rw [seqOk]
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁=>?_)
+    apply WP.ite _ (VG.PPC64LE.eval_nonzero s₁ .r24)
+    · intro _
+      refine WP.mono (seqOk_ok n (a+1) (fun k hk hk'=>h k (by omega) (by omega)) s₁ h₁) ?_
+      rintro s' ⟨k,hk,hk',hi,hd⟩
+      exact ⟨k,by omega,by omega,hi,hd.imp (fun _=>by omega) id⟩
+    · intro hb
+      exact WP.block_nil ⟨a+1,by omega,by omega,h₁,.inr (by simpa using hb)⟩
+
+theorem IZ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
+    (hk:k≤p.ℓ) (h:IZ p STK σ t k k s) (hd:k=p.ℓ ∨ s.gpr .r24=0) :
+    s.gpr .r24=bit (ZOk p σ (p.ℓ*t)) := by
+  rcases hd with rfl|h0
+  · exact h.r24
+  · rw [h.r24] at h0 ⊢
+    have hn := bit_zero.mp h0
+    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn fun j hj=>ha j (by omega))]
+
+theorem IQ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
+    (hk:k≤p.k) (h:IQ p STK σ t k k s) (hd:k=p.k ∨ s.gpr .r24=0) :
+    s.gpr .r24=bit (ZOk p σ (p.ℓ*t) ∧ R0Ok p σ (p.ℓ*t)) := by
+  rcases hd with rfl|h0
+  · exact h.r24
+  · rw [h.r24] at h0 ⊢
+    have hn := bit_zero.mp h0
+    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn ⟨ha.1,fun j hj=>ha.2 j (by omega)⟩)]
+
+theorem rejected_ko {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State}
+    (h:KB p STK σ t s) (hn:¬PassV p σ (p.ℓ*t)) (hz:s.gpr .r24=0) : KO p STK σ t s :=
+  ⟨h,fun hp=>absurd hp hn,fun hp=>absurd hp hn,by rw [hz,bit_zero.mpr hn]⟩
 
 theorem sign_bit {S w : Nat} (hS : S < 2 ^ 62) (hw : w < 2 ^ 62) :
     (BitVec.ofNat 64 S - BitVec.ofNat 64 w) >>> 63 = if S < w then 1 else 0 := by
@@ -697,7 +755,7 @@ theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k
     srel2 (fun σ s h => h.b.l.k.sc) (onesOk_taint p)⟩
   have hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
   have hom := hF.om
-  refine ⟨h.b.regs2 r2, fun j hj => by rw [r2.mem]; exact h.z j hj, fun j hj => by rw [r2.mem]; exact h.h j hj, ?_⟩
+  refine ⟨h.b.regs2 r2, (fun _ j hj => by rw [r2.mem]; exact h.z j hj), (fun _ j hj => by rw [r2.mem]; exact h.h j hj), ?_⟩
   rw [e24, h.r26, h.r24, sign_bit (by omega) (by omega), bit_and']
   exact bit_congr passV_iff
 
