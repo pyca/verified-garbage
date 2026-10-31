@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP256Umaal
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP384Umaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on ARMv7 -/
@@ -99,6 +100,12 @@ def artifacts : List Artifact := [
     notes := packedNotes
     code := mulFn p384p.k p384p.m
     verified := p384p_mul_verified },
+  p384p.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := umaalNotes
+    code := mulFnU p384p.k p384p.m
+    verified := p384p_mulU_verified
+    features := ["umaal"] },
   p384p.addApi.artifact Arm.target {
     notes := notes
     code := addFn p384p.k p384p.m
@@ -111,6 +118,12 @@ def artifacts : List Artifact := [
     notes := packedNotes
     code := mulFn p384n.k p384n.m
     verified := p384n_mul_verified },
+  p384n.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := umaalNotes
+    code := mulFnU p384n.k p384n.m
+    verified := p384n_mulU_verified
+    features := ["umaal"] },
   p384n.addApi.artifact Arm.target {
     notes := notes
     code := addFn p384n.k p384n.m

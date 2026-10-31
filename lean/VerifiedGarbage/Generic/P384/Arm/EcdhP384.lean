@@ -91,6 +91,12 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \
       `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.Arm.exchangeP384
-    verified := Proof.Ecdh.Arm.P384.ecdh_verified h.law }]
+    verified := Proof.Ecdh.Arm.P384.ecdh_verified h.law },
+  Spec.Ecdh.P384.exchangeApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_ecdh_p384`'s code, but for its call of `vg_p384_mul_umaal`. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    code := Impl.Ecdh.Arm.exchangeP384U
+    verified := Proof.Ecdh.Arm.P384.ecdhU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P384.Arm.EcdhP384

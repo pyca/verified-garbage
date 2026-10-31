@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.MulVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.MulLit
 
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
+
 /-!
 # P-384's point multiplication on 32-bit ARM
 
@@ -32,6 +34,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       word-by-word Montgomery multiplication in calls of `vg_p384_mul_mod_p` and the other functions of \
       `p384_mont`; nothing depends on `k` or `Q` but through masks."]
     code := Impl.Ecdsa.Arm.mulP384
-    verified := Proof.Ecdsa.Arm.P384.Mul.mul_verified h.law }]
+    verified := Proof.Ecdsa.Arm.P384.Mul.mul_verified h.law },
+  Spec.Weierstrass.Mul.p384.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_p384_mul`'s code, but for its calls of `vg_p384_point_double_umaal` and \
+      `vg_p384_point_add_umaal`. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    code := Impl.Ecdsa.Arm.mulP384U
+    verified := Proof.Ecdsa.Arm.P384.Mul.mulU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P384.Arm.MulP384
