@@ -14,4 +14,7 @@ namespace VG
 materialize_code Impl.Ecdsa.Arm.signP384Comb
 materialize_code Impl.Ecdsa.Arm.publicKeyP384Comb
 materialize_code Impl.Ecdsa.Arm.verifyP384Comb
+materialize_code Impl.Ecdsa.Arm.signP384CombU
+materialize_code Impl.Ecdsa.Arm.publicKeyP384CombU
+materialize_code Impl.Ecdsa.Arm.verifyP384CombU
 end VG

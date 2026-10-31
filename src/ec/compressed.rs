@@ -170,6 +170,12 @@ codec!(
         vg_ec_p384_decompress_public_key_adx,
         VG_EC_P384_COMPRESS_PUBLIC_KEY_ADX_FEATURES
     ]
+    [
+        vg_ec_p384_compress_public_key_umaal,
+        vg_ec_p384_decompress_public_key_umaal,
+        VG_EC_P384_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES,
+        VG_EC_P384_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
+    ]
 );
 codec!(
     P521,

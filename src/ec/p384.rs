@@ -2,7 +2,9 @@
 //! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
 //! compute. On x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants
 //! multiply field elements with `mulx`, `adcx` and `adox`, and the
-//! signatures' and public keys' comb selects its entries with AVX2.
+//! signatures' and public keys' comb selects its entries with AVX2. On
+//! ARMv7 cores with `umaal`, the `_umaal` variants multiply field elements
+//! and scalars with it.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -15,10 +17,18 @@
 use crate::arch::ec_p384::vg_ec_p384_public_key;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ec_p384::{VG_EC_P384_PUBLIC_KEY_ADX_FEATURES, vg_ec_p384_public_key_adx};
+#[cfg(target_arch = "arm")]
+use crate::arch::ec_p384::{VG_EC_P384_PUBLIC_KEY_UMAAL_FEATURES, vg_ec_p384_public_key_umaal};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p384::VG_ECDH_P384_ADX_FEATURES;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdh_p384::VG_ECDH_P384_UMAAL_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::{VG_ECDSA_P384_SIGN_ADX_FEATURES, VG_ECDSA_P384_VERIFY_ADX_FEATURES};
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p384::{
+    VG_ECDSA_P384_SIGN_UMAAL_FEATURES, VG_ECDSA_P384_VERIFY_UMAAL_FEATURES,
+};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
@@ -31,6 +41,10 @@ pub(crate) enum Mul {
     /// by AVX2 (the `_adx` variants).
     #[cfg(target_arch = "x86_64")]
     Adx,
+    /// ARMv7's `umaal` for the Montgomery multiplications (the `_umaal`
+    /// variants).
+    #[cfg(target_arch = "arm")]
+    Umaal,
 }
 
 impl Mul {
@@ -50,9 +64,25 @@ impl Mul {
         if adx { Mul::Adx } else { Mul::Baseline }
     }
 
+    /// The fastest multiplications a CPU with the features `f` can run.
+    #[cfg(target_arch = "arm")]
+    pub(crate) fn select(f: Features) -> Mul {
+        let umaal = f.contains(
+            const {
+                Features::all(&[
+                    VG_EC_P384_PUBLIC_KEY_UMAAL_FEATURES,
+                    VG_ECDH_P384_UMAAL_FEATURES,
+                    VG_ECDSA_P384_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_P384_VERIFY_UMAAL_FEATURES,
+                ])
+            },
+        );
+        if umaal { Mul::Umaal } else { Mul::Baseline }
+    }
+
     /// The multiplications a CPU with the features `f` can run: there is
     /// only one here.
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
     pub(crate) fn select(_: Features) -> Mul {
         Mul::Baseline
     }
@@ -74,6 +104,10 @@ pub(crate) fn public_key(d: &[u8; 48]) -> Option<[u8; 97]> {
         // (`Mul::select`).
         #[cfg(target_arch = "x86_64")]
         Mul::Adx => unsafe { vg_ec_p384_public_key_adx(&mut out, d, &mut scratch) },
+        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+        // (`Mul::select`).
+        #[cfg(target_arch = "arm")]
+        Mul::Umaal => unsafe { vg_ec_p384_public_key_umaal(&mut out, d, &mut scratch) },
     };
     zeroize(&mut scratch);
     (ok == 1).then_some(out)
@@ -99,5 +133,17 @@ mod tests {
         for (f, m) in cases {
             assert_eq!(Mul::select(f), m, "{f:?}");
         }
+    }
+}
+
+#[cfg(all(test, target_arch = "arm"))]
+mod arm_tests {
+    use super::*;
+
+    /// The multiplications chosen with `umaal`, or without it.
+    #[test]
+    fn select() {
+        assert_eq!(Mul::select(Features::of(&[])), Mul::Baseline);
+        assert_eq!(Mul::select(Features::of(&["umaal"])), Mul::Umaal);
     }
 }

@@ -42,6 +42,22 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       let every input affect it."]
     consts := Impl.Weierstrass.Arm.p384CombConsts
     code := Impl.Ecdsa.Arm.verifyP384Comb
-    verified := Proof.Ecdsa.Verify.Arm.P384.combVerify_verified h.law }]
+    verified := Proof.Ecdsa.Verify.Arm.P384.combVerify_verified h.law },
+  Spec.Ecdsa.P384.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_ecdsa_p384_sign`'s code, but for its calls of `vg_p384_point_add_umaal` in \
+      the comb. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    consts := Impl.Weierstrass.Arm.p384CombConsts
+    code := Impl.Ecdsa.Arm.signP384CombU
+    verified := Proof.Ecdsa.Arm.P384.combSignU_verified h.law
+    features := ["umaal"] },
+  Spec.Ecdsa.P384.verifyApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_ecdsa_p384_verify`'s code, but for its calls of `vg_p384_point_add_umaal` in \
+      the comb and of `vg_p384_mul_umaal`. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    consts := Impl.Weierstrass.Arm.p384CombConsts
+    code := Impl.Ecdsa.Arm.verifyP384CombU
+    verified := Proof.Ecdsa.Verify.Arm.P384.combVerifyU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P384.Arm.EcdsaP384
