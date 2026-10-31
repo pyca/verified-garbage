@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Cast5.RISCV64.Scan
-import VerifiedGarbage.Proof.Cast5.Rotate
 public import VerifiedGarbage.Proof.Cast5.Round
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -71,96 +70,35 @@ theorem mix_ok (s : State) {t : Nat} (ht : t < 3) {kmw d : Spec.Cast5.Word}
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [hr.1, hr.2, ite_false]
 
-/-- Bit `b` of `k` as the rotation's mask: zero if it is set, all ones if not. -/
-theorem rotMask_eq (k : BitVec 64) {b : Nat} (hb : b < 64) :
-    (k <<< (63 - b)) >>> 63 - 1#64 = if k.getLsbD b then 0 else BitVec.allOnes 64 := by
-  have e : (k <<< (63 - b)) >>> 63 = if k.getLsbD b then 1#64 else 0#64 := by
-    apply BitVec.eq_of_getLsbD_eq
-    intro i hi
-    rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
-    by_cases h0 : i = 0
-    · subst h0
-      have e1 : 63 - (63 - b) = b := by omega
-      rw [Nat.add_zero, e1, decide_eq_true (show 63 < 64 by decide),
-        decide_eq_false (show ¬ 63 < 63 - b by omega)]
-      cases k.getLsbD b <;> decide
-    · rw [decide_eq_false (show ¬ 63 + i < 64 by omega), Bool.false_and]
-      have : ∀ c : Bool, (if c then 1#64 else 0#64).getLsbD i = false := fun c => by
-        cases c <;> simp [BitVec.getLsbD_one, h0]
-      exact (this _).symm
-  rw [e]
-  split <;> decide
-
-/-- Step `b` of the rotation of `a` (the low word of `vI`) by `k` (`vKr`):
-the rotation by `2 ^ b` if bit `b` of `k` is set. -/
-theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a : BitVec 32} {k : BitVec 64}
-    (hI : lo (s.gpr vI) = a) (hK : s.gpr vKr = k) :
-    WP isa (.block (rotateStep b)) s fun u =>
-      lo (u.gpr vI) = a.rotateLeft (2 ^ b * (k.toNat / 2 ^ b % 2)) ∧ u.gpr vKr = k ∧
-      Keep [msk, tmp, wd, vI] s u ∧ u.mem = s.mem := by
-  have hn : 32 - 2 ^ b < 32 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
-      subst h <;> decide
-  have hp : 2 ^ b < 32 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
-      subst h <;> decide
-  have hr : a <<< 2 ^ b ||| a >>> (32 - 2 ^ b) = a.rotateLeft (2 ^ b) := rotl_shifts a hp
-  unfold rotateStep
-  c5run [hK, hn, hp, show 63 - b < 64 by omega]
-  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl⟩⟩
-  swap
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
-  rw [rotMask_eq k (by omega)]
-  simp only [lo_xor, lo_and, lo_or, lo_sext, hI]
-  rw [hr]
-  have hb' : k.getLsbD b = (k.toNat / 2 ^ b % 2 == 1) := by
-    rw [BitVec.getLsbD, Nat.testBit, Nat.shiftRight_eq_div_pow]
-    simp [Nat.one_and_eq_mod_two]
-  rcases Nat.mod_two_eq_zero_or_one (k.toNat / 2 ^ b) with h | h
-  · have hg : k.getLsbD b = false := by rw [hb', h]; rfl
-    rw [hg, h, Nat.mul_zero, show lo (if false = true then 0 else BitVec.allOnes 64) = BitVec.allOnes 32 by decide,
-      BitVec.and_allOnes, BitVec.xor_comm a, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-    apply BitVec.eq_of_getLsbD_eq; intro i hi
-    simp [hi]
-  · have hg : k.getLsbD b = true := by rw [hb', h]; rfl
-    rw [hg, h, Nat.mul_one]
-    apply BitVec.eq_of_getLsbD_eq; intro i hi
-    simp [hi]
-
+/-- The rotation: `Krᵢ`'s low byte `k` into `vKr`, then `vI` shifted left
+by `k mod 32` (`sllw`) ORed with `vI` shifted right by `(32 - k) mod 32`
+(`srlw`), which is `32 - k mod 32`, or 0 when that is 0 and the left shift
+is too. -/
 theorem rotate_ok (s : State) {a : BitVec 32} {kr : Byte} (hI : lo (s.gpr vI) = a)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr km + BitVec.ofNat 64 64) 1)
     (hv : s.mem (s.gpr km + BitVec.ofNat 64 64) = kr) :
     WP isa (.block rotate) s fun u =>
-      lo (u.gpr vI) = a.rotateLeft (kr.toNat % 32) ∧ Keep [vKr, msk, tmp, wd, vI] s u ∧ u.mem = s.mem := by
-  have e : rotate = [.load .b vKr km 64] ++ rotateStep 0 ++ rotateStep 1 ++ rotateStep 2 ++ rotateStep 3 ++
-      rotateStep 4 := rfl
-  rw [e, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
-    WP.block_append_iff]
-  have k0 : WP isa (.block [.load .b vKr km 64]) s fun u =>
-      u.gpr vKr = kr.setWidth 64 ∧ lo (u.gpr vI) = a ∧ Keep [vKr, msk, tmp, wd, vI] s u ∧ u.mem = s.mem := by
-    refine wp_lbu (by decide) rfl hin fun u hu => WP.block_nil ?_
-    refine ⟨by rw [hu.gpr, hv], by rw [hu.other _ (by decide)]; exact hI, ⟨fun r hr => hu.other r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; exact hr.1), hu.rd, hu.wr⟩, hu.mem⟩
-  refine WP.mono k0 fun t₀ ⟨k₀, a₀, p₀, m₀⟩ => ?_
-  refine WP.mono (rotateStep_ok t₀ (by decide) a₀ k₀) fun t₁ ⟨a₁, k₁, p₁, m₁⟩ => ?_
-  refine WP.mono (rotateStep_ok t₁ (by decide) a₁ k₁) fun t₂ ⟨a₂, k₂, p₂, m₂⟩ => ?_
-  refine WP.mono (rotateStep_ok t₂ (by decide) a₂ k₂) fun t₃ ⟨a₃, k₃, p₃, m₃⟩ => ?_
-  refine WP.mono (rotateStep_ok t₃ (by decide) a₃ k₃) fun t₄ ⟨a₄, k₄, p₄, m₄⟩ => ?_
-  refine WP.mono (rotateStep_ok t₄ (by decide) a₄ k₄) fun t₅ ⟨a₅, _, p₅, m₅⟩ => ?_
-  have hk : (kr.setWidth 64).toNat = kr.toNat := by
+      lo (u.gpr vI) = a.rotateLeft (kr.toNat % 32) ∧ Keep [vKr, wd, vI] s u ∧ u.mem = s.mem := by
+  unfold rotate
+  refine wp_lbu (by decide) rfl hin fun u hu => ?_
+  have hk : u.gpr vKr = kr.setWidth 64 := by rw [hu.gpr, hv]
+  have ha : lo (u.gpr vI) = a := by rw [hu.other _ (by decide)]; exact hI
+  have hkn : (kr.setWidth 64).toNat = kr.toNat := by
     rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := kr.isLt; omega)
-  refine ⟨?_, ((((p₀.trans p₁).trans p₂).trans p₃).trans p₄).trans p₅ |>.mono fun r hr => ?_,
-    by rw [m₅, m₄, m₃, m₂, m₁, m₀]⟩
-  · rw [a₅]
-    simp only [Proof.Cast5.rotateLeft_rotateLeft, hk]
-    rw [← BitVec.rotateLeft_mod_eq_rotateLeft]
-    congr 1
-    simp only [Nat.reducePow, Nat.div_one, Nat.one_mul]
-    omega
-  · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with ((((h | h | h | h | h) | h | h | h | h) | h | h | h | h) | h | h | h | h) | h | h | h | h <;>
-      simp only [h, true_or, or_true]
+  c5run [hk]
+  refine ⟨?_, ⟨fun r hr => ?_, hu.rd, hu.wr⟩, hu.mem⟩
+  · have e : lo (u.gpr .t5) = a := ha
+    have hr : (32#64 - kr.setWidth 64).toNat % 32 = (32 - kr.toNat % 32) % 32 := by
+      rw [BitVec.toNat_sub, hkn, show (32#64).toNat = 32 from rfl]; have := kr.isLt; omega
+    simp only [lo_or, lo_sext, e, hkn, hr]
+    by_cases h0 : kr.toNat % 32 = 0
+    · rw [h0, BitVec.rotateLeft_eq_rotateLeftAux_of_lt (by decide)]
+      simp [BitVec.rotateLeftAux, BitVec.ushiftRight_eq_zero]
+    · rw [Nat.mod_eq_of_lt (show 32 - kr.toNat % 32 < 32 by omega)]
+      exact rotl_shifts a (Nat.mod_lt _ (by decide))
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.2.1, hr.2.2, ite_false]
+    exact hu.other r hr.1
 
 /-- Index `k` of a scan of `I`: byte `k` of `I` (from the least significant). -/
 abbrev idxOf (i : BitVec 32) (k : Nat) : Nat := i.toNat / 2 ^ (8 * k) % 256
@@ -303,7 +241,7 @@ structure RoundPre (s : State) (kmw krw l r : Spec.Cast5.Word) (t : Nat) : Prop 
   held : Held s.mem (s.gpr tbl) Impl.Cast5.s1234
 
 /-- The registers a round writes. -/
-def roundRegs : List Reg := [tmp, wd, .t2, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, msk,
+def roundRegs : List Reg := [tmp, wd, .t2, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, .a5,
   xL, xR, km, typ, left]
 
 theorem round_ok (s : State) (up : Bool) {kmw krw l r : Spec.Cast5.Word} {t : Nat}
