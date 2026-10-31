@@ -172,9 +172,8 @@ omit hP hF hS hp in
 theorem pub_leq {σ₁ σ₂ : State} (hpub : sPub p σ₁ σ₂)
     (hA₁ : expandA p maxBounds (rhoOf p σ₁) = some (amat p (Am p σ₁)))
     (hA₂ : expandA p maxBounds (rhoOf p σ₂) = some (amat p (Am p σ₂))) : LeakEq p 0 σ₁ σ₂ := by
-  have e := Proof.MlDsa.Sign.signLeakT_congr p
-    (by simp only [skOf, VG.Spec.Sha3.bytesAt, List.length_map, List.length_range]) hpub.2.2.2.2.2.2
-  rw [Proof.MlDsa.Sign.signLeakT_eq hA₁, Proof.MlDsa.Sign.signLeakT_eq hA₂, pub_rho hpub] at e
+  have e := hpub.2.2.2.2.2.2
+  rw [Proof.MlDsa.Sign.signLeak_eq hA₁, Proof.MlDsa.Sign.signLeak_eq hA₂, pub_rho hpub] at e
   exact List.append_cancel_left e
 
 omit hP hF hS hp in

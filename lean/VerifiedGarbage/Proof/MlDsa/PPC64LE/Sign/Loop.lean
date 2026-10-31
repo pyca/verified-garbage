@@ -258,8 +258,8 @@ theorem kthen_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h 
     rw [h.r24, bit_neg hc] at hb; exact hb rfl
   have e24 : s.gpr .r24 = 1 := by rw [h.r24, bit_pos hpass]
   exact ⟨h.b.l.k.of_regs (W1.of_regs (by decide) w) w.2.2.1 w.2.2.2.1 w.2.2.2.2.1 w.2.2.2.2.2,
-    by rw [w.2.2.1]; exact h.b.ct, fun r hr => by rw [w.2.2.1]; exact h.z r hr,
-    fun i hi => by rw [w.2.2.1]; exact h.h i hi, h.b.some, hpass,
+    by rw [w.2.2.1]; exact h.b.ct, fun r hr => by rw [w.2.2.1]; exact h.z hpass r hr,
+    fun i hi => by rw [w.2.2.1]; exact h.h hpass i hi, h.b.some, hpass,
     by rw [w.2.1 .r24 (by decide)]; exact e24, w.1, h.b.l.t_lt, h.b.l.rej⟩
 
 theorem kelse_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (hl : p.ℓ < 2 ^ 15) (h : KO p STK σ t s)
@@ -321,15 +321,45 @@ section
 variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
 include hP hF hS
 
+theorem checksR0_ok {σ : State} (hpre:SPre p STK σ) {t : Nat} {s : State} (h:IQ p STK σ t 0 0 s) :
+    WP isa (checksR0 P p) s (KO p STK σ t) := by
+  unfold checksR0
+  refine WP.seq (WP.mono (seqOk_ok (I:=fun i=>IQ p STK σ t i i) p.k 0
+    (fun i _ hi s hs=>(r0R_piece hP hF hS (by omega)).ok σ s hpre hs) s h) fun s₁ ⟨k,_,hk,hi,hd⟩=>?_)
+  rw [Nat.zero_add] at hk hd
+  apply WP.ite _ (eval_nonzero s₁ .r24)
+  · intro hb
+    have hn:s₁.gpr .r24≠0:=by simpa using hb
+    have he:k=p.k:=hd.resolve_right hn
+    subst he
+    exact WP.seq (WP.mono ((hs_piece hP hF hS).ok σ s₁ hpre hi.ih) fun s₂ h₂=>(onesOk_piece hF).ok σ s₂ hpre h₂)
+  · intro hb
+    have hz:s₁.gpr .r24=0:=by simpa using hb
+    have hn:¬PassV p σ (p.ℓ*t):=fun hp=>(bit_ne.mpr ⟨hp.1,hp.2.1⟩) ((IQ.done hk hi hd).symm.trans hz)
+    exact WP.block_nil (rejected_ko hi.b hn hz)
+
+theorem zchecks_ok {σ : State} (hpre:SPre p STK σ) {t : Nat} {s : State} (h:IZ p STK σ t 0 0 s) :
+    WP isa (.seq (seqOk (zR P p) 0 p.ℓ) (ifOk (checksR0 P p))) s (KO p STK σ t) := by
+  refine WP.seq (WP.mono (seqOk_ok (I:=fun i=>IZ p STK σ t i i) p.ℓ 0
+    (fun i _ hi s hs=>(zR_piece hP hF hS (by omega)).ok σ s hpre hs) s h) fun s₁ ⟨k,_,hk,hi,hd⟩=>?_)
+  rw [Nat.zero_add] at hk hd
+  apply WP.ite _ (eval_nonzero s₁ .r24)
+  · intro hb
+    have hn:s₁.gpr .r24≠0:=by simpa using hb
+    have he:k=p.ℓ:=hd.resolve_right hn
+    subst he
+    exact checksR0_ok hP hF hS hpre hi.iq
+  · intro hb
+    have hz:s₁.gpr .r24=0:=by simpa using hb
+    have hn:¬PassV p σ (p.ℓ*t):=fun hp=>(bit_ne.mpr hp.1) ((IZ.done hk hi hd).symm.trans hz)
+    exact WP.block_nil (rejected_ko hi.b hn hz)
+
 theorem checks_ok {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h : KA p STK t σ s) :
     WP isa (checks P p) s fun s' => EP p STK σ t s' ∨ EF p STK σ t s' := by
   unfold checks
   refine WP.seq (WP.mono ((cntt_piece hP hF hS).ok σ s hpre h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (kinit_piece.ok σ s1 hpre h1) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono ((zs_piece hP hF hS).ok σ s2 hpre h2) fun s3 h3 => ?_)
-  refine WP.seq (WP.mono ((r0s_piece hP hF hS).ok σ s3 hpre h3) fun s4 h4 => ?_)
-  refine WP.seq (WP.mono ((hs_piece hP hF hS).ok σ s4 hpre h4) fun s5 h5 => ?_)
-  exact WP.seq (WP.mono ((onesOk_piece hF).ok σ s5 hpre h5) fun s6 h6 => kbranch_ok (by have := hF.l; omega_arith) h6)
+  exact WP.seq (WP.mono (zchecks_ok hP hF hS hpre h2) fun s₃ h₃=>kbranch_ok (by have := hF.l; omega) h₃)
 
 theorem iter_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h : IL p STK σ t s) :
     WP isa (iter P p) s (LP p STK σ t) := by
