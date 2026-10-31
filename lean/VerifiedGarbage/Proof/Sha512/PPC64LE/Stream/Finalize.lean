@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 
@@ -921,22 +924,18 @@ theorem all_finalizeWith (p : Instr → Bool) (o : List Instr) :
 
 theorem untouched_fixed :
     ((instrs (finalizeWith [])).all fun i => untouched.all fun r => dstOf i != some r) = true :=
-  keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
+  keepsU_all _ (by rw [← Code.allInstrs_eq]; lit_decide)
 
-theorem lr_fixed : lrSafe (finalizeWith []) = true := by decide +kernel
+theorem lr_fixed : lrSafe (finalizeWith []) = true := by lit_decide
 
 theorem lr_finalizeWith (o : List Instr) (ho : o.all (fun i => !i.writesLr) = true) :
     lrSafe (finalizeWith o) = true := by
   have hb := lr_fixed
-  have hr : restore.all (fun i => !i.writesLr) = true := by decide +kernel
+  have hr : restore.all (fun i => !i.writesLr) = true := by lit_decide
   simp only [finalizeWith, lrSafe, Bool.and_eq_true, List.nil_append] at hb ⊢
   refine ⟨hb.1, hb.2.1, lrSafeBlock_of_all ?_⟩
   rw [List.all_append, ho, hr]
   rfl
-
-theorem noCalls_finalizeWith (o : List Instr) : (finalizeWith o).noCalls = true := by
-  have h : (finalizeWith []).noCalls = true := by decide +kernel
-  exact h
 
 theorem finalize64_verified : Verified PPC64LE.target finalize (Proof.Sha512.finalizeDPPC64LE 64) := by
   refine ⟨fun s hs => ?_, ?_, ⟨satD 64, satD_pre (by decide)⟩⟩

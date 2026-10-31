@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 
@@ -590,7 +593,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (hI : Inv s
   have h10₁ : s₁.gpr .r9 = 0 := by rw [u₁.gpr]; rfl
   have nv₁ : ∀ r ∈ nvRegs, s₁.gpr r = s.gpr r := fun r hr => u₁.other r (by revert r hr; decide)
   refine WP.seq (WP.mono (WP.gprs (rs := nvRegs) (Q := fun s' => (∃ c', c < c' ∧ Pending s₀ c' s') ∨ Done s₀ s')
-    ?_ (nv_of_avoids (by decide +kernel)))
+    ?_ (nv_of_avoids (by lit_decide)))
     fun s' ⟨h, hnv⟩ => ?_)
   · refine WP.ite (decide (rr s₀ c = 0))
       (by show VG.PPC64LE.eval (.zero .d .r30) s₁ = _; rw [eval_zero, hI₁.r30, ofNat_beq_zero (by omega_arith)])
@@ -667,7 +670,7 @@ theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : Inv s₀ (l
 
 /-- No instruction of `update` writes the callee-saved registers it does not save. -/
 theorem untouched_ok : ∀ r ∈ untouched, ∀ i ∈ instrs update, dstOf i ≠ some r :=
-  nv_of_avoids (by decide +kernel)
+  nv_of_avoids (by lit_decide)
 
 /-- `update`: the callee-saved registers are kept. -/
 theorem correct {s₀ : State} (hp : Pre s₀) :
@@ -736,7 +739,7 @@ def sat : State where
 theorem update_verified : Verified PPC64LE.target update Proof.Sha512.updatePPC64LE := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr_safe he (by decide +kernel)⟩, h⟩
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr_safe he (by lit_decide)⟩, h⟩
   · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
   · refine ⟨sat, rfl, rfl, ?_, ?_, ?_⟩ <;>
