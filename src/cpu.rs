@@ -29,34 +29,10 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
-/// The bit of each feature detection knows in a [`Features`], by its Rust
-/// `target_feature` name in uppercase: what the generated `_FEATURES`
-/// constants, and the code choosing among implementations, are made of.
-/// (Each target detects and uses only some of them.)
-#[allow(dead_code)]
-pub(crate) mod feature {
-    pub(crate) const SSSE3: u32 = 1 << 0;
-    pub(crate) const SHA: u32 = 1 << 1;
-    pub(crate) const AES: u32 = 1 << 2;
-    pub(crate) const PCLMULQDQ: u32 = 1 << 3;
-    pub(crate) const AVX: u32 = 1 << 4;
-    pub(crate) const AVX2: u32 = 1 << 5;
-    pub(crate) const BMI1: u32 = 1 << 6;
-    pub(crate) const BMI2: u32 = 1 << 7;
-    pub(crate) const AVX512F: u32 = 1 << 8;
-    pub(crate) const SHA512: u32 = 1 << 9;
-    pub(crate) const SHA2: u32 = 1 << 10;
-    pub(crate) const SHA3: u32 = 1 << 11;
-    pub(crate) const ADX: u32 = 1 << 12;
-    pub(crate) const AVX512IFMA: u32 = 1 << 13;
-    pub(crate) const AVX512VL: u32 = 1 << 14;
-    pub(crate) const NEON: u32 = 1 << 15;
-    pub(crate) const SVE2: u32 = 1 << 16;
-    pub(crate) const VAES: u32 = 1 << 17;
-    pub(crate) const VPCLMULQDQ: u32 = 1 << 18;
-    pub(crate) const AVX512BW: u32 = 1 << 19;
-    pub(crate) const UMAAL: u32 = 1 << 20;
-}
+pub(crate) use verified_garbage_cpu::Features;
+// Each target uses only some of the features' bits, and some none.
+#[allow(unused_imports)]
+pub(crate) use verified_garbage_cpu::feature;
 
 /// Each feature's name and bit, for reading `VG_CPU_FEATURES` and for the
 /// tests: bit `i` is `NAMES[i]`'s.
@@ -84,64 +60,6 @@ pub(crate) const NAMES: [(&str, u32); 21] = [
     ("avx512bw", feature::AVX512BW),
     ("umaal", feature::UMAAL),
 ];
-
-/// A set of CPU features.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Features(pub(crate) u32);
-
-impl Features {
-    /// The features in any of `sets`.
-    #[cfg_attr(
-        not(any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            )
-        )),
-        allow(dead_code)
-    )]
-    pub(crate) const fn all(sets: &[Features]) -> Features {
-        let mut acc = 0;
-        let mut i = 0;
-        while i < sets.len() {
-            acc |= sets[i].0;
-            i += 1;
-        }
-        Features(acc)
-    }
-
-    /// Whether every feature of `other` is in `self`.
-    #[cfg_attr(
-        not(any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            )
-        )),
-        allow(dead_code)
-    )]
-    pub(crate) fn contains(self, other: Features) -> bool {
-        self.0 & other.0 == other.0
-    }
-}
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known.
 static DETECTED: AtomicU32 = AtomicU32::new(0);

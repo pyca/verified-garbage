@@ -517,6 +517,7 @@ name = "verified-garbage"
 version = "0.0.0"
 dependencies = [
  "getrandom",
+ "verified-garbage-cpu",
 ]
 
 [[package]]
@@ -531,6 +532,10 @@ dependencies = [
  "openssl-sys",
  "verified-garbage",
 ]
+
+[[package]]
+name = "verified-garbage-cpu"
+version = "0.0.0"
 
 [[package]]
 name = "walkdir"

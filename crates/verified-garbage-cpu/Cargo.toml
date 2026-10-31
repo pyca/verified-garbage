@@ -1,0 +1,10 @@
+[package]
+name = "verified-garbage-cpu"
+description = "The CPU features verified-garbage chooses among implementations by"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+build = false

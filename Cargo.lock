@@ -128,7 +128,12 @@ dependencies = [
  "getrandom",
  "serde",
  "serde_json",
+ "verified-garbage-cpu",
 ]
+
+[[package]]
+name = "verified-garbage-cpu"
+version = "0.0.0"
 
 [[package]]
 name = "zmij"
