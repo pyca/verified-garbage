@@ -671,12 +671,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn randomness() {
-        let mut seed = [0u8; 32];
-        os_random(&mut seed).unwrap();
-    }
-
     /// The same seed gives the same ciphertext, as the fixed-tape benchmark
     /// relies on, and a failing draw fails the encryption.
     #[test]

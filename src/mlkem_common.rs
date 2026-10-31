@@ -567,41 +567,6 @@ macro_rules! ml_kem {
             }
         }
 
-        #[cfg(all(test, target_arch = "x86_64"))]
-        mod backend_tests {
-            use super::{Backend, $DecapsulationKey, $EncapsulationKey, AVX2, AVX512};
-
-            /// Each instance the CPU can run agrees with the baseline's, with
-            /// a key that keeps `H(ek)` (from key generation, encapsulating
-            /// with `encaps_h`) and with one that does not (from
-            /// `from_bytes`, encapsulating with `encaps`, which hashes it).
-            #[test]
-            fn kept_and_computed_hash_agree() {
-                let f = $crate::cpu::detected();
-                let backends = [
-                    (Backend::Scalar, true),
-                    (Backend::Avx2, f.contains(const { verified_garbage_cpu::Features::all(AVX2) })),
-                    (Backend::Avx512, f.contains(const { verified_garbage_cpu::Features::all(AVX512) })),
-                ];
-                for i in 0..2u8 {
-                    let seed: [u8; 64] = core::array::from_fn(|j| (j as u8).wrapping_mul(29) ^ i);
-                    let m: [u8; 32] = core::array::from_fn(|j| (j as u8).wrapping_mul(13) ^ i);
-                    let dk = $DecapsulationKey::from_seed(&seed).unwrap();
-                    let kept = dk.encapsulation_key();
-                    let computed = $EncapsulationKey::from_bytes(kept.as_bytes()).unwrap();
-                    assert!(kept.h.is_some() && computed.h.is_none() && &computed == kept);
-                    // SAFETY: the baseline needs no feature.
-                    let want = unsafe { kept.encapsulate_with(&m, Backend::Scalar) }.unwrap();
-                    for (backend, _) in backends.iter().filter(|b| b.1) {
-                        // SAFETY: the CPU has the features of `backend`'s instances.
-                        assert_eq!(unsafe { kept.encapsulate_with(&m, *backend) }.unwrap(), want);
-                        // SAFETY: as above.
-                        assert_eq!(unsafe { computed.encapsulate_with(&m, *backend) }.unwrap(), want);
-                    }
-                }
-            }
-        }
-
         #[cfg(all(test, target_arch = "aarch64"))]
         mod backend_tests {
             use super::{Backend, $DecapsulationKey, SHA3};

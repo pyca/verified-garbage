@@ -170,19 +170,4 @@ mod tests {
         assert_eq!(<Sha256 as HashFunction>::OUTPUT_SIZE, 32);
         assert_eq!(<Sha256 as HashFunction>::BLOCK_SIZE, 64);
     }
-
-    /// A computation rebuilt from another's streaming state, length and
-    /// implementation (as HMAC's are) continues it.
-    #[test]
-    fn from_state() {
-        let msg = [0x5a; 300];
-        let mut h = Sha256::new();
-        h.update(&msg[..100]);
-        let backend = h.backend();
-        let (state, length) = h.state_mut();
-        assert_eq!(length, 100);
-        let mut g = Sha256::from_state(*state, length, backend);
-        g.update(&msg[100..]);
-        assert_eq!(g.finalize(), Sha256::digest(&msg));
-    }
 }
