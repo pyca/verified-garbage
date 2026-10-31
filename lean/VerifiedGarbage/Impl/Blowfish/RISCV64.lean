@@ -11,19 +11,17 @@ One block at a time in general-purpose registers, and an S-box lookup reads
 every entry of the S-box's four byte planes, a row of eight entries of each
 plane (a doubleword, `ld`) at a time, with the 32 rows unrolled. A row's
 mask is all ones if the row holds the index's entry, else zero, made
-without a comparison from the index's row `q` (the index shifted right by
-three): `q XOR k` is zero exactly for row `k`, and less one it is negative,
-so shifted right arithmetically by 63 it is all ones, exactly then. Each
+without a comparison from one bit at the index's row `q` (the index
+shifted right by three), `2 ^ q` (1 shifted left by `q`, `sll`): row `k`'s
+mask is its bit `k` shifted to the top and arithmetically back down. Each
 plane has its own accumulator, into which its masked doublewords are ORed,
 so that after the last row it is the plane's doubleword of the index's row.
 Plane `b`'s byte of the entry is its byte in the index's lane `L` (the index
-mod 8): the accumulator times `2 ^ (56 - 8L)` has that byte on top, which a
-shift right by 56 brings down, and a shift left by `8b` puts in place. The
-multiplier is a product of three factors, `2 ^ (8 * 2 ^ c)` or 1 as bit `c`
-of `L` is clear or set, each made from its bit by shifts. Every address and
-branch is a public counter or pointer; the index is only ever an operand of
-the masks' and the multiplications' arithmetic (`mul`'s latency does not
-depend on its operands, see `TCB/RISCV64/Isa.lean`).
+mod 8): the accumulator shifted right by `8L` (`srl`) has it at the bottom,
+which `andi` keeps, and a shift left by `8b` puts in place. Every address
+and branch is a public counter or pointer; the index is only ever an
+operand of the masks' and the shifts' arithmetic (shifts by a register
+take a time that depends on neither operand, see `TCB/RISCV64/Isa.lean`).
 
 The offsets of the loads (below 2048) reach only one S-box from a base, so
 F moves the schedule's pointer `sch` from each S-box to the next, by 1024,
@@ -47,9 +45,8 @@ Registers: the frame (the schedule) at `a7` (`sch`, at S-box `j` during
 its lookup), the halves in `a3` (xL) and `a4` (xR), F in `a5`, the P-array
 pointer in `a6`; during a lookup, the index's row in `t1` (`q`), the row's
 mask in `t3`, a temporary in `t4` and the accumulators of planes 0 to 3 in
-`t2` (`acc`, which ends with the entry), `t5`, `t6` and `t0`; at the end, the
-multiplier's factors in `t4` and `t1`, and the complemented index (shifted
-to the top) in `t3`. ECB keeps the data pointer in `a1` and the blocks left
+`t2` (`acc`, which ends with the entry), `t5`, `t6` and `t0`; at the end,
+the lane's shift `8L` in `t3`. ECB keeps the data pointer in `a1` and the blocks left
 in `a2`; key expansion, the schedule's pointer in `a2`, the pointer to the
 next entries in `a1` and the encryptions left in `a0`. Only temporaries and
 argument registers are used.
@@ -90,15 +87,18 @@ def accOf : Nat → Reg
   | 2 => .t6
   | _ => .t0
 
-/-- `q` := the row of the byte of xL that indexes S-box `j`: byte `3 - j`,
-shifted to the top of the doubleword, and back but for its lane's bits. -/
+/-- `q` := one bit, at the row of the byte of xL that indexes S-box `j`
+(`t3` is 1 after it):
+byte `3 - j`, shifted to the top of the doubleword and back but for its
+lane's bits, then 1 shifted left by it. -/
 def index (j : Nat) : List Instr :=
-  [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 59]
+  [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 59, .li mReg 1,
+   .shiftReg .sll .d qReg mReg qReg]
 
-/-- Row `k`'s mask: all ones if `q` is `k` (`q XOR k` is zero, so less one
-it is negative), else zero. -/
+/-- Row `k`'s mask: all ones if `q`'s bit `k` is set, else zero (the bit
+shifted to the top, and arithmetically down). -/
 def rowMask (k : Nat) : List Instr :=
-  [.logicImm .xor mReg qReg k, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63]
+  [.shift .sll .d mReg qReg (63 - k), .shift .sra .d mReg mReg 63]
 
 /-- Plane `b`'s doubleword of row 0, masked, into its accumulator. -/
 def firstPlane (b : Nat) : List Instr :=
@@ -118,25 +118,17 @@ def row (k : Nat) : List Instr := rowMask k ++ plane k 0 ++ plane k 1 ++ plane k
 /-- Rows `0, …, n`. -/
 def rows (n : Nat) : List Instr := row0 ++ (List.range n).flatMap fun i => row (i + 1)
 
-/-- `d := 2 ^ (8 * 2 ^ c)` if bit `c` of the lane (bit `56 + c` of `t3`'s
-complement) is clear, else 1: the bit shifted to the top, arithmetically
-down, logically down to `8 * 2 ^ c` ones, plus one. -/
-def factor (d : Reg) (c : Nat) : List Instr :=
-  [.shift .sll .d d mReg (7 - c), .shift .sra .d d d 63, .shift .srl .d d d (64 - 8 * 2 ^ c), .addi d d 1]
-
-/-- Plane `b`'s byte of the entry from its accumulator: the accumulator
-times `2 ^ (56 - 8L)` (in `q`), whose top byte is lane `L`'s, shifted down
-to byte `b`. -/
+/-- Plane `b`'s byte of the entry from its accumulator: shifted right by
+`8L` (in `t3`), the low byte, shifted up to byte `b`. -/
 def pick (b : Nat) : List Instr :=
-  [.mul (accOf b) (accOf b) qReg, .shift .srl .d (accOf b) (accOf b) 56] ++
+  [.shiftReg .srl .d (accOf b) (accOf b) mReg, .logicImm .and (accOf b) (accOf b) 255] ++
     if b = 0 then [] else [.shift .sll .d (accOf b) (accOf b) (8 * b)]
 
-/-- The entry from the accumulators, into the low word of `acc`: `q :=
-2 ^ (56 - 8L)` for the index's lane `L`, a product of three factors, then
-each plane's byte and their OR. -/
+/-- The entry from the accumulators, into the low word of `acc`: `t3 := 8L`
+for the index's lane `L`, then each plane's byte and their OR. -/
 def extract (j : Nat) : List Instr :=
-  [.shift .sll .d mReg xL (32 + 8 * j), .logicImm .xor mReg mReg (-1)] ++ factor tmp 0 ++ factor qReg 1 ++
-    [.mul tmp tmp qReg] ++ factor qReg 2 ++ [.mul qReg tmp qReg] ++ pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
+  [.shift .srl .d mReg xL (24 - 8 * j), .logicImm .and mReg mReg 7, .shift .sll .d mReg mReg 3] ++
+    pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
     [.logic .or acc acc (accOf 1), .logic .or (accOf 2) (accOf 2) (accOf 3), .logic .or acc acc (accOf 2)]
 
 /-- S-box `j`, at `sch` (which F moves there), of xL's byte `3 - j`, into

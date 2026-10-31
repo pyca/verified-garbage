@@ -18,10 +18,11 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 leaves S-box `j`'s entry for the byte `3 - j` of xL's low word in the
 accumulator's low word, changing only the lookup's registers. The rows
 (`row_step`, by induction in `rows_run`) leave each plane's doubleword of the
-index's row in its accumulator (`scanPlane`, `Proof/Blowfish/Scan64.lean`);
-the end (`extract`) multiplies each by `2 ^ (56 - 8L)` (`fac_prod`), which
-brings the byte of the index's lane `L` to the top (`mul_byte`), and packs
-the four bytes into the entry (`pack_byte`).
+index's row in its accumulator (`scanPlane`, `Proof/Blowfish/Scan64.lean`),
+each row's mask being its bit of `2 ^ q` spread over the doubleword
+(`mask_eq`); the end (`extract`) shifts each right by `8L` (`lane_val`),
+which brings the byte of the index's lane `L` to the bottom (`shr_byte`),
+and packs the four bytes into the entry (`pack_byte`).
 -/
 
 @[expose] public section
@@ -96,11 +97,6 @@ theorem index_val (x : BitVec 64) {j : Nat} (hj : j < 4) :
 
 /-! ## The rows -/
 
-/-- `xori` of a numeral below 2048. -/
-theorem exec_xori_nat {s : State} {d n : Reg} {m : Nat} (h : m < 2048) :
-    exec (.logicImm .xor d n (m : Int)) s = some (s.write d (s.gpr n ^^^ BitVec.ofNat 64 m)) := by
-  rw [exec_logicImm (by unfold imm12; omega), BitVec.ofInt_natCast]
-
 /-- Row `k > 0`: each accumulator ORed with its plane's doubleword, masked. -/
 theorem row_run (u : State) {k : Nat} (hk : k < 32) {B q : BitVec 64}
     (h7 : u.gpr .a7 = B) (h1 : u.gpr .t1 = q)
@@ -113,14 +109,14 @@ theorem row_run (u : State) {k : Nat} (hk : k < 32) {B q : BitVec 64}
     (a2 : (B + BitVec.ofNat 64 (512 + 8 * k)).toNat % 8 = 0)
     (a3 : (B + BitVec.ofNat 64 (768 + 8 * k)).toNat % 8 = 0) :
     WP isa (.block (row k)) u fun t =>
-      let M := ((q ^^^ BitVec.ofNat 64 k) - 1#64).sshiftRight 63
+      let M := (q <<< (63 - k)).sshiftRight 63
       t.gpr .t2 = u.gpr .t2 ||| (u.mem.readW (B + BitVec.ofNat 64 (8 * k)) 64 &&& M) ∧
       t.gpr .t5 = u.gpr .t5 ||| (u.mem.readW (B + BitVec.ofNat 64 (256 + 8 * k)) 64 &&& M) ∧
       t.gpr .t6 = u.gpr .t6 ||| (u.mem.readW (B + BitVec.ofNat 64 (512 + 8 * k)) 64 &&& M) ∧
       t.gpr .t0 = u.gpr .t0 ||| (u.mem.readW (B + BitVec.ofNat 64 (768 + 8 * k)) 64 &&& M) ∧
       t.mem = u.mem := by
   unfold row rowMask plane
-  brun [↓exec_xori_nat, accOf, Nat.zero_add, h7, h1, r0, r1, r2, r3, a0, a1, a2, a3, show k < 2048 by omega,
+  brun [accOf, Nat.zero_add, h7, h1, r0, r1, r2, r3, a0, a1, a2, a3, show 63 - k < 64 by omega,
     show 8 * k < 2048 by omega, show 256 * 1 + 8 * k < 2048 by omega,
     show 256 * 2 + 8 * k < 2048 by omega, show 256 * 3 + 8 * k < 2048 by omega]
 
@@ -134,34 +130,24 @@ theorem row0_run (u : State) {B q : BitVec 64}
     (a0 : B.toNat % 8 = 0) (a1 : (B + 256#64).toNat % 8 = 0)
     (a2 : (B + 512#64).toNat % 8 = 0) (a3 : (B + 768#64).toNat % 8 = 0) :
     WP isa (.block row0) u fun t =>
-      let M := ((q ^^^ BitVec.ofNat 64 0) - 1#64).sshiftRight 63
+      let M := (q <<< (63 - 0)).sshiftRight 63
       t.gpr .t2 = u.mem.readW B 64 &&& M ∧ t.gpr .t5 = u.mem.readW (B + 256#64) 64 &&& M ∧
       t.gpr .t6 = u.mem.readW (B + 512#64) 64 &&& M ∧ t.gpr .t0 = u.mem.readW (B + 768#64) 64 &&& M ∧
       t.mem = u.mem := by
   unfold row0 rowMask firstPlane
-  brun [↓exec_xori_nat, accOf, h7, h1, r0, r1, r2, r3, a0, a1, a2, a3]
+  brun [accOf, h7, h1, r0, r1, r2, r3, a0, a1, a2, a3]
 
-/-- The row's mask, from the index's row in `t1`. -/
+/-- The row's mask, from the bit of the index's row in `t1`. -/
 theorem mask_eq (x : Byte) {k : Nat} (hk : k < 32) :
-    ((BitVec.ofNat 64 (x.toNat / 8) ^^^ BitVec.ofNat 64 k) - 1#64).sshiftRight 63 = rowSel x.toNat k := by
-  have hx := x.isLt
-  have e : (BitVec.ofNat 64 (x.toNat / 8) ^^^ BitVec.ofNat 64 k).toNat = x.toNat / 8 ^^^ k := by
-    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-  have hl : x.toNat / 8 ^^^ k < 2 ^ 5 := Nat.xor_lt_two_pow (by omega) (by omega)
-  rw [sra_mask _ (by rw [e]; omega), rowSel]
+    (BitVec.twoPow 64 (x.toNat / 8) <<< (63 - k)).sshiftRight 63 = rowSel x.toNat k := by
+  rw [bit_mask _ (by omega), BitVec.getLsbD_twoPow, rowSel]
   by_cases h : x.toNat / 8 = k
-  · rw [ite_eq_left h, ite_eq_left (by rw [h, BitVec.xor_self]; rfl)]
-  · have hne : BitVec.ofNat 64 (x.toNat / 8) ≠ BitVec.ofNat 64 k := fun e' => h (by
-      have := congrArg BitVec.toNat e'
-      rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
-      exact this)
-    rw [ite_eq_right h, ite_eq_right (fun h' => hne (BitVec.xor_eq_zero_iff.mp (BitVec.eq_of_toNat_eq (by
-      rw [h']; rfl))))]
+  · subst h; simp only [ite_true, decide_eq_true (by omega : x.toNat / 8 < 64), Bool.true_and, decide_true]
+  · simp [h]
 
 theorem index_run (s : State) {j : Nat} (hj : j < 4) :
     WP isa (.block (index j)) s fun t =>
-      t.gpr .t1 = BitVec.ofNat 64 ((quarter (lo (s.gpr .a3)) j).toNat / 8) ∧ t.mem = s.mem := by
+      t.gpr .t1 = BitVec.twoPow 64 ((quarter (lo (s.gpr .a3)) j).toNat / 8) ∧ t.mem = s.mem := by
   have e : (s.gpr .a3 <<< (32 + 8 * j)) >>> 59 = BitVec.ofNat 64 ((quarter (lo (s.gpr .a3)) j).toNat / 8) := by
     have h := congrArg (fun v : BitVec 64 => v >>> 3) (index_val (s.gpr .a3) hj)
     rw [← BitVec.shiftRight_add] at h
@@ -170,9 +156,11 @@ theorem index_run (s : State) {j : Nat} (hj : j < 4) :
     have := (quarter (lo (s.gpr .a3)) j).isLt
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  rw [← e]
+  have hq := (quarter (lo (s.gpr .a3)) j).isLt
   unfold index
-  brun [show 32 + 8 * j < 64 by omega]
+  brun [show 32 + 8 * j < 64 by omega, e]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rfl
 
 /-- The schedule at `S`, readable a doubleword at a time, and aligned. -/
 structure SchAt (s : State) (S : Addr) : Prop where
@@ -182,7 +170,7 @@ structure SchAt (s : State) (S : Addr) : Prop where
 /-- After rows `0, …, n - 1` of S-box `j` of the schedule at `S` for the
 index `idx`, from the lookup's start `s₀`. -/
 structure RowInv (s₀ : State) (S : Addr) (j : Nat) (idx : Byte) (n : Nat) (u : State) : Prop where
-  q : u.gpr .t1 = BitVec.ofNat 64 (idx.toNat / 8)
+  q : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8)
   p0 : u.gpr .t2 = scanPlane s₀.mem S j 0 idx.toNat n
   p1 : u.gpr .t5 = scanPlane s₀.mem S j 1 idx.toNat n
   p2 : u.gpr .t6 = scanPlane s₀.mem S j 2 idx.toNat n
@@ -198,7 +186,7 @@ theorem plane_addr (S : Addr) (j b k : Nat) (_ : 1024 * j + 256 * b + 8 * k < 2 
 
 theorem row0_step {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j < 4) (idx : Byte)
     {u : State} (h7 : u.gpr .a7 = S + BitVec.ofNat 64 (1024 * j))
-    (hq : u.gpr .t1 = BitVec.ofNat 64 (idx.toNat / 8)) (hk : Keep lookRegs s₀ u) (hm : u.mem = s₀.mem) :
+    (hq : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8)) (hk : Keep lookRegs s₀ u) (hm : u.mem = s₀.mem) :
     WP isa (.block row0) u (RowInv s₀ S j idx 1) := by
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [hk.2.1, hk.2.2]
   let B := S + BitVec.ofNat 64 (1024 * j)
@@ -267,7 +255,7 @@ theorem rows_succ (n : Nat) : rows (n + 1) = rows n ++ row (n + 1) := by
 
 theorem rows_run {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j < 4) (idx : Byte)
     {u : State} (h7 : u.gpr .a7 = S + BitVec.ofNat 64 (1024 * j))
-    (hq : u.gpr .t1 = BitVec.ofNat 64 (idx.toNat / 8)) (hk : Keep lookRegs s₀ u) (hm : u.mem = s₀.mem)
+    (hq : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8)) (hk : Keep lookRegs s₀ u) (hm : u.mem = s₀.mem)
     (h7₀ : s₀.gpr .a7 = S + BitVec.ofNat 64 (1024 * j)) :
     ∀ n, n < 32 → WP isa (.block (rows n)) u (RowInv s₀ S j idx (n + 1)) := by
   intro n
@@ -281,59 +269,57 @@ theorem rows_run {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j 
 
 /-! ## The entry from the accumulators -/
 
-theorem notShift_run (s : State) {j : Nat} (hj : j < 4) :
-    WP isa (.block [.shift .sll .d mReg xL (32 + 8 * j), .logicImm .xor mReg mReg (-1)]) s fun t =>
-      t.gpr .t3 = ~~~(s.gpr .a3 <<< (32 + 8 * j)) ∧ t.mem = s.mem := by
-  brun [show 32 + 8 * j < 64 by omega]
-  rw [show (-1#64 : BitVec 64) = BitVec.allOnes 64 from rfl, BitVec.xor_allOnes]
+/-- `t3 := 8L` for the lane `L` of xL's byte `3 - j`. -/
+theorem lane_val (x : BitVec 64) {j : Nat} (hj : j < 4) :
+    ((x >>> (24 - 8 * j)) &&& 7#64) <<< 3 = BitVec.ofNat 64 (8 * ((quarter (lo x) j).toNat % 8)) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [quarter, BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_ushiftRight,
+    BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.shiftLeft_eq]
+  rw [show (7 : Nat) % 2 ^ 64 = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
+    show 24 - 8 * j = 8 * (3 - j) by omega]
+  have e32 : (2 : Nat) ^ 32 = 2 ^ (8 * (3 - j)) * 2 ^ (32 - 8 * (3 - j)) := by
+    rw [← Nat.pow_add]; congr 1; omega
+  rw [e32, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (by decide : 8 ∣ 2 ^ 8),
+    Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega : 3 ≤ 32 - 8 * (3 - j)))]
+  generalize x.toNat / 2 ^ (8 * (3 - j)) = n
+  have : n % 8 < 8 := Nat.mod_lt _ (by decide)
+  show n % 8 * 8 % 2 ^ 64 = 8 * (n % 8) % 2 ^ 64
+  rw [Nat.mul_comm]
 
-theorem ones_fac : ∀ c < 3, BitVec.allOnes 64 >>> (64 - 8 * 2 ^ c) + 1#64 = BitVec.ofNat 64 (2 ^ (8 * 2 ^ c)) := by
-  decide
+theorem lane_run (s : State) {j : Nat} (hj : j < 4) :
+    WP isa (.block [.shift .srl .d mReg xL (24 - 8 * j), .logicImm .and mReg mReg 7,
+      .shift .sll .d mReg mReg 3]) s fun t =>
+      t.gpr .t3 = BitVec.ofNat 64 (8 * ((quarter (lo (s.gpr .a3)) j).toNat % 8)) ∧ t.mem = s.mem := by
+  rw [← lane_val _ hj]
+  brun [show 24 - 8 * j < 64 by omega]
 
-theorem factor_run (s : State) (d : Reg) {c : Nat} (hc : c < 3) :
-    WP isa (.block (factor d c)) s fun t =>
-      t.gpr d = (if (s.gpr .t3).getLsbD (56 + c) then BitVec.ofNat 64 (2 ^ (8 * 2 ^ c)) else 1) ∧
-        t.mem = s.mem := by
-  unfold factor
-  have bm := bit_mask (s.gpr .t3) (c := 56 + c) (by omega)
-  rw [show 63 - (56 + c) = 7 - c by omega] at bm
-  brun [show 7 - c < 64 by omega, show 64 - 8 * 2 ^ c < 64 by
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide]
-  rw [bm]
-  by_cases h : (s.gpr .t3).getLsbD (56 + c) = true
-  · rw [ite_eq_left h, ite_eq_left h, ones_fac c hc]
-  · rw [ite_eq_right h, ite_eq_right h]
-    exact (by simp : ∀ n : Nat, (0 : BitVec 64) >>> n + 1#64 = 1) _
-
-theorem pick_run (u : State) {K A0 A1 A2 A3 : BitVec 64} (h1 : u.gpr .t1 = K) (h2 : u.gpr .t2 = A0)
+theorem pick_run (u : State) {K A0 A1 A2 A3 : BitVec 64} (h3 : u.gpr .t3 = K) (h2 : u.gpr .t2 = A0)
     (h5 : u.gpr .t5 = A1) (h6 : u.gpr .t6 = A2) (h0 : u.gpr .t0 = A3) :
     WP isa (.block (pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
       ([.logic .or acc acc (accOf 1), .logic .or (accOf 2) (accOf 2) (accOf 3), .logic .or acc acc (accOf 2)] :
         List Instr))) u fun t =>
-      t.gpr .t2 = ((A0 * K) >>> 56 ||| ((A1 * K) >>> 56) <<< 8) |||
-        (((A2 * K) >>> 56) <<< 16 ||| ((A3 * K) >>> 56) <<< 24) ∧ t.mem = u.mem := by
+      t.gpr .t2 = ((A0 >>> (K.toNat % 64) &&& 255#64) ||| (A1 >>> (K.toNat % 64) &&& 255#64) <<< 8) |||
+        ((A2 >>> (K.toNat % 64) &&& 255#64) <<< 16 ||| (A3 >>> (K.toNat % 64) &&& 255#64) <<< 24) ∧
+        t.mem = u.mem := by
   unfold pick
-  brun [accOf, h1, h2, h5, h6, h0]
+  brun [accOf, h3, h2, h5, h6, h0]
 
-/-- A doubleword times `2 ^ (56 - 8L)`, shifted down 56: its byte `L`. -/
-theorem mul_byte (a : BitVec 64) {L : Nat} (hL : L < 8) :
-    (a * BitVec.ofNat 64 (2 ^ (56 - 8 * L))) >>> 56 = (a.extractLsb' (8 * L) 8).setWidth 64 := by
-  have e : BitVec.ofNat 64 (2 ^ (56 - 8 * L)) = BitVec.twoPow 64 (56 - 8 * L) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_twoPow, BitVec.toNat_ofNat]
-  rw [e, BitVec.mul_twoPow_eq_shiftLeft]
+/-- A doubleword shifted right by `8L` and masked: its byte `L`. -/
+theorem shr_byte (a : BitVec 64) (L : Nat) :
+    (a >>> (8 * L)) &&& 255#64 = (a.extractLsb' (8 * L) 8).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
+  simp only [BitVec.getLsbD_and, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_extractLsb']
   by_cases h8 : i < 8
-  · simp only [h8, decide_true, Bool.true_and, show 56 + i < 64 by omega,
-      show ¬ (56 + i < 56 - 8 * L) by omega, decide_false, Bool.not_false]
-    rw [decide_eq_true (by omega : i < 64), Bool.true_and]
-    congr 1; omega
-  · simp only [h8, decide_false, Bool.false_and]
-    by_cases h : 56 + i < 64
-    · omega
-    · simp [h]
+  · have : (255#64).getLsbD i = true := by
+      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    rw [this, Bool.and_true, decide_eq_true h8, decide_eq_true hi, Bool.true_and, Bool.true_and, Nat.add_comm]
+  · have : (255#64).getLsbD i = false := by
+      rw [BitVec.getLsbD_ofNat]; simp only [Bool.and_eq_false_iff]; right
+      rw [Nat.testBit_lt_two_pow (by have := Nat.pow_le_pow_right (by decide : 0 < 2) (by omega : 8 ≤ i); omega)]
+    rw [this, Bool.and_false, decide_eq_false h8, Bool.false_and, Bool.and_false]
 
 /-- The low word of four bytes ORed into place. -/
 theorem pack_byte (y : Nat → Byte) {c : Nat} (hc : c < 4) :
@@ -347,44 +333,6 @@ theorem pack_byte (y : Nat → Byte) {c : Nat} (hc : c < 4) :
       Bool.false_and, Bool.and_false, Bool.false_or, Bool.or_false, Bool.not_true, Bool.not_false,
       Nat.add_sub_cancel_left, Nat.zero_add, BitVec.getLsbD_of_ge, Nat.reduceMul]
 
-/-- The low three bits of `q`, by `q`'s residue mod 8. -/
-theorem bit012 (q : BitVec 64) :
-    q.getLsbD 0 = decide (q.toNat % 8 % 2 = 1) ∧ q.getLsbD 1 = decide (q.toNat % 8 / 2 % 2 = 1) ∧
-      q.getLsbD 2 = decide (q.toNat % 8 / 4 = 1) := by
-  simp only [BitVec.getLsbD, Nat.testBit_zero, Nat.testBit_succ]
-  refine ⟨?_, ?_, ?_⟩ <;> congr 1 <;> apply propext <;> omega
-
-/-- The three factors' product, `2 ^ (56 - 8L)`, by the lane's bits. -/
-theorem fac_prod {L : Nat} (hL : L < 8) :
-    (if (!decide (L % 8 % 2 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 0)) else 1) *
-      (if (!decide (L % 8 / 2 % 2 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 1)) else 1) *
-      (if (!decide (L % 8 / 4 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 2)) else 1) =
-      BitVec.ofNat 64 (2 ^ (56 - 8 * L)) := by
-  have h : ∀ L < 8,
-      (if (!decide (L % 8 % 2 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 0)) else 1) *
-        (if (!decide (L % 8 / 2 % 2 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 1)) else 1) *
-        (if (!decide (L % 8 / 4 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 2)) else 1) =
-        BitVec.ofNat 64 (2 ^ (56 - 8 * L)) := by
-    decide
-  exact h L hL
-
-/-- `fac_prod` for any index, by its lane. -/
-theorem fac_prod' (x : Nat) :
-    (if (!decide (x % 8 % 2 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 0)) else 1) *
-      (if (!decide (x % 8 / 2 % 2 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 1)) else 1) *
-      (if (!decide (x % 8 / 4 = 1)) = true then BitVec.ofNat 64 (2 ^ (8 * 2 ^ 2)) else 1) =
-      BitVec.ofNat 64 (2 ^ (56 - 8 * (x % 8))) := by
-  have := fac_prod (L := x % 8) (Nat.mod_lt _ (by decide))
-  rw [Nat.mod_mod] at this
-  exact this
-
-/-- Bit `56 + c` of the complemented, shifted xL is the complement of bit
-`c` of the index. -/
-theorem notShift_bit (x : BitVec 64) {j c : Nat} (hj : j < 4) (hc : c < 8) :
-    (~~~(x <<< (32 + 8 * j))).getLsbD (56 + c) = !((quarter (lo x) j).setWidth 64).getLsbD c := by
-  rw [← index_val x hj, BitVec.getLsbD_not, BitVec.getLsbD_ushiftRight, decide_eq_true (by omega : 56 + c < 64),
-    Bool.true_and]
-
 /-- The lookup of S-box `j` (at `sch`, moved to it) for the byte `3 - j` of
 xL's low word. -/
 theorem lookup_run {s : State} {S : Addr} (E : SchAt s S) {j : Nat} (hj : j < 4)
@@ -395,7 +343,7 @@ theorem lookup_run {s : State} {S : Addr} (E : SchAt s S) {j : Nat} (hj : j < 4)
   let idx := quarter (lo (s.gpr .a3)) j
   unfold lookup
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (WP.keep [.t1] (index_run s hj) (by rfl) rfl) fun u ⟨⟨u1, um⟩, uk⟩ => ?_
+  refine WP.mono (WP.keep [.t1, .t3] (index_run s hj) (by rfl) rfl) fun u ⟨⟨u1, um⟩, uk⟩ => ?_
   rw [WP.block_append_iff]
   have uk' : Keep lookRegs s u := uk.mono (by decide)
   refine WP.mono (rows_run E hj idx (by rw [uk.gpr (by decide), h7]) u1 uk' um h7 31 (by decide))
@@ -403,65 +351,19 @@ theorem lookup_run {s : State} {S : Addr} (E : SchAt s S) {j : Nat} (hj : j < 4)
   unfold extract
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t3] (notShift_run v hj) (by rfl) rfl) fun w ⟨⟨w3, wm⟩, wk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t4] (factor_run w .t4 (c := 0) (by decide)) (by rfl) rfl)
-    fun x ⟨⟨x4, xm⟩, xk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t1] (factor_run x .t1 (c := 1) (by decide)) (by rfl) rfl)
-    fun y ⟨⟨y1, ym⟩, yk⟩ => ?_
-  rw [WP.block_append_iff]
-  have mul1 : WP isa (.block [.mul tmp tmp qReg]) y fun t =>
-      t.gpr .t4 = y.gpr .t4 * y.gpr .t1 ∧ t.mem = y.mem := by brun
-  refine WP.mono (WP.keep [.t4] mul1 (by rfl) rfl) fun z ⟨⟨z4, zm⟩, zk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t1] (factor_run z .t1 (c := 2) (by decide)) (by rfl) rfl)
-    fun z' ⟨⟨z'1, z'm⟩, z'k⟩ => ?_
-  rw [WP.block_append_iff]
-  have mul2 : WP isa (.block [.mul qReg tmp qReg]) z' fun t =>
-      t.gpr .t1 = z'.gpr .t4 * z'.gpr .t1 ∧ t.mem = z'.mem := by brun
-  refine WP.mono (WP.keep [.t1] mul2 (by rfl) rfl) fun a ⟨⟨a1, am⟩, ak⟩ => ?_
-  simp only [← List.append_assoc]
-  -- the factors' product
+  refine WP.mono (WP.keep [.t3] (lane_run v hj) (by rfl) rfl) fun w ⟨⟨w3, wm⟩, wk⟩ => ?_
   have hv3 : v.gpr .a3 = s.gpr .a3 := V.keep.gpr (by decide)
-  have hb : ∀ c < 8, (w.gpr .t3).getLsbD (56 + c) = !((idx.setWidth 64).getLsbD c) := fun c hc => by
-    rw [w3, hv3]; exact notShift_bit _ hj hc
-  obtain ⟨b0, b1, b2⟩ := bit012 (idx.setWidth 64)
-  have hn : (idx.setWidth 64).toNat = idx.toNat := by
-    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := idx.isLt; omega)
-  rw [hn] at b0 b1 b2
-  have x3 : x.gpr .t3 = w.gpr .t3 := xk.gpr (r := .t3) (by decide)
-  have y3 : y.gpr .t3 = w.gpr .t3 := (yk.gpr (r := .t3) (by decide)).trans x3
-  have z3 : z.gpr .t3 = w.gpr .t3 := (zk.gpr (r := .t3) (by decide)).trans y3
-  have y4 : y.gpr .t4 = x.gpr .t4 := yk.gpr (r := .t4) (by decide)
-  have z'4 : z'.gpr .t4 = z.gpr .t4 := z'k.gpr (r := .t4) (by decide)
-  have zy1 : z.gpr .t1 = y.gpr .t1 := zk.gpr (r := .t1) (by decide)
-  have hK : a.gpr .t1 = BitVec.ofNat 64 (2 ^ (56 - 8 * (idx.toNat % 8))) := by
-    rw [a1, z'4, z4, z'1, y4, x4, y1, z3, x3, hb 0 (by decide), hb 1 (by decide), hb 2 (by decide),
-      b0, b1, b2]
-    exact fac_prod' _
-  have ka : Keep lookRegs v a :=
-    ((((wk.trans xk).trans yk).trans zk).trans z'k).trans ak |>.mono (by decide)
-  have hm : a.mem = s.mem := by rw [am, z'm, zm, ym, xm, wm, V.mem]
-  have pa : ∀ r, r ∉ lookRegs → a.gpr r = v.gpr r := fun r hr => ka.gpr hr
-  have g2 : a.gpr .t2 = v.gpr .t2 := by
-    rw [ak.gpr (by decide), z'k.gpr (by decide), zk.gpr (by decide), yk.gpr (by decide),
-      xk.gpr (by decide), wk.gpr (by decide)]
-  have g5 : a.gpr .t5 = v.gpr .t5 := by
-    rw [ak.gpr (by decide), z'k.gpr (by decide), zk.gpr (by decide), yk.gpr (by decide),
-      xk.gpr (by decide), wk.gpr (by decide)]
-  have g6 : a.gpr .t6 = v.gpr .t6 := by
-    rw [ak.gpr (by decide), z'k.gpr (by decide), zk.gpr (by decide), yk.gpr (by decide),
-      xk.gpr (by decide), wk.gpr (by decide)]
-  have g0 : a.gpr .t0 = v.gpr .t0 := by
-    rw [ak.gpr (by decide), z'k.gpr (by decide), zk.gpr (by decide), yk.gpr (by decide),
-      xk.gpr (by decide), wk.gpr (by decide)]
-  refine WP.mono (WP.keep [.t2, .t5, .t6, .t0] (pick_run a hK (g2.trans V.p0) (g5.trans V.p1)
-    (g6.trans V.p2) (g0.trans V.p3)) (by rfl) rfl) fun t ⟨⟨t2, tm⟩, tk⟩ => ?_
-  refine ⟨?_, (V.keep.trans ka).trans tk |>.mono (by decide), by rw [tm, hm]⟩
-  have hL : idx.toNat % 8 < 8 := Nat.mod_lt _ (by decide)
-  rw [t2, scanPlane_all, scanPlane_all, scanPlane_all, scanPlane_all, mul_byte _ hL, mul_byte _ hL,
-    mul_byte _ hL, mul_byte _ hL]
+  have hK : (w.gpr .t3).toNat % 64 = 8 * (idx.toNat % 8) := by
+    have := idx.isLt
+    rw [w3, hv3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  simp only [← List.append_assoc]
+  refine WP.mono (WP.keep [.t2, .t5, .t6, .t0] (pick_run w rfl
+    ((wk.gpr (by decide)).trans V.p0) ((wk.gpr (by decide)).trans V.p1)
+    ((wk.gpr (by decide)).trans V.p2) ((wk.gpr (by decide)).trans V.p3)) (by rfl) rfl)
+    fun t ⟨⟨t2, tm⟩, tk⟩ => ?_
+  refine ⟨?_, (V.keep.trans wk).trans tk |>.mono (by decide), by rw [tm, wm, V.mem]⟩
+  rw [t2, hK, scanPlane_all, scanPlane_all, scanPlane_all, scanPlane_all, shr_byte, shr_byte,
+    shr_byte, shr_byte]
   refine word_ext fun c hc => ?_
   have e := pack_byte (fun b => (planeWord64 s.mem S j b (idx.toNat / 8)).extractLsb' (8 * (idx.toNat % 8)) 8) hc
   rw [e, planeWord64_byte _ _ hj hc]
