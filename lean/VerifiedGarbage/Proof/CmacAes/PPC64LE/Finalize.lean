@@ -15,6 +15,7 @@ public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.Cmac
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CMAC on PPC64LE: `vg_cmac_aes_finalize`

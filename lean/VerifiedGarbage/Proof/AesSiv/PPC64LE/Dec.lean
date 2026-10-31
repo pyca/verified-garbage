@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.AesSiv.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.Long
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Entry
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: `decrypt`

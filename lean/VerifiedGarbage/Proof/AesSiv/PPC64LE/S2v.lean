@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.FinRaw
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: S2V over the components of associated data

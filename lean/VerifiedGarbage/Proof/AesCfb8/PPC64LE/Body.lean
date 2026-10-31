@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.AesCfb8.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CFB8 on PPC64LE: one byte

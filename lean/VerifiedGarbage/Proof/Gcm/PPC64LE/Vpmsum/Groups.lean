@@ -108,27 +108,13 @@ theorem mul_ok (d a key : VReg) (s : State) (ha : Free a) (hk : Free key)
 
 
 
-theorem const64_ok (d : Reg) (x : BitVec 64) (s : State) :
-    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.const64 d x)) s (· = s.write d x) := by
-  apply WP.of_runBlock
-  simp only [Impl.Gcm.PPC64LE.Vpmsum.const64, runBlock_cons, runStep_some,
-    runBlock_nil, reduceExec, show 32 < 64 by decide, ite_true, RegUpd.gpr_write_self, write_overwrite,
-    movImm64_eq, Option.some.injEq, exists_eq_left']
+export VG.PPC64LE (const64_ok)
 
 theorem pair_ok (d : VReg) (hi lo : Reg) (s : State)
     (hd : d ≠ T) (hdz : d ≠ Z) (hz : s.vpr Z = 0) :
     WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.pair d hi lo)) s fun s' =>
-      s'.vpr d = s.gpr hi ++ s.gpr lo ∧ VOnly [d, T] s s' := by
-  apply WP.of_runBlock
-  simp only [Impl.Gcm.PPC64LE.Vpmsum.pair, runBlock_cons, runStep_some, runBlock_nil,
-    exec_shift8, reduceExec, vpr_writeV, gpr_writeV, Option.some.injEq, exists_eq_left',
-    hd, Ne.symm hd, Ne.symm hdz, ite_true, ite_false, reduceCtorEq]
-  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
-    by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
-    by simp only [lr_writeV]⟩⟩
-  · simp only [half, hz, BitVec.ofNat_eq_ofNat, dw_zero, vdword_append_0, vdword_append_1]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [vpr_writeV, hr.1, hr.2, ite_false]
+      s'.vpr d = s.gpr hi ++ s.gpr lo ∧ VOnly [d, T] s s' :=
+  VG.PPC64LE.pair_ok d T Z hi lo s hd hdz (by decide) hz
 
 theorem rev128_append (a b : BitVec 64) : rev128 (a ++ b) = rev64 b ++ rev64 a := by
   apply BitVec.eq_of_getLsbD_eq
@@ -185,21 +171,14 @@ theorem loadRev_ok (d : VReg) (p : Reg) (s : State) (hp : p ≠ .r0)
     WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.loadRev d p)) s fun s' =>
       s'.vpr d = ext8 (Spec.Gcm.blockAt s.mem (s.gpr p)) (Spec.Gcm.blockAt s.mem (s.gpr p)) ∧
       VOnly [d] s s' := by
-  have hx : exec (.lxvd2x d p .r0) s = some (s.writeV d (swapDwords (s.mem.read (s.gpr p) 16))) := by
-    simp only [reduceExec, addrX, hp, ne_eq, not_false_eq_true, ite_true, h0,
-      BitVec.ofNat_eq_ofNat, BitVec.add_zero, Option.bind_some, State.load, hr, Option.map_some]
-  have hm' : (s.writeV d (swapDwords (s.mem.read (s.gpr p) 16))).vpr MASK =
-      Impl.Gcm.PPC64LE.Vpmsum.reverseMask := by
-    simpa only [vpr_writeV, Ne.symm hd, ite_false] using hm
-  apply WP.of_runBlock
-  simp only [Impl.Gcm.PPC64LE.Vpmsum.loadRev, runBlock_cons, runStep_some, runBlock_nil,
-    hx, exec_reverse _ _ _ hm', Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
-    by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
-    by simp only [lr_writeV]⟩⟩
-  · simp only [vpr_writeV, ite_true, load_value]
-  · have hrd : r ≠ d := by simpa only [List.mem_singleton] using hr
-    simp only [vpr_writeV, hrd, ite_false]
+  refine WP.mono (loadPerm_ok d p MASK _ s hp hd h0 hm hr) fun t ⟨hv, ho⟩ => ⟨?_, ho⟩
+  rw [hv]
+  have he : permSelf (swapDwords (s.mem.read (s.gpr p) 16)) Impl.Gcm.PPC64LE.Vpmsum.reverseMask =
+      rev128 (swapDwords (s.mem.read (s.gpr p) 16)) := by
+    apply ofVBytes_congr
+    intro i hi
+    rw [mask_byte hi, ite_eq_left (show 15-i < 16 by omega)]
+  rw [he, load_value]
 
 /-- Scalar state shared by setup and every vector-only group. -/
 structure Stable (s s' : State) : Prop where
@@ -292,14 +271,6 @@ theorem consts_ok (s : State) :
     have hu := ((ht.write .r8 _ (by decide)).write .r9 _ (by decide)).trans (VOnly.stable hmu)
     exact ((hu.write .r8 _ (by decide)).write .r9 3 (by decide)).trans (VOnly.stable hhw)
 
-theorem vector_step (i : Instr) (d : VReg) (v : BitVec 128) (s : State)
-    (he : exec i s = some (s.writeV d v)) :
-    WP isa (.block [i]) s fun t => t.vpr d = v ∧ VOnly [d] s t := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, he, runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
-  refine ⟨by simp only [vpr_writeV, ite_true], ⟨fun r hr => ?_, gpr_writeV ..,
-    mem_writeV .., rd_writeV .., wr_writeV .., sp_writeV .., lr_writeV ..⟩⟩
-  simp only [vpr_writeV, show r ≠ d by simpa only [List.mem_singleton] using hr, ite_false]
 
 theorem Config.keep {rs : List VReg} {s t : State} (h : Config s) (ho : VOnly rs s t)
     (hc : C ∉ rs) (hm : MASK ∉ rs) (hz : Z ∉ rs) : Config t :=

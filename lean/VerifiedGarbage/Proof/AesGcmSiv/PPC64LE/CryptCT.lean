@@ -20,6 +20,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: the tag and counter mode in two runs

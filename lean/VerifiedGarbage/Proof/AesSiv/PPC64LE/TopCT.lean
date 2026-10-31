@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.AesSiv.PPC64LE.Enc
 meta import VerifiedGarbage.Proof.AesSiv.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesSiv.PPC64LE.Long
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Enc
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: constant time of `encrypt` and `decrypt`

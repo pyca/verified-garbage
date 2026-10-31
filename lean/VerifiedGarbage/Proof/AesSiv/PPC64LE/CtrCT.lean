@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: CTR in two runs

@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.Mem
 /-!
 # The layers of bitsliced AES on RISC-V
 
-As on PPC64LE (`Proof/Aes/PPC64LE/Encrypt.lean`):
+As on x86-64 (`Proof/Aes/X86_64/Encrypt.lean`):
 
 * `sboxCode` only combines words bitwise, so it computes the same Boolean
   function at each of the 64 bit positions: the kernel evaluates it once on

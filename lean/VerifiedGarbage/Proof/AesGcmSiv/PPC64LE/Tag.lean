@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: a block encrypted (`tag`)

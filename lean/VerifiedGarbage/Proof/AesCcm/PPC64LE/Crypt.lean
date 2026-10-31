@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Common
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: counter mode (`ctr`)

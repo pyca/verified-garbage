@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Pre
 import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Steps
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # XTS-AES of data units on PPC64LE: encryption

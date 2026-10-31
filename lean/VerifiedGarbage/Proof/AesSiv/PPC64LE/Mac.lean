@@ -21,6 +21,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: the calls' arguments, and the CMAC of a string

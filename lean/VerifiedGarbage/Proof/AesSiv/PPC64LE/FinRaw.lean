@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: `vg_cmac_aes_finalize` with any subkeys

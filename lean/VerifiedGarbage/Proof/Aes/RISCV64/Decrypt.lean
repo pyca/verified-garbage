@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # Decrypting four blocks, bitsliced, on RISC-V
 
-As on PPC64LE (`Proof/Aes/PPC64LE/Decrypt.lean`): the inverse layers
+As on x86-64 (`Proof/Aes/X86_64/Decrypt.lean`): the inverse layers
 (`Impl/Aes/RISCV64/Inv.lean`) are checked by evaluation as the cipher's are
 (`Layers.lean`): the inverse S-box on the truth
 tables of the 256 inputs against the specification's (`invSboxT`), the

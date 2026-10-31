@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Impl.AesOfb.PPC64LE
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-OFB on PPC64LE: one block, and constant time

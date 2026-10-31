@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 /-!
 # Encrypting four blocks, bitsliced, on RISC-V
 
-As on PPC64LE (`Proof/Aes/PPC64LE/Encrypt.lean`): `encrypt4_ok`, from four
+As on x86-64 (`Proof/Aes/X86_64/Encrypt.lean`): `encrypt4_ok`, from four
 blocks in the registers (`InRel`), with the bitsliced round keys and the
 masks in the scratch buffer (`EncPre`), `encrypt4` leaves the four
 ciphertexts, having written only the first 320 bytes of the scratch buffer.

@@ -23,6 +23,7 @@ public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Spec.Ocb
 public import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-OCB on PPC64LE: the data and the tag are constant time

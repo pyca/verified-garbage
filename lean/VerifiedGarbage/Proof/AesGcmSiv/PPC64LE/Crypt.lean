@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Aes
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: counter mode (`crypt`)

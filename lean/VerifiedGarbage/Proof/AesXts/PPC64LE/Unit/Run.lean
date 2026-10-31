@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Call
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Contract
 public import VerifiedGarbage.Spec.Xts
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # XTS-AES of data units on PPC64LE: the tweak, and what every piece keeps

@@ -15,6 +15,7 @@ public import VerifiedGarbage.Impl.AesSiv.PPC64LE
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Ctr
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Short
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: `encrypt`

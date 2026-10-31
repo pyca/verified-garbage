@@ -23,6 +23,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Spec.Cmac
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: a buffer padded, chained (`absorbPad y`)

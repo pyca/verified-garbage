@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Spec.GcmSiv
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: the keys (`keys`)

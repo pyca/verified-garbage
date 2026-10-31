@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesCbc.PPC64LE
+public import VerifiedGarbage.Impl.Aes.PPC64LE.Ctr32
 
 /-!
 # AES-CTR: PPC64LE implementation

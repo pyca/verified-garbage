@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Impl.Aes.KeyWords -- shake: keep (exports the existing AES round constant)
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
@@ -137,8 +138,8 @@ def wregs : List Reg := [.x4, .x5, .x6, .x7, .x8, .x11, .x12, .x13]
 /-- The register of word `i`. -/
 def wreg (nk i : Nat) : Reg := wregs.getD (i % nk) .x4
 
-/-- The round constant `Rcon[j]`'s first byte, `x^(j−1)` (FIPS 197 §5.2). -/
-def rc (j : Nat) : BitVec 8 := Nat.repeat Spec.Aes.xtimes (j - 1) 1
+/- The round constant `Rcon[j]`'s first byte, `x^(j−1)` (FIPS 197 §5.2). -/
+export VG.Impl.Aes.KeyWords (rc)
 
 /-- `w9 ← SubWord(p)`, with `v0` zero. -/
 def subW (p : Reg) : List Instr := [.vop (.dup .s4 .v1 p), .vop (.aese .v1 .v0), .umov .w .x9 .v1 0]
