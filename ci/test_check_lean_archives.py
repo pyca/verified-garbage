@@ -467,9 +467,9 @@ class LeanArchiveTests(unittest.TestCase):
                            ("packages/mathlib/.lake/build/Mathlib/Order", False)):
             names = json.loads((ltar / (rel + ".ltar")).read_text())
             self.assertEqual(any(n.endswith(".c") for n in names), has_c, rel)
-        with tarfile.open(ltar / "files.tar") as tar:
+        with tarfile.open(ltar / "files.tar.gz") as tar:
             names = tar.getnames()
-        # Nor in `files.tar`, which keeps every `.c.hash` and the objects.
+        # Nor in `files.tar.gz`, which keeps every `.c.hash` and the objects.
         self.assertNotIn(".lake/build/ir/A/B.c", names)
         self.assertIn(".lake/build/ir/A/B.c.hash", names)
         self.assertIn(".lake/build/ir/C.c.o.export", names)
