@@ -23,8 +23,9 @@ XOR of input bits given here.
   registers is input words `0 … 7`, the state's planes words `8 … 39`.
 * The transposes (`toBs`, `fromBs`): the tail buffer's sixteen blocks
   (slots 96–127) are input words `0 … 31`; the state's planes are.
-* A round key's planes (`keyLoad`): the schedule's word at `a0` is input
-  word `0`.
+* A round key's planes before their fill (`keyPre`; the fill,
+  `keyFill`, is a subtraction, `Keys.lean`): the schedule's word at
+  `a0` is input word `0`.
 
 Position `p = 16 i + b` of a plane is byte `i` (from the most significant)
 of the word of block `b`.
@@ -222,14 +223,18 @@ def keyEnv : Env (Nat × Nat) := linEnvG [] [] maskCs
 `i` from the most significant, bits `32 h + 8 (3 - i) + j` of the word. -/
 def keyBsG (h j p : Nat) : List Nat := [32 * h + 8 * (3 - p / 16) + j]
 
-theorem keyLoad0_check :
-    check (lanes 64 7) keyCfg (linExt 0) (keyLoad 0) keyEnv
-      (linPostG 7 (qOuts (keyBsG 0)) [] keyMaskSlots keyEnv) = true := by
+/-- Before the fill (`keyPre`), plane `j` has only the bits `16 i` of its
+groups. -/
+def keyBsG0 (h j p : Nat) : List Nat := if p % 16 = 0 then keyBsG h j p else []
+
+theorem keyPre0_check :
+    check (lanes 64 7) keyCfg (linExt 0) (keyPre 0) keyEnv
+      (linPostG 7 (qOuts (keyBsG0 0)) [] keyMaskSlots keyEnv) = true := by
   decide +kernel
 
-theorem keyLoad1_check :
-    check (lanes 64 7) keyCfg (linExt 0) (keyLoad 1) keyEnv
-      (linPostG 7 (qOuts (keyBsG 1)) [] keyMaskSlots keyEnv) = true := by
+theorem keyPre1_check :
+    check (lanes 64 7) keyCfg (linExt 0) (keyPre 1) keyEnv
+      (linPostG 7 (qOuts (keyBsG0 1)) [] keyMaskSlots keyEnv) = true := by
   decide +kernel
 
 /-- The entry at `kr`. -/
