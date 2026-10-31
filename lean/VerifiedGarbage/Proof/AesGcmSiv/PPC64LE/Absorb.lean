@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
@@ -310,7 +311,7 @@ structure ChunkPost (c : Cx) (Q : Addr) (m k : Nat) (t t' : State) : Prop where
     Spec.Gcm.ghashFrom (Spec.Gcm.blockAt t.mem (c.W + BitVec.ofNat 64 64))
       (Spec.Gcm.blockAt t.mem (c.W + BitVec.ofNat 64 80)) (elemsAt t.mem Q k)
 
-theorem chunk_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
+theorem chunk_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
     (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ : Src c t Q (16 * (m / 16))) (h23 : t.gpr .r23 = Q)
     (h24 : t.gpr .r24 = BitVec.ofNat 64 m) :
     WP isa chunk t (ChunkPost c Q m (min (m / 16) 64) t) := by
@@ -432,7 +433,7 @@ theorem CInv.step {c : Cx} (L : Lay c) {σ t t' : State} {Q : Addr} {m d : Nat}
     by rw [C.r24]; congr 1; omega_arith⟩, by rw [C.r11]; congr 1; omega_arith⟩
 
 /-- The whole blocks: chunks until fewer than 16 bytes are left. -/
-theorem chunks_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
+theorem chunks_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
     (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ : Src c t Q (16 * (m / 16))) (h23 : t.gpr .r23 = Q)
     (h24 : t.gpr .r24 = BitVec.ofNat 64 m) :
     WP isa (.loop chunk (.nonzero .d .r11)) t fun t' =>

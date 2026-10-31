@@ -16,6 +16,9 @@ blocks at `x9` as loaded, and the powers and keys of the table at `x19`
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.Gcm.AArch64.Stitch
 
 open VG VG.AArch64
@@ -40,7 +43,7 @@ theorem trn_sum (a b : BitVec 128) :
     VPermOp.eval .trn1 .d2 a b ^^^ VPermOp.eval .trn2 .d2 a b =
       ofVDwords (vdword a 0 ^^^ vdword a 1) (vdword b 0 ^^^ vdword b 1) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, ofVDwords, vdword, BitVec.getLsbD_xor,
+  simp only [VG.AArch64.ofVDwords, VG.AArch64.vdword, VPermOp.eval, VArr.lanes, VArr.ofLanes, VG.Proof.Gcm.Clmul.ofVDwords, VG.Proof.Gcm.Clmul.vdword, BitVec.getLsbD_xor,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 64 <;> simp [h, hi, List.getD] <;> omega
 

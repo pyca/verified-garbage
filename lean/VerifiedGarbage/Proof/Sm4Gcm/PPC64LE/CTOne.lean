@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
@@ -101,7 +102,7 @@ include L X
 
 omit X in
 /-- Before `oneAad`: the nonce's address and length in `r24` and `r25`. -/
-theorem oneAad_ct : CT (fun s => OneI c W x sp Np n Ad A D Ln s ∧ s.gpr .r24 = Np ∧
+theorem oneAad_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => OneI c W x sp Np n Ad A D Ln s ∧ s.gpr .r24 = Np ∧
     s.gpr .r25 = BitVec.ofNat 64 n) oneAad := by
   -- `j0`
   refine CT.seq (J := fun s => OneI c W x sp Np n Ad A D Ln s ∧
@@ -197,7 +198,7 @@ theorem oneCrypt_ct : CT (OneI c W x sp Np n Ad A D Ln) oneCrypt := by
       h24, h25, h26⟩ => ⟨V, blockAt s.mem (V .r30 + BitVec.ofNat 64 48), 0, a, b, d, e, rfl,
         ⟨he, h24, h25, h26, by rw [a, b, d]; exact hD.dw, by rw [e]; exact hD.xw, by rw [e]; exact hD.dx⟩⟩)
 
-theorem oneTag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem oneTag_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) :
     CT (OneI c W x sp Np n Ad A D Ln) (oneTag o) := by
   refine CT.seq dataArgs_ct (fun s h => dataArgs_one h) ?_
   refine CT.seq (J := OneI c W x sp Np n Ad A D Ln)

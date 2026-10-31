@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 public import VerifiedGarbage.Proof.Gcm.Stream
@@ -260,7 +261,7 @@ theorem headPre_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.st_st (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
 
 /-- After `headPre`: the buffer absorbed if full. -/
-theorem headPost_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {k : Nat} {s : State}
+theorem headPost_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {k : Nat} {s : State}
     (h : HeadMid V sp yo H x D n m₀ k s) :
     WP isa (.ite (.zero .d .r6) (ghash1 yo .r30 32) (.block [])) s
       (fun s' => ∃ j, j = k ∧ AbsMid V sp yo H x D n m₀ j s') := by
@@ -290,7 +291,7 @@ theorem headPost_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem
     exact Proof.Gcm.absorb_fill ha (by rw [hdk]; exact h16) h.hY (by rw [hdk]; exact h.buf)
 
 /-- Filling the buffer. -/
-theorem head_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+theorem head_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     (h : AbsIn V sp yo H x D n s) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) :
     WP isa (absorbHead yo) s (fun s' => ∃ j, j = min (16 - x.length % 16) n ∧
       AbsMid V sp yo H x D n s.mem j s') :=
@@ -318,7 +319,7 @@ theorem split_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 2 ^
     ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- The whole blocks. -/
-theorem whole_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
     (h : AbsMid V sp yo H x D n m₀ j s) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
     WP isa (absorbWhole yo) s (fun s' => ∃ j', j' = j + 16 * ((n - j) / 16) ∧
       AbsMid V sp yo H x D n m₀ j' s' ∧ n - j' < 16) := by
@@ -451,7 +452,7 @@ theorem AbsMid.data_eq {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : 
   bytesAt_frame h.frame (data_absFrame hyo h.data) (by have := h.data.lt; omega_arith)
 
 /-- After the first test: the buffer filled if it holds bytes. -/
-theorem absorbFill_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+theorem absorbFill_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     (h : AbsIn V sp yo H x D n s) (h0 : n ≠ 0) :
     WP isa (absorbFill yo) s (fun s' => ∃ j, j = (if x.length % 16 = 0 then 0 else min (16 - x.length % 16) n) ∧
       AbsMid V sp yo H x D n s.mem j s') := by
@@ -464,7 +465,7 @@ theorem absorbFill_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : Stat
     exact WP.mono (head_ok L hyo h h0 ho) fun _ ⟨j, hj, hm⟩ => ⟨j, by simp only [ho, ite_false]; exact hj, hm⟩
 
 /-- `absorb yo`. -/
-theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+theorem absorb_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     (h : AbsIn V sp yo H x D n s) :
     WP isa (absorb yo) s (AbsOut V sp yo H x (x ++ bytesAt s.mem D n) s.mem) := by
   have hn' := h.data.lt

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Verified
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
@@ -77,7 +78,7 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamCryptSig.contract
     (writeArgs := true) (stack := 5888)).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, PPC64LE.abi, PPC64LE.argRegs] [streamEncryptFrameSat, streamCryptSat] using streamEncryptFrameSat
 
-theorem streamEncrypt_framed :
+theorem streamEncrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9
       (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 streamEncrypt))
       (Spec.Sm4.Gcm.streamCryptSig.contract PPC64LE.abi (post := Spec.Sm4.Gcm.streamEncryptPost PPC64LE.abi.ptrBits) (writeArgs := true) (stack := 5888)) :=
@@ -107,7 +108,7 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamCryptSig.contract
     (writeArgs := true) (stack := 5888)).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, PPC64LE.abi, PPC64LE.argRegs] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
 
-theorem streamDecrypt_framed :
+theorem streamDecrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9
       (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 streamDecrypt))
       (Spec.Sm4.Gcm.streamCryptSig.contract PPC64LE.abi (post := Spec.Sm4.Gcm.streamDecryptPost PPC64LE.abi.ptrBits) (writeArgs := true) (stack := 5888)) :=
@@ -137,7 +138,7 @@ theorem streamFinishFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishSig.contract
     (writeArgs := true) (stack := 5888)).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, PPC64LE.abi, PPC64LE.argRegs] [streamFinishFrameSat, finSat] using streamFinishFrameSat
 
-theorem streamFinish_framed :
+theorem streamFinish_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8
       (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r9 streamFinish))
       (Spec.Sm4.Gcm.streamFinishSig.contract PPC64LE.abi (post := Spec.Sm4.Gcm.streamFinishPost PPC64LE.abi.ptrBits) (writeArgs := true) (stack := 5888)) :=
@@ -167,7 +168,7 @@ theorem streamVerifyFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifySig.contract
     (writeArgs := true) (stack := 5888)).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, PPC64LE.abi, PPC64LE.argRegs] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
 
-theorem streamVerify_framed :
+theorem streamVerify_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9
       (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 streamVerify))
       (Spec.Sm4.Gcm.streamVerifySig.contract PPC64LE.abi (post := Spec.Sm4.Gcm.streamVerifyPost PPC64LE.abi.ptrBits) (writeArgs := true) (stack := 5888)) :=
@@ -209,7 +210,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract PPC64LE.abi 6048).p
 /-- `seal`: the outer frame passes the working space's address as the first
 stack argument, and the inner frame copies it, then SM4's working space's
 address, above its stack pointer (`Verified.stackScratchArgs`). -/
-theorem seal_framed :
+theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 0
       (Impl.StackScratch.PPC64LE.withStackScratchArgs 3376 1 «seal»))
       (Spec.Sm4.Gcm.sealContract PPC64LE.abi 6048) :=
@@ -251,7 +252,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract PPC64LE.abi 6064).p
     [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 /-- `open`, whose `tag_len` arrives on the stack before the working spaces. -/
-theorem open_framed :
+theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1
       (Impl.StackScratch.PPC64LE.withStackScratchArgs 3392 2 «open»))
       (Spec.Sm4.Gcm.openContract PPC64LE.abi 6064) :=

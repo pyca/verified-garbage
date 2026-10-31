@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
@@ -126,7 +127,7 @@ include L hR hTd t1 t16
 
 /-- `open` from `oneAad` on, once the tag length is allowed, with what the
 comparison of the tags gives (`Res b`). -/
-theorem openGood_ct : CT (fun s => (OneO c W sp R Np n Ad A D Ln T TL s ∧ s.gpr .r24 = Np ∧
+theorem openGood_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => (OneO c W sp R Np n Ad A D Ln T TL s ∧ s.gpr .r24 = Np ∧
     s.gpr .r25 = BitVec.ofNat 64 n) ∧ WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112)
       (.seq (.block [mov .r19 .r3]) (.block [])))))) s (Res b))
     (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .r19 .r3])
@@ -237,7 +238,7 @@ theorem open_one {t₀ s : State} (h : openPre t₀) (h1 : SO1 (stackArg t₀ 2)
       (t₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
   · rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
 
-theorem open_ct : ConstantTime isa openPPC64LE.pre openPPC64LE.pub «open» := by
+theorem open_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa openPPC64LE.pre openPPC64LE.pub «open» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩, qres⟩ := hq
   have h₁' : openPre σ₁ := h₁

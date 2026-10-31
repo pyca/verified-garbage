@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
@@ -43,7 +44,7 @@ theorem streamAadPre_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) (.block streamAadPre) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem streamInit_ct : ConstantTime isa streamInitPPC64LE.pre streamInitPPC64LE.pub streamInit := by
+theorem streamInit_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa streamInitPPC64LE.pre streamInitPPC64LE.pub streamInit := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, qsp⟩ := hq
   have L : Lay (σ₁.gpr .r3) (σ₁.gpr .r6) (σ₁.gpr .r7) := by
@@ -70,7 +71,7 @@ theorem streamInit_ct : ConstantTime isa streamInitPPC64LE.pre streamInitPPC64LE
   obtain ⟨_, hc⟩ := restore_taint
   exact CT.taintEq _ (fun _ => σ₁.gpr .r7) σ₁.sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
 
-theorem streamAad_ct : ConstantTime isa streamAadPPC64LE.pre streamAadPPC64LE.pub streamAad := by
+theorem streamAad_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa streamAadPPC64LE.pre streamAadPPC64LE.pub streamAad := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, qsp⟩ := hq
   have L : Lay (σ₁.gpr .r3) (σ₁.gpr .r4) (σ₁.gpr .r8) := by

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.TopCT
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Open
@@ -36,11 +37,11 @@ open VG VG.PPC64LE VG.Impl.AesGcmSiv.PPC64LE
 
 /-! ## Correctness and constant time -/
 
-theorem seal_correct (hti : TagInputEq) (s : State) (hs : sealPPC64LE.pre s) :
+theorem seal_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) (s : State) (hs : sealPPC64LE.pre s) :
     ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
   seal_wp hti hs
 
-theorem open_correct (hti : TagInputEq) (s : State) (hs : openPPC64LE.pre s) :
+theorem open_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) (s : State) (hs : openPPC64LE.pre s) :
     ∃ t s', Exec isa «open» s t s' ∧ abiPreserved s s' ∧ openPPC64LE.post s s' :=
   open_wp hti hs
 
@@ -64,7 +65,7 @@ def openSat : State :=
 
 /-! ## The shared contracts -/
 
-theorem seal_verified (hti : TagInputEq) :
+theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target «seal» (Proof.AesGcmSiv.sealScratchContract PPC64LE.abi 478) :=
   Verified.of_correct (seal_correct hti) seal_ct
       { pre := by
@@ -101,7 +102,7 @@ theorem seal_verified (hti : TagInputEq) :
             List.range.loop]
             [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
 
-theorem open_verified (hti : TagInputEq) :
+theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target «open» (Proof.AesGcmSiv.openScratchContract PPC64LE.abi 478) :=
   Verified.of_correct (open_correct hti) open_ct
       { pre := by
@@ -163,7 +164,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract PPC64LE.abi 3936).pr
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed (hti : TagInputEq) :
+theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «seal»)
       (Spec.GcmSiv.sealContract PPC64LE.abi 3936) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
@@ -183,7 +184,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract PPC64LE.abi 3936).pr
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
-theorem open_framed (hti : TagInputEq) :
+theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «open»)
       (Spec.GcmSiv.openContract PPC64LE.abi 3936) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)

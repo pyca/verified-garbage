@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -59,7 +60,7 @@ section
 variable {c st w sp : Addr} (L : Lay c st w)
 include L
 
-theorem j0hash_ct {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0hash := by
+theorem j0hash_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0hash := by
   refine CT.seq (J := fun s => AbsI c st w sp 0 Np n 0 s ∧ EnvN c st w sp n s) ?_
     (fun s ⟨V, H, h29, h30, h31, hs⟩ => WP.mono (j0zero_ok (L.v h29 h30 h31) hs) fun s' ⟨hai, _⟩ =>
       ⟨⟨V, H, [], h29, h30, h31, rfl, hai⟩, hs.data.lt, V, h29, h30, h31, hs.r18, hai.env⟩) ?_
@@ -111,7 +112,7 @@ theorem j0hash_ct {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0hash := by
     exact WP.mono h₅ fun s₅ ⟨hg, hk⟩ => hs.keep (fun r hr => hg r (by revert r; decide)
       (by revert r; decide)) hk.sp hk.rd hk.wr
 
-theorem j0_ct {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0 := by
+theorem j0_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0 := by
   refine CT.seq (J := fun s => J0I c st w sp Np n s ∧ s.gpr .r6 = BitVec.ofNat 64 n - BitVec.ofNat 64 12) ?_
     (fun s ⟨V, H, h29, h30, h31, hs⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r25])

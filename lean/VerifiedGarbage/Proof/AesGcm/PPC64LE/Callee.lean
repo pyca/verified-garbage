@@ -77,7 +77,7 @@ theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S 
     h.r3, h.r4, h.r5, h.r6, h.r7, toNat64 h.n_lt]
   exact ⟨by trivial, by trivial, h.hy, h.hs, h.yd, h.ys, h.ds⟩
 
-theorem gh_call {name : String} {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
+theorem gh_call [VG.Proof.Gcm.PPC64LE.GhashLaw] {name : String} {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa (.call name Impl.Gcm.PPC64LE.ghash) s (GhPost s H Y D S n) := by
   refine WP.call (k := Proof.Gcm.ghashPPC64LE) Proof.Gcm.PPC64LE.ghash_correct
     (rd := [⟨H, 16⟩, ⟨D, 16 * n⟩]) (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) h.pre h.reads h.writes ?_
@@ -90,7 +90,7 @@ theorem gh_call {name : String} {s : State} {H Y D S : Addr} {n : Nat} (h : GhCa
   exact hpost
 
 /-- Calls of `vg_ghash` with the same arguments in both runs are constant time. -/
-theorem gh_rel {name : String} {P : State → State → Prop}
+theorem gh_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {name : String} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S n, GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) :
     RelCT isa P (.call name Impl.Gcm.PPC64LE.ghash) fun _ _ => True := by
   refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr × Addr × Nat) (s₁ s₂ : State) =>

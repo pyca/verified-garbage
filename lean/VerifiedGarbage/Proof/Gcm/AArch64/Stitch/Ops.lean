@@ -26,6 +26,9 @@ needs of the table of keys, without the algebra
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.Gcm.AArch64.Stitch
 
 open VG.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Keys
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Polyval
@@ -95,7 +96,7 @@ theorem entry_buf {c : Cx} {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.
     simp only [List.mem_singleton] at hr; subst hr; exact hP.sub_right (Lay.wSub (by decide))) hl
 
 /-- `vg_aes_gcm_siv_seal`, for its arguments. -/
-theorem seal_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) (hTw : Covers [⟨c.T, 16⟩] s.wr) :
+theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) (hTw : Covers [⟨c.T, 16⟩] s.wr) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧
       Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem c.K c.R) (Spec.GcmSiv.keyLen c.R) (bytesAt s.mem c.N 12)
         (bytesAt s.mem c.D c.n) (bytesAt s.mem c.A c.al) = (bytesAt s'.mem c.D c.n, bytesAt s'.mem c.T 16) := by
@@ -185,7 +186,7 @@ theorem seal_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) (hTw : 
   simp only [hti]
 
 /-- `vg_aes_gcm_siv_seal`. -/
-theorem seal_wp (hti : TagInputEq) {s : State} (h : sealPPC64LE.pre s) :
+theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {s : State} (h : sealPPC64LE.pre s) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧ sealPPC64LE.post s s' := by
   have A := args_of_seal h
   refine WP.mono (seal_wp' hti A.1 A.2) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩
