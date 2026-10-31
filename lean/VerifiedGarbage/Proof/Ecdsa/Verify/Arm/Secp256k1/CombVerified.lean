@@ -35,14 +35,15 @@ theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-def combVerifyLocal : Contract isa where
-  pre := combVerifyPre
-  post := VPost secp256k1
+def combVerifyLocal (um : Bool) : Contract isa where
+  pre := combVerifyPre um
+  post := VPost (secp256k1With um)
   pub := combVerifyPub
 
-theorem combVerify_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
-    Verified Arm.target verifySecp256k1Comb combVerifySpec := by
-  refine Verified.of_correct (k := combVerifyLocal) (fun s hs => ?_) combVerify_ct
+theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (um : Bool)
+    (hct : ConstantTime isa (combVerifyPre um) combVerifyPub (verifySecp256k1CombWith um)) :
+    Verified Arm.target (verifySecp256k1CombWith um) combVerifySpec := by
+  refine Verified.of_correct (k := combVerifyLocal um) (fun s hs => ?_) hct
     ⟨fun _ h => combVerify_pre h,?_,?_,⟨combVerifySat,combVerify_sat⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combVerify_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
@@ -58,5 +59,13 @@ theorem combVerify_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
       Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩
+
+theorem combVerify_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target verifySecp256k1Comb combVerifySpec :=
+  combVerifyWith_verified hC false combVerify_ct
+
+theorem combVerifyU_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target verifySecp256k1CombU combVerifySpec :=
+  combVerifyWith_verified hC true combVerifyU_ct
 
 end VG.Proof.Ecdsa.Verify.Arm.Secp256k1

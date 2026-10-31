@@ -28,39 +28,39 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TCom
 abbrev combVerifySpec : Contract isa :=
   Spec.Ecdsa.Secp256k1.inst.verifyContract (abi.withConsts secp256k1CombConsts)
 
-def combVerifyPre (s : State) : Prop :=
-  VPre secp256k1 s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
+def combVerifyPre (um : Bool) (s : State) : Prop :=
+  VPre (secp256k1With um) s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
 
-theorem verify_spec_pre {s : State}
-    (h : (Spec.Ecdsa.Secp256k1.inst.verifyContract abi).pre s) : VPre secp256k1 s := by
+theorem verify_spec_pre {um : Bool} {s : State}
+    (h : (Spec.Ecdsa.Secp256k1.inst.verifyContract abi).pre s) : VPre (secp256k1With um) s := by
   sig_pre [Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
     Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
   exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc⟩
 
-theorem combVerify_pre {s : State} (h : combVerifySpec.pre s) : combVerifyPre s := by
+theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
   have hp : (Spec.Ecdsa.Secp256k1.inst.verifyContract abi).pre (stripConsts secp256k1CombConsts s) ∧
       ConstsOk secp256k1CombConsts 0 s := pre_consts.mp h
-  have p := verify_spec_pre hp.1
+  have p := verify_spec_pre (um := um) hp.1
   refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit⟩,hp.2⟩
   rw [← List.take_append_drop (s.rd.length-secp256k1CombConsts.length) s.rd,hp.2.1]
   exact congrArg (fun rs => rs++constRegs secp256k1CombConsts s) p.rd
 
-theorem combVerify_ok (hC : Law Spec.Secp256k1.curve) {s₀ : State} (hp : combVerifyPre s₀) :
-    WP isa verifySecp256k1Comb s₀ fun t => VKeep s₀ t ∧ VPost secp256k1 s₀ t := by
+theorem combVerify_ok (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
+    WP isa (verifySecp256k1CombWith um) s₀ fun t => VKeep s₀ t ∧ VPost (secp256k1With um) s₀ t := by
   have member : (secp256k1Comb.tsym,secp256k1CombWords)∈secp256k1CombConsts := List.mem_singleton_self _
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
-  apply verifyWith_ok secp256k1_ok hC hp.1 (a0₁ := false) nofun
+  apply verifyWith_ok (secp256k1With_ok um) hC hp.1 (a0₁ := false) nofun
   intro s M syms
   intro u hs hf F _ _ _ _ _ _ bits _ keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame
     (unch.outside (o := 0) (n := 8192) (by simp)) (Nat.le_refl _)
   have hu := ht.of_frame (by rw [keep.rd,keep.wr]) frame
     (by simpa only [List.mem_singleton,forall_eq] using hd)
-  have mul := comb_generator_ok hC hs hf F hu (by rw [syu,syms])
-    (hd.sub_right (Region.sub_prefix (by decide))) (k := sv secp256k1 (ptr s₀ .r3) s U)
+  have mul := comb_generator_ok hC hs hf F hu (by rw [syu,syms]; rfl)
+    (hd.sub_right (Region.sub_prefix (by decide))) (k := sv (secp256k1With um) (ptr s₀ .r3) s U)
     (VG.Proof.Mont.wordsVal_lt _ _ _ _) (bits rfl)
   exact WP.mono mul fun _ post => by simpa only [GeneratorPost,Nat.shiftRight_zero] using post
 

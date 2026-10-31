@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
@@ -29,10 +31,31 @@ abbrev code : Prog isa := Impl.EcKey.Compressed.Arm.compress secp256k1
 
 materialize_shared baseline := code
 
+/-- The function with `umaal`. -/
+abbrev codeU : Prog isa := Impl.EcKey.Compressed.Arm.compress (secp256k1With true)
+
+materialize_shared umaal := codeU
+
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem ct : ConstantTime isa (compressContract Spec.Secp256k1.curve).pre (compressContract Spec.Secp256k1.curve).pub code := by
   refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  intro s t _ _ ⟨_, h0, h1, h2⟩
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
+    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
+      fun _ h => (List.not_mem_nil h).elim⟩,
+    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
+      fun _ h => (List.not_mem_nil h).elim⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun h => absurd h (Nat.lt_irrefl 0), fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact h0
+  · exact h1
+  · exact h2
+
+theorem ctU : ConstantTime isa (compressContract Spec.Secp256k1.curve).pre (compressContract Spec.Secp256k1.curve).pub codeU := by
+  refine VG.Taint.constantTime (A := taintU) τ₀ ?_ (by taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
@@ -55,5 +78,8 @@ theorem sat : ∃ s, (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract abi 0)
 
 theorem verified : Verified target code (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract abi 0) :=
   Verified.of_correct (compress_correct secp256k1 secp256k1_ok) ct (compress_implies _ sat)
+
+theorem verifiedU : Verified target codeU (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract abi 0) :=
+  Verified.of_correct (compress_correct (secp256k1With true) secp256k1u_ok) ctU (compress_implies _ sat)
 
 end VG.Proof.EcKey.Compressed.Arm.Secp256k1

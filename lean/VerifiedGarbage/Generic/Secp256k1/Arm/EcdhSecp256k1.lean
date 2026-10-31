@@ -78,6 +78,11 @@ namespace VG.Generic.Secp256k1.Arm.EcdhSecp256k1
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.exchangeSecp256k1
-    verified := Proof.Ecdh.Arm.Secp256k1.ecdh_verified h.law }]
+    verified := Proof.Ecdh.Arm.Secp256k1.ecdh_verified h.law },
+  Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdh.Arm.exchangeSecp256k1U
+    verified := Proof.Ecdh.Arm.Secp256k1.ecdhU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.Secp256k1.Arm.EcdhSecp256k1

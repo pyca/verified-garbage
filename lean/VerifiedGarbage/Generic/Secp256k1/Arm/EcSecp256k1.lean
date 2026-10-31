@@ -22,6 +22,12 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
   Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
     consts := Impl.Weierstrass.Arm.secp256k1CombConsts
     code := Impl.Ecdsa.Arm.publicKeySecp256k1Comb
-    verified := Proof.EcKey.Arm.Secp256k1.combPk_verified h.law }]
+    verified := Proof.EcKey.Arm.Secp256k1.combPk_verified h.law },
+  Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    consts := Impl.Weierstrass.Arm.secp256k1CombConsts
+    code := Impl.Ecdsa.Arm.publicKeySecp256k1CombU
+    verified := Proof.EcKey.Arm.Secp256k1.combPkU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.Secp256k1.Arm.EcSecp256k1

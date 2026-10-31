@@ -40,14 +40,14 @@ def pt0Arm (C : Spec.Weierstrass.Point.Curve) (dbl : Bool) : Contract Arm.isa wh
     Spec.Weierstrass.Point.Keeps C.k (State.addr (s.gpr .r0)) s.mem s'.mem
   pub := (sumArm C dbl).pub
 
-/-- `fn0 (modP C) dbl` meets its contract, by register. -/
+/-- `fn0 (modP C) dbl u` meets its contract, by register. -/
 theorem pt0_arm {C : Spec.Weierstrass.Point.Curve} (hM : ModOk C.k C.p) (hk6 : C.k ≤ 6) (hodd : C.p % 2 = 1)
-    (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) (s : State) (hs : (pt0Arm C dbl).pre s) :
-    ∃ t s', Exec isa (fn0 (modP C) dbl) s t s' ∧ abiPreserved s s' ∧ (pt0Arm C dbl).post s s' := by
+    (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) {u : Bool} (s : State) (hs : (pt0Arm C dbl).pre s) :
+    ∃ t s', Exec isa (fn0 (modP C) dbl u) s t s' ∧ abiPreserved s s' ∧ (pt0Arm C dbl).post s s' := by
   have hk3 := hM.n3
   have hp := prePt_of hk3 hk6 hs
   have hl := lay_nums hk3 hk6
-  obtain ⟨t, s', he, A, O, -, hlt, hEq⟩ := fnOps_ok (S := modP C) hM hodd (ops0_opsOk dbl) hp
+  obtain ⟨t, s', he, A, O, -, hlt, hEq⟩ := fnOps_ok (S := modP C) hM hodd (ops0_opsOk dbl) hp (u := u)
   have hu : UnitMod C.p C.R := unitMod_pow_two hodd _
   have dq := dec_eq C h1 hF hu
   have e : ∀ (m : Mem) x, x < 4096 → C.coordAt m (State.addr (s.gpr .r0)) x =
@@ -103,9 +103,9 @@ theorem pt0_implies (C : Spec.Weierstrass.Point.Curve) (hp : 0 < C.p) (dbl : Boo
 /-- `vg_<curve>_point_a0_double` (`dbl`) or `vg_<curve>_point_a0_add_affine`
 meets its contract, given its constant time. -/
 theorem pt0_verified (C : Spec.Weierstrass.Point.Curve) (hM : Mont.ModOk C.k C.p) (hk6 : C.k ≤ 6)
-    (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool)
-    (hct : ConstantTime isa (pt0Arm C dbl).pre (pt0Arm C dbl).pub (fn0 (modP C) dbl)) :
-    Verified Arm.target (fn0 (modP C) dbl) (pt0C C dbl) :=
+    (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) {u : Bool}
+    (hct : ConstantTime isa (pt0Arm C dbl).pre (pt0Arm C dbl).pub (fn0 (modP C) dbl u)) :
+    Verified Arm.target (fn0 (modP C) dbl u) (pt0C C dbl) :=
   Verified.of_correct (pt0_arm hM hk6 hodd h1 hF dbl) hct (pt0_implies C (by omega) dbl)
 
 end VG.Proof.Weierstrass.Arm.Point

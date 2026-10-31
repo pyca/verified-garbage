@@ -321,6 +321,15 @@ GROUPS = {
         "lib": ["scrypt"],
         "tests": [],
     },
+    "secp256k1": {
+        "lib": ["ec::secp256k1", "ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
+        "tests": [
+            "secp256k1",
+            "wycheproof::ec_compressed::secp256k1",
+            "wycheproof::ecdh_secp256k1",
+            "wycheproof::ecdsa_secp256k1",
+        ],
+    },
     "sha1": {
         "lib": ["hashes::sha1", "hmac::sha1", "pbkdf2::sha1", "rsa_pss::sha1"],
         "tests": ["cavp::sha1", "pbkdf2::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],

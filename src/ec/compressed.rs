@@ -215,6 +215,12 @@ codec!(
     vg_ec_secp256k1_compress_public_key,
     vg_ec_secp256k1_decompress_public_key,
     []
+    [
+        vg_ec_secp256k1_compress_public_key_umaal,
+        vg_ec_secp256k1_decompress_public_key_umaal,
+        VG_EC_SECP256K1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES,
+        VG_EC_SECP256K1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
+    ]
 );
 codec!(
     BrainpoolP256r1,
