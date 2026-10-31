@@ -8522,8 +8522,6 @@ pub(crate) const VG_ECDSA_BRAINPOOLP512R1_SIGN_UMAAL_FEATURES: crate::cpu::Featu
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The code of the function without the suffix, but for its calls of the `_umaal` functions. Field multiplications are calls of `vg_brainpoolp512r1_mul_mod_p_umaal` (and `vg_brainpoolp512r1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 128 bytes.
@@ -11574,8 +11572,6 @@ pub(crate) const VG_ECDSA_BRAINPOOLP512R1_VERIFY_UMAAL_FEATURES: crate::cpu::Fea
 /// ECDSA signature verification over brainpoolP512r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 64 bytes each, most significant first) of the hash at `digest` (its leftmost 64 bytes, or, for a shorter hash, the hash padded on the left with zeros to 64 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 64 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
-///
-/// The code of the function without the suffix, but for its calls of the `_umaal` functions. Field multiplications are calls of `vg_brainpoolp512r1_mul_mod_p_umaal` (and `vg_brainpoolp512r1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///

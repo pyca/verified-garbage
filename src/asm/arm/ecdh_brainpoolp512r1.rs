@@ -3425,8 +3425,6 @@ pub(crate) const VG_ECDH_BRAINPOOLP512R1_UMAAL_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// `vg_ecdh_brainpoolp512r1`'s code, but for its calls of the `_umaal` functions. Field multiplications are calls of `vg_brainpoolp512r1_mul_mod_p_umaal` (and `vg_brainpoolp512r1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.

@@ -3942,8 +3942,6 @@ pub(crate) const VG_EC_BRAINPOOLP512R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
-/// Field multiplications are calls of `vg_brainpoolp512r1_mul_mod_p_umaal` (and `vg_brainpoolp512r1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.
@@ -5939,8 +5937,6 @@ pub(crate) const VG_EC_BRAINPOOLP512R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES: cra
 /// Validate and decompress a brainpoolP512r1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 64 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 64 bytes each and returns 1. If no such finite point exists, writes 129 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// Field multiplications are calls of `vg_brainpoolp512r1_mul_mod_p_umaal` (and `vg_brainpoolp512r1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///
