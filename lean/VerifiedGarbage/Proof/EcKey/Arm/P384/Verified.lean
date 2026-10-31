@@ -48,7 +48,7 @@ theorem pre_of {s : State} (h : pkArm.pre s) : PkPre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem post_of {s s' : State} (h : PkPost p384 s s') : pkArm.post s s' := by
+theorem post_of {u : Bool} {s s' : State} (h : PkPost (p384With u) s s') : pkArm.post s s' := by
   unfold PkPost at h
   show match pk s.mem (State.addr (s.gpr .r1)) with
     | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
@@ -58,14 +58,15 @@ theorem post_of {s s' : State} (h : PkPost p384 s s') : pkArm.post s s' := by
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : pk s.mem (State.addr (s.gpr .r1)) = q
-  rw [show Spec.EcKey.publicKey p384.C (dk p384 s) = pk s.mem (State.addr (s.gpr .r1)) from rfl, hq]
+  rw [show Spec.EcKey.publicKey (p384With u).C (dk (p384With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl,
+    hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
 theorem pk_arm (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : pkArm.pre s) :
     ∃ t s', Exec isa Impl.EcKey.Arm.publicKeyP384 s t s' ∧ abiPreserved s s' ∧ pkArm.post s s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p384_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
+  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of (u := false) hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact K.saved (.r4, 0) (by decide)

@@ -1,6 +1,6 @@
 //! ECDH over P-384 (`vg_ecdh_p384`), and public keys
 //! (`vg_ec_p384_public_key`), each with BMI2 and ADX where the CPU has them
-//! (`_adx`).
+//! (`_adx`), and on ARMv7 with `umaal` where the CPU has it (`_umaal`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,6 +14,8 @@ use super::{Error, P384, PrivateKey};
 use crate::arch::ecdh_p384::vg_ecdh_p384;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p384::vg_ecdh_p384_adx;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdh_p384::vg_ecdh_p384_umaal;
 use crate::cpu::detected;
 use crate::ec::p384::{Mul, public_key};
 use crate::zeroize::zeroize;
@@ -52,6 +54,10 @@ impl PrivateKey<P384> {
             // (`Mul::select`).
             #[cfg(target_arch = "x86_64")]
             Mul::Adx => unsafe { vg_ecdh_p384_adx(&mut out, &self.d, peer, &mut scratch) },
+            // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+            // (`Mul::select`).
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => unsafe { vg_ecdh_p384_umaal(&mut out, &self.d, peer, &mut scratch) },
         };
         zeroize(&mut scratch);
         if ok == 1 {

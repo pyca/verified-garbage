@@ -50,14 +50,14 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   coreX := by
     intro s hs
     have pre : Proof.Ecdsa.Arm.P384.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p384,Spec.P384.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p384,Impl.Ecdsa.Arm.p384With,Spec.P384.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
         false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.P384.signArm] using hs
     obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.P384.sign_arm hL s pre
     refine ⟨tr,t,exec,abi,?_⟩
     change Proof.Ecdsa.Arm.P384.signArm.post s t
     exact post
   coreCT := by
-    simpa only [coreK,coreSigOf,Spec.P384.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p384,Proof.Ecdsa.Arm.P384.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+    simpa only [coreK,coreSigOf,Spec.P384.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p384,Impl.Ecdsa.Arm.p384With,Proof.Ecdsa.Arm.P384.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.P384.signArm] using Proof.Ecdsa.Arm.P384.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)

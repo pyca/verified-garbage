@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 public import VerifiedGarbage.Proof.P384.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -24,6 +26,7 @@ import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.P384.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -45,21 +48,21 @@ open VG.Proof.Ecdsa.Arm
 abbrev combSignSpec : Contract isa :=
   Spec.Ecdsa.P384.inst.signContract (abi.withConsts p384CombConsts)
 
-def combSignPre (s : State) : Prop :=
-  Pre p384 s (constRegs p384CombConsts s) ∧ ConstsOk p384CombConsts 0 s
+def combSignPre (u : Bool) (s : State) : Prop :=
+  Pre (p384With u) s (constRegs p384CombConsts s) ∧ ConstsOk p384CombConsts 0 s
 
-theorem sign_spec_pre {s : State}
-    (h : (Spec.Ecdsa.P384.inst.signContract abi).pre s) : Pre p384 s := by
+theorem sign_spec_pre {u : Bool} {s : State}
+    (h : (Spec.Ecdsa.P384.inst.signContract abi).pre s) : Pre (p384With u) s := by
   sig_pre [Spec.Ecdsa.P384.inst,Spec.Ecdsa.Instance.signContract,Spec.Ecdsa.Instance.signSig,
     Spec.P384.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr,stackArgAddr,
     BitVec.add_zero] at h
   obtain ⟨sp,rd,wr,_od,_oh,_ok,os,oa,ds,hs,ks,sa,fo,fd,fh,fk,fs⟩ := h
   exact ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
 
-theorem combSign_pre {s : State} (h : combSignSpec.pre s) : combSignPre s := by
+theorem combSign_pre {u : Bool} {s : State} (h : combSignSpec.pre s) : combSignPre u s := by
   have hp : (Spec.Ecdsa.P384.inst.signContract abi).pre (stripConsts p384CombConsts s) ∧
       ConstsOk p384CombConsts 0 s := pre_consts.mp h
-  have p := sign_spec_pre hp.1
+  have p := sign_spec_pre (u := u) hp.1
   refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.digest_sc,p.k_sc,p.out_args,p.sc_args,
     p.out_fit,p.d_fit,p.digest_fit,p.k_fit,p.sc_fit,p.sp_fit⟩,hp.2⟩
   rw [← List.take_append_drop (s.rd.length-p384CombConsts.length) s.rd,hp.2.1]
@@ -67,20 +70,27 @@ theorem combSign_pre {s : State} (h : combSignSpec.pre s) : combSignPre s := by
 
 def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms p384Comb.tsym=t.syms p384Comb.tsym
 
-theorem combSign_ct : ConstantTime isa combSignPre combSignPub signP384Comb := by
+theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signP384Comb := by
   refine VG.Taint.constantTime (A := taintSym [p384Comb.tsym]) τ₀ ?_ (by native_taint_decide)
   intro s t hs ht pub
   exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
     obtain rfl := List.mem_singleton.mp hn
     exact pub.2⟩
 
-theorem combSign_ok (hC : Law Spec.P384.curve) {s₀ : State} (hp : combSignPre s₀) :
-    WP isa signP384Comb s₀ fun t => SignKeep p384 s₀ t ∧ SignPost p384 s₀ t := by
+theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signP384CombU := by
+  refine VG.Taint.constantTime (A := taintSymU [p384Comb.tsym]) τ₀ ?_ (by taint_decide)
+  intro s t hs ht pub
+  exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
+    obtain rfl := List.mem_singleton.mp hn
+    exact pub.2⟩
+
+theorem combSign_ok (hC : Law Spec.P384.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
+    WP isa (signP384CombWith u) s₀ fun t => SignKeep (p384With u) s₀ t ∧ SignPost (p384With u) s₀ t := by
   have member : (p384Comb.tsym,p384CombWords)∈p384CombConsts := List.mem_singleton_self _
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show scR s₀∈s₀.wr by rw [hp.1.wr]; simp)
-  exact signWith_ok p384_ok hC hp.1 fun _ S sy => comb_generator_stage hC S sy ht rfl hd
+  exact signWith_ok (p384With_ok u) hC hp.1 fun _ S sy => comb_generator_stage hC S sy ht rfl hd
 
 open VG.Proof.P384.Arm in
 theorem combSign_sat : combSignSpec.pre combSatState := by
@@ -102,14 +112,15 @@ theorem combSign_sat : combSignSpec.pre combSatState := by
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-def combSignLocal : Contract isa where
-  pre := combSignPre
-  post := SignPost p384
+def combSignLocal (u : Bool) : Contract isa where
+  pre := combSignPre u
+  post := SignPost (p384With u)
   pub := combSignPub
 
-theorem combSign_verified (hC : Weierstrass.Law Spec.P384.curve) :
-    Verified Arm.target signP384Comb combSignSpec := by
-  refine Verified.of_correct (k := combSignLocal) (fun s hs => ?_) combSign_ct
+theorem combSignWith_verified (hC : Weierstrass.Law Spec.P384.curve) (u : Bool)
+    (hct : ConstantTime isa (combSignPre u) combSignPub (signP384CombWith u)) :
+    Verified Arm.target (signP384CombWith u) combSignSpec := by
+  refine Verified.of_correct (k := combSignLocal u) (fun s hs => ?_) hct
     ⟨fun _ h => combSign_pre h,?_,?_,⟨VG.Proof.P384.Arm.combSatState,combSign_sat⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hC hs
     exact ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,post⟩
@@ -125,5 +136,13 @@ theorem combSign_verified (hC : Weierstrass.Law Spec.P384.curve) :
       Loc.val,State.addr,stackArgAddr,BitVec.add_zero,p384CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,h0,h1,h2,h3,ha⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3,ha⟩,sy⟩
+
+theorem combSign_verified (hC : Weierstrass.Law Spec.P384.curve) :
+    Verified Arm.target signP384Comb combSignSpec :=
+  combSignWith_verified hC false combSign_ct
+
+theorem combSignU_verified (hC : Weierstrass.Law Spec.P384.curve) :
+    Verified Arm.target signP384CombU combSignSpec :=
+  combSignWith_verified hC true combSignU_ct
 
 end VG.Proof.Ecdsa.Arm.P384

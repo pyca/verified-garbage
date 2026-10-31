@@ -1,7 +1,8 @@
 //! ECDSA over P-384: deterministic signatures with HMAC-SHA-384
 //! (`vg_ecdsa_p384_sha384_sign`, which calls `vg_ecdsa_p384_sign`), public
 //! keys (`vg_ec_p384_public_key`), and verification (`vg_ecdsa_p384_verify`),
-//! each with BMI2 and ADX where the CPU has them (`_adx`).
+//! each with BMI2 and ADX where the CPU has them (`_adx`), and on ARMv7
+//! with `umaal` where the CPU has it (`_umaal`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -15,9 +16,13 @@ use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_umaal;
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_sha3;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384_sha384::{
     vg_ecdsa_p384_sha384_sign_adx, vg_ecdsa_p384_sha384_sign_avx2,
@@ -58,6 +63,8 @@ impl sealed::Functions<P384> for Sha384 {
             (Sha384Backend::ShaNi, Mul::Adx) => vg_ecdsa_p384_sha384_sign_shani_adx,
             #[cfg(target_arch = "x86_64")]
             (Sha384Backend::Avx2, Mul::Adx) => vg_ecdsa_p384_sha384_sign_avx2_adx,
+            #[cfg(target_arch = "arm")]
+            (Sha384Backend::Scalar, Mul::Umaal) => vg_ecdsa_p384_sha384_sign_umaal,
         };
         let mut out = [0; 96];
         let mut scratch = [0u64; 1024];
@@ -90,6 +97,10 @@ impl sealed::Functions<P384> for Sha384 {
             // (`Mul::select`).
             #[cfg(target_arch = "x86_64")]
             Mul::Adx => unsafe { vg_ecdsa_p384_verify_adx(q, digest, signature, &mut scratch) },
+            // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+            // (`Mul::select`).
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => unsafe { vg_ecdsa_p384_verify_umaal(q, digest, signature, &mut scratch) },
         };
         if ok == 1 {
             Ok(())
