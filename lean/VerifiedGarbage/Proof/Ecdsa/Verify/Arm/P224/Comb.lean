@@ -99,7 +99,7 @@ theorem combVerify_ok (hC : Law Spec.P224.curve) {um : Bool} {s₀ : State} (hp 
     rw [k_eq]
   have mul := comb_generator_ok hC hs₂ hf₂ F₂ hu₂ (by rw [sy₂,syu,syms]; rfl)
     (hd.sub_right (Region.sub_prefix (by decide))) (k := sv (p224With um) (ptr s₀ .r3) s U)
-    (Nat.lt_trans M.u_lt (by decide)) bits
+    (Nat.lt_trans M.u_lt (by cases um <;> decide)) bits
   refine WP.mono mul fun t ⟨R,U',Mo,L,Rp⟩ => ⟨(k₂.mono (by decide)).trans R,
     (O₂.unch.trans U').mono fun w hw => ?_,Mo,L,by simpa only [Nat.shiftRight_zero] using Rp⟩
   rcases List.mem_append.mp hw with h|h
