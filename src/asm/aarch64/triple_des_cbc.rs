@@ -18,11 +18,19 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_cbc_encrypt_chained(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #464
+        r".arch_extension sha3
+sub sp, sp, #576
 add x4, sp, #0
 add x14, x0, #0
 add x15, x4, #0
 cbz x3, 20f
+str q8, [x15, #464]
+str q9, [x15, #480]
+str q10, [x15, #496]
+str q11, [x15, #512]
+str q12, [x15, #528]
+str q13, [x15, #544]
+str q14, [x15, #560]
 str x19, [x15, #384]
 str x20, [x15, #392]
 str x21, [x15, #400]
@@ -266,6 +274,50 @@ movk x0, #1024, lsl #48
 movz x8, #8, lsl #0
 movk x8, #8194, lsl #32
 movk x8, #16, lsl #48
+movz x19, #65535, lsl #0
+movk x19, #65535, lsl #16
+movk x19, #65519, lsl #32
+movk x19, #65503, lsl #48
+movz x20, #57327, lsl #0
+movk x20, #63471, lsl #16
+movk x20, #61439, lsl #32
+movk x20, #65023, lsl #48
+movz x21, #64509, lsl #0
+movk x21, #65535, lsl #16
+movk x21, #65247, lsl #32
+movk x21, #65279, lsl #48
+movz x22, #63455, lsl #0
+movk x22, #64253, lsl #16
+movk x22, #63487, lsl #32
+movk x22, #57337, lsl #48
+movz x23, #65535, lsl #0
+movk x23, #65531, lsl #16
+movk x23, #65535, lsl #32
+movk x23, #65535, lsl #48
+movz x24, #65535, lsl #0
+movk x24, #65535, lsl #16
+movk x24, #65535, lsl #32
+movk x24, #63487, lsl #48
+movz x25, #65278, lsl #0
+movk x25, #65023, lsl #16
+movk x25, #64503, lsl #32
+movk x25, #65527, lsl #48
+movz x26, #65535, lsl #0
+movk x26, #57334, lsl #16
+movk x26, #65535, lsl #32
+movk x26, #61439, lsl #48
+movz x27, #60927, lsl #0
+movk x27, #61439, lsl #16
+movk x27, #65018, lsl #32
+movk x27, #65534, lsl #48
+movz x0, #65531, lsl #0
+movk x0, #65503, lsl #16
+movk x0, #65535, lsl #32
+movk x0, #64511, lsl #48
+movz x8, #65527, lsl #0
+movk x8, #65535, lsl #16
+movk x8, #57341, lsl #32
+movk x8, #65519, lsl #48
 23:
 ldr x5, [x1, #0]
 ldr x6, [x2, #0]
@@ -629,12 +681,15 @@ ror x6, x5, #63
 and x6, x6, x7
 eor x12, x12, x6
 add x10, x15, #0
+dup v7.2d, x11
+dup v8.2d, x12
+eor v9.16b, v9.16b, v9.16b
 movz x16, #8, lsl #0
 24:
 ldr x5, [x10, #0]
 add x10, x10, #8
-eor x5, x5, x12
-mov v0.d[0], x5
+dup v0.2d, x5
+eor v0.16b, v0.16b, v8.16b
 eor v1.16b, v0.16b, v4.16b
 eor v2.16b, v0.16b, v5.16b
 eor v3.16b, v0.16b, v6.16b
@@ -645,44 +700,44 @@ tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
 orr v2.16b, v2.16b, v3.16b
 orr v0.16b, v0.16b, v1.16b
 orr v0.16b, v0.16b, v2.16b
-umov x5, v0.d[0]
-ror x6, x5, #6
-and x6, x6, x19
-ror x7, x5, #10
-and x7, x7, x20
-eor x6, x6, x7
-ror x7, x5, #18
-and x7, x7, x21
-eor x6, x6, x7
-ror x7, x5, #22
-and x7, x7, x22
-eor x6, x6, x7
-ror x9, x5, #23
-and x9, x9, x23
-ror x13, x5, #29
-and x13, x13, x24
-eor x9, x9, x13
-ror x13, x5, #34
-and x13, x13, x25
-eor x9, x9, x13
-ror x13, x5, #38
-and x13, x13, x26
-eor x9, x9, x13
-ror x17, x5, #46
-and x17, x17, x27
-ror x7, x5, #50
-and x7, x7, x0
-eor x17, x17, x7
-ror x7, x5, #58
-and x7, x7, x8
-eor x17, x17, x7
-eor x11, x11, x6
-eor x9, x9, x17
-eor x11, x11, x9
+dup v13.2d, x19
+xar v14.2d, v0.2d, v9.2d, #6
+bcax v10.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x20
+xar v14.2d, v0.2d, v9.2d, #10
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x21
+xar v14.2d, v0.2d, v9.2d, #18
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x22
+xar v14.2d, v0.2d, v9.2d, #22
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x23
+xar v14.2d, v0.2d, v9.2d, #23
+bcax v11.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x24
+xar v14.2d, v0.2d, v9.2d, #29
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x25
+xar v14.2d, v0.2d, v9.2d, #34
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x26
+xar v14.2d, v0.2d, v9.2d, #38
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x27
+xar v14.2d, v0.2d, v9.2d, #46
+bcax v12.16b, v7.16b, v14.16b, v13.16b
+dup v13.2d, x0
+xar v14.2d, v0.2d, v9.2d, #50
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+dup v13.2d, x8
+xar v14.2d, v0.2d, v9.2d, #58
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+eor3 v7.16b, v10.16b, v11.16b, v12.16b
 ldr x5, [x10, #0]
 add x10, x10, #8
-eor x5, x5, x11
-mov v0.d[0], x5
+dup v0.2d, x5
+eor v0.16b, v0.16b, v7.16b
 eor v1.16b, v0.16b, v4.16b
 eor v2.16b, v0.16b, v5.16b
 eor v3.16b, v0.16b, v6.16b
@@ -693,52 +748,52 @@ tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
 orr v2.16b, v2.16b, v3.16b
 orr v0.16b, v0.16b, v1.16b
 orr v0.16b, v0.16b, v2.16b
-umov x5, v0.d[0]
-ror x6, x5, #6
-and x6, x6, x19
-ror x7, x5, #10
-and x7, x7, x20
-eor x6, x6, x7
-ror x7, x5, #18
-and x7, x7, x21
-eor x6, x6, x7
-ror x7, x5, #22
-and x7, x7, x22
-eor x6, x6, x7
-ror x9, x5, #23
-and x9, x9, x23
-ror x13, x5, #29
-and x13, x13, x24
-eor x9, x9, x13
-ror x13, x5, #34
-and x13, x13, x25
-eor x9, x9, x13
-ror x13, x5, #38
-and x13, x13, x26
-eor x9, x9, x13
-ror x17, x5, #46
-and x17, x17, x27
-ror x7, x5, #50
-and x7, x7, x0
-eor x17, x17, x7
-ror x7, x5, #58
-and x7, x7, x8
-eor x17, x17, x7
-eor x12, x12, x6
-eor x9, x9, x17
-eor x12, x12, x9
+dup v13.2d, x19
+xar v14.2d, v0.2d, v9.2d, #6
+bcax v10.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x20
+xar v14.2d, v0.2d, v9.2d, #10
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x21
+xar v14.2d, v0.2d, v9.2d, #18
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x22
+xar v14.2d, v0.2d, v9.2d, #22
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x23
+xar v14.2d, v0.2d, v9.2d, #23
+bcax v11.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x24
+xar v14.2d, v0.2d, v9.2d, #29
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x25
+xar v14.2d, v0.2d, v9.2d, #34
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x26
+xar v14.2d, v0.2d, v9.2d, #38
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x27
+xar v14.2d, v0.2d, v9.2d, #46
+bcax v12.16b, v8.16b, v14.16b, v13.16b
+dup v13.2d, x0
+xar v14.2d, v0.2d, v9.2d, #50
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+dup v13.2d, x8
+xar v14.2d, v0.2d, v9.2d, #58
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+eor3 v8.16b, v10.16b, v11.16b, v12.16b
 sub x16, x16, #1
 cbnz x16, 24b
 add x10, x10, #120
-add x5, x11, #0
-add x11, x12, #0
-add x12, x5, #0
+orr v10.16b, v7.16b, v7.16b
+orr v7.16b, v8.16b, v8.16b
+orr v8.16b, v10.16b, v10.16b
 movz x16, #8, lsl #0
 25:
 ldr x5, [x10, #0]
 sub x10, x10, #8
-eor x5, x5, x12
-mov v0.d[0], x5
+dup v0.2d, x5
+eor v0.16b, v0.16b, v8.16b
 eor v1.16b, v0.16b, v4.16b
 eor v2.16b, v0.16b, v5.16b
 eor v3.16b, v0.16b, v6.16b
@@ -749,44 +804,44 @@ tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
 orr v2.16b, v2.16b, v3.16b
 orr v0.16b, v0.16b, v1.16b
 orr v0.16b, v0.16b, v2.16b
-umov x5, v0.d[0]
-ror x6, x5, #6
-and x6, x6, x19
-ror x7, x5, #10
-and x7, x7, x20
-eor x6, x6, x7
-ror x7, x5, #18
-and x7, x7, x21
-eor x6, x6, x7
-ror x7, x5, #22
-and x7, x7, x22
-eor x6, x6, x7
-ror x9, x5, #23
-and x9, x9, x23
-ror x13, x5, #29
-and x13, x13, x24
-eor x9, x9, x13
-ror x13, x5, #34
-and x13, x13, x25
-eor x9, x9, x13
-ror x13, x5, #38
-and x13, x13, x26
-eor x9, x9, x13
-ror x17, x5, #46
-and x17, x17, x27
-ror x7, x5, #50
-and x7, x7, x0
-eor x17, x17, x7
-ror x7, x5, #58
-and x7, x7, x8
-eor x17, x17, x7
-eor x11, x11, x6
-eor x9, x9, x17
-eor x11, x11, x9
+dup v13.2d, x19
+xar v14.2d, v0.2d, v9.2d, #6
+bcax v10.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x20
+xar v14.2d, v0.2d, v9.2d, #10
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x21
+xar v14.2d, v0.2d, v9.2d, #18
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x22
+xar v14.2d, v0.2d, v9.2d, #22
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x23
+xar v14.2d, v0.2d, v9.2d, #23
+bcax v11.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x24
+xar v14.2d, v0.2d, v9.2d, #29
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x25
+xar v14.2d, v0.2d, v9.2d, #34
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x26
+xar v14.2d, v0.2d, v9.2d, #38
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x27
+xar v14.2d, v0.2d, v9.2d, #46
+bcax v12.16b, v7.16b, v14.16b, v13.16b
+dup v13.2d, x0
+xar v14.2d, v0.2d, v9.2d, #50
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+dup v13.2d, x8
+xar v14.2d, v0.2d, v9.2d, #58
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+eor3 v7.16b, v10.16b, v11.16b, v12.16b
 ldr x5, [x10, #0]
 sub x10, x10, #8
-eor x5, x5, x11
-mov v0.d[0], x5
+dup v0.2d, x5
+eor v0.16b, v0.16b, v7.16b
 eor v1.16b, v0.16b, v4.16b
 eor v2.16b, v0.16b, v5.16b
 eor v3.16b, v0.16b, v6.16b
@@ -797,52 +852,52 @@ tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
 orr v2.16b, v2.16b, v3.16b
 orr v0.16b, v0.16b, v1.16b
 orr v0.16b, v0.16b, v2.16b
-umov x5, v0.d[0]
-ror x6, x5, #6
-and x6, x6, x19
-ror x7, x5, #10
-and x7, x7, x20
-eor x6, x6, x7
-ror x7, x5, #18
-and x7, x7, x21
-eor x6, x6, x7
-ror x7, x5, #22
-and x7, x7, x22
-eor x6, x6, x7
-ror x9, x5, #23
-and x9, x9, x23
-ror x13, x5, #29
-and x13, x13, x24
-eor x9, x9, x13
-ror x13, x5, #34
-and x13, x13, x25
-eor x9, x9, x13
-ror x13, x5, #38
-and x13, x13, x26
-eor x9, x9, x13
-ror x17, x5, #46
-and x17, x17, x27
-ror x7, x5, #50
-and x7, x7, x0
-eor x17, x17, x7
-ror x7, x5, #58
-and x7, x7, x8
-eor x17, x17, x7
-eor x12, x12, x6
-eor x9, x9, x17
-eor x12, x12, x9
+dup v13.2d, x19
+xar v14.2d, v0.2d, v9.2d, #6
+bcax v10.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x20
+xar v14.2d, v0.2d, v9.2d, #10
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x21
+xar v14.2d, v0.2d, v9.2d, #18
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x22
+xar v14.2d, v0.2d, v9.2d, #22
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x23
+xar v14.2d, v0.2d, v9.2d, #23
+bcax v11.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x24
+xar v14.2d, v0.2d, v9.2d, #29
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x25
+xar v14.2d, v0.2d, v9.2d, #34
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x26
+xar v14.2d, v0.2d, v9.2d, #38
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x27
+xar v14.2d, v0.2d, v9.2d, #46
+bcax v12.16b, v8.16b, v14.16b, v13.16b
+dup v13.2d, x0
+xar v14.2d, v0.2d, v9.2d, #50
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+dup v13.2d, x8
+xar v14.2d, v0.2d, v9.2d, #58
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+eor3 v8.16b, v10.16b, v11.16b, v12.16b
 sub x16, x16, #1
 cbnz x16, 25b
 add x10, x10, #136
-add x5, x11, #0
-add x11, x12, #0
-add x12, x5, #0
+orr v10.16b, v7.16b, v7.16b
+orr v7.16b, v8.16b, v8.16b
+orr v8.16b, v10.16b, v10.16b
 movz x16, #8, lsl #0
 26:
 ldr x5, [x10, #0]
 add x10, x10, #8
-eor x5, x5, x12
-mov v0.d[0], x5
+dup v0.2d, x5
+eor v0.16b, v0.16b, v8.16b
 eor v1.16b, v0.16b, v4.16b
 eor v2.16b, v0.16b, v5.16b
 eor v3.16b, v0.16b, v6.16b
@@ -853,44 +908,44 @@ tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
 orr v2.16b, v2.16b, v3.16b
 orr v0.16b, v0.16b, v1.16b
 orr v0.16b, v0.16b, v2.16b
-umov x5, v0.d[0]
-ror x6, x5, #6
-and x6, x6, x19
-ror x7, x5, #10
-and x7, x7, x20
-eor x6, x6, x7
-ror x7, x5, #18
-and x7, x7, x21
-eor x6, x6, x7
-ror x7, x5, #22
-and x7, x7, x22
-eor x6, x6, x7
-ror x9, x5, #23
-and x9, x9, x23
-ror x13, x5, #29
-and x13, x13, x24
-eor x9, x9, x13
-ror x13, x5, #34
-and x13, x13, x25
-eor x9, x9, x13
-ror x13, x5, #38
-and x13, x13, x26
-eor x9, x9, x13
-ror x17, x5, #46
-and x17, x17, x27
-ror x7, x5, #50
-and x7, x7, x0
-eor x17, x17, x7
-ror x7, x5, #58
-and x7, x7, x8
-eor x17, x17, x7
-eor x11, x11, x6
-eor x9, x9, x17
-eor x11, x11, x9
+dup v13.2d, x19
+xar v14.2d, v0.2d, v9.2d, #6
+bcax v10.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x20
+xar v14.2d, v0.2d, v9.2d, #10
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x21
+xar v14.2d, v0.2d, v9.2d, #18
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x22
+xar v14.2d, v0.2d, v9.2d, #22
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x23
+xar v14.2d, v0.2d, v9.2d, #23
+bcax v11.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x24
+xar v14.2d, v0.2d, v9.2d, #29
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x25
+xar v14.2d, v0.2d, v9.2d, #34
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x26
+xar v14.2d, v0.2d, v9.2d, #38
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x27
+xar v14.2d, v0.2d, v9.2d, #46
+bcax v12.16b, v7.16b, v14.16b, v13.16b
+dup v13.2d, x0
+xar v14.2d, v0.2d, v9.2d, #50
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+dup v13.2d, x8
+xar v14.2d, v0.2d, v9.2d, #58
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+eor3 v7.16b, v10.16b, v11.16b, v12.16b
 ldr x5, [x10, #0]
 add x10, x10, #8
-eor x5, x5, x11
-mov v0.d[0], x5
+dup v0.2d, x5
+eor v0.16b, v0.16b, v7.16b
 eor v1.16b, v0.16b, v4.16b
 eor v2.16b, v0.16b, v5.16b
 eor v3.16b, v0.16b, v6.16b
@@ -901,42 +956,44 @@ tbl v3.16b, {{v28.16b, v29.16b, v30.16b, v31.16b}}, v3.16b
 orr v2.16b, v2.16b, v3.16b
 orr v0.16b, v0.16b, v1.16b
 orr v0.16b, v0.16b, v2.16b
-umov x5, v0.d[0]
-ror x6, x5, #6
-and x6, x6, x19
-ror x7, x5, #10
-and x7, x7, x20
-eor x6, x6, x7
-ror x7, x5, #18
-and x7, x7, x21
-eor x6, x6, x7
-ror x7, x5, #22
-and x7, x7, x22
-eor x6, x6, x7
-ror x9, x5, #23
-and x9, x9, x23
-ror x13, x5, #29
-and x13, x13, x24
-eor x9, x9, x13
-ror x13, x5, #34
-and x13, x13, x25
-eor x9, x9, x13
-ror x13, x5, #38
-and x13, x13, x26
-eor x9, x9, x13
-ror x17, x5, #46
-and x17, x17, x27
-ror x7, x5, #50
-and x7, x7, x0
-eor x17, x17, x7
-ror x7, x5, #58
-and x7, x7, x8
-eor x17, x17, x7
-eor x12, x12, x6
-eor x9, x9, x17
-eor x12, x12, x9
+dup v13.2d, x19
+xar v14.2d, v0.2d, v9.2d, #6
+bcax v10.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x20
+xar v14.2d, v0.2d, v9.2d, #10
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x21
+xar v14.2d, v0.2d, v9.2d, #18
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x22
+xar v14.2d, v0.2d, v9.2d, #22
+bcax v10.16b, v10.16b, v14.16b, v13.16b
+dup v13.2d, x23
+xar v14.2d, v0.2d, v9.2d, #23
+bcax v11.16b, v9.16b, v14.16b, v13.16b
+dup v13.2d, x24
+xar v14.2d, v0.2d, v9.2d, #29
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x25
+xar v14.2d, v0.2d, v9.2d, #34
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x26
+xar v14.2d, v0.2d, v9.2d, #38
+bcax v11.16b, v11.16b, v14.16b, v13.16b
+dup v13.2d, x27
+xar v14.2d, v0.2d, v9.2d, #46
+bcax v12.16b, v8.16b, v14.16b, v13.16b
+dup v13.2d, x0
+xar v14.2d, v0.2d, v9.2d, #50
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+dup v13.2d, x8
+xar v14.2d, v0.2d, v9.2d, #58
+bcax v12.16b, v12.16b, v14.16b, v13.16b
+eor3 v8.16b, v10.16b, v11.16b, v12.16b
 sub x16, x16, #1
 cbnz x16, 26b
+umov x11, v7.d[0]
+umov x12, v8.d[0]
 movz x7, #16, lsl #0
 movk x7, #4, lsl #48
 and x5, x12, x7
@@ -1238,6 +1295,13 @@ ldr x24, [x15, #424]
 ldr x25, [x15, #432]
 ldr x26, [x15, #440]
 ldr x27, [x15, #448]
+ldr q8, [x15, #464]
+ldr q9, [x15, #480]
+ldr q10, [x15, #496]
+ldr q11, [x15, #512]
+ldr q12, [x15, #528]
+ldr q13, [x15, #544]
+ldr q14, [x15, #560]
 b 21f
 20:
 21:
@@ -1272,7 +1336,15 @@ stp x17, x17, [x16, #400]
 stp x17, x17, [x16, #416]
 stp x17, x17, [x16, #432]
 stp x17, x17, [x16, #448]
-add sp, sp, #464
+stp x17, x17, [x16, #464]
+stp x17, x17, [x16, #480]
+stp x17, x17, [x16, #496]
+add x16, sp, #512
+stp x17, x17, [x16, #0]
+stp x17, x17, [x16, #16]
+stp x17, x17, [x16, #32]
+stp x17, x17, [x16, #48]
+add sp, sp, #576
 ret
 .p2align 6",
     )
