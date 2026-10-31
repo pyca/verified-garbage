@@ -2759,11 +2759,14 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   separate assembler step. Naked functions' machine code is the same at every
   optimization level, and optimized, rustc's ThinLTO has LLVM parse their
   assembly twice more, so a crate depending on this one builds faster with
-  them unoptimized (as this repository's own builds are):
+  them unoptimized, and in as many codegen units as it states (rustc merges
+  the units of a crate of naked functions into one, assembled on one thread,
+  unless their number is stated), as this repository's own builds are:
 
   ```toml
   [profile.release.package.verified-garbage-asm-x86_64]
   opt-level = 0
+  codegen-units = 16
   ```
 * The public APIs are Rust that composes these verified primitives (see
   [what is not verified](#what-is-not-verified)).
