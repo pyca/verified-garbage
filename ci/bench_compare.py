@@ -682,4 +682,17 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # UNPROVED branch-only lifetime experiment. Use the existing read-only
+    # benchmark workflow; its workflow definition is deliberately unchanged.
+    driver = pathlib.Path("head/experiments/run_auto_lifetimes_ci.py")
+    if os.environ.get("GITHUB_ACTIONS") == "true" and driver.is_file():
+        import runpy
+        def experiment_arg(name):
+            return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else ""
+        if (experiment_arg("--arch") != "aarch64" or
+                experiment_arg("--modules") != "mldsa44 mldsa65 mldsa87" or
+                os.environ.get("VG_CPU_FEATURES", "")):
+            raise SystemExit("This prototype needs only default AArch64 and modules mldsa44 mldsa65 mldsa87")
+        runpy.run_path(str(driver), run_name="__main__")
+    else:
+        sys.exit(main())

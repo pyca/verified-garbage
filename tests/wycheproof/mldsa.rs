@@ -90,13 +90,19 @@ macro_rules! mldsa_tests {
                         .map_or([0; 32], |r| r.0[..].try_into().unwrap());
                     // Every valid vector gives `μ`; some (`Internal`) give no message.
                     let mu: [u8; 64] = c.mu.as_ref().unwrap().0[..].try_into().unwrap();
-                    assert_eq!(key.sign_mu(&mu, &rnd), Ok(sig), "tcId {id}");
-                    assert_eq!(key.verifying_key().verify_mu(&mu, &sig), Ok(()));
-                    if let Some(msg) = &c.msg {
-                        if c.rnd.is_none() {
-                            assert_eq!(key.sign_deterministic(&msg.0, ctx), Ok(sig), "tcId {id}");
+                    for _ in 0..3 {
+                        assert_eq!(key.sign_mu(&mu, &rnd), Ok(sig), "tcId {id}");
+                        assert_eq!(key.verifying_key().verify_mu(&mu, &sig), Ok(()));
+                        if let Some(msg) = &c.msg {
+                            if c.rnd.is_none() {
+                                assert_eq!(
+                                    key.sign_deterministic(&msg.0, ctx),
+                                    Ok(sig),
+                                    "tcId {id}"
+                                );
+                            }
+                            assert_eq!(key.verifying_key().verify(&msg.0, ctx, &sig), Ok(()));
                         }
-                        assert_eq!(key.verifying_key().verify(&msg.0, ctx, &sig), Ok(()));
                     }
                 } else {
                     // The only invalid vectors with a seed of the right length
@@ -123,7 +129,12 @@ macro_rules! mldsa_tests {
                 // Keys and signatures of the wrong length are not represented.
                 let ok = match (pk, sig) {
                     (Ok(pk), Ok(sig)) => {
-                        $VerifyingKey::from_bytes(&pk).verify(&c.msg.0, ctx, &sig) == Ok(())
+                        let key = $VerifyingKey::from_bytes(&pk);
+                        let result = key.verify(&c.msg.0, ctx, &sig);
+                        for _ in 0..2 {
+                            assert_eq!(key.verify(&c.msg.0, ctx, &sig), result);
+                        }
+                        result == Ok(())
                     }
                     _ => false,
                 };

@@ -1,4 +1,4 @@
-// UNPROVED prepared-key experiment; AArch64 only. Do not ship.
+// UNPROVED automatic prepared-key experiment; AArch64 only. Do not ship.
 //! What ML-DSA-44, ML-DSA-65 and ML-DSA-87 (`crate::mldsa44`,
 //! `crate::mldsa65`, `crate::mldsa87`) share: their API, defined once by
 //! `ml_dsa!` for each parameter set's verified functions and sizes.
@@ -53,13 +53,265 @@ impl Backend {
 /// which takes the hash `tr` of the public key the `VerifyingKey` keeps), its
 /// `sign` and `verify` functions (which take a precomputed `μ`)
 /// and its sizes.
-pub(crate) const CACHE_NTT: bool = true;
+// UNPROVED EXPERIMENT: Rust publication protocol, not a verified prepared-key API.
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+pub(crate) mod auto_cache {
+    use alloc::{
+        alloc::{Layout, alloc_zeroed},
+        boxed::Box,
+    };
+    use core::{
+        marker::PhantomData,
+        ptr,
+        sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
+    };
+
+    pub(crate) const AFTER: usize = match option_env!("VG_MLDSA_CACHE_AFTER") {
+        Some(s) => match s.as_bytes() {
+            b"0" => 0,
+            b"1" => 1,
+            b"4" => 4,
+            _ => 2,
+        },
+        None => 2,
+    };
+
+    #[repr(C, align(16))]
+    pub(crate) struct Prepared<const N: usize, const SECRET: bool> {
+        pub(crate) bytes: [u8; N],
+    }
+    impl<const N: usize, const SECRET: bool> Prepared<N, SECRET> {
+        pub(crate) fn allocate() -> Option<Box<Self>> {
+            // SAFETY: nonzero sized/aligned array object. Zero is a valid value of
+            // every byte; Box takes ownership only when allocation succeeded.
+            let p = unsafe { alloc_zeroed(Layout::new::<Self>()).cast::<Self>() };
+            if p.is_null() {
+                None
+            } else {
+                Some(unsafe { Box::from_raw(p) })
+            }
+        }
+    }
+    impl<const N: usize, const SECRET: bool> Drop for Prepared<N, SECRET> {
+        fn drop(&mut self) {
+            if SECRET {
+                crate::zeroize::zeroize(&mut self.bytes);
+            }
+        }
+    }
+
+    pub(crate) struct Cache<T> {
+        pointer: AtomicPtr<T>,
+        uses: AtomicUsize,
+        // AtomicPtr alone would permit non-Send/non-Sync T. Ownership ties our
+        // auto traits and drop checking to the published allocation's contents.
+        owned: PhantomData<Box<T>>,
+    }
+    impl<T> Cache<T> {
+        pub(crate) fn new() -> Self {
+            Self {
+                pointer: AtomicPtr::new(ptr::null_mut()),
+                uses: AtomicUsize::new(0),
+                owned: PhantomData,
+            }
+        }
+        pub(crate) fn get(&self, build: impl FnOnce() -> Option<Box<T>>) -> Option<&T> {
+            if AFTER == 0 {
+                return None;
+            }
+            let p = self.pointer.load(Ordering::Acquire);
+            if !p.is_null() {
+                // SAFETY: publication releases a complete immutable Box. It is
+                // freed only by Drop, excluded by our shared borrow of self.
+                return Some(unsafe { &*p });
+            }
+            let mut uses = self.uses.load(Ordering::Relaxed);
+            loop {
+                // Reaching AFTER also claims initialization. Other callers do
+                // not wait, allocate, or retry a failed/panicking preparation.
+                if uses >= AFTER {
+                    return None;
+                }
+                match self.uses.compare_exchange_weak(
+                    uses,
+                    uses + 1,
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                ) {
+                    Ok(_) => break,
+                    Err(current) => uses = current,
+                }
+            }
+            if uses + 1 < AFTER {
+                return None;
+            }
+            let p = Box::into_raw(build()?);
+            self.pointer.store(p, Ordering::Release);
+            // SAFETY: as above; this caller owns the initialization claim.
+            Some(unsafe { &*p })
+        }
+    }
+    // Cached values/usage counts are performance hints, not key identity.
+    // Clones start cold; they never copy or share secret cache allocations.
+    impl<T> Clone for Cache<T> {
+        fn clone(&self) -> Self {
+            Self::new()
+        }
+    }
+    impl<T> PartialEq for Cache<T> {
+        fn eq(&self, _: &Self) -> bool {
+            true
+        }
+    }
+    impl<T> Eq for Cache<T> {}
+    impl<T> Drop for Cache<T> {
+        fn drop(&mut self) {
+            let p = *self.pointer.get_mut();
+            if !p.is_null() {
+                // SAFETY: exclusive access excludes all outstanding borrows.
+                unsafe {
+                    drop(Box::from_raw(p));
+                }
+            }
+        }
+    }
+    #[cfg(all(test, feature = "std"))]
+    mod tests {
+        use super::*;
+        use std::{
+            alloc::{GlobalAlloc, System},
+            sync::{Arc, Barrier},
+            thread,
+        };
+        static TARGET: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
+        static WIPED: AtomicUsize = AtomicUsize::new(0);
+        struct ObserveFree;
+        #[global_allocator]
+        static ALLOCATOR: ObserveFree = ObserveFree;
+        unsafe impl GlobalAlloc for ObserveFree {
+            unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+                unsafe { System.alloc(layout) }
+            }
+            unsafe fn dealloc(&self, p: *mut u8, layout: Layout) {
+                if TARGET
+                    .compare_exchange(p, ptr::null_mut(), Ordering::AcqRel, Ordering::Relaxed)
+                    .is_ok()
+                {
+                    // The allocation is still owned here, after its value's
+                    // Drop and before its storage is released to System.
+                    let bytes = unsafe { core::slice::from_raw_parts(p, layout.size()) };
+                    WIPED.store(
+                        if bytes.iter().all(|&b| b == 0) { 1 } else { 2 },
+                        Ordering::Release,
+                    );
+                }
+                unsafe {
+                    System.dealloc(p, layout);
+                }
+            }
+        }
+        #[test]
+        fn mldsa_cache_promotes_once_and_clone_starts_cold() {
+            assert_eq!(AFTER, 2, "protocol tests use second-use policy");
+            let cache = Cache::new();
+            assert!(
+                cache
+                    .get(|| panic!("first use must stay compact"))
+                    .is_none()
+            );
+            assert_eq!(cache.get(|| Some(Box::new(42))), Some(&42));
+            assert_eq!(cache.get(|| panic!("already initialized")), Some(&42));
+            assert!(cache.clone().get(|| panic!("clone starts cold")).is_none());
+        }
+        #[test]
+        fn mldsa_cache_failed_preparation_falls_back_permanently() {
+            let cache = Cache::<usize>::new();
+            assert!(cache.get(|| panic!("first use")).is_none());
+            assert!(cache.get(|| None).is_none());
+            assert!(cache.get(|| panic!("must not retry allocation")).is_none());
+        }
+        #[test]
+        fn mldsa_cache_panicking_preparation_does_not_block_later_calls() {
+            let cache = Cache::<usize>::new();
+            assert!(cache.get(|| None).is_none());
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    cache.get(|| panic!("simulated initializer panic"));
+                }))
+                .is_err()
+            );
+            assert!(cache.get(|| panic!("must not retry")).is_none());
+        }
+        #[test]
+        fn mldsa_cache_readers_do_not_wait_for_initializer() {
+            let cache = Arc::new(Cache::new());
+            let started = Arc::new(Barrier::new(2));
+            let release = Arc::new(Barrier::new(2));
+            assert!(cache.get(|| None).is_none());
+            let builder = {
+                let (cache, started, release) = (cache.clone(), started.clone(), release.clone());
+                thread::spawn(move || {
+                    assert_eq!(
+                        cache.get(|| {
+                            started.wait();
+                            release.wait();
+                            Some(Box::new(99))
+                        }),
+                        Some(&99)
+                    );
+                })
+            };
+            started.wait();
+            // This has to complete before the initializer is released.
+            assert!(cache.get(|| panic!("only one builder")).is_none());
+            release.wait();
+            builder.join().unwrap();
+            thread::scope(|scope| {
+                for _ in 0..16 {
+                    let cache = &cache;
+                    scope.spawn(move || {
+                        for _ in 0..1000 {
+                            assert_eq!(cache.get(|| panic!("published")), Some(&99));
+                        }
+                    });
+                }
+            });
+        }
+        #[test]
+        fn mldsa_cache_secret_is_zero_at_deallocation() {
+            let cache = Cache::new();
+            assert!(cache.get(|| None).is_none());
+            let prepared = cache
+                .get(|| {
+                    let mut value = Prepared::<32, true>::allocate()?;
+                    value.bytes.fill(0x5a);
+                    Some(value)
+                })
+                .unwrap();
+            TARGET.store(
+                core::ptr::from_ref(prepared).cast_mut().cast(),
+                Ordering::Release,
+            );
+            drop(cache);
+            assert_eq!(WIPED.load(Ordering::Acquire), 1);
+            assert!(TARGET.load(Ordering::Acquire).is_null());
+        }
+    }
+}
 
 macro_rules! ml_dsa {
     (
         name: $name:literal,
         signing_key: $SigningKey:ident,
         verifying_key: $VerifyingKey:ident,
+        sign_prepared: $sign_prepared:path,
+        verify_prepared: $verify_prepared:path,
+        sign_message_prepared: $sign_message_prepared:path,
+        verify_message_prepared: $verify_message_prepared:path,
+        sign_prepared_sha3: $sign_prepared_sha3:path,
+        verify_prepared_sha3: $verify_prepared_sha3:path,
+        sign_message_prepared_sha3: $sign_message_prepared_sha3:path,
+        verify_message_prepared_sha3: $verify_message_prepared_sha3:path,
         keygen: $keygen:path,
         sign: $sign:path,
         verify: $verify:path,
@@ -146,9 +398,10 @@ macro_rules! ml_dsa {
 
         #[doc = concat!("An ", $name, " public key.")]
         #[derive(Clone, PartialEq, Eq)]
-        #[repr(C, align(16))]
         pub struct $VerifyingKey {
-            bytes: [u8; $pk + 1024 * $k],
+            bytes: [u8; $pk],
+            #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+            cache: $crate::mldsa_common::auto_cache::Cache<$crate::mldsa_common::auto_cache::Prepared<{ $pk + 1024 * $k }, false>>,
             // Constructors maintain tr = SHAKE256(bytes, 64).
             #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
             tr: [u8; 64],
@@ -161,6 +414,27 @@ macro_rules! ml_dsa {
         }
 
         impl $VerifyingKey {
+
+            #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+            fn prepared(&self) -> Option<&$crate::mldsa_common::auto_cache::Prepared<{ $pk + 1024 * $k }, false>> {
+                self.cache.get(|| {
+                    let mut prepared = $crate::mldsa_common::auto_cache::Prepared::allocate()?;
+                    prepared.bytes[..$pk].copy_from_slice(&self.bytes);
+                    let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
+                    for i in 0..$k {
+                        // UNPROVED: composing existing unpack/NTT, new layout not yet proved.
+                        unsafe {
+                            let input = prepared.bytes.as_ptr().add(32 + 320 * i).cast();
+                            let output = prepared.bytes.as_mut_ptr().add($pk + 1024 * i).cast();
+                            $crate::arch::mldsa::vg_mldsa_unpack_t1(input, output);
+                            $crate::arch::mldsa::vg_mldsa_ntt(output, work.as_mut_ptr());
+                        }
+                    }
+                    unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), 1024); }
+                    Some(prepared)
+                })
+            }
+
             /// The size of a public key, in bytes.
             pub const SIZE: usize = $pk;
             /// The size of a signature, in bytes.
@@ -169,38 +443,22 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
-                let mut result = $VerifyingKey {
-                    bytes: [0; $pk + 1024 * $k],
+                $VerifyingKey {
+                    bytes: *bytes,
+                    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                    cache: $crate::mldsa_common::auto_cache::Cache::new(),
                     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                     tr: {
                         let mut tr = [0; 64];
                         $crate::hashes::sha3::Shake256::digest(bytes, &mut tr);
                         tr
                     },
-                };
-                result.bytes[..$pk].copy_from_slice(bytes);
-                result.prepare_polynomials();
-                result
-            }
-
-            fn prepare_polynomials(&mut self) {
-                let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
-                for i in 0..$k {
-                    unsafe {
-                        let input = self.bytes.as_ptr().add(32 + 320 * i).cast();
-                        let output = self.bytes.as_mut_ptr().add($pk + 1024 * i).cast();
-                        $crate::arch::mldsa::vg_mldsa_unpack_t1(input, output);
-                        if $crate::mldsa_common::CACHE_NTT {
-                            $crate::arch::mldsa::vg_mldsa_ntt(output, work.as_mut_ptr());
-                        }
-                    }
                 }
-                unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), 1024); }
             }
 
             /// The bytes of the key.
             pub fn as_bytes(&self) -> &[u8; $pk] {
-                self.bytes[..$pk].try_into().unwrap()
+                &self.bytes
             }
 
             /// `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3):
@@ -210,6 +468,7 @@ macro_rules! ml_dsa {
             /// about 2⁻²⁵⁶ or less, if a loop reaches its bound), and
             /// [`Error::ContextTooLong`] if `ctx` is longer than 255 bytes.
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), Error> {
+                if ctx.len() > 255 { return Err(Error::ContextTooLong); }
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -220,18 +479,42 @@ macro_rules! ml_dsa {
                 // the stack, or wrap around the end of the address space.
                 // Backend selection checks the generated CPU feature requirements.
                 let r = unsafe {
+                    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                    { if let Some(prepared) = self.prepared() {
+                            let key = prepared.bytes.as_ptr().cast();
+                            match backend() {
+                                Backend::Scalar => $verify_message_prepared(key, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                                Backend::Sha3 => $verify_message_prepared_sha3(key, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                            }
+                        } else {
                     match backend() {
                         #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-                        Backend::Scalar => $verify_message(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
                         // Both constructors establish tr = SHAKE256(bytes, 64);
                         // the key and digest remain private and immutable.
                         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-                        Backend::Scalar => $verify_message_cached(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_message_cached_sha3(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_message_cached_avx2(self.bytes.as_ptr().cast(), m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
+                 } }
+                    #[cfg(not(all(target_arch = "aarch64", feature = "alloc")))]
+                    {
+                    match backend() {
+                        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+                        Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
+                        // Both constructors establish tr = SHAKE256(bytes, 64);
+                        // the key and digest remain private and immutable.
+                        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                    }
+                 }
                 };
                 match r {
                     1 => Ok(()),
@@ -257,13 +540,32 @@ macro_rules! ml_dsa {
                 // `backend()` chose an implementation whose features the CPU
                 // has.
                 let r = unsafe {
+                    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                    { if let Some(prepared) = self.prepared() {
+                            let key = prepared.bytes.as_ptr().cast();
+                            match backend() {
+                                Backend::Scalar => $verify_prepared(key, mu, sig, scratch.as_mut_ptr()),
+                                Backend::Sha3 => $verify_prepared_sha3(key, mu, sig, scratch.as_mut_ptr()),
+                            }
+                        } else {
                     match backend() {
-                        Backend::Scalar => $verify(self.bytes.as_ptr().cast(), mu, sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $verify(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_sha3(self.bytes.as_ptr().cast(), mu, sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_avx2(self.bytes.as_ptr().cast(), mu, sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
+                 } }
+                    #[cfg(not(all(target_arch = "aarch64", feature = "alloc")))]
+                    {
+                    match backend() {
+                        Backend::Scalar => $verify(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                    }
+                 }
                 };
                 if r == 1 { Ok(()) } else { Err(Error::InvalidSignature) }
             }
@@ -274,11 +576,12 @@ macro_rules! ml_dsa {
             (FIPS 204 §3.6.3), with the keys it expands to. The seed and the expanded key are \
             destroyed when it is dropped."
         )]
-        #[repr(C, align(16))]
         pub struct $SigningKey {
             seed: [u8; 32],
             vk: $VerifyingKey,
-            sk: [u8; $sk + 1024 * ($l + 2 * $k)],
+            sk: [u8; $sk],
+            #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+            cache: $crate::mldsa_common::auto_cache::Cache<$crate::mldsa_common::auto_cache::Prepared<{ $sk + 1024 * ($l + 2 * $k) }, true>>,
         }
 
         impl core::fmt::Debug for $SigningKey {
@@ -295,6 +598,33 @@ macro_rules! ml_dsa {
         }
 
         impl $SigningKey {
+
+            #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+            fn prepared(&self) -> Option<&$crate::mldsa_common::auto_cache::Prepared<{ $sk + 1024 * ($l + 2 * $k) }, true>> {
+                self.cache.get(|| {
+                    let mut prepared = $crate::mldsa_common::auto_cache::Prepared::allocate()?;
+                    prepared.bytes[..$sk].copy_from_slice(&self.sk);
+                    let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
+                    let slen = if $eta == 2 { 96 } else { 128 };
+                    for i in 0..($l + 2 * $k) {
+                        let (offset, len, a, b) = if i < $l + $k {
+                            (128 + slen * i, slen, $eta, $eta)
+                        } else {
+                            (128 + slen * ($l + $k) + 416 * (i - $l - $k), 416, 4095, 4096)
+                        };
+                        // UNPROVED: composing existing unpack/NTT, new layout not yet proved.
+                        unsafe {
+                            let input = prepared.bytes.as_ptr().add(offset);
+                            let output = prepared.bytes.as_mut_ptr().add($sk + 1024 * i).cast();
+                            $crate::arch::mldsa::vg_mldsa_bit_unpack(input, len, a, b, output);
+                            $crate::arch::mldsa::vg_mldsa_ntt(output, work.as_mut_ptr());
+                        }
+                    }
+                    unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), 1024); }
+                    Some(prepared)
+                })
+            }
+
             /// The size of a seed, in bytes.
             pub const SEED_SIZE: usize = 32;
 
@@ -306,11 +636,15 @@ macro_rules! ml_dsa {
                 let mut key = $SigningKey {
                     seed: *seed,
                     vk: $VerifyingKey {
-                        bytes: [0; $pk + 1024 * $k],
+                        bytes: [0; $pk],
+                        #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                        cache: $crate::mldsa_common::auto_cache::Cache::new(),
                         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                         tr: [0; 64],
                     },
-                    sk: [0; $sk + 1024 * ($l + 2 * $k)],
+                    sk: [0; $sk],
+                    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                    cache: $crate::mldsa_common::auto_cache::Cache::new(),
                 };
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -323,11 +657,11 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $keygen(seed, key.vk.bytes.as_mut_ptr().cast(), key.sk.as_mut_ptr().cast(), scratch.as_mut_ptr()),
+                        Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $keygen_sha3(seed, key.vk.bytes.as_mut_ptr().cast(), key.sk.as_mut_ptr().cast(), scratch.as_mut_ptr()),
+                        Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, key.vk.bytes.as_mut_ptr().cast(), key.sk.as_mut_ptr().cast(), scratch.as_mut_ptr()),
+                        Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -344,30 +678,7 @@ macro_rules! ml_dsa {
                 // Initialize the cache only after successful key generation.
                 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                 key.vk.tr.copy_from_slice(&key.sk[64..128]);
-                key.vk.prepare_polynomials();
-                key.prepare_polynomials();
                 Ok(key)
-            }
-
-            fn prepare_polynomials(&mut self) {
-                let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
-                let slen = if $eta == 2 { 96 } else { 128 };
-                for i in 0..($l + 2 * $k) {
-                    let (offset, len, a, b) = if i < $l + $k {
-                        (128 + slen * i, slen, $eta, $eta)
-                    } else {
-                        (128 + slen * ($l + $k) + 416 * (i - $l - $k), 416, 4095, 4096)
-                    };
-                    unsafe {
-                        let input = self.sk.as_ptr().add(offset);
-                        let output = self.sk.as_mut_ptr().add($sk + 1024 * i).cast();
-                        $crate::arch::mldsa::vg_mldsa_bit_unpack(input, len, a, b, output);
-                        if $crate::mldsa_common::CACHE_NTT {
-                            $crate::arch::mldsa::vg_mldsa_ntt(output, work.as_mut_ptr());
-                        }
-                    }
-                }
-                unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), 1024); }
             }
 
             /// The seed `ξ`.
@@ -402,6 +713,7 @@ macro_rules! ml_dsa {
             }
 
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
+                if ctx.len() > 255 { return Err(Error::ContextTooLong); }
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
@@ -414,19 +726,44 @@ macro_rules! ml_dsa {
                 // `self.sk` was written by the key generation.
                 // Backend selection checks the generated CPU feature requirements.
                 let r = unsafe {
+                    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                    { if let Some(prepared) = self.prepared() {
+                            let key = prepared.bytes.as_ptr().cast();
+                            match backend() {
+                                Backend::Scalar => $sign_message_prepared(key, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
+                                Backend::Sha3 => $sign_message_prepared_sha3(key, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
+                            }
+                        } else {
                     match backend() {
                         Backend::Scalar => {
-                            $sign_message(self.sk.as_ptr().cast(), m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
-                            $sign_message_sha3(self.sk.as_ptr().cast(), m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => {
-                            $sign_message_avx2(self.sk.as_ptr().cast(), m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                     }
+                 } }
+                    #[cfg(not(all(target_arch = "aarch64", feature = "alloc")))]
+                    {
+                    match backend() {
+                        Backend::Scalar => {
+                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                        }
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => {
+                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                        }
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx2 => {
+                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                        }
+                    }
+                 }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -470,13 +807,32 @@ macro_rules! ml_dsa {
                 // `backend()` chose an implementation whose features the CPU
                 // has.
                 let r = unsafe {
+                    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+                    { if let Some(prepared) = self.prepared() {
+                            let key = prepared.bytes.as_ptr().cast();
+                            match backend() {
+                                Backend::Scalar => $sign_prepared(key, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                                Backend::Sha3 => $sign_prepared_sha3(key, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                            }
+                        } else {
                     match backend() {
-                        Backend::Scalar => $sign(self.sk.as_ptr().cast(), mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_sha3(self.sk.as_ptr().cast(), mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_avx2(self.sk.as_ptr().cast(), mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                     }
+                 } }
+                    #[cfg(not(all(target_arch = "aarch64", feature = "alloc")))]
+                    {
+                    match backend() {
+                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                    }
+                 }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.

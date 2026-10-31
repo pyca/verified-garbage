@@ -113,30 +113,32 @@ macro_rules! mldsa_tests {
                 for t in &g.tests {
                     let pk = $VerifyingKey::from_bytes(&unhex(&t.pk)[..].try_into().unwrap());
                     let sig = unhex(&t.signature)[..].try_into().unwrap();
-                    let r = if g.interface == "external" {
-                        pk.verify(&unhex(&t.message), &unhex(&t.context), &sig)
-                    } else {
-                        let mu: [u8; 64] = if g.external_mu {
-                            unhex(&t.mu).try_into().unwrap()
+                    for _ in 0..3 {
+                        let r = if g.interface == "external" {
+                            pk.verify(&unhex(&t.message), &unhex(&t.context), &sig)
                         } else {
-                            // `μ = H(H(pk, 64) ‖ M′, 64)`, the message being `M′`.
-                            let mut tr = [0u8; 64];
-                            Shake256::digest(pk.as_bytes(), &mut tr);
-                            let mut h = Shake256::new();
-                            h.update(&tr);
-                            h.update(&unhex(&t.message));
-                            let mut mu = [0u8; 64];
-                            h.finalize(&mut mu);
-                            mu
+                            let mu: [u8; 64] = if g.external_mu {
+                                unhex(&t.mu).try_into().unwrap()
+                            } else {
+                                // `μ = H(H(pk, 64) ‖ M′, 64)`, the message being `M′`.
+                                let mut tr = [0u8; 64];
+                                Shake256::digest(pk.as_bytes(), &mut tr);
+                                let mut h = Shake256::new();
+                                h.update(&tr);
+                                h.update(&unhex(&t.message));
+                                let mut mu = [0u8; 64];
+                                h.finalize(&mut mu);
+                                mu
+                            };
+                            pk.verify_mu(&mu, &sig)
                         };
-                        pk.verify_mu(&mu, &sig)
-                    };
-                    let expected = if t.passed {
-                        Ok(())
-                    } else {
-                        Err(Error::InvalidSignature)
-                    };
-                    assert_eq!(r, expected);
+                        let expected = if t.passed {
+                            Ok(())
+                        } else {
+                            Err(Error::InvalidSignature)
+                        };
+                        assert_eq!(r, expected);
+                    }
                     count += 1;
                 }
             }
