@@ -3,4 +3,3 @@ family = "RSA"
 specs = ["RsaKeyGen", "MillerRabin"]
 modules = ["src/rsa_keygen.rs"]
 asm = ["rsa_keygen", "rsa_mont"]
-optimized = { arm = "Miller–Rabin powers written directly to their final table slots" }

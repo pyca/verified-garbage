@@ -9,15 +9,15 @@ is a row:
   modules  the Rust modules of its public API
   asm      the generated modules, src/asm/<arch>/<asm>.rs, whose functions
            it runs
-  optimized  (optional) notes on optimizations that the code can't show, by
-           Rust architecture name, e.g. { aarch64 = "NEON" } for tuning
-           that needs no CPU feature
+
+and nothing else: a row describes no optimizations by hand.
 
 * Spec landed: every spec exists.
 * One column per architecture: ✅ if it is in the `target_arch`s of every
   module's inner `#![cfg(...)]` (so every module must exist and have one),
-  followed by the CPU features that its `asm` modules' functions need (a
-  generated `_FEATURES` constant) and its `optimized` note, if any.
+  followed by its variants, all read from the `asm` modules: the CPU
+  features their functions need (a generated `_FEATURES` constant), and
+  the variants that need none, by their suffix (`SUFFIXES`).
 
 Every cell is on a line of its own (`tr`), so that git merges PRs that
 change different cells without a conflict.
@@ -65,18 +65,31 @@ FEATURES = {
     "vaes": "VAES",
     "pclmulqdq": "PCLMULQDQ",
     "vpclmulqdq": "VPCLMULQDQ",
-    "ssse3": None,
+    "ssse3": "SSSE3",
     "avx512f": "AVX-512F",
     "avx512ifma": "AVX-512 IFMA",
     "avx512vl": "AVX-512VL",
     "avx512bw": "AVX-512BW",
     "avx2": "AVX2",
-    "avx": None,
+    "avx": "AVX",
     "bmi1": "BMI1",
     "bmi2": "BMI2",
     "adx": "ADX",
     "sve2": "SVE2",
 }
+
+# Features that come with others: every CPU with the key's has the value's
+# (AVX2 is an extension of AVX; SSSE3 predates the rest). A cell leaves out
+# a feature that another of its features brings.
+IMPLIES = {"avx2": {"avx"}, "avx": {"ssse3"}, "aes": {"ssse3"}, "pclmulqdq": {"ssse3"}, "sha": {"ssse3"}}
+
+# The variants that need no CPU feature beyond the architecture's baseline,
+# so have no `_FEATURES` constant, by architecture: the suffix of the
+# function's name and how the table names it.
+SUFFIXES = {"aarch64": {"neon": "NEON"}}
+
+# The keys of a row.
+KEYS = {"name", "family", "specs", "modules", "asm"}
 
 # Names that differ on one architecture: AArch64's `aes` (Rust's name for
 # FEAT_AES with FEAT_PMULL) is not AES-NI.
@@ -85,6 +98,7 @@ ARCH_FEATURES = {"aarch64": {"aes": "AES, PMULL", "sha2": "SHA extensions", "sha
 CFG = re.compile(r"^#!\[cfg\((.*?)\)\]$", re.MULTILINE | re.DOTALL)
 ARCH = re.compile(r'target_arch\s*=\s*"(\w+)"')
 FEATURE_CONST = re.compile(r"_FEATURES: crate::cpu::Features = crate::cpu::Features::of\(&\[(.*?)\]\);")
+FUNCTION = re.compile(r"\bfn (vg_\w+)\(")
 
 
 def supported(row, errors):
@@ -101,23 +115,38 @@ def supported(row, errors):
     return names
 
 
-def optimized(row, arch):
-    """The CPU features and notes of `row`'s optimizations on `arch`."""
-    features = []
+def implied(features):
+    """The features that others of `features` imply, directly or not."""
+    out, todo = set(), [g for f in features for g in IMPLIES.get(f, ())]
+    while todo:
+        f = todo.pop()
+        if f not in out:
+            out.add(f)
+            todo += IMPLIES.get(f, ())
+    return out
+
+
+def variants(row, arch):
+    """How `row`'s variants on `arch` are named: the CPU features they need,
+    then the variants that need none."""
+    features, suffixes = set(), SUFFIXES.get(arch, {})
+    found = set()
     for asm in row["asm"]:
         path = ROOT / "src" / "asm" / ASM_DIRS.get(arch, arch) / f"{asm}.rs"
         if path.is_file():
-            for m in FEATURE_CONST.finditer(path.read_text()):
-                features += re.findall(r'"([^"]+)"', m[1])
+            text = path.read_text()
+            for m in FEATURE_CONST.finditer(text):
+                features |= set(re.findall(r'"([^"]+)"', m[1]))
+            found |= {s for f in FUNCTION.findall(text) for s in suffixes if f.endswith(f"_{s}")}
+    features -= implied(features)
     order = list(FEATURES)
     shown = []
-    for f in sorted(set(features), key=lambda f: (order.index(f) if f in order else len(order), f)):
+    for f in sorted(features, key=lambda f: (order.index(f) if f in order else len(order), f)):
         f = {**FEATURES, **ARCH_FEATURES.get(arch, {})}.get(f, f)
         # Several features may share a name (AArch64's SHA-2 and SHA-3).
         if f is not None and f not in shown:
             shown.append(f)
-    note = row.get("optimized", {}).get(arch)
-    return ", ".join(shown) + ("; " if shown and note else "") + (note or "")
+    return ", ".join(shown + [suffixes[s] for s in suffixes if s in found])
 
 
 def cell(text):
@@ -143,15 +172,16 @@ def table(errors):
         if row["family"] not in families:
             errors.append(f"{path.relative_to(ROOT)}: family must be one of {', '.join(FAMILIES)}")
             continue
-        unknown = set(row.get("optimized", {})) - set(ARCHES)
+        unknown = set(row) - KEYS
         if unknown:
-            errors.append(f"{path.relative_to(ROOT)}: optimized names unknown architectures {sorted(unknown)}")
+            errors.append(f"{path.relative_to(ROOT)}: unknown keys {', '.join(sorted(unknown))}; the table "
+                          "names only what the code states, the CPU features and suffixes of its variants")
             continue
         spec = all((ROOT / "lean/VerifiedGarbage/Spec" / f"{s}.lean").is_file() for s in row["specs"])
         names = supported(row, errors)
         cells = [row["name"], "✅" if spec else "❌"]
         for arch in ARCHES:
-            opt = optimized(row, arch) if arch in names else ""
+            opt = variants(row, arch) if arch in names else ""
             cells.append(("✅" if arch in names else "❌") + (f" {opt}" if opt else ""))
         families[row["family"]].append(tr("td", [cell(c) for c in cells]))
     return "\n".join(
