@@ -10,7 +10,7 @@ than building every module of the library as `Emit.lean` needs. Run it from
 
 * `lake env lean --run EmitOne.lean Rc2.AArch64 [More.Target …]` builds
   `VerifiedGarbage/Artifacts/Rc2/AArch64.lean`, and writes its files under
-  `../src/asm`.
+  `../crates` (its target's crate, `verified-garbage-asm-<target>/src/`).
 * `lake env lean --run EmitOne.lean --check Rc2.AArch64 …` writes nothing and
   fails if those files on disk differ from what would be generated.
 
@@ -23,10 +23,10 @@ It runs the same trusted printer (`VG.Emit.run`) and the same audits
 (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
 `#assert_spec_origin`) as `Emit.lean`, on these artifacts only, into
 `.lake/emit/one`, and then copies (or compares) each file it generated but the
-`mod.rs` files. It refuses a file that does not exist yet (a new module also
-changes `mod.rs`) or that has functions it did not generate (another
+crate's root `lib.rs` and `consts/mod.rs`. It refuses a file that does not
+exist yet (a new module also changes `lib.rs`) or that has functions it did not generate (another
 registration file emits into it): `Emit.lean` handles those. Each table of
-constants has a file of its own (`src/asm/<target>/consts/<name>.rs`, which
+constants has a file of its own (`src/consts/<name>.rs` of the crate, which
 depends only on the table), so it writes those of its artifacts' tables and
 leaves the others; a new table is a new file. It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI
@@ -130,11 +130,12 @@ def main (args : List String) : IO UInt32 := do
     ((libs.map fun (_, f) => s!"--load-dynlib={f}").toArray ++
       #["--run", driver.toString, out.toString])
   unless code == 0 do return code
-  -- Copy or compare each generated file but `mod.rs`.
-  let dest : FilePath := ".." / "src" / "asm"
+  -- Copy or compare each generated file but the crates' `lib.rs` and `consts/mod.rs`.
+  let dest : FilePath := ".." / "crates"
   let mut ok := true
   for path in ← out.walkDir do
-    unless path.extension == some "rs" && path.fileName != some "mod.rs" do continue
+    unless path.extension == some "rs" && path.fileName != some "mod.rs" &&
+        path.fileName != some "lib.rs" do continue
     let rel := (path.toString.dropPrefix (out.toString ++ "/")).toString
     let target := dest / rel
     let text ← IO.FS.readFile path

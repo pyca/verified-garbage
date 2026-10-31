@@ -653,7 +653,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- Every RISC-V function's text enables the M extension for itself alone
 -- (`Rust.funcOptions`): `.option push` and `.option arch, +m` are its first
 -- lines and `.option pop` its last, after its labels, branches and return
--- (`vg_ct_eq`, the code of `src/asm/riscv64/ct.rs`). Other targets' functions
+-- (`vg_ct_eq`, the code of `crates/verified-garbage-asm-riscv64/src/ct.rs`). Other targets' functions
 -- get no such directives.
 #guard Rust.funcOptions RISCV64.target.name ==
   ([".option push", ".option arch, +m"], [".option pop"])

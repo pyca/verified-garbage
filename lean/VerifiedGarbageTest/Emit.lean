@@ -157,9 +157,9 @@ open VG.Emit
 def args (as : List String) : Option (Bool × Option String × String) :=
   (parseArgs as).map fun (c, p, d) => (c, p, d.toString)
 
-#guard args [] == some (false, none, "../src/asm")
+#guard args [] == some (false, none, "../crates")
 #guard args ["--check", "--part", "f", "d"] == some (true, some "f", "d")
-#guard args ["--part", "f"] == some (false, some "f", "../src/asm")
+#guard args ["--part", "f"] == some (false, some "f", "../crates")
 #guard args ["a", "b"] == none
 
 -- A target whose artifacts two parts emitted.

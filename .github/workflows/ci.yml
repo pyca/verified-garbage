@@ -333,7 +333,8 @@ jobs:
   # The Rust jobs' matrices (ci/rust_matrix.toml), narrowed to the
   # architectures whose tests run: a pull request starts only the jobs of
   # those its changes can affect (ci/rust_arches.py): an architecture's own
-  # `src/asm/<target>/`, or the shared code, which is every architecture's.
+  # `crates/verified-garbage-asm-<target>/`, or the shared code, which is every
+  # architecture's.
   # Each architecture's tests cover every line it builds (`coverage`), so
   # those that run are checked alone. The merge queue runs every job, so that
   # everything is checked before anything lands. A push to main is the commit the
@@ -404,8 +405,6 @@ jobs:
             /*
             !/lean/
             !/docs/
-            !/src/asm/*/
-            /src/asm/${{ matrix.asm || matrix.arch }}/
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.asm || matrix.arch }}/
@@ -566,8 +565,6 @@ jobs:
             !/lean/
             !/docs/
             !/bench/
-            !/src/asm/*/
-            /src/asm/${{ matrix.arch }}/
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.arch }}/
@@ -756,8 +753,6 @@ jobs:
             !/lean/
             !/docs/
             !/bench/
-            !/src/asm/*/
-            /src/asm/${{ matrix.arch || 'x86_64' }}/
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.arch || 'x86_64' }}/

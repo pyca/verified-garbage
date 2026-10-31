@@ -3,8 +3,9 @@
 //!
 //! The cryptographic primitives are assembly that has been formally verified
 //! in Lean (see `lean/README.md` for what is proven and what has to be
-//! trusted). They live in naked functions in the generated `asm` module, and
-//! the public APIs compose them.
+//! trusted). They live in naked functions in the generated crate of each
+//! target, `crates/verified-garbage-asm-<target>/`, and the public APIs
+//! compose them.
 
 #![no_std]
 #![deny(missing_docs)]
@@ -15,26 +16,26 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod asm;
 mod cpu;
 
 // The verified assembly of the architecture being compiled for:
-// `crate::arch::<module>` is `crate::asm::<target>::<module>`, so a module
+// `crate::arch::<module>` is the module of the target's crate of generated
+// code (`verified_garbage_asm_<target>::<module>`), so a module
 // that runs the same functions on every architecture it supports imports
 // them once (and supporting another architecture changes only its
 // `#![cfg(...)]`).
 #[cfg(target_arch = "aarch64")]
-use asm::aarch64 as arch;
+use verified_garbage_asm_aarch64 as arch;
 #[cfg(target_arch = "arm")]
-use asm::arm as arch;
+use verified_garbage_asm_arm as arch;
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-use asm::powerpc64le as arch;
+use verified_garbage_asm_powerpc64le as arch;
 #[cfg(all(target_arch = "riscv64", target_endian = "little"))]
-use asm::riscv64 as arch;
+use verified_garbage_asm_riscv64 as arch;
 #[cfg(target_arch = "x86")]
-use asm::x86 as arch;
+use verified_garbage_asm_x86 as arch;
 #[cfg(target_arch = "x86_64")]
-use asm::x86_64 as arch;
+use verified_garbage_asm_x86_64 as arch;
 
 // The ISA models are little-endian, and the contracts assume the pointer
 // width of each architecture's calling convention: the verified assembly is
@@ -192,7 +193,7 @@ mod tests {
         ];
         for (a, b) in cases {
             // SAFETY: the contract has no preconditions.
-            let r = unsafe { crate::asm::x86_64::selftest::vg_selftest_add(a, b) };
+            let r = unsafe { crate::arch::selftest::vg_selftest_add(a, b) };
             assert_eq!(r, a.wrapping_add(b));
         }
     }

@@ -36,26 +36,35 @@ getrandom = "0.4"
 # constants and the detection in `src/cpu.rs` name.
 verified-garbage-cpu = { path = "crates/verified-garbage-cpu" }
 
-# The verified assembly of each target, generated into `src/asm/<target>/`:
-# a crate per target (see `lean/VerifiedGarbage/TCB/Rust.lean`).
+# The verified assembly of each target, generated into
+# `crates/verified-garbage-asm-<target>/src/`: a crate per target (see
+# `lean/VerifiedGarbage/TCB/Rust.lean`).
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-verified-garbage-asm-aarch64 = { path = "src/asm/aarch64" }
+verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64" }
 [target.'cfg(target_arch = "arm")'.dependencies]
-verified-garbage-asm-arm = { path = "src/asm/arm" }
+verified-garbage-asm-arm = { path = "crates/verified-garbage-asm-arm" }
 [target.'cfg(target_arch = "powerpc64")'.dependencies]
-verified-garbage-asm-powerpc64le = { path = "src/asm/powerpc64le" }
+verified-garbage-asm-powerpc64le = { path = "crates/verified-garbage-asm-powerpc64le" }
 [target.'cfg(target_arch = "riscv64")'.dependencies]
-verified-garbage-asm-riscv64 = { path = "src/asm/riscv64" }
+verified-garbage-asm-riscv64 = { path = "crates/verified-garbage-asm-riscv64" }
 [target.'cfg(target_arch = "x86")'.dependencies]
-verified-garbage-asm-x86 = { path = "src/asm/x86" }
+verified-garbage-asm-x86 = { path = "crates/verified-garbage-asm-x86" }
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-verified-garbage-asm-x86_64 = { path = "src/asm/x86_64" }
+verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64" }
 
 [workspace]
 members = ["crates/*"]
-# The generated crates are not members, so that `cargo fmt` leaves them as
-# the emitter wrote them and Clippy lints them as it does any dependency.
-exclude = ["src/asm"]
+# The generated crates are not members (`exclude` takes no globs), so that
+# `cargo fmt` leaves them as the emitter wrote them and Clippy lints them as
+# it does any dependency.
+exclude = [
+    "crates/verified-garbage-asm-aarch64",
+    "crates/verified-garbage-asm-arm",
+    "crates/verified-garbage-asm-powerpc64le",
+    "crates/verified-garbage-asm-riscv64",
+    "crates/verified-garbage-asm-x86",
+    "crates/verified-garbage-asm-x86_64",
+]
 
 [[test]]
 name = "tests"

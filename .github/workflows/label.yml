@@ -3,8 +3,7 @@ name: Label
 # Labels a pull request `untrusted-only` while every file it touches (and,
 # for a rename, the path it was renamed from) is an implementation
 # (`lean/VerifiedGarbage/Impl/`), a proof (`lean/VerifiedGarbage/Proof/`) or
-# generated assembly (`crates/verified-garbage-asm-<target>/src/`, or
-# `src/asm/` before that), and removes the label otherwise: such a
+# generated assembly (`crates/verified-garbage-asm-<target>/src/`), and removes the label otherwise: such a
 # pull request changes nothing Lean does not check (lean/README.md, "What you
 # need to trust").
 #
@@ -38,7 +37,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           CHANGED: ${{ github.event.pull_request.changed_files }}
           LABEL: untrusted-only
-          UNTRUSTED: '^(lean/VerifiedGarbage/(Impl|Proof)/|src/asm/|crates/verified-garbage-asm-[a-z0-9_]+/src/)'
+          UNTRUSTED: '^(lean/VerifiedGarbage/(Impl|Proof)/|crates/verified-garbage-asm-[a-z0-9_]+/src/)'
         run: |
           set -euo pipefail
           files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" \
@@ -51,7 +50,7 @@ jobs:
             echo "Every file is an implementation, a proof or generated assembly."
             gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$LABEL" > /dev/null
           else
-            echo "Files outside Impl/, Proof/ and src/asm/ ($listed of $CHANGED listed):"
+            echo "Files outside Impl/, Proof/ and the generated crates ($listed of $CHANGED listed):"
             printf '%s\n' "$trusted"
             if gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name' | grep -qx -- "$LABEL"; then
               gh api -X DELETE "repos/$REPO/issues/$PR/labels/$LABEL" > /dev/null
