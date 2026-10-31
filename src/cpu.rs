@@ -11,7 +11,7 @@
 //! system the code was compiled for (`umaal`, on those that run on A-profile
 //! cores alone). Each object that can use such a function chooses its
 //! implementation when it is created, from the features detected. A feature
-//! detection does not know ([`NAMES`]) cannot be checked for: a generated
+//! detection does not know ([`NAMES`](verified_garbage_cpu::NAMES)) cannot be checked for: a generated
 //! constant is the union of the bits in [`feature`] of the features it
 //! names, so naming one without a bit there fails to compile (as
 //! [`Features::of`], which the Rust code uses, panics on one).
@@ -19,7 +19,7 @@
 //! With the `cpu-features-env` Cargo feature, the environment variable
 //! `VG_CPU_FEATURES` restricts the features detected, so that tests and
 //! benchmarks can run every implementation on one machine: `none`, or a
-//! comma-separated list of the names in [`NAMES`] (e.g. `aes,pclmulqdq`).
+//! comma-separated list of the names in [`NAMES`](verified_garbage_cpu::NAMES) (e.g. `aes,pclmulqdq`).
 //! Unset or empty, it restricts nothing. It can only remove features, so it
 //! can never choose code the CPU cannot run, and it names only features
 //! this library knows and the CPU has: anything else panics, rather than
@@ -30,239 +30,10 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
-/// The features detection knows, by their Rust `target_feature` names: bit
-/// `i` of a [`Features`] is `NAMES[i]`.
-pub(crate) const NAMES: [&str; 21] = [
-    "ssse3",
-    "sha",
-    "aes",
-    "pclmulqdq",
-    "avx",
-    "avx2",
-    "bmi1",
-    "bmi2",
-    "avx512f",
-    "sha512",
-    "sha2",
-    "sha3",
-    "adx",
-    "avx512ifma",
-    "avx512vl",
-    "neon",
-    "sve2",
-    "vaes",
-    "vpclmulqdq",
-    "avx512bw",
-    "umaal",
-];
-
-/// The bit of the feature `name` in a [`Features`]: its index in [`NAMES`],
-/// which [`Features::of`] checks. A `match`, which the compiler evaluates in
-/// a few steps, rather than a search of [`NAMES`]: evaluating the generated
-/// `_FEATURES` constants by searching took a second of every build of the
-/// crate.
-#[cfg_attr(
-    not(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        )
-    )),
-    allow(dead_code)
-)]
-const fn bit(name: &str) -> usize {
-    match name.as_bytes() {
-        b"ssse3" => 0,
-        b"sha" => 1,
-        b"aes" => 2,
-        b"pclmulqdq" => 3,
-        b"avx" => 4,
-        b"avx2" => 5,
-        b"bmi1" => 6,
-        b"bmi2" => 7,
-        b"avx512f" => 8,
-        b"sha512" => 9,
-        b"sha2" => 10,
-        b"sha3" => 11,
-        b"adx" => 12,
-        b"avx512ifma" => 13,
-        b"avx512vl" => 14,
-        b"neon" => 15,
-        b"sve2" => 16,
-        b"vaes" => 17,
-        b"vpclmulqdq" => 18,
-        b"avx512bw" => 19,
-        b"umaal" => 20,
-        _ => panic!("a CPU feature this library does not know"),
-    }
-}
-
-/// The bit of each feature of [`NAMES`] in a [`Features`], by its name in
-/// uppercase (`.` and other characters not allowed in a name as `_`): what
-/// the generated `_FEATURES` constants are made of, `Features(feature::AVX |
-/// feature::AVX2)`. rustc evaluates every constant of the crate, and an `|`
-/// of these takes it a few steps, where [`Features::of`] on the names, which
-/// these constants once called, took it a tenth of a build of the crate.
-#[allow(dead_code)]
-pub(crate) mod feature {
-    pub(crate) const SSSE3: u32 = 1 << super::bit("ssse3");
-    pub(crate) const SHA: u32 = 1 << super::bit("sha");
-    pub(crate) const AES: u32 = 1 << super::bit("aes");
-    pub(crate) const PCLMULQDQ: u32 = 1 << super::bit("pclmulqdq");
-    pub(crate) const AVX: u32 = 1 << super::bit("avx");
-    pub(crate) const AVX2: u32 = 1 << super::bit("avx2");
-    pub(crate) const BMI1: u32 = 1 << super::bit("bmi1");
-    pub(crate) const BMI2: u32 = 1 << super::bit("bmi2");
-    pub(crate) const AVX512F: u32 = 1 << super::bit("avx512f");
-    pub(crate) const SHA512: u32 = 1 << super::bit("sha512");
-    pub(crate) const SHA2: u32 = 1 << super::bit("sha2");
-    pub(crate) const SHA3: u32 = 1 << super::bit("sha3");
-    pub(crate) const ADX: u32 = 1 << super::bit("adx");
-    pub(crate) const AVX512IFMA: u32 = 1 << super::bit("avx512ifma");
-    pub(crate) const AVX512VL: u32 = 1 << super::bit("avx512vl");
-    pub(crate) const NEON: u32 = 1 << super::bit("neon");
-    pub(crate) const SVE2: u32 = 1 << super::bit("sve2");
-    pub(crate) const VAES: u32 = 1 << super::bit("vaes");
-    pub(crate) const VPCLMULQDQ: u32 = 1 << super::bit("vpclmulqdq");
-    pub(crate) const AVX512BW: u32 = 1 << super::bit("avx512bw");
-    pub(crate) const UMAAL: u32 = 1 << super::bit("umaal");
-}
-
-/// Whether two names are equal (`==` on strings, which is not `const`).
-#[cfg_attr(
-    not(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        )
-    )),
-    allow(dead_code)
-)]
-const fn eq(a: &str, b: &str) -> bool {
-    let (a, b) = (a.as_bytes(), b.as_bytes());
-    let mut same = a.len() == b.len();
-    let mut i = 0;
-    while same && i < a.len() {
-        same = a[i] == b[i];
-        i += 1;
-    }
-    same
-}
-
-/// A set of CPU features.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Features(pub(crate) u32);
-
-impl Features {
-    /// The features named in `names` (as each generated `_FEATURES`
-    /// constant is made). A `const fn`, so that choosing an implementation
-    /// can compare precomputed sets rather than names.
-    ///
-    /// # Panics
-    ///
-    /// If `names` has a feature not in [`NAMES`], which detection does not
-    /// know. In a constant (`const { Features::of(…) }`), that fails to
-    /// compile, rather than quietly never choosing the code that needs it.
-    #[cfg_attr(
-        not(any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            )
-        )),
-        allow(dead_code)
-    )]
-    pub(crate) const fn of(names: &[&str]) -> Features {
-        let mut acc = 0;
-        let mut i = 0;
-        while i < names.len() {
-            let j = bit(names[i]);
-            assert!(eq(names[i], NAMES[j]));
-            acc |= 1 << j;
-            i += 1;
-        }
-        Features(acc)
-    }
-
-    /// The features in any of `sets`.
-    #[cfg_attr(
-        not(any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            )
-        )),
-        allow(dead_code)
-    )]
-    pub(crate) const fn all(sets: &[Features]) -> Features {
-        let mut acc = 0;
-        let mut i = 0;
-        while i < sets.len() {
-            acc |= sets[i].0;
-            i += 1;
-        }
-        Features(acc)
-    }
-
-    /// Whether every feature of `other` is in `self`.
-    #[cfg_attr(
-        not(any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            )
-        )),
-        allow(dead_code)
-    )]
-    pub(crate) fn contains(self, other: Features) -> bool {
-        self.0 & other.0 == other.0
-    }
-}
+pub(crate) use verified_garbage_cpu::{Features, feature};
+// The names, for reading `VG_CPU_FEATURES` and for the tests.
+#[cfg(any(test, feature = "cpu-features-env"))]
+pub(crate) use verified_garbage_cpu::NAMES;
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known.
 static DETECTED: AtomicU32 = AtomicU32::new(0);
@@ -645,16 +416,8 @@ mod tests {
     #[test]
     fn bits_are_indices() {
         for (j, name) in NAMES.iter().enumerate() {
-            assert_eq!(bit(name), j);
+            assert_eq!(Features::of(&[name]), Features(1 << j));
         }
-    }
-
-    #[test]
-    fn eq_names() {
-        assert!(eq("avx2", "avx2"));
-        assert!(!eq("avx", "avx2"));
-        assert!(!eq("avx2", "avx"));
-        assert!(!eq("aes", "adx"));
     }
 
     #[test]

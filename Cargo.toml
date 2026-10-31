@@ -32,6 +32,12 @@ cpu-features-env = ["std"]
 # Randomness from the operating system, for generating keys and for
 # randomized signing, encryption and encapsulation.
 getrandom = "0.4"
+# `Features`, the sets of CPU features that the generated `_FEATURES`
+# constants and the detection in `src/cpu.rs` name.
+verified-garbage-cpu = { path = "cpu" }
+
+[workspace]
+members = ["cpu"]
 
 [[test]]
 name = "tests"
