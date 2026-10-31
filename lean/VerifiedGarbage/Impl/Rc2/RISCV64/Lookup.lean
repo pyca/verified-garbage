@@ -32,35 +32,31 @@ open VG.RISCV64
 /-- Keep the low `n` bits of `r`. -/
 def mask (r : Reg) (n : Nat) : List Instr := [.shift .sll .d r r (64 - n), .shift .srl .d r r (64 - n)]
 
-/-- The accumulator and the row pointer at the last of `rows` rows. -/
-def scanStart (base rp : Reg) (rows : Nat) : List Instr :=
-  [.li .t1 0, .addi rp base (8 * (rows - 1) : Nat)]
+/-- `t3 := 1 << (q >> 3)`, a bit at the index's row, through `t2`. -/
+def rowBit : List Instr :=
+  [.shift .srl .d .t3 .t0 3, .li .t2 1, .shiftReg .sll .d .t3 .t2 .t3]
 
-/-- One row: the doubleword at `rp`, kept if it holds the entry, into the
-accumulator; the previous row, and `a7` zero after the first row. -/
-def scanRow (base rp : Reg) : List Instr :=
-  [.sub .a7 rp base, .logic .xor .t2 .t0 .a7, .shift .srl .d .t2 .t2 3, .addi .t2 .t2 (-1),
-   .shift .srl .d .t2 .t2 63, .addi .t2 .t2 (-1), .load .d .a7 rp 0, .logic .and .t2 .a7 .t2,
-   .logic .xor .a7 .a7 .t2, .logic .or .t1 .t1 .a7, .sub .a7 rp base, .addi rp rp (-8)]
+/-- Row `k`'s mask into `t2`: all ones if bit `k` of `t3` is set, else zero. -/
+def rowMask (k : Nat) : List Instr := [.shift .sll .d .t2 .t3 (63 - k), .shift .sra .d .t2 .t2 63]
 
-/-- The accumulator shifted right by `8 * 2 ^ c` if bit `c` of `q` is set:
-`x := sh XOR ((sh XOR x) AND m)` for the mask `m` that is all ones exactly
-when the bit is clear. -/
-def condShift (c : Nat) : List Instr :=
-  [.shift .sll .d .t2 .t0 (63 - c), .shift .srl .d .t2 .t2 63, .addi .t2 .t2 (-1),
-   .shift .srl .d .a7 .t1 (8 * 2 ^ c), .logic .xor .t1 .t1 .a7, .logic .and .t1 .t1 .t2,
-   .logic .xor .t1 .t1 .a7]
+/-- Row 0 of the table at `base`, masked, into the accumulator. -/
+def row0 (base : Reg) : List Instr := rowMask 0 ++ [.load .d .t1 base 0, .logic .and .t1 .t1 .t2]
+
+/-- Row `k`, masked, ORed into the accumulator. -/
+def row (base : Reg) (k : Nat) : List Instr :=
+  rowMask k ++ [.load .d .a7 base (8 * k), .logic .and .a7 .a7 .t2, .logic .or .t1 .t1 .a7]
 
 /-- The entry at byte offset `q` of the table of `rows` doublewords at
-`base`, of `bits` bits, its lane selected by the bits `lanes` of `q`, into
-`t1`. -/
-def scan (base rp : Reg) (rows : Nat) (lanes : List Nat) (bits : Nat) : Prog isa :=
-  .seq (.block (scanStart base rp rows))
-    (.seq (.loop (.block (scanRow base rp)) (.nonzero .a7))
-      (.block (lanes.flatMap condShift ++ mask .t1 bits)))
+`base`, of `bits` bits, its lane the bits `q AND laneBits`, into `t1`: the
+rows (only the index's survives its mask), then shifted right by eight
+times the lane's offset, and masked. -/
+def scan (base : Reg) (rows : Nat) (laneBits : Nat) (bits : Nat) : Prog isa :=
+  .block (rowBit ++ row0 base ++ (List.range (rows - 1)).flatMap (fun i => row base (i + 1)) ++
+    [.logicImm .and .t2 .t0 laneBits, .shift .sll .d .t2 .t2 3, .shiftReg .srl .d .t1 .t1 .t2] ++
+    mask .t1 bits)
 
 /-- `t1 := schedule[q / 2]`, the 16-bit entry at byte offset `q` of the
 schedule's copy at `a2`, through the row pointer `t3`. -/
-def keyLookup : Prog isa := scan .a2 .t3 16 [1, 2] 16
+def keyLookup : Prog isa := scan .a2 16 6 16
 
 end VG.Impl.Rc2.RISCV64
