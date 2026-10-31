@@ -61,22 +61,6 @@ theorem movImm64_eq (x : BitVec 64) :
       show i - 32 < 32 by omega, show i - 32 - 16 < 16 by omega, show 48 + (i - 32 - 16) = i by omega,
       show ¬ i - 16 < 16 by omega, show i - 32 < 64 by omega]
 
-/-- The working variables move one register along each round. -/
-theorem var_succ (t k : Nat) (hk : k < 7) : var (t + 1) (k + 1) = var t k := by
-  simp only [var]; congr 1; omega
-
-theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 7 := by
-  simp only [var]; congr 1; omega
-
-/-- The registers of a round are all different. -/
-theorem round_nodup (t : Nat) :
-    ([var t 0, var t 1, var t 2, var t 3, var t 4, var t 5, var t 6, var t 7, T0, T1, T2, T3] ++
-      pubRegs).Nodup := by
-  simp only [var]
-  have := Nat.mod_lt t (show 8 > 0 by omega)
-  generalize t % 8 = c at *
-  revert this; revert c; decide
-
 /-- Reassociate the independent constant/message sum before the state-dependent terms. -/
 theorem t1_add_tree (h k w s c : Word) :
     h + (k + w) + s + c = h + s + c + k + w := by
@@ -205,17 +189,6 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
 
 
 /-! ## The 80 rounds -/
-
-theorem var_mem (t k : Nat) : var t k ∈ work := by
-  unfold var List.getD
-  cases h : work[(k + 8 - t % 8) % 8]?
-  · simp [work]
-  · exact List.mem_of_getElem? h
-
-theorem work_ne' : ∀ r ∈ work, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 := by decide
-
-theorem work_ne {r : Reg} (h : r ∈ work) : r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 :=
-  work_ne' r h
 
 theorem pubRegs_ne' : ∀ r ∈ pubRegs, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 := by decide
 
