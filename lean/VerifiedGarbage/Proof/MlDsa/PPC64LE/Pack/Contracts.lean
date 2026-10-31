@@ -210,7 +210,7 @@ theorem sel_ok (r : Reg) (hr : r ≠ .r9) (v : Nat) (hv : v < 2 ^ 32) (hl : load
 /-- An instruction that accesses no memory. -/
 def noMem : Instr → Bool
   | .load .. | .store .. | .lbz .. | .stb .. | .loadRev .. | .storeRev .. | .push _ | .pop _
-  | .alloc _ | .lxvd2x .. | .stxvd2x .. => false
+  | .alloc _ | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. => false
   | _ => true
 
 theorem addrs_noMem {i : Instr} (h : noMem i = true) (s : State) : VG.PPC64LE.addrs i s = [] := by

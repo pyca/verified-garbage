@@ -93,6 +93,18 @@ Modelling choices:
   does not know the address `bcl` leaves in `LR`: it is the next of the
   state's `unknowns`, as a call's return address is, so code that returns
   after an `adrSym` must restore `LR`.
+* A table carried by an instruction (`lxvd2xTbl`, its name and words) is
+  the immutable static of that name the emitter writes (`TCB/Rust.lean`),
+  as for AArch64's `ldrqTbl` and x86-64's `aluTbl`: throughout execution it
+  is readable at `State.syms name`, holds those little-endian 8-byte words,
+  and does not wrap around the address space. No writable region or stack
+  overlaps it. The linker places the immutable static in read-only memory,
+  apart from other objects and the stack; no pointer the program writes
+  through may reach it. The model therefore reads its words from the
+  instruction, independently of `State.mem` and the contract's regions.
+  The printed instruction uses registers, so execution faults unless their
+  base register holds the static's address and its index selects two words
+  within the table. Leakage records the index, as for x86-64's table loads.
 * A frame may instead allocate a buffer on the stack (`alloc`, `stdu r1,
   -bytes(r1)`), released by its pop (`free`, `addi r1, r1, bytes`): the
   frame is the 32-byte header of the ELFv2 minimum frame (as for `push`)
@@ -243,6 +255,10 @@ inductive Instr
   /-- `lxvd2x XT, RA, RB`, XT = vector register + 32 (Book I §7.6.2.1.2).
   Unaligned 16-byte access; RA must not be r0, as for `addrX`. -/
   | lxvd2x (d : VReg) (a b : Reg)
+  /-- The same `lxvd2x` reading two words of the immutable static `name`,
+  at the byte offset in RB (a multiple of 8). RA must hold
+  `State.syms name`; the emitter supplies `words` (see module docs). -/
+  | lxvd2xTbl (d : VReg) (a b : Reg) (name : String) (words : List (BitVec 64))
   /-- `stxvd2x XS, RA, RB`, XS = vector register + 32 (Book I §7.6.2.1.2). -/
   | stxvd2x (n : VReg) (a b : Reg)
   /-- `mtvsrd XT, RA`, XT = vector register + 32 (Book I §3.3.18).
@@ -392,6 +408,14 @@ def exec : Instr → State → Option State
   | .vop op, s => (op.eval s.vpr).map fun (d, v) => s.writeV d v
   | .lxvd2x d a b, s =>
     (addrX s a b).bind fun ea => (s.load ea 16).map fun v => s.writeV d (swapDwords v)
+  -- Book I §7.6.2.1.2: `lxvd2x` places MEM(EA,8) in the high
+  -- doubleword and MEM(EA+8,8) in the low doubleword in little-endian
+  -- mode. The guard ties that access to two words of the emitted static.
+  | .lxvd2xTbl d a b name ws, s =>
+    let off := (s.gpr b).toNat
+    if a ≠ .r0 ∧ s.gpr a = s.syms name ∧ off % 8 = 0 ∧ off / 8 + 2 ≤ ws.length then
+      some (s.writeV d (ws.getD (off / 8) 0 ++ ws.getD (off / 8 + 1) 0))
+    else none
   | .stxvd2x n a b, s =>
     (addrX s a b).bind fun ea => s.store ea 16 (swapDwords (s.vpr n))
   | .mtvsrd d n, s => some { s.writeV d (s.gpr n ++ s.unknowns 0) with
@@ -454,6 +478,7 @@ def exec : Instr → State → Option State
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
 
 def addrs : Instr → State → List Addr
+  | .lxvd2xTbl _ _ b .., s => [s.gpr b]
   | .lxvd2x _ a b, s | .stxvd2x _ a b, s => [s.gpr a + s.gpr b]
   | .load _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .store _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
