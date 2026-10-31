@@ -397,13 +397,15 @@ jobs:
         with:
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
-          # this target never compiles.
+          # this target never compiles (but their manifests, which Cargo
+          # reads for every path dependency, built or not).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
             !/lean/
             !/docs/
             !/src/asm/*/
+            /src/asm/*/Cargo.toml
             /src/asm/${{ matrix.asm || matrix.arch }}/
       - uses: ./.github/actions/runner-info
 
@@ -554,7 +556,8 @@ jobs:
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (or formats: rustfmt skips a missing
-          # module file that a `cfg` leaves out).
+          # module file that a `cfg` leaves out), but their manifests, which
+          # Cargo reads for every path dependency, built or not.
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -562,6 +565,7 @@ jobs:
             !/docs/
             !/bench/
             !/src/asm/*/
+            /src/asm/*/Cargo.toml
             /src/asm/${{ matrix.arch }}/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -740,7 +744,8 @@ jobs:
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (or formats: rustfmt skips a missing
-          # module file that a `cfg` leaves out).
+          # module file that a `cfg` leaves out), but their manifests, which
+          # Cargo reads for every path dependency, built or not.
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -748,6 +753,7 @@ jobs:
             !/docs/
             !/bench/
             !/src/asm/*/
+            /src/asm/*/Cargo.toml
             /src/asm/${{ matrix.arch || 'x86_64' }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

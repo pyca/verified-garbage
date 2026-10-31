@@ -185,7 +185,7 @@ mod tests {
                 VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES, VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES,
                 VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES, VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES,
             };
-            use crate::cpu::Features;
+            use crate::cpu::{Features, feature};
             assert_eq!(
                 Backend::select(Features::all(&[
                     VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES,
@@ -202,7 +202,7 @@ mod tests {
                 ])),
                 Backend::Avx2
             );
-            assert_eq!(Backend::select(Features::of(&["avx"])), Backend::Scalar);
+            assert_eq!(Backend::select(Features(feature::AVX)), Backend::Scalar);
         }
     }
 }

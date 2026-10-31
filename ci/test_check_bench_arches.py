@@ -70,6 +70,17 @@ def asm(*features, old=None):
                    for i, f in enumerate(features))
 
 
+# `CPU` as it is written since its features are bits: a table of the names
+# and bits, and detection naming the bits.
+CPU_BITS = (CPU
+            .replace('const NAMES: [&str; 6] = ["ssse3", "aes", "bmi2", "adx", "sha3", "neon"];',
+                     'const NAMES: [(&str, u32); 6] = [("ssse3", feature::SSSE3), ("aes", feature::AES), '
+                     '("bmi2", feature::BMI2), ("adx", feature::ADX), ("sha3", feature::SHA3), '
+                     '("neon", feature::NEON)];')
+            .replace('Features::of(&["sha3"]).0', 'feature::SHA3')
+            .replace('Features::of(&["neon"]).0', 'feature::NEON'))
+
+
 class Selection(unittest.TestCase):
     def setUp(self):
         planner.read.cache_clear()
@@ -209,6 +220,17 @@ class Selection(unittest.TestCase):
         self.assertEqual(self.modules(rows), {'aarch64': 'keccak'})
         # A feature no module chooses by needs nothing.
         self.assertEqual(self.cpu('let aes = 1;', 'let aes = 2;'), [])
+
+    def test_cpu_detection_by_bits(self):
+        # Detection naming a feature's bit, `feature::SHA3`, as by its name.
+        rows = self.cpu('feature::SHA3\n', '(feature::SHA3 & 1)\n', base=CPU_BITS)
+        self.assertEqual(self.modules(rows), {'aarch64': 'keccak'})
+        # The table of names and bits names what detection can find.
+        self.assertEqual(planner.detectable('aarch64', CPU_BITS), {'sha3', 'neon'})
+        self.assertEqual(planner.detectable('x86_64', CPU_BITS), planner.detectable('x86_64', CPU))
+        # A name appended to the table needs nothing.
+        self.assertEqual(self.cpu('("neon", feature::NEON)];', '("neon", feature::NEON), ("vaes", feature::VAES)];',
+                                  base=CPU_BITS), [])
 
     def test_cpu_detection_naming_no_feature_selects_all_of_its_architectures(self):
         rows = self.cpu('    let ssse3 = 1;', '    let leaf = 7;\n    let ssse3 = 1;')

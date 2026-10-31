@@ -535,7 +535,10 @@ pub(crate) mod tests {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn backends_x86_64() {
-        assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+        assert_eq!(
+            Backend::select(Features(crate::cpu::feature::BMI2)),
+            Backend::Baseline
+        );
         // The private-key operation's `_adx` code reads its table with AVX2.
         assert_eq!(
             Backend::select(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES),
@@ -549,7 +552,7 @@ pub(crate) mod tests {
             Backend::select(Features::all(&[
                 VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
                 VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
-                Features::of(&["avx", "avx2"]),
+                Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2),
             ])),
             Backend::Adx
         );
@@ -560,12 +563,17 @@ pub(crate) mod tests {
         assert_eq!(
             Backend::select(Features::all(&[
                 VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
-                Features::of(&["avx2"]),
+                Features(crate::cpu::feature::AVX2),
             ])),
             Backend::Ifma
         );
         assert_eq!(
-            Backend::select(Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl"])),
+            Backend::select(Features(
+                crate::cpu::feature::AVX
+                    | crate::cpu::feature::AVX512F
+                    | crate::cpu::feature::AVX512IFMA
+                    | crate::cpu::feature::AVX512VL
+            )),
             Backend::Baseline
         );
     }

@@ -116,19 +116,29 @@ pub(crate) fn public_key(d: &[u8; 48]) -> Option<[u8; 97]> {
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::*;
+    use crate::cpu::feature;
 
     /// The multiplications chosen with BMI2, ADX and AVX2 (and AVX, which
     /// AVX2 implies), or without one of them.
     #[test]
     fn select() {
         let cases = [
-            (Features::of(&[]), Mul::Baseline),
-            (Features::of(&["bmi2"]), Mul::Baseline),
-            (Features::of(&["adx"]), Mul::Baseline),
-            (Features::of(&["bmi2", "adx"]), Mul::Baseline),
-            (Features::of(&["avx", "avx2", "bmi2"]), Mul::Baseline),
-            (Features::of(&["avx", "avx2", "adx"]), Mul::Baseline),
-            (Features::of(&["avx", "avx2", "bmi2", "adx"]), Mul::Adx),
+            (Features(0), Mul::Baseline),
+            (Features(feature::BMI2), Mul::Baseline),
+            (Features(feature::ADX), Mul::Baseline),
+            (Features(feature::BMI2 | feature::ADX), Mul::Baseline),
+            (
+                Features(feature::AVX | feature::AVX2 | feature::BMI2),
+                Mul::Baseline,
+            ),
+            (
+                Features(feature::AVX | feature::AVX2 | feature::ADX),
+                Mul::Baseline,
+            ),
+            (
+                Features(feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX),
+                Mul::Adx,
+            ),
         ];
         for (f, m) in cases {
             assert_eq!(Mul::select(f), m, "{f:?}");
@@ -139,11 +149,12 @@ mod tests {
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
     use super::*;
+    use crate::cpu::feature;
 
     /// The multiplications chosen with `umaal`, or without it.
     #[test]
     fn select() {
-        assert_eq!(Mul::select(Features::of(&[])), Mul::Baseline);
-        assert_eq!(Mul::select(Features::of(&["umaal"])), Mul::Umaal);
+        assert_eq!(Mul::select(Features(0)), Mul::Baseline);
+        assert_eq!(Mul::select(Features(feature::UMAAL)), Mul::Umaal);
     }
 }

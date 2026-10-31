@@ -109,7 +109,7 @@ mod tests {
             assert_eq!(backend == Sha1Backend::ShaNi, bits & 0b11 == 0b11);
             #[cfg(target_arch = "aarch64")]
             {
-                let expected = if Features(bits).contains(Features::of(&["sha2"])) {
+                let expected = if Features(bits).contains(Features(crate::cpu::feature::SHA2)) {
                     Sha1Backend::Sha2
                 } else {
                     Sha1Backend::Scalar

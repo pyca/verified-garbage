@@ -456,14 +456,11 @@ mod tests {
     #[test]
     fn accelerated_dispatch_requires_all_features() {
         use super::Backend;
-        use crate::cpu::Features;
-        let required = Features::of(&["sha3", "sha2"]);
+        use crate::cpu::{Features, feature};
+        let required = Features(feature::SHA3 | feature::SHA2);
+        assert_eq!(Backend::select(Features(0), required), Backend::Scalar);
         assert_eq!(
-            Backend::select(Features::of(&[]), required),
-            Backend::Scalar
-        );
-        assert_eq!(
-            Backend::select(Features::of(&["sha3"]), required),
+            Backend::select(Features(feature::SHA3), required),
             Backend::Scalar
         );
         assert_eq!(Backend::select(required, required), Backend::Sha3);

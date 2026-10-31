@@ -55,7 +55,7 @@ mod tests {
             let backend = Blake2sBackend::select(Features(bits));
             #[cfg(target_arch = "x86_64")]
             {
-                let expected = if Features(bits).contains(Features::of(&["avx"])) {
+                let expected = if Features(bits).contains(Features(crate::cpu::feature::AVX)) {
                     Blake2sBackend::Avx
                 } else {
                     Blake2sBackend::Scalar

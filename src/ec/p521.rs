@@ -82,19 +82,29 @@ pub(crate) fn public_key(d: &[u8; 66]) -> Option<[u8; 133]> {
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::*;
+    use crate::cpu::feature;
 
     /// The multiplications chosen with BMI2, ADX and AVX2 (and AVX, which
     /// AVX2 implies), or without one of them.
     #[test]
     fn select() {
         let cases = [
-            (Features::of(&[]), Mul::Baseline),
-            (Features::of(&["bmi2"]), Mul::Baseline),
-            (Features::of(&["adx"]), Mul::Baseline),
-            (Features::of(&["bmi2", "adx"]), Mul::Baseline),
-            (Features::of(&["avx", "avx2", "bmi2"]), Mul::Baseline),
-            (Features::of(&["avx", "avx2", "adx"]), Mul::Baseline),
-            (Features::of(&["avx", "avx2", "bmi2", "adx"]), Mul::Adx),
+            (Features(0), Mul::Baseline),
+            (Features(feature::BMI2), Mul::Baseline),
+            (Features(feature::ADX), Mul::Baseline),
+            (Features(feature::BMI2 | feature::ADX), Mul::Baseline),
+            (
+                Features(feature::AVX | feature::AVX2 | feature::BMI2),
+                Mul::Baseline,
+            ),
+            (
+                Features(feature::AVX | feature::AVX2 | feature::ADX),
+                Mul::Baseline,
+            ),
+            (
+                Features(feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX),
+                Mul::Adx,
+            ),
         ];
         for (f, m) in cases {
             assert_eq!(Mul::select(f), m, "{f:?}");

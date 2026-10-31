@@ -652,13 +652,13 @@ pub(crate) use ml_kem;
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::Backend;
-    use crate::cpu::Features;
+    use crate::cpu::{Features, feature};
 
     #[test]
     fn selects_complete_feature_sets() {
-        let avx2 = Features::of(&["avx", "avx2"]);
-        let avx512 = Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
-        let sha3 = Features::of(&[]);
+        let avx2 = Features(feature::AVX | feature::AVX2);
+        let avx512 = Features(feature::AVX | feature::AVX2 | feature::AVX512F | feature::AVX512VL);
+        let sha3 = Features(0);
         for apple in [false, true] {
             assert_eq!(
                 Backend::select(avx512, avx2, avx512, sha3, apple),
@@ -667,8 +667,8 @@ mod tests {
         }
         for features in [
             avx2,
-            Features::of(&["avx", "avx2", "avx512f"]),
-            Features::of(&["avx", "avx2", "avx512vl"]),
+            Features(feature::AVX | feature::AVX2 | feature::AVX512F),
+            Features(feature::AVX | feature::AVX2 | feature::AVX512VL),
         ] {
             assert_eq!(
                 Backend::select(features, avx2, avx512, sha3, false),
@@ -676,8 +676,8 @@ mod tests {
             );
         }
         for features in [
-            Features::of(&[]),
-            Features::of(&["avx", "avx512f", "avx512vl"]),
+            Features(0),
+            Features(feature::AVX | feature::AVX512F | feature::AVX512VL),
         ] {
             assert_eq!(
                 Backend::select(features, avx2, avx512, sha3, false),
@@ -690,12 +690,12 @@ mod tests {
 #[cfg(all(test, target_arch = "aarch64"))]
 mod aarch64_tests {
     use super::Backend;
-    use crate::cpu::Features;
+    use crate::cpu::{Features, feature};
 
     #[test]
     fn selects_complete_feature_sets() {
-        let empty = Features::of(&[]);
-        let required = Features::of(&["neon", "sha3"]);
+        let empty = Features(0);
+        let required = Features(feature::NEON | feature::SHA3);
         // The SHA-3 extension's single-state permutation on Apple's cores,
         // the scalar one elsewhere.
         assert_eq!(
@@ -706,7 +706,7 @@ mod aarch64_tests {
             Backend::select(required, empty, empty, required, false),
             Backend::X2Sha3
         );
-        for available in [empty, Features::of(&["neon"]), Features::of(&["sha3"])] {
+        for available in [empty, Features(feature::NEON), Features(feature::SHA3)] {
             for apple in [false, true] {
                 assert_eq!(
                     Backend::select(available, empty, empty, required, apple),
