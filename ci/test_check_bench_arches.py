@@ -280,6 +280,15 @@ class Selection(unittest.TestCase):
         rows = self.rows(['src/asm/x86_64/x448.rs'])
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
 
+    def test_features_named_by_their_crate_count(self):
+        # Only the base has the variant needing ADX, its constant naming
+        # `verified_garbage_cpu` rather than its alias.
+        self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
+        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx']).replace(
+            'crate::cpu::', 'verified_garbage_cpu::')
+        rows = self.rows(['src/asm/x86_64/x448.rs'])
+        self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
+
     def test_features_of_names_at_base_count(self):
         # Only the base has the variant needing ADX, made by `Features::of`.
         self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])

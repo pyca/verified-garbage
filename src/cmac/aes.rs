@@ -58,8 +58,9 @@ use crate::arch::cmac_aes::{
     vg_cmac_aes_init_aesni,
 };
 use crate::arch::cmac_aes::{vg_cmac_aes_absorb, vg_cmac_aes_finish, vg_cmac_aes_init};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The streaming state, in 64-bit words.
 const STATE: usize = 38;
@@ -298,7 +299,8 @@ impl AesCmac {
 mod tests {
     use super::{AesCmac, Backend, select};
     use crate::cmac::InvalidKeyLength;
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
+    use verified_garbage_cpu::Features;
 
     /// Keys of other lengths are rejected.
     #[test]
@@ -402,32 +404,41 @@ mod tests {
         {
             assert_eq!(
                 select(Features(
-                    crate::cpu::feature::AES | crate::cpu::feature::SSSE3
+                    verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3
                 )),
                 Backend::AesNi
             );
-            assert_eq!(select(Features(crate::cpu::feature::AES)), Backend::Scalar);
+            assert_eq!(
+                select(Features(verified_garbage_cpu::feature::AES)),
+                Backend::Scalar
+            );
             assert_eq!(
                 select(Features(
-                    crate::cpu::feature::AES
-                        | crate::cpu::feature::AVX
-                        | crate::cpu::feature::AVX2
-                        | crate::cpu::feature::SSSE3
-                        | crate::cpu::feature::VAES
+                    verified_garbage_cpu::feature::AES
+                        | verified_garbage_cpu::feature::AVX
+                        | verified_garbage_cpu::feature::AVX2
+                        | verified_garbage_cpu::feature::SSSE3
+                        | verified_garbage_cpu::feature::VAES
                 )),
                 Backend::Vaes
             );
         }
         #[cfg(target_arch = "x86")]
         {
-            assert_eq!(select(Features(crate::cpu::feature::AES)), Backend::AesNi);
             assert_eq!(
-                select(Features(crate::cpu::feature::SSSE3)),
+                select(Features(verified_garbage_cpu::feature::AES)),
+                Backend::AesNi
+            );
+            assert_eq!(
+                select(Features(verified_garbage_cpu::feature::SSSE3)),
                 Backend::Scalar
             );
         }
         #[cfg(target_arch = "aarch64")]
-        assert_eq!(select(Features(crate::cpu::feature::AES)), Backend::Aes);
+        assert_eq!(
+            select(Features(verified_garbage_cpu::feature::AES)),
+            Backend::Aes
+        );
         assert_eq!(select(Features(0)), Backend::Scalar);
         let best = AesCmac::new(&[0; 16]).unwrap().backend;
         assert_eq!(best, select(detected()));

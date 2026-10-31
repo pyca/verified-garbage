@@ -76,7 +76,8 @@ super::streaming_hash!(
 #[cfg(test)]
 mod tests {
     use super::{Sha1, Sha1Backend};
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
+    use verified_garbage_cpu::Features;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -109,11 +110,12 @@ mod tests {
             assert_eq!(backend == Sha1Backend::ShaNi, bits & 0b11 == 0b11);
             #[cfg(target_arch = "aarch64")]
             {
-                let expected = if Features(bits).contains(Features(crate::cpu::feature::SHA2)) {
-                    Sha1Backend::Sha2
-                } else {
-                    Sha1Backend::Scalar
-                };
+                let expected =
+                    if Features(bits).contains(Features(verified_garbage_cpu::feature::SHA2)) {
+                        Sha1Backend::Sha2
+                    } else {
+                        Sha1Backend::Scalar
+                    };
                 assert_eq!(backend, expected, "{bits:#b}");
             }
             #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]

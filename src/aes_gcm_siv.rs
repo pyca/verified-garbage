@@ -254,7 +254,7 @@ mod tests {
         VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
         VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES,
     };
-    use crate::cpu::Features;
+    use verified_garbage_cpu::Features;
 
     /// The features of every instance of a backend are within those it is
     /// selected by (AES-GCM's `seal`'s).

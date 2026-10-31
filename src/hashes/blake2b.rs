@@ -52,7 +52,8 @@ pub type Blake2b512 = Blake2b<64>;
 #[cfg(test)]
 mod tests {
     use super::{Blake2b, Blake2bBackend};
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
+    use verified_garbage_cpu::Features;
 
     /// The implementation chosen for each set of the features it depends on.
     #[test]
@@ -63,14 +64,14 @@ mod tests {
             {
                 let f = Features(bits);
                 let expected = if f.contains(Features(
-                    crate::cpu::feature::AVX
-                        | crate::cpu::feature::AVX2
-                        | crate::cpu::feature::AVX512F
-                        | crate::cpu::feature::AVX512VL,
+                    verified_garbage_cpu::feature::AVX
+                        | verified_garbage_cpu::feature::AVX2
+                        | verified_garbage_cpu::feature::AVX512F
+                        | verified_garbage_cpu::feature::AVX512VL,
                 )) {
                     Blake2bBackend::Avx512
                 } else if f.contains(Features(
-                    crate::cpu::feature::AVX | crate::cpu::feature::AVX2,
+                    verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2,
                 )) {
                     Blake2bBackend::Avx2
                 } else {

@@ -295,7 +295,8 @@ mod tests {
     use crate::arch::scrypt::VG_SCRYPT_SHA2_FEATURES;
     #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     use crate::arch::scrypt::VG_SCRYPT_SHANI_FEATURES;
-    use crate::cpu::{Features, NAMES};
+    use crate::cpu::NAMES;
+    use verified_garbage_cpu::Features;
 
     /// Each implementation of `vg_scrypt` needs no CPU feature that the
     /// implementation of SHA-256 is not selected for: on every set of

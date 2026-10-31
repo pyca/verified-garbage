@@ -51,9 +51,10 @@ use crate::arch::x25519::{
 };
 #[cfg(target_arch = "arm")]
 use crate::arch::x25519::{VG_X25519_UMAAL_FEATURES, vg_x25519_umaal};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::{MaybeUninit, size_of};
+use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_x25519`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -321,21 +322,23 @@ mod tests {
             // The ladder's features alone, without the comb's AVX2.
             assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Baseline);
             assert_eq!(
-                Backend::select(Features(crate::cpu::feature::BMI2)),
+                Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
                 Backend::Baseline
             );
             let ifma = Features(VG_X25519_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(
                 Backend::select(Features(
-                    adx.0 | Features(crate::cpu::feature::AVX512IFMA).0
+                    adx.0 | Features(verified_garbage_cpu::feature::AVX512IFMA).0
                 )),
                 Backend::Adx
             );
             // Without AVX512F, which the ladder's EVEX-encoded instructions and
             // the comb need.
             assert_eq!(
-                Backend::select(Features(ifma.0 & !Features(crate::cpu::feature::AVX512F).0)),
+                Backend::select(Features(
+                    ifma.0 & !Features(verified_garbage_cpu::feature::AVX512F).0
+                )),
                 Backend::Adx
             );
         }

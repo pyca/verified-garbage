@@ -136,7 +136,7 @@ macro_rules! whole_pbkdf2 {
         // The CPU features of each implementation, which `tests` checks.
         $(
             $(#[$attr])*
-            const _: &[$crate::cpu::Features] = &[$($req),*];
+            const _: &[verified_garbage_cpu::Features] = &[$($req),*];
         )*
 
         impl super::Pbkdf2Hash for $hash {
@@ -187,9 +187,9 @@ macro_rules! whole_pbkdf2 {
                 $(
                     $(#[$attr])*
                     for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                        let f = $crate::cpu::Features(bits);
+                        let f = verified_garbage_cpu::Features(bits);
                         if $backend::select(f) == $backend::$variant {
-                            assert!(f.contains($crate::cpu::Features::all(&[$($req),*])));
+                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$($req),*])));
                         }
                     }
                 )*

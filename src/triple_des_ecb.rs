@@ -27,8 +27,9 @@ use crate::arch::triple_des::{
 use crate::arch::triple_des::{
     vg_triple_des_ecb_decrypt, vg_triple_des_ecb_encrypt, vg_triple_des_expand_key,
 };
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The implementations of ECB encryption and decryption.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -185,7 +186,7 @@ mod tests {
                 VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES, VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES,
                 VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES, VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES,
             };
-            use crate::cpu::{Features, feature};
+            use verified_garbage_cpu::{Features, feature};
             assert_eq!(
                 Backend::select(Features::all(&[
                     VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES,

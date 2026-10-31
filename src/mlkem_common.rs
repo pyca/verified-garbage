@@ -70,10 +70,10 @@ impl Backend {
     // Each target uses only some of the arguments.
     #[allow(unused_variables)]
     pub(crate) fn select(
-        f: crate::cpu::Features,
-        avx2: crate::cpu::Features,
-        avx512: crate::cpu::Features,
-        sha3: crate::cpu::Features,
+        f: verified_garbage_cpu::Features,
+        avx2: verified_garbage_cpu::Features,
+        avx512: verified_garbage_cpu::Features,
+        sha3: verified_garbage_cpu::Features,
         apple: bool,
     ) -> Backend {
         #[cfg(target_arch = "aarch64")]
@@ -158,36 +158,36 @@ macro_rules! ml_kem {
         /// The features of the instances of key generation, encapsulation and
         /// decapsulation of each implementation but the baseline's.
         #[cfg(target_arch = "x86_64")]
-        const AVX2: &[$crate::cpu::Features] = &[
+        const AVX2: &[verified_garbage_cpu::Features] = &[
             $keygen_avx2_features, $encaps_h_avx2_features, $encaps_avx2_features, $decaps_avx2_features,
             $check_ek_avx2_features,
         ];
         #[cfg(not(target_arch = "x86_64"))]
-        const AVX2: &[$crate::cpu::Features] = &[];
+        const AVX2: &[verified_garbage_cpu::Features] = &[];
         #[cfg(target_arch = "x86_64")]
-        const AVX512: &[$crate::cpu::Features] = &[
+        const AVX512: &[verified_garbage_cpu::Features] = &[
             $keygen_avx512_features, $encaps_h_avx512_features, $encaps_avx512_features, $decaps_avx512_features,
             $check_ek_avx2_features,
         ];
         #[cfg(not(target_arch = "x86_64"))]
-        const AVX512: &[$crate::cpu::Features] = &[];
+        const AVX512: &[verified_garbage_cpu::Features] = &[];
         #[cfg(target_arch = "aarch64")]
-        const SHA3: &[$crate::cpu::Features] = &[
+        const SHA3: &[verified_garbage_cpu::Features] = &[
             $keygen_x2_sha3_features, $encaps_x2_sha3_features, $decaps_x2_sha3_features,
             $keygen_x2_sha3_keccak_sha3_features, $encaps_x2_sha3_keccak_sha3_features,
             $decaps_x2_sha3_keccak_sha3_features,
         ];
         #[cfg(not(target_arch = "aarch64"))]
-        const SHA3: &[$crate::cpu::Features] = &[];
+        const SHA3: &[verified_garbage_cpu::Features] = &[];
 
         /// The implementation to call: the best one whose instances of key
         /// generation, encapsulation and decapsulation the CPU can all run.
         fn backend() -> Backend {
             Backend::select(
                 $crate::cpu::detected(),
-                const { $crate::cpu::Features::all(AVX2) },
-                const { $crate::cpu::Features::all(AVX512) },
-                const { $crate::cpu::Features::all(SHA3) },
+                const { verified_garbage_cpu::Features::all(AVX2) },
+                const { verified_garbage_cpu::Features::all(AVX512) },
+                const { verified_garbage_cpu::Features::all(SHA3) },
                 cfg!(target_vendor = "apple"),
             )
         }
@@ -580,8 +580,8 @@ macro_rules! ml_kem {
                 let f = $crate::cpu::detected();
                 let backends = [
                     (Backend::Scalar, true),
-                    (Backend::Avx2, f.contains(const { $crate::cpu::Features::all(AVX2) })),
-                    (Backend::Avx512, f.contains(const { $crate::cpu::Features::all(AVX512) })),
+                    (Backend::Avx2, f.contains(const { verified_garbage_cpu::Features::all(AVX2) })),
+                    (Backend::Avx512, f.contains(const { verified_garbage_cpu::Features::all(AVX512) })),
                 ];
                 for i in 0..2u8 {
                     let seed: [u8; 64] = core::array::from_fn(|j| (j as u8).wrapping_mul(29) ^ i);
@@ -612,7 +612,7 @@ macro_rules! ml_kem {
             /// on the implicit rejection of a modified ciphertext.
             #[test]
             fn paired_instances_agree() {
-                if !$crate::cpu::detected().contains(const { $crate::cpu::Features::all(SHA3) }) {
+                if !$crate::cpu::detected().contains(const { verified_garbage_cpu::Features::all(SHA3) }) {
                     return;
                 }
                 for i in 0..2u8 {
@@ -652,7 +652,7 @@ pub(crate) use ml_kem;
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::Backend;
-    use crate::cpu::{Features, feature};
+    use verified_garbage_cpu::{Features, feature};
 
     #[test]
     fn selects_complete_feature_sets() {
@@ -690,7 +690,7 @@ mod tests {
 #[cfg(all(test, target_arch = "aarch64"))]
 mod aarch64_tests {
     use super::Backend;
-    use crate::cpu::{Features, feature};
+    use verified_garbage_cpu::{Features, feature};
 
     #[test]
     fn selects_complete_feature_sets() {

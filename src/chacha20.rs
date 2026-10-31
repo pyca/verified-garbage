@@ -66,9 +66,10 @@ use crate::arch::chacha20::{
     VG_CHACHA20_APPLY_SVE2_FEATURES, vg_chacha20_apply_neon, vg_chacha20_apply_sve2,
 };
 use crate::arch::chacha20::{vg_chacha20_apply, vg_chacha20_init, vg_chacha20_set_nonce};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize_raw;
 use core::mem::MaybeUninit;
+use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_chacha20_xor` (and of `vg_chacha20_apply`,
 /// which calls them), which ChaCha20-Poly1305 follows
@@ -108,7 +109,7 @@ pub(crate) enum Backend {
 /// `vg_chacha20_apply_avx512`) does not use: it is chosen on the CPUs whose
 /// ChaCha20-Poly1305 runs its `_ifma` instances, which need it.
 #[cfg(target_arch = "x86_64")]
-const IFMA: Features = Features(crate::cpu::feature::AVX512IFMA);
+const IFMA: Features = Features(verified_garbage_cpu::feature::AVX512IFMA);
 
 impl Backend {
     /// AdvSIMD is part of our AArch64 baseline. Tracking it also lets
@@ -117,11 +118,11 @@ impl Backend {
     /// ChaCha20-Poly1305's need too, see its tests).
     #[cfg(target_arch = "aarch64")]
     pub(crate) fn select(f: Features) -> Backend {
-        if f.contains(const { Features(crate::cpu::feature::NEON) })
+        if f.contains(const { Features(verified_garbage_cpu::feature::NEON) })
             && f.contains(VG_CHACHA20_APPLY_SVE2_FEATURES)
         {
             Backend::Sve2
-        } else if f.contains(const { Features(crate::cpu::feature::NEON) }) {
+        } else if f.contains(const { Features(verified_garbage_cpu::feature::NEON) }) {
             Backend::Neon
         } else {
             Backend::Scalar
@@ -525,19 +526,19 @@ mod tests {
         assert_eq!(best, Backend::select(detected()));
         #[cfg(target_arch = "aarch64")]
         {
-            use crate::cpu::Features;
+            use verified_garbage_cpu::Features;
             assert_eq!(
-                Backend::select(Features(crate::cpu::feature::NEON)),
+                Backend::select(Features(verified_garbage_cpu::feature::NEON)),
                 Backend::Neon
             );
             assert_eq!(
                 Backend::select(Features(
-                    crate::cpu::feature::NEON | crate::cpu::feature::SVE2
+                    verified_garbage_cpu::feature::NEON | verified_garbage_cpu::feature::SVE2
                 )),
                 Backend::Sve2
             );
             assert_eq!(
-                Backend::select(Features(crate::cpu::feature::SVE2)),
+                Backend::select(Features(verified_garbage_cpu::feature::SVE2)),
                 Backend::Scalar
             );
             assert_eq!(Backend::select(Features(0)), Backend::Scalar);
@@ -548,7 +549,7 @@ mod tests {
                 VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
                 VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_IFMA_FEATURES,
             };
-            use crate::cpu::Features;
+            use verified_garbage_cpu::Features;
             let avx2 = VG_CHACHA20_APPLY_AVX2_FEATURES;
             let avx512 = VG_CHACHA20_APPLY_AVX512_FEATURES;
             let avx512vl = VG_CHACHA20_APPLY_AVX512VL_FEATURES;
@@ -572,14 +573,14 @@ mod tests {
                 Backend::Avx512
             );
             assert_eq!(
-                Backend::select(Features(crate::cpu::feature::AVX)),
+                Backend::select(Features(verified_garbage_cpu::feature::AVX)),
                 Backend::Scalar
             );
         }
         #[cfg(target_arch = "x86")]
         {
             use crate::arch::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES;
-            use crate::cpu::Features;
+            use verified_garbage_cpu::Features;
             assert_eq!(
                 Backend::select(VG_CHACHA20_APPLY_SSSE3_FEATURES),
                 Backend::Ssse3

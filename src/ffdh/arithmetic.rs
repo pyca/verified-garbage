@@ -15,8 +15,8 @@ use crate::arch::ffdh::{
     VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES,
     VG_FFDH_GENERATE_PARAMETERS_SIEVED_UMAAL_FEATURES,
 };
-use crate::cpu::Features;
 use alloc::{vec, vec::Vec};
+use verified_garbage_cpu::Features;
 
 pub(super) fn canonical(a: &[u8]) -> &[u8] {
     &a[a.iter().position(|&b| b != 0).unwrap_or(a.len())..]
@@ -90,7 +90,7 @@ impl Backend {
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::*;
-    use crate::cpu::feature;
+    use verified_garbage_cpu::feature;
 
     #[test]
     fn backend_feature_requirements() {
@@ -145,7 +145,7 @@ mod tests {
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
     use super::*;
-    use crate::cpu::feature;
+    use verified_garbage_cpu::feature;
     #[test]
     fn backend_feature_requirements() {
         for (names, expected) in [

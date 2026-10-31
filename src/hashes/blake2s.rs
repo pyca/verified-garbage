@@ -46,7 +46,8 @@ pub type Blake2s256 = Blake2s<32>;
 #[cfg(test)]
 mod tests {
     use super::{Blake2s, Blake2sBackend};
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
+    use verified_garbage_cpu::Features;
 
     /// The implementation chosen for each set of the features it depends on.
     #[test]
@@ -55,11 +56,12 @@ mod tests {
             let backend = Blake2sBackend::select(Features(bits));
             #[cfg(target_arch = "x86_64")]
             {
-                let expected = if Features(bits).contains(Features(crate::cpu::feature::AVX)) {
-                    Blake2sBackend::Avx
-                } else {
-                    Blake2sBackend::Scalar
-                };
+                let expected =
+                    if Features(bits).contains(Features(verified_garbage_cpu::feature::AVX)) {
+                        Blake2sBackend::Avx
+                    } else {
+                        Blake2sBackend::Scalar
+                    };
                 assert_eq!(backend, expected, "{bits:#b}");
             }
             #[cfg(not(target_arch = "x86_64"))]

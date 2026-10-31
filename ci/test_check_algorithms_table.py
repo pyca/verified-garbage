@@ -39,6 +39,11 @@ class Cells(unittest.TestCase):
         asm = features("VG_F_SHANI", ["sha", "ssse3"])
         self.assertEqual(self.variants({"src/asm/x86_64/m.rs": asm}, "x86_64"), "SHA extensions")
 
+    def test_features_named_by_their_crate(self):
+        # The constants may name `verified_garbage_cpu` rather than its alias.
+        asm = features("VG_F_AVX2", ["avx", "avx2"]).replace("crate::cpu::", "verified_garbage_cpu::")
+        self.assertEqual(self.variants({"src/asm/x86_64/m.rs": asm}, "x86_64"), "AVX2")
+
     def test_a_variant_without_features(self):
         # A `_neon` function on AArch64 is named after the features.
         asm = (features("VG_F_SVE2", ["sve2"]) + "fn vg_f(x: u64) {}\nfn vg_f_neon(x: u64) {}\n"

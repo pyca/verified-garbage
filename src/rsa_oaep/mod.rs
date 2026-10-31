@@ -416,7 +416,7 @@ macro_rules! oaep_pair {
         /// The functions, `(encrypt, decrypt)`, for the implementations
         /// that a CPU with the features `f` runs best.
         pub(super) fn functions(
-            $f: $crate::cpu::Features,
+            $f: verified_garbage_cpu::Features,
         ) -> (super::EncryptFn<N>, super::DecryptFn) {
             let rsa = $crate::rsa::Backend::select($f);
             match $select {
@@ -437,7 +437,7 @@ macro_rules! oaep_pair {
             #[test]
             fn backend_features() {
                 for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                    let $f = $crate::cpu::Features(bits);
+                    let $f = verified_garbage_cpu::Features(bits);
                     let rsa = $crate::rsa::Backend::select($f);
                     let (encrypt, decrypt) = match $select {
                         $($(#[$attr])* $pat => $crate::rsa_oaep::oaep_pair!(@features rsa, $fns),)*
@@ -527,12 +527,12 @@ macro_rules! oaep_pair {
     }) => {
         (
             match $rsa {
-                $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($ereq),*]),
+                $crate::rsa::Backend::Baseline => verified_garbage_cpu::Features::all(&[$($ereq),*]),
                 $(
                     #[cfg(target_arch = "x86_64")]
-                    $crate::rsa::Backend::Adx => $crate::cpu::Features::all(&[$($eareq),*]),
+                    $crate::rsa::Backend::Adx => verified_garbage_cpu::Features::all(&[$($eareq),*]),
                     #[cfg(target_arch = "x86_64")]
-                    $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($eireq),*]),
+                    $crate::rsa::Backend::Ifma => verified_garbage_cpu::Features::all(&[$($eireq),*]),
                 )?
                 $(
                     #[cfg(all(
@@ -545,16 +545,16 @@ macro_rules! oaep_pair {
                             target_os = "openbsd"
                         )
                     ))]
-                    $crate::rsa::Backend::Umaal => $crate::cpu::Features::all(&[$($eureq),*]),
+                    $crate::rsa::Backend::Umaal => verified_garbage_cpu::Features::all(&[$($eureq),*]),
                 )?
             },
             match $rsa {
-                $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($dreq),*]),
+                $crate::rsa::Backend::Baseline => verified_garbage_cpu::Features::all(&[$($dreq),*]),
                 $(
                     #[cfg(target_arch = "x86_64")]
-                    $crate::rsa::Backend::Adx => $crate::cpu::Features::all(&[$($dareq),*]),
+                    $crate::rsa::Backend::Adx => verified_garbage_cpu::Features::all(&[$($dareq),*]),
                     #[cfg(target_arch = "x86_64")]
-                    $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($direq),*]),
+                    $crate::rsa::Backend::Ifma => verified_garbage_cpu::Features::all(&[$($direq),*]),
                 )?
                 $(
                     #[cfg(all(
@@ -567,7 +567,7 @@ macro_rules! oaep_pair {
                             target_os = "openbsd"
                         )
                     ))]
-                    $crate::rsa::Backend::Umaal => $crate::cpu::Features::all(&[$($dureq),*]),
+                    $crate::rsa::Backend::Umaal => verified_garbage_cpu::Features::all(&[$($dureq),*]),
                 )?
             },
         )

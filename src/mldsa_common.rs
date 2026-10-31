@@ -33,7 +33,10 @@ impl Backend {
         not(any(target_arch = "x86_64", target_arch = "aarch64")),
         allow(unused_variables)
     )]
-    pub(crate) fn select(f: crate::cpu::Features, required: crate::cpu::Features) -> Backend {
+    pub(crate) fn select(
+        f: verified_garbage_cpu::Features,
+        required: verified_garbage_cpu::Features,
+    ) -> Backend {
         #[cfg(target_arch = "aarch64")]
         if f.contains(required) {
             return Backend::Sha3;
@@ -85,7 +88,7 @@ macro_rules! ml_dsa {
         /// Select from the generated requirements of every accelerated caller.
         fn backend() -> Backend {
             #[cfg(target_arch = "aarch64")]
-            const REQUIRED: &[$crate::cpu::Features] = &[
+            const REQUIRED: &[verified_garbage_cpu::Features] = &[
                 $keygen_sha3_features,
                 $sign_sha3_features,
                 $verify_sha3_features,
@@ -93,7 +96,7 @@ macro_rules! ml_dsa {
                 $verify_message_cached_sha3_features,
             ];
             #[cfg(target_arch = "x86_64")]
-            const REQUIRED: &[$crate::cpu::Features] = &[
+            const REQUIRED: &[verified_garbage_cpu::Features] = &[
                 $keygen_avx2_features,
                 $sign_avx2_features,
                 $verify_avx2_features,
@@ -101,10 +104,10 @@ macro_rules! ml_dsa {
                 $verify_message_cached_avx2_features,
             ];
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            const REQUIRED: &[$crate::cpu::Features] = &[];
+            const REQUIRED: &[verified_garbage_cpu::Features] = &[];
             Backend::select(
                 $crate::cpu::detected(),
-                const { $crate::cpu::Features::all(REQUIRED) },
+                const { verified_garbage_cpu::Features::all(REQUIRED) },
             )
         }
 
@@ -456,7 +459,7 @@ mod tests {
     #[test]
     fn accelerated_dispatch_requires_all_features() {
         use super::Backend;
-        use crate::cpu::{Features, feature};
+        use verified_garbage_cpu::{Features, feature};
         let required = Features(feature::SHA3 | feature::SHA2);
         assert_eq!(Backend::select(Features(0), required), Backend::Scalar);
         assert_eq!(

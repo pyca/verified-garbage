@@ -45,8 +45,9 @@ use crate::arch::dsa::{
 };
 #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::{Int, zeroize};
+use verified_garbage_cpu::Features;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {

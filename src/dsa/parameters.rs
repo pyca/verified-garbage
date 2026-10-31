@@ -15,7 +15,8 @@ use alloc::{vec, vec::Vec};
 
 use super::{Error, Secret};
 use crate::arch::dsa::*;
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
+use verified_garbage_cpu::Features;
 
 /// Generated probable-prime DSA domain parameters, encoded big-endian.
 #[derive(Clone, Debug)]

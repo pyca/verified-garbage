@@ -10,7 +10,9 @@
 ))]
 
 #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
+use verified_garbage_cpu::Features;
 
 /// The baseline implementation, or the faster one (x86-64's `_adx`, ARMv7's
 /// `_umaal`) if the CPU has its features.
@@ -278,8 +280,8 @@ mod tests {
         let required = crate::arch::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES;
         for features in [
             Features(0),
-            Features(crate::cpu::feature::BMI2),
-            Features(crate::cpu::feature::ADX),
+            Features(verified_garbage_cpu::feature::BMI2),
+            Features(verified_garbage_cpu::feature::ADX),
         ] {
             assert_eq!(Backend::select(features, required), Backend::Baseline);
         }

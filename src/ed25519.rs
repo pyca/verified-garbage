@@ -45,12 +45,13 @@ use crate::arch::ed25519::{vg_ed25519_public_key, vg_ed25519_sign_cached};
 use crate::arch::ed25519::{vg_ed25519_public_key_expanded, vg_ed25519_sign_expanded};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ed25519::{vg_ed25519_sign_expanded_sha3, vg_ed25519_verify_sha3};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::hashes::sha512::Sha512;
 use crate::hashes::sha512::Sha512Backend;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::{MaybeUninit, size_of};
+use verified_garbage_cpu::Features;
 
 /// The field multiplications of the complete operations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -381,7 +382,8 @@ mod tests {
     use crate::arch::ed25519::{
         VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES, VG_ED25519_VERIFY_SHA3_FEATURES,
     };
-    use crate::cpu::{Features, NAMES};
+    use crate::cpu::NAMES;
+    use verified_garbage_cpu::Features;
 
     /// Every feature set selecting SHA-512's optimized backend also supports
     /// each complete Ed25519 operation that uses that backend.
@@ -414,7 +416,7 @@ mod x86_64_tests {
         VG_ED25519_VERIFY_SHANI_FEATURES, VG_ED25519_VERIFY_SHANI_IFMA_FEATURES,
     };
     use crate::cpu::NAMES;
-    use crate::cpu::feature;
+    use verified_garbage_cpu::feature;
 
     /// The CPU features of the three operations with SHA-512's backend `s`
     /// and the field multiplications `f`.
