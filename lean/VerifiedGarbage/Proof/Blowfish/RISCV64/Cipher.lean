@@ -37,24 +37,52 @@ theorem combine_run (u : State) {j : Nat} (hj : j < 4) :
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     brun [combine] <;> simp only [lo_xor, lo_add, BitVec.or_self]
 
+/-- What a run of `Keep (r :: rs)` that leaves `r` as it was keeps. -/
+theorem keep_restore {r : Reg} {rs : List Reg} {s t : State} (h : Keep (r :: rs) s t)
+    (hr : t.gpr r = s.gpr r) : Keep rs s t :=
+  ⟨fun r' h' => by
+    by_cases e : r' = r
+    · rw [e]; exact hr
+    · exact h.1 r' (by simp only [List.mem_cons, not_or]; exact ⟨e, h'⟩), h.2⟩
+
+/-- The registers F writes, with the schedule pointer, which it moves and
+restores. -/
+def fRegs7 : List Reg := .a7 :: fRegs
+
 /-- S-box `j`'s lookup, then its accumulation, from `fAcc … (j - 1)` (or
-anything, for `j = 0`) in `a5`. -/
-theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs s₀ u)
-    (hm : u.mem = s₀.mem) (h7 : 0 < j → lo (u.gpr .a5) = fAcc (scheduleAt s₀.mem (s₀.gpr .a7))
+anything, for `j = 0`) in `a5`, with `sch` at S-box `j`. -/
+theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs7 s₀ u)
+    (hm : u.mem = s₀.mem) (h7 : u.gpr .a7 = s₀.gpr .a7 + BitVec.ofNat 64 (1024 * j))
+    (hp : 0 < j → lo (u.gpr .a5) = fAcc (scheduleAt s₀.mem (s₀.gpr .a7))
       (lo (s₀.gpr .a3)) (j - 1)) {Q : State → Prop}
     (hQ : ∀ t, lo (t.gpr .a5) = fAcc (scheduleAt s₀.mem (s₀.gpr .a7)) (lo (s₀.gpr .a3)) j →
-      Keep fRegs s₀ t → t.mem = s₀.mem → Q t) :
+      Keep fRegs7 s₀ t → t.mem = s₀.mem → t.gpr .a7 = u.gpr .a7 → Q t) :
     WP isa (.seq (lookup j) (.block [combine j])) u Q := by
-  have Eu : LookEnv u := E.keep k (by decide)
+  have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [k.2.1, k.2.2]
+  have Eu : SchAt u (s₀.gpr .a7) := ⟨fun o h1 h2 => by rw [hrd]; exact E.rd8 o h1 h2, E.al8⟩
   apply WP.seq
-  refine WP.mono (lookup_run Eu hj) fun v ⟨v10, vk, vm⟩ => ?_
+  refine WP.mono (lookup_run Eu hj h7) fun v ⟨v10, vk, vm⟩ => ?_
   refine WP.mono (WP.keep [.a5] (combine_run v hj) (by
     rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide) rfl)
     fun t ⟨⟨t7, tm⟩, tk⟩ => hQ t ?_ ((k.trans vk).trans tk |>.mono (by decide)) (by rw [tm, vm, hm])
-  have e3 : u.gpr .a7 = s₀.gpr .a7 := k.gpr (by decide)
+      (by rw [tk.gpr (by decide), vk.gpr (by decide)])
   have e4 : u.gpr .a3 = s₀.gpr .a3 := k.gpr (by decide)
-  rw [t7, v10, hm, e3, e4, vk.gpr (by decide)]
-  exact fAcc_step _ _ hj _ h7
+  rw [t7, v10, hm, e4, vk.gpr (by decide)]
+  exact fAcc_step _ _ hj _ hp
+
+theorem nextBox_run (u : State) :
+    WP isa (.block [nextBox]) u fun t => t.gpr .a7 = u.gpr .a7 + BitVec.ofNat 64 1024 ∧ t.mem = u.mem := by
+  brun [nextBox]
+
+/-- `nextBox` after the lookup of S-box `j < 3`, and what it keeps. -/
+theorem next_run {s₀ : State} {j : Nat} {u : State} (k : Keep fRegs7 s₀ u)
+    (h7 : u.gpr .a7 = s₀.gpr .a7 + BitVec.ofNat 64 (1024 * j)) :
+    WP isa (.block [nextBox]) u fun t => Keep fRegs7 s₀ t ∧ t.mem = u.mem ∧
+      t.gpr .a7 = s₀.gpr .a7 + BitVec.ofNat 64 (1024 * (j + 1)) ∧ t.gpr .a5 = u.gpr .a5 := by
+  refine WP.mono (WP.keep [.a7] (nextBox_run u) (by rfl) rfl) fun t ⟨⟨t7, tm⟩, tk⟩ =>
+    ⟨(k.trans tk).mono (by decide), tm, ?_, tk.gpr (by decide)⟩
+  rw [t7, h7, Offset.add_add]
+  congr 2
 
 theorem f_run {s : State} (E : LookEnv s) :
     WP isa Impl.Blowfish.RISCV64.f s fun t =>
@@ -62,14 +90,32 @@ theorem f_run {s : State} (E : LookEnv s) :
         Keep fRegs s t ∧ t.mem = s.mem := by
   unfold Impl.Blowfish.RISCV64.f
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 0) (by decide) (Keep.refl _ _) rfl (fun h => absurd h (by decide))
-    fun t0 h0 k0 m0 => ?_
+  refine step_run E (j := 0) (by decide) (Keep.refl _ _) rfl (by simp) (fun h => absurd h (by decide))
+    fun t0 h0 k0 m0 e0 => ?_
+  apply WP.seq
+  refine WP.mono (next_run (j := 0) k0 (by rw [e0]; simp)) fun u0 ⟨k0', m0', e0', a0⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 1) (by decide) k0 m0 (fun _ => h0) fun t1 h1 k1 m1 => ?_
+  refine step_run E (j := 1) (by decide) k0' (m0'.trans m0) e0' (fun _ => by rw [a0]; exact h0)
+    fun t1 h1 k1 m1 e1 => ?_
+  apply WP.seq
+  refine WP.mono (next_run (j := 1) k1 (by rw [e1, e0'])) fun u1 ⟨k1', m1', e1', a1⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 2) (by decide) k1 m1 (fun _ => h1) fun t2 h2 k2 m2 => ?_
-  refine step_run E (j := 3) (by decide) k2 m2 (fun _ => h2) fun t3 h3 k3 m3 => ?_
-  exact ⟨by rw [h3, fAcc_three], k3, m3⟩
+  refine step_run E (j := 2) (by decide) k1' (m1'.trans m1) e1' (fun _ => by rw [a1]; exact h1)
+    fun t2 h2 k2 m2 e2 => ?_
+  apply WP.seq
+  refine WP.mono (next_run (j := 2) k2 (by rw [e2, e1'])) fun u2 ⟨k2', m2', e2', a2⟩ => ?_
+  apply WP.reassoc; apply WP.seq
+  refine step_run E (j := 3) (by decide) k2' (m2'.trans m2) e2' (fun _ => by rw [a2]; exact h2)
+    fun t3 h3 k3 m3 e3 => ?_
+  have back : WP isa (.block [.addi sch sch (-2048), .addi sch sch (-1024)]) t3 fun t =>
+      t.gpr .a7 = t3.gpr .a7 - BitVec.ofNat 64 2048 - BitVec.ofNat 64 1024 ∧ t.mem = t3.mem := by
+    brun
+  refine WP.mono (WP.keep [.a7] back (by rfl) rfl) fun t ⟨⟨t7, tm⟩, tk⟩ => ?_
+  have e7 : t.gpr .a7 = s.gpr .a7 := by
+    rw [t7, e3, e2', BitVec.sub_sub, BitVec.ofNat_add_ofNat]
+    exact BitVec.add_sub_cancel _ _
+  refine ⟨?_, keep_restore ((k3.trans tk).mono (by decide)) e7, tm.trans m3⟩
+  rw [tk.gpr (by decide), h3, fAcc_three]
 
 /-! ## Rounds -/
 

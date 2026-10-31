@@ -7,20 +7,27 @@ public import VerifiedGarbage.Impl.Blowfish.Table
 /-!
 # Blowfish on RISC-V
 
-The algorithm of the PPC64LE implementation (`Impl/Blowfish/PPC64LE.lean`):
-one block at a time in general-purpose registers, and an S-box lookup reads
+One block at a time in general-purpose registers, and an S-box lookup reads
 every entry of the S-box's four byte planes, a row of eight entries of each
-plane (a doubleword, `ld`) at a time. A row's mask is all ones in the byte
-lane of the index's entry if the row holds it (`(q - 8k) >> 3` is zero, for
-the index `q`), else zero, made without a comparison: `(v - 1) >> 63`,
-arithmetically, is all ones exactly when `v < 2 ^ 63` is zero. The masked
-doublewords are ORed into one accumulator, plane `b`'s rotated left by `8b`.
-The accumulator then holds byte `b` of the entry in lane `L + b` (mod 8), for
-the index's lane `L`, and rotating it right by `8L`, by three rotations
-selected by masks of `L`'s bits, gives the entry in its low word. Every
-address and branch is a public counter or pointer; the index is only ever
-an operand of the masks' arithmetic. There are no rotate instructions: a
-rotation is two shifts and an XOR.
+plane (a doubleword, `ld`) at a time, with the 32 rows unrolled. A row's
+mask is all ones if the row holds the index's entry, else zero, made
+without a comparison from the index's row `q` (the index shifted right by
+three): `q XOR k` is zero exactly for row `k`, and less one it is negative,
+so shifted right arithmetically by 63 it is all ones, exactly then. Each
+plane has its own accumulator, into which its masked doublewords are ORed,
+so that after the last row it is the plane's doubleword of the index's row.
+Plane `b`'s byte of the entry is its byte in the index's lane `L` (the index
+mod 8): the accumulator times `2 ^ (56 - 8L)` has that byte on top, which a
+shift right by 56 brings down, and a shift left by `8b` puts in place. The
+multiplier is a product of three factors, `2 ^ (8 * 2 ^ c)` or 1 as bit `c`
+of `L` is clear or set, each made from its bit by shifts. Every address and
+branch is a public counter or pointer; the index is only ever an operand of
+the masks' and the multiplications' arithmetic (`mul`'s latency does not
+depend on its operands, see `TCB/RISCV64/Isa.lean`).
+
+The offsets of the loads (below 2048) reach only one S-box from a base, so
+F moves the schedule's pointer `sch` from each S-box to the next, by 1024,
+and back after the last.
 
 The model faults on misaligned accesses, and the contracts state no
 alignment for the schedule, so the code keeps it in a frame of 4176 bytes
@@ -36,14 +43,16 @@ word shifts read the low word, word stores store it, and the index is taken
 from it. The accumulator is a doubleword until the lookup's end, when its
 low word is the entry.
 
-Registers: the frame (the schedule) at `a7` (`sch`), the halves in `a3` (xL)
-and `a4` (xR), F in `a5`, the P-array pointer in `a6`; during a lookup, the
-index less four times the rows read so far in `t1` (`q`), the accumulator in
-`t2`, the row's mask in `t3`, temporaries in `t4` and `t5`, the index's lane
-mask in `t6` and the row pointer in `t0`. ECB keeps the data pointer in `a1`
-and the blocks left in `a2`; key expansion, the schedule's pointer in `a2`,
-the pointer to the next entries in `a1` and the encryptions left in `a0`.
-Only temporaries and argument registers are used.
+Registers: the frame (the schedule) at `a7` (`sch`, at S-box `j` during
+its lookup), the halves in `a3` (xL) and `a4` (xR), F in `a5`, the P-array
+pointer in `a6`; during a lookup, the index's row in `t1` (`q`), the row's
+mask in `t3`, a temporary in `t4` and the accumulators of planes 0 to 3 in
+`t2` (`acc`, which ends with the entry), `t5`, `t6` and `t0`; at the end, the
+multiplier's factors in `t4` and `t1`, and the complemented index (shifted
+to the top) in `t3`. ECB keeps the data pointer in `a1` and the blocks left
+in `a2`; key expansion, the schedule's pointer in `a2`, the pointer to the
+next entries in `a1` and the encryptions left in `a0`. Only temporaries and
+argument registers are used.
 -/
 
 @[expose] public section
@@ -62,8 +71,6 @@ def qReg : Reg := .t1
 def acc : Reg := .t2
 def mReg : Reg := .t3
 def tmp : Reg := .t4
-def tmp2 : Reg := .t5
-def lane : Reg := .t6
 def rowPtr : Reg := .t0
 def ptr : Reg := .a1
 def cnt : Reg := .a2
@@ -76,53 +83,65 @@ def frameBytes : Nat := 4176
 
 /-! ## Lookups -/
 
-/-- `q` := the byte of xL that indexes S-box `j`: byte `3 - j`, shifted to
-the top of the doubleword and back. -/
+/-- The accumulator of plane `b`. -/
+def accOf : Nat → Reg
+  | 0 => .t2
+  | 1 => .t5
+  | 2 => .t6
+  | _ => .t0
+
+/-- `q` := the row of the byte of xL that indexes S-box `j`: byte `3 - j`,
+shifted to the top of the doubleword, and back but for its lane's bits. -/
 def index (j : Nat) : List Instr :=
-  [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 56]
+  [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 59]
 
-/-- `x` rotated right by `a` (as a doubleword) if bit `c` of `q` is set:
-`x := x XOR ((rotr x a XOR x) AND m)`, the mask `m` all ones if the bit is
-set (bit `c` shifted to the top, then arithmetically down). -/
-def condRot (x : Reg) (c a : Nat) : List Instr :=
-  [.shift .srl .d tmp x a, .shift .sll .d mReg x (64 - a), .logic .xor tmp tmp mReg,
-   .logic .xor tmp tmp x, .shift .sll .d mReg qReg (63 - c), .shift .sra .d mReg mReg 63,
-   .logic .and tmp tmp mReg, .logic .xor x x tmp]
+/-- Row `k`'s mask: all ones if `q` is `k` (`q XOR k` is zero, so less one
+it is negative), else zero. -/
+def rowMask (k : Nat) : List Instr :=
+  [.logicImm .xor mReg qReg k, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63]
 
-/-- The lane mask `0xFF <<< 8L` for the index's lane `L` (of a doubleword),
-the accumulator and the row pointer, at S-box `j` (`sch + 1024 j`, in two
-steps). -/
-def lookupStart (j : Nat) : List Instr :=
-  [.li lane 255] ++ condRot lane 0 56 ++ condRot lane 1 48 ++ condRot lane 2 32 ++
-    [.li acc 0, .addi rowPtr sch (512 * j : Nat), .addi rowPtr rowPtr (512 * j : Nat)]
+/-- Plane `b`'s doubleword of row 0, masked, into its accumulator. -/
+def firstPlane (b : Nat) : List Instr :=
+  [.load .d (accOf b) sch (256 * b), .logic .and (accOf b) (accOf b) mReg]
 
-/-- Plane `b`'s doubleword of the row, masked, into the accumulator, rotated
-left by `8b`. -/
-def plane (b : Nat) : List Instr :=
-  if b = 0 then [.load .d tmp rowPtr 0, .logic .and tmp tmp mReg, .logic .or acc acc tmp]
-  else [.load .d tmp rowPtr (256 * b), .logic .and tmp tmp mReg,
-    .shift .srl .d tmp2 tmp (64 - 8 * b), .shift .sll .d tmp tmp (8 * b), .logic .xor tmp tmp tmp2,
-    .logic .or acc acc tmp]
+/-- Plane `b`'s doubleword of row `k`, masked, ORed into its accumulator. -/
+def plane (k b : Nat) : List Instr :=
+  [.load .d tmp sch (256 * b + 8 * k), .logic .and tmp tmp mReg, .logic .or (accOf b) (accOf b) tmp]
 
-/-- The row's mask: all ones in the index's lane if `q >> 3` is zero. -/
-def rowMask : List Instr :=
-  [.shift .srl .d mReg qReg 3, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63,
-   .logic .and mReg mReg lane, .addi qReg qReg (-8)]
+/-- Row 0 (eight entries) of the S-box at `sch`: the mask and the four
+planes, which start the accumulators. -/
+def row0 : List Instr := rowMask 0 ++ firstPlane 0 ++ firstPlane 1 ++ firstPlane 2 ++ firstPlane 3
 
-/-- One row (eight entries) of S-box `j`: the mask, the four planes, and the
-next row; `tmp` is zero after the last. -/
-def row (j : Nat) : List Instr :=
-  rowMask ++ plane 0 ++ plane 1 ++ plane 2 ++ plane 3 ++
-    [.addi rowPtr rowPtr 8, .sub tmp rowPtr sch, .addi tmp tmp (-(512 * j : Nat)),
-     .addi tmp tmp (-(512 * j + 256 : Nat))]
+/-- Row `k > 0`: the mask and the four planes. -/
+def row (k : Nat) : List Instr := rowMask k ++ plane k 0 ++ plane k 1 ++ plane k 2 ++ plane k 3
 
-/-- The accumulator rotated right by `8L`. -/
-def lookupEnd : List Instr := condRot acc 0 8 ++ condRot acc 1 16 ++ condRot acc 2 32
+/-- Rows `0, …, n`. -/
+def rows (n : Nat) : List Instr := row0 ++ (List.range n).flatMap fun i => row (i + 1)
 
-/-- S-box `j` of xL's byte `3 - j`, into the accumulator's low word. -/
-def lookup (j : Nat) : Prog isa :=
-  .seq (.block (index j ++ lookupStart j))
-    (.seq (.loop (.block (row j)) (.nonzero tmp)) (.block lookupEnd))
+/-- `d := 2 ^ (8 * 2 ^ c)` if bit `c` of the lane (bit `56 + c` of `t3`'s
+complement) is clear, else 1: the bit shifted to the top, arithmetically
+down, logically down to `8 * 2 ^ c` ones, plus one. -/
+def factor (d : Reg) (c : Nat) : List Instr :=
+  [.shift .sll .d d mReg (7 - c), .shift .sra .d d d 63, .shift .srl .d d d (64 - 8 * 2 ^ c), .addi d d 1]
+
+/-- Plane `b`'s byte of the entry from its accumulator: the accumulator
+times `2 ^ (56 - 8L)` (in `q`), whose top byte is lane `L`'s, shifted down
+to byte `b`. -/
+def pick (b : Nat) : List Instr :=
+  [.mul (accOf b) (accOf b) qReg, .shift .srl .d (accOf b) (accOf b) 56] ++
+    if b = 0 then [] else [.shift .sll .d (accOf b) (accOf b) (8 * b)]
+
+/-- The entry from the accumulators, into the low word of `acc`: `q :=
+2 ^ (56 - 8L)` for the index's lane `L`, a product of three factors, then
+each plane's byte and their OR. -/
+def extract (j : Nat) : List Instr :=
+  [.shift .sll .d mReg xL (32 + 8 * j), .logicImm .xor mReg mReg (-1)] ++ factor tmp 0 ++ factor qReg 1 ++
+    [.mul tmp tmp qReg] ++ factor qReg 2 ++ [.mul qReg tmp qReg] ++ pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
+    [.logic .or acc acc (accOf 1), .logic .or (accOf 2) (accOf 2) (accOf 3), .logic .or acc acc (accOf 2)]
+
+/-- S-box `j`, at `sch` (which F moves there), of xL's byte `3 - j`, into
+the accumulator's low word. -/
+def lookup (j : Nat) : Prog isa := .block (index j ++ rows 31 ++ extract j)
 
 /-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄. -/
 def combine (j : Nat) : Instr :=
@@ -130,10 +149,17 @@ def combine (j : Nat) : Instr :=
   else if j = 2 then .logic .xor fReg fReg acc
   else .add fReg fReg acc
 
-/-- F of xL into `fReg`'s low word. -/
+/-- `sch` to the next S-box. -/
+def nextBox : Instr := .addi sch sch 1024
+
+/-- F of xL into `fReg`'s low word: `sch` moves to each S-box in turn, and
+back. -/
 def f : Prog isa :=
-  .seq (lookup 0) (.seq (.block [combine 0]) (.seq (lookup 1) (.seq (.block [combine 1])
-    (.seq (lookup 2) (.seq (.block [combine 2]) (.seq (lookup 3) (.block [combine 3])))))))
+  .seq (lookup 0) (.seq (.block [combine 0]) (.seq (.block [nextBox])
+    (.seq (lookup 1) (.seq (.block [combine 1]) (.seq (.block [nextBox])
+      (.seq (lookup 2) (.seq (.block [combine 2]) (.seq (.block [nextBox])
+        (.seq (lookup 3) (.seq (.block [combine 3])
+          (.block [.addi sch sch (-2048), .addi sch sch (-1024)])))))))))))
 
 /-! ## Rounds
 
