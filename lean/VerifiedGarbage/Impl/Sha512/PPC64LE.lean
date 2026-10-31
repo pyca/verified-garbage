@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.Sha2.PPC64LE
 
 /-!
 # SHA-512 compression function: PPC64LE implementation
@@ -65,26 +65,9 @@ def movImm64 (d : Reg) (v : BitVec 64) : List Instr :=
   [.lis d (v.extractLsb' 48 16), .ori d d (v.extractLsb' 32 16), .lsl d d 32,
    .oris d d (v.extractLsb' 16 16), .ori d d (v.extractLsb' 0 16)]
 
-/-- Each vector holds two consecutive schedule words. -/
-def pairs : List VReg := [.v0, .v1, .v2, .v3, .v16, .v17, .v18, .v19]
+export VG.Impl.Sha2.PPC64LE (pairs preg)
 
-def preg (n : Nat) : VReg := pairs.getD (n % 8) .v0
-
-/-- Generate two schedule words at once, retaining all sixteen words in vectors. -/
-def schedulePair (n : Nat) : List Instr :=
-  let p := preg n
-  if n < 8 then [
-    .li .r0 (16*n), .loadRev .d T0 .r4 .r0,
-    .li .r0 (16*n+8), .loadRev .d T1 .r4 .r0,
-    .mtvsrd p T0, .mtvsrd .v12 T1,
-    .vop (.sldoi p p p 8), .vop (.sldoi p p .v12 8)]
-  else [
-    .vop (.sha512 .v12 (preg (n+7)) false 10),
-    .vop (.sldoi .v13 p (preg (n+1)) 8),
-    .vop (.sha512 .v13 .v13 false 0),
-    .vop (.sldoi .v14 (preg (n+4)) (preg (n+5)) 8),
-    .vop (.add true .v12 .v12 p), .vop (.add true .v12 .v12 .v13),
-    .vop (.add true p .v12 .v14)]
+def schedulePair (n : Nat) : List Instr := VG.Impl.Sha2.PPC64LE.schedulePair true n
 
 /-- The odd word was computed with its predecessor. -/
 def schedule (t : Nat) : List Instr :=

@@ -218,7 +218,7 @@ theorem pair_load_ok (n : Nat) (hn : n < 8) (M : Block) (s : State) (bp : Addr)
     fun r hr => pair_work_disjoint r hr _ (preg_mem n)
   have hpair : ∀ r ∈ pairs, r ≠ .v12 := fun r hr => (pair_temps_disjoint r hr).1
   apply WP.of_runBlock
-  simp only [schedulePair, hn, ite_true, T0, T1, PairPost]
+  simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, hn, ite_true, T0, T1, PairPost]
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     exec_li (show 16*n < 2^15 by omega), exec_li (show 16*n+8 < 2^15 by omega),
     exec_loadRev_d (show (Reg.r4 : Reg) ≠ .r0 by decide), exec_sldoi8, reduceExec, isa,
@@ -267,7 +267,7 @@ theorem pair_compute_ok (n : Nat) (hn : 8 ≤ n) (M : Block) (s : State)
     fun r hr => pair_work_disjoint r hr _ (preg_mem n)
   have hp : ∀ r ∈ pairs, r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 := pair_temps_disjoint
   apply WP.of_runBlock
-  simp only [schedulePair, show ¬n < 8 by omega, ite_false, PairPost]
+  simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, show ¬n < 8 by omega, ite_false, PairPost]
   generalize preg n = a at *
   generalize preg (n+1) = b at *
   generalize preg (n+4) = c at *
