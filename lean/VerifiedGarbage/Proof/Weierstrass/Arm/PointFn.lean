@@ -104,8 +104,8 @@ the memory changed only at `O` and in the own working space, and `O`'s
 coordinates below the prime, standing for what `ops` computes from what the
 slots stand for. -/
 theorem fnOps_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
-    {dbl : Bool} {ops : List FOp} (hO : OpsOk ops) {s : State} (hp : PrePt S.k S.m dbl s) :
-    WP isa (Impl.Weierstrass.Arm.Point.fnOps S dbl ops) s fun s' => abiPreserved s s' ∧
+    {dbl : Bool} {ops : List FOp} (hO : OpsOk ops) {s : State} (hp : PrePt S.k S.m dbl s) {u : Bool} :
+    WP isa (Impl.Weierstrass.Arm.Point.fnOps S dbl ops u) s fun s' => abiPreserved s s' ∧
       Outs (State.addr (s.gpr .r0)) [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
         (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
       s'.gpr .r12 = s.gpr .r0 ∧
@@ -165,8 +165,8 @@ theorem fnOps_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.
 /-- `fnOps_ok` for the complete addition: `O`'s coordinates stand for
 `rcbAdd` of what the constants and the operands stand for. -/
 theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
-    {dbl : Bool} {s : State} (hp : PrePt S.k S.m dbl s) :
-    WP isa (Impl.Weierstrass.Arm.Point.fn S dbl) s fun s' => abiPreserved s s' ∧
+    {dbl : Bool} {s : State} (hp : PrePt S.k S.m dbl s) {u : Bool} :
+    WP isa (Impl.Weierstrass.Arm.Point.fn S dbl u) s fun s' => abiPreserved s s' ∧
       Outs (State.addr (s.gpr .r0)) [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
         (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
       s'.gpr .r12 = s.gpr .r0 ∧

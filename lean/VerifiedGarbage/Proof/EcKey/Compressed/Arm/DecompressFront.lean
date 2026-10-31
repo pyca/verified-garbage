@@ -69,7 +69,7 @@ theorem decompressFront_ok {c : Cfg} (hc : CfgOk c) {s₀ : State}
     (h : ∀ s, DecompressFront c s₀ s → WP isa rest s Q) :
     WP isa (.seq (.block (c.setupWith Impl.EcKey.Compressed.Arm.args))
       (.seq (.block (Impl.EcKey.Compressed.Arm.decompressPeer c))
-      (.seq (Impl.Weierstrass.Arm.fprog c.SP (Impl.EcKey.Compressed.Arm.rhsOps c)) rest))) s₀ Q := by
+      (.seq (Impl.Weierstrass.Arm.fprog c.SP (Impl.EcKey.Compressed.Arm.rhsOps c) c.umaal) rest))) s₀ Q := by
   have h7 := hc.n10
   have h0 := hc.n0
   have hd : Region.Disjoint ⟨ptr s₀ .r1, 1 + c.C.len⟩ ⟨ptr s₀ .r2, size⟩ :=

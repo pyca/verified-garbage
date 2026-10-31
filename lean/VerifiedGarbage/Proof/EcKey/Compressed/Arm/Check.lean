@@ -68,7 +68,7 @@ theorem checkPoly_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
     (hy : sv c base s QY < c.C.p) (hr : sv c base s W2 < c.C.p)
     (hr2 : sv c base s R2P = c.R * c.R % c.C.p) :
     WP isa (Impl.Weierstrass.Arm.fprog c.SP
-      (Impl.EcKey.Compressed.Arm.checkRootOps c)) s (CheckPolyPost c base s) := by
+      (Impl.EcKey.Compressed.Arm.checkRootOps c) c.umaal) s (CheckPolyPost c base s) := by
   have h7 := hc.n10
   have hL : Lay c.MP' size (· ∈ checkSlots.map c.sl) := lay_map hc rfl rfl rfl (by decide)
   have hW : WkOk c.MP' size c.wk (· ∈ checkSlots.map c.sl) := by
@@ -149,7 +149,7 @@ theorem checkRoot_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have hY := sl_le c h7 (i := QY) (by decide)
   have hD := sl_le c h7 (i := D) (by decide)
   change WP isa (.seq
-    (Impl.Weierstrass.Arm.fprog c.SP (Impl.EcKey.Compressed.Arm.checkRootOps c))
+    (Impl.Weierstrass.Arm.fprog c.SP (Impl.EcKey.Compressed.Arm.checkRootOps c) c.umaal)
     (.block (Impl.EcKey.Compressed.Arm.checkRootChecks c))) s _
   refine WP.seq (WP.mono (checkPoly_ok hc hs hfar hM hy hr hr2) fun s₁ I => ?_)
   have flag₁ : flagW c base s₁ = mask32 P := by

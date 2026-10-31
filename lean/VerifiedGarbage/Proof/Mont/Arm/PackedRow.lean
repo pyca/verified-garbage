@@ -148,4 +148,98 @@ abbrev rowClob : List Reg := [.r0, .r2, .r3, .r5, .r6, .r7, .r8]
   rw [m4] at outside
   exact (outside.mono (Nat.le_refl _) (by omega_arith)).trans (out.mono (by omega_arith) (by omega_arith))
 
+def stepsU (acc : Nat) (rb : Reg) (d k : Nat) : List Instr :=
+  (List.range k).flatMap (stepU acc rb d)
+
+/-- `steps_ok` for the steps with `umaal`, whose scalar is r2. -/
+theorem stepsU_ok {s : State} {base : Addr} {size acc src K d n : Nat} {rb : Reg}
+    (hs : Scr s base size) (hp : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K)
+    (hd : K + d = src) (hrb : rb ∉ stepClob)
+    (ha : acc + 4 * n ≤ size) (hb : src + 4 * n ≤ size)
+    (sep : acc + 4 * n ≤ src ∨ src + 4 * n ≤ acc) :
+    ∀ k, k ≤ n → WP isa (.block (stepsU acc rb d k)) s fun t =>
+      Outside base acc (4 * k) s.mem t.mem ∧
+      val32 t.mem base acc k + 2 ^ (32 * k) * (t.gpr .r3).toNat =
+        val32 s.mem base acc k + (s.gpr .r2).toNat * val32 s.mem base src k + (s.gpr .r3).toNat ∧
+      Rest stepClob s t
+  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by simp [val32], Rest.refl _ _⟩
+  | k + 1, hk => by
+    have hn := hs.nowrap
+    have eq : stepsU acc rb d (k + 1) = stepsU acc rb d k ++ stepU acc rb d k := by
+      simp only [stepsU, List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    rw [eq]
+    refine VG.Proof.X25519.Arm.WP.append (stepsU_ok hs hp hd hrb ha hb sep k (by omega_arith))
+      fun u ⟨out, val, rest⟩ => ?_
+    have hu := hs.of_rest rest (by decide)
+    have pu : u.gpr rb = u.gpr .r12 + BitVec.ofNat 32 K := by
+      rw [rest.gpr _ hrb, rest.gpr _ (by decide)]; exact hp
+    have x2 : u.gpr .r2 = s.gpr .r2 := rest.gpr _ (by decide)
+    refine WP.mono (stepU_ok hu pu hd (by omega_arith) (by omega_arith)) fun t ⟨mem, value, keep⟩ => ?_
+    have oldA := out.w32 (d := acc + 4 * k) (by omega_arith) (by omega_arith)
+    have oldB := out.w32 (d := src + 4 * k) (by omega_arith) (by omega_arith)
+    rw [oldA, oldB, x2] at value
+    have wr := writeW32_outside u.mem base (d := acc + 4 * k) (t.gpr .r5) (by omega_arith)
+    rw [← mem] at wr
+    have low := wr.val32 (d := acc) (k := k) (by omega_arith) (by omega_arith)
+    have top : w32 t.mem base (acc + 4 * k) = (t.gpr .r5).toNat := by rw [mem, w32_write_self]
+    refine ⟨(out.mono (Nat.le_refl _) (by omega_arith)).trans (wr.mono (by omega_arith) (by omega_arith)), ?_, rest.trans keep⟩
+    rw [val32_succ, val32_succ, val32_succ, low, top, pow32_succ]
+    generalize 2 ^ (32 * k) = P at *
+    grind
+
+/-- `row_ok` for the row with `umaal`. -/
+theorem rowU_ok {s : State} {base : Addr} {size acc src K d n : Nat} {rb : Reg}
+    (hs : Scr s base size) (hp : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K)
+    (hd : K + d = src) (hrb : rb ∉ rowClob)
+    (ha : acc + 4 * (n + 2) ≤ size) (hb : src + 4 * n ≤ size)
+    (sep : acc + 4 * (n + 2) ≤ src ∨ src + 4 * n ≤ acc)
+    (fit : val32 s.mem base acc (n + 2) + (s.gpr .r2).toNat * val32 s.mem base src n < 2 ^ (32 * (n + 2))) :
+    WP isa (.block (rowU acc rb d n)) s fun t =>
+      val32 t.mem base acc (n + 2) = val32 s.mem base acc (n + 2) +
+        (s.gpr .r2).toNat * val32 s.mem base src n ∧
+      Outside base acc (4 * (n + 2)) s.mem t.mem ∧ Rest rowClob s t := by
+  have hn := hs.nowrap
+  simp only [rowU, List.cons_append, List.nil_append]
+  refine wp_mov (op2_imm (by decide)) fun s4 u4 => ?_
+  have k4 : Rest rowClob s s4 := u4.rest (by simp)
+  have m4 : s4.mem = s.mem := u4.mem
+  have p4 : s4.gpr rb = s4.gpr .r12 + BitVec.ofNat 32 K := by
+    rw [k4.gpr _ hrb, k4.gpr _ (by decide)]; exact hp
+  have x4 : s4.gpr .r2 = s.gpr .r2 := u4.other _ (by decide)
+  change WP isa (.block (stepsU acc rb d n ++ carry acc n)) s4 _
+  refine VG.Proof.X25519.Arm.WP.append (stepsU_ok (hs.of_rest k4 (by decide)) p4 hd
+    (fun h => hrb ((by decide : ∀ r ∈ stepClob, r ∈ rowClob) rb h)) (by omega_arith) hb (by omega_arith)
+    n (Nat.le_refl _)) fun u ⟨outside, value, rest⟩ => ?_
+  have tops := outside.val32 (d := acc + 4 * n) (k := 2) (by omega_arith) (by omega_arith)
+  rw [u4.gpr, show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero, m4, x4] at value
+  have total : val32 u.mem base acc n + 2 ^ (32 * n) *
+      (val32 u.mem base (acc + 4 * n) 2 + (u.gpr .r3).toNat) =
+      val32 s.mem base acc (n + 2) + (s.gpr .r2).toNat * val32 s.mem base src n := by
+    rw [tops, m4, val32_append s.mem base acc n 2]
+    generalize 2 ^ (32 * n) = P at *
+    grind
+  have topfit : val32 u.mem base (acc + 4 * n) 2 + (u.gpr .r3).toNat < 2 ^ 64 := by
+    rw [← total, VG.Proof.Bignum.Arm.pow32_addtwo] at fit
+    exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) fit)
+  have k : Rest rowClob s u := k4.trans (rest.mono (by simp))
+  refine WP.mono (carry_ok (hs.of_rest k (by decide)) ha topfit) fun t ⟨out, val, keep⟩ => ?_
+  refine ⟨by rw [val]; exact total, ?_, k.trans (keep.mono (by simp))⟩
+  rw [m4] at outside
+  exact (outside.mono (Nat.le_refl _) (by omega_arith)).trans (out.mono (by omega_arith) (by omega_arith))
+
+/-- `row_ok` for the row of either kind. -/
+theorem rowWith_ok (u : Bool) {s : State} {base : Addr} {size acc src K d n : Nat} {rb : Reg}
+    (hs : Scr s base size) (hp : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K)
+    (hd : K + d = src) (hrb : rb ∉ rowClob)
+    (ha : acc + 4 * (n + 2) ≤ size) (hb : src + 4 * n ≤ size)
+    (sep : acc + 4 * (n + 2) ≤ src ∨ src + 4 * n ≤ acc)
+    (fit : val32 s.mem base acc (n + 2) + (s.gpr .r2).toNat * val32 s.mem base src n < 2 ^ (32 * (n + 2))) :
+    WP isa (.block (rowWith u acc rb d n)) s fun t =>
+      val32 t.mem base acc (n + 2) = val32 s.mem base acc (n + 2) +
+        (s.gpr .r2).toNat * val32 s.mem base src n ∧
+      Outside base acc (4 * (n + 2)) s.mem t.mem ∧ Rest rowClob s t := by
+  cases u
+  · exact row_ok hs hp hd hrb ha hb sep fit
+  · exact rowU_ok hs hp hd hrb ha hb sep fit
+
 end VG.Proof.Mont.Arm.Packed

@@ -117,8 +117,8 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     exact O₂
 
 theorem middle_eq (c : Cfg) : Impl.Ecdh.Arm.Cfg.middle c =
-    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
+    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.finish c))) := rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
@@ -320,7 +320,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.Arm.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r2)) (.seq (Impl.Ecdh.Arm.Cfg.validate c)
-    (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP) (Impl.Ecdh.Arm.Cfg.middle c))))) :=
+    (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP c.umaal) (Impl.Ecdh.Arm.Cfg.middle c))))) :=
   rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores

@@ -306,8 +306,8 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
     {s₀ : State} (hf₀ : Far s₀ base 8192) (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
     {a0 : Bool} (hstep : Step L C base s₀ k Q a0)
     (hbits : ∀ t < L.nbits, s₀.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
-    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInvP L wk C base size Q s₀ s j) :
-    WP isa (ladderPBody L S a0) s fun s' =>
+    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInvP L wk C base size Q s₀ s j) {u : Bool} :
+    WP isa (ladderPBody L S a0 u) s fun s' =>
       LadInvP L wk C base size Q s₀ s' (j - 1) ∧ s'.z = decide (j - 1 = 0) := by
   have hM : Mont.ModOk L.M.n C.p := by have h := hF.ok; rw [hF.k, hF.m] at h; exact h
   have hodd := ModOk.odd hM
@@ -537,8 +537,8 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
     {a0 : Bool} (ha0 : a0 = true → L.M.n ≤ 6) (hstep : Step L C base s k Q a0)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
-    (henc : encodable (BitVec.ofNat 32 L.nbits) = true) :
-    WP isa (ladderP L S a0) s fun s' => Rest powClob s s' ∧ Unch base (ladWp L wk) s.mem s'.mem ∧
+    (henc : encodable (BitVec.ofNat 32 L.nbits) = true) {u : Bool} :
+    WP isa (ladderP L S a0 u) s fun s' => Rest powClob s s' ∧ Unch base (ladWp L wk) s.mem s'.mem ∧
       ModOkW L.M size C.p s'.mem base ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by

@@ -20,7 +20,7 @@ open VG.Proof.X25519.Arm (Rest wp_ldr wp_movw wp_mul wp_dp wp_subs op2_reg op2_i
 
 abbrev roundClob : List Reg := [.r0, .r1, .r2, .r3, .r5, .r6, .r7, .r8, .r9]
 
- theorem round_ok {s : State} {base : Addr} {size acc a b i n m : Nat} {M : Mod}
+ theorem round_ok (u : Bool) {s : State} {base : Addr} {size acc a b i n m : Nat} {M : Mod}
     (hs : Scr s base size) (hMn : 2 * M.n = n)
     (pa : s.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 (a + 4 * i))
     (pb : s.gpr .r4 = s.gpr .r12 + BitVec.ofNat 32 b)
@@ -32,7 +32,7 @@ abbrev roundClob : List Reg := [.r0, .r1, .r2, .r3, .r5, .r6, .r7, .r8, .r9]
     (inverse : (m * M.minv.toNat + 1) % 2 ^ 64 = 0)
     (operand : val32 s.mem base b n < m) (bound : val32 s.mem base acc (n + 2) < 2 * m)
     :
-    WP isa (.block (round M acc)) s fun t =>
+    WP isa (.block (round M acc u)) s fun t =>
       (∃ q < 2 ^ 32, 2 ^ 32 * val32 t.mem base acc (n + 2) =
         val32 s.mem base acc (n + 2) + w32 s.mem base (a + 4 * i) * val32 s.mem base b n + q * m) ∧
       val32 t.mem base acc (n + 2) < 2 * m ∧
@@ -52,7 +52,7 @@ abbrev roundClob : List Reg := [.r0, .r1, .r2, .r3, .r5, .r6, .r7, .r8, .r9]
     rw [u1.mem, scalar]
     have f := round_fit bound x.isLt operand (by decide : 0 < 2 ^ 32) mlt
     simpa only [Nat.zero_mul, Nat.add_zero] using f
-  refine VG.Proof.X25519.Arm.WP.append (row_ok h1 pb1 (Nat.add_zero _) (by decide) ft fb sb fits1)
+  refine VG.Proof.X25519.Arm.WP.append (rowWith_ok u h1 pb1 (Nat.add_zero _) (by decide) ft fb sb fits1)
     fun s2 ⟨v2, o2, k2⟩ => ?_
   have k12 : Rest rowClob s s2 := k1.trans (k2.mono (by simp))
   have h2 := hs.of_rest k12 (by decide)
@@ -72,7 +72,7 @@ abbrev roundClob : List Reg := [.r0, .r1, .r2, .r3, .r5, .r6, .r7, .r8, .r9]
   have fits2 : val32 s6.mem base acc (n + 2) + (s6.gpr .r2).toNat * val32 s6.mem base M.mo n < 2 ^ (32 * (n + 2)) := by
     rw [mem6, mo2, v2']
     exact round_fit bound x.isLt operand (s6.gpr .r2).isLt mlt
-  refine VG.Proof.X25519.Arm.WP.append (row_ok h6 (K := 0) (by simp) (Nat.zero_add _) (by decide) ft fm sm fits2)
+  refine VG.Proof.X25519.Arm.WP.append (rowWith_ok u h6 (K := 0) (by simp) (Nat.zero_add _) (by decide) ft fm sm fits2)
     fun s7 ⟨v7, o7, k7⟩ => ?_
   have sum : val32 s7.mem base acc (n + 2) = val32 s2.mem base acc (n + 2) + (s6.gpr .r2).toNat * m := by
     rw [v7, mem6, mo2]

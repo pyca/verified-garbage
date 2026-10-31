@@ -69,8 +69,8 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     (hf₀ : Far s₀ base 8192)
     (hM₀ : ModOkW P.M size m s₀.mem base) (hB : wordsVal s₀.mem base P.base P.M.n < m)
     (hbits : ∀ t < P.nbits, s₀.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
-    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits) (hI : PowInv P wk base size m e s₀ s j) :
-    WP isa (powBody P S) s fun s' =>
+    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits) (hI : PowInv P wk base size m e s₀ s j) {u : Bool} :
+    WP isa (powBody P S u) s fun s' =>
       PowInv P wk base size m e s₀ s' (j - 1) ∧ s'.z = decide (j - 1 = 0) := by
   have hn := hI.scr.nowrap
   have hnb := hL.nbits
@@ -200,8 +200,8 @@ theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
     (hM : ModOkW P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)
     (hO : wordsVal s.mem base P.one P.M.n = 2 ^ (64 * P.M.n) % m)
     (hbits : ∀ t < P.nbits, s.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
-    (he : e < 2 ^ P.nbits) (henc : encodable (BitVec.ofNat 32 P.nbits) = true) :
-    WP isa (pow P S) s fun s' => Rest powClob s s' ∧ Unch base (powWx P wk) s.mem s'.mem ∧
+    (he : e < 2 ^ P.nbits) (henc : encodable (BitVec.ofNat 32 P.nbits) = true) {u : Bool} :
+    WP isa (pow P S u) s fun s' => Rest powClob s s' ∧ Unch base (powWx P wk) s.mem s'.mem ∧
       wordsVal s'.mem base P.acc P.M.n < m ∧
       toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ e := by

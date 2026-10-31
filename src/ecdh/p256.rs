@@ -14,6 +14,8 @@ use super::{Error, P256, PrivateKey};
 use crate::arch::ecdh_p256::vg_ecdh_p256;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p256::vg_ecdh_p256_adx;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdh_p256::vg_ecdh_p256_umaal;
 use crate::cpu::detected;
 use crate::ec::p256::{Mul, public_key};
 use crate::zeroize::zeroize;
@@ -52,6 +54,10 @@ impl PrivateKey<P256> {
             // (`Mul::select`).
             #[cfg(target_arch = "x86_64")]
             Mul::Adx => unsafe { vg_ecdh_p256_adx(&mut out, &self.d, peer, &mut scratch) },
+            // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+            // (`Mul::select`).
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => unsafe { vg_ecdh_p256_umaal(&mut out, &self.d, peer, &mut scratch) },
         };
         zeroize(&mut scratch);
         if ok == 1 {

@@ -308,13 +308,51 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
         wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
           wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
       hM (by decide) hp fun s1 e => ?_
-    refine WP.mono (Packed.mulR_ok e.scr e.mod rfl (by change 0 < n; omega)
+    refine WP.mono (Packed.mulR_ok false e.scr e.mod rfl (by change 0 < n; omega)
       (by change n < 128; omega) (opLay hM hp) e.ra e.rb e.ro
       (by change wordsVal _ _ _ n < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
     have eq : (mod n m).n = n := rfl
     rw [eq, e.val hM hp.a, e.val hM hp.b] at value
     exact ⟨keep, bound, value⟩
   · exact mulFn16_ok hM hp hb
+
+set_option exponentiation.threshold 1024 in
+/-- `mulFn_ok` for `mulFnU`. -/
+theorem mulFnU_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
+    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
+    WP isa (mulFnU n m) s fun s' => abiPreserved s s' ∧
+      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
+      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
+      s'.gpr .r12 = s.gpr .r0 := by
+  refine fn_ok (R := fun mem => wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+    wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+      wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
+    hM (by decide) hp fun s1 e => ?_
+  have := hM.n3; have := hM.n9
+  refine WP.mono (Packed.mulR_ok true e.scr e.mod rfl (by change 0 < n; omega)
+    (by change n < 128; omega) (opLay hM hp) e.ra e.rb e.ro
+    (by change wordsVal _ _ _ n < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
+  have eq : (mod n m).n = n := rfl
+  rw [eq, e.val hM hp.a, e.val hM hp.b] at value
+  exact ⟨keep, bound, value⟩
+
+/-- `mulFn_ok` for `mulFnWith u`. -/
+theorem mulFnWith_ok (u : Bool) {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
+    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
+    WP isa (mulFnWith u n m) s fun s' => abiPreserved s s' ∧
+      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
+      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
+      s'.gpr .r12 = s.gpr .r0 := by
+  cases u
+  · exact mulFn_ok hM hp hb
+  · exact mulFnU_ok hM hp hb
 
 /-- `vg_<curve>_add_mod_<p|n>`: `[o] = [a] + [b] mod m`. -/
 theorem addFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)

@@ -2,7 +2,8 @@
 //! HMAC-SHA-384 (`vg_ecdsa_p256_<hash>_sign`, which calls
 //! `vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
 //! verification (`vg_ecdsa_p256_verify`), each with BMI2 and ADX (and the
-//! comb's selection by AVX2) where the CPU has them (`_adx`).
+//! comb's selection by AVX2) where the CPU has them (`_adx`), and on ARMv7
+//! with `umaal` where the CPU has it (`_umaal`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -16,11 +17,15 @@ use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_adx;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_umaal;
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha256::{
     vg_ecdsa_p256_sha256_sign_adx, vg_ecdsa_p256_sha256_sign_avx2,
@@ -29,6 +34,8 @@ use crate::arch::ecdsa_p256_sha256::{
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha384::{
     vg_ecdsa_p256_sha384_sign_adx, vg_ecdsa_p256_sha384_sign_avx2,
@@ -111,6 +118,10 @@ fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), E
         // (`Mul::select`).
         #[cfg(target_arch = "x86_64")]
         Mul::Adx => unsafe { vg_ecdsa_p256_verify_adx(q, e, signature, &mut scratch.0) },
+        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+        // (`Mul::select`).
+        #[cfg(target_arch = "arm")]
+        Mul::Umaal => unsafe { vg_ecdsa_p256_verify_umaal(q, e, signature, &mut scratch.0) },
     };
     if ok == 1 {
         Ok(())
@@ -136,6 +147,8 @@ impl sealed::Functions<P256> for Sha256 {
             (Sha256Backend::ShaNi, Mul::Adx) => vg_ecdsa_p256_sha256_sign_shani_adx,
             #[cfg(target_arch = "x86_64")]
             (Sha256Backend::Avx2, Mul::Adx) => vg_ecdsa_p256_sha256_sign_avx2_adx,
+            #[cfg(target_arch = "arm")]
+            (Sha256Backend::Scalar, Mul::Umaal) => vg_ecdsa_p256_sha256_sign_umaal,
         };
         // SAFETY: `sign` needs no CPU feature that the implementation of
         // SHA-256 and the multiplications selected for this CPU do not.
@@ -166,6 +179,8 @@ impl sealed::Functions<P256> for Sha384 {
             (Sha384Backend::ShaNi, Mul::Adx) => vg_ecdsa_p256_sha384_sign_shani_adx,
             #[cfg(target_arch = "x86_64")]
             (Sha384Backend::Avx2, Mul::Adx) => vg_ecdsa_p256_sha384_sign_avx2_adx,
+            #[cfg(target_arch = "arm")]
+            (Sha384Backend::Scalar, Mul::Umaal) => vg_ecdsa_p256_sha384_sign_umaal,
         };
         // SAFETY: `sign` needs no CPU feature that the implementation of
         // SHA-384 and the multiplications selected for this CPU do not.

@@ -191,8 +191,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat �
     (hW : WkOk M size wk Sl) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk M wk S m)
     (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
-    (hR : ∀ x ∈ op.ins, x ∈ V) :
-    WP isa (opCode S op) s fun s' =>
+    (hR : ∀ x ∈ op.ins, x ∈ V) {u : Bool} :
+    WP isa (opCode S u op) s fun s' =>
       ProgKeep M base wk [op.out] s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
   have hk := hF.k
   have hmm := hF.m
@@ -240,11 +240,11 @@ theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State �
 /-- A field program. -/
 theorem fprog_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hW : WkOk M size wk Sl) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk M wk S m)
-    (hm : UnitMod m (2 ^ (64 * M.n))) :
+    (hm : UnitMod m (2 ^ (64 * M.n))) {u : Bool} :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
       Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
       readsOk ops V = true →
-      WP isa (fprog S ops) s fun s' => ProgKeep M base wk (ops.map FOp.out) s s' ∧
+      WP isa (fprog S ops u) s fun s' => ProgKeep M base wk (ops.map FOp.out) s s' ∧
         Inv M base size m Sl (validAfter ops V) (runOps ops E) s'
   | [], _, _, s, hI, _, _ => WP.block_nil ⟨ProgKeep.refl _ _ _ _ s, hI⟩
   | op :: ops, V, E, s, hI, hS, hR => by
@@ -268,8 +268,8 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat �
     (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m} {s : State}
-    (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprog S' (rcb S p q o)) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
+    (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) {u : Bool} :
+    WP isa (fprog S' (rcb S p q o) u) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
       Inv M base size m Sl (rcbW S o ++ V) (runOps (rcb S p q o) E) s' ∧
       (runOps (rcb S p q o) E o.x, runOps (rcb S p q o) E o.y, runOps (rcb S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd (E S.a) (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y)

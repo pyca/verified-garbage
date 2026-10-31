@@ -62,13 +62,13 @@ theorem rhs_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
     (hs : Scr s base size) (hf : Far s base 8192) (hM : ModOkW c.MP' size c.C.p s.mem base)
     (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) :
-    WP isa (Impl.Weierstrass.Arm.fprog c.SP (rhsOps c)) s (RhsPost c base s) := by
+    WP isa (Impl.Weierstrass.Arm.fprog c.SP (rhsOps c) c.umaal) s (RhsPost c base s) := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   change WP isa (.seq (VG.Impl.Weierstrass.Arm.Mont.mulCall c.SP
-    (c.sl QXM) (c.sl E) (c.sl R2P))
-    (VG.Impl.Weierstrass.Arm.fprog c.SP (rhsTail.map (FOp.rename c.sl)))) s _
+    (c.sl QXM) (c.sl E) (c.sl R2P) c.umaal)
+    (VG.Impl.Weierstrass.Arm.fprog c.SP (rhsTail.map (FOp.rename c.sl)) c.umaal)) s _
   refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs hf (o := QXM) (a := E) (b := R2P)
     (by decide) (by decide) (by decide)
     (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega)))

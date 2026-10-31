@@ -46,7 +46,7 @@ theorem selectRoot_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have hW := sl_le c h7 (i := W0) (by decide)
   have hD := sl_le c h7 (i := D) (by decide)
   have hMP := sl_le c h7 (i := MP) (by decide)
-  change WP isa (.seq (Mont.mulCall c.SP (c.sl QY) (c.sl ACC) (c.sl ONE))
+  change WP isa (.seq (Mont.mulCall c.SP (c.sl QY) (c.sl ACC) (c.sl ONE) c.umaal)
     (.seq (Mont.subCall c.SP (c.sl W0) (c.sl ZERO) (c.sl QY))
       (.block (Impl.EcKey.Compressed.Arm.parityMask c ++ sel (2 * c.n) (c.sl QY) (c.sl QY) (c.sl W0))))) s _
   refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs hf (o := QY) (a := ACC) (b := ONE)

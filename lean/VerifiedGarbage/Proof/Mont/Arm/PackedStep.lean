@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.ArmPacked
 import VerifiedGarbage.Proof.Mont.Arm.PackedProduct
+import VerifiedGarbage.Proof.Bignum.Arm.FiosArithmetic
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -60,6 +61,40 @@ abbrev stepClob : List Reg := [.r3, .r5, .r6, .r7, .r8]
   · rw [u7.mem, u6.mem, f5.mem, f4.mem, m3, u7.other .r5 (by decide), u6.gpr]
   · rw [u7.other .r5 (by decide), u6.gpr, u7.gpr, u6.gpr, v5,
       v4, prod3, acc3, f4.regs .r3 (by simp), carry3]
+    omega
+
+/-- `step_ok` for the step with `umaal`, whose scalar is r2. -/
+theorem stepU_ok {s : State} {base : Addr} {size acc src K d j : Nat} {rb : Reg}
+    (hs : Scr s base size) (hp : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K)
+    (hd : K + d = src)
+    (ha : acc + 4 * j + 4 ≤ size) (hb : src + 4 * j + 4 ≤ size) :
+    WP isa (.block (stepU acc rb d j)) s fun t =>
+      t.mem = s.mem.writeW (off base (acc + 4 * j)) (t.gpr .r5) ∧
+      (t.gpr .r5).toNat + (t.gpr .r3).toNat * 2 ^ 32 =
+        w32 s.mem base (acc + 4 * j) + (s.gpr .r2).toNat * w32 s.mem base (src + 4 * j) + (s.gpr .r3).toNat ∧
+      Rest stepClob s t := by
+  have hn := hs.nowrap
+  simp only [stepU]
+  refine wp_ldr (hs.off_lt (by omega))
+    (by rw [hs.ea_off hp (by omega)]; congr 1; omega) (hs.read hb) fun s1 u1 => ?_
+  have hs1 := hs.of_rest (u1.rest (ws := stepClob) (by simp)) (by decide)
+  refine wp_ldr (hs.off_lt (by omega)) (hs1.ea (by omega)) (hs1.read ha) fun s2 u2 => ?_
+  have y2 : (s2.gpr .r7).toNat = w32 s.mem base (src + 4 * j) := by rw [u2.other _ (by decide), u1.gpr]
+  have a2 : (s2.gpr .r5).toNat = w32 s.mem base (acc + 4 * j) := by rw [u2.gpr, u1.mem]
+  have x2 : s2.gpr .r2 = s.gpr .r2 := by rw [u2.other _ (by decide), u1.other _ (by decide)]
+  have c2 : s2.gpr .r3 = s.gpr .r3 := by rw [u2.other _ (by decide), u1.other _ (by decide)]
+  rw [show ([.umaal .r5 .r3 .r2 .r7, .str .r5 .r12 (acc + 4 * j)] : List Instr) =
+    [.umaal .r5 .r3 .r2 .r7] ++ [.str .r5 .r12 (acc + 4 * j)] from rfl]
+  refine VG.Proof.X25519.Arm.WP.append (VG.Proof.Bignum.Arm.Fios.umaal_ok s2 .r5 .r3 .r2 .r7 (by decide))
+    fun s3 ⟨v3, f3⟩ => ?_
+  have k3 : Rest stepClob s s3 :=
+    (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((frame_rest f3).mono (by simp)))
+  have hs3 := hs.of_rest k3 (by decide)
+  refine wp_str (hs.off_lt (by omega)) (hs3.ea (by omega)) (hs3.write ha) fun t u4 => WP.block_nil ?_
+  have g : t.gpr = s3.gpr := u4.gpr
+  refine ⟨?_, ?_, k3.trans (u4.rest _)⟩
+  · rw [u4.mem, g, f3.mem, u2.mem, u1.mem]
+  · rw [g, Nat.mul_comm _ (2 ^ 32), v3, y2, a2, x2, c2]
     omega
 
 end VG.Proof.Mont.Arm.Packed

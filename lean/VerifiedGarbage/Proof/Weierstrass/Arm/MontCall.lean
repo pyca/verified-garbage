@@ -124,16 +124,18 @@ theorem pre_of_call {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
 theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
-    (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k) (hB : wordsVal s.mem base b S.k < S.m) :
-    WP isa (mulCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
+    (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k) (hB : wordsVal s.mem base b S.k < S.m)
+    {u : Bool} :
+    WP isa (mulCall S o a b u) s fun s' => CallKeep S.k base o s s' ∧
       wordsVal s'.mem base o S.k < S.m ∧
       wordsVal s'.mem base o S.k * 2 ^ (64 * S.k) % S.m =
         wordsVal s.mem base a S.k * wordsVal s.mem base b S.k % S.m :=
   callOp_ok (V := fun m m' => wordsVal m' base o S.k < S.m ∧
       wordsVal m' base o S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base a S.k * wordsVal m base b S.k % S.m)
-    (by unfold mulFn; split <;> rfl) hf fun t h1 h2 h3 h4 h5 h6 h7 => by
+    (by unfold mulFnWith mulFnU mulFn; cases u <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> (try split) <;> rfl)
+    hf fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0, e1, e2, e3⟩ := pre_of_call hM hs hf ho ha hb h1 h2 h3 h4 h5 h6 (m := S.m)
-      refine WP.mono (mulFn_ok hM hp (by rw [e0, e3, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
+      refine WP.mono (mulFnWith_ok u hM hp (by rw [e0, e3, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
       rw [e0, e1, e2, e3] at *
       exact ⟨A, K, ⟨V, C⟩, R⟩
 

@@ -142,6 +142,10 @@ structure Cfg where
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
   mul : Option Spec.Weierstrass.Mul.Curve
+  /-- Whether the field multiplications are calls of the `_umaal` variants
+  of `vg_<curve>_mul_mod_<p|n>` (`Impl/Weierstrass/Arm/Mont.lean`), and so
+  the point functions and `vg_<curve>_mul` called too. -/
+  umaal : Bool := false
 
 namespace Cfg
 
@@ -261,10 +265,10 @@ def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal,
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal,
     Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO),
-    Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal,
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
 
 /-- The callee-saved registers restored. -/
@@ -279,13 +283,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  progs [Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N),
-    Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N),
-    Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N),
-    Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM),
+  progs [Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N) c.umaal,
+    Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N) c.umaal,
+    Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N) c.umaal,
+    Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM) c.umaal,
     Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM),
-    Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT),
-    Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE),
+    Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT) c.umaal,
+    Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal,
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
@@ -295,9 +299,9 @@ def signWith (generator : Prog isa) : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq generator <|
-  .seq (pow c.powP c.SP) <|
+  .seq (pow c.powP c.SP c.umaal) <|
   .seq c.middle <|
-  .seq (pow c.powN c.SN) c.scalar
+  .seq (pow c.powN c.SN c.umaal) c.scalar
 
 
 /-! ## `vg_<curve>_mul`
@@ -329,7 +333,7 @@ def mulBody : Prog isa :=
   .seq (.block (copy (2 * c.n) (c.sl ACC) (c.sl RX) ++ copy (2 * c.n) (c.sl PT) (c.sl RY) ++
     copy (2 * c.n) (c.sl RX) (c.sl ZERO) ++ copy (2 * c.n) (c.sl RY) (c.sl ONEP) ++
     copy (2 * c.n) (c.sl RZ) (c.sl ZERO)))
-    (Point.ladderP c.mulLadder c.SP)
+    (Point.ladderP c.mulLadder c.SP false c.umaal)
 
 /-- `vg_<curve>_mul`: the working space from `r0` to `r12`, the callee-saved
 registers kept around the body (`mulSaved`, and `r10` in `lr`). -/
@@ -345,7 +349,7 @@ calls of the point and Montgomery functions do. -/
 def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py) ++
     [.mov .r10 (.reg .lr), .mov .r0 (.reg wb)])) <|
-  .seq (.call C.mulApi.name c.mulFn) (.block [.mov .lr (.reg .r10)])
+  .seq (.call (C.mulApi.name ++ if c.umaal then "_umaal" else "") c.mulFn) (.block [.mov .lr (.reg .r10)])
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):
@@ -360,7 +364,7 @@ the ladder inline, from the table of `k`'s bits (by the point functions for
 def qMul (px py : Nat) : Prog isa :=
   match c.mul with
   | some C => c.mulAt C px py
-  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP c.qA0
+  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP c.qA0 c.umaal
 
 /-- `R = [k]G`: `qMul` from `G`. -/
 def gen : Prog isa := c.qMul GX GY

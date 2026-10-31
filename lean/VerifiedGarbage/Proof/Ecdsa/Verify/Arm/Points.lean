@@ -111,7 +111,7 @@ abbrev sumSl : List Nat := [AP, B3P, T0, T1, T2, T3, T4, T5, DX, DY, DZ, UX, UY,
 abbrev sumR : List Nat := [AP, B3P, UX, UY, UZ, RX, RY, RZ]
 
 theorem sum_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.sum c =
-    .seq (fprog c.SP (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
+    .seq (fprog c.SP (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)) c.umaal)
       (.block (copy (2 * c.n) (c.sl RX) (c.sl DX) ++ (copy (2 * c.n) (c.sl RY) (c.sl DY) ++
         copy (2 * c.n) (c.sl RZ) (c.sl DZ)))) := by
   simp only [Impl.Ecdsa.Verify.Arm.Cfg.sum, List.append_assoc]

@@ -22,7 +22,7 @@ structure LoopInv (s0 : State) (base : Addr) (acc a b n m i : Nat) (s : State) :
     val32 s0.mem base a i * val32 s0.mem base b n % m
   rest : Rest roundClob s0 s
 
- theorem loop_ok {s : State} {base : Addr} {size acc a b n m : Nat} {M : Mod}
+ theorem loop_ok (u : Bool) {s : State} {base : Addr} {size acc a b n m : Nat} {M : Mod}
     (hs : Scr s base size) (hMn : 2 * M.n = n) (hn : 0 < n) (hn32 : n < 2 ^ 32)
     (pa : s.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 a)
     (pb : s.gpr .r4 = s.gpr .r12 + BitVec.ofNat 32 b)
@@ -35,15 +35,15 @@ structure LoopInv (s0 : State) (base : Addr) (acc a b n m i : Nat) (s : State) :
     (modulus : val32 s.mem base M.mo n = m)
     (inverse : (m * M.minv.toNat + 1) % 2 ^ 64 = 0)
     (operand : val32 s.mem base b n < m) (zero : val32 s.mem base acc (n + 2) = 0) :
-    WP isa (.loop (.block (round M acc)) .ne) s fun t =>
+    WP isa (.loop (.block (round M acc u)) .ne) s fun t =>
       val32 t.mem base acc (n + 2) < 2 * m ∧
       2 ^ (32 * n) * val32 t.mem base acc (n + 2) % m = val32 s.mem base a n * val32 s.mem base b n % m ∧
       Outside base acc (4 * (n + 2)) s.mem t.mem ∧ Rest roundClob s t := by
   have nowrap := hs.nowrap
   have mpos : 0 < m := by omega
   let I := fun k t => ∃ i, i + k = n ∧ 0 < k ∧ LoopInv s base acc a b n m i t
-  have step (k : Nat) (u : State) (h : I k u) :
-      WP isa (.block (round M acc)) u fun t =>
+  have step (k : Nat) (w : State) (h : I k w) :
+      WP isa (.block (round M acc u)) w fun t =>
         (isa.eval .ne t = some false ∧ (val32 t.mem base acc (n + 2) < 2 * m ∧
           2 ^ (32 * n) * val32 t.mem base acc (n + 2) % m = val32 s.mem base a n * val32 s.mem base b n % m ∧
           Outside base acc (4 * (n + 2)) s.mem t.mem ∧ Rest roundClob s t)) ∨
@@ -51,14 +51,14 @@ structure LoopInv (s0 : State) (base : Addr) (acc a b n m i : Nat) (s : State) :
     obtain ⟨i, hik, hk, inv⟩ := h
     have hi : i < n := by omega
     have hu := hs.of_rest inv.rest (by decide)
-    have pu : u.gpr .r1 = u.gpr .r12 + BitVec.ofNat 32 (a + 4 * i) := by
+    have pu : w.gpr .r1 = w.gpr .r12 + BitVec.ofNat 32 (a + 4 * i) := by
       rw [inv.ptr, inv.rest.gpr .r12 (by decide)]
-    have bu : u.gpr .r4 = u.gpr .r12 + BitVec.ofNat 32 b := by
+    have bu : w.gpr .r4 = w.gpr .r12 + BitVec.ofNat 32 b := by
       rw [inv.rest.gpr .r4 (by decide), inv.rest.gpr .r12 (by decide)]; exact pb
     have oldM := inv.outside.val32 (d := M.mo) (k := n) (by omega) (by omega)
     have oldB := inv.outside.val32 (d := b) (k := n) (by omega) (by omega)
     have oldA := inv.outside.w32 (d := a + 4 * i) (by omega) (by omega)
-    refine WP.mono (round_ok hu hMn pu bu (by omega) fb fm ft sb sm
+    refine WP.mono (round_ok u hu hMn pu bu (by omega) fb fm ft sb sm
       (oldM.trans modulus) inverse (by rw [oldB]; exact operand) inv.bound) fun t post => ?_
     obtain ⟨⟨q, hq, value⟩, bound, out, rest, ptr, count, zeroFlag⟩ := post
     rw [oldA, oldB] at value

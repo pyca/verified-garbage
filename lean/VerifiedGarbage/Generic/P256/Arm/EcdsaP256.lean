@@ -41,6 +41,22 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       let every input affect it."]
     consts := Impl.Weierstrass.Arm.p256CombConsts
     code := Impl.Ecdsa.Arm.verifyP256Comb
-    verified := Proof.Ecdsa.Verify.Arm.P256.combVerify_verified h.law }]
+    verified := Proof.Ecdsa.Verify.Arm.P256.combVerify_verified h.law },
+  Spec.Ecdsa.P256.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_ecdsa_p256_sign`'s code, but for its calls of `vg_p256_point_add_umaal` in \
+      the comb. Field multiplications are calls of `vg_p256_mul_mod_p_umaal` (and `vg_p256_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    consts := Impl.Weierstrass.Arm.p256CombConsts
+    code := Impl.Ecdsa.Arm.signP256CombU
+    verified := Proof.Ecdsa.Arm.P256.combSignU_verified h.law
+    features := ["umaal"] },
+  Spec.Ecdsa.P256.verifyApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_ecdsa_p256_verify`'s code, but for its calls of `vg_p256_point_add_umaal` in \
+      the comb and of `vg_p256_mul_umaal`. Field multiplications are calls of `vg_p256_mul_mod_p_umaal` (and `vg_p256_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    consts := Impl.Weierstrass.Arm.p256CombConsts
+    code := Impl.Ecdsa.Arm.verifyP256CombU
+    verified := Proof.Ecdsa.Verify.Arm.P256.combVerifyU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P256.Arm.EcdsaP256

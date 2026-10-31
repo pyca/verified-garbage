@@ -24,5 +24,6 @@ checked once here, rather than rebuilt in every check that evaluates it.
 namespace VG
 
 materialize_code Impl.Ecdh.Arm.exchangeP256
+materialize_code Impl.Ecdh.Arm.exchangeP256U
 
 end VG

@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Mont.Arm
 
-/-! Packed 32-bit Montgomery arithmetic, using baseline half-word products.
-All row accesses have fixed offsets, so r12 remains the workspace base and
-r10/r11 remain available to curve callers. -/
+/-! Packed 32-bit Montgomery arithmetic, using baseline half-word products,
+or, with `u`, one `umaal` (`hi:lo = n m + hi + lo`, the CPU feature `umaal`)
+for each word of a row (`rowU`). All row accesses have fixed offsets, so r12
+remains the workspace base and r10/r11 remain available to curve callers. -/
 
 @[expose] public section
 namespace VG.Impl.Mont.Arm.Packed
@@ -42,16 +43,30 @@ def carry (acc n : Nat) : List Instr :=
 def row (acc : Nat) (rb : Reg) (src n : Nat) : List Instr :=
   split ++ [.mov .r3 (.imm 0)] ++ (List.range n).flatMap (step acc rb src) ++ carry acc n
 
+/-- The step with `umaal`, the scalar `x` whole in r2:
+`r3:acc[j] = acc[j] + x [src + 4 j] + r3`. -/
+def stepU (acc : Nat) (rb : Reg) (src j : Nat) : List Instr :=
+  [.ldr .r7 rb (src + 4 * j), .ldr .r5 .r12 (acc + 4 * j), .umaal .r5 .r3 .r2 .r7,
+    .str .r5 .r12 (acc + 4 * j)]
+
+/-- The row with `umaal`, which needs no split of the scalar. -/
+def rowU (acc : Nat) (rb : Reg) (src n : Nat) : List Instr :=
+  [.mov .r3 (.imm 0)] ++ (List.range n).flatMap (stepU acc rb src) ++ carry acc n
+
+/-- The row of `row` or, with `u`, of `rowU`. -/
+def rowWith (u : Bool) (acc : Nat) (rb : Reg) (src n : Nat) : List Instr :=
+  if u then rowU acc rb src n else row acc rb src n
+
 def shift (acc n : Nat) : List Instr :=
   (List.range (n + 1)).flatMap (fun j =>
     [.ldr .r5 .r12 (acc + 4 * j + 4), .str .r5 .r12 (acc + 4 * j)]) ++
   [.mov .r5 (.imm 0), .str .r5 .r12 (acc + 4 * (n + 1))]
 
-def round (M : Mod) (acc : Nat) : List Instr :=
-  [.ldr .r2 .r1 0] ++ row acc .r4 0 (2 * M.n) ++
+def round (M : Mod) (acc : Nat) (u : Bool := false) : List Instr :=
+  [.ldr .r2 .r1 0] ++ rowWith u acc .r4 0 (2 * M.n) ++
   [.ldr .r2 .r12 acc, .movw .r7 (BitVec.ofNat 16 M.minv.toNat),
     .movt .r7 (BitVec.ofNat 16 (M.minv.toNat >>> 16)), .mul .r2 .r2 .r7] ++
-  row acc .r12 M.mo (2 * M.n) ++ shift acc (2 * M.n) ++
+  rowWith u acc .r12 M.mo (2 * M.n) ++ shift acc (2 * M.n) ++
   [.dp .add .r1 .r1 (.imm 4), .subs .r9 .r9 (.imm 1)]
 
 /-- Convert packed words to half-word digits for the existing reducer. -/
@@ -59,9 +74,9 @@ def expand (acc dst n : Nat) : List Instr :=
   [.movw .r6 0xffff] ++ (List.range n).flatMap fun j =>
     digitAt .r12 acc j ++ [.str .r7 .r12 (dst + 4 * j)]
 
-def mulR (M : Mod) (acc : Nat) : Prog isa :=
+def mulR (M : Mod) (acc : Nat) (u : Bool := false) : Prog isa :=
   .seq (.block (zeros acc (2 * M.n + 2) ++ [.mov .r9 (.imm (BitVec.ofNat 32 (2 * M.n)))])) <|
-  .seq (.loop (.block (round M acc)) .ne) <|
+  .seq (.loop (.block (round M acc u)) .ne) <|
   .block (expand acc (acc + 8 * M.n + 8) (4 * M.n + 1) ++
     csub M (acc + 8 * M.n + 8) .lr 0)
 

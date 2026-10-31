@@ -22,7 +22,7 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 namespace VG.Generic.P256.Arm.EcdsaP256Sha256
 
 open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
-open VG.Proof.Ecdsa.Rfc6979.Arm.P256Sha256Comb (pack sign_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm.P256Sha256Comb (pack packU sign_verified signU_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P256Sha256.signApi.artifact Arm.target {
@@ -32,6 +32,16 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     code := (cfgOf (pack h.law)).sign
     consts := Impl.Weierstrass.Arm.p256CombConsts
     stack := 240
-    verified := sign_verified h.law }]
+    verified := sign_verified h.law },
+  Spec.Ecdsa.Rfc6979.P256Sha256.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := [signNotes
+      Proof.Pbkdf2.Whole.Arm.sha256F.hiN Proof.Pbkdf2.Whole.Arm.sha256F.H.updN
+      Proof.Pbkdf2.Whole.Arm.sha256F.hfN 32 (Spec.Ecdsa.P256.signApi.name ++ "_umaal")]
+    code := (cfgOf (packU h.law)).sign
+    consts := Impl.Weierstrass.Arm.p256CombConsts
+    stack := 240
+    verified := signU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P256.Arm.EcdsaP256Sha256

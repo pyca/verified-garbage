@@ -14,4 +14,7 @@ namespace VG
 materialize_code Impl.Ecdsa.Arm.signP256Comb
 materialize_code Impl.Ecdsa.Arm.publicKeyP256Comb
 materialize_code Impl.Ecdsa.Arm.verifyP256Comb
+materialize_code Impl.Ecdsa.Arm.signP256CombU
+materialize_code Impl.Ecdsa.Arm.publicKeyP256CombU
+materialize_code Impl.Ecdsa.Arm.verifyP256CombU
 end VG

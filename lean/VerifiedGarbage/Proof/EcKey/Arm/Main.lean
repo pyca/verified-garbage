@@ -45,10 +45,10 @@ open VG.Impl.EcKey.Arm (YM Y Args.publicKey)
 variable {c : Cfg}
 
 theorem middle_eq (c : Cfg) : Impl.EcKey.Arm.Cfg.middle c =
-    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
-    (.seq (Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE))
+    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
+    (.seq (Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE) c.umaal)
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.EcKey.Arm.Cfg.finish c))))) := rfl
 
 /-- What `middle`'s field operations leave. -/
@@ -67,10 +67,10 @@ structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     (hMP : ModOkW c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', OpsPost c base s s' → WP isa rest s' Q) :
-    WP isa (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-      (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
-      (.seq (Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC))
-      (.seq (Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE)) rest)))) s Q := by
+    WP isa (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
+      (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
+      (.seq (Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC) c.umaal)
+      (.seq (Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE) c.umaal) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)

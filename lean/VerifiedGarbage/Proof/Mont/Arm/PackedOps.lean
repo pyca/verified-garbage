@@ -41,14 +41,14 @@ open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 /-- Packed rows and the expanded half-word reducer fit inside the original
 `32 * n + 8` byte accumulator. The word count must be a baseline immediate. -/
-theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m n : Nat}
+theorem mulR_ok (u : Bool) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m n : Nat}
     (hM : ModOkW M size m s.mem base) (hMn : M.n = n) (hn : 0 < n) (hn128 : n < 128)
     {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (pa : s.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 a)
     (pb : s.gpr .r4 = s.gpr .r12 + BitVec.ofNat 32 b)
     (po : s.gpr .lr = s.gpr .r12 + BitVec.ofNat 32 o)
     (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (Impl.Mont.Arm.Packed.mulR M acc) s fun t => OpKeep M base acc o s t ∧
+    WP isa (Impl.Mont.Arm.Packed.mulR M acc u) s fun t => OpKeep M base acc o s t ∧
       wordsVal t.mem base o M.n < m ∧
       wordsVal t.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
@@ -86,7 +86,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have z2 : val32 s2.mem base acc (2 * n + 2) = 0 := by
     rw [mem2]
     exact val32_zeros (2 * n + 2) zero1
-  refine WP.seq (WP.mono (loop_ok ctx2 (M := M) (n := 2 * n) (by rw [hMn]) (by omega_arith) (by omega_arith)
+  refine WP.seq (WP.mono (loop_ok u ctx2 (M := M) (n := 2 * n) (by rw [hMn]) (by omega_arith) (by omega_arith)
     pa2 pb2 u2.gpr (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) mod2 hM.inv b2 z2)
     fun s3 ⟨bound, value, out3, keep3⟩ => ?_)
   have keep : Rest roundClob s s3 := (keep2.mono (by simp)).trans keep3

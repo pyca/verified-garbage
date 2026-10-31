@@ -16,6 +16,10 @@ open VG.Proof.P256.Arm
 def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash :=
   {Sha384.pack hL with R := p256CombCurve hL}
 
+/-- `pack`, calling `vg_ecdsa_p256_sign_umaal`. -/
+def packU (hL : Weierstrass.Law Spec.P256.curve) : RfcHash :=
+  {Sha384.pack hL with R := p256CombCurveU hL}
+
 abbrev rfcCombSpec : Contract isa := Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract
   (abi.withConsts p256CombConsts) 240
 
@@ -82,5 +86,9 @@ theorem implies : (rfcArm Spec.Ecdsa.Rfc6979.P256Sha384.inst 240 p256CombConsts)
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
     Verified Arm.target (cfgOf (pack hL)).sign rfcCombSpec :=
   Arm.sign_verified (pack hL) implies
+
+theorem signU_verified (hL : Weierstrass.Law Spec.P256.curve) :
+    Verified Arm.target (cfgOf (packU hL)).sign rfcCombSpec :=
+  Arm.sign_verified (packU hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.Arm.P256Sha384Comb

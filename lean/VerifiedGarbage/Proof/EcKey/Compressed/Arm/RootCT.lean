@@ -42,7 +42,7 @@ def descentPrefix (c : Cfg) : Prog isa :=
 
 def descentRest (c : Cfg) : Prog isa :=
   .seq (Impl.EcKey.Compressed.Arm.descentChoose c)
-    (.seq (fprog c.SP (Impl.EcKey.Compressed.Arm.descentOps c))
+    (.seq (fprog c.SP (Impl.EcKey.Compressed.Arm.descentOps c) c.umaal)
       (.block (Impl.EcKey.Compressed.Arm.descentCounter c)))
 
 structure LoopState (c : Cfg) (base : Addr) (j : Nat) (s : State) : Prop where
@@ -234,7 +234,7 @@ theorem rootCandidate_rel {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 ≠ 3)
 def conversionFront (c : Cfg) : Prog isa :=
   .seq (.seq (.block (c.setupWith Impl.EcKey.Compressed.Arm.args))
     (.block (Impl.EcKey.Compressed.Arm.decompressPeer c)))
-    (fprog c.SP (Impl.EcKey.Compressed.Arm.rhsOps c))
+    (fprog c.SP (Impl.EcKey.Compressed.Arm.rhsOps c) c.umaal)
 
 def conversionSuffix (c : Cfg) : Prog isa :=
   .seq (Impl.EcKey.Compressed.Arm.selectRoot c)

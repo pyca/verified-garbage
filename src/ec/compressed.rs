@@ -9,21 +9,23 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use crate::cpu::{Features, detected};
 
-#[cfg(target_arch = "x86_64")]
+/// The baseline implementation, or the faster one (x86-64's `_adx`, ARMv7's
+/// `_umaal`) if the CPU has its features.
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     Baseline,
-    Adx,
+    Fast,
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl Backend {
     fn select(cpu: Features, required: Features) -> Self {
         if cpu.contains(required) {
-            Self::Adx
+            Self::Fast
         } else {
             Self::Baseline
         }
@@ -39,10 +41,31 @@ macro_rules! check {
         {
             match Backend::select(detected(), $features) {
                 Backend::Baseline => $base(&mut $out, $public, &mut $ws),
-                Backend::Adx => $adx(&mut $out, $public, &mut $ws),
+                Backend::Fast => $adx(&mut $out, $public, &mut $ws),
             }
         }
         #[cfg(not(target_arch = "x86_64"))]
+        {
+            $base(&mut $out, $public, &mut $ws)
+        }
+    }};
+    ($base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident,
+        $umaal:ident, $ufeatures:ident) => {{
+        #[cfg(target_arch = "x86_64")]
+        {
+            match Backend::select(detected(), $features) {
+                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
+                Backend::Fast => $adx(&mut $out, $public, &mut $ws),
+            }
+        }
+        #[cfg(target_arch = "arm")]
+        {
+            match Backend::select(detected(), $ufeatures) {
+                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
+                Backend::Fast => $umaal(&mut $out, $public, &mut $ws),
+            }
+        }
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
         {
             $base(&mut $out, $public, &mut $ws)
         }
@@ -51,7 +74,8 @@ macro_rules! check {
 
 macro_rules! codec {
     ($curve:ident, $len:literal, $module:ident, $compress:ident, $decompress:ident,
-        [$($compress_adx:ident, $decompress_adx:ident, $features:ident)?]) => {
+        [$($compress_adx:ident, $decompress_adx:ident, $features:ident)?]
+        $([$compress_umaal:ident, $decompress_umaal:ident, $cfeatures:ident, $dfeatures:ident])?) => {
         impl super::$curve {
             /// Validates and compresses `04 || x || y` to SEC 1 `02/03 || x`.
             ///
@@ -61,12 +85,17 @@ macro_rules! codec {
                 use crate::arch::$module::$compress;
                 $(#[cfg(target_arch = "x86_64")]
                 use crate::arch::$module::{$compress_adx, $features};)?
+                $(#[cfg(target_arch = "arm")]
+                use crate::arch::$module::{$compress_umaal, $cfeatures};)?
                 let mut out = [0; $len + 1];
                 let mut ws = [0u64; 1024];
                 // SAFETY: all three arrays have the contract's lengths and
                 // occupy separate Rust objects. Their ranges cannot wrap or
                 // overlap the return address. Dispatch checks CPU requirements.
-                let ok = unsafe { check!($compress, out, public, ws $(, $compress_adx, $features)?) };
+                let ok = unsafe {
+                    check!($compress, out, public, ws $(, $compress_adx, $features)?
+                        $(, $compress_umaal, $cfeatures)?)
+                };
                 (ok == 1).then_some(out)
             }
 
@@ -79,12 +108,17 @@ macro_rules! codec {
                 use crate::arch::$module::$decompress;
                 $(#[cfg(target_arch = "x86_64")]
                 use crate::arch::$module::{$decompress_adx, $features};)?
+                $(#[cfg(target_arch = "arm")]
+                use crate::arch::$module::{$decompress_umaal, $dfeatures};)?
                 let mut out = [0; 2 * $len + 1];
                 let mut ws = [0u64; 1024];
                 // SAFETY: all three arrays have the contract's lengths and
                 // occupy separate Rust objects. Their ranges cannot wrap or
                 // overlap the return address. Dispatch checks CPU requirements.
-                let ok = unsafe { check!($decompress, out, public, ws $(, $decompress_adx, $features)?) };
+                let ok = unsafe {
+                    check!($decompress, out, public, ws $(, $decompress_adx, $features)?
+                        $(, $decompress_umaal, $dfeatures)?)
+                };
                 (ok == 1).then_some(out)
             }
         }
@@ -117,6 +151,12 @@ codec!(
         vg_ec_p256_compress_public_key_adx,
         vg_ec_p256_decompress_public_key_adx,
         VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES
+    ]
+    [
+        vg_ec_p256_compress_public_key_umaal,
+        vg_ec_p256_decompress_public_key_umaal,
+        VG_EC_P256_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES,
+        VG_EC_P256_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
 codec!(
@@ -178,7 +218,7 @@ codec!(
 
 #[cfg(test)]
 mod tests {
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
     use super::*;
     use crate::ec::*;
     use crate::ecdh::PrivateKey;
@@ -194,7 +234,19 @@ mod tests {
         ] {
             assert_eq!(Backend::select(features, required), Backend::Baseline);
         }
-        assert_eq!(Backend::select(required, required), Backend::Adx);
+        assert_eq!(Backend::select(required, required), Backend::Fast);
+    }
+
+    #[cfg(target_arch = "arm")]
+    #[test]
+    fn backends() {
+        let required =
+            crate::arch::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES;
+        assert_eq!(
+            Backend::select(Features::of(&[]), required),
+            Backend::Baseline
+        );
+        assert_eq!(Backend::select(required, required), Backend::Fast);
     }
 
     macro_rules! cases {

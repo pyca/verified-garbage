@@ -92,12 +92,12 @@ theorem prePt_of {C : Spec.Weierstrass.Point.Curve} (hk3 : 3 ≤ C.k) (hk6 : C.k
 /-- `vg_<curve>_point_add` or `vg_<curve>_point_double` meets its contract,
 by register. -/
 theorem sum_arm {C : Spec.Weierstrass.Point.Curve} (hM : ModOk C.k C.p) (hk6 : C.k ≤ 6) (hodd : C.p % 2 = 1)
-    (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) (s : State) (hs : (sumArm C dbl).pre s) :
-    ∃ t s', Exec isa (fn (modP C) dbl) s t s' ∧ abiPreserved s s' ∧ (sumArm C dbl).post s s' := by
+    (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) {u : Bool} (s : State) (hs : (sumArm C dbl).pre s) :
+    ∃ t s', Exec isa (fn (modP C) dbl u) s t s' ∧ abiPreserved s s' ∧ (sumArm C dbl).post s s' := by
   have hk3 := hM.n3
   have hp := prePt_of hk3 hk6 hs
   have hl := lay_nums hk3 hk6
-  obtain ⟨t, s', he, A, O, -, hlt, hEq⟩ := fn_ok (S := modP C) hM hodd hp
+  obtain ⟨t, s', he, A, O, -, hlt, hEq⟩ := fn_ok (S := modP C) (u := u) hM hodd hp
   have hu : UnitMod C.p C.R := unitMod_pow_two hodd _
   have dq := dec_eq C h1 hF hu
   have e : ∀ (m : Mem) x, x < 4096 → C.coordAt m (State.addr (s.gpr .r0)) x =

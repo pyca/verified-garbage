@@ -11,7 +11,7 @@ namespace VG.Impl.Ecdsa.Arm
 open VG.Arm
 
 /-- brainpoolP512r1 as the code has it. -/
-def brainpoolp512r1 : Cfg := ⟨8, Spec.BrainpoolP512r1.curve, Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, none⟩
+def brainpoolp512r1 : Cfg := ⟨8, Spec.BrainpoolP512r1.curve, Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, none, false⟩
 
 /-- `vg_ecdsa_brainpoolp512r1_sign`. -/
 def signBrainpoolP512r1 : Prog isa := brainpoolp512r1.sign
