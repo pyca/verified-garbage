@@ -12,3 +12,11 @@ if [ "${OS-}" = Windows_NT ]; then
 else
   export RUSTDOC="$PWD/ci/rustdoc_timing.sh"
 fi
+# Hides durations that round to zero at libtest's millisecond precision, from
+# a test run piped through it, streaming each line to the log as it comes:
+# sed buffers its output to a pipe until it exits (only GNU's has -u), and
+# mawk, Debian's awk, buffers its input even with fflush(). Perl is on every
+# runner (Debian's essential perl-base, Git Bash's, macOS's).
+vg_hide_zero_times() {
+  perl -pe 'BEGIN { $| = 1 } s/ <0\.000s>//g'
+}
