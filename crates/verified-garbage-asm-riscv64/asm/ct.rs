@@ -15,32 +15,47 @@
 pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi a4, zero, 0
-sub a7, a1, a3
-beqz a7, 20f
-addi a0, zero, 0
+.option arch, +m",
+        // addi a4, zero, 0
+        // sub a7, a1, a3
+        r".insn 4, 0x00000713
+.insn 4, 0x40d588b3
+beqz a7, 20f",
+        // addi a0, zero, 0
+        r".insn 4, 0x00000513
 j 21f
-20:
-addi a5, zero, 0
+20:",
+        // addi a5, zero, 0
+        r".insn 4, 0x00000793
 beqz a1, 22f
-24:
-add t0, a0, a5
-lbu t1, 0(t0)
-add t0, a2, a5
-lbu t2, 0(t0)
-xor t1, t1, t2
-or a4, a4, t1
-addi a5, a5, 1
-sub a7, a5, a1
+24:",
+        // add t0, a0, a5
+        // lbu t1, 0(t0)
+        // add t0, a2, a5
+        // lbu t2, 0(t0)
+        // xor t1, t1, t2
+        // or a4, a4, t1
+        // addi a5, a5, 1
+        // sub a7, a5, a1
+        r".insn 4, 0x00f502b3
+.insn 4, 0x0002c303
+.insn 4, 0x00f602b3
+.insn 4, 0x0002c383
+.insn 4, 0x00734333
+.insn 4, 0x00676733
+.insn 4, 0x00178793
+.insn 4, 0x40b788b3
 bnez a7, 24b
 j 23f
 22:
-23:
-addi a4, a4, -1
-srli a0, a4, 63
-21:
-ret
+23:",
+        // addi a4, a4, -1
+        // srli a0, a4, 63
+        r".insn 4, 0xfff70713
+.insn 4, 0x03f75513
+21:",
+        // ret
+        r".insn 4, 0x00008067
 .option pop",
     )
 }

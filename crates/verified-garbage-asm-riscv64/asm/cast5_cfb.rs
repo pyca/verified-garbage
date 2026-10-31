@@ -18,999 +18,1921 @@
 pub unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi t0, a1, 0
-addi a1, a2, 0
-addi a2, a3, 0
-addi a3, a4, 0
-addi t0, t0, -12
-beqz t0, 20f
-addi sp, sp, -128
-addi t0, sp, 0
-sd s1, 0(t0)
-sd s2, 8(t0)
-sd s3, 16(t0)
-sd s4, 24(t0)
-addi s4, t0, 0
-addi s1, a1, 0
-addi s2, a1, 0
-addi s3, a3, 0
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-addi s2, a2, 0
+.option arch, +m",
+        // addi t0, a1, 0
+        // addi a1, a2, 0
+        // addi a2, a3, 0
+        // addi a3, a4, 0
+        // addi t0, t0, -12
+        r".insn 4, 0x00058293
+.insn 4, 0x00060593
+.insn 4, 0x00068613
+.insn 4, 0x00070693
+.insn 4, 0xff428293
+beqz t0, 20f",
+        // addi sp, sp, -128
+        // addi t0, sp, 0
+        // sd s1, 0(t0)
+        // sd s2, 8(t0)
+        // sd s3, 16(t0)
+        // sd s4, 24(t0)
+        // addi s4, t0, 0
+        // addi s1, a1, 0
+        // addi s2, a1, 0
+        // addi s3, a3, 0
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // addi s2, a2, 0
+        r".insn 4, 0xf8010113
+.insn 4, 0x00010293
+.insn 4, 0x0092b023
+.insn 4, 0x0122b423
+.insn 4, 0x0132b823
+.insn 4, 0x0142bc23
+.insn 4, 0x00028a13
+.insn 4, 0x00058493
+.insn 4, 0x00058913
+.insn 4, 0x00068993
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00060913
 beqz s3, 22f
-24:
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 48(s4)
-srli t2, t0, 8
-sb t2, 49(s4)
-srli t2, t0, 16
-sb t2, 50(s4)
-srli t2, t0, 24
-sb t2, 51(s4)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 52(s4)
-srli t2, t0, 8
-sb t2, 53(s4)
-srli t2, t0, 16
-sb t2, 54(s4)
-srli t2, t0, 24
-sb t2, 55(s4)
-sd s0, 56(s4)
-sd s5, 64(s4)
-sd s6, 72(s4)
-sd s7, 80(s4)
-sd s8, 88(s4)
-sd s9, 96(s4)
-sd s10, 104(s4)
-sd s11, 112(s4)
-sd ra, 120(s4)
-addi a2, s4, 48
-addi a3, s1, 0
-addi a4, s2, 0
-addi s11, s3, 0
-addi ra, s4, 0
-lla t4, {VG_CAST5_S1234}
-addi a1, zero, 16
-lbu a6, 0(a2)
-slli a6, a6, 24
-lbu t0, 1(a2)
-slli t0, t0, 16
-or a6, a6, t0
-lbu t0, 2(a2)
-slli t0, t0, 8
-or a6, a6, t0
-lbu t0, 3(a2)
-or a6, a6, t0
-lbu a7, 4(a2)
-slli a7, a7, 24
-lbu t0, 5(a2)
-slli t0, t0, 16
-or a7, a7, t0
-lbu t0, 6(a2)
-slli t0, t0, 8
-or a7, a7, t0
-lbu t0, 7(a2)
-or a7, a7, t0
-addi s8, a0, 0
-addi s9, a1, 0
-addi s10, zero, 1
+24:",
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 48(s4)
+        // srli t2, t0, 8
+        // sb t2, 49(s4)
+        // srli t2, t0, 16
+        // sb t2, 50(s4)
+        // srli t2, t0, 24
+        // sb t2, 51(s4)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 52(s4)
+        // srli t2, t0, 8
+        // sb t2, 53(s4)
+        // srli t2, t0, 16
+        // sb t2, 54(s4)
+        // srli t2, t0, 24
+        // sb t2, 55(s4)
+        // sd s0, 56(s4)
+        // sd s5, 64(s4)
+        // sd s6, 72(s4)
+        // sd s7, 80(s4)
+        // sd s8, 88(s4)
+        // sd s9, 96(s4)
+        // sd s10, 104(s4)
+        // sd s11, 112(s4)
+        // sd ra, 120(s4)
+        // addi a2, s4, 48
+        // addi a3, s1, 0
+        // addi a4, s2, 0
+        // addi s11, s3, 0
+        // addi ra, s4, 0
+        r".insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0823
+.insn 4, 0x0082d393
+.insn 4, 0x027a08a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0923
+.insn 4, 0x0182d393
+.insn 4, 0x027a09a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0a23
+.insn 4, 0x0082d393
+.insn 4, 0x027a0aa3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0b23
+.insn 4, 0x0182d393
+.insn 4, 0x027a0ba3
+.insn 4, 0x028a3c23
+.insn 4, 0x055a3023
+.insn 4, 0x056a3423
+.insn 4, 0x057a3823
+.insn 4, 0x058a3c23
+.insn 4, 0x079a3023
+.insn 4, 0x07aa3423
+.insn 4, 0x07ba3823
+.insn 4, 0x061a3c23
+.insn 4, 0x030a0613
+.insn 4, 0x00048693
+.insn 4, 0x00090713
+.insn 4, 0x00098d93
+.insn 4, 0x000a0093
+lla t4, {VG_CAST5_S1234}",
+        // addi a1, zero, 16
+        // lbu a6, 0(a2)
+        // slli a6, a6, 24
+        // lbu t0, 1(a2)
+        // slli t0, t0, 16
+        // or a6, a6, t0
+        // lbu t0, 2(a2)
+        // slli t0, t0, 8
+        // or a6, a6, t0
+        // lbu t0, 3(a2)
+        // or a6, a6, t0
+        // lbu a7, 4(a2)
+        // slli a7, a7, 24
+        // lbu t0, 5(a2)
+        // slli t0, t0, 16
+        // or a7, a7, t0
+        // lbu t0, 6(a2)
+        // slli t0, t0, 8
+        // or a7, a7, t0
+        // lbu t0, 7(a2)
+        // or a7, a7, t0
+        // addi s8, a0, 0
+        // addi s9, a1, 0
+        // addi s10, zero, 1
+        r".insn 4, 0x01000593
+.insn 4, 0x00064803
+.insn 4, 0x01881813
+.insn 4, 0x00164283
+.insn 4, 0x01029293
+.insn 4, 0x00586833
+.insn 4, 0x00264283
+.insn 4, 0x00829293
+.insn 4, 0x00586833
+.insn 4, 0x00364283
+.insn 4, 0x00586833
+.insn 4, 0x00464883
+.insn 4, 0x01889893
+.insn 4, 0x00564283
+.insn 4, 0x01029293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00664283
+.insn 4, 0x00829293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00764283
+.insn 4, 0x0058e8b3
+.insn 4, 0x00050c13
+.insn 4, 0x00058c93
+.insn 4, 0x00100d13
 25:
-beqz s10, 26f
-addi t0, s10, -1
-beqz t0, 28f
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-xor t5, t5, a7
+beqz s10, 26f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 28f",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // xor t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f4f33
 j 29f
-28:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-add t5, t5, a7
+28:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // add t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f0f33
 29:
 j 27f
-26:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-sub t5, t5, a7
-27:
-lbu t6, 64(s8)
-slli a5, t6, 63
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 31
-slliw t0, t5, 1
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 62
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 30
-slliw t0, t5, 2
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 61
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 28
-slliw t0, t5, 4
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 60
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 24
-slliw t0, t5, 8
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 59
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 16
-slliw t0, t5, 16
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-andi s0, t5, 255
-srliw s1, t5, 8
-andi s1, s1, 255
-srliw s2, t5, 16
-andi s2, s2, 255
-srliw s3, t5, 24
-addi t3, t4, 0
-addi t2, zero, 0
-addi s4, zero, 0
-addi s5, zero, 0
-addi s6, zero, 0
-addi s7, zero, 0
-210:
-lbu t1, 0(t3)
-lbu t0, 1(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 2(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 3(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s0, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s4, s4, t1
-lbu t1, 4(t3)
-lbu t0, 5(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 6(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 7(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s1, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s5, s5, t1
-lbu t1, 8(t3)
-lbu t0, 9(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 10(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 11(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s2, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s6, s6, t1
-lbu t1, 12(t3)
-lbu t0, 13(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 14(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 15(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s3, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s7, s7, t1
-addi t3, t3, 16
-addi t2, t2, 1
-addi t0, t2, -256
+26:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // sub t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x411f0f33
+27:",
+        // lbu t6, 64(s8)
+        // slli a5, t6, 63
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 31
+        // slliw t0, t5, 1
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 62
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 30
+        // slliw t0, t5, 2
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 61
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 28
+        // slliw t0, t5, 4
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 60
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 24
+        // slliw t0, t5, 8
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 59
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 16
+        // slliw t0, t5, 16
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // andi s0, t5, 255
+        // srliw s1, t5, 8
+        // andi s1, s1, 255
+        // srliw s2, t5, 16
+        // andi s2, s2, 255
+        // srliw s3, t5, 24
+        // addi t3, t4, 0
+        // addi t2, zero, 0
+        // addi s4, zero, 0
+        // addi s5, zero, 0
+        // addi s6, zero, 0
+        // addi s7, zero, 0
+        r".insn 4, 0x040c4f83
+.insn 4, 0x03ff9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ff531b
+.insn 4, 0x001f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03ef9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ef531b
+.insn 4, 0x002f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03df9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01cf531b
+.insn 4, 0x004f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03cf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x018f531b
+.insn 4, 0x008f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03bf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x010f531b
+.insn 4, 0x010f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x0fff7413
+.insn 4, 0x008f549b
+.insn 4, 0x0ff4f493
+.insn 4, 0x010f591b
+.insn 4, 0x0ff97913
+.insn 4, 0x018f599b
+.insn 4, 0x000e8e13
+.insn 4, 0x00000393
+.insn 4, 0x00000a13
+.insn 4, 0x00000a93
+.insn 4, 0x00000b13
+.insn 4, 0x00000b93
+210:",
+        // lbu t1, 0(t3)
+        // lbu t0, 1(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 2(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 3(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s0, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s4, s4, t1
+        // lbu t1, 4(t3)
+        // lbu t0, 5(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 6(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 7(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s1, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s5, s5, t1
+        // lbu t1, 8(t3)
+        // lbu t0, 9(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 10(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 11(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s2, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s6, s6, t1
+        // lbu t1, 12(t3)
+        // lbu t0, 13(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 14(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 15(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s3, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s7, s7, t1
+        // addi t3, t3, 16
+        // addi t2, t2, 1
+        // addi t0, t2, -256
+        r".insn 4, 0x000e4303
+.insn 4, 0x001e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x002e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x003e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007442b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006a6a33
+.insn 4, 0x004e4303
+.insn 4, 0x005e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x006e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x007e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0074c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006aeab3
+.insn 4, 0x008e4303
+.insn 4, 0x009e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ae4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00be4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007942b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006b6b33
+.insn 4, 0x00ce4303
+.insn 4, 0x00de4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ee4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00fe4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0079c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006bebb3
+.insn 4, 0x010e0e13
+.insn 4, 0x00138393
+.insn 4, 0xf0038293
 bnez t0, 210b
-beqz s10, 211f
-addi t0, s10, -1
-beqz t0, 213f
-sub t5, s7, s6
-add t5, t5, s5
-xor t5, t5, s4
+beqz s10, 211f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 213f",
+        // sub t5, s7, s6
+        // add t5, t5, s5
+        // xor t5, t5, s4
+        r".insn 4, 0x416b8f33
+.insn 4, 0x015f0f33
+.insn 4, 0x014f4f33
 j 214f
-213:
-xor t5, s7, s6
-sub t5, t5, s5
-add t5, t5, s4
+213:",
+        // xor t5, s7, s6
+        // sub t5, t5, s5
+        // add t5, t5, s4
+        r".insn 4, 0x016bcf33
+.insn 4, 0x415f0f33
+.insn 4, 0x014f0f33
 214:
 j 212f
-211:
-add t5, s7, s6
-xor t5, t5, s5
-sub t5, t5, s4
-212:
-xor t5, t5, a6
-addi a6, a7, 0
-addi a7, t5, 0
-addi s8, s8, 4
-addi t0, s10, -2
-beqz t0, 215f
-addi s10, s10, 1
+211:",
+        // add t5, s7, s6
+        // xor t5, t5, s5
+        // sub t5, t5, s4
+        r".insn 4, 0x016b8f33
+.insn 4, 0x015f4f33
+.insn 4, 0x414f0f33
+212:",
+        // xor t5, t5, a6
+        // addi a6, a7, 0
+        // addi a7, t5, 0
+        // addi s8, s8, 4
+        // addi t0, s10, -2
+        r".insn 4, 0x010f4f33
+.insn 4, 0x00088813
+.insn 4, 0x000f0893
+.insn 4, 0x004c0c13
+.insn 4, 0xffed0293
+beqz t0, 215f",
+        // addi s10, s10, 1
+        r".insn 4, 0x001d0d13
 j 216f
-215:
-addi s10, zero, 0
-216:
-addi s9, s9, -1
-bnez s9, 25b
-srli t0, a7, 24
-sb t0, 0(a2)
-srli t0, a7, 16
-sb t0, 1(a2)
-srli t0, a7, 8
-sb t0, 2(a2)
-srli t0, a7, 0
-sb t0, 3(a2)
-srli t0, a6, 24
-sb t0, 4(a2)
-srli t0, a6, 16
-sb t0, 5(a2)
-srli t0, a6, 8
-sb t0, 6(a2)
-srli t0, a6, 0
-sb t0, 7(a2)
-addi s1, a3, 0
-addi s2, a4, 0
-addi s3, s11, 0
-addi s4, ra, 0
-ld s0, 56(s4)
-ld s5, 64(s4)
-ld s6, 72(s4)
-ld s7, 80(s4)
-ld s8, 88(s4)
-ld s9, 96(s4)
-ld s10, 104(s4)
-ld s11, 112(s4)
-ld ra, 120(s4)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 48(s4)
-lbu t2, 49(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 50(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 51(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 52(s4)
-lbu t2, 53(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 54(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 55(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-addi s2, s2, 8
-addi s3, s3, -1
+215:",
+        // addi s10, zero, 0
+        r".insn 4, 0x00000d13
+216:",
+        // addi s9, s9, -1
+        r".insn 4, 0xfffc8c93
+bnez s9, 25b",
+        // srli t0, a7, 24
+        // sb t0, 0(a2)
+        // srli t0, a7, 16
+        // sb t0, 1(a2)
+        // srli t0, a7, 8
+        // sb t0, 2(a2)
+        // srli t0, a7, 0
+        // sb t0, 3(a2)
+        // srli t0, a6, 24
+        // sb t0, 4(a2)
+        // srli t0, a6, 16
+        // sb t0, 5(a2)
+        // srli t0, a6, 8
+        // sb t0, 6(a2)
+        // srli t0, a6, 0
+        // sb t0, 7(a2)
+        // addi s1, a3, 0
+        // addi s2, a4, 0
+        // addi s3, s11, 0
+        // addi s4, ra, 0
+        // ld s0, 56(s4)
+        // ld s5, 64(s4)
+        // ld s6, 72(s4)
+        // ld s7, 80(s4)
+        // ld s8, 88(s4)
+        // ld s9, 96(s4)
+        // ld s10, 104(s4)
+        // ld s11, 112(s4)
+        // ld ra, 120(s4)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 48(s4)
+        // lbu t2, 49(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 50(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 51(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 52(s4)
+        // lbu t2, 53(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 54(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 55(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // addi s2, s2, 8
+        // addi s3, s3, -1
+        r".insn 4, 0x0188d293
+.insn 4, 0x00560023
+.insn 4, 0x0108d293
+.insn 4, 0x005600a3
+.insn 4, 0x0088d293
+.insn 4, 0x00560123
+.insn 4, 0x0008d293
+.insn 4, 0x005601a3
+.insn 4, 0x01885293
+.insn 4, 0x00560223
+.insn 4, 0x01085293
+.insn 4, 0x005602a3
+.insn 4, 0x00885293
+.insn 4, 0x00560323
+.insn 4, 0x00085293
+.insn 4, 0x005603a3
+.insn 4, 0x00068493
+.insn 4, 0x00070913
+.insn 4, 0x000d8993
+.insn 4, 0x00008a13
+.insn 4, 0x038a3403
+.insn 4, 0x040a3a83
+.insn 4, 0x048a3b03
+.insn 4, 0x050a3b83
+.insn 4, 0x058a3c03
+.insn 4, 0x060a3c83
+.insn 4, 0x068a3d03
+.insn 4, 0x070a3d83
+.insn 4, 0x078a3083
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x030a4303
+.insn 4, 0x031a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x032a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x033a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x034a4303
+.insn 4, 0x035a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x036a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x037a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00890913
+.insn 4, 0xfff98993
 bnez s3, 24b
 j 23f
 22:
-23:
-addi s2, s1, 0
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-addi t3, s4, 0
-ld s1, 0(t3)
-ld s2, 8(t3)
-ld s3, 16(t3)
-ld s4, 24(t3)
-addi t0, zero, 0
-addi t1, t3, 0
-addi t2, zero, 16
-217:
-sd t0, 0(t1)
-addi t1, t1, 8
-addi t2, t2, -1
-bnez t2, 217b
-addi sp, sp, 128
+23:",
+        // addi s2, s1, 0
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // addi t3, s4, 0
+        // ld s1, 0(t3)
+        // ld s2, 8(t3)
+        // ld s3, 16(t3)
+        // ld s4, 24(t3)
+        // addi t0, zero, 0
+        // addi t1, t3, 0
+        // addi t2, zero, 16
+        r".insn 4, 0x00048913
+.insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x000a0e13
+.insn 4, 0x000e3483
+.insn 4, 0x008e3903
+.insn 4, 0x010e3983
+.insn 4, 0x018e3a03
+.insn 4, 0x00000293
+.insn 4, 0x000e0313
+.insn 4, 0x01000393
+217:",
+        // sd t0, 0(t1)
+        // addi t1, t1, 8
+        // addi t2, t2, -1
+        r".insn 4, 0x00533023
+.insn 4, 0x00830313
+.insn 4, 0xfff38393
+bnez t2, 217b",
+        // addi sp, sp, 128
+        r".insn 4, 0x08010113
 j 21f
-20:
-addi sp, sp, -128
-addi t0, sp, 0
-sd s1, 0(t0)
-sd s2, 8(t0)
-sd s3, 16(t0)
-sd s4, 24(t0)
-addi s4, t0, 0
-addi s1, a1, 0
-addi s2, a1, 0
-addi s3, a3, 0
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-addi s2, a2, 0
+20:",
+        // addi sp, sp, -128
+        // addi t0, sp, 0
+        // sd s1, 0(t0)
+        // sd s2, 8(t0)
+        // sd s3, 16(t0)
+        // sd s4, 24(t0)
+        // addi s4, t0, 0
+        // addi s1, a1, 0
+        // addi s2, a1, 0
+        // addi s3, a3, 0
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // addi s2, a2, 0
+        r".insn 4, 0xf8010113
+.insn 4, 0x00010293
+.insn 4, 0x0092b023
+.insn 4, 0x0122b423
+.insn 4, 0x0132b823
+.insn 4, 0x0142bc23
+.insn 4, 0x00028a13
+.insn 4, 0x00058493
+.insn 4, 0x00058913
+.insn 4, 0x00068993
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00060913
 beqz s3, 218f
-220:
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 48(s4)
-srli t2, t0, 8
-sb t2, 49(s4)
-srli t2, t0, 16
-sb t2, 50(s4)
-srli t2, t0, 24
-sb t2, 51(s4)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 52(s4)
-srli t2, t0, 8
-sb t2, 53(s4)
-srli t2, t0, 16
-sb t2, 54(s4)
-srli t2, t0, 24
-sb t2, 55(s4)
-sd s0, 56(s4)
-sd s5, 64(s4)
-sd s6, 72(s4)
-sd s7, 80(s4)
-sd s8, 88(s4)
-sd s9, 96(s4)
-sd s10, 104(s4)
-sd s11, 112(s4)
-sd ra, 120(s4)
-addi a2, s4, 48
-addi a3, s1, 0
-addi a4, s2, 0
-addi s11, s3, 0
-addi ra, s4, 0
-lla t4, {VG_CAST5_S1234}
-addi a1, zero, 12
-lbu a6, 0(a2)
-slli a6, a6, 24
-lbu t0, 1(a2)
-slli t0, t0, 16
-or a6, a6, t0
-lbu t0, 2(a2)
-slli t0, t0, 8
-or a6, a6, t0
-lbu t0, 3(a2)
-or a6, a6, t0
-lbu a7, 4(a2)
-slli a7, a7, 24
-lbu t0, 5(a2)
-slli t0, t0, 16
-or a7, a7, t0
-lbu t0, 6(a2)
-slli t0, t0, 8
-or a7, a7, t0
-lbu t0, 7(a2)
-or a7, a7, t0
-addi s8, a0, 0
-addi s9, a1, 0
-addi s10, zero, 1
+220:",
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 48(s4)
+        // srli t2, t0, 8
+        // sb t2, 49(s4)
+        // srli t2, t0, 16
+        // sb t2, 50(s4)
+        // srli t2, t0, 24
+        // sb t2, 51(s4)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 52(s4)
+        // srli t2, t0, 8
+        // sb t2, 53(s4)
+        // srli t2, t0, 16
+        // sb t2, 54(s4)
+        // srli t2, t0, 24
+        // sb t2, 55(s4)
+        // sd s0, 56(s4)
+        // sd s5, 64(s4)
+        // sd s6, 72(s4)
+        // sd s7, 80(s4)
+        // sd s8, 88(s4)
+        // sd s9, 96(s4)
+        // sd s10, 104(s4)
+        // sd s11, 112(s4)
+        // sd ra, 120(s4)
+        // addi a2, s4, 48
+        // addi a3, s1, 0
+        // addi a4, s2, 0
+        // addi s11, s3, 0
+        // addi ra, s4, 0
+        r".insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0823
+.insn 4, 0x0082d393
+.insn 4, 0x027a08a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0923
+.insn 4, 0x0182d393
+.insn 4, 0x027a09a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0a23
+.insn 4, 0x0082d393
+.insn 4, 0x027a0aa3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0b23
+.insn 4, 0x0182d393
+.insn 4, 0x027a0ba3
+.insn 4, 0x028a3c23
+.insn 4, 0x055a3023
+.insn 4, 0x056a3423
+.insn 4, 0x057a3823
+.insn 4, 0x058a3c23
+.insn 4, 0x079a3023
+.insn 4, 0x07aa3423
+.insn 4, 0x07ba3823
+.insn 4, 0x061a3c23
+.insn 4, 0x030a0613
+.insn 4, 0x00048693
+.insn 4, 0x00090713
+.insn 4, 0x00098d93
+.insn 4, 0x000a0093
+lla t4, {VG_CAST5_S1234}",
+        // addi a1, zero, 12
+        // lbu a6, 0(a2)
+        // slli a6, a6, 24
+        // lbu t0, 1(a2)
+        // slli t0, t0, 16
+        // or a6, a6, t0
+        // lbu t0, 2(a2)
+        // slli t0, t0, 8
+        // or a6, a6, t0
+        // lbu t0, 3(a2)
+        // or a6, a6, t0
+        // lbu a7, 4(a2)
+        // slli a7, a7, 24
+        // lbu t0, 5(a2)
+        // slli t0, t0, 16
+        // or a7, a7, t0
+        // lbu t0, 6(a2)
+        // slli t0, t0, 8
+        // or a7, a7, t0
+        // lbu t0, 7(a2)
+        // or a7, a7, t0
+        // addi s8, a0, 0
+        // addi s9, a1, 0
+        // addi s10, zero, 1
+        r".insn 4, 0x00c00593
+.insn 4, 0x00064803
+.insn 4, 0x01881813
+.insn 4, 0x00164283
+.insn 4, 0x01029293
+.insn 4, 0x00586833
+.insn 4, 0x00264283
+.insn 4, 0x00829293
+.insn 4, 0x00586833
+.insn 4, 0x00364283
+.insn 4, 0x00586833
+.insn 4, 0x00464883
+.insn 4, 0x01889893
+.insn 4, 0x00564283
+.insn 4, 0x01029293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00664283
+.insn 4, 0x00829293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00764283
+.insn 4, 0x0058e8b3
+.insn 4, 0x00050c13
+.insn 4, 0x00058c93
+.insn 4, 0x00100d13
 221:
-beqz s10, 222f
-addi t0, s10, -1
-beqz t0, 224f
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-xor t5, t5, a7
+beqz s10, 222f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 224f",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // xor t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f4f33
 j 225f
-224:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-add t5, t5, a7
+224:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // add t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f0f33
 225:
 j 223f
-222:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-sub t5, t5, a7
-223:
-lbu t6, 64(s8)
-slli a5, t6, 63
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 31
-slliw t0, t5, 1
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 62
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 30
-slliw t0, t5, 2
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 61
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 28
-slliw t0, t5, 4
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 60
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 24
-slliw t0, t5, 8
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 59
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 16
-slliw t0, t5, 16
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-andi s0, t5, 255
-srliw s1, t5, 8
-andi s1, s1, 255
-srliw s2, t5, 16
-andi s2, s2, 255
-srliw s3, t5, 24
-addi t3, t4, 0
-addi t2, zero, 0
-addi s4, zero, 0
-addi s5, zero, 0
-addi s6, zero, 0
-addi s7, zero, 0
-226:
-lbu t1, 0(t3)
-lbu t0, 1(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 2(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 3(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s0, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s4, s4, t1
-lbu t1, 4(t3)
-lbu t0, 5(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 6(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 7(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s1, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s5, s5, t1
-lbu t1, 8(t3)
-lbu t0, 9(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 10(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 11(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s2, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s6, s6, t1
-lbu t1, 12(t3)
-lbu t0, 13(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 14(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 15(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s3, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s7, s7, t1
-addi t3, t3, 16
-addi t2, t2, 1
-addi t0, t2, -256
+222:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // sub t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x411f0f33
+223:",
+        // lbu t6, 64(s8)
+        // slli a5, t6, 63
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 31
+        // slliw t0, t5, 1
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 62
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 30
+        // slliw t0, t5, 2
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 61
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 28
+        // slliw t0, t5, 4
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 60
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 24
+        // slliw t0, t5, 8
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 59
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 16
+        // slliw t0, t5, 16
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // andi s0, t5, 255
+        // srliw s1, t5, 8
+        // andi s1, s1, 255
+        // srliw s2, t5, 16
+        // andi s2, s2, 255
+        // srliw s3, t5, 24
+        // addi t3, t4, 0
+        // addi t2, zero, 0
+        // addi s4, zero, 0
+        // addi s5, zero, 0
+        // addi s6, zero, 0
+        // addi s7, zero, 0
+        r".insn 4, 0x040c4f83
+.insn 4, 0x03ff9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ff531b
+.insn 4, 0x001f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03ef9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ef531b
+.insn 4, 0x002f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03df9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01cf531b
+.insn 4, 0x004f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03cf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x018f531b
+.insn 4, 0x008f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03bf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x010f531b
+.insn 4, 0x010f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x0fff7413
+.insn 4, 0x008f549b
+.insn 4, 0x0ff4f493
+.insn 4, 0x010f591b
+.insn 4, 0x0ff97913
+.insn 4, 0x018f599b
+.insn 4, 0x000e8e13
+.insn 4, 0x00000393
+.insn 4, 0x00000a13
+.insn 4, 0x00000a93
+.insn 4, 0x00000b13
+.insn 4, 0x00000b93
+226:",
+        // lbu t1, 0(t3)
+        // lbu t0, 1(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 2(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 3(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s0, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s4, s4, t1
+        // lbu t1, 4(t3)
+        // lbu t0, 5(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 6(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 7(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s1, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s5, s5, t1
+        // lbu t1, 8(t3)
+        // lbu t0, 9(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 10(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 11(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s2, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s6, s6, t1
+        // lbu t1, 12(t3)
+        // lbu t0, 13(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 14(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 15(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s3, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s7, s7, t1
+        // addi t3, t3, 16
+        // addi t2, t2, 1
+        // addi t0, t2, -256
+        r".insn 4, 0x000e4303
+.insn 4, 0x001e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x002e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x003e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007442b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006a6a33
+.insn 4, 0x004e4303
+.insn 4, 0x005e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x006e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x007e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0074c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006aeab3
+.insn 4, 0x008e4303
+.insn 4, 0x009e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ae4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00be4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007942b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006b6b33
+.insn 4, 0x00ce4303
+.insn 4, 0x00de4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ee4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00fe4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0079c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006bebb3
+.insn 4, 0x010e0e13
+.insn 4, 0x00138393
+.insn 4, 0xf0038293
 bnez t0, 226b
-beqz s10, 227f
-addi t0, s10, -1
-beqz t0, 229f
-sub t5, s7, s6
-add t5, t5, s5
-xor t5, t5, s4
+beqz s10, 227f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 229f",
+        // sub t5, s7, s6
+        // add t5, t5, s5
+        // xor t5, t5, s4
+        r".insn 4, 0x416b8f33
+.insn 4, 0x015f0f33
+.insn 4, 0x014f4f33
 j 230f
-229:
-xor t5, s7, s6
-sub t5, t5, s5
-add t5, t5, s4
+229:",
+        // xor t5, s7, s6
+        // sub t5, t5, s5
+        // add t5, t5, s4
+        r".insn 4, 0x016bcf33
+.insn 4, 0x415f0f33
+.insn 4, 0x014f0f33
 230:
 j 228f
-227:
-add t5, s7, s6
-xor t5, t5, s5
-sub t5, t5, s4
-228:
-xor t5, t5, a6
-addi a6, a7, 0
-addi a7, t5, 0
-addi s8, s8, 4
-addi t0, s10, -2
-beqz t0, 231f
-addi s10, s10, 1
+227:",
+        // add t5, s7, s6
+        // xor t5, t5, s5
+        // sub t5, t5, s4
+        r".insn 4, 0x016b8f33
+.insn 4, 0x015f4f33
+.insn 4, 0x414f0f33
+228:",
+        // xor t5, t5, a6
+        // addi a6, a7, 0
+        // addi a7, t5, 0
+        // addi s8, s8, 4
+        // addi t0, s10, -2
+        r".insn 4, 0x010f4f33
+.insn 4, 0x00088813
+.insn 4, 0x000f0893
+.insn 4, 0x004c0c13
+.insn 4, 0xffed0293
+beqz t0, 231f",
+        // addi s10, s10, 1
+        r".insn 4, 0x001d0d13
 j 232f
-231:
-addi s10, zero, 0
-232:
-addi s9, s9, -1
-bnez s9, 221b
-srli t0, a7, 24
-sb t0, 0(a2)
-srli t0, a7, 16
-sb t0, 1(a2)
-srli t0, a7, 8
-sb t0, 2(a2)
-srli t0, a7, 0
-sb t0, 3(a2)
-srli t0, a6, 24
-sb t0, 4(a2)
-srli t0, a6, 16
-sb t0, 5(a2)
-srli t0, a6, 8
-sb t0, 6(a2)
-srli t0, a6, 0
-sb t0, 7(a2)
-addi s1, a3, 0
-addi s2, a4, 0
-addi s3, s11, 0
-addi s4, ra, 0
-ld s0, 56(s4)
-ld s5, 64(s4)
-ld s6, 72(s4)
-ld s7, 80(s4)
-ld s8, 88(s4)
-ld s9, 96(s4)
-ld s10, 104(s4)
-ld s11, 112(s4)
-ld ra, 120(s4)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 48(s4)
-lbu t2, 49(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 50(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 51(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 52(s4)
-lbu t2, 53(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 54(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 55(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-addi s2, s2, 8
-addi s3, s3, -1
+231:",
+        // addi s10, zero, 0
+        r".insn 4, 0x00000d13
+232:",
+        // addi s9, s9, -1
+        r".insn 4, 0xfffc8c93
+bnez s9, 221b",
+        // srli t0, a7, 24
+        // sb t0, 0(a2)
+        // srli t0, a7, 16
+        // sb t0, 1(a2)
+        // srli t0, a7, 8
+        // sb t0, 2(a2)
+        // srli t0, a7, 0
+        // sb t0, 3(a2)
+        // srli t0, a6, 24
+        // sb t0, 4(a2)
+        // srli t0, a6, 16
+        // sb t0, 5(a2)
+        // srli t0, a6, 8
+        // sb t0, 6(a2)
+        // srli t0, a6, 0
+        // sb t0, 7(a2)
+        // addi s1, a3, 0
+        // addi s2, a4, 0
+        // addi s3, s11, 0
+        // addi s4, ra, 0
+        // ld s0, 56(s4)
+        // ld s5, 64(s4)
+        // ld s6, 72(s4)
+        // ld s7, 80(s4)
+        // ld s8, 88(s4)
+        // ld s9, 96(s4)
+        // ld s10, 104(s4)
+        // ld s11, 112(s4)
+        // ld ra, 120(s4)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 48(s4)
+        // lbu t2, 49(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 50(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 51(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 52(s4)
+        // lbu t2, 53(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 54(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 55(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // addi s2, s2, 8
+        // addi s3, s3, -1
+        r".insn 4, 0x0188d293
+.insn 4, 0x00560023
+.insn 4, 0x0108d293
+.insn 4, 0x005600a3
+.insn 4, 0x0088d293
+.insn 4, 0x00560123
+.insn 4, 0x0008d293
+.insn 4, 0x005601a3
+.insn 4, 0x01885293
+.insn 4, 0x00560223
+.insn 4, 0x01085293
+.insn 4, 0x005602a3
+.insn 4, 0x00885293
+.insn 4, 0x00560323
+.insn 4, 0x00085293
+.insn 4, 0x005603a3
+.insn 4, 0x00068493
+.insn 4, 0x00070913
+.insn 4, 0x000d8993
+.insn 4, 0x00008a13
+.insn 4, 0x038a3403
+.insn 4, 0x040a3a83
+.insn 4, 0x048a3b03
+.insn 4, 0x050a3b83
+.insn 4, 0x058a3c03
+.insn 4, 0x060a3c83
+.insn 4, 0x068a3d03
+.insn 4, 0x070a3d83
+.insn 4, 0x078a3083
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x030a4303
+.insn 4, 0x031a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x032a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x033a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x034a4303
+.insn 4, 0x035a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x036a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x037a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00890913
+.insn 4, 0xfff98993
 bnez s3, 220b
 j 219f
 218:
-219:
-addi s2, s1, 0
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-addi t3, s4, 0
-ld s1, 0(t3)
-ld s2, 8(t3)
-ld s3, 16(t3)
-ld s4, 24(t3)
-addi t0, zero, 0
-addi t1, t3, 0
-addi t2, zero, 16
-233:
-sd t0, 0(t1)
-addi t1, t1, 8
-addi t2, t2, -1
-bnez t2, 233b
-addi sp, sp, 128
-21:
-ret
+219:",
+        // addi s2, s1, 0
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // addi t3, s4, 0
+        // ld s1, 0(t3)
+        // ld s2, 8(t3)
+        // ld s3, 16(t3)
+        // ld s4, 24(t3)
+        // addi t0, zero, 0
+        // addi t1, t3, 0
+        // addi t2, zero, 16
+        r".insn 4, 0x00048913
+.insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x000a0e13
+.insn 4, 0x000e3483
+.insn 4, 0x008e3903
+.insn 4, 0x010e3983
+.insn 4, 0x018e3a03
+.insn 4, 0x00000293
+.insn 4, 0x000e0313
+.insn 4, 0x01000393
+233:",
+        // sd t0, 0(t1)
+        // addi t1, t1, 8
+        // addi t2, t2, -1
+        r".insn 4, 0x00533023
+.insn 4, 0x00830313
+.insn 4, 0xfff38393
+bnez t2, 233b",
+        // addi sp, sp, 128
+        r".insn 4, 0x08010113
+21:",
+        // ret
+        r".insn 4, 0x00008067
 .option pop",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -1032,999 +1954,1921 @@ ret
 pub unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi t0, a1, 0
-addi a1, a2, 0
-addi a2, a3, 0
-addi a3, a4, 0
-addi t0, t0, -12
-beqz t0, 20f
-addi sp, sp, -128
-addi t0, sp, 0
-sd s1, 0(t0)
-sd s2, 8(t0)
-sd s3, 16(t0)
-sd s4, 24(t0)
-addi s4, t0, 0
-addi s1, a1, 0
-addi s2, a1, 0
-addi s3, a3, 0
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-addi s2, a2, 0
+.option arch, +m",
+        // addi t0, a1, 0
+        // addi a1, a2, 0
+        // addi a2, a3, 0
+        // addi a3, a4, 0
+        // addi t0, t0, -12
+        r".insn 4, 0x00058293
+.insn 4, 0x00060593
+.insn 4, 0x00068613
+.insn 4, 0x00070693
+.insn 4, 0xff428293
+beqz t0, 20f",
+        // addi sp, sp, -128
+        // addi t0, sp, 0
+        // sd s1, 0(t0)
+        // sd s2, 8(t0)
+        // sd s3, 16(t0)
+        // sd s4, 24(t0)
+        // addi s4, t0, 0
+        // addi s1, a1, 0
+        // addi s2, a1, 0
+        // addi s3, a3, 0
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // addi s2, a2, 0
+        r".insn 4, 0xf8010113
+.insn 4, 0x00010293
+.insn 4, 0x0092b023
+.insn 4, 0x0122b423
+.insn 4, 0x0132b823
+.insn 4, 0x0142bc23
+.insn 4, 0x00028a13
+.insn 4, 0x00058493
+.insn 4, 0x00058913
+.insn 4, 0x00068993
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00060913
 beqz s3, 22f
-24:
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 48(s4)
-srli t2, t0, 8
-sb t2, 49(s4)
-srli t2, t0, 16
-sb t2, 50(s4)
-srli t2, t0, 24
-sb t2, 51(s4)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 52(s4)
-srli t2, t0, 8
-sb t2, 53(s4)
-srli t2, t0, 16
-sb t2, 54(s4)
-srli t2, t0, 24
-sb t2, 55(s4)
-sd s0, 56(s4)
-sd s5, 64(s4)
-sd s6, 72(s4)
-sd s7, 80(s4)
-sd s8, 88(s4)
-sd s9, 96(s4)
-sd s10, 104(s4)
-sd s11, 112(s4)
-sd ra, 120(s4)
-addi a2, s4, 48
-addi a3, s1, 0
-addi a4, s2, 0
-addi s11, s3, 0
-addi ra, s4, 0
-lla t4, {VG_CAST5_S1234}
-addi a1, zero, 16
-lbu a6, 0(a2)
-slli a6, a6, 24
-lbu t0, 1(a2)
-slli t0, t0, 16
-or a6, a6, t0
-lbu t0, 2(a2)
-slli t0, t0, 8
-or a6, a6, t0
-lbu t0, 3(a2)
-or a6, a6, t0
-lbu a7, 4(a2)
-slli a7, a7, 24
-lbu t0, 5(a2)
-slli t0, t0, 16
-or a7, a7, t0
-lbu t0, 6(a2)
-slli t0, t0, 8
-or a7, a7, t0
-lbu t0, 7(a2)
-or a7, a7, t0
-addi s8, a0, 0
-addi s9, a1, 0
-addi s10, zero, 1
+24:",
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 48(s4)
+        // srli t2, t0, 8
+        // sb t2, 49(s4)
+        // srli t2, t0, 16
+        // sb t2, 50(s4)
+        // srli t2, t0, 24
+        // sb t2, 51(s4)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 52(s4)
+        // srli t2, t0, 8
+        // sb t2, 53(s4)
+        // srli t2, t0, 16
+        // sb t2, 54(s4)
+        // srli t2, t0, 24
+        // sb t2, 55(s4)
+        // sd s0, 56(s4)
+        // sd s5, 64(s4)
+        // sd s6, 72(s4)
+        // sd s7, 80(s4)
+        // sd s8, 88(s4)
+        // sd s9, 96(s4)
+        // sd s10, 104(s4)
+        // sd s11, 112(s4)
+        // sd ra, 120(s4)
+        // addi a2, s4, 48
+        // addi a3, s1, 0
+        // addi a4, s2, 0
+        // addi s11, s3, 0
+        // addi ra, s4, 0
+        r".insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0823
+.insn 4, 0x0082d393
+.insn 4, 0x027a08a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0923
+.insn 4, 0x0182d393
+.insn 4, 0x027a09a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0a23
+.insn 4, 0x0082d393
+.insn 4, 0x027a0aa3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0b23
+.insn 4, 0x0182d393
+.insn 4, 0x027a0ba3
+.insn 4, 0x028a3c23
+.insn 4, 0x055a3023
+.insn 4, 0x056a3423
+.insn 4, 0x057a3823
+.insn 4, 0x058a3c23
+.insn 4, 0x079a3023
+.insn 4, 0x07aa3423
+.insn 4, 0x07ba3823
+.insn 4, 0x061a3c23
+.insn 4, 0x030a0613
+.insn 4, 0x00048693
+.insn 4, 0x00090713
+.insn 4, 0x00098d93
+.insn 4, 0x000a0093
+lla t4, {VG_CAST5_S1234}",
+        // addi a1, zero, 16
+        // lbu a6, 0(a2)
+        // slli a6, a6, 24
+        // lbu t0, 1(a2)
+        // slli t0, t0, 16
+        // or a6, a6, t0
+        // lbu t0, 2(a2)
+        // slli t0, t0, 8
+        // or a6, a6, t0
+        // lbu t0, 3(a2)
+        // or a6, a6, t0
+        // lbu a7, 4(a2)
+        // slli a7, a7, 24
+        // lbu t0, 5(a2)
+        // slli t0, t0, 16
+        // or a7, a7, t0
+        // lbu t0, 6(a2)
+        // slli t0, t0, 8
+        // or a7, a7, t0
+        // lbu t0, 7(a2)
+        // or a7, a7, t0
+        // addi s8, a0, 0
+        // addi s9, a1, 0
+        // addi s10, zero, 1
+        r".insn 4, 0x01000593
+.insn 4, 0x00064803
+.insn 4, 0x01881813
+.insn 4, 0x00164283
+.insn 4, 0x01029293
+.insn 4, 0x00586833
+.insn 4, 0x00264283
+.insn 4, 0x00829293
+.insn 4, 0x00586833
+.insn 4, 0x00364283
+.insn 4, 0x00586833
+.insn 4, 0x00464883
+.insn 4, 0x01889893
+.insn 4, 0x00564283
+.insn 4, 0x01029293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00664283
+.insn 4, 0x00829293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00764283
+.insn 4, 0x0058e8b3
+.insn 4, 0x00050c13
+.insn 4, 0x00058c93
+.insn 4, 0x00100d13
 25:
-beqz s10, 26f
-addi t0, s10, -1
-beqz t0, 28f
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-xor t5, t5, a7
+beqz s10, 26f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 28f",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // xor t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f4f33
 j 29f
-28:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-add t5, t5, a7
+28:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // add t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f0f33
 29:
 j 27f
-26:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-sub t5, t5, a7
-27:
-lbu t6, 64(s8)
-slli a5, t6, 63
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 31
-slliw t0, t5, 1
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 62
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 30
-slliw t0, t5, 2
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 61
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 28
-slliw t0, t5, 4
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 60
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 24
-slliw t0, t5, 8
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 59
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 16
-slliw t0, t5, 16
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-andi s0, t5, 255
-srliw s1, t5, 8
-andi s1, s1, 255
-srliw s2, t5, 16
-andi s2, s2, 255
-srliw s3, t5, 24
-addi t3, t4, 0
-addi t2, zero, 0
-addi s4, zero, 0
-addi s5, zero, 0
-addi s6, zero, 0
-addi s7, zero, 0
-210:
-lbu t1, 0(t3)
-lbu t0, 1(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 2(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 3(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s0, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s4, s4, t1
-lbu t1, 4(t3)
-lbu t0, 5(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 6(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 7(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s1, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s5, s5, t1
-lbu t1, 8(t3)
-lbu t0, 9(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 10(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 11(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s2, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s6, s6, t1
-lbu t1, 12(t3)
-lbu t0, 13(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 14(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 15(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s3, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s7, s7, t1
-addi t3, t3, 16
-addi t2, t2, 1
-addi t0, t2, -256
+26:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // sub t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x411f0f33
+27:",
+        // lbu t6, 64(s8)
+        // slli a5, t6, 63
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 31
+        // slliw t0, t5, 1
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 62
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 30
+        // slliw t0, t5, 2
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 61
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 28
+        // slliw t0, t5, 4
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 60
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 24
+        // slliw t0, t5, 8
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 59
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 16
+        // slliw t0, t5, 16
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // andi s0, t5, 255
+        // srliw s1, t5, 8
+        // andi s1, s1, 255
+        // srliw s2, t5, 16
+        // andi s2, s2, 255
+        // srliw s3, t5, 24
+        // addi t3, t4, 0
+        // addi t2, zero, 0
+        // addi s4, zero, 0
+        // addi s5, zero, 0
+        // addi s6, zero, 0
+        // addi s7, zero, 0
+        r".insn 4, 0x040c4f83
+.insn 4, 0x03ff9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ff531b
+.insn 4, 0x001f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03ef9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ef531b
+.insn 4, 0x002f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03df9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01cf531b
+.insn 4, 0x004f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03cf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x018f531b
+.insn 4, 0x008f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03bf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x010f531b
+.insn 4, 0x010f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x0fff7413
+.insn 4, 0x008f549b
+.insn 4, 0x0ff4f493
+.insn 4, 0x010f591b
+.insn 4, 0x0ff97913
+.insn 4, 0x018f599b
+.insn 4, 0x000e8e13
+.insn 4, 0x00000393
+.insn 4, 0x00000a13
+.insn 4, 0x00000a93
+.insn 4, 0x00000b13
+.insn 4, 0x00000b93
+210:",
+        // lbu t1, 0(t3)
+        // lbu t0, 1(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 2(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 3(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s0, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s4, s4, t1
+        // lbu t1, 4(t3)
+        // lbu t0, 5(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 6(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 7(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s1, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s5, s5, t1
+        // lbu t1, 8(t3)
+        // lbu t0, 9(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 10(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 11(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s2, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s6, s6, t1
+        // lbu t1, 12(t3)
+        // lbu t0, 13(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 14(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 15(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s3, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s7, s7, t1
+        // addi t3, t3, 16
+        // addi t2, t2, 1
+        // addi t0, t2, -256
+        r".insn 4, 0x000e4303
+.insn 4, 0x001e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x002e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x003e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007442b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006a6a33
+.insn 4, 0x004e4303
+.insn 4, 0x005e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x006e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x007e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0074c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006aeab3
+.insn 4, 0x008e4303
+.insn 4, 0x009e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ae4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00be4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007942b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006b6b33
+.insn 4, 0x00ce4303
+.insn 4, 0x00de4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ee4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00fe4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0079c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006bebb3
+.insn 4, 0x010e0e13
+.insn 4, 0x00138393
+.insn 4, 0xf0038293
 bnez t0, 210b
-beqz s10, 211f
-addi t0, s10, -1
-beqz t0, 213f
-sub t5, s7, s6
-add t5, t5, s5
-xor t5, t5, s4
+beqz s10, 211f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 213f",
+        // sub t5, s7, s6
+        // add t5, t5, s5
+        // xor t5, t5, s4
+        r".insn 4, 0x416b8f33
+.insn 4, 0x015f0f33
+.insn 4, 0x014f4f33
 j 214f
-213:
-xor t5, s7, s6
-sub t5, t5, s5
-add t5, t5, s4
+213:",
+        // xor t5, s7, s6
+        // sub t5, t5, s5
+        // add t5, t5, s4
+        r".insn 4, 0x016bcf33
+.insn 4, 0x415f0f33
+.insn 4, 0x014f0f33
 214:
 j 212f
-211:
-add t5, s7, s6
-xor t5, t5, s5
-sub t5, t5, s4
-212:
-xor t5, t5, a6
-addi a6, a7, 0
-addi a7, t5, 0
-addi s8, s8, 4
-addi t0, s10, -2
-beqz t0, 215f
-addi s10, s10, 1
+211:",
+        // add t5, s7, s6
+        // xor t5, t5, s5
+        // sub t5, t5, s4
+        r".insn 4, 0x016b8f33
+.insn 4, 0x015f4f33
+.insn 4, 0x414f0f33
+212:",
+        // xor t5, t5, a6
+        // addi a6, a7, 0
+        // addi a7, t5, 0
+        // addi s8, s8, 4
+        // addi t0, s10, -2
+        r".insn 4, 0x010f4f33
+.insn 4, 0x00088813
+.insn 4, 0x000f0893
+.insn 4, 0x004c0c13
+.insn 4, 0xffed0293
+beqz t0, 215f",
+        // addi s10, s10, 1
+        r".insn 4, 0x001d0d13
 j 216f
-215:
-addi s10, zero, 0
-216:
-addi s9, s9, -1
-bnez s9, 25b
-srli t0, a7, 24
-sb t0, 0(a2)
-srli t0, a7, 16
-sb t0, 1(a2)
-srli t0, a7, 8
-sb t0, 2(a2)
-srli t0, a7, 0
-sb t0, 3(a2)
-srli t0, a6, 24
-sb t0, 4(a2)
-srli t0, a6, 16
-sb t0, 5(a2)
-srli t0, a6, 8
-sb t0, 6(a2)
-srli t0, a6, 0
-sb t0, 7(a2)
-addi s1, a3, 0
-addi s2, a4, 0
-addi s3, s11, 0
-addi s4, ra, 0
-ld s0, 56(s4)
-ld s5, 64(s4)
-ld s6, 72(s4)
-ld s7, 80(s4)
-ld s8, 88(s4)
-ld s9, 96(s4)
-ld s10, 104(s4)
-ld s11, 112(s4)
-ld ra, 120(s4)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 48(s4)
-lbu t2, 49(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 50(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 51(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 52(s4)
-lbu t2, 53(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 54(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 55(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-addi s2, s2, 8
-addi s3, s3, -1
+215:",
+        // addi s10, zero, 0
+        r".insn 4, 0x00000d13
+216:",
+        // addi s9, s9, -1
+        r".insn 4, 0xfffc8c93
+bnez s9, 25b",
+        // srli t0, a7, 24
+        // sb t0, 0(a2)
+        // srli t0, a7, 16
+        // sb t0, 1(a2)
+        // srli t0, a7, 8
+        // sb t0, 2(a2)
+        // srli t0, a7, 0
+        // sb t0, 3(a2)
+        // srli t0, a6, 24
+        // sb t0, 4(a2)
+        // srli t0, a6, 16
+        // sb t0, 5(a2)
+        // srli t0, a6, 8
+        // sb t0, 6(a2)
+        // srli t0, a6, 0
+        // sb t0, 7(a2)
+        // addi s1, a3, 0
+        // addi s2, a4, 0
+        // addi s3, s11, 0
+        // addi s4, ra, 0
+        // ld s0, 56(s4)
+        // ld s5, 64(s4)
+        // ld s6, 72(s4)
+        // ld s7, 80(s4)
+        // ld s8, 88(s4)
+        // ld s9, 96(s4)
+        // ld s10, 104(s4)
+        // ld s11, 112(s4)
+        // ld ra, 120(s4)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 48(s4)
+        // lbu t2, 49(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 50(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 51(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 52(s4)
+        // lbu t2, 53(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 54(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 55(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // addi s2, s2, 8
+        // addi s3, s3, -1
+        r".insn 4, 0x0188d293
+.insn 4, 0x00560023
+.insn 4, 0x0108d293
+.insn 4, 0x005600a3
+.insn 4, 0x0088d293
+.insn 4, 0x00560123
+.insn 4, 0x0008d293
+.insn 4, 0x005601a3
+.insn 4, 0x01885293
+.insn 4, 0x00560223
+.insn 4, 0x01085293
+.insn 4, 0x005602a3
+.insn 4, 0x00885293
+.insn 4, 0x00560323
+.insn 4, 0x00085293
+.insn 4, 0x005603a3
+.insn 4, 0x00068493
+.insn 4, 0x00070913
+.insn 4, 0x000d8993
+.insn 4, 0x00008a13
+.insn 4, 0x038a3403
+.insn 4, 0x040a3a83
+.insn 4, 0x048a3b03
+.insn 4, 0x050a3b83
+.insn 4, 0x058a3c03
+.insn 4, 0x060a3c83
+.insn 4, 0x068a3d03
+.insn 4, 0x070a3d83
+.insn 4, 0x078a3083
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x030a4303
+.insn 4, 0x031a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x032a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x033a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x034a4303
+.insn 4, 0x035a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x036a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x037a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x00890913
+.insn 4, 0xfff98993
 bnez s3, 24b
 j 23f
 22:
-23:
-addi s2, s1, 0
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-addi t3, s4, 0
-ld s1, 0(t3)
-ld s2, 8(t3)
-ld s3, 16(t3)
-ld s4, 24(t3)
-addi t0, zero, 0
-addi t1, t3, 0
-addi t2, zero, 16
-217:
-sd t0, 0(t1)
-addi t1, t1, 8
-addi t2, t2, -1
-bnez t2, 217b
-addi sp, sp, 128
+23:",
+        // addi s2, s1, 0
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // addi t3, s4, 0
+        // ld s1, 0(t3)
+        // ld s2, 8(t3)
+        // ld s3, 16(t3)
+        // ld s4, 24(t3)
+        // addi t0, zero, 0
+        // addi t1, t3, 0
+        // addi t2, zero, 16
+        r".insn 4, 0x00048913
+.insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x000a0e13
+.insn 4, 0x000e3483
+.insn 4, 0x008e3903
+.insn 4, 0x010e3983
+.insn 4, 0x018e3a03
+.insn 4, 0x00000293
+.insn 4, 0x000e0313
+.insn 4, 0x01000393
+217:",
+        // sd t0, 0(t1)
+        // addi t1, t1, 8
+        // addi t2, t2, -1
+        r".insn 4, 0x00533023
+.insn 4, 0x00830313
+.insn 4, 0xfff38393
+bnez t2, 217b",
+        // addi sp, sp, 128
+        r".insn 4, 0x08010113
 j 21f
-20:
-addi sp, sp, -128
-addi t0, sp, 0
-sd s1, 0(t0)
-sd s2, 8(t0)
-sd s3, 16(t0)
-sd s4, 24(t0)
-addi s4, t0, 0
-addi s1, a1, 0
-addi s2, a1, 0
-addi s3, a3, 0
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-addi s2, a2, 0
+20:",
+        // addi sp, sp, -128
+        // addi t0, sp, 0
+        // sd s1, 0(t0)
+        // sd s2, 8(t0)
+        // sd s3, 16(t0)
+        // sd s4, 24(t0)
+        // addi s4, t0, 0
+        // addi s1, a1, 0
+        // addi s2, a1, 0
+        // addi s3, a3, 0
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // addi s2, a2, 0
+        r".insn 4, 0xf8010113
+.insn 4, 0x00010293
+.insn 4, 0x0092b023
+.insn 4, 0x0122b423
+.insn 4, 0x0132b823
+.insn 4, 0x0142bc23
+.insn 4, 0x00028a13
+.insn 4, 0x00058493
+.insn 4, 0x00058913
+.insn 4, 0x00068993
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00060913
 beqz s3, 218f
-220:
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 48(s4)
-srli t2, t0, 8
-sb t2, 49(s4)
-srli t2, t0, 16
-sb t2, 50(s4)
-srli t2, t0, 24
-sb t2, 51(s4)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 52(s4)
-srli t2, t0, 8
-sb t2, 53(s4)
-srli t2, t0, 16
-sb t2, 54(s4)
-srli t2, t0, 24
-sb t2, 55(s4)
-sd s0, 56(s4)
-sd s5, 64(s4)
-sd s6, 72(s4)
-sd s7, 80(s4)
-sd s8, 88(s4)
-sd s9, 96(s4)
-sd s10, 104(s4)
-sd s11, 112(s4)
-sd ra, 120(s4)
-addi a2, s4, 48
-addi a3, s1, 0
-addi a4, s2, 0
-addi s11, s3, 0
-addi ra, s4, 0
-lla t4, {VG_CAST5_S1234}
-addi a1, zero, 12
-lbu a6, 0(a2)
-slli a6, a6, 24
-lbu t0, 1(a2)
-slli t0, t0, 16
-or a6, a6, t0
-lbu t0, 2(a2)
-slli t0, t0, 8
-or a6, a6, t0
-lbu t0, 3(a2)
-or a6, a6, t0
-lbu a7, 4(a2)
-slli a7, a7, 24
-lbu t0, 5(a2)
-slli t0, t0, 16
-or a7, a7, t0
-lbu t0, 6(a2)
-slli t0, t0, 8
-or a7, a7, t0
-lbu t0, 7(a2)
-or a7, a7, t0
-addi s8, a0, 0
-addi s9, a1, 0
-addi s10, zero, 1
+220:",
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 48(s4)
+        // srli t2, t0, 8
+        // sb t2, 49(s4)
+        // srli t2, t0, 16
+        // sb t2, 50(s4)
+        // srli t2, t0, 24
+        // sb t2, 51(s4)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 52(s4)
+        // srli t2, t0, 8
+        // sb t2, 53(s4)
+        // srli t2, t0, 16
+        // sb t2, 54(s4)
+        // srli t2, t0, 24
+        // sb t2, 55(s4)
+        // sd s0, 56(s4)
+        // sd s5, 64(s4)
+        // sd s6, 72(s4)
+        // sd s7, 80(s4)
+        // sd s8, 88(s4)
+        // sd s9, 96(s4)
+        // sd s10, 104(s4)
+        // sd s11, 112(s4)
+        // sd ra, 120(s4)
+        // addi a2, s4, 48
+        // addi a3, s1, 0
+        // addi a4, s2, 0
+        // addi s11, s3, 0
+        // addi ra, s4, 0
+        r".insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0823
+.insn 4, 0x0082d393
+.insn 4, 0x027a08a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0923
+.insn 4, 0x0182d393
+.insn 4, 0x027a09a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0a23
+.insn 4, 0x0082d393
+.insn 4, 0x027a0aa3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0b23
+.insn 4, 0x0182d393
+.insn 4, 0x027a0ba3
+.insn 4, 0x028a3c23
+.insn 4, 0x055a3023
+.insn 4, 0x056a3423
+.insn 4, 0x057a3823
+.insn 4, 0x058a3c23
+.insn 4, 0x079a3023
+.insn 4, 0x07aa3423
+.insn 4, 0x07ba3823
+.insn 4, 0x061a3c23
+.insn 4, 0x030a0613
+.insn 4, 0x00048693
+.insn 4, 0x00090713
+.insn 4, 0x00098d93
+.insn 4, 0x000a0093
+lla t4, {VG_CAST5_S1234}",
+        // addi a1, zero, 12
+        // lbu a6, 0(a2)
+        // slli a6, a6, 24
+        // lbu t0, 1(a2)
+        // slli t0, t0, 16
+        // or a6, a6, t0
+        // lbu t0, 2(a2)
+        // slli t0, t0, 8
+        // or a6, a6, t0
+        // lbu t0, 3(a2)
+        // or a6, a6, t0
+        // lbu a7, 4(a2)
+        // slli a7, a7, 24
+        // lbu t0, 5(a2)
+        // slli t0, t0, 16
+        // or a7, a7, t0
+        // lbu t0, 6(a2)
+        // slli t0, t0, 8
+        // or a7, a7, t0
+        // lbu t0, 7(a2)
+        // or a7, a7, t0
+        // addi s8, a0, 0
+        // addi s9, a1, 0
+        // addi s10, zero, 1
+        r".insn 4, 0x00c00593
+.insn 4, 0x00064803
+.insn 4, 0x01881813
+.insn 4, 0x00164283
+.insn 4, 0x01029293
+.insn 4, 0x00586833
+.insn 4, 0x00264283
+.insn 4, 0x00829293
+.insn 4, 0x00586833
+.insn 4, 0x00364283
+.insn 4, 0x00586833
+.insn 4, 0x00464883
+.insn 4, 0x01889893
+.insn 4, 0x00564283
+.insn 4, 0x01029293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00664283
+.insn 4, 0x00829293
+.insn 4, 0x0058e8b3
+.insn 4, 0x00764283
+.insn 4, 0x0058e8b3
+.insn 4, 0x00050c13
+.insn 4, 0x00058c93
+.insn 4, 0x00100d13
 221:
-beqz s10, 222f
-addi t0, s10, -1
-beqz t0, 224f
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-xor t5, t5, a7
+beqz s10, 222f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 224f",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // xor t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f4f33
 j 225f
-224:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-add t5, t5, a7
+224:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // add t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x011f0f33
 225:
 j 223f
-222:
-lbu t5, 0(s8)
-lbu t0, 1(s8)
-slli t0, t0, 8
-or t5, t5, t0
-lbu t0, 2(s8)
-slli t0, t0, 16
-or t5, t5, t0
-lbu t0, 3(s8)
-slli t0, t0, 24
-or t5, t5, t0
-sub t5, t5, a7
-223:
-lbu t6, 64(s8)
-slli a5, t6, 63
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 31
-slliw t0, t5, 1
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 62
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 30
-slliw t0, t5, 2
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 61
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 28
-slliw t0, t5, 4
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 60
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 24
-slliw t0, t5, 8
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-slli a5, t6, 59
-srli a5, a5, 63
-addi a5, a5, -1
-srliw t1, t5, 16
-slliw t0, t5, 16
-or t0, t0, t1
-xor t1, t5, t0
-and t1, t1, a5
-xor t5, t0, t1
-andi s0, t5, 255
-srliw s1, t5, 8
-andi s1, s1, 255
-srliw s2, t5, 16
-andi s2, s2, 255
-srliw s3, t5, 24
-addi t3, t4, 0
-addi t2, zero, 0
-addi s4, zero, 0
-addi s5, zero, 0
-addi s6, zero, 0
-addi s7, zero, 0
-226:
-lbu t1, 0(t3)
-lbu t0, 1(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 2(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 3(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s0, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s4, s4, t1
-lbu t1, 4(t3)
-lbu t0, 5(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 6(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 7(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s1, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s5, s5, t1
-lbu t1, 8(t3)
-lbu t0, 9(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 10(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 11(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s2, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s6, s6, t1
-lbu t1, 12(t3)
-lbu t0, 13(t3)
-slli t0, t0, 8
-or t1, t1, t0
-lbu t0, 14(t3)
-slli t0, t0, 16
-or t1, t1, t0
-lbu t0, 15(t3)
-slli t0, t0, 24
-or t1, t1, t0
-xor t0, s3, t2
-addi t0, t0, -1
-srai t0, t0, 63
-and t1, t1, t0
-or s7, s7, t1
-addi t3, t3, 16
-addi t2, t2, 1
-addi t0, t2, -256
+222:",
+        // lbu t5, 0(s8)
+        // lbu t0, 1(s8)
+        // slli t0, t0, 8
+        // or t5, t5, t0
+        // lbu t0, 2(s8)
+        // slli t0, t0, 16
+        // or t5, t5, t0
+        // lbu t0, 3(s8)
+        // slli t0, t0, 24
+        // or t5, t5, t0
+        // sub t5, t5, a7
+        r".insn 4, 0x000c4f03
+.insn 4, 0x001c4283
+.insn 4, 0x00829293
+.insn 4, 0x005f6f33
+.insn 4, 0x002c4283
+.insn 4, 0x01029293
+.insn 4, 0x005f6f33
+.insn 4, 0x003c4283
+.insn 4, 0x01829293
+.insn 4, 0x005f6f33
+.insn 4, 0x411f0f33
+223:",
+        // lbu t6, 64(s8)
+        // slli a5, t6, 63
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 31
+        // slliw t0, t5, 1
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 62
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 30
+        // slliw t0, t5, 2
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 61
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 28
+        // slliw t0, t5, 4
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 60
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 24
+        // slliw t0, t5, 8
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // slli a5, t6, 59
+        // srli a5, a5, 63
+        // addi a5, a5, -1
+        // srliw t1, t5, 16
+        // slliw t0, t5, 16
+        // or t0, t0, t1
+        // xor t1, t5, t0
+        // and t1, t1, a5
+        // xor t5, t0, t1
+        // andi s0, t5, 255
+        // srliw s1, t5, 8
+        // andi s1, s1, 255
+        // srliw s2, t5, 16
+        // andi s2, s2, 255
+        // srliw s3, t5, 24
+        // addi t3, t4, 0
+        // addi t2, zero, 0
+        // addi s4, zero, 0
+        // addi s5, zero, 0
+        // addi s6, zero, 0
+        // addi s7, zero, 0
+        r".insn 4, 0x040c4f83
+.insn 4, 0x03ff9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ff531b
+.insn 4, 0x001f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03ef9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01ef531b
+.insn 4, 0x002f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03df9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x01cf531b
+.insn 4, 0x004f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03cf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x018f531b
+.insn 4, 0x008f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x03bf9793
+.insn 4, 0x03f7d793
+.insn 4, 0xfff78793
+.insn 4, 0x010f531b
+.insn 4, 0x010f129b
+.insn 4, 0x0062e2b3
+.insn 4, 0x005f4333
+.insn 4, 0x00f37333
+.insn 4, 0x0062cf33
+.insn 4, 0x0fff7413
+.insn 4, 0x008f549b
+.insn 4, 0x0ff4f493
+.insn 4, 0x010f591b
+.insn 4, 0x0ff97913
+.insn 4, 0x018f599b
+.insn 4, 0x000e8e13
+.insn 4, 0x00000393
+.insn 4, 0x00000a13
+.insn 4, 0x00000a93
+.insn 4, 0x00000b13
+.insn 4, 0x00000b93
+226:",
+        // lbu t1, 0(t3)
+        // lbu t0, 1(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 2(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 3(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s0, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s4, s4, t1
+        // lbu t1, 4(t3)
+        // lbu t0, 5(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 6(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 7(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s1, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s5, s5, t1
+        // lbu t1, 8(t3)
+        // lbu t0, 9(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 10(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 11(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s2, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s6, s6, t1
+        // lbu t1, 12(t3)
+        // lbu t0, 13(t3)
+        // slli t0, t0, 8
+        // or t1, t1, t0
+        // lbu t0, 14(t3)
+        // slli t0, t0, 16
+        // or t1, t1, t0
+        // lbu t0, 15(t3)
+        // slli t0, t0, 24
+        // or t1, t1, t0
+        // xor t0, s3, t2
+        // addi t0, t0, -1
+        // srai t0, t0, 63
+        // and t1, t1, t0
+        // or s7, s7, t1
+        // addi t3, t3, 16
+        // addi t2, t2, 1
+        // addi t0, t2, -256
+        r".insn 4, 0x000e4303
+.insn 4, 0x001e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x002e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x003e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007442b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006a6a33
+.insn 4, 0x004e4303
+.insn 4, 0x005e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x006e4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x007e4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0074c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006aeab3
+.insn 4, 0x008e4303
+.insn 4, 0x009e4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ae4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00be4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x007942b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006b6b33
+.insn 4, 0x00ce4303
+.insn 4, 0x00de4283
+.insn 4, 0x00829293
+.insn 4, 0x00536333
+.insn 4, 0x00ee4283
+.insn 4, 0x01029293
+.insn 4, 0x00536333
+.insn 4, 0x00fe4283
+.insn 4, 0x01829293
+.insn 4, 0x00536333
+.insn 4, 0x0079c2b3
+.insn 4, 0xfff28293
+.insn 4, 0x43f2d293
+.insn 4, 0x00537333
+.insn 4, 0x006bebb3
+.insn 4, 0x010e0e13
+.insn 4, 0x00138393
+.insn 4, 0xf0038293
 bnez t0, 226b
-beqz s10, 227f
-addi t0, s10, -1
-beqz t0, 229f
-sub t5, s7, s6
-add t5, t5, s5
-xor t5, t5, s4
+beqz s10, 227f",
+        // addi t0, s10, -1
+        r".insn 4, 0xfffd0293
+beqz t0, 229f",
+        // sub t5, s7, s6
+        // add t5, t5, s5
+        // xor t5, t5, s4
+        r".insn 4, 0x416b8f33
+.insn 4, 0x015f0f33
+.insn 4, 0x014f4f33
 j 230f
-229:
-xor t5, s7, s6
-sub t5, t5, s5
-add t5, t5, s4
+229:",
+        // xor t5, s7, s6
+        // sub t5, t5, s5
+        // add t5, t5, s4
+        r".insn 4, 0x016bcf33
+.insn 4, 0x415f0f33
+.insn 4, 0x014f0f33
 230:
 j 228f
-227:
-add t5, s7, s6
-xor t5, t5, s5
-sub t5, t5, s4
-228:
-xor t5, t5, a6
-addi a6, a7, 0
-addi a7, t5, 0
-addi s8, s8, 4
-addi t0, s10, -2
-beqz t0, 231f
-addi s10, s10, 1
+227:",
+        // add t5, s7, s6
+        // xor t5, t5, s5
+        // sub t5, t5, s4
+        r".insn 4, 0x016b8f33
+.insn 4, 0x015f4f33
+.insn 4, 0x414f0f33
+228:",
+        // xor t5, t5, a6
+        // addi a6, a7, 0
+        // addi a7, t5, 0
+        // addi s8, s8, 4
+        // addi t0, s10, -2
+        r".insn 4, 0x010f4f33
+.insn 4, 0x00088813
+.insn 4, 0x000f0893
+.insn 4, 0x004c0c13
+.insn 4, 0xffed0293
+beqz t0, 231f",
+        // addi s10, s10, 1
+        r".insn 4, 0x001d0d13
 j 232f
-231:
-addi s10, zero, 0
-232:
-addi s9, s9, -1
-bnez s9, 221b
-srli t0, a7, 24
-sb t0, 0(a2)
-srli t0, a7, 16
-sb t0, 1(a2)
-srli t0, a7, 8
-sb t0, 2(a2)
-srli t0, a7, 0
-sb t0, 3(a2)
-srli t0, a6, 24
-sb t0, 4(a2)
-srli t0, a6, 16
-sb t0, 5(a2)
-srli t0, a6, 8
-sb t0, 6(a2)
-srli t0, a6, 0
-sb t0, 7(a2)
-addi s1, a3, 0
-addi s2, a4, 0
-addi s3, s11, 0
-addi s4, ra, 0
-ld s0, 56(s4)
-ld s5, 64(s4)
-ld s6, 72(s4)
-ld s7, 80(s4)
-ld s8, 88(s4)
-ld s9, 96(s4)
-ld s10, 104(s4)
-ld s11, 112(s4)
-ld ra, 120(s4)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 32(s4)
-srli t2, t0, 8
-sb t2, 33(s4)
-srli t2, t0, 16
-sb t2, 34(s4)
-srli t2, t0, 24
-sb t2, 35(s4)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 36(s4)
-srli t2, t0, 8
-sb t2, 37(s4)
-srli t2, t0, 16
-sb t2, 38(s4)
-srli t2, t0, 24
-sb t2, 39(s4)
-lbu t0, 0(s2)
-lbu t2, 1(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 2(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 3(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 48(s4)
-lbu t2, 49(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 50(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 51(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 4(s2)
-lbu t2, 5(s2)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 6(s2)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 7(s2)
-slli t2, t2, 24
-or t0, t0, t2
-lbu t1, 52(s4)
-lbu t2, 53(s4)
-slli t2, t2, 8
-or t1, t1, t2
-lbu t2, 54(s4)
-slli t2, t2, 16
-or t1, t1, t2
-lbu t2, 55(s4)
-slli t2, t2, 24
-or t1, t1, t2
-xor t0, t0, t1
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-addi s2, s2, 8
-addi s3, s3, -1
+231:",
+        // addi s10, zero, 0
+        r".insn 4, 0x00000d13
+232:",
+        // addi s9, s9, -1
+        r".insn 4, 0xfffc8c93
+bnez s9, 221b",
+        // srli t0, a7, 24
+        // sb t0, 0(a2)
+        // srli t0, a7, 16
+        // sb t0, 1(a2)
+        // srli t0, a7, 8
+        // sb t0, 2(a2)
+        // srli t0, a7, 0
+        // sb t0, 3(a2)
+        // srli t0, a6, 24
+        // sb t0, 4(a2)
+        // srli t0, a6, 16
+        // sb t0, 5(a2)
+        // srli t0, a6, 8
+        // sb t0, 6(a2)
+        // srli t0, a6, 0
+        // sb t0, 7(a2)
+        // addi s1, a3, 0
+        // addi s2, a4, 0
+        // addi s3, s11, 0
+        // addi s4, ra, 0
+        // ld s0, 56(s4)
+        // ld s5, 64(s4)
+        // ld s6, 72(s4)
+        // ld s7, 80(s4)
+        // ld s8, 88(s4)
+        // ld s9, 96(s4)
+        // ld s10, 104(s4)
+        // ld s11, 112(s4)
+        // ld ra, 120(s4)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 32(s4)
+        // srli t2, t0, 8
+        // sb t2, 33(s4)
+        // srli t2, t0, 16
+        // sb t2, 34(s4)
+        // srli t2, t0, 24
+        // sb t2, 35(s4)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 36(s4)
+        // srli t2, t0, 8
+        // sb t2, 37(s4)
+        // srli t2, t0, 16
+        // sb t2, 38(s4)
+        // srli t2, t0, 24
+        // sb t2, 39(s4)
+        // lbu t0, 0(s2)
+        // lbu t2, 1(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 2(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 3(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 48(s4)
+        // lbu t2, 49(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 50(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 51(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 4(s2)
+        // lbu t2, 5(s2)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 6(s2)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 7(s2)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // lbu t1, 52(s4)
+        // lbu t2, 53(s4)
+        // slli t2, t2, 8
+        // or t1, t1, t2
+        // lbu t2, 54(s4)
+        // slli t2, t2, 16
+        // or t1, t1, t2
+        // lbu t2, 55(s4)
+        // slli t2, t2, 24
+        // or t1, t1, t2
+        // xor t0, t0, t1
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // addi s2, s2, 8
+        // addi s3, s3, -1
+        r".insn 4, 0x0188d293
+.insn 4, 0x00560023
+.insn 4, 0x0108d293
+.insn 4, 0x005600a3
+.insn 4, 0x0088d293
+.insn 4, 0x00560123
+.insn 4, 0x0008d293
+.insn 4, 0x005601a3
+.insn 4, 0x01885293
+.insn 4, 0x00560223
+.insn 4, 0x01085293
+.insn 4, 0x005602a3
+.insn 4, 0x00885293
+.insn 4, 0x00560323
+.insn 4, 0x00085293
+.insn 4, 0x005603a3
+.insn 4, 0x00068493
+.insn 4, 0x00070913
+.insn 4, 0x000d8993
+.insn 4, 0x00008a13
+.insn 4, 0x038a3403
+.insn 4, 0x040a3a83
+.insn 4, 0x048a3b03
+.insn 4, 0x050a3b83
+.insn 4, 0x058a3c03
+.insn 4, 0x060a3c83
+.insn 4, 0x068a3d03
+.insn 4, 0x070a3d83
+.insn 4, 0x078a3083
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0023
+.insn 4, 0x0082d393
+.insn 4, 0x027a00a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0123
+.insn 4, 0x0182d393
+.insn 4, 0x027a01a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x025a0223
+.insn 4, 0x0082d393
+.insn 4, 0x027a02a3
+.insn 4, 0x0102d393
+.insn 4, 0x027a0323
+.insn 4, 0x0182d393
+.insn 4, 0x027a03a3
+.insn 4, 0x00094283
+.insn 4, 0x00194383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00294383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00394383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x030a4303
+.insn 4, 0x031a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x032a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x033a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x00494283
+.insn 4, 0x00594383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00694383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00794383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x034a4303
+.insn 4, 0x035a4383
+.insn 4, 0x00839393
+.insn 4, 0x00736333
+.insn 4, 0x036a4383
+.insn 4, 0x01039393
+.insn 4, 0x00736333
+.insn 4, 0x037a4383
+.insn 4, 0x01839393
+.insn 4, 0x00736333
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x00890913
+.insn 4, 0xfff98993
 bnez s3, 220b
 j 219f
 218:
-219:
-addi s2, s1, 0
-lbu t0, 32(s4)
-lbu t2, 33(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 34(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 35(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 0(s2)
-srli t2, t0, 8
-sb t2, 1(s2)
-srli t2, t0, 16
-sb t2, 2(s2)
-srli t2, t0, 24
-sb t2, 3(s2)
-lbu t0, 36(s4)
-lbu t2, 37(s4)
-slli t2, t2, 8
-or t0, t0, t2
-lbu t2, 38(s4)
-slli t2, t2, 16
-or t0, t0, t2
-lbu t2, 39(s4)
-slli t2, t2, 24
-or t0, t0, t2
-sb t0, 4(s2)
-srli t2, t0, 8
-sb t2, 5(s2)
-srli t2, t0, 16
-sb t2, 6(s2)
-srli t2, t0, 24
-sb t2, 7(s2)
-addi t3, s4, 0
-ld s1, 0(t3)
-ld s2, 8(t3)
-ld s3, 16(t3)
-ld s4, 24(t3)
-addi t0, zero, 0
-addi t1, t3, 0
-addi t2, zero, 16
-233:
-sd t0, 0(t1)
-addi t1, t1, 8
-addi t2, t2, -1
-bnez t2, 233b
-addi sp, sp, 128
-21:
-ret
+219:",
+        // addi s2, s1, 0
+        // lbu t0, 32(s4)
+        // lbu t2, 33(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 34(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 35(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 0(s2)
+        // srli t2, t0, 8
+        // sb t2, 1(s2)
+        // srli t2, t0, 16
+        // sb t2, 2(s2)
+        // srli t2, t0, 24
+        // sb t2, 3(s2)
+        // lbu t0, 36(s4)
+        // lbu t2, 37(s4)
+        // slli t2, t2, 8
+        // or t0, t0, t2
+        // lbu t2, 38(s4)
+        // slli t2, t2, 16
+        // or t0, t0, t2
+        // lbu t2, 39(s4)
+        // slli t2, t2, 24
+        // or t0, t0, t2
+        // sb t0, 4(s2)
+        // srli t2, t0, 8
+        // sb t2, 5(s2)
+        // srli t2, t0, 16
+        // sb t2, 6(s2)
+        // srli t2, t0, 24
+        // sb t2, 7(s2)
+        // addi t3, s4, 0
+        // ld s1, 0(t3)
+        // ld s2, 8(t3)
+        // ld s3, 16(t3)
+        // ld s4, 24(t3)
+        // addi t0, zero, 0
+        // addi t1, t3, 0
+        // addi t2, zero, 16
+        r".insn 4, 0x00048913
+.insn 4, 0x020a4283
+.insn 4, 0x021a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x022a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x023a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590023
+.insn 4, 0x0082d393
+.insn 4, 0x007900a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790123
+.insn 4, 0x0182d393
+.insn 4, 0x007901a3
+.insn 4, 0x024a4283
+.insn 4, 0x025a4383
+.insn 4, 0x00839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x026a4383
+.insn 4, 0x01039393
+.insn 4, 0x0072e2b3
+.insn 4, 0x027a4383
+.insn 4, 0x01839393
+.insn 4, 0x0072e2b3
+.insn 4, 0x00590223
+.insn 4, 0x0082d393
+.insn 4, 0x007902a3
+.insn 4, 0x0102d393
+.insn 4, 0x00790323
+.insn 4, 0x0182d393
+.insn 4, 0x007903a3
+.insn 4, 0x000a0e13
+.insn 4, 0x000e3483
+.insn 4, 0x008e3903
+.insn 4, 0x010e3983
+.insn 4, 0x018e3a03
+.insn 4, 0x00000293
+.insn 4, 0x000e0313
+.insn 4, 0x01000393
+233:",
+        // sd t0, 0(t1)
+        // addi t1, t1, 8
+        // addi t2, t2, -1
+        r".insn 4, 0x00533023
+.insn 4, 0x00830313
+.insn 4, 0xfff38393
+bnez t2, 233b",
+        // addi sp, sp, 128
+        r".insn 4, 0x08010113
+21:",
+        // ret
+        r".insn 4, 0x00008067
 .option pop",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )

@@ -16,428 +16,847 @@
 pub unsafe extern "C" fn vg_gf25519_r32_mul(ws: *mut [u64; 512], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-slli a1, a1, 32
-srli a1, a1, 32
-slli a2, a2, 32
-srli a2, a2, 32
-slli a3, a3, 32
-srli a3, a3, 32
-add t3, a0, a1
-add t4, a0, a2
-add t5, a0, a3
-addi a3, a0, 0
-lbu a4, 0(t4)
-lbu a5, 1(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 2(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 3(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 768(a3)
-lbu a4, 4(t4)
-lbu a5, 5(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 6(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 7(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 772(a3)
-lbu a4, 8(t4)
-lbu a5, 9(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 10(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 11(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 776(a3)
-lbu a4, 12(t4)
-lbu a5, 13(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 14(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 15(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 780(a3)
-lbu a4, 16(t4)
-lbu a5, 17(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 18(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 19(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 784(a3)
-lbu a4, 20(t4)
-lbu a5, 21(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 22(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 23(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 788(a3)
-lbu a4, 24(t4)
-lbu a5, 25(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 26(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 27(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 792(a3)
-lbu a4, 28(t4)
-lbu a5, 29(t4)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 30(t4)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 31(t4)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 796(a3)
-lbu a4, 0(t5)
-lbu a5, 1(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 2(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 3(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 800(a3)
-lbu a4, 4(t5)
-lbu a5, 5(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 6(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 7(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 804(a3)
-lbu a4, 8(t5)
-lbu a5, 9(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 10(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 11(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 808(a3)
-lbu a4, 12(t5)
-lbu a5, 13(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 14(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 15(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 812(a3)
-lbu a4, 16(t5)
-lbu a5, 17(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 18(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 19(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 816(a3)
-lbu a4, 20(t5)
-lbu a5, 21(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 22(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 23(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 820(a3)
-lbu a4, 24(t5)
-lbu a5, 25(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 26(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 27(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 824(a3)
-lbu a4, 28(t5)
-lbu a5, 29(t5)
-slli a5, a5, 8
-or a4, a4, a5
-lbu a5, 30(t5)
-slli a5, a5, 16
-or a4, a4, a5
-lbu a5, 31(t5)
-slli a5, a5, 24
-or a4, a4, a5
-sw a4, 828(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-20:
-lwu a1, 768(a6)
-addi a5, zero, 0
-lwu a2, 800(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 804(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 808(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 812(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 816(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 820(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 824(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 828(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 20b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 832(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 836(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 840(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 844(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 848(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 852(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 856(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 860(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 832(a3)
-add a4, a4, a5
-sw a4, 832(a3)
-srli a5, a4, 32
-lwu a4, 836(a3)
-add a4, a4, a5
-sw a4, 836(a3)
-srli a5, a4, 32
-lwu a4, 840(a3)
-add a4, a4, a5
-sw a4, 840(a3)
-srli a5, a4, 32
-lwu a4, 844(a3)
-add a4, a4, a5
-sw a4, 844(a3)
-srli a5, a4, 32
-lwu a4, 848(a3)
-add a4, a4, a5
-sw a4, 848(a3)
-srli a5, a4, 32
-lwu a4, 852(a3)
-add a4, a4, a5
-sw a4, 852(a3)
-srli a5, a4, 32
-lwu a4, 856(a3)
-add a4, a4, a5
-sw a4, 856(a3)
-srli a5, a4, 32
-lwu a4, 860(a3)
-add a4, a4, a5
-sw a4, 860(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 832(a3)
-add a4, a4, a5
-sw a4, 832(a3)
-lwu a4, 832(a3)
-sb a4, 0(t3)
-srli a5, a4, 8
-sb a5, 1(t3)
-srli a5, a4, 16
-sb a5, 2(t3)
-srli a5, a4, 24
-sb a5, 3(t3)
-lwu a4, 836(a3)
-sb a4, 4(t3)
-srli a5, a4, 8
-sb a5, 5(t3)
-srli a5, a4, 16
-sb a5, 6(t3)
-srli a5, a4, 24
-sb a5, 7(t3)
-lwu a4, 840(a3)
-sb a4, 8(t3)
-srli a5, a4, 8
-sb a5, 9(t3)
-srli a5, a4, 16
-sb a5, 10(t3)
-srli a5, a4, 24
-sb a5, 11(t3)
-lwu a4, 844(a3)
-sb a4, 12(t3)
-srli a5, a4, 8
-sb a5, 13(t3)
-srli a5, a4, 16
-sb a5, 14(t3)
-srli a5, a4, 24
-sb a5, 15(t3)
-lwu a4, 848(a3)
-sb a4, 16(t3)
-srli a5, a4, 8
-sb a5, 17(t3)
-srli a5, a4, 16
-sb a5, 18(t3)
-srli a5, a4, 24
-sb a5, 19(t3)
-lwu a4, 852(a3)
-sb a4, 20(t3)
-srli a5, a4, 8
-sb a5, 21(t3)
-srli a5, a4, 16
-sb a5, 22(t3)
-srli a5, a4, 24
-sb a5, 23(t3)
-lwu a4, 856(a3)
-sb a4, 24(t3)
-srli a5, a4, 8
-sb a5, 25(t3)
-srli a5, a4, 16
-sb a5, 26(t3)
-srli a5, a4, 24
-sb a5, 27(t3)
-lwu a4, 860(a3)
-sb a4, 28(t3)
-srli a5, a4, 8
-sb a5, 29(t3)
-srli a5, a4, 16
-sb a5, 30(t3)
-srli a5, a4, 24
-sb a5, 31(t3)
-ret
+.option arch, +m",
+        // slli a1, a1, 32
+        // srli a1, a1, 32
+        // slli a2, a2, 32
+        // srli a2, a2, 32
+        // slli a3, a3, 32
+        // srli a3, a3, 32
+        // add t3, a0, a1
+        // add t4, a0, a2
+        // add t5, a0, a3
+        // addi a3, a0, 0
+        // lbu a4, 0(t4)
+        // lbu a5, 1(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 2(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 3(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 768(a3)
+        // lbu a4, 4(t4)
+        // lbu a5, 5(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 6(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 7(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 772(a3)
+        // lbu a4, 8(t4)
+        // lbu a5, 9(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 10(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 11(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 776(a3)
+        // lbu a4, 12(t4)
+        // lbu a5, 13(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 14(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 15(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 780(a3)
+        // lbu a4, 16(t4)
+        // lbu a5, 17(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 18(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 19(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 784(a3)
+        // lbu a4, 20(t4)
+        // lbu a5, 21(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 22(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 23(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 788(a3)
+        // lbu a4, 24(t4)
+        // lbu a5, 25(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 26(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 27(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 792(a3)
+        // lbu a4, 28(t4)
+        // lbu a5, 29(t4)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 30(t4)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 31(t4)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 796(a3)
+        // lbu a4, 0(t5)
+        // lbu a5, 1(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 2(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 3(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 800(a3)
+        // lbu a4, 4(t5)
+        // lbu a5, 5(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 6(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 7(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 804(a3)
+        // lbu a4, 8(t5)
+        // lbu a5, 9(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 10(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 11(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 808(a3)
+        // lbu a4, 12(t5)
+        // lbu a5, 13(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 14(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 15(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 812(a3)
+        // lbu a4, 16(t5)
+        // lbu a5, 17(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 18(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 19(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 816(a3)
+        // lbu a4, 20(t5)
+        // lbu a5, 21(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 22(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 23(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 820(a3)
+        // lbu a4, 24(t5)
+        // lbu a5, 25(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 26(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 27(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 824(a3)
+        // lbu a4, 28(t5)
+        // lbu a5, 29(t5)
+        // slli a5, a5, 8
+        // or a4, a4, a5
+        // lbu a5, 30(t5)
+        // slli a5, a5, 16
+        // or a4, a4, a5
+        // lbu a5, 31(t5)
+        // slli a5, a5, 24
+        // or a4, a4, a5
+        // sw a4, 828(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02059593
+.insn 4, 0x0205d593
+.insn 4, 0x02061613
+.insn 4, 0x02065613
+.insn 4, 0x02069693
+.insn 4, 0x0206d693
+.insn 4, 0x00b50e33
+.insn 4, 0x00c50eb3
+.insn 4, 0x00d50f33
+.insn 4, 0x00050693
+.insn 4, 0x000ec703
+.insn 4, 0x001ec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x002ec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x003ec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6a023
+.insn 4, 0x004ec703
+.insn 4, 0x005ec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x006ec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x007ec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6a223
+.insn 4, 0x008ec703
+.insn 4, 0x009ec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x00aec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x00bec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6a423
+.insn 4, 0x00cec703
+.insn 4, 0x00dec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x00eec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x00fec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6a623
+.insn 4, 0x010ec703
+.insn 4, 0x011ec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x012ec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x013ec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6a823
+.insn 4, 0x014ec703
+.insn 4, 0x015ec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x016ec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x017ec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6aa23
+.insn 4, 0x018ec703
+.insn 4, 0x019ec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x01aec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x01bec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6ac23
+.insn 4, 0x01cec703
+.insn 4, 0x01dec783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x01eec783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x01fec783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x30e6ae23
+.insn 4, 0x000f4703
+.insn 4, 0x001f4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x002f4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x003f4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6a023
+.insn 4, 0x004f4703
+.insn 4, 0x005f4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x006f4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x007f4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6a223
+.insn 4, 0x008f4703
+.insn 4, 0x009f4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x00af4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x00bf4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6a423
+.insn 4, 0x00cf4703
+.insn 4, 0x00df4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x00ef4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x00ff4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6a623
+.insn 4, 0x010f4703
+.insn 4, 0x011f4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x012f4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x013f4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6a823
+.insn 4, 0x014f4703
+.insn 4, 0x015f4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x016f4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x017f4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6aa23
+.insn 4, 0x018f4703
+.insn 4, 0x019f4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x01af4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x01bf4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6ac23
+.insn 4, 0x01cf4703
+.insn 4, 0x01df4783
+.insn 4, 0x00879793
+.insn 4, 0x00f76733
+.insn 4, 0x01ef4783
+.insn 4, 0x01079793
+.insn 4, 0x00f76733
+.insn 4, 0x01ff4783
+.insn 4, 0x01879793
+.insn 4, 0x00f76733
+.insn 4, 0x32e6ae23
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+20:",
+        // lwu a1, 768(a6)
+        // addi a5, zero, 0
+        // lwu a2, 800(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 804(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 808(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 812(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 816(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 820(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 824(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 828(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x30086583
+.insn 4, 0x00000793
+.insn 4, 0x3206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x3246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x3286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x32c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x3306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x3346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x3386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x33c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 20b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 832(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 836(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 840(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 844(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 848(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 852(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 856(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 860(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 832(a3)
+        // add a4, a4, a5
+        // sw a4, 832(a3)
+        // srli a5, a4, 32
+        // lwu a4, 836(a3)
+        // add a4, a4, a5
+        // sw a4, 836(a3)
+        // srli a5, a4, 32
+        // lwu a4, 840(a3)
+        // add a4, a4, a5
+        // sw a4, 840(a3)
+        // srli a5, a4, 32
+        // lwu a4, 844(a3)
+        // add a4, a4, a5
+        // sw a4, 844(a3)
+        // srli a5, a4, 32
+        // lwu a4, 848(a3)
+        // add a4, a4, a5
+        // sw a4, 848(a3)
+        // srli a5, a4, 32
+        // lwu a4, 852(a3)
+        // add a4, a4, a5
+        // sw a4, 852(a3)
+        // srli a5, a4, 32
+        // lwu a4, 856(a3)
+        // add a4, a4, a5
+        // sw a4, 856(a3)
+        // srli a5, a4, 32
+        // lwu a4, 860(a3)
+        // add a4, a4, a5
+        // sw a4, 860(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 832(a3)
+        // add a4, a4, a5
+        // sw a4, 832(a3)
+        // lwu a4, 832(a3)
+        // sb a4, 0(t3)
+        // srli a5, a4, 8
+        // sb a5, 1(t3)
+        // srli a5, a4, 16
+        // sb a5, 2(t3)
+        // srli a5, a4, 24
+        // sb a5, 3(t3)
+        // lwu a4, 836(a3)
+        // sb a4, 4(t3)
+        // srli a5, a4, 8
+        // sb a5, 5(t3)
+        // srli a5, a4, 16
+        // sb a5, 6(t3)
+        // srli a5, a4, 24
+        // sb a5, 7(t3)
+        // lwu a4, 840(a3)
+        // sb a4, 8(t3)
+        // srli a5, a4, 8
+        // sb a5, 9(t3)
+        // srli a5, a4, 16
+        // sb a5, 10(t3)
+        // srli a5, a4, 24
+        // sb a5, 11(t3)
+        // lwu a4, 844(a3)
+        // sb a4, 12(t3)
+        // srli a5, a4, 8
+        // sb a5, 13(t3)
+        // srli a5, a4, 16
+        // sb a5, 14(t3)
+        // srli a5, a4, 24
+        // sb a5, 15(t3)
+        // lwu a4, 848(a3)
+        // sb a4, 16(t3)
+        // srli a5, a4, 8
+        // sb a5, 17(t3)
+        // srli a5, a4, 16
+        // sb a5, 18(t3)
+        // srli a5, a4, 24
+        // sb a5, 19(t3)
+        // lwu a4, 852(a3)
+        // sb a4, 20(t3)
+        // srli a5, a4, 8
+        // sb a5, 21(t3)
+        // srli a5, a4, 16
+        // sb a5, 22(t3)
+        // srli a5, a4, 24
+        // sb a5, 23(t3)
+        // lwu a4, 856(a3)
+        // sb a4, 24(t3)
+        // srli a5, a4, 8
+        // sb a5, 25(t3)
+        // srli a5, a4, 16
+        // sb a5, 26(t3)
+        // srli a5, a4, 24
+        // sb a5, 27(t3)
+        // lwu a4, 860(a3)
+        // sb a4, 28(t3)
+        // srli a5, a4, 8
+        // sb a5, 29(t3)
+        // srli a5, a4, 16
+        // sb a5, 30(t3)
+        // srli a5, a4, 24
+        // sb a5, 31(t3)
+        // ret
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x34e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x3406e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3446e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3486e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a423
+.insn 4, 0x02075793
+.insn 4, 0x34c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3506e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3546e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3586e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x35c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x3406e703
+.insn 4, 0x00f70733
+.insn 4, 0x34e6a023
+.insn 4, 0x3406e703
+.insn 4, 0x00ee0023
+.insn 4, 0x00875793
+.insn 4, 0x00fe00a3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0123
+.insn 4, 0x01875793
+.insn 4, 0x00fe01a3
+.insn 4, 0x3446e703
+.insn 4, 0x00ee0223
+.insn 4, 0x00875793
+.insn 4, 0x00fe02a3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0323
+.insn 4, 0x01875793
+.insn 4, 0x00fe03a3
+.insn 4, 0x3486e703
+.insn 4, 0x00ee0423
+.insn 4, 0x00875793
+.insn 4, 0x00fe04a3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0523
+.insn 4, 0x01875793
+.insn 4, 0x00fe05a3
+.insn 4, 0x34c6e703
+.insn 4, 0x00ee0623
+.insn 4, 0x00875793
+.insn 4, 0x00fe06a3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0723
+.insn 4, 0x01875793
+.insn 4, 0x00fe07a3
+.insn 4, 0x3506e703
+.insn 4, 0x00ee0823
+.insn 4, 0x00875793
+.insn 4, 0x00fe08a3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0923
+.insn 4, 0x01875793
+.insn 4, 0x00fe09a3
+.insn 4, 0x3546e703
+.insn 4, 0x00ee0a23
+.insn 4, 0x00875793
+.insn 4, 0x00fe0aa3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0b23
+.insn 4, 0x01875793
+.insn 4, 0x00fe0ba3
+.insn 4, 0x3586e703
+.insn 4, 0x00ee0c23
+.insn 4, 0x00875793
+.insn 4, 0x00fe0ca3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0d23
+.insn 4, 0x01875793
+.insn 4, 0x00fe0da3
+.insn 4, 0x35c6e703
+.insn 4, 0x00ee0e23
+.insn 4, 0x00875793
+.insn 4, 0x00fe0ea3
+.insn 4, 0x01075793
+.insn 4, 0x00fe0f23
+.insn 4, 0x01875793
+.insn 4, 0x00fe0fa3
+.insn 4, 0x00008067
 .option pop",
     )
 }
@@ -455,4797 +874,9517 @@ ret
 pub unsafe extern "C" fn vg_gf25519_r32_pow250(ws: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi a3, a0, 0
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-20:
-lwu a1, 128(a6)
-addi a5, zero, 0
-lwu a2, 128(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 132(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 136(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 140(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 144(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 148(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 152(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 156(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 20b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 512(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 516(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 520(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 524(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 528(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 532(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 536(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 540(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 512(a3)
-add a4, a4, a5
-sw a4, 512(a3)
-srli a5, a4, 32
-lwu a4, 516(a3)
-add a4, a4, a5
-sw a4, 516(a3)
-srli a5, a4, 32
-lwu a4, 520(a3)
-add a4, a4, a5
-sw a4, 520(a3)
-srli a5, a4, 32
-lwu a4, 524(a3)
-add a4, a4, a5
-sw a4, 524(a3)
-srli a5, a4, 32
-lwu a4, 528(a3)
-add a4, a4, a5
-sw a4, 528(a3)
-srli a5, a4, 32
-lwu a4, 532(a3)
-add a4, a4, a5
-sw a4, 532(a3)
-srli a5, a4, 32
-lwu a4, 536(a3)
-add a4, a4, a5
-sw a4, 536(a3)
-srli a5, a4, 32
-lwu a4, 540(a3)
-add a4, a4, a5
-sw a4, 540(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 512(a3)
-add a4, a4, a5
-sw a4, 512(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-21:
-lwu a1, 512(a6)
-addi a5, zero, 0
-lwu a2, 512(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 516(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 520(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 524(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 528(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 532(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 536(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 540(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 21b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-22:
-lwu a1, 544(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 22b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-23:
-lwu a1, 128(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 23b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-24:
-lwu a1, 512(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 24b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 512(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 516(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 520(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 524(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 528(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 532(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 536(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 540(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 512(a3)
-add a4, a4, a5
-sw a4, 512(a3)
-srli a5, a4, 32
-lwu a4, 516(a3)
-add a4, a4, a5
-sw a4, 516(a3)
-srli a5, a4, 32
-lwu a4, 520(a3)
-add a4, a4, a5
-sw a4, 520(a3)
-srli a5, a4, 32
-lwu a4, 524(a3)
-add a4, a4, a5
-sw a4, 524(a3)
-srli a5, a4, 32
-lwu a4, 528(a3)
-add a4, a4, a5
-sw a4, 528(a3)
-srli a5, a4, 32
-lwu a4, 532(a3)
-add a4, a4, a5
-sw a4, 532(a3)
-srli a5, a4, 32
-lwu a4, 536(a3)
-add a4, a4, a5
-sw a4, 536(a3)
-srli a5, a4, 32
-lwu a4, 540(a3)
-add a4, a4, a5
-sw a4, 540(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 512(a3)
-add a4, a4, a5
-sw a4, 512(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-25:
-lwu a1, 512(a6)
-addi a5, zero, 0
-lwu a2, 512(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 516(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 520(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 524(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 528(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 532(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 536(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 540(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 25b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-26:
-lwu a1, 544(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 26b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-27:
-lwu a1, 544(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 27b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, zero, 4
-28:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-29:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 29b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, t1, -1
-bnez t1, 28b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-210:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 210b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-211:
-lwu a1, 544(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 211b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, zero, 9
-212:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-213:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 213b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, t1, -1
-bnez t1, 212b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-214:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 214b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-215:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 215b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 612(a3)
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 616(a3)
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 620(a3)
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 624(a3)
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 628(a3)
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 632(a3)
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 636(a3)
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-addi t1, zero, 19
-216:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-217:
-lwu a1, 608(a6)
-addi a5, zero, 0
-lwu a2, 608(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 612(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 616(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 620(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 624(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 628(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 632(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 636(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 217b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 612(a3)
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 616(a3)
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 620(a3)
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 624(a3)
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 628(a3)
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 632(a3)
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 636(a3)
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-addi t1, t1, -1
-bnez t1, 216b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-218:
-lwu a1, 608(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 218b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-219:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 219b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, zero, 9
-220:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-221:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 221b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, t1, -1
-bnez t1, 220b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-222:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 222b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-223:
-lwu a1, 544(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 223b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, zero, 49
-224:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-225:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 225b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, t1, -1
-bnez t1, 224b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-226:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 226b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-227:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 227b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 612(a3)
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 616(a3)
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 620(a3)
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 624(a3)
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 628(a3)
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 632(a3)
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 636(a3)
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-addi t1, zero, 99
-228:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-229:
-lwu a1, 608(a6)
-addi a5, zero, 0
-lwu a2, 608(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 612(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 616(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 620(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 624(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 628(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 632(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 636(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 229b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-srli a5, a4, 32
-lwu a4, 612(a3)
-add a4, a4, a5
-sw a4, 612(a3)
-srli a5, a4, 32
-lwu a4, 616(a3)
-add a4, a4, a5
-sw a4, 616(a3)
-srli a5, a4, 32
-lwu a4, 620(a3)
-add a4, a4, a5
-sw a4, 620(a3)
-srli a5, a4, 32
-lwu a4, 624(a3)
-add a4, a4, a5
-sw a4, 624(a3)
-srli a5, a4, 32
-lwu a4, 628(a3)
-add a4, a4, a5
-sw a4, 628(a3)
-srli a5, a4, 32
-lwu a4, 632(a3)
-add a4, a4, a5
-sw a4, 632(a3)
-srli a5, a4, 32
-lwu a4, 636(a3)
-add a4, a4, a5
-sw a4, 636(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 608(a3)
-add a4, a4, a5
-sw a4, 608(a3)
-addi t1, t1, -1
-bnez t1, 228b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-230:
-lwu a1, 608(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 230b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-231:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 231b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, zero, 49
-232:
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-233:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 576(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 580(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 584(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 588(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 592(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 596(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 600(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 604(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 233b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-srli a5, a4, 32
-lwu a4, 580(a3)
-add a4, a4, a5
-sw a4, 580(a3)
-srli a5, a4, 32
-lwu a4, 584(a3)
-add a4, a4, a5
-sw a4, 584(a3)
-srli a5, a4, 32
-lwu a4, 588(a3)
-add a4, a4, a5
-sw a4, 588(a3)
-srli a5, a4, 32
-lwu a4, 592(a3)
-add a4, a4, a5
-sw a4, 592(a3)
-srli a5, a4, 32
-lwu a4, 596(a3)
-add a4, a4, a5
-sw a4, 596(a3)
-srli a5, a4, 32
-lwu a4, 600(a3)
-add a4, a4, a5
-sw a4, 600(a3)
-srli a5, a4, 32
-lwu a4, 604(a3)
-add a4, a4, a5
-sw a4, 604(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 576(a3)
-add a4, a4, a5
-sw a4, 576(a3)
-addi t1, t1, -1
-bnez t1, 232b
-addi a7, zero, 38
-addi a5, zero, 0
-addi a4, zero, 0
-sw a4, 864(a3)
-sw a4, 868(a3)
-sw a4, 872(a3)
-sw a4, 876(a3)
-sw a4, 880(a3)
-sw a4, 884(a3)
-sw a4, 888(a3)
-sw a4, 892(a3)
-addi a6, a3, 0
-addi t0, zero, 8
-234:
-lwu a1, 576(a6)
-addi a5, zero, 0
-lwu a2, 544(a3)
-mul a2, a1, a2
-lwu a4, 864(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 864(a6)
-srli a5, a4, 32
-lwu a2, 548(a3)
-mul a2, a1, a2
-lwu a4, 868(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 868(a6)
-srli a5, a4, 32
-lwu a2, 552(a3)
-mul a2, a1, a2
-lwu a4, 872(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 872(a6)
-srli a5, a4, 32
-lwu a2, 556(a3)
-mul a2, a1, a2
-lwu a4, 876(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 876(a6)
-srli a5, a4, 32
-lwu a2, 560(a3)
-mul a2, a1, a2
-lwu a4, 880(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 880(a6)
-srli a5, a4, 32
-lwu a2, 564(a3)
-mul a2, a1, a2
-lwu a4, 884(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 884(a6)
-srli a5, a4, 32
-lwu a2, 568(a3)
-mul a2, a1, a2
-lwu a4, 888(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 888(a6)
-srli a5, a4, 32
-lwu a2, 572(a3)
-mul a2, a1, a2
-lwu a4, 892(a6)
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 892(a6)
-srli a5, a4, 32
-sw a5, 896(a6)
-addi a6, a6, 4
-addi t0, t0, -1
-bnez t0, 234b
-addi a5, zero, 0
-lwu a4, 864(a3)
-lwu a2, 896(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 868(a3)
-lwu a2, 900(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 872(a3)
-lwu a2, 904(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 876(a3)
-lwu a2, 908(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 880(a3)
-lwu a2, 912(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 884(a3)
-lwu a2, 916(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 888(a3)
-lwu a2, 920(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 892(a3)
-lwu a2, 924(a3)
-mul a2, a2, a7
-add a4, a4, a2
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-srli a5, a4, 32
-lwu a4, 548(a3)
-add a4, a4, a5
-sw a4, 548(a3)
-srli a5, a4, 32
-lwu a4, 552(a3)
-add a4, a4, a5
-sw a4, 552(a3)
-srli a5, a4, 32
-lwu a4, 556(a3)
-add a4, a4, a5
-sw a4, 556(a3)
-srli a5, a4, 32
-lwu a4, 560(a3)
-add a4, a4, a5
-sw a4, 560(a3)
-srli a5, a4, 32
-lwu a4, 564(a3)
-add a4, a4, a5
-sw a4, 564(a3)
-srli a5, a4, 32
-lwu a4, 568(a3)
-add a4, a4, a5
-sw a4, 568(a3)
-srli a5, a4, 32
-lwu a4, 572(a3)
-add a4, a4, a5
-sw a4, 572(a3)
-srli a5, a4, 32
-mul a5, a5, a7
-lwu a4, 544(a3)
-add a4, a4, a5
-sw a4, 544(a3)
-ret
+.option arch, +m",
+        // addi a3, a0, 0
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00050693
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+20:",
+        // lwu a1, 128(a6)
+        // addi a5, zero, 0
+        // lwu a2, 128(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 132(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 136(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 140(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 144(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 148(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 152(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 156(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x08086583
+.insn 4, 0x00000793
+.insn 4, 0x0806e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x0846e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x0886e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x08c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x0906e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x0946e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x0986e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x09c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 20b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 512(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 516(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 520(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 524(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 528(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 532(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 536(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 540(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 512(a3)
+        // add a4, a4, a5
+        // sw a4, 512(a3)
+        // srli a5, a4, 32
+        // lwu a4, 516(a3)
+        // add a4, a4, a5
+        // sw a4, 516(a3)
+        // srli a5, a4, 32
+        // lwu a4, 520(a3)
+        // add a4, a4, a5
+        // sw a4, 520(a3)
+        // srli a5, a4, 32
+        // lwu a4, 524(a3)
+        // add a4, a4, a5
+        // sw a4, 524(a3)
+        // srli a5, a4, 32
+        // lwu a4, 528(a3)
+        // add a4, a4, a5
+        // sw a4, 528(a3)
+        // srli a5, a4, 32
+        // lwu a4, 532(a3)
+        // add a4, a4, a5
+        // sw a4, 532(a3)
+        // srli a5, a4, 32
+        // lwu a4, 536(a3)
+        // add a4, a4, a5
+        // sw a4, 536(a3)
+        // srli a5, a4, 32
+        // lwu a4, 540(a3)
+        // add a4, a4, a5
+        // sw a4, 540(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 512(a3)
+        // add a4, a4, a5
+        // sw a4, 512(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2006e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2046e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2086e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a423
+.insn 4, 0x02075793
+.insn 4, 0x20c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2106e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2146e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2186e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x21c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2006e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+21:",
+        // lwu a1, 512(a6)
+        // addi a5, zero, 0
+        // lwu a2, 512(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 516(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 520(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 524(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 528(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 532(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 536(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 540(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x20086583
+.insn 4, 0x00000793
+.insn 4, 0x2006e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2046e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2086e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x20c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2106e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2146e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2186e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x21c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 21b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+22:",
+        // lwu a1, 544(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x22086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 22b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+23:",
+        // lwu a1, 128(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x08086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 23b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+24:",
+        // lwu a1, 512(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x20086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 24b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 512(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 516(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 520(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 524(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 528(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 532(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 536(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 540(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 512(a3)
+        // add a4, a4, a5
+        // sw a4, 512(a3)
+        // srli a5, a4, 32
+        // lwu a4, 516(a3)
+        // add a4, a4, a5
+        // sw a4, 516(a3)
+        // srli a5, a4, 32
+        // lwu a4, 520(a3)
+        // add a4, a4, a5
+        // sw a4, 520(a3)
+        // srli a5, a4, 32
+        // lwu a4, 524(a3)
+        // add a4, a4, a5
+        // sw a4, 524(a3)
+        // srli a5, a4, 32
+        // lwu a4, 528(a3)
+        // add a4, a4, a5
+        // sw a4, 528(a3)
+        // srli a5, a4, 32
+        // lwu a4, 532(a3)
+        // add a4, a4, a5
+        // sw a4, 532(a3)
+        // srli a5, a4, 32
+        // lwu a4, 536(a3)
+        // add a4, a4, a5
+        // sw a4, 536(a3)
+        // srli a5, a4, 32
+        // lwu a4, 540(a3)
+        // add a4, a4, a5
+        // sw a4, 540(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 512(a3)
+        // add a4, a4, a5
+        // sw a4, 512(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2006e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2046e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2086e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a423
+.insn 4, 0x02075793
+.insn 4, 0x20c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2106e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2146e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2186e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x21c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2006e703
+.insn 4, 0x00f70733
+.insn 4, 0x20e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+25:",
+        // lwu a1, 512(a6)
+        // addi a5, zero, 0
+        // lwu a2, 512(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 516(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 520(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 524(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 528(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 532(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 536(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 540(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x20086583
+.insn 4, 0x00000793
+.insn 4, 0x2006e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2046e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2086e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x20c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2106e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2146e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2186e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x21c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 25b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+26:",
+        // lwu a1, 544(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x22086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 26b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+27:",
+        // lwu a1, 544(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x22086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 27b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, zero, 4
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x00400313
+28:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+29:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 29b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0xfff30313
+bnez t1, 28b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+210:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 210b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+211:",
+        // lwu a1, 544(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x22086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 211b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, zero, 9
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x00900313
+212:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+213:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 213b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0xfff30313
+bnez t1, 212b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+214:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 214b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+215:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 215b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 612(a3)
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 616(a3)
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 620(a3)
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 624(a3)
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 628(a3)
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 632(a3)
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 636(a3)
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // addi t1, zero, 19
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2646e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2686e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x26c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2706e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2746e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2786e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x27c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x01300313
+216:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+217:",
+        // lwu a1, 608(a6)
+        // addi a5, zero, 0
+        // lwu a2, 608(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 612(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 616(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 620(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 624(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 628(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 632(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 636(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x26086583
+.insn 4, 0x00000793
+.insn 4, 0x2606e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2646e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2686e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x26c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2706e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2746e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2786e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x27c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 217b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 612(a3)
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 616(a3)
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 620(a3)
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 624(a3)
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 628(a3)
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 632(a3)
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 636(a3)
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2646e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2686e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x26c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2706e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2746e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2786e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x27c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0xfff30313
+bnez t1, 216b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+218:",
+        // lwu a1, 608(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x26086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 218b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+219:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 219b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, zero, 9
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x00900313
+220:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+221:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 221b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0xfff30313
+bnez t1, 220b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+222:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 222b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+223:",
+        // lwu a1, 544(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x22086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 223b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, zero, 49
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x03100313
+224:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+225:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 225b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0xfff30313
+bnez t1, 224b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+226:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 226b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+227:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 227b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 612(a3)
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 616(a3)
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 620(a3)
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 624(a3)
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 628(a3)
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 632(a3)
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 636(a3)
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // addi t1, zero, 99
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2646e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2686e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x26c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2706e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2746e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2786e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x27c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x06300313
+228:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+229:",
+        // lwu a1, 608(a6)
+        // addi a5, zero, 0
+        // lwu a2, 608(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 612(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 616(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 620(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 624(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 628(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 632(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 636(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x26086583
+.insn 4, 0x00000793
+.insn 4, 0x2606e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2646e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2686e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x26c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2706e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2746e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2786e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x27c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 229b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // srli a5, a4, 32
+        // lwu a4, 612(a3)
+        // add a4, a4, a5
+        // sw a4, 612(a3)
+        // srli a5, a4, 32
+        // lwu a4, 616(a3)
+        // add a4, a4, a5
+        // sw a4, 616(a3)
+        // srli a5, a4, 32
+        // lwu a4, 620(a3)
+        // add a4, a4, a5
+        // sw a4, 620(a3)
+        // srli a5, a4, 32
+        // lwu a4, 624(a3)
+        // add a4, a4, a5
+        // sw a4, 624(a3)
+        // srli a5, a4, 32
+        // lwu a4, 628(a3)
+        // add a4, a4, a5
+        // sw a4, 628(a3)
+        // srli a5, a4, 32
+        // lwu a4, 632(a3)
+        // add a4, a4, a5
+        // sw a4, 632(a3)
+        // srli a5, a4, 32
+        // lwu a4, 636(a3)
+        // add a4, a4, a5
+        // sw a4, 636(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 608(a3)
+        // add a4, a4, a5
+        // sw a4, 608(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2646e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2686e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a423
+.insn 4, 0x02075793
+.insn 4, 0x26c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2706e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2746e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2786e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x27c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2606e703
+.insn 4, 0x00f70733
+.insn 4, 0x26e6a023
+.insn 4, 0xfff30313
+bnez t1, 228b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+230:",
+        // lwu a1, 608(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x26086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 230b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+231:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 231b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, zero, 49
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x03100313
+232:",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+233:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 576(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 580(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 584(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 588(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 592(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 596(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 600(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 604(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2406e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2446e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2486e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2506e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2546e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2586e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 233b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // srli a5, a4, 32
+        // lwu a4, 580(a3)
+        // add a4, a4, a5
+        // sw a4, 580(a3)
+        // srli a5, a4, 32
+        // lwu a4, 584(a3)
+        // add a4, a4, a5
+        // sw a4, 584(a3)
+        // srli a5, a4, 32
+        // lwu a4, 588(a3)
+        // add a4, a4, a5
+        // sw a4, 588(a3)
+        // srli a5, a4, 32
+        // lwu a4, 592(a3)
+        // add a4, a4, a5
+        // sw a4, 592(a3)
+        // srli a5, a4, 32
+        // lwu a4, 596(a3)
+        // add a4, a4, a5
+        // sw a4, 596(a3)
+        // srli a5, a4, 32
+        // lwu a4, 600(a3)
+        // add a4, a4, a5
+        // sw a4, 600(a3)
+        // srli a5, a4, 32
+        // lwu a4, 604(a3)
+        // add a4, a4, a5
+        // sw a4, 604(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 576(a3)
+        // add a4, a4, a5
+        // sw a4, 576(a3)
+        // addi t1, t1, -1
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2446e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2486e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a423
+.insn 4, 0x02075793
+.insn 4, 0x24c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2506e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2546e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2586e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x25c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2406e703
+.insn 4, 0x00f70733
+.insn 4, 0x24e6a023
+.insn 4, 0xfff30313
+bnez t1, 232b",
+        // addi a7, zero, 38
+        // addi a5, zero, 0
+        // addi a4, zero, 0
+        // sw a4, 864(a3)
+        // sw a4, 868(a3)
+        // sw a4, 872(a3)
+        // sw a4, 876(a3)
+        // sw a4, 880(a3)
+        // sw a4, 884(a3)
+        // sw a4, 888(a3)
+        // sw a4, 892(a3)
+        // addi a6, a3, 0
+        // addi t0, zero, 8
+        r".insn 4, 0x02600893
+.insn 4, 0x00000793
+.insn 4, 0x00000713
+.insn 4, 0x36e6a023
+.insn 4, 0x36e6a223
+.insn 4, 0x36e6a423
+.insn 4, 0x36e6a623
+.insn 4, 0x36e6a823
+.insn 4, 0x36e6aa23
+.insn 4, 0x36e6ac23
+.insn 4, 0x36e6ae23
+.insn 4, 0x00068813
+.insn 4, 0x00800293
+234:",
+        // lwu a1, 576(a6)
+        // addi a5, zero, 0
+        // lwu a2, 544(a3)
+        // mul a2, a1, a2
+        // lwu a4, 864(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 864(a6)
+        // srli a5, a4, 32
+        // lwu a2, 548(a3)
+        // mul a2, a1, a2
+        // lwu a4, 868(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 868(a6)
+        // srli a5, a4, 32
+        // lwu a2, 552(a3)
+        // mul a2, a1, a2
+        // lwu a4, 872(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 872(a6)
+        // srli a5, a4, 32
+        // lwu a2, 556(a3)
+        // mul a2, a1, a2
+        // lwu a4, 876(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 876(a6)
+        // srli a5, a4, 32
+        // lwu a2, 560(a3)
+        // mul a2, a1, a2
+        // lwu a4, 880(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 880(a6)
+        // srli a5, a4, 32
+        // lwu a2, 564(a3)
+        // mul a2, a1, a2
+        // lwu a4, 884(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 884(a6)
+        // srli a5, a4, 32
+        // lwu a2, 568(a3)
+        // mul a2, a1, a2
+        // lwu a4, 888(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 888(a6)
+        // srli a5, a4, 32
+        // lwu a2, 572(a3)
+        // mul a2, a1, a2
+        // lwu a4, 892(a6)
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 892(a6)
+        // srli a5, a4, 32
+        // sw a5, 896(a6)
+        // addi a6, a6, 4
+        // addi t0, t0, -1
+        r".insn 4, 0x24086583
+.insn 4, 0x00000793
+.insn 4, 0x2206e603
+.insn 4, 0x02c58633
+.insn 4, 0x36086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82023
+.insn 4, 0x02075793
+.insn 4, 0x2246e603
+.insn 4, 0x02c58633
+.insn 4, 0x36486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82223
+.insn 4, 0x02075793
+.insn 4, 0x2286e603
+.insn 4, 0x02c58633
+.insn 4, 0x36886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x36c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82623
+.insn 4, 0x02075793
+.insn 4, 0x2306e603
+.insn 4, 0x02c58633
+.insn 4, 0x37086703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82823
+.insn 4, 0x02075793
+.insn 4, 0x2346e603
+.insn 4, 0x02c58633
+.insn 4, 0x37486703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82a23
+.insn 4, 0x02075793
+.insn 4, 0x2386e603
+.insn 4, 0x02c58633
+.insn 4, 0x37886703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82c23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e603
+.insn 4, 0x02c58633
+.insn 4, 0x37c86703
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x36e82e23
+.insn 4, 0x02075793
+.insn 4, 0x38f82023
+.insn 4, 0x00480813
+.insn 4, 0xfff28293
+bnez t0, 234b",
+        // addi a5, zero, 0
+        // lwu a4, 864(a3)
+        // lwu a2, 896(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 868(a3)
+        // lwu a2, 900(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 872(a3)
+        // lwu a2, 904(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 876(a3)
+        // lwu a2, 908(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 880(a3)
+        // lwu a2, 912(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 884(a3)
+        // lwu a2, 916(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 888(a3)
+        // lwu a2, 920(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 892(a3)
+        // lwu a2, 924(a3)
+        // mul a2, a2, a7
+        // add a4, a4, a2
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // srli a5, a4, 32
+        // lwu a4, 548(a3)
+        // add a4, a4, a5
+        // sw a4, 548(a3)
+        // srli a5, a4, 32
+        // lwu a4, 552(a3)
+        // add a4, a4, a5
+        // sw a4, 552(a3)
+        // srli a5, a4, 32
+        // lwu a4, 556(a3)
+        // add a4, a4, a5
+        // sw a4, 556(a3)
+        // srli a5, a4, 32
+        // lwu a4, 560(a3)
+        // add a4, a4, a5
+        // sw a4, 560(a3)
+        // srli a5, a4, 32
+        // lwu a4, 564(a3)
+        // add a4, a4, a5
+        // sw a4, 564(a3)
+        // srli a5, a4, 32
+        // lwu a4, 568(a3)
+        // add a4, a4, a5
+        // sw a4, 568(a3)
+        // srli a5, a4, 32
+        // lwu a4, 572(a3)
+        // add a4, a4, a5
+        // sw a4, 572(a3)
+        // srli a5, a4, 32
+        // mul a5, a5, a7
+        // lwu a4, 544(a3)
+        // add a4, a4, a5
+        // sw a4, 544(a3)
+        // ret
+        r".insn 4, 0x00000793
+.insn 4, 0x3606e703
+.insn 4, 0x3806e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x3646e703
+.insn 4, 0x3846e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x3686e703
+.insn 4, 0x3886e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x36c6e703
+.insn 4, 0x38c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x3706e703
+.insn 4, 0x3906e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x3746e703
+.insn 4, 0x3946e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x3786e703
+.insn 4, 0x3986e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x37c6e703
+.insn 4, 0x39c6e603
+.insn 4, 0x03160633
+.insn 4, 0x00c70733
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x02075793
+.insn 4, 0x2246e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a223
+.insn 4, 0x02075793
+.insn 4, 0x2286e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a423
+.insn 4, 0x02075793
+.insn 4, 0x22c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a623
+.insn 4, 0x02075793
+.insn 4, 0x2306e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a823
+.insn 4, 0x02075793
+.insn 4, 0x2346e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6aa23
+.insn 4, 0x02075793
+.insn 4, 0x2386e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ac23
+.insn 4, 0x02075793
+.insn 4, 0x23c6e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6ae23
+.insn 4, 0x02075793
+.insn 4, 0x031787b3
+.insn 4, 0x2206e703
+.insn 4, 0x00f70733
+.insn 4, 0x22e6a023
+.insn 4, 0x00008067
 .option pop",
     )
 }

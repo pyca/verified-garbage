@@ -19,296 +19,576 @@
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi sp, sp, -624
-addi a7, sp, 0
-addi t0, a7, 7
-andi t0, t0, -8
-sd s7, 560(t0)
-sd s8, 568(t0)
-sd s9, 576(t0)
-sd s10, 584(t0)
-sd s11, 592(t0)
-sd ra, 600(t0)
-addi s7, a2, 0
-addi s8, a3, 0
-addi s9, a4, 0
-addi s10, a5, 0
-addi s11, a6, 0
-addi t1, zero, 101
-sb t1, 0(t0)
-addi t1, zero, 120
-sb t1, 1(t0)
-addi t1, zero, 112
-sb t1, 2(t0)
-addi t1, zero, 97
-sb t1, 3(t0)
-addi t1, zero, 110
-sb t1, 4(t0)
-addi t1, zero, 100
-sb t1, 5(t0)
-addi t1, zero, 32
-sb t1, 6(t0)
-addi t1, zero, 51
-sb t1, 7(t0)
-addi t1, zero, 50
-sb t1, 8(t0)
-addi t1, zero, 45
-sb t1, 9(t0)
-addi t1, zero, 98
-sb t1, 10(t0)
-addi t1, zero, 121
-sb t1, 11(t0)
-addi t1, zero, 116
-sb t1, 12(t0)
-addi t1, zero, 101
-sb t1, 13(t0)
-addi t1, zero, 32
-sb t1, 14(t0)
-addi t1, zero, 107
-sb t1, 15(t0)
-lbu t1, 0(a0)
-sb t1, 16(t0)
-lbu t1, 1(a0)
-sb t1, 17(t0)
-lbu t1, 2(a0)
-sb t1, 18(t0)
-lbu t1, 3(a0)
-sb t1, 19(t0)
-lbu t1, 4(a0)
-sb t1, 20(t0)
-lbu t1, 5(a0)
-sb t1, 21(t0)
-lbu t1, 6(a0)
-sb t1, 22(t0)
-lbu t1, 7(a0)
-sb t1, 23(t0)
-lbu t1, 8(a0)
-sb t1, 24(t0)
-lbu t1, 9(a0)
-sb t1, 25(t0)
-lbu t1, 10(a0)
-sb t1, 26(t0)
-lbu t1, 11(a0)
-sb t1, 27(t0)
-lbu t1, 12(a0)
-sb t1, 28(t0)
-lbu t1, 13(a0)
-sb t1, 29(t0)
-lbu t1, 14(a0)
-sb t1, 30(t0)
-lbu t1, 15(a0)
-sb t1, 31(t0)
-lbu t1, 16(a0)
-sb t1, 32(t0)
-lbu t1, 17(a0)
-sb t1, 33(t0)
-lbu t1, 18(a0)
-sb t1, 34(t0)
-lbu t1, 19(a0)
-sb t1, 35(t0)
-lbu t1, 20(a0)
-sb t1, 36(t0)
-lbu t1, 21(a0)
-sb t1, 37(t0)
-lbu t1, 22(a0)
-sb t1, 38(t0)
-lbu t1, 23(a0)
-sb t1, 39(t0)
-lbu t1, 24(a0)
-sb t1, 40(t0)
-lbu t1, 25(a0)
-sb t1, 41(t0)
-lbu t1, 26(a0)
-sb t1, 42(t0)
-lbu t1, 27(a0)
-sb t1, 43(t0)
-lbu t1, 28(a0)
-sb t1, 44(t0)
-lbu t1, 29(a0)
-sb t1, 45(t0)
-lbu t1, 30(a0)
-sb t1, 46(t0)
-lbu t1, 31(a0)
-sb t1, 47(t0)
-addi t1, zero, 0
-sb t1, 48(t0)
-addi t1, zero, 0
-sb t1, 49(t0)
-addi t1, zero, 0
-sb t1, 50(t0)
-addi t1, zero, 0
-sb t1, 51(t0)
-lbu t1, 0(a1)
-sb t1, 52(t0)
-lbu t1, 1(a1)
-sb t1, 53(t0)
-lbu t1, 2(a1)
-sb t1, 54(t0)
-lbu t1, 3(a1)
-sb t1, 55(t0)
-lbu t1, 4(a1)
-sb t1, 56(t0)
-lbu t1, 5(a1)
-sb t1, 57(t0)
-lbu t1, 6(a1)
-sb t1, 58(t0)
-lbu t1, 7(a1)
-sb t1, 59(t0)
-lbu t1, 8(a1)
-sb t1, 60(t0)
-lbu t1, 9(a1)
-sb t1, 61(t0)
-lbu t1, 10(a1)
-sb t1, 62(t0)
-lbu t1, 11(a1)
-sb t1, 63(t0)
-addi t1, zero, 0
-sd t1, 512(t0)
-sd t1, 520(t0)
-sd s8, 528(t0)
-sd s10, 536(t0)
-addi a0, t0, 0
-addi a1, a0, 64
-call {vg_chacha20_block}
-addi a1, a0, 64
-addi a0, a0, 384
-call {vg_poly1305_init}
-addi a1, zero, 0
-addi a2, s7, 0
-addi a3, s8, 0
-call {vg_poly1305_update}
-addi a1, s8, 0
-addi a3, zero, 0
-sub a3, a3, s8
-andi a3, a3, 15
-addi a2, a0, 128
-call {vg_poly1305_update}
-addi a0, a0, -384
-addi t0, zero, 1
-sb t0, 48(a0)
-addi a1, s9, 0
-addi a2, s10, 0
-addi a3, a0, 64
-call {vg_chacha20_xor}
-addi a0, a0, 384
-addi a1, s8, 15
-andi a1, a1, -16
-addi a2, s9, 0
-addi a3, s10, 0
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-add a1, a1, s10
-addi a3, zero, 0
-sub a3, a3, s10
-andi a3, a3, 15
-addi a2, a0, 128
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-addi t0, s10, 15
-andi t0, t0, -16
-add a1, a1, t0
-addi a2, a0, 144
-addi a3, zero, 16
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-addi t0, s10, 15
-andi t0, t0, -16
-add a1, a1, t0
-addi a1, a1, 16
-addi a2, s11, 0
-call {vg_poly1305_finalize}
-addi t0, a0, -384
-ld s7, 560(t0)
-ld s8, 568(t0)
-ld s9, 576(t0)
-ld s10, 584(t0)
-ld s11, 592(t0)
-ld ra, 600(t0)
-addi t5, sp, 0
-addi t6, zero, 0
-sd t6, 0(t5)
-sd t6, 8(t5)
-sd t6, 16(t5)
-sd t6, 24(t5)
-sd t6, 32(t5)
-sd t6, 40(t5)
-sd t6, 48(t5)
-sd t6, 56(t5)
-sd t6, 64(t5)
-sd t6, 72(t5)
-sd t6, 80(t5)
-sd t6, 88(t5)
-sd t6, 96(t5)
-sd t6, 104(t5)
-sd t6, 112(t5)
-sd t6, 120(t5)
-sd t6, 128(t5)
-sd t6, 136(t5)
-sd t6, 144(t5)
-sd t6, 152(t5)
-sd t6, 160(t5)
-sd t6, 168(t5)
-sd t6, 176(t5)
-sd t6, 184(t5)
-sd t6, 192(t5)
-sd t6, 200(t5)
-sd t6, 208(t5)
-sd t6, 216(t5)
-sd t6, 224(t5)
-sd t6, 232(t5)
-sd t6, 240(t5)
-sd t6, 248(t5)
-sd t6, 256(t5)
-sd t6, 264(t5)
-sd t6, 272(t5)
-sd t6, 280(t5)
-sd t6, 288(t5)
-sd t6, 296(t5)
-sd t6, 304(t5)
-sd t6, 312(t5)
-sd t6, 320(t5)
-sd t6, 328(t5)
-sd t6, 336(t5)
-sd t6, 344(t5)
-sd t6, 352(t5)
-sd t6, 360(t5)
-sd t6, 368(t5)
-sd t6, 376(t5)
-sd t6, 384(t5)
-sd t6, 392(t5)
-sd t6, 400(t5)
-sd t6, 408(t5)
-sd t6, 416(t5)
-sd t6, 424(t5)
-sd t6, 432(t5)
-sd t6, 440(t5)
-sd t6, 448(t5)
-sd t6, 456(t5)
-sd t6, 464(t5)
-sd t6, 472(t5)
-sd t6, 480(t5)
-sd t6, 488(t5)
-sd t6, 496(t5)
-sd t6, 504(t5)
-sd t6, 512(t5)
-sd t6, 520(t5)
-sd t6, 528(t5)
-sd t6, 536(t5)
-sd t6, 544(t5)
-sd t6, 552(t5)
-sd t6, 560(t5)
-sd t6, 568(t5)
-sd t6, 576(t5)
-sd t6, 584(t5)
-sd t6, 592(t5)
-sd t6, 600(t5)
-sd t6, 608(t5)
-addi sp, sp, 624
-ret
+.option arch, +m",
+        // addi sp, sp, -624
+        // addi a7, sp, 0
+        // addi t0, a7, 7
+        // andi t0, t0, -8
+        // sd s7, 560(t0)
+        // sd s8, 568(t0)
+        // sd s9, 576(t0)
+        // sd s10, 584(t0)
+        // sd s11, 592(t0)
+        // sd ra, 600(t0)
+        // addi s7, a2, 0
+        // addi s8, a3, 0
+        // addi s9, a4, 0
+        // addi s10, a5, 0
+        // addi s11, a6, 0
+        // addi t1, zero, 101
+        // sb t1, 0(t0)
+        // addi t1, zero, 120
+        // sb t1, 1(t0)
+        // addi t1, zero, 112
+        // sb t1, 2(t0)
+        // addi t1, zero, 97
+        // sb t1, 3(t0)
+        // addi t1, zero, 110
+        // sb t1, 4(t0)
+        // addi t1, zero, 100
+        // sb t1, 5(t0)
+        // addi t1, zero, 32
+        // sb t1, 6(t0)
+        // addi t1, zero, 51
+        // sb t1, 7(t0)
+        // addi t1, zero, 50
+        // sb t1, 8(t0)
+        // addi t1, zero, 45
+        // sb t1, 9(t0)
+        // addi t1, zero, 98
+        // sb t1, 10(t0)
+        // addi t1, zero, 121
+        // sb t1, 11(t0)
+        // addi t1, zero, 116
+        // sb t1, 12(t0)
+        // addi t1, zero, 101
+        // sb t1, 13(t0)
+        // addi t1, zero, 32
+        // sb t1, 14(t0)
+        // addi t1, zero, 107
+        // sb t1, 15(t0)
+        // lbu t1, 0(a0)
+        // sb t1, 16(t0)
+        // lbu t1, 1(a0)
+        // sb t1, 17(t0)
+        // lbu t1, 2(a0)
+        // sb t1, 18(t0)
+        // lbu t1, 3(a0)
+        // sb t1, 19(t0)
+        // lbu t1, 4(a0)
+        // sb t1, 20(t0)
+        // lbu t1, 5(a0)
+        // sb t1, 21(t0)
+        // lbu t1, 6(a0)
+        // sb t1, 22(t0)
+        // lbu t1, 7(a0)
+        // sb t1, 23(t0)
+        // lbu t1, 8(a0)
+        // sb t1, 24(t0)
+        // lbu t1, 9(a0)
+        // sb t1, 25(t0)
+        // lbu t1, 10(a0)
+        // sb t1, 26(t0)
+        // lbu t1, 11(a0)
+        // sb t1, 27(t0)
+        // lbu t1, 12(a0)
+        // sb t1, 28(t0)
+        // lbu t1, 13(a0)
+        // sb t1, 29(t0)
+        // lbu t1, 14(a0)
+        // sb t1, 30(t0)
+        // lbu t1, 15(a0)
+        // sb t1, 31(t0)
+        // lbu t1, 16(a0)
+        // sb t1, 32(t0)
+        // lbu t1, 17(a0)
+        // sb t1, 33(t0)
+        // lbu t1, 18(a0)
+        // sb t1, 34(t0)
+        // lbu t1, 19(a0)
+        // sb t1, 35(t0)
+        // lbu t1, 20(a0)
+        // sb t1, 36(t0)
+        // lbu t1, 21(a0)
+        // sb t1, 37(t0)
+        // lbu t1, 22(a0)
+        // sb t1, 38(t0)
+        // lbu t1, 23(a0)
+        // sb t1, 39(t0)
+        // lbu t1, 24(a0)
+        // sb t1, 40(t0)
+        // lbu t1, 25(a0)
+        // sb t1, 41(t0)
+        // lbu t1, 26(a0)
+        // sb t1, 42(t0)
+        // lbu t1, 27(a0)
+        // sb t1, 43(t0)
+        // lbu t1, 28(a0)
+        // sb t1, 44(t0)
+        // lbu t1, 29(a0)
+        // sb t1, 45(t0)
+        // lbu t1, 30(a0)
+        // sb t1, 46(t0)
+        // lbu t1, 31(a0)
+        // sb t1, 47(t0)
+        // addi t1, zero, 0
+        // sb t1, 48(t0)
+        // addi t1, zero, 0
+        // sb t1, 49(t0)
+        // addi t1, zero, 0
+        // sb t1, 50(t0)
+        // addi t1, zero, 0
+        // sb t1, 51(t0)
+        // lbu t1, 0(a1)
+        // sb t1, 52(t0)
+        // lbu t1, 1(a1)
+        // sb t1, 53(t0)
+        // lbu t1, 2(a1)
+        // sb t1, 54(t0)
+        // lbu t1, 3(a1)
+        // sb t1, 55(t0)
+        // lbu t1, 4(a1)
+        // sb t1, 56(t0)
+        // lbu t1, 5(a1)
+        // sb t1, 57(t0)
+        // lbu t1, 6(a1)
+        // sb t1, 58(t0)
+        // lbu t1, 7(a1)
+        // sb t1, 59(t0)
+        // lbu t1, 8(a1)
+        // sb t1, 60(t0)
+        // lbu t1, 9(a1)
+        // sb t1, 61(t0)
+        // lbu t1, 10(a1)
+        // sb t1, 62(t0)
+        // lbu t1, 11(a1)
+        // sb t1, 63(t0)
+        // addi t1, zero, 0
+        // sd t1, 512(t0)
+        // sd t1, 520(t0)
+        // sd s8, 528(t0)
+        // sd s10, 536(t0)
+        // addi a0, t0, 0
+        // addi a1, a0, 64
+        r".insn 4, 0xd9010113
+.insn 4, 0x00010893
+.insn 4, 0x00788293
+.insn 4, 0xff82f293
+.insn 4, 0x2372b823
+.insn 4, 0x2382bc23
+.insn 4, 0x2592b023
+.insn 4, 0x25a2b423
+.insn 4, 0x25b2b823
+.insn 4, 0x2412bc23
+.insn 4, 0x00060b93
+.insn 4, 0x00068c13
+.insn 4, 0x00070c93
+.insn 4, 0x00078d13
+.insn 4, 0x00080d93
+.insn 4, 0x06500313
+.insn 4, 0x00628023
+.insn 4, 0x07800313
+.insn 4, 0x006280a3
+.insn 4, 0x07000313
+.insn 4, 0x00628123
+.insn 4, 0x06100313
+.insn 4, 0x006281a3
+.insn 4, 0x06e00313
+.insn 4, 0x00628223
+.insn 4, 0x06400313
+.insn 4, 0x006282a3
+.insn 4, 0x02000313
+.insn 4, 0x00628323
+.insn 4, 0x03300313
+.insn 4, 0x006283a3
+.insn 4, 0x03200313
+.insn 4, 0x00628423
+.insn 4, 0x02d00313
+.insn 4, 0x006284a3
+.insn 4, 0x06200313
+.insn 4, 0x00628523
+.insn 4, 0x07900313
+.insn 4, 0x006285a3
+.insn 4, 0x07400313
+.insn 4, 0x00628623
+.insn 4, 0x06500313
+.insn 4, 0x006286a3
+.insn 4, 0x02000313
+.insn 4, 0x00628723
+.insn 4, 0x06b00313
+.insn 4, 0x006287a3
+.insn 4, 0x00054303
+.insn 4, 0x00628823
+.insn 4, 0x00154303
+.insn 4, 0x006288a3
+.insn 4, 0x00254303
+.insn 4, 0x00628923
+.insn 4, 0x00354303
+.insn 4, 0x006289a3
+.insn 4, 0x00454303
+.insn 4, 0x00628a23
+.insn 4, 0x00554303
+.insn 4, 0x00628aa3
+.insn 4, 0x00654303
+.insn 4, 0x00628b23
+.insn 4, 0x00754303
+.insn 4, 0x00628ba3
+.insn 4, 0x00854303
+.insn 4, 0x00628c23
+.insn 4, 0x00954303
+.insn 4, 0x00628ca3
+.insn 4, 0x00a54303
+.insn 4, 0x00628d23
+.insn 4, 0x00b54303
+.insn 4, 0x00628da3
+.insn 4, 0x00c54303
+.insn 4, 0x00628e23
+.insn 4, 0x00d54303
+.insn 4, 0x00628ea3
+.insn 4, 0x00e54303
+.insn 4, 0x00628f23
+.insn 4, 0x00f54303
+.insn 4, 0x00628fa3
+.insn 4, 0x01054303
+.insn 4, 0x02628023
+.insn 4, 0x01154303
+.insn 4, 0x026280a3
+.insn 4, 0x01254303
+.insn 4, 0x02628123
+.insn 4, 0x01354303
+.insn 4, 0x026281a3
+.insn 4, 0x01454303
+.insn 4, 0x02628223
+.insn 4, 0x01554303
+.insn 4, 0x026282a3
+.insn 4, 0x01654303
+.insn 4, 0x02628323
+.insn 4, 0x01754303
+.insn 4, 0x026283a3
+.insn 4, 0x01854303
+.insn 4, 0x02628423
+.insn 4, 0x01954303
+.insn 4, 0x026284a3
+.insn 4, 0x01a54303
+.insn 4, 0x02628523
+.insn 4, 0x01b54303
+.insn 4, 0x026285a3
+.insn 4, 0x01c54303
+.insn 4, 0x02628623
+.insn 4, 0x01d54303
+.insn 4, 0x026286a3
+.insn 4, 0x01e54303
+.insn 4, 0x02628723
+.insn 4, 0x01f54303
+.insn 4, 0x026287a3
+.insn 4, 0x00000313
+.insn 4, 0x02628823
+.insn 4, 0x00000313
+.insn 4, 0x026288a3
+.insn 4, 0x00000313
+.insn 4, 0x02628923
+.insn 4, 0x00000313
+.insn 4, 0x026289a3
+.insn 4, 0x0005c303
+.insn 4, 0x02628a23
+.insn 4, 0x0015c303
+.insn 4, 0x02628aa3
+.insn 4, 0x0025c303
+.insn 4, 0x02628b23
+.insn 4, 0x0035c303
+.insn 4, 0x02628ba3
+.insn 4, 0x0045c303
+.insn 4, 0x02628c23
+.insn 4, 0x0055c303
+.insn 4, 0x02628ca3
+.insn 4, 0x0065c303
+.insn 4, 0x02628d23
+.insn 4, 0x0075c303
+.insn 4, 0x02628da3
+.insn 4, 0x0085c303
+.insn 4, 0x02628e23
+.insn 4, 0x0095c303
+.insn 4, 0x02628ea3
+.insn 4, 0x00a5c303
+.insn 4, 0x02628f23
+.insn 4, 0x00b5c303
+.insn 4, 0x02628fa3
+.insn 4, 0x00000313
+.insn 4, 0x2062b023
+.insn 4, 0x2062b423
+.insn 4, 0x2182b823
+.insn 4, 0x21a2bc23
+.insn 4, 0x00028513
+.insn 4, 0x04050593
+call {vg_chacha20_block}",
+        // addi a1, a0, 64
+        // addi a0, a0, 384
+        r".insn 4, 0x04050593
+.insn 4, 0x18050513
+call {vg_poly1305_init}",
+        // addi a1, zero, 0
+        // addi a2, s7, 0
+        // addi a3, s8, 0
+        r".insn 4, 0x00000593
+.insn 4, 0x000b8613
+.insn 4, 0x000c0693
+call {vg_poly1305_update}",
+        // addi a1, s8, 0
+        // addi a3, zero, 0
+        // sub a3, a3, s8
+        // andi a3, a3, 15
+        // addi a2, a0, 128
+        r".insn 4, 0x000c0593
+.insn 4, 0x00000693
+.insn 4, 0x418686b3
+.insn 4, 0x00f6f693
+.insn 4, 0x08050613
+call {vg_poly1305_update}",
+        // addi a0, a0, -384
+        // addi t0, zero, 1
+        // sb t0, 48(a0)
+        // addi a1, s9, 0
+        // addi a2, s10, 0
+        // addi a3, a0, 64
+        r".insn 4, 0xe8050513
+.insn 4, 0x00100293
+.insn 4, 0x02550823
+.insn 4, 0x000c8593
+.insn 4, 0x000d0613
+.insn 4, 0x04050693
+call {vg_chacha20_xor}",
+        // addi a0, a0, 384
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // addi a2, s9, 0
+        // addi a3, s10, 0
+        r".insn 4, 0x18050513
+.insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x000c8613
+.insn 4, 0x000d0693
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // add a1, a1, s10
+        // addi a3, zero, 0
+        // sub a3, a3, s10
+        // andi a3, a3, 15
+        // addi a2, a0, 128
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x01a585b3
+.insn 4, 0x00000693
+.insn 4, 0x41a686b3
+.insn 4, 0x00f6f693
+.insn 4, 0x08050613
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // addi t0, s10, 15
+        // andi t0, t0, -16
+        // add a1, a1, t0
+        // addi a2, a0, 144
+        // addi a3, zero, 16
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x00fd0293
+.insn 4, 0xff02f293
+.insn 4, 0x005585b3
+.insn 4, 0x09050613
+.insn 4, 0x01000693
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // addi t0, s10, 15
+        // andi t0, t0, -16
+        // add a1, a1, t0
+        // addi a1, a1, 16
+        // addi a2, s11, 0
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x00fd0293
+.insn 4, 0xff02f293
+.insn 4, 0x005585b3
+.insn 4, 0x01058593
+.insn 4, 0x000d8613
+call {vg_poly1305_finalize}",
+        // addi t0, a0, -384
+        // ld s7, 560(t0)
+        // ld s8, 568(t0)
+        // ld s9, 576(t0)
+        // ld s10, 584(t0)
+        // ld s11, 592(t0)
+        // ld ra, 600(t0)
+        // addi t5, sp, 0
+        // addi t6, zero, 0
+        // sd t6, 0(t5)
+        // sd t6, 8(t5)
+        // sd t6, 16(t5)
+        // sd t6, 24(t5)
+        // sd t6, 32(t5)
+        // sd t6, 40(t5)
+        // sd t6, 48(t5)
+        // sd t6, 56(t5)
+        // sd t6, 64(t5)
+        // sd t6, 72(t5)
+        // sd t6, 80(t5)
+        // sd t6, 88(t5)
+        // sd t6, 96(t5)
+        // sd t6, 104(t5)
+        // sd t6, 112(t5)
+        // sd t6, 120(t5)
+        // sd t6, 128(t5)
+        // sd t6, 136(t5)
+        // sd t6, 144(t5)
+        // sd t6, 152(t5)
+        // sd t6, 160(t5)
+        // sd t6, 168(t5)
+        // sd t6, 176(t5)
+        // sd t6, 184(t5)
+        // sd t6, 192(t5)
+        // sd t6, 200(t5)
+        // sd t6, 208(t5)
+        // sd t6, 216(t5)
+        // sd t6, 224(t5)
+        // sd t6, 232(t5)
+        // sd t6, 240(t5)
+        // sd t6, 248(t5)
+        // sd t6, 256(t5)
+        // sd t6, 264(t5)
+        // sd t6, 272(t5)
+        // sd t6, 280(t5)
+        // sd t6, 288(t5)
+        // sd t6, 296(t5)
+        // sd t6, 304(t5)
+        // sd t6, 312(t5)
+        // sd t6, 320(t5)
+        // sd t6, 328(t5)
+        // sd t6, 336(t5)
+        // sd t6, 344(t5)
+        // sd t6, 352(t5)
+        // sd t6, 360(t5)
+        // sd t6, 368(t5)
+        // sd t6, 376(t5)
+        // sd t6, 384(t5)
+        // sd t6, 392(t5)
+        // sd t6, 400(t5)
+        // sd t6, 408(t5)
+        // sd t6, 416(t5)
+        // sd t6, 424(t5)
+        // sd t6, 432(t5)
+        // sd t6, 440(t5)
+        // sd t6, 448(t5)
+        // sd t6, 456(t5)
+        // sd t6, 464(t5)
+        // sd t6, 472(t5)
+        // sd t6, 480(t5)
+        // sd t6, 488(t5)
+        // sd t6, 496(t5)
+        // sd t6, 504(t5)
+        // sd t6, 512(t5)
+        // sd t6, 520(t5)
+        // sd t6, 528(t5)
+        // sd t6, 536(t5)
+        // sd t6, 544(t5)
+        // sd t6, 552(t5)
+        // sd t6, 560(t5)
+        // sd t6, 568(t5)
+        // sd t6, 576(t5)
+        // sd t6, 584(t5)
+        // sd t6, 592(t5)
+        // sd t6, 600(t5)
+        // sd t6, 608(t5)
+        // addi sp, sp, 624
+        // ret
+        r".insn 4, 0xe8050293
+.insn 4, 0x2302bb83
+.insn 4, 0x2382bc03
+.insn 4, 0x2402bc83
+.insn 4, 0x2482bd03
+.insn 4, 0x2502bd83
+.insn 4, 0x2582b083
+.insn 4, 0x00010f13
+.insn 4, 0x00000f93
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 4, 0x05ff3023
+.insn 4, 0x05ff3423
+.insn 4, 0x05ff3823
+.insn 4, 0x05ff3c23
+.insn 4, 0x07ff3023
+.insn 4, 0x07ff3423
+.insn 4, 0x07ff3823
+.insn 4, 0x07ff3c23
+.insn 4, 0x09ff3023
+.insn 4, 0x09ff3423
+.insn 4, 0x09ff3823
+.insn 4, 0x09ff3c23
+.insn 4, 0x0bff3023
+.insn 4, 0x0bff3423
+.insn 4, 0x0bff3823
+.insn 4, 0x0bff3c23
+.insn 4, 0x0dff3023
+.insn 4, 0x0dff3423
+.insn 4, 0x0dff3823
+.insn 4, 0x0dff3c23
+.insn 4, 0x0fff3023
+.insn 4, 0x0fff3423
+.insn 4, 0x0fff3823
+.insn 4, 0x0fff3c23
+.insn 4, 0x11ff3023
+.insn 4, 0x11ff3423
+.insn 4, 0x11ff3823
+.insn 4, 0x11ff3c23
+.insn 4, 0x13ff3023
+.insn 4, 0x13ff3423
+.insn 4, 0x13ff3823
+.insn 4, 0x13ff3c23
+.insn 4, 0x15ff3023
+.insn 4, 0x15ff3423
+.insn 4, 0x15ff3823
+.insn 4, 0x15ff3c23
+.insn 4, 0x17ff3023
+.insn 4, 0x17ff3423
+.insn 4, 0x17ff3823
+.insn 4, 0x17ff3c23
+.insn 4, 0x19ff3023
+.insn 4, 0x19ff3423
+.insn 4, 0x19ff3823
+.insn 4, 0x19ff3c23
+.insn 4, 0x1bff3023
+.insn 4, 0x1bff3423
+.insn 4, 0x1bff3823
+.insn 4, 0x1bff3c23
+.insn 4, 0x1dff3023
+.insn 4, 0x1dff3423
+.insn 4, 0x1dff3823
+.insn 4, 0x1dff3c23
+.insn 4, 0x1fff3023
+.insn 4, 0x1fff3423
+.insn 4, 0x1fff3823
+.insn 4, 0x1fff3c23
+.insn 4, 0x21ff3023
+.insn 4, 0x21ff3423
+.insn 4, 0x21ff3823
+.insn 4, 0x21ff3c23
+.insn 4, 0x23ff3023
+.insn 4, 0x23ff3423
+.insn 4, 0x23ff3823
+.insn 4, 0x23ff3c23
+.insn 4, 0x25ff3023
+.insn 4, 0x25ff3423
+.insn 4, 0x25ff3823
+.insn 4, 0x25ff3c23
+.insn 4, 0x27ff3023
+.insn 4, 0x27010113
+.insn 4, 0x00008067
 .option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -335,364 +615,712 @@ ret
 pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi sp, sp, -624
-addi a7, sp, 0
-addi t0, a7, 7
-andi t0, t0, -8
-sd s7, 560(t0)
-sd s8, 568(t0)
-sd s9, 576(t0)
-sd s10, 584(t0)
-sd s11, 592(t0)
-sd ra, 600(t0)
-addi s7, a2, 0
-addi s8, a3, 0
-addi s9, a4, 0
-addi s10, a5, 0
-addi s11, a6, 0
-addi t1, zero, 101
-sb t1, 0(t0)
-addi t1, zero, 120
-sb t1, 1(t0)
-addi t1, zero, 112
-sb t1, 2(t0)
-addi t1, zero, 97
-sb t1, 3(t0)
-addi t1, zero, 110
-sb t1, 4(t0)
-addi t1, zero, 100
-sb t1, 5(t0)
-addi t1, zero, 32
-sb t1, 6(t0)
-addi t1, zero, 51
-sb t1, 7(t0)
-addi t1, zero, 50
-sb t1, 8(t0)
-addi t1, zero, 45
-sb t1, 9(t0)
-addi t1, zero, 98
-sb t1, 10(t0)
-addi t1, zero, 121
-sb t1, 11(t0)
-addi t1, zero, 116
-sb t1, 12(t0)
-addi t1, zero, 101
-sb t1, 13(t0)
-addi t1, zero, 32
-sb t1, 14(t0)
-addi t1, zero, 107
-sb t1, 15(t0)
-lbu t1, 0(a0)
-sb t1, 16(t0)
-lbu t1, 1(a0)
-sb t1, 17(t0)
-lbu t1, 2(a0)
-sb t1, 18(t0)
-lbu t1, 3(a0)
-sb t1, 19(t0)
-lbu t1, 4(a0)
-sb t1, 20(t0)
-lbu t1, 5(a0)
-sb t1, 21(t0)
-lbu t1, 6(a0)
-sb t1, 22(t0)
-lbu t1, 7(a0)
-sb t1, 23(t0)
-lbu t1, 8(a0)
-sb t1, 24(t0)
-lbu t1, 9(a0)
-sb t1, 25(t0)
-lbu t1, 10(a0)
-sb t1, 26(t0)
-lbu t1, 11(a0)
-sb t1, 27(t0)
-lbu t1, 12(a0)
-sb t1, 28(t0)
-lbu t1, 13(a0)
-sb t1, 29(t0)
-lbu t1, 14(a0)
-sb t1, 30(t0)
-lbu t1, 15(a0)
-sb t1, 31(t0)
-lbu t1, 16(a0)
-sb t1, 32(t0)
-lbu t1, 17(a0)
-sb t1, 33(t0)
-lbu t1, 18(a0)
-sb t1, 34(t0)
-lbu t1, 19(a0)
-sb t1, 35(t0)
-lbu t1, 20(a0)
-sb t1, 36(t0)
-lbu t1, 21(a0)
-sb t1, 37(t0)
-lbu t1, 22(a0)
-sb t1, 38(t0)
-lbu t1, 23(a0)
-sb t1, 39(t0)
-lbu t1, 24(a0)
-sb t1, 40(t0)
-lbu t1, 25(a0)
-sb t1, 41(t0)
-lbu t1, 26(a0)
-sb t1, 42(t0)
-lbu t1, 27(a0)
-sb t1, 43(t0)
-lbu t1, 28(a0)
-sb t1, 44(t0)
-lbu t1, 29(a0)
-sb t1, 45(t0)
-lbu t1, 30(a0)
-sb t1, 46(t0)
-lbu t1, 31(a0)
-sb t1, 47(t0)
-addi t1, zero, 0
-sb t1, 48(t0)
-addi t1, zero, 0
-sb t1, 49(t0)
-addi t1, zero, 0
-sb t1, 50(t0)
-addi t1, zero, 0
-sb t1, 51(t0)
-lbu t1, 0(a1)
-sb t1, 52(t0)
-lbu t1, 1(a1)
-sb t1, 53(t0)
-lbu t1, 2(a1)
-sb t1, 54(t0)
-lbu t1, 3(a1)
-sb t1, 55(t0)
-lbu t1, 4(a1)
-sb t1, 56(t0)
-lbu t1, 5(a1)
-sb t1, 57(t0)
-lbu t1, 6(a1)
-sb t1, 58(t0)
-lbu t1, 7(a1)
-sb t1, 59(t0)
-lbu t1, 8(a1)
-sb t1, 60(t0)
-lbu t1, 9(a1)
-sb t1, 61(t0)
-lbu t1, 10(a1)
-sb t1, 62(t0)
-lbu t1, 11(a1)
-sb t1, 63(t0)
-addi t1, zero, 0
-sd t1, 512(t0)
-sd t1, 520(t0)
-sd s8, 528(t0)
-sd s10, 536(t0)
-addi a0, t0, 0
-addi a1, a0, 64
-call {vg_chacha20_block}
-addi a1, a0, 64
-addi a0, a0, 384
-call {vg_poly1305_init}
-addi a1, zero, 0
-addi a2, s7, 0
-addi a3, s8, 0
-call {vg_poly1305_update}
-addi a1, s8, 0
-addi a3, zero, 0
-sub a3, a3, s8
-andi a3, a3, 15
-addi a2, a0, 128
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-addi a2, s9, 0
-addi a3, s10, 0
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-add a1, a1, s10
-addi a3, zero, 0
-sub a3, a3, s10
-andi a3, a3, 15
-addi a2, a0, 128
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-addi t0, s10, 15
-andi t0, t0, -16
-add a1, a1, t0
-addi a2, a0, 144
-addi a3, zero, 16
-call {vg_poly1305_update}
-addi a1, s8, 15
-andi a1, a1, -16
-addi t0, s10, 15
-andi t0, t0, -16
-add a1, a1, t0
-addi a1, a1, 16
-addi a2, a0, 160
-call {vg_poly1305_finalize}
-addi a0, a0, -384
-addi t0, zero, 1
-sb t0, 48(a0)
-addi a1, s9, 0
-addi a2, s10, 0
-addi a3, a0, 64
-call {vg_chacha20_xor}
-addi a0, a0, 384
-addi t0, a0, -384
-addi t1, zero, 0
-lbu t2, 544(t0)
-lbu t3, 0(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 545(t0)
-lbu t3, 1(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 546(t0)
-lbu t3, 2(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 547(t0)
-lbu t3, 3(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 548(t0)
-lbu t3, 4(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 549(t0)
-lbu t3, 5(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 550(t0)
-lbu t3, 6(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 551(t0)
-lbu t3, 7(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 552(t0)
-lbu t3, 8(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 553(t0)
-lbu t3, 9(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 554(t0)
-lbu t3, 10(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 555(t0)
-lbu t3, 11(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 556(t0)
-lbu t3, 12(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 557(t0)
-lbu t3, 13(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 558(t0)
-lbu t3, 14(s11)
-xor t2, t2, t3
-or t1, t1, t2
-lbu t2, 559(t0)
-lbu t3, 15(s11)
-xor t2, t2, t3
-or t1, t1, t2
-addi t2, zero, 1
-sltu t1, t1, t2
-ld s7, 560(t0)
-ld s8, 568(t0)
-ld s9, 576(t0)
-ld s10, 584(t0)
-ld s11, 592(t0)
-ld ra, 600(t0)
-addi a0, t1, 0
-addi t5, sp, 0
-addi t6, zero, 0
-sd t6, 0(t5)
-sd t6, 8(t5)
-sd t6, 16(t5)
-sd t6, 24(t5)
-sd t6, 32(t5)
-sd t6, 40(t5)
-sd t6, 48(t5)
-sd t6, 56(t5)
-sd t6, 64(t5)
-sd t6, 72(t5)
-sd t6, 80(t5)
-sd t6, 88(t5)
-sd t6, 96(t5)
-sd t6, 104(t5)
-sd t6, 112(t5)
-sd t6, 120(t5)
-sd t6, 128(t5)
-sd t6, 136(t5)
-sd t6, 144(t5)
-sd t6, 152(t5)
-sd t6, 160(t5)
-sd t6, 168(t5)
-sd t6, 176(t5)
-sd t6, 184(t5)
-sd t6, 192(t5)
-sd t6, 200(t5)
-sd t6, 208(t5)
-sd t6, 216(t5)
-sd t6, 224(t5)
-sd t6, 232(t5)
-sd t6, 240(t5)
-sd t6, 248(t5)
-sd t6, 256(t5)
-sd t6, 264(t5)
-sd t6, 272(t5)
-sd t6, 280(t5)
-sd t6, 288(t5)
-sd t6, 296(t5)
-sd t6, 304(t5)
-sd t6, 312(t5)
-sd t6, 320(t5)
-sd t6, 328(t5)
-sd t6, 336(t5)
-sd t6, 344(t5)
-sd t6, 352(t5)
-sd t6, 360(t5)
-sd t6, 368(t5)
-sd t6, 376(t5)
-sd t6, 384(t5)
-sd t6, 392(t5)
-sd t6, 400(t5)
-sd t6, 408(t5)
-sd t6, 416(t5)
-sd t6, 424(t5)
-sd t6, 432(t5)
-sd t6, 440(t5)
-sd t6, 448(t5)
-sd t6, 456(t5)
-sd t6, 464(t5)
-sd t6, 472(t5)
-sd t6, 480(t5)
-sd t6, 488(t5)
-sd t6, 496(t5)
-sd t6, 504(t5)
-sd t6, 512(t5)
-sd t6, 520(t5)
-sd t6, 528(t5)
-sd t6, 536(t5)
-sd t6, 544(t5)
-sd t6, 552(t5)
-sd t6, 560(t5)
-sd t6, 568(t5)
-sd t6, 576(t5)
-sd t6, 584(t5)
-sd t6, 592(t5)
-sd t6, 600(t5)
-sd t6, 608(t5)
-addi sp, sp, 624
-ret
+.option arch, +m",
+        // addi sp, sp, -624
+        // addi a7, sp, 0
+        // addi t0, a7, 7
+        // andi t0, t0, -8
+        // sd s7, 560(t0)
+        // sd s8, 568(t0)
+        // sd s9, 576(t0)
+        // sd s10, 584(t0)
+        // sd s11, 592(t0)
+        // sd ra, 600(t0)
+        // addi s7, a2, 0
+        // addi s8, a3, 0
+        // addi s9, a4, 0
+        // addi s10, a5, 0
+        // addi s11, a6, 0
+        // addi t1, zero, 101
+        // sb t1, 0(t0)
+        // addi t1, zero, 120
+        // sb t1, 1(t0)
+        // addi t1, zero, 112
+        // sb t1, 2(t0)
+        // addi t1, zero, 97
+        // sb t1, 3(t0)
+        // addi t1, zero, 110
+        // sb t1, 4(t0)
+        // addi t1, zero, 100
+        // sb t1, 5(t0)
+        // addi t1, zero, 32
+        // sb t1, 6(t0)
+        // addi t1, zero, 51
+        // sb t1, 7(t0)
+        // addi t1, zero, 50
+        // sb t1, 8(t0)
+        // addi t1, zero, 45
+        // sb t1, 9(t0)
+        // addi t1, zero, 98
+        // sb t1, 10(t0)
+        // addi t1, zero, 121
+        // sb t1, 11(t0)
+        // addi t1, zero, 116
+        // sb t1, 12(t0)
+        // addi t1, zero, 101
+        // sb t1, 13(t0)
+        // addi t1, zero, 32
+        // sb t1, 14(t0)
+        // addi t1, zero, 107
+        // sb t1, 15(t0)
+        // lbu t1, 0(a0)
+        // sb t1, 16(t0)
+        // lbu t1, 1(a0)
+        // sb t1, 17(t0)
+        // lbu t1, 2(a0)
+        // sb t1, 18(t0)
+        // lbu t1, 3(a0)
+        // sb t1, 19(t0)
+        // lbu t1, 4(a0)
+        // sb t1, 20(t0)
+        // lbu t1, 5(a0)
+        // sb t1, 21(t0)
+        // lbu t1, 6(a0)
+        // sb t1, 22(t0)
+        // lbu t1, 7(a0)
+        // sb t1, 23(t0)
+        // lbu t1, 8(a0)
+        // sb t1, 24(t0)
+        // lbu t1, 9(a0)
+        // sb t1, 25(t0)
+        // lbu t1, 10(a0)
+        // sb t1, 26(t0)
+        // lbu t1, 11(a0)
+        // sb t1, 27(t0)
+        // lbu t1, 12(a0)
+        // sb t1, 28(t0)
+        // lbu t1, 13(a0)
+        // sb t1, 29(t0)
+        // lbu t1, 14(a0)
+        // sb t1, 30(t0)
+        // lbu t1, 15(a0)
+        // sb t1, 31(t0)
+        // lbu t1, 16(a0)
+        // sb t1, 32(t0)
+        // lbu t1, 17(a0)
+        // sb t1, 33(t0)
+        // lbu t1, 18(a0)
+        // sb t1, 34(t0)
+        // lbu t1, 19(a0)
+        // sb t1, 35(t0)
+        // lbu t1, 20(a0)
+        // sb t1, 36(t0)
+        // lbu t1, 21(a0)
+        // sb t1, 37(t0)
+        // lbu t1, 22(a0)
+        // sb t1, 38(t0)
+        // lbu t1, 23(a0)
+        // sb t1, 39(t0)
+        // lbu t1, 24(a0)
+        // sb t1, 40(t0)
+        // lbu t1, 25(a0)
+        // sb t1, 41(t0)
+        // lbu t1, 26(a0)
+        // sb t1, 42(t0)
+        // lbu t1, 27(a0)
+        // sb t1, 43(t0)
+        // lbu t1, 28(a0)
+        // sb t1, 44(t0)
+        // lbu t1, 29(a0)
+        // sb t1, 45(t0)
+        // lbu t1, 30(a0)
+        // sb t1, 46(t0)
+        // lbu t1, 31(a0)
+        // sb t1, 47(t0)
+        // addi t1, zero, 0
+        // sb t1, 48(t0)
+        // addi t1, zero, 0
+        // sb t1, 49(t0)
+        // addi t1, zero, 0
+        // sb t1, 50(t0)
+        // addi t1, zero, 0
+        // sb t1, 51(t0)
+        // lbu t1, 0(a1)
+        // sb t1, 52(t0)
+        // lbu t1, 1(a1)
+        // sb t1, 53(t0)
+        // lbu t1, 2(a1)
+        // sb t1, 54(t0)
+        // lbu t1, 3(a1)
+        // sb t1, 55(t0)
+        // lbu t1, 4(a1)
+        // sb t1, 56(t0)
+        // lbu t1, 5(a1)
+        // sb t1, 57(t0)
+        // lbu t1, 6(a1)
+        // sb t1, 58(t0)
+        // lbu t1, 7(a1)
+        // sb t1, 59(t0)
+        // lbu t1, 8(a1)
+        // sb t1, 60(t0)
+        // lbu t1, 9(a1)
+        // sb t1, 61(t0)
+        // lbu t1, 10(a1)
+        // sb t1, 62(t0)
+        // lbu t1, 11(a1)
+        // sb t1, 63(t0)
+        // addi t1, zero, 0
+        // sd t1, 512(t0)
+        // sd t1, 520(t0)
+        // sd s8, 528(t0)
+        // sd s10, 536(t0)
+        // addi a0, t0, 0
+        // addi a1, a0, 64
+        r".insn 4, 0xd9010113
+.insn 4, 0x00010893
+.insn 4, 0x00788293
+.insn 4, 0xff82f293
+.insn 4, 0x2372b823
+.insn 4, 0x2382bc23
+.insn 4, 0x2592b023
+.insn 4, 0x25a2b423
+.insn 4, 0x25b2b823
+.insn 4, 0x2412bc23
+.insn 4, 0x00060b93
+.insn 4, 0x00068c13
+.insn 4, 0x00070c93
+.insn 4, 0x00078d13
+.insn 4, 0x00080d93
+.insn 4, 0x06500313
+.insn 4, 0x00628023
+.insn 4, 0x07800313
+.insn 4, 0x006280a3
+.insn 4, 0x07000313
+.insn 4, 0x00628123
+.insn 4, 0x06100313
+.insn 4, 0x006281a3
+.insn 4, 0x06e00313
+.insn 4, 0x00628223
+.insn 4, 0x06400313
+.insn 4, 0x006282a3
+.insn 4, 0x02000313
+.insn 4, 0x00628323
+.insn 4, 0x03300313
+.insn 4, 0x006283a3
+.insn 4, 0x03200313
+.insn 4, 0x00628423
+.insn 4, 0x02d00313
+.insn 4, 0x006284a3
+.insn 4, 0x06200313
+.insn 4, 0x00628523
+.insn 4, 0x07900313
+.insn 4, 0x006285a3
+.insn 4, 0x07400313
+.insn 4, 0x00628623
+.insn 4, 0x06500313
+.insn 4, 0x006286a3
+.insn 4, 0x02000313
+.insn 4, 0x00628723
+.insn 4, 0x06b00313
+.insn 4, 0x006287a3
+.insn 4, 0x00054303
+.insn 4, 0x00628823
+.insn 4, 0x00154303
+.insn 4, 0x006288a3
+.insn 4, 0x00254303
+.insn 4, 0x00628923
+.insn 4, 0x00354303
+.insn 4, 0x006289a3
+.insn 4, 0x00454303
+.insn 4, 0x00628a23
+.insn 4, 0x00554303
+.insn 4, 0x00628aa3
+.insn 4, 0x00654303
+.insn 4, 0x00628b23
+.insn 4, 0x00754303
+.insn 4, 0x00628ba3
+.insn 4, 0x00854303
+.insn 4, 0x00628c23
+.insn 4, 0x00954303
+.insn 4, 0x00628ca3
+.insn 4, 0x00a54303
+.insn 4, 0x00628d23
+.insn 4, 0x00b54303
+.insn 4, 0x00628da3
+.insn 4, 0x00c54303
+.insn 4, 0x00628e23
+.insn 4, 0x00d54303
+.insn 4, 0x00628ea3
+.insn 4, 0x00e54303
+.insn 4, 0x00628f23
+.insn 4, 0x00f54303
+.insn 4, 0x00628fa3
+.insn 4, 0x01054303
+.insn 4, 0x02628023
+.insn 4, 0x01154303
+.insn 4, 0x026280a3
+.insn 4, 0x01254303
+.insn 4, 0x02628123
+.insn 4, 0x01354303
+.insn 4, 0x026281a3
+.insn 4, 0x01454303
+.insn 4, 0x02628223
+.insn 4, 0x01554303
+.insn 4, 0x026282a3
+.insn 4, 0x01654303
+.insn 4, 0x02628323
+.insn 4, 0x01754303
+.insn 4, 0x026283a3
+.insn 4, 0x01854303
+.insn 4, 0x02628423
+.insn 4, 0x01954303
+.insn 4, 0x026284a3
+.insn 4, 0x01a54303
+.insn 4, 0x02628523
+.insn 4, 0x01b54303
+.insn 4, 0x026285a3
+.insn 4, 0x01c54303
+.insn 4, 0x02628623
+.insn 4, 0x01d54303
+.insn 4, 0x026286a3
+.insn 4, 0x01e54303
+.insn 4, 0x02628723
+.insn 4, 0x01f54303
+.insn 4, 0x026287a3
+.insn 4, 0x00000313
+.insn 4, 0x02628823
+.insn 4, 0x00000313
+.insn 4, 0x026288a3
+.insn 4, 0x00000313
+.insn 4, 0x02628923
+.insn 4, 0x00000313
+.insn 4, 0x026289a3
+.insn 4, 0x0005c303
+.insn 4, 0x02628a23
+.insn 4, 0x0015c303
+.insn 4, 0x02628aa3
+.insn 4, 0x0025c303
+.insn 4, 0x02628b23
+.insn 4, 0x0035c303
+.insn 4, 0x02628ba3
+.insn 4, 0x0045c303
+.insn 4, 0x02628c23
+.insn 4, 0x0055c303
+.insn 4, 0x02628ca3
+.insn 4, 0x0065c303
+.insn 4, 0x02628d23
+.insn 4, 0x0075c303
+.insn 4, 0x02628da3
+.insn 4, 0x0085c303
+.insn 4, 0x02628e23
+.insn 4, 0x0095c303
+.insn 4, 0x02628ea3
+.insn 4, 0x00a5c303
+.insn 4, 0x02628f23
+.insn 4, 0x00b5c303
+.insn 4, 0x02628fa3
+.insn 4, 0x00000313
+.insn 4, 0x2062b023
+.insn 4, 0x2062b423
+.insn 4, 0x2182b823
+.insn 4, 0x21a2bc23
+.insn 4, 0x00028513
+.insn 4, 0x04050593
+call {vg_chacha20_block}",
+        // addi a1, a0, 64
+        // addi a0, a0, 384
+        r".insn 4, 0x04050593
+.insn 4, 0x18050513
+call {vg_poly1305_init}",
+        // addi a1, zero, 0
+        // addi a2, s7, 0
+        // addi a3, s8, 0
+        r".insn 4, 0x00000593
+.insn 4, 0x000b8613
+.insn 4, 0x000c0693
+call {vg_poly1305_update}",
+        // addi a1, s8, 0
+        // addi a3, zero, 0
+        // sub a3, a3, s8
+        // andi a3, a3, 15
+        // addi a2, a0, 128
+        r".insn 4, 0x000c0593
+.insn 4, 0x00000693
+.insn 4, 0x418686b3
+.insn 4, 0x00f6f693
+.insn 4, 0x08050613
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // addi a2, s9, 0
+        // addi a3, s10, 0
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x000c8613
+.insn 4, 0x000d0693
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // add a1, a1, s10
+        // addi a3, zero, 0
+        // sub a3, a3, s10
+        // andi a3, a3, 15
+        // addi a2, a0, 128
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x01a585b3
+.insn 4, 0x00000693
+.insn 4, 0x41a686b3
+.insn 4, 0x00f6f693
+.insn 4, 0x08050613
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // addi t0, s10, 15
+        // andi t0, t0, -16
+        // add a1, a1, t0
+        // addi a2, a0, 144
+        // addi a3, zero, 16
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x00fd0293
+.insn 4, 0xff02f293
+.insn 4, 0x005585b3
+.insn 4, 0x09050613
+.insn 4, 0x01000693
+call {vg_poly1305_update}",
+        // addi a1, s8, 15
+        // andi a1, a1, -16
+        // addi t0, s10, 15
+        // andi t0, t0, -16
+        // add a1, a1, t0
+        // addi a1, a1, 16
+        // addi a2, a0, 160
+        r".insn 4, 0x00fc0593
+.insn 4, 0xff05f593
+.insn 4, 0x00fd0293
+.insn 4, 0xff02f293
+.insn 4, 0x005585b3
+.insn 4, 0x01058593
+.insn 4, 0x0a050613
+call {vg_poly1305_finalize}",
+        // addi a0, a0, -384
+        // addi t0, zero, 1
+        // sb t0, 48(a0)
+        // addi a1, s9, 0
+        // addi a2, s10, 0
+        // addi a3, a0, 64
+        r".insn 4, 0xe8050513
+.insn 4, 0x00100293
+.insn 4, 0x02550823
+.insn 4, 0x000c8593
+.insn 4, 0x000d0613
+.insn 4, 0x04050693
+call {vg_chacha20_xor}",
+        // addi a0, a0, 384
+        // addi t0, a0, -384
+        // addi t1, zero, 0
+        // lbu t2, 544(t0)
+        // lbu t3, 0(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 545(t0)
+        // lbu t3, 1(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 546(t0)
+        // lbu t3, 2(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 547(t0)
+        // lbu t3, 3(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 548(t0)
+        // lbu t3, 4(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 549(t0)
+        // lbu t3, 5(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 550(t0)
+        // lbu t3, 6(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 551(t0)
+        // lbu t3, 7(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 552(t0)
+        // lbu t3, 8(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 553(t0)
+        // lbu t3, 9(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 554(t0)
+        // lbu t3, 10(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 555(t0)
+        // lbu t3, 11(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 556(t0)
+        // lbu t3, 12(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 557(t0)
+        // lbu t3, 13(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 558(t0)
+        // lbu t3, 14(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // lbu t2, 559(t0)
+        // lbu t3, 15(s11)
+        // xor t2, t2, t3
+        // or t1, t1, t2
+        // addi t2, zero, 1
+        // sltu t1, t1, t2
+        // ld s7, 560(t0)
+        // ld s8, 568(t0)
+        // ld s9, 576(t0)
+        // ld s10, 584(t0)
+        // ld s11, 592(t0)
+        // ld ra, 600(t0)
+        // addi a0, t1, 0
+        // addi t5, sp, 0
+        // addi t6, zero, 0
+        // sd t6, 0(t5)
+        // sd t6, 8(t5)
+        // sd t6, 16(t5)
+        // sd t6, 24(t5)
+        // sd t6, 32(t5)
+        // sd t6, 40(t5)
+        // sd t6, 48(t5)
+        // sd t6, 56(t5)
+        // sd t6, 64(t5)
+        // sd t6, 72(t5)
+        // sd t6, 80(t5)
+        // sd t6, 88(t5)
+        // sd t6, 96(t5)
+        // sd t6, 104(t5)
+        // sd t6, 112(t5)
+        // sd t6, 120(t5)
+        // sd t6, 128(t5)
+        // sd t6, 136(t5)
+        // sd t6, 144(t5)
+        // sd t6, 152(t5)
+        // sd t6, 160(t5)
+        // sd t6, 168(t5)
+        // sd t6, 176(t5)
+        // sd t6, 184(t5)
+        // sd t6, 192(t5)
+        // sd t6, 200(t5)
+        // sd t6, 208(t5)
+        // sd t6, 216(t5)
+        // sd t6, 224(t5)
+        // sd t6, 232(t5)
+        // sd t6, 240(t5)
+        // sd t6, 248(t5)
+        // sd t6, 256(t5)
+        // sd t6, 264(t5)
+        // sd t6, 272(t5)
+        // sd t6, 280(t5)
+        // sd t6, 288(t5)
+        // sd t6, 296(t5)
+        // sd t6, 304(t5)
+        // sd t6, 312(t5)
+        // sd t6, 320(t5)
+        // sd t6, 328(t5)
+        // sd t6, 336(t5)
+        // sd t6, 344(t5)
+        // sd t6, 352(t5)
+        // sd t6, 360(t5)
+        // sd t6, 368(t5)
+        // sd t6, 376(t5)
+        // sd t6, 384(t5)
+        // sd t6, 392(t5)
+        // sd t6, 400(t5)
+        // sd t6, 408(t5)
+        // sd t6, 416(t5)
+        // sd t6, 424(t5)
+        // sd t6, 432(t5)
+        // sd t6, 440(t5)
+        // sd t6, 448(t5)
+        // sd t6, 456(t5)
+        // sd t6, 464(t5)
+        // sd t6, 472(t5)
+        // sd t6, 480(t5)
+        // sd t6, 488(t5)
+        // sd t6, 496(t5)
+        // sd t6, 504(t5)
+        // sd t6, 512(t5)
+        // sd t6, 520(t5)
+        // sd t6, 528(t5)
+        // sd t6, 536(t5)
+        // sd t6, 544(t5)
+        // sd t6, 552(t5)
+        // sd t6, 560(t5)
+        // sd t6, 568(t5)
+        // sd t6, 576(t5)
+        // sd t6, 584(t5)
+        // sd t6, 592(t5)
+        // sd t6, 600(t5)
+        // sd t6, 608(t5)
+        // addi sp, sp, 624
+        // ret
+        r".insn 4, 0x18050513
+.insn 4, 0xe8050293
+.insn 4, 0x00000313
+.insn 4, 0x2202c383
+.insn 4, 0x000dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2212c383
+.insn 4, 0x001dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2222c383
+.insn 4, 0x002dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2232c383
+.insn 4, 0x003dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2242c383
+.insn 4, 0x004dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2252c383
+.insn 4, 0x005dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2262c383
+.insn 4, 0x006dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2272c383
+.insn 4, 0x007dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2282c383
+.insn 4, 0x008dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2292c383
+.insn 4, 0x009dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22a2c383
+.insn 4, 0x00adce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22b2c383
+.insn 4, 0x00bdce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22c2c383
+.insn 4, 0x00cdce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22d2c383
+.insn 4, 0x00ddce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22e2c383
+.insn 4, 0x00edce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22f2c383
+.insn 4, 0x00fdce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x00100393
+.insn 4, 0x00733333
+.insn 4, 0x2302bb83
+.insn 4, 0x2382bc03
+.insn 4, 0x2402bc83
+.insn 4, 0x2482bd03
+.insn 4, 0x2502bd83
+.insn 4, 0x2582b083
+.insn 4, 0x00030513
+.insn 4, 0x00010f13
+.insn 4, 0x00000f93
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 4, 0x05ff3023
+.insn 4, 0x05ff3423
+.insn 4, 0x05ff3823
+.insn 4, 0x05ff3c23
+.insn 4, 0x07ff3023
+.insn 4, 0x07ff3423
+.insn 4, 0x07ff3823
+.insn 4, 0x07ff3c23
+.insn 4, 0x09ff3023
+.insn 4, 0x09ff3423
+.insn 4, 0x09ff3823
+.insn 4, 0x09ff3c23
+.insn 4, 0x0bff3023
+.insn 4, 0x0bff3423
+.insn 4, 0x0bff3823
+.insn 4, 0x0bff3c23
+.insn 4, 0x0dff3023
+.insn 4, 0x0dff3423
+.insn 4, 0x0dff3823
+.insn 4, 0x0dff3c23
+.insn 4, 0x0fff3023
+.insn 4, 0x0fff3423
+.insn 4, 0x0fff3823
+.insn 4, 0x0fff3c23
+.insn 4, 0x11ff3023
+.insn 4, 0x11ff3423
+.insn 4, 0x11ff3823
+.insn 4, 0x11ff3c23
+.insn 4, 0x13ff3023
+.insn 4, 0x13ff3423
+.insn 4, 0x13ff3823
+.insn 4, 0x13ff3c23
+.insn 4, 0x15ff3023
+.insn 4, 0x15ff3423
+.insn 4, 0x15ff3823
+.insn 4, 0x15ff3c23
+.insn 4, 0x17ff3023
+.insn 4, 0x17ff3423
+.insn 4, 0x17ff3823
+.insn 4, 0x17ff3c23
+.insn 4, 0x19ff3023
+.insn 4, 0x19ff3423
+.insn 4, 0x19ff3823
+.insn 4, 0x19ff3c23
+.insn 4, 0x1bff3023
+.insn 4, 0x1bff3423
+.insn 4, 0x1bff3823
+.insn 4, 0x1bff3c23
+.insn 4, 0x1dff3023
+.insn 4, 0x1dff3423
+.insn 4, 0x1dff3823
+.insn 4, 0x1dff3c23
+.insn 4, 0x1fff3023
+.insn 4, 0x1fff3423
+.insn 4, 0x1fff3823
+.insn 4, 0x1fff3c23
+.insn 4, 0x21ff3023
+.insn 4, 0x21ff3423
+.insn 4, 0x21ff3823
+.insn 4, 0x21ff3c23
+.insn 4, 0x23ff3023
+.insn 4, 0x23ff3423
+.insn 4, 0x23ff3823
+.insn 4, 0x23ff3c23
+.insn 4, 0x25ff3023
+.insn 4, 0x25ff3423
+.insn 4, 0x25ff3823
+.insn 4, 0x25ff3c23
+.insn 4, 0x27ff3023
+.insn 4, 0x27010113
+.insn 4, 0x00008067
 .option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -722,82 +1350,144 @@ ret
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi sp, sp, -16
-sd ra, 8(sp)
-addi t5, sp, 16
-ld t5, 0(t5)
-addi t6, a6, 0
+.option arch, +m",
+        // addi sp, sp, -16
+        // sd ra, 8(sp)
+        // addi t5, sp, 16
+        // ld t5, 0(t5)
+        // addi t6, a6, 0
+        r".insn 4, 0xff010113
+.insn 4, 0x00113423
+.insn 4, 0x01010f13
+.insn 4, 0x000f3f03
+.insn 4, 0x00080f93
 beqz a5, 20f
-22:
-lbu t0, 0(a4)
-lbu t3, 1(a4)
-slli t3, t3, 8
-or t0, t0, t3
-lbu t3, 2(a4)
-slli t3, t3, 16
-or t0, t0, t3
-lbu t3, 3(a4)
-slli t3, t3, 24
-or t0, t0, t3
-lbu t4, 4(a4)
-lbu t3, 5(a4)
-slli t3, t3, 8
-or t4, t4, t3
-lbu t3, 6(a4)
-slli t3, t3, 16
-or t4, t4, t3
-lbu t3, 7(a4)
-slli t3, t3, 24
-or t4, t4, t3
-slli t4, t4, 32
-or t0, t0, t4
-lbu t1, 8(a4)
-lbu t3, 9(a4)
-slli t3, t3, 8
-or t1, t1, t3
-lbu t3, 10(a4)
-slli t3, t3, 16
-or t1, t1, t3
-lbu t3, 11(a4)
-slli t3, t3, 24
-or t1, t1, t3
-lbu t4, 12(a4)
-lbu t3, 13(a4)
-slli t3, t3, 8
-or t4, t4, t3
-lbu t3, 14(a4)
-slli t3, t3, 16
-or t4, t4, t3
-lbu t3, 15(a4)
-slli t3, t3, 24
-or t4, t4, t3
-slli t4, t4, 32
-or t1, t1, t4
-addi a4, a4, 16
+22:",
+        // lbu t0, 0(a4)
+        // lbu t3, 1(a4)
+        // slli t3, t3, 8
+        // or t0, t0, t3
+        // lbu t3, 2(a4)
+        // slli t3, t3, 16
+        // or t0, t0, t3
+        // lbu t3, 3(a4)
+        // slli t3, t3, 24
+        // or t0, t0, t3
+        // lbu t4, 4(a4)
+        // lbu t3, 5(a4)
+        // slli t3, t3, 8
+        // or t4, t4, t3
+        // lbu t3, 6(a4)
+        // slli t3, t3, 16
+        // or t4, t4, t3
+        // lbu t3, 7(a4)
+        // slli t3, t3, 24
+        // or t4, t4, t3
+        // slli t4, t4, 32
+        // or t0, t0, t4
+        // lbu t1, 8(a4)
+        // lbu t3, 9(a4)
+        // slli t3, t3, 8
+        // or t1, t1, t3
+        // lbu t3, 10(a4)
+        // slli t3, t3, 16
+        // or t1, t1, t3
+        // lbu t3, 11(a4)
+        // slli t3, t3, 24
+        // or t1, t1, t3
+        // lbu t4, 12(a4)
+        // lbu t3, 13(a4)
+        // slli t3, t3, 8
+        // or t4, t4, t3
+        // lbu t3, 14(a4)
+        // slli t3, t3, 16
+        // or t4, t4, t3
+        // lbu t3, 15(a4)
+        // slli t3, t3, 24
+        // or t4, t4, t3
+        // slli t4, t4, 32
+        // or t1, t1, t4
+        // addi a4, a4, 16
+        r".insn 4, 0x00074283
+.insn 4, 0x00174e03
+.insn 4, 0x008e1e13
+.insn 4, 0x01c2e2b3
+.insn 4, 0x00274e03
+.insn 4, 0x010e1e13
+.insn 4, 0x01c2e2b3
+.insn 4, 0x00374e03
+.insn 4, 0x018e1e13
+.insn 4, 0x01c2e2b3
+.insn 4, 0x00474e83
+.insn 4, 0x00574e03
+.insn 4, 0x008e1e13
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00674e03
+.insn 4, 0x010e1e13
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00774e03
+.insn 4, 0x018e1e13
+.insn 4, 0x01ceeeb3
+.insn 4, 0x020e9e93
+.insn 4, 0x01d2e2b3
+.insn 4, 0x00874303
+.insn 4, 0x00974e03
+.insn 4, 0x008e1e13
+.insn 4, 0x01c36333
+.insn 4, 0x00a74e03
+.insn 4, 0x010e1e13
+.insn 4, 0x01c36333
+.insn 4, 0x00b74e03
+.insn 4, 0x018e1e13
+.insn 4, 0x01c36333
+.insn 4, 0x00c74e83
+.insn 4, 0x00d74e03
+.insn 4, 0x008e1e13
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00e74e03
+.insn 4, 0x010e1e13
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00f74e03
+.insn 4, 0x018e1e13
+.insn 4, 0x01ceeeb3
+.insn 4, 0x020e9e93
+.insn 4, 0x01d36333
+.insn 4, 0x01070713
 beqz t1, 23f
-25:
-lbu t2, 0(t0)
-sb t2, 0(a6)
-addi t0, t0, 1
-addi a6, a6, 1
-addi t1, t1, -1
+25:",
+        // lbu t2, 0(t0)
+        // sb t2, 0(a6)
+        // addi t0, t0, 1
+        // addi a6, a6, 1
+        // addi t1, t1, -1
+        r".insn 4, 0x0002c383
+.insn 4, 0x00780023
+.insn 4, 0x00128293
+.insn 4, 0x00180813
+.insn 4, 0xfff30313
 bnez t1, 25b
 j 24f
 23:
-24:
-addi a5, a5, -1
+24:",
+        // addi a5, a5, -1
+        r".insn 4, 0xfff78793
 bnez a5, 22b
 j 21f
 20:
-21:
-addi a4, t6, 0
-addi a5, a7, 0
-addi a6, t5, 0
-call {vg_chacha20_poly1305_seal}
-ld ra, 8(sp)
-addi sp, sp, 16
-ret
+21:",
+        // addi a4, t6, 0
+        // addi a5, a7, 0
+        // addi a6, t5, 0
+        r".insn 4, 0x000f8713
+.insn 4, 0x00088793
+.insn 4, 0x000f0813
+call {vg_chacha20_poly1305_seal}",
+        // ld ra, 8(sp)
+        // addi sp, sp, 16
+        // ret
+        r".insn 4, 0x00813083
+.insn 4, 0x01010113
+.insn 4, 0x00008067
 .option pop",
         vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
     )

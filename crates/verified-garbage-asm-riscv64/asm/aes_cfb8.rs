@@ -20,153 +20,292 @@
 pub unsafe extern "C" fn vg_aes_cfb8_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi t0, a5, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-sd ra, 16(t0)
-sd s1, 24(t0)
-sd s2, 32(t0)
-sd s3, 40(t0)
-sd s4, 48(t0)
-sd s5, 56(t0)
-sd s6, 64(t0)
-addi s1, a0, 0
-addi s2, a1, 0
-addi s3, a2, 0
-addi s4, a3, 0
-addi s5, a4, 0
-addi s6, a5, 0
+.option arch, +m",
+        // addi t0, a5, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // sd ra, 16(t0)
+        // sd s1, 24(t0)
+        // sd s2, 32(t0)
+        // sd s3, 40(t0)
+        // sd s4, 48(t0)
+        // sd s5, 56(t0)
+        // sd s6, 64(t0)
+        // addi s1, a0, 0
+        // addi s2, a1, 0
+        // addi s3, a2, 0
+        // addi s4, a3, 0
+        // addi s5, a4, 0
+        // addi s6, a5, 0
+        r".insn 4, 0x7ff78293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x0012b823
+.insn 4, 0x0092bc23
+.insn 4, 0x0322b023
+.insn 4, 0x0332b423
+.insn 4, 0x0342b823
+.insn 4, 0x0352bc23
+.insn 4, 0x0562b023
+.insn 4, 0x00050493
+.insn 4, 0x00058913
+.insn 4, 0x00060993
+.insn 4, 0x00068a13
+.insn 4, 0x00070a93
+.insn 4, 0x00078b13
 beqz s5, 20f
-22:
-addi t0, s6, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-lbu t3, 0(s3)
-sb t3, 0(t0)
-lbu t3, 1(s3)
-sb t3, 1(t0)
-lbu t3, 2(s3)
-sb t3, 2(t0)
-lbu t3, 3(s3)
-sb t3, 3(t0)
-lbu t3, 4(s3)
-sb t3, 4(t0)
-lbu t3, 5(s3)
-sb t3, 5(t0)
-lbu t3, 6(s3)
-sb t3, 6(t0)
-lbu t3, 7(s3)
-sb t3, 7(t0)
-lbu t3, 8(s3)
-sb t3, 8(t0)
-lbu t3, 9(s3)
-sb t3, 9(t0)
-lbu t3, 10(s3)
-sb t3, 10(t0)
-lbu t3, 11(s3)
-sb t3, 11(t0)
-lbu t3, 12(s3)
-sb t3, 12(t0)
-lbu t3, 13(s3)
-sb t3, 13(t0)
-lbu t3, 14(s3)
-sb t3, 14(t0)
-lbu t3, 15(s3)
-sb t3, 15(t0)
-addi a0, s1, 0
-addi a1, s2, 0
-addi a2, t0, 0
-addi a3, zero, 1
-addi a4, s6, 0
-call {vg_aes_encrypt_blocks}
-addi t0, s6, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-lbu t1, 0(s4)
-lbu t2, 0(t0)
-xor t1, t1, t2
-sb t1, 0(s4)
-lbu t3, 1(s3)
-sb t3, 0(t0)
-lbu t3, 2(s3)
-sb t3, 1(t0)
-lbu t3, 3(s3)
-sb t3, 2(t0)
-lbu t3, 4(s3)
-sb t3, 3(t0)
-lbu t3, 5(s3)
-sb t3, 4(t0)
-lbu t3, 6(s3)
-sb t3, 5(t0)
-lbu t3, 7(s3)
-sb t3, 6(t0)
-lbu t3, 8(s3)
-sb t3, 7(t0)
-lbu t3, 9(s3)
-sb t3, 8(t0)
-lbu t3, 10(s3)
-sb t3, 9(t0)
-lbu t3, 11(s3)
-sb t3, 10(t0)
-lbu t3, 12(s3)
-sb t3, 11(t0)
-lbu t3, 13(s3)
-sb t3, 12(t0)
-lbu t3, 14(s3)
-sb t3, 13(t0)
-lbu t3, 15(s3)
-sb t3, 14(t0)
-sb t1, 15(t0)
-lbu t3, 0(t0)
-sb t3, 0(s3)
-lbu t3, 1(t0)
-sb t3, 1(s3)
-lbu t3, 2(t0)
-sb t3, 2(s3)
-lbu t3, 3(t0)
-sb t3, 3(s3)
-lbu t3, 4(t0)
-sb t3, 4(s3)
-lbu t3, 5(t0)
-sb t3, 5(s3)
-lbu t3, 6(t0)
-sb t3, 6(s3)
-lbu t3, 7(t0)
-sb t3, 7(s3)
-lbu t3, 8(t0)
-sb t3, 8(s3)
-lbu t3, 9(t0)
-sb t3, 9(s3)
-lbu t3, 10(t0)
-sb t3, 10(s3)
-lbu t3, 11(t0)
-sb t3, 11(s3)
-lbu t3, 12(t0)
-sb t3, 12(s3)
-lbu t3, 13(t0)
-sb t3, 13(s3)
-lbu t3, 14(t0)
-sb t3, 14(s3)
-lbu t3, 15(t0)
-sb t3, 15(s3)
-addi s4, s4, 1
-addi s5, s5, -1
+22:",
+        // addi t0, s6, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // lbu t3, 0(s3)
+        // sb t3, 0(t0)
+        // lbu t3, 1(s3)
+        // sb t3, 1(t0)
+        // lbu t3, 2(s3)
+        // sb t3, 2(t0)
+        // lbu t3, 3(s3)
+        // sb t3, 3(t0)
+        // lbu t3, 4(s3)
+        // sb t3, 4(t0)
+        // lbu t3, 5(s3)
+        // sb t3, 5(t0)
+        // lbu t3, 6(s3)
+        // sb t3, 6(t0)
+        // lbu t3, 7(s3)
+        // sb t3, 7(t0)
+        // lbu t3, 8(s3)
+        // sb t3, 8(t0)
+        // lbu t3, 9(s3)
+        // sb t3, 9(t0)
+        // lbu t3, 10(s3)
+        // sb t3, 10(t0)
+        // lbu t3, 11(s3)
+        // sb t3, 11(t0)
+        // lbu t3, 12(s3)
+        // sb t3, 12(t0)
+        // lbu t3, 13(s3)
+        // sb t3, 13(t0)
+        // lbu t3, 14(s3)
+        // sb t3, 14(t0)
+        // lbu t3, 15(s3)
+        // sb t3, 15(t0)
+        // addi a0, s1, 0
+        // addi a1, s2, 0
+        // addi a2, t0, 0
+        // addi a3, zero, 1
+        // addi a4, s6, 0
+        r".insn 4, 0x7ffb0293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x0009ce03
+.insn 4, 0x01c28023
+.insn 4, 0x0019ce03
+.insn 4, 0x01c280a3
+.insn 4, 0x0029ce03
+.insn 4, 0x01c28123
+.insn 4, 0x0039ce03
+.insn 4, 0x01c281a3
+.insn 4, 0x0049ce03
+.insn 4, 0x01c28223
+.insn 4, 0x0059ce03
+.insn 4, 0x01c282a3
+.insn 4, 0x0069ce03
+.insn 4, 0x01c28323
+.insn 4, 0x0079ce03
+.insn 4, 0x01c283a3
+.insn 4, 0x0089ce03
+.insn 4, 0x01c28423
+.insn 4, 0x0099ce03
+.insn 4, 0x01c284a3
+.insn 4, 0x00a9ce03
+.insn 4, 0x01c28523
+.insn 4, 0x00b9ce03
+.insn 4, 0x01c285a3
+.insn 4, 0x00c9ce03
+.insn 4, 0x01c28623
+.insn 4, 0x00d9ce03
+.insn 4, 0x01c286a3
+.insn 4, 0x00e9ce03
+.insn 4, 0x01c28723
+.insn 4, 0x00f9ce03
+.insn 4, 0x01c287a3
+.insn 4, 0x00048513
+.insn 4, 0x00090593
+.insn 4, 0x00028613
+.insn 4, 0x00100693
+.insn 4, 0x000b0713
+call {vg_aes_encrypt_blocks}",
+        // addi t0, s6, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // lbu t1, 0(s4)
+        // lbu t2, 0(t0)
+        // xor t1, t1, t2
+        // sb t1, 0(s4)
+        // lbu t3, 1(s3)
+        // sb t3, 0(t0)
+        // lbu t3, 2(s3)
+        // sb t3, 1(t0)
+        // lbu t3, 3(s3)
+        // sb t3, 2(t0)
+        // lbu t3, 4(s3)
+        // sb t3, 3(t0)
+        // lbu t3, 5(s3)
+        // sb t3, 4(t0)
+        // lbu t3, 6(s3)
+        // sb t3, 5(t0)
+        // lbu t3, 7(s3)
+        // sb t3, 6(t0)
+        // lbu t3, 8(s3)
+        // sb t3, 7(t0)
+        // lbu t3, 9(s3)
+        // sb t3, 8(t0)
+        // lbu t3, 10(s3)
+        // sb t3, 9(t0)
+        // lbu t3, 11(s3)
+        // sb t3, 10(t0)
+        // lbu t3, 12(s3)
+        // sb t3, 11(t0)
+        // lbu t3, 13(s3)
+        // sb t3, 12(t0)
+        // lbu t3, 14(s3)
+        // sb t3, 13(t0)
+        // lbu t3, 15(s3)
+        // sb t3, 14(t0)
+        // sb t1, 15(t0)
+        // lbu t3, 0(t0)
+        // sb t3, 0(s3)
+        // lbu t3, 1(t0)
+        // sb t3, 1(s3)
+        // lbu t3, 2(t0)
+        // sb t3, 2(s3)
+        // lbu t3, 3(t0)
+        // sb t3, 3(s3)
+        // lbu t3, 4(t0)
+        // sb t3, 4(s3)
+        // lbu t3, 5(t0)
+        // sb t3, 5(s3)
+        // lbu t3, 6(t0)
+        // sb t3, 6(s3)
+        // lbu t3, 7(t0)
+        // sb t3, 7(s3)
+        // lbu t3, 8(t0)
+        // sb t3, 8(s3)
+        // lbu t3, 9(t0)
+        // sb t3, 9(s3)
+        // lbu t3, 10(t0)
+        // sb t3, 10(s3)
+        // lbu t3, 11(t0)
+        // sb t3, 11(s3)
+        // lbu t3, 12(t0)
+        // sb t3, 12(s3)
+        // lbu t3, 13(t0)
+        // sb t3, 13(s3)
+        // lbu t3, 14(t0)
+        // sb t3, 14(s3)
+        // lbu t3, 15(t0)
+        // sb t3, 15(s3)
+        // addi s4, s4, 1
+        // addi s5, s5, -1
+        r".insn 4, 0x7ffb0293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x000a4303
+.insn 4, 0x0002c383
+.insn 4, 0x00734333
+.insn 4, 0x006a0023
+.insn 4, 0x0019ce03
+.insn 4, 0x01c28023
+.insn 4, 0x0029ce03
+.insn 4, 0x01c280a3
+.insn 4, 0x0039ce03
+.insn 4, 0x01c28123
+.insn 4, 0x0049ce03
+.insn 4, 0x01c281a3
+.insn 4, 0x0059ce03
+.insn 4, 0x01c28223
+.insn 4, 0x0069ce03
+.insn 4, 0x01c282a3
+.insn 4, 0x0079ce03
+.insn 4, 0x01c28323
+.insn 4, 0x0089ce03
+.insn 4, 0x01c283a3
+.insn 4, 0x0099ce03
+.insn 4, 0x01c28423
+.insn 4, 0x00a9ce03
+.insn 4, 0x01c284a3
+.insn 4, 0x00b9ce03
+.insn 4, 0x01c28523
+.insn 4, 0x00c9ce03
+.insn 4, 0x01c285a3
+.insn 4, 0x00d9ce03
+.insn 4, 0x01c28623
+.insn 4, 0x00e9ce03
+.insn 4, 0x01c286a3
+.insn 4, 0x00f9ce03
+.insn 4, 0x01c28723
+.insn 4, 0x006287a3
+.insn 4, 0x0002ce03
+.insn 4, 0x01c98023
+.insn 4, 0x0012ce03
+.insn 4, 0x01c980a3
+.insn 4, 0x0022ce03
+.insn 4, 0x01c98123
+.insn 4, 0x0032ce03
+.insn 4, 0x01c981a3
+.insn 4, 0x0042ce03
+.insn 4, 0x01c98223
+.insn 4, 0x0052ce03
+.insn 4, 0x01c982a3
+.insn 4, 0x0062ce03
+.insn 4, 0x01c98323
+.insn 4, 0x0072ce03
+.insn 4, 0x01c983a3
+.insn 4, 0x0082ce03
+.insn 4, 0x01c98423
+.insn 4, 0x0092ce03
+.insn 4, 0x01c984a3
+.insn 4, 0x00a2ce03
+.insn 4, 0x01c98523
+.insn 4, 0x00b2ce03
+.insn 4, 0x01c985a3
+.insn 4, 0x00c2ce03
+.insn 4, 0x01c98623
+.insn 4, 0x00d2ce03
+.insn 4, 0x01c986a3
+.insn 4, 0x00e2ce03
+.insn 4, 0x01c98723
+.insn 4, 0x00f2ce03
+.insn 4, 0x01c987a3
+.insn 4, 0x001a0a13
+.insn 4, 0xfffa8a93
 bnez s5, 22b
 j 21f
 20:
-21:
-addi t0, s6, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-ld ra, 16(t0)
-ld s1, 24(t0)
-ld s2, 32(t0)
-ld s3, 40(t0)
-ld s4, 48(t0)
-ld s5, 56(t0)
-ld s6, 64(t0)
-ret
+21:",
+        // addi t0, s6, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // ld ra, 16(t0)
+        // ld s1, 24(t0)
+        // ld s2, 32(t0)
+        // ld s3, 40(t0)
+        // ld s4, 48(t0)
+        // ld s5, 56(t0)
+        // ld s6, 64(t0)
+        // ret
+        r".insn 4, 0x7ffb0293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x0102b083
+.insn 4, 0x0182b483
+.insn 4, 0x0202b903
+.insn 4, 0x0282b983
+.insn 4, 0x0302ba03
+.insn 4, 0x0382ba83
+.insn 4, 0x0402bb03
+.insn 4, 0x00008067
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -190,153 +329,292 @@ ret
 pub unsafe extern "C" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi t0, a5, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-sd ra, 16(t0)
-sd s1, 24(t0)
-sd s2, 32(t0)
-sd s3, 40(t0)
-sd s4, 48(t0)
-sd s5, 56(t0)
-sd s6, 64(t0)
-addi s1, a0, 0
-addi s2, a1, 0
-addi s3, a2, 0
-addi s4, a3, 0
-addi s5, a4, 0
-addi s6, a5, 0
+.option arch, +m",
+        // addi t0, a5, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // sd ra, 16(t0)
+        // sd s1, 24(t0)
+        // sd s2, 32(t0)
+        // sd s3, 40(t0)
+        // sd s4, 48(t0)
+        // sd s5, 56(t0)
+        // sd s6, 64(t0)
+        // addi s1, a0, 0
+        // addi s2, a1, 0
+        // addi s3, a2, 0
+        // addi s4, a3, 0
+        // addi s5, a4, 0
+        // addi s6, a5, 0
+        r".insn 4, 0x7ff78293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x0012b823
+.insn 4, 0x0092bc23
+.insn 4, 0x0322b023
+.insn 4, 0x0332b423
+.insn 4, 0x0342b823
+.insn 4, 0x0352bc23
+.insn 4, 0x0562b023
+.insn 4, 0x00050493
+.insn 4, 0x00058913
+.insn 4, 0x00060993
+.insn 4, 0x00068a13
+.insn 4, 0x00070a93
+.insn 4, 0x00078b13
 beqz s5, 20f
-22:
-addi t0, s6, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-lbu t3, 0(s3)
-sb t3, 0(t0)
-lbu t3, 1(s3)
-sb t3, 1(t0)
-lbu t3, 2(s3)
-sb t3, 2(t0)
-lbu t3, 3(s3)
-sb t3, 3(t0)
-lbu t3, 4(s3)
-sb t3, 4(t0)
-lbu t3, 5(s3)
-sb t3, 5(t0)
-lbu t3, 6(s3)
-sb t3, 6(t0)
-lbu t3, 7(s3)
-sb t3, 7(t0)
-lbu t3, 8(s3)
-sb t3, 8(t0)
-lbu t3, 9(s3)
-sb t3, 9(t0)
-lbu t3, 10(s3)
-sb t3, 10(t0)
-lbu t3, 11(s3)
-sb t3, 11(t0)
-lbu t3, 12(s3)
-sb t3, 12(t0)
-lbu t3, 13(s3)
-sb t3, 13(t0)
-lbu t3, 14(s3)
-sb t3, 14(t0)
-lbu t3, 15(s3)
-sb t3, 15(t0)
-addi a0, s1, 0
-addi a1, s2, 0
-addi a2, t0, 0
-addi a3, zero, 1
-addi a4, s6, 0
-call {vg_aes_encrypt_blocks}
-addi t0, s6, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-lbu t1, 0(s4)
-lbu t2, 0(t0)
-xor t2, t2, t1
-sb t2, 0(s4)
-lbu t3, 1(s3)
-sb t3, 0(t0)
-lbu t3, 2(s3)
-sb t3, 1(t0)
-lbu t3, 3(s3)
-sb t3, 2(t0)
-lbu t3, 4(s3)
-sb t3, 3(t0)
-lbu t3, 5(s3)
-sb t3, 4(t0)
-lbu t3, 6(s3)
-sb t3, 5(t0)
-lbu t3, 7(s3)
-sb t3, 6(t0)
-lbu t3, 8(s3)
-sb t3, 7(t0)
-lbu t3, 9(s3)
-sb t3, 8(t0)
-lbu t3, 10(s3)
-sb t3, 9(t0)
-lbu t3, 11(s3)
-sb t3, 10(t0)
-lbu t3, 12(s3)
-sb t3, 11(t0)
-lbu t3, 13(s3)
-sb t3, 12(t0)
-lbu t3, 14(s3)
-sb t3, 13(t0)
-lbu t3, 15(s3)
-sb t3, 14(t0)
-sb t1, 15(t0)
-lbu t3, 0(t0)
-sb t3, 0(s3)
-lbu t3, 1(t0)
-sb t3, 1(s3)
-lbu t3, 2(t0)
-sb t3, 2(s3)
-lbu t3, 3(t0)
-sb t3, 3(s3)
-lbu t3, 4(t0)
-sb t3, 4(s3)
-lbu t3, 5(t0)
-sb t3, 5(s3)
-lbu t3, 6(t0)
-sb t3, 6(s3)
-lbu t3, 7(t0)
-sb t3, 7(s3)
-lbu t3, 8(t0)
-sb t3, 8(s3)
-lbu t3, 9(t0)
-sb t3, 9(s3)
-lbu t3, 10(t0)
-sb t3, 10(s3)
-lbu t3, 11(t0)
-sb t3, 11(s3)
-lbu t3, 12(t0)
-sb t3, 12(s3)
-lbu t3, 13(t0)
-sb t3, 13(s3)
-lbu t3, 14(t0)
-sb t3, 14(s3)
-lbu t3, 15(t0)
-sb t3, 15(s3)
-addi s4, s4, 1
-addi s5, s5, -1
+22:",
+        // addi t0, s6, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // lbu t3, 0(s3)
+        // sb t3, 0(t0)
+        // lbu t3, 1(s3)
+        // sb t3, 1(t0)
+        // lbu t3, 2(s3)
+        // sb t3, 2(t0)
+        // lbu t3, 3(s3)
+        // sb t3, 3(t0)
+        // lbu t3, 4(s3)
+        // sb t3, 4(t0)
+        // lbu t3, 5(s3)
+        // sb t3, 5(t0)
+        // lbu t3, 6(s3)
+        // sb t3, 6(t0)
+        // lbu t3, 7(s3)
+        // sb t3, 7(t0)
+        // lbu t3, 8(s3)
+        // sb t3, 8(t0)
+        // lbu t3, 9(s3)
+        // sb t3, 9(t0)
+        // lbu t3, 10(s3)
+        // sb t3, 10(t0)
+        // lbu t3, 11(s3)
+        // sb t3, 11(t0)
+        // lbu t3, 12(s3)
+        // sb t3, 12(t0)
+        // lbu t3, 13(s3)
+        // sb t3, 13(t0)
+        // lbu t3, 14(s3)
+        // sb t3, 14(t0)
+        // lbu t3, 15(s3)
+        // sb t3, 15(t0)
+        // addi a0, s1, 0
+        // addi a1, s2, 0
+        // addi a2, t0, 0
+        // addi a3, zero, 1
+        // addi a4, s6, 0
+        r".insn 4, 0x7ffb0293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x0009ce03
+.insn 4, 0x01c28023
+.insn 4, 0x0019ce03
+.insn 4, 0x01c280a3
+.insn 4, 0x0029ce03
+.insn 4, 0x01c28123
+.insn 4, 0x0039ce03
+.insn 4, 0x01c281a3
+.insn 4, 0x0049ce03
+.insn 4, 0x01c28223
+.insn 4, 0x0059ce03
+.insn 4, 0x01c282a3
+.insn 4, 0x0069ce03
+.insn 4, 0x01c28323
+.insn 4, 0x0079ce03
+.insn 4, 0x01c283a3
+.insn 4, 0x0089ce03
+.insn 4, 0x01c28423
+.insn 4, 0x0099ce03
+.insn 4, 0x01c284a3
+.insn 4, 0x00a9ce03
+.insn 4, 0x01c28523
+.insn 4, 0x00b9ce03
+.insn 4, 0x01c285a3
+.insn 4, 0x00c9ce03
+.insn 4, 0x01c28623
+.insn 4, 0x00d9ce03
+.insn 4, 0x01c286a3
+.insn 4, 0x00e9ce03
+.insn 4, 0x01c28723
+.insn 4, 0x00f9ce03
+.insn 4, 0x01c287a3
+.insn 4, 0x00048513
+.insn 4, 0x00090593
+.insn 4, 0x00028613
+.insn 4, 0x00100693
+.insn 4, 0x000b0713
+call {vg_aes_encrypt_blocks}",
+        // addi t0, s6, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // lbu t1, 0(s4)
+        // lbu t2, 0(t0)
+        // xor t2, t2, t1
+        // sb t2, 0(s4)
+        // lbu t3, 1(s3)
+        // sb t3, 0(t0)
+        // lbu t3, 2(s3)
+        // sb t3, 1(t0)
+        // lbu t3, 3(s3)
+        // sb t3, 2(t0)
+        // lbu t3, 4(s3)
+        // sb t3, 3(t0)
+        // lbu t3, 5(s3)
+        // sb t3, 4(t0)
+        // lbu t3, 6(s3)
+        // sb t3, 5(t0)
+        // lbu t3, 7(s3)
+        // sb t3, 6(t0)
+        // lbu t3, 8(s3)
+        // sb t3, 7(t0)
+        // lbu t3, 9(s3)
+        // sb t3, 8(t0)
+        // lbu t3, 10(s3)
+        // sb t3, 9(t0)
+        // lbu t3, 11(s3)
+        // sb t3, 10(t0)
+        // lbu t3, 12(s3)
+        // sb t3, 11(t0)
+        // lbu t3, 13(s3)
+        // sb t3, 12(t0)
+        // lbu t3, 14(s3)
+        // sb t3, 13(t0)
+        // lbu t3, 15(s3)
+        // sb t3, 14(t0)
+        // sb t1, 15(t0)
+        // lbu t3, 0(t0)
+        // sb t3, 0(s3)
+        // lbu t3, 1(t0)
+        // sb t3, 1(s3)
+        // lbu t3, 2(t0)
+        // sb t3, 2(s3)
+        // lbu t3, 3(t0)
+        // sb t3, 3(s3)
+        // lbu t3, 4(t0)
+        // sb t3, 4(s3)
+        // lbu t3, 5(t0)
+        // sb t3, 5(s3)
+        // lbu t3, 6(t0)
+        // sb t3, 6(s3)
+        // lbu t3, 7(t0)
+        // sb t3, 7(s3)
+        // lbu t3, 8(t0)
+        // sb t3, 8(s3)
+        // lbu t3, 9(t0)
+        // sb t3, 9(s3)
+        // lbu t3, 10(t0)
+        // sb t3, 10(s3)
+        // lbu t3, 11(t0)
+        // sb t3, 11(s3)
+        // lbu t3, 12(t0)
+        // sb t3, 12(s3)
+        // lbu t3, 13(t0)
+        // sb t3, 13(s3)
+        // lbu t3, 14(t0)
+        // sb t3, 14(s3)
+        // lbu t3, 15(t0)
+        // sb t3, 15(s3)
+        // addi s4, s4, 1
+        // addi s5, s5, -1
+        r".insn 4, 0x7ffb0293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x000a4303
+.insn 4, 0x0002c383
+.insn 4, 0x0063c3b3
+.insn 4, 0x007a0023
+.insn 4, 0x0019ce03
+.insn 4, 0x01c28023
+.insn 4, 0x0029ce03
+.insn 4, 0x01c280a3
+.insn 4, 0x0039ce03
+.insn 4, 0x01c28123
+.insn 4, 0x0049ce03
+.insn 4, 0x01c281a3
+.insn 4, 0x0059ce03
+.insn 4, 0x01c28223
+.insn 4, 0x0069ce03
+.insn 4, 0x01c282a3
+.insn 4, 0x0079ce03
+.insn 4, 0x01c28323
+.insn 4, 0x0089ce03
+.insn 4, 0x01c283a3
+.insn 4, 0x0099ce03
+.insn 4, 0x01c28423
+.insn 4, 0x00a9ce03
+.insn 4, 0x01c284a3
+.insn 4, 0x00b9ce03
+.insn 4, 0x01c28523
+.insn 4, 0x00c9ce03
+.insn 4, 0x01c285a3
+.insn 4, 0x00d9ce03
+.insn 4, 0x01c28623
+.insn 4, 0x00e9ce03
+.insn 4, 0x01c286a3
+.insn 4, 0x00f9ce03
+.insn 4, 0x01c28723
+.insn 4, 0x006287a3
+.insn 4, 0x0002ce03
+.insn 4, 0x01c98023
+.insn 4, 0x0012ce03
+.insn 4, 0x01c980a3
+.insn 4, 0x0022ce03
+.insn 4, 0x01c98123
+.insn 4, 0x0032ce03
+.insn 4, 0x01c981a3
+.insn 4, 0x0042ce03
+.insn 4, 0x01c98223
+.insn 4, 0x0052ce03
+.insn 4, 0x01c982a3
+.insn 4, 0x0062ce03
+.insn 4, 0x01c98323
+.insn 4, 0x0072ce03
+.insn 4, 0x01c983a3
+.insn 4, 0x0082ce03
+.insn 4, 0x01c98423
+.insn 4, 0x0092ce03
+.insn 4, 0x01c984a3
+.insn 4, 0x00a2ce03
+.insn 4, 0x01c98523
+.insn 4, 0x00b2ce03
+.insn 4, 0x01c985a3
+.insn 4, 0x00c2ce03
+.insn 4, 0x01c98623
+.insn 4, 0x00d2ce03
+.insn 4, 0x01c986a3
+.insn 4, 0x00e2ce03
+.insn 4, 0x01c98723
+.insn 4, 0x00f2ce03
+.insn 4, 0x01c987a3
+.insn 4, 0x001a0a13
+.insn 4, 0xfffa8a93
 bnez s5, 22b
 j 21f
 20:
-21:
-addi t0, s6, 2047
-addi t0, t0, 8
-andi t0, t0, -8
-ld ra, 16(t0)
-ld s1, 24(t0)
-ld s2, 32(t0)
-ld s3, 40(t0)
-ld s4, 48(t0)
-ld s5, 56(t0)
-ld s6, 64(t0)
-ret
+21:",
+        // addi t0, s6, 2047
+        // addi t0, t0, 8
+        // andi t0, t0, -8
+        // ld ra, 16(t0)
+        // ld s1, 24(t0)
+        // ld s2, 32(t0)
+        // ld s3, 40(t0)
+        // ld s4, 48(t0)
+        // ld s5, 56(t0)
+        // ld s6, 64(t0)
+        // ret
+        r".insn 4, 0x7ffb0293
+.insn 4, 0x00828293
+.insn 4, 0xff82f293
+.insn 4, 0x0102b083
+.insn 4, 0x0182b483
+.insn 4, 0x0202b903
+.insn 4, 0x0282b983
+.insn 4, 0x0302ba03
+.insn 4, 0x0382ba83
+.insn 4, 0x0402bb03
+.insn 4, 0x00008067
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )

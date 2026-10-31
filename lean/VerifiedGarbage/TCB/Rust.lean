@@ -245,21 +245,29 @@ those lines separated by newlines, the others as arguments of their own
 `naked_asm!` joins its arguments with newlines, so the template is the same
 as with one argument per line. A function's template is then a few tokens
 for rustc to parse and expand, not one per line.
-A comment line (`commentOf`) is not part of the template: it is written,
-in order, as a Rust comment before the string literal of the run it falls in,
-so the assembler never sees it. -/
+A comment line (`commentOf`), which comments the line after it, is not part
+of the template: it is written as a Rust comment before the string literal
+that line is in, so the assembler never sees it. A comment after a line that
+no comment is about (e.g. a label or a branch, after the commented
+instructions before it) starts a new literal, so that each literal's
+comments are just above it: one literal per run of commented lines and the
+lines after them, not per line. -/
 def template (call : String) (ls : List Line) : String :=
-  go ls [] []
+  go ls [] [] false false
 where
   /-- The arguments for `ls`, after the run of text lines `run` and the
-  comments `cs` before it (both reversed). -/
-  go : List Line → List String → List String → String
-    | [], run, cs => flush run cs
-    | l :: ls, run, cs => match commentOf l with
-      | some c => go ls run (c :: cs)
+  comments `cs` before it (both reversed); `tail` if `run` has a line that
+  no comment is about since its last commented one, and `after` if the line
+  before was a comment. -/
+  go : List Line → List String → List String → Bool → Bool → String
+    | [], run, cs, _, _ => flush run cs
+    | l :: ls, run, cs, tail, after => match commentOf l with
+      | some c =>
+        if tail then flush run cs ++ go ls [] [c] false true
+        else go ls run (c :: cs) false true
       | none => match lineText call l with
-        | some t => go ls (t :: run) cs
-        | none => flush run cs ++ line call l ++ go ls [] []
+        | some t => go ls (t :: run) cs (tail || !after) false
+        | none => flush run cs ++ line call l ++ go ls [] [] false false
   /-- The comments `cs`, then the run of text lines `run` as one string
   literal (both reversed). -/
   flush : List String → List String → String

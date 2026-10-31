@@ -610,6 +610,24 @@ def sampleRV : Prog RISCV64.isa :=
   "// ret", ".insn 4, 0x00008067"
 ]
 
+-- Each base instruction is its machine code (`Encode.lean`), after its
+-- text as a comment: the words in the expected lines above and below are
+-- LLVM's encodings of that text (`llvm-mc -triple=riscv64 -mattr=+m,-c
+-- -show-encoding`, LLVM 18), not `encode`'s. An operand that does not fit
+-- its field has no encoding, which the emitter refuses; `lla` is text.
+#guard [RISCV64.Instr.addi .a0 .a0 2048, .addi .a0 .a0 (-2049), .li .a0 4096,
+    .addiw .a0 .a0 2048, .logicImm .and .a0 .a0 (-2049), .shift .sll .d .a0 .a0 64,
+    .shift .sra .w .a0 .a0 32, .load .d .a0 .a0 2048, .store .b .a0 .a0 2048, .addSp .a0 2048,
+    .alloc 4096, .free 4096].all (·.unencodable.isSome)
+#guard RISCV64.Instr.unencodable (.lla .a0 "VG_TABLE") == none
+#guard RISCV64.Instr.unencodable (.alloc 4064) == none
+-- A comment line is a printer's `// ` line of one line: anything else is
+-- assembly.
+#guard Rust.commentOf (.text "// add a0, a1, a2") == some "// add a0, a1, a2"
+#guard Rust.commentOf (.text "// a\nb") == none
+#guard Rust.commentOf (.text "add a0, a1, a2 // a") == none
+#guard Rust.commentOf (.call "vg_f") == none
+
 -- Every register name.
 #guard ([RISCV64.Reg.ra, .t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2,
     .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11, .t3, .t4, .t5, .t6].map RISCV64.Reg.name) ==
@@ -648,7 +666,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- same string literal.
 #guard Rust.template RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
-  "        r\"addi a0, zero, 1\nlla a5, {VG_TABLE}\nret\",\n"
+  "        // addi a0, zero, 1\n        r\".insn 4, 0x00100513\nlla a5, {VG_TABLE}\",\n        // ret\n        r\".insn 4, 0x00008067\",\n"
 
 -- Every RISC-V function's text enables the M extension for itself alone
 -- (`Rust.funcOptions`): `.option push` and `.option arch, +m` are its first
@@ -660,32 +678,47 @@ def sampleRV : Prog RISCV64.isa :=
 #guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
 #guard match Artifacts.Ct.RISCV64.artifacts with
   | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r\".option push
-.option arch, +m
-addi a4, zero, 0
-sub a7, a1, a3
-beqz a7, 20f
-addi a0, zero, 0
+.option arch, +m\",
+        // addi a4, zero, 0
+        // sub a7, a1, a3
+        r\".insn 4, 0x00000713
+.insn 4, 0x40d588b3
+beqz a7, 20f\",
+        // addi a0, zero, 0
+        r\".insn 4, 0x00000513
 j 21f
-20:
-addi a5, zero, 0
+20:\",
+        // addi a5, zero, 0
+        r\".insn 4, 0x00000793
 beqz a1, 22f
-24:
-add t0, a0, a5
-lbu t1, 0(t0)
-add t0, a2, a5
-lbu t2, 0(t0)
-xor t1, t1, t2
-or a4, a4, t1
-addi a5, a5, 1
-sub a7, a5, a1
+24:\",
+        // add t0, a0, a5
+        // lbu t1, 0(t0)
+        // add t0, a2, a5
+        // lbu t2, 0(t0)
+        // xor t1, t1, t2
+        // or a4, a4, t1
+        // addi a5, a5, 1
+        // sub a7, a5, a1
+        r\".insn 4, 0x00f502b3
+.insn 4, 0x0002c303
+.insn 4, 0x00f602b3
+.insn 4, 0x0002c383
+.insn 4, 0x00734333
+.insn 4, 0x00676733
+.insn 4, 0x00178793
+.insn 4, 0x40b788b3
 bnez a7, 24b
 j 23f
 22:
-23:
-addi a4, a4, -1
-srli a0, a4, 63
-21:
-ret
+23:\",
+        // addi a4, a4, -1
+        // srli a0, a4, 63
+        r\".insn 4, 0xfff70713
+.insn 4, 0x03f75513
+21:\",
+        // ret
+        r\".insn 4, 0x00008067
 .option pop\",
     )
 }

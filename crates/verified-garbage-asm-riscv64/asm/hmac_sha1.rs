@@ -17,136 +17,230 @@
 pub unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi sp, sp, -160
-addi t0, sp, 0
-sd ra, 104(t0)
-sd s7, 112(t0)
-sd s8, 120(t0)
-sd s9, 128(t0)
-sd s10, 136(t0)
-sd s11, 144(t0)
-addi s7, a0, 0
-addi s8, t0, 0
-addi s9, a1, 0
-addi s10, a2, 0
-addi s11, a3, 0
-srli t1, a3, 7
-andi t2, a3, 127
-addi t2, t2, 63
-srli t2, t2, 7
-add t1, t1, t2
-beqz t1, 20f
-addi a0, s8, 0
-call {vg_sha1_init}
-addi a0, s8, 0
-addi a1, zero, 0
-addi a2, s10, 0
-addi a3, s11, 0
-call {vg_sha1_update}
-addi a0, s8, 0
-addi a1, s11, 0
-addi a2, s8, 84
-call {vg_sha1_finalize}
-addi s10, s8, 84
-addi s11, zero, 20
+.option arch, +m",
+        // addi sp, sp, -160
+        // addi t0, sp, 0
+        // sd ra, 104(t0)
+        // sd s7, 112(t0)
+        // sd s8, 120(t0)
+        // sd s9, 128(t0)
+        // sd s10, 136(t0)
+        // sd s11, 144(t0)
+        // addi s7, a0, 0
+        // addi s8, t0, 0
+        // addi s9, a1, 0
+        // addi s10, a2, 0
+        // addi s11, a3, 0
+        // srli t1, a3, 7
+        // andi t2, a3, 127
+        // addi t2, t2, 63
+        // srli t2, t2, 7
+        // add t1, t1, t2
+        r".insn 4, 0xf6010113
+.insn 4, 0x00010293
+.insn 4, 0x0612b423
+.insn 4, 0x0772b823
+.insn 4, 0x0782bc23
+.insn 4, 0x0992b023
+.insn 4, 0x09a2b423
+.insn 4, 0x09b2b823
+.insn 4, 0x00050b93
+.insn 4, 0x00028c13
+.insn 4, 0x00058c93
+.insn 4, 0x00060d13
+.insn 4, 0x00068d93
+.insn 4, 0x0076d313
+.insn 4, 0x07f6f393
+.insn 4, 0x03f38393
+.insn 4, 0x0073d393
+.insn 4, 0x00730333
+beqz t1, 20f",
+        // addi a0, s8, 0
+        r".insn 4, 0x000c0513
+call {vg_sha1_init}",
+        // addi a0, s8, 0
+        // addi a1, zero, 0
+        // addi a2, s10, 0
+        // addi a3, s11, 0
+        r".insn 4, 0x000c0513
+.insn 4, 0x00000593
+.insn 4, 0x000d0613
+.insn 4, 0x000d8693
+call {vg_sha1_update}",
+        // addi a0, s8, 0
+        // addi a1, s11, 0
+        // addi a2, s8, 84
+        r".insn 4, 0x000c0513
+.insn 4, 0x000d8593
+.insn 4, 0x054c0613
+call {vg_sha1_finalize}",
+        // addi s10, s8, 84
+        // addi s11, zero, 20
+        r".insn 4, 0x054c0d13
+.insn 4, 0x01400d93
 j 21f
 20:
-21:
-addi a0, s7, 0
-call {vg_sha1_init}
-addi a0, s9, 0
-call {vg_sha1_init}
-addi t5, zero, 54
-addi t6, zero, 0
-addi t2, s10, 0
-addi t3, s11, 0
+21:",
+        // addi a0, s7, 0
+        r".insn 4, 0x000b8513
+call {vg_sha1_init}",
+        // addi a0, s9, 0
+        r".insn 4, 0x000c8513
+call {vg_sha1_init}",
+        // addi t5, zero, 54
+        // addi t6, zero, 0
+        // addi t2, s10, 0
+        // addi t3, s11, 0
+        r".insn 4, 0x03600f13
+.insn 4, 0x00000f93
+.insn 4, 0x000d0393
+.insn 4, 0x000d8e13
 beqz t3, 22f
-24:
-lbu t1, 0(t2)
-xor t1, t1, t5
-add t4, s9, t6
-sb t1, 20(t4)
-addi t2, t2, 1
-addi t6, t6, 1
-addi t3, t3, -1
+24:",
+        // lbu t1, 0(t2)
+        // xor t1, t1, t5
+        // add t4, s9, t6
+        // sb t1, 20(t4)
+        // addi t2, t2, 1
+        // addi t6, t6, 1
+        // addi t3, t3, -1
+        r".insn 4, 0x0003c303
+.insn 4, 0x01e34333
+.insn 4, 0x01fc8eb3
+.insn 4, 0x006e8a23
+.insn 4, 0x00138393
+.insn 4, 0x001f8f93
+.insn 4, 0xfffe0e13
 bnez t3, 24b
 j 23f
 22:
-23:
-addi t3, zero, 64
-sub t3, t3, t6
+23:",
+        // addi t3, zero, 64
+        // sub t3, t3, t6
+        r".insn 4, 0x04000e13
+.insn 4, 0x41fe0e33
 beqz t3, 25f
-27:
-add t4, s9, t6
-sb t5, 20(t4)
-addi t6, t6, 1
-addi t3, t3, -1
+27:",
+        // add t4, s9, t6
+        // sb t5, 20(t4)
+        // addi t6, t6, 1
+        // addi t3, t3, -1
+        r".insn 4, 0x01fc8eb3
+.insn 4, 0x01ee8a23
+.insn 4, 0x001f8f93
+.insn 4, 0xfffe0e13
 bnez t3, 27b
 j 26f
 25:
-26:
-addi a0, s7, 0
-addi a1, zero, 0
-addi a2, s9, 20
-addi a3, zero, 64
-call {vg_sha1_update}
-addi t5, zero, 92
-addi t6, zero, 0
-addi t2, s10, 0
-addi t3, s11, 0
+26:",
+        // addi a0, s7, 0
+        // addi a1, zero, 0
+        // addi a2, s9, 20
+        // addi a3, zero, 64
+        r".insn 4, 0x000b8513
+.insn 4, 0x00000593
+.insn 4, 0x014c8613
+.insn 4, 0x04000693
+call {vg_sha1_update}",
+        // addi t5, zero, 92
+        // addi t6, zero, 0
+        // addi t2, s10, 0
+        // addi t3, s11, 0
+        r".insn 4, 0x05c00f13
+.insn 4, 0x00000f93
+.insn 4, 0x000d0393
+.insn 4, 0x000d8e13
 beqz t3, 28f
-210:
-lbu t1, 0(t2)
-xor t1, t1, t5
-add t4, s7, t6
-sb t1, 20(t4)
-addi t2, t2, 1
-addi t6, t6, 1
-addi t3, t3, -1
+210:",
+        // lbu t1, 0(t2)
+        // xor t1, t1, t5
+        // add t4, s7, t6
+        // sb t1, 20(t4)
+        // addi t2, t2, 1
+        // addi t6, t6, 1
+        // addi t3, t3, -1
+        r".insn 4, 0x0003c303
+.insn 4, 0x01e34333
+.insn 4, 0x01fb8eb3
+.insn 4, 0x006e8a23
+.insn 4, 0x00138393
+.insn 4, 0x001f8f93
+.insn 4, 0xfffe0e13
 bnez t3, 210b
 j 29f
 28:
-29:
-addi t3, zero, 64
-sub t3, t3, t6
+29:",
+        // addi t3, zero, 64
+        // sub t3, t3, t6
+        r".insn 4, 0x04000e13
+.insn 4, 0x41fe0e33
 beqz t3, 211f
-213:
-add t4, s7, t6
-sb t5, 20(t4)
-addi t6, t6, 1
-addi t3, t3, -1
+213:",
+        // add t4, s7, t6
+        // sb t5, 20(t4)
+        // addi t6, t6, 1
+        // addi t3, t3, -1
+        r".insn 4, 0x01fb8eb3
+.insn 4, 0x01ee8a23
+.insn 4, 0x001f8f93
+.insn 4, 0xfffe0e13
 bnez t3, 213b
 j 212f
 211:
-212:
-addi a0, s9, 0
-addi a1, zero, 0
-addi a2, s7, 20
-addi a3, zero, 64
-call {vg_sha1_update}
-addi t1, zero, 0
-sd t1, 0(s8)
-sd t1, 8(s8)
-sd t1, 16(s8)
-sd t1, 24(s8)
-sd t1, 32(s8)
-sd t1, 40(s8)
-sd t1, 48(s8)
-sd t1, 56(s8)
-sd t1, 64(s8)
-sd t1, 72(s8)
-sd t1, 80(s8)
-sd t1, 88(s8)
-sd t1, 96(s8)
-ld ra, 104(s8)
-ld s7, 112(s8)
-ld s9, 128(s8)
-ld s10, 136(s8)
-ld s11, 144(s8)
-ld s8, 120(s8)
-addi sp, sp, 160
-ret
+212:",
+        // addi a0, s9, 0
+        // addi a1, zero, 0
+        // addi a2, s7, 20
+        // addi a3, zero, 64
+        r".insn 4, 0x000c8513
+.insn 4, 0x00000593
+.insn 4, 0x014b8613
+.insn 4, 0x04000693
+call {vg_sha1_update}",
+        // addi t1, zero, 0
+        // sd t1, 0(s8)
+        // sd t1, 8(s8)
+        // sd t1, 16(s8)
+        // sd t1, 24(s8)
+        // sd t1, 32(s8)
+        // sd t1, 40(s8)
+        // sd t1, 48(s8)
+        // sd t1, 56(s8)
+        // sd t1, 64(s8)
+        // sd t1, 72(s8)
+        // sd t1, 80(s8)
+        // sd t1, 88(s8)
+        // sd t1, 96(s8)
+        // ld ra, 104(s8)
+        // ld s7, 112(s8)
+        // ld s9, 128(s8)
+        // ld s10, 136(s8)
+        // ld s11, 144(s8)
+        // ld s8, 120(s8)
+        // addi sp, sp, 160
+        // ret
+        r".insn 4, 0x00000313
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x066c3023
+.insn 4, 0x068c3083
+.insn 4, 0x070c3b83
+.insn 4, 0x080c3c83
+.insn 4, 0x088c3d03
+.insn 4, 0x090c3d83
+.insn 4, 0x078c3c03
+.insn 4, 0x0a010113
+.insn 4, 0x00008067
 .option pop",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update = sym super::sha1::vg_sha1_update,
@@ -170,79 +264,148 @@ ret
 pub unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m
-addi sp, sp, -80
-addi t0, sp, 0
-sd ra, 24(t0)
-sd s7, 32(t0)
-sd s8, 40(t0)
-sd s9, 48(t0)
-sd s10, 56(t0)
-sd s11, 64(t0)
-addi s7, a0, 0
-addi s8, t0, 0
-addi s9, a1, 0
-addi s10, a3, 0
-addi a1, a2, 0
-addi a2, t0, 0
-call {vg_sha1_finalize}
-lbu t1, 0(s9)
-sb t1, 0(s7)
-lbu t1, 1(s9)
-sb t1, 1(s7)
-lbu t1, 2(s9)
-sb t1, 2(s7)
-lbu t1, 3(s9)
-sb t1, 3(s7)
-lbu t1, 4(s9)
-sb t1, 4(s7)
-lbu t1, 5(s9)
-sb t1, 5(s7)
-lbu t1, 6(s9)
-sb t1, 6(s7)
-lbu t1, 7(s9)
-sb t1, 7(s7)
-lbu t1, 8(s9)
-sb t1, 8(s7)
-lbu t1, 9(s9)
-sb t1, 9(s7)
-lbu t1, 10(s9)
-sb t1, 10(s7)
-lbu t1, 11(s9)
-sb t1, 11(s7)
-lbu t1, 12(s9)
-sb t1, 12(s7)
-lbu t1, 13(s9)
-sb t1, 13(s7)
-lbu t1, 14(s9)
-sb t1, 14(s7)
-lbu t1, 15(s9)
-sb t1, 15(s7)
-lbu t1, 16(s9)
-sb t1, 16(s7)
-lbu t1, 17(s9)
-sb t1, 17(s7)
-lbu t1, 18(s9)
-sb t1, 18(s7)
-lbu t1, 19(s9)
-sb t1, 19(s7)
-addi a0, s7, 0
-addi a1, zero, 64
-addi a2, s8, 0
-addi a3, zero, 20
-call {vg_sha1_update}
-addi a0, s7, 0
-addi a1, zero, 84
-addi a2, s10, 0
-call {vg_sha1_finalize}
-ld ra, 24(s8)
-ld s7, 32(s8)
-ld s9, 48(s8)
-ld s10, 56(s8)
-ld s11, 64(s8)
-ld s8, 40(s8)
-addi sp, sp, 80
-ret
+.option arch, +m",
+        // addi sp, sp, -80
+        // addi t0, sp, 0
+        // sd ra, 24(t0)
+        // sd s7, 32(t0)
+        // sd s8, 40(t0)
+        // sd s9, 48(t0)
+        // sd s10, 56(t0)
+        // sd s11, 64(t0)
+        // addi s7, a0, 0
+        // addi s8, t0, 0
+        // addi s9, a1, 0
+        // addi s10, a3, 0
+        // addi a1, a2, 0
+        // addi a2, t0, 0
+        r".insn 4, 0xfb010113
+.insn 4, 0x00010293
+.insn 4, 0x0012bc23
+.insn 4, 0x0372b023
+.insn 4, 0x0382b423
+.insn 4, 0x0392b823
+.insn 4, 0x03a2bc23
+.insn 4, 0x05b2b023
+.insn 4, 0x00050b93
+.insn 4, 0x00028c13
+.insn 4, 0x00058c93
+.insn 4, 0x00068d13
+.insn 4, 0x00060593
+.insn 4, 0x00028613
+call {vg_sha1_finalize}",
+        // lbu t1, 0(s9)
+        // sb t1, 0(s7)
+        // lbu t1, 1(s9)
+        // sb t1, 1(s7)
+        // lbu t1, 2(s9)
+        // sb t1, 2(s7)
+        // lbu t1, 3(s9)
+        // sb t1, 3(s7)
+        // lbu t1, 4(s9)
+        // sb t1, 4(s7)
+        // lbu t1, 5(s9)
+        // sb t1, 5(s7)
+        // lbu t1, 6(s9)
+        // sb t1, 6(s7)
+        // lbu t1, 7(s9)
+        // sb t1, 7(s7)
+        // lbu t1, 8(s9)
+        // sb t1, 8(s7)
+        // lbu t1, 9(s9)
+        // sb t1, 9(s7)
+        // lbu t1, 10(s9)
+        // sb t1, 10(s7)
+        // lbu t1, 11(s9)
+        // sb t1, 11(s7)
+        // lbu t1, 12(s9)
+        // sb t1, 12(s7)
+        // lbu t1, 13(s9)
+        // sb t1, 13(s7)
+        // lbu t1, 14(s9)
+        // sb t1, 14(s7)
+        // lbu t1, 15(s9)
+        // sb t1, 15(s7)
+        // lbu t1, 16(s9)
+        // sb t1, 16(s7)
+        // lbu t1, 17(s9)
+        // sb t1, 17(s7)
+        // lbu t1, 18(s9)
+        // sb t1, 18(s7)
+        // lbu t1, 19(s9)
+        // sb t1, 19(s7)
+        // addi a0, s7, 0
+        // addi a1, zero, 64
+        // addi a2, s8, 0
+        // addi a3, zero, 20
+        r".insn 4, 0x000cc303
+.insn 4, 0x006b8023
+.insn 4, 0x001cc303
+.insn 4, 0x006b80a3
+.insn 4, 0x002cc303
+.insn 4, 0x006b8123
+.insn 4, 0x003cc303
+.insn 4, 0x006b81a3
+.insn 4, 0x004cc303
+.insn 4, 0x006b8223
+.insn 4, 0x005cc303
+.insn 4, 0x006b82a3
+.insn 4, 0x006cc303
+.insn 4, 0x006b8323
+.insn 4, 0x007cc303
+.insn 4, 0x006b83a3
+.insn 4, 0x008cc303
+.insn 4, 0x006b8423
+.insn 4, 0x009cc303
+.insn 4, 0x006b84a3
+.insn 4, 0x00acc303
+.insn 4, 0x006b8523
+.insn 4, 0x00bcc303
+.insn 4, 0x006b85a3
+.insn 4, 0x00ccc303
+.insn 4, 0x006b8623
+.insn 4, 0x00dcc303
+.insn 4, 0x006b86a3
+.insn 4, 0x00ecc303
+.insn 4, 0x006b8723
+.insn 4, 0x00fcc303
+.insn 4, 0x006b87a3
+.insn 4, 0x010cc303
+.insn 4, 0x006b8823
+.insn 4, 0x011cc303
+.insn 4, 0x006b88a3
+.insn 4, 0x012cc303
+.insn 4, 0x006b8923
+.insn 4, 0x013cc303
+.insn 4, 0x006b89a3
+.insn 4, 0x000b8513
+.insn 4, 0x04000593
+.insn 4, 0x000c0613
+.insn 4, 0x01400693
+call {vg_sha1_update}",
+        // addi a0, s7, 0
+        // addi a1, zero, 84
+        // addi a2, s10, 0
+        r".insn 4, 0x000b8513
+.insn 4, 0x05400593
+.insn 4, 0x000d0613
+call {vg_sha1_finalize}",
+        // ld ra, 24(s8)
+        // ld s7, 32(s8)
+        // ld s9, 48(s8)
+        // ld s10, 56(s8)
+        // ld s11, 64(s8)
+        // ld s8, 40(s8)
+        // addi sp, sp, 80
+        // ret
+        r".insn 4, 0x018c3083
+.insn 4, 0x020c3b83
+.insn 4, 0x030c3c83
+.insn 4, 0x038c3d03
+.insn 4, 0x040c3d83
+.insn 4, 0x028c3c03
+.insn 4, 0x05010113
+.insn 4, 0x00008067
 .option pop",
         vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
         vg_sha1_update = sym super::sha1::vg_sha1_update,
