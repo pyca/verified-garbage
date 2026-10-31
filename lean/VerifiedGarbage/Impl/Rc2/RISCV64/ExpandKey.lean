@@ -14,7 +14,7 @@ immediates into the first 256 bytes of the working space, which the
 contracts align to 8 bytes (`Impl.Rc2.piQuads`), and each lookup scans it
 whole (`piLookup`, `Lookup.lean`). Only the public lengths control the loops
 and the branches; `a5` counts through `L`, `a6` holds addresses, `t4` holds
-`T8` and `t3` is the scans' row pointer. Only temporaries and argument
+`T8` and `t3` the scans' row bit. Only temporaries and argument
 registers are used, and no stack.
 -/
 
@@ -31,7 +31,7 @@ def piInit : List Instr :=
 
 /-- `t1 := PITABLE[q]`, the byte at offset `q` (in `t0`) of the table in
 the working space. -/
-def piLookup : Prog isa := scan .a4 .t3 32 [0, 1, 2] 8
+def piLookup : Prog isa := scan .a4 32 7 8
 
 /-- `L[i] := key[i]`, the next `i`; `a7` is zero at the key's length. -/
 def copyKey : List Instr :=

@@ -55,7 +55,7 @@ def VOp.asm : VOp → String
 
 def Instr.asm : Instr → List String
   | .vop op => [op.asm]
-  | .lxvd2x d a b => [s!"lxvd2x {d.vsx}, {a.name}, {b.name}"]
+  | .lxvd2x d a b | .lxvd2xTbl d a b .. => [s!"lxvd2x {d.vsx}, {a.name}, {b.name}"]
   | .stxvd2x n a b => [s!"stxvd2x {n.vsx}, {a.name}, {b.name}"]
   | .mtvsrd d n => [s!"mtvsrd {d.vsx}, {n.name}"]
   | .mfvsrd d n => [s!"mfvsrd {d.name}, {n.vsx}"]
@@ -122,5 +122,9 @@ def printer : Printer isa where
     | .adrSym d name => some [.text "bcl 20, 31, 2f", .text "2:", .text s!"mflr {d.name}",
         .sym s!"addis {d.name}, {d.name}, (" .ppcHa name, .sym s!"addi {d.name}, {d.name}, (" .ppcLo name]
     | _ => none
+
+  tables
+    | .lxvd2xTbl _ _ _ name ws => [(name, ws)]
+    | _ => []
 
 end VG.PPC64LE

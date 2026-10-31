@@ -301,8 +301,9 @@ beqz s3, 21f
         // xor a3, a3, t4
         // slli t1, a3, 32
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -312,8 +313,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -327,8 +327,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -342,8 +341,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -357,8 +355,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -372,8 +369,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -387,8 +383,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -402,8 +397,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -417,8 +411,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -432,8 +425,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -447,8 +439,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -462,8 +453,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -477,8 +467,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -492,8 +481,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -507,8 +495,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -522,8 +509,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -537,8 +523,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -552,8 +537,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -567,8 +551,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -582,8 +565,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -597,8 +579,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -612,8 +593,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -627,8 +607,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -642,8 +621,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -657,8 +635,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -672,8 +649,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -687,8 +663,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -702,8 +677,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -717,8 +691,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -732,8 +705,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -747,8 +719,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -762,8 +733,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -777,32 +747,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 32
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 24
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -811,8 +768,9 @@ beqz s3, 21f
         // addi a7, a7, 1024
         // slli t1, a3, 40
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -822,8 +780,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -837,8 +794,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -852,8 +808,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -867,8 +822,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -882,8 +836,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -897,8 +850,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -912,8 +864,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -927,8 +878,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -942,8 +892,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -957,8 +906,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -972,8 +920,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -987,8 +934,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -1002,8 +948,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -1017,8 +962,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -1032,8 +976,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -1047,8 +990,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -1062,8 +1004,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -1077,8 +1018,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -1092,8 +1032,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -1107,8 +1046,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -1122,8 +1060,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -1137,8 +1074,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -1152,8 +1088,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -1167,8 +1102,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -1182,8 +1116,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -1197,8 +1130,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -1212,8 +1144,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -1227,8 +1158,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -1242,8 +1172,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -1257,8 +1186,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -1272,8 +1200,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -1287,32 +1214,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 40
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 16
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -1321,8 +1235,9 @@ beqz s3, 21f
         // addi a7, a7, 1024
         // slli t1, a3, 48
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -1332,8 +1247,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -1347,8 +1261,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -1362,8 +1275,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -1377,8 +1289,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -1392,8 +1303,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -1407,8 +1317,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -1422,8 +1331,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -1437,8 +1345,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -1452,8 +1359,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -1467,8 +1373,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -1482,8 +1387,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -1497,8 +1401,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -1512,8 +1415,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -1527,8 +1429,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -1542,8 +1443,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -1557,8 +1457,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -1572,8 +1471,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -1587,8 +1485,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -1602,8 +1499,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -1617,8 +1513,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -1632,8 +1527,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -1647,8 +1541,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -1662,8 +1555,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -1677,8 +1569,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -1692,8 +1583,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -1707,8 +1597,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -1722,8 +1611,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -1737,8 +1625,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -1752,8 +1639,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -1767,8 +1653,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -1782,8 +1667,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -1797,32 +1681,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 48
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 8
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -1831,8 +1702,9 @@ beqz s3, 21f
         // addi a7, a7, 1024
         // slli t1, a3, 56
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -1842,8 +1714,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -1857,8 +1728,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -1872,8 +1742,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -1887,8 +1756,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -1902,8 +1770,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -1917,8 +1784,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -1932,8 +1798,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -1947,8 +1812,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -1962,8 +1826,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -1977,8 +1840,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -1992,8 +1854,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -2007,8 +1868,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -2022,8 +1882,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -2037,8 +1896,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -2052,8 +1910,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -2067,8 +1924,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -2082,8 +1938,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -2097,8 +1952,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -2112,8 +1966,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -2127,8 +1980,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -2142,8 +1994,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -2157,8 +2008,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -2172,8 +2022,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -2187,8 +2036,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -2202,8 +2050,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -2217,8 +2064,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -2232,8 +2078,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -2247,8 +2092,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -2262,8 +2106,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -2277,8 +2120,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -2292,8 +2134,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -2307,32 +2148,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 56
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 0
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -2353,8 +2181,9 @@ beqz s3, 21f
 .insn 4, 0x01d6c6b3
 .insn 4, 0x02069313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -2364,8 +2193,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -2379,8 +2207,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -2394,8 +2221,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -2409,8 +2235,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -2424,8 +2249,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -2439,8 +2263,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -2454,8 +2277,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -2469,8 +2291,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -2484,8 +2305,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -2499,8 +2319,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -2514,8 +2333,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -2529,8 +2347,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -2544,8 +2361,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -2559,8 +2375,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -2574,8 +2389,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -2589,8 +2403,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -2604,8 +2417,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -2619,8 +2431,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -2634,8 +2445,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -2649,8 +2459,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -2664,8 +2473,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -2679,8 +2487,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -2694,8 +2501,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -2709,8 +2515,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -2724,8 +2529,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -2739,8 +2543,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -2754,8 +2557,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -2769,8 +2571,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -2784,8 +2585,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -2799,8 +2599,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -2814,8 +2613,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -2829,32 +2627,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x02069e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0186de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -2863,8 +2648,9 @@ beqz s3, 21f
 .insn 4, 0x40088893
 .insn 4, 0x02869313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -2874,8 +2660,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -2889,8 +2674,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -2904,8 +2688,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -2919,8 +2702,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -2934,8 +2716,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -2949,8 +2730,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -2964,8 +2744,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -2979,8 +2758,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -2994,8 +2772,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -3009,8 +2786,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -3024,8 +2800,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -3039,8 +2814,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -3054,8 +2828,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -3069,8 +2842,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -3084,8 +2856,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -3099,8 +2870,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -3114,8 +2884,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -3129,8 +2898,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -3144,8 +2912,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -3159,8 +2926,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -3174,8 +2940,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -3189,8 +2954,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -3204,8 +2968,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -3219,8 +2982,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -3234,8 +2996,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -3249,8 +3010,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -3264,8 +3024,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -3279,8 +3038,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -3294,8 +3052,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -3309,8 +3066,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -3324,8 +3080,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -3339,32 +3094,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x02869e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0106de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -3373,8 +3115,9 @@ beqz s3, 21f
 .insn 4, 0x40088893
 .insn 4, 0x03069313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -3384,8 +3127,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -3399,8 +3141,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -3414,8 +3155,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -3429,8 +3169,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -3444,8 +3183,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -3459,8 +3197,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -3474,8 +3211,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -3489,8 +3225,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -3504,8 +3239,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -3519,8 +3253,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -3534,8 +3267,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -3549,8 +3281,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -3564,8 +3295,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -3579,8 +3309,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -3594,8 +3323,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -3609,8 +3337,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -3624,8 +3351,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -3639,8 +3365,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -3654,8 +3379,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -3669,8 +3393,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -3684,8 +3407,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -3699,8 +3421,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -3714,8 +3435,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -3729,8 +3449,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -3744,8 +3463,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -3759,8 +3477,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -3774,8 +3491,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -3789,8 +3505,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -3804,8 +3519,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -3819,8 +3533,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -3834,8 +3547,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -3849,32 +3561,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x03069e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0086de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -3883,8 +3582,9 @@ beqz s3, 21f
 .insn 4, 0x40088893
 .insn 4, 0x03869313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -3894,8 +3594,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -3909,8 +3608,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -3924,8 +3622,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -3939,8 +3636,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -3954,8 +3650,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -3969,8 +3664,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -3984,8 +3678,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -3999,8 +3692,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -4014,8 +3706,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -4029,8 +3720,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -4044,8 +3734,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -4059,8 +3748,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -4074,8 +3762,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -4089,8 +3776,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -4104,8 +3790,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -4119,8 +3804,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -4134,8 +3818,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -4149,8 +3832,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -4164,8 +3846,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -4179,8 +3860,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -4194,8 +3874,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -4209,8 +3888,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -4224,8 +3902,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -4239,8 +3916,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -4254,8 +3930,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -4269,8 +3944,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -4284,8 +3958,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -4299,8 +3972,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -4314,8 +3986,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -4329,8 +4000,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -4344,8 +4014,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -4359,32 +4028,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x03869e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0006de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -4953,8 +4609,9 @@ beqz s3, 21f
         // xor a3, a3, t4
         // slli t1, a3, 32
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -4964,8 +4621,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -4979,8 +4635,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -4994,8 +4649,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -5009,8 +4663,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -5024,8 +4677,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -5039,8 +4691,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -5054,8 +4705,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -5069,8 +4719,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -5084,8 +4733,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -5099,8 +4747,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -5114,8 +4761,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -5129,8 +4775,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -5144,8 +4789,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -5159,8 +4803,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -5174,8 +4817,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -5189,8 +4831,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -5204,8 +4845,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -5219,8 +4859,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -5234,8 +4873,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -5249,8 +4887,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -5264,8 +4901,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -5279,8 +4915,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -5294,8 +4929,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -5309,8 +4943,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -5324,8 +4957,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -5339,8 +4971,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -5354,8 +4985,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -5369,8 +4999,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -5384,8 +5013,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -5399,8 +5027,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -5414,8 +5041,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -5429,32 +5055,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 32
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 24
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -5463,8 +5076,9 @@ beqz s3, 21f
         // addi a7, a7, 1024
         // slli t1, a3, 40
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -5474,8 +5088,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -5489,8 +5102,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -5504,8 +5116,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -5519,8 +5130,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -5534,8 +5144,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -5549,8 +5158,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -5564,8 +5172,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -5579,8 +5186,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -5594,8 +5200,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -5609,8 +5214,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -5624,8 +5228,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -5639,8 +5242,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -5654,8 +5256,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -5669,8 +5270,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -5684,8 +5284,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -5699,8 +5298,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -5714,8 +5312,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -5729,8 +5326,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -5744,8 +5340,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -5759,8 +5354,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -5774,8 +5368,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -5789,8 +5382,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -5804,8 +5396,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -5819,8 +5410,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -5834,8 +5424,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -5849,8 +5438,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -5864,8 +5452,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -5879,8 +5466,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -5894,8 +5480,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -5909,8 +5494,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -5924,8 +5508,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -5939,32 +5522,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 40
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 16
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -5973,8 +5543,9 @@ beqz s3, 21f
         // addi a7, a7, 1024
         // slli t1, a3, 48
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -5984,8 +5555,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -5999,8 +5569,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -6014,8 +5583,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -6029,8 +5597,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -6044,8 +5611,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -6059,8 +5625,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -6074,8 +5639,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -6089,8 +5653,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -6104,8 +5667,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -6119,8 +5681,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -6134,8 +5695,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -6149,8 +5709,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -6164,8 +5723,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -6179,8 +5737,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -6194,8 +5751,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -6209,8 +5765,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -6224,8 +5779,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -6239,8 +5793,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -6254,8 +5807,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -6269,8 +5821,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -6284,8 +5835,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -6299,8 +5849,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -6314,8 +5863,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -6329,8 +5877,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -6344,8 +5891,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -6359,8 +5905,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -6374,8 +5919,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -6389,8 +5933,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -6404,8 +5947,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -6419,8 +5961,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -6434,8 +5975,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -6449,32 +5989,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 48
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 8
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -6483,8 +6010,9 @@ beqz s3, 21f
         // addi a7, a7, 1024
         // slli t1, a3, 56
         // srli t1, t1, 59
-        // xori t3, t1, 0
-        // addi t3, t3, -1
+        // addi t3, zero, 1
+        // sll t1, t3, t1
+        // slli t3, t1, 63
         // srai t3, t3, 63
         // ld t2, 0(a7)
         // and t2, t2, t3
@@ -6494,8 +6022,7 @@ beqz s3, 21f
         // and t6, t6, t3
         // ld t0, 768(a7)
         // and t0, t0, t3
-        // xori t3, t1, 1
-        // addi t3, t3, -1
+        // slli t3, t1, 62
         // srai t3, t3, 63
         // ld t4, 8(a7)
         // and t4, t4, t3
@@ -6509,8 +6036,7 @@ beqz s3, 21f
         // ld t4, 776(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 2
-        // addi t3, t3, -1
+        // slli t3, t1, 61
         // srai t3, t3, 63
         // ld t4, 16(a7)
         // and t4, t4, t3
@@ -6524,8 +6050,7 @@ beqz s3, 21f
         // ld t4, 784(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 3
-        // addi t3, t3, -1
+        // slli t3, t1, 60
         // srai t3, t3, 63
         // ld t4, 24(a7)
         // and t4, t4, t3
@@ -6539,8 +6064,7 @@ beqz s3, 21f
         // ld t4, 792(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 4
-        // addi t3, t3, -1
+        // slli t3, t1, 59
         // srai t3, t3, 63
         // ld t4, 32(a7)
         // and t4, t4, t3
@@ -6554,8 +6078,7 @@ beqz s3, 21f
         // ld t4, 800(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 5
-        // addi t3, t3, -1
+        // slli t3, t1, 58
         // srai t3, t3, 63
         // ld t4, 40(a7)
         // and t4, t4, t3
@@ -6569,8 +6092,7 @@ beqz s3, 21f
         // ld t4, 808(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 6
-        // addi t3, t3, -1
+        // slli t3, t1, 57
         // srai t3, t3, 63
         // ld t4, 48(a7)
         // and t4, t4, t3
@@ -6584,8 +6106,7 @@ beqz s3, 21f
         // ld t4, 816(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 7
-        // addi t3, t3, -1
+        // slli t3, t1, 56
         // srai t3, t3, 63
         // ld t4, 56(a7)
         // and t4, t4, t3
@@ -6599,8 +6120,7 @@ beqz s3, 21f
         // ld t4, 824(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 8
-        // addi t3, t3, -1
+        // slli t3, t1, 55
         // srai t3, t3, 63
         // ld t4, 64(a7)
         // and t4, t4, t3
@@ -6614,8 +6134,7 @@ beqz s3, 21f
         // ld t4, 832(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 9
-        // addi t3, t3, -1
+        // slli t3, t1, 54
         // srai t3, t3, 63
         // ld t4, 72(a7)
         // and t4, t4, t3
@@ -6629,8 +6148,7 @@ beqz s3, 21f
         // ld t4, 840(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 10
-        // addi t3, t3, -1
+        // slli t3, t1, 53
         // srai t3, t3, 63
         // ld t4, 80(a7)
         // and t4, t4, t3
@@ -6644,8 +6162,7 @@ beqz s3, 21f
         // ld t4, 848(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 11
-        // addi t3, t3, -1
+        // slli t3, t1, 52
         // srai t3, t3, 63
         // ld t4, 88(a7)
         // and t4, t4, t3
@@ -6659,8 +6176,7 @@ beqz s3, 21f
         // ld t4, 856(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 12
-        // addi t3, t3, -1
+        // slli t3, t1, 51
         // srai t3, t3, 63
         // ld t4, 96(a7)
         // and t4, t4, t3
@@ -6674,8 +6190,7 @@ beqz s3, 21f
         // ld t4, 864(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 13
-        // addi t3, t3, -1
+        // slli t3, t1, 50
         // srai t3, t3, 63
         // ld t4, 104(a7)
         // and t4, t4, t3
@@ -6689,8 +6204,7 @@ beqz s3, 21f
         // ld t4, 872(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 14
-        // addi t3, t3, -1
+        // slli t3, t1, 49
         // srai t3, t3, 63
         // ld t4, 112(a7)
         // and t4, t4, t3
@@ -6704,8 +6218,7 @@ beqz s3, 21f
         // ld t4, 880(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 15
-        // addi t3, t3, -1
+        // slli t3, t1, 48
         // srai t3, t3, 63
         // ld t4, 120(a7)
         // and t4, t4, t3
@@ -6719,8 +6232,7 @@ beqz s3, 21f
         // ld t4, 888(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 16
-        // addi t3, t3, -1
+        // slli t3, t1, 47
         // srai t3, t3, 63
         // ld t4, 128(a7)
         // and t4, t4, t3
@@ -6734,8 +6246,7 @@ beqz s3, 21f
         // ld t4, 896(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 17
-        // addi t3, t3, -1
+        // slli t3, t1, 46
         // srai t3, t3, 63
         // ld t4, 136(a7)
         // and t4, t4, t3
@@ -6749,8 +6260,7 @@ beqz s3, 21f
         // ld t4, 904(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 18
-        // addi t3, t3, -1
+        // slli t3, t1, 45
         // srai t3, t3, 63
         // ld t4, 144(a7)
         // and t4, t4, t3
@@ -6764,8 +6274,7 @@ beqz s3, 21f
         // ld t4, 912(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 19
-        // addi t3, t3, -1
+        // slli t3, t1, 44
         // srai t3, t3, 63
         // ld t4, 152(a7)
         // and t4, t4, t3
@@ -6779,8 +6288,7 @@ beqz s3, 21f
         // ld t4, 920(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 20
-        // addi t3, t3, -1
+        // slli t3, t1, 43
         // srai t3, t3, 63
         // ld t4, 160(a7)
         // and t4, t4, t3
@@ -6794,8 +6302,7 @@ beqz s3, 21f
         // ld t4, 928(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 21
-        // addi t3, t3, -1
+        // slli t3, t1, 42
         // srai t3, t3, 63
         // ld t4, 168(a7)
         // and t4, t4, t3
@@ -6809,8 +6316,7 @@ beqz s3, 21f
         // ld t4, 936(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 22
-        // addi t3, t3, -1
+        // slli t3, t1, 41
         // srai t3, t3, 63
         // ld t4, 176(a7)
         // and t4, t4, t3
@@ -6824,8 +6330,7 @@ beqz s3, 21f
         // ld t4, 944(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 23
-        // addi t3, t3, -1
+        // slli t3, t1, 40
         // srai t3, t3, 63
         // ld t4, 184(a7)
         // and t4, t4, t3
@@ -6839,8 +6344,7 @@ beqz s3, 21f
         // ld t4, 952(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 24
-        // addi t3, t3, -1
+        // slli t3, t1, 39
         // srai t3, t3, 63
         // ld t4, 192(a7)
         // and t4, t4, t3
@@ -6854,8 +6358,7 @@ beqz s3, 21f
         // ld t4, 960(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 25
-        // addi t3, t3, -1
+        // slli t3, t1, 38
         // srai t3, t3, 63
         // ld t4, 200(a7)
         // and t4, t4, t3
@@ -6869,8 +6372,7 @@ beqz s3, 21f
         // ld t4, 968(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 26
-        // addi t3, t3, -1
+        // slli t3, t1, 37
         // srai t3, t3, 63
         // ld t4, 208(a7)
         // and t4, t4, t3
@@ -6884,8 +6386,7 @@ beqz s3, 21f
         // ld t4, 976(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 27
-        // addi t3, t3, -1
+        // slli t3, t1, 36
         // srai t3, t3, 63
         // ld t4, 216(a7)
         // and t4, t4, t3
@@ -6899,8 +6400,7 @@ beqz s3, 21f
         // ld t4, 984(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 28
-        // addi t3, t3, -1
+        // slli t3, t1, 35
         // srai t3, t3, 63
         // ld t4, 224(a7)
         // and t4, t4, t3
@@ -6914,8 +6414,7 @@ beqz s3, 21f
         // ld t4, 992(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 29
-        // addi t3, t3, -1
+        // slli t3, t1, 34
         // srai t3, t3, 63
         // ld t4, 232(a7)
         // and t4, t4, t3
@@ -6929,8 +6428,7 @@ beqz s3, 21f
         // ld t4, 1000(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 30
-        // addi t3, t3, -1
+        // slli t3, t1, 33
         // srai t3, t3, 63
         // ld t4, 240(a7)
         // and t4, t4, t3
@@ -6944,8 +6442,7 @@ beqz s3, 21f
         // ld t4, 1008(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // xori t3, t1, 31
-        // addi t3, t3, -1
+        // slli t3, t1, 32
         // srai t3, t3, 63
         // ld t4, 248(a7)
         // and t4, t4, t3
@@ -6959,32 +6456,19 @@ beqz s3, 21f
         // ld t4, 1016(a7)
         // and t4, t4, t3
         // or t0, t0, t4
-        // slli t3, a3, 56
-        // xori t3, t3, -1
-        // slli t4, t3, 7
-        // srai t4, t4, 63
-        // srli t4, t4, 56
-        // addi t4, t4, 1
-        // slli t1, t3, 6
-        // srai t1, t1, 63
-        // srli t1, t1, 48
-        // addi t1, t1, 1
-        // mul t4, t4, t1
-        // slli t1, t3, 5
-        // srai t1, t1, 63
-        // srli t1, t1, 32
-        // addi t1, t1, 1
-        // mul t1, t4, t1
-        // mul t2, t2, t1
-        // srli t2, t2, 56
-        // mul t5, t5, t1
-        // srli t5, t5, 56
+        // srli t3, a3, 0
+        // andi t3, t3, 7
+        // slli t3, t3, 3
+        // srl t2, t2, t3
+        // andi t2, t2, 255
+        // srl t5, t5, t3
+        // andi t5, t5, 255
         // slli t5, t5, 8
-        // mul t6, t6, t1
-        // srli t6, t6, 56
+        // srl t6, t6, t3
+        // andi t6, t6, 255
         // slli t6, t6, 16
-        // mul t0, t0, t1
-        // srli t0, t0, 56
+        // srl t0, t0, t3
+        // andi t0, t0, 255
         // slli t0, t0, 24
         // or t2, t2, t5
         // or t6, t6, t0
@@ -7005,8 +6489,9 @@ beqz s3, 21f
 .insn 4, 0x01d6c6b3
 .insn 4, 0x02069313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -7016,8 +6501,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -7031,8 +6515,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -7046,8 +6529,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -7061,8 +6543,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -7076,8 +6557,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -7091,8 +6571,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -7106,8 +6585,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -7121,8 +6599,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -7136,8 +6613,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -7151,8 +6627,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -7166,8 +6641,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -7181,8 +6655,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -7196,8 +6669,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -7211,8 +6683,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -7226,8 +6697,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -7241,8 +6711,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -7256,8 +6725,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -7271,8 +6739,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -7286,8 +6753,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -7301,8 +6767,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -7316,8 +6781,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -7331,8 +6795,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -7346,8 +6809,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -7361,8 +6823,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -7376,8 +6837,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -7391,8 +6851,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -7406,8 +6865,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -7421,8 +6879,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -7436,8 +6893,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -7451,8 +6907,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -7466,8 +6921,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -7481,32 +6935,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x02069e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0186de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -7515,8 +6956,9 @@ beqz s3, 21f
 .insn 4, 0x40088893
 .insn 4, 0x02869313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -7526,8 +6968,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -7541,8 +6982,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -7556,8 +6996,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -7571,8 +7010,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -7586,8 +7024,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -7601,8 +7038,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -7616,8 +7052,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -7631,8 +7066,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -7646,8 +7080,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -7661,8 +7094,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -7676,8 +7108,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -7691,8 +7122,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -7706,8 +7136,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -7721,8 +7150,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -7736,8 +7164,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -7751,8 +7178,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -7766,8 +7192,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -7781,8 +7206,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -7796,8 +7220,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -7811,8 +7234,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -7826,8 +7248,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -7841,8 +7262,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -7856,8 +7276,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -7871,8 +7290,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -7886,8 +7304,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -7901,8 +7318,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -7916,8 +7332,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -7931,8 +7346,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -7946,8 +7360,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -7961,8 +7374,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -7976,8 +7388,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -7991,32 +7402,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x02869e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0106de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -8025,8 +7423,9 @@ beqz s3, 21f
 .insn 4, 0x40088893
 .insn 4, 0x03069313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -8036,8 +7435,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -8051,8 +7449,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -8066,8 +7463,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -8081,8 +7477,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -8096,8 +7491,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -8111,8 +7505,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -8126,8 +7519,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -8141,8 +7533,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -8156,8 +7547,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -8171,8 +7561,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -8186,8 +7575,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -8201,8 +7589,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -8216,8 +7603,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -8231,8 +7617,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -8246,8 +7631,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -8261,8 +7645,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -8276,8 +7659,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -8291,8 +7673,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -8306,8 +7687,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -8321,8 +7701,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -8336,8 +7715,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -8351,8 +7729,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -8366,8 +7743,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -8381,8 +7757,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -8396,8 +7771,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -8411,8 +7785,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -8426,8 +7799,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -8441,8 +7813,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -8456,8 +7827,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -8471,8 +7841,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -8486,8 +7855,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -8501,32 +7869,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x03069e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0086de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3
@@ -8535,8 +7890,9 @@ beqz s3, 21f
 .insn 4, 0x40088893
 .insn 4, 0x03869313
 .insn 4, 0x03b35313
-.insn 4, 0x00034e13
-.insn 2, 0x1e7d
+.insn 2, 0x4e05
+.insn 4, 0x006e1333
+.insn 4, 0x03f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0008b383
 .insn 4, 0x01c3f3b3
@@ -8546,8 +7902,7 @@ beqz s3, 21f
 .insn 4, 0x01cfffb3
 .insn 4, 0x3008b283
 .insn 4, 0x01c2f2b3
-.insn 4, 0x00134e13
-.insn 2, 0x1e7d
+.insn 4, 0x03e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0088be83
 .insn 4, 0x01cefeb3
@@ -8561,8 +7916,7 @@ beqz s3, 21f
 .insn 4, 0x3088be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00234e13
-.insn 2, 0x1e7d
+.insn 4, 0x03d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0108be83
 .insn 4, 0x01cefeb3
@@ -8576,8 +7930,7 @@ beqz s3, 21f
 .insn 4, 0x3108be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00334e13
-.insn 2, 0x1e7d
+.insn 4, 0x03c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0188be83
 .insn 4, 0x01cefeb3
@@ -8591,8 +7944,7 @@ beqz s3, 21f
 .insn 4, 0x3188be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00434e13
-.insn 2, 0x1e7d
+.insn 4, 0x03b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0208be83
 .insn 4, 0x01cefeb3
@@ -8606,8 +7958,7 @@ beqz s3, 21f
 .insn 4, 0x3208be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00534e13
-.insn 2, 0x1e7d
+.insn 4, 0x03a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0288be83
 .insn 4, 0x01cefeb3
@@ -8621,8 +7972,7 @@ beqz s3, 21f
 .insn 4, 0x3288be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00634e13
-.insn 2, 0x1e7d
+.insn 4, 0x03931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0308be83
 .insn 4, 0x01cefeb3
@@ -8636,8 +7986,7 @@ beqz s3, 21f
 .insn 4, 0x3308be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00734e13
-.insn 2, 0x1e7d
+.insn 4, 0x03831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0388be83
 .insn 4, 0x01cefeb3
@@ -8651,8 +8000,7 @@ beqz s3, 21f
 .insn 4, 0x3388be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00834e13
-.insn 2, 0x1e7d
+.insn 4, 0x03731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0408be83
 .insn 4, 0x01cefeb3
@@ -8666,8 +8014,7 @@ beqz s3, 21f
 .insn 4, 0x3408be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00934e13
-.insn 2, 0x1e7d
+.insn 4, 0x03631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0488be83
 .insn 4, 0x01cefeb3
@@ -8681,8 +8028,7 @@ beqz s3, 21f
 .insn 4, 0x3488be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0508be83
 .insn 4, 0x01cefeb3
@@ -8696,8 +8042,7 @@ beqz s3, 21f
 .insn 4, 0x3508be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0588be83
 .insn 4, 0x01cefeb3
@@ -8711,8 +8056,7 @@ beqz s3, 21f
 .insn 4, 0x3588be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0608be83
 .insn 4, 0x01cefeb3
@@ -8726,8 +8070,7 @@ beqz s3, 21f
 .insn 4, 0x3608be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0688be83
 .insn 4, 0x01cefeb3
@@ -8741,8 +8084,7 @@ beqz s3, 21f
 .insn 4, 0x3688be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0708be83
 .insn 4, 0x01cefeb3
@@ -8756,8 +8098,7 @@ beqz s3, 21f
 .insn 4, 0x3708be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x00f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x03031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0788be83
 .insn 4, 0x01cefeb3
@@ -8771,8 +8112,7 @@ beqz s3, 21f
 .insn 4, 0x3788be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01034e13
-.insn 2, 0x1e7d
+.insn 4, 0x02f31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0808be83
 .insn 4, 0x01cefeb3
@@ -8786,8 +8126,7 @@ beqz s3, 21f
 .insn 4, 0x3808be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01134e13
-.insn 2, 0x1e7d
+.insn 4, 0x02e31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0888be83
 .insn 4, 0x01cefeb3
@@ -8801,8 +8140,7 @@ beqz s3, 21f
 .insn 4, 0x3888be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01234e13
-.insn 2, 0x1e7d
+.insn 4, 0x02d31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0908be83
 .insn 4, 0x01cefeb3
@@ -8816,8 +8154,7 @@ beqz s3, 21f
 .insn 4, 0x3908be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01334e13
-.insn 2, 0x1e7d
+.insn 4, 0x02c31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0988be83
 .insn 4, 0x01cefeb3
@@ -8831,8 +8168,7 @@ beqz s3, 21f
 .insn 4, 0x3988be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01434e13
-.insn 2, 0x1e7d
+.insn 4, 0x02b31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a08be83
 .insn 4, 0x01cefeb3
@@ -8846,8 +8182,7 @@ beqz s3, 21f
 .insn 4, 0x3a08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01534e13
-.insn 2, 0x1e7d
+.insn 4, 0x02a31e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0a88be83
 .insn 4, 0x01cefeb3
@@ -8861,8 +8196,7 @@ beqz s3, 21f
 .insn 4, 0x3a88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01634e13
-.insn 2, 0x1e7d
+.insn 4, 0x02931e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b08be83
 .insn 4, 0x01cefeb3
@@ -8876,8 +8210,7 @@ beqz s3, 21f
 .insn 4, 0x3b08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01734e13
-.insn 2, 0x1e7d
+.insn 4, 0x02831e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0b88be83
 .insn 4, 0x01cefeb3
@@ -8891,8 +8224,7 @@ beqz s3, 21f
 .insn 4, 0x3b88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01834e13
-.insn 2, 0x1e7d
+.insn 4, 0x02731e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c08be83
 .insn 4, 0x01cefeb3
@@ -8906,8 +8238,7 @@ beqz s3, 21f
 .insn 4, 0x3c08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01934e13
-.insn 2, 0x1e7d
+.insn 4, 0x02631e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0c88be83
 .insn 4, 0x01cefeb3
@@ -8921,8 +8252,7 @@ beqz s3, 21f
 .insn 4, 0x3c88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01a34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02531e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d08be83
 .insn 4, 0x01cefeb3
@@ -8936,8 +8266,7 @@ beqz s3, 21f
 .insn 4, 0x3d08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01b34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02431e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0d88be83
 .insn 4, 0x01cefeb3
@@ -8951,8 +8280,7 @@ beqz s3, 21f
 .insn 4, 0x3d88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01c34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02331e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e08be83
 .insn 4, 0x01cefeb3
@@ -8966,8 +8294,7 @@ beqz s3, 21f
 .insn 4, 0x3e08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01d34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02231e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0e88be83
 .insn 4, 0x01cefeb3
@@ -8981,8 +8308,7 @@ beqz s3, 21f
 .insn 4, 0x3e88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01e34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02131e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f08be83
 .insn 4, 0x01cefeb3
@@ -8996,8 +8322,7 @@ beqz s3, 21f
 .insn 4, 0x3f08be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x01f34e13
-.insn 2, 0x1e7d
+.insn 4, 0x02031e13
 .insn 4, 0x43fe5e13
 .insn 4, 0x0f88be83
 .insn 4, 0x01cefeb3
@@ -9011,32 +8336,19 @@ beqz s3, 21f
 .insn 4, 0x3f88be83
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d2e2b3
-.insn 4, 0x03869e13
-.insn 4, 0xfffe4e13
-.insn 4, 0x007e1e93
-.insn 4, 0x43fede93
-.insn 4, 0x038ede93
-.insn 2, 0x0e85
-.insn 4, 0x006e1313
-.insn 4, 0x43f35313
-.insn 4, 0x03035313
-.insn 2, 0x0305
-.insn 4, 0x026e8eb3
-.insn 4, 0x005e1313
-.insn 4, 0x43f35313
-.insn 4, 0x02035313
-.insn 2, 0x0305
-.insn 4, 0x026e8333
-.insn 4, 0x026383b3
-.insn 4, 0x0383d393
-.insn 4, 0x026f0f33
-.insn 4, 0x038f5f13
+.insn 4, 0x0006de13
+.insn 4, 0x007e7e13
+.insn 2, 0x0e0e
+.insn 4, 0x01c3d3b3
+.insn 4, 0x0ff3f393
+.insn 4, 0x01cf5f33
+.insn 4, 0x0fff7f13
 .insn 2, 0x0f22
-.insn 4, 0x026f8fb3
-.insn 4, 0x038fdf93
+.insn 4, 0x01cfdfb3
+.insn 4, 0x0fffff93
 .insn 2, 0x0fc2
-.insn 4, 0x026282b3
-.insn 4, 0x0382d293
+.insn 4, 0x01c2d2b3
+.insn 4, 0x0ff2f293
 .insn 2, 0x02e2
 .insn 4, 0x01e3e3b3
 .insn 4, 0x005fefb3

@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.Code
 `brun [facts]` runs a block of the Blowfish code symbolically (`mrun`). The
 code's 32-bit values live in the low words of registers: `lo` is that word,
 and the `lo_*` lemmas take it through the operations the code uses. The
-masks are made by arithmetic shifts (`sra_mask`, `bit_mask`).
+masks are made by arithmetic shifts (`bit_mask`).
 -/
 
 @[expose] public section
@@ -64,23 +64,6 @@ theorem lo_rotr (x : BitVec 64) {r : Nat} (h : r < 32) :
   rw [lo_xor, lo_sext, lo_sext, RISCV64.ByteLoad.rotr_shifts _ h]
 
 /-! ## Masks -/
-
-/-- `v >> 63`, arithmetically, after `v - 1`: all ones exactly when
-`v < 2 ^ 63` is zero. -/
-theorem sra_mask (v : BitVec 64) (h : v.toNat < 2 ^ 63) :
-    (v - 1#64).sshiftRight 63 = if v.toNat = 0 then BitVec.allOnes 64 else 0 := by
-  by_cases e : v.toNat = 0
-  · have : v = 0#64 := BitVec.eq_of_toNat_eq (by simp [e])
-    subst this; decide
-  · rw [ite_eq_right e, BitVec.sshiftRight_eq_of_msb_false]
-    · apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow,
-        show BitVec.toNat (0 : BitVec 64) = 0 from rfl]
-      simp only [BitVec.toNat_ofNat]
-      omega
-    · rw [BitVec.msb_eq_decide]
-      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, decide_eq_false_iff_not]
-      omega
 
 /-- Bit `c` of `q` shifted to the top and arithmetically back: all ones if
 it is set. -/
