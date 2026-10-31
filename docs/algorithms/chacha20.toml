@@ -7,3 +7,4 @@ asm = ["chacha20"]
 [optimized]
 aarch64 = "NEON"
 x86 = "SSE2, SSSE3"
+powerpc64 = "doubleword XOR for complete blocks"

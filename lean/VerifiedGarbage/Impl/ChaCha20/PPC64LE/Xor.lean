@@ -9,8 +9,9 @@ public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 
 For each 64 bytes of data (the last piece may be shorter),
 `vg_chacha20_block(state, buf)` is called, the first `n = min(64, remaining)`
-bytes of its output (the first 64 bytes of `buf`) are XORed into the data a
-byte at a time, and the block counter (word 12 of the state) is incremented
+bytes of its output (the first 64 bytes of `buf`) are XORed into the data
+eight bytes at a time for complete blocks, or bytewise for a partial block,
+and the block counter (word 12 of the state) is incremented
 modulo 2³².
 
 The block function takes `state` in `r3` and `buf` in `r4`, and writes
@@ -51,9 +52,21 @@ def restore : List Instr :=
 
 /-- XORs the next `r5` bytes of the keystream (from `r7`) into the data (at
 `r22`), advancing both. -/
-def xorLoop : Prog isa :=
+def xorBytes : Prog isa :=
   .loop (.block [.lbz .r6 .r22 0, .lbz .r8 .r7 0, .logic .xor .r6 .r6 .r8, .stb .r6 .r22 0,
     .addi .r22 .r22 1, .addi .r7 .r7 1, .subi .r5 .r5 1]) (.nonzero .d .r5)
+
+/-- XOR a complete block with eight doubleword operations. The load/store
+addresses need not be aligned; only the public length selects this path. -/
+def xorWords : Prog isa :=
+  .loop (.block [.load .d .r6 .r22 0, .load .d .r8 .r7 0, .logic .xor .r6 .r6 .r8,
+    .store .d .r6 .r22 0, .addi .r22 .r22 8, .addi .r7 .r7 8, .subi .r5 .r5 8])
+    (.nonzero .d .r5)
+
+/-- Complete blocks use doublewords; the final partial block uses bytes. -/
+def xorLoop : Prog isa :=
+  .seq (.block [.lsr .d .r9 .r5 6])
+    (.ite (.zero .d .r9) xorBytes xorWords)
 
 /-- One block: the keystream into `buf`, `r5 = min(64, r23)` bytes of it
 XORed into the data, and the counter incremented. -/

@@ -1091,7 +1091,7 @@ yours to keep:
 
 <td>✅ SSE2, SSSE3</td>
 
-<td>✅</td>
+<td>✅ doubleword XOR for complete blocks</td>
 
 <td>✅</td>
 

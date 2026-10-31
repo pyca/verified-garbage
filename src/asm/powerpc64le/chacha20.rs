@@ -1097,7 +1097,22 @@ b 24f
 24:
 subf %r23, %r5, %r23
 addi %r7, %r4, 0
+rldicl %r9, %r5, 58, 6
+cmpldi %cr0, %r9, 0
+beq %cr0, 25f
+27:
+ld %r6, 0(%r22)
+ld %r8, 0(%r7)
+xor %r6, %r6, %r8
+std %r6, 0(%r22)
+addi %r22, %r22, 8
+addi %r7, %r7, 8
+addi %r5, %r5, -8
+cmpldi %cr0, %r5, 0
+bne %cr0, 27b
+b 26f
 25:
+28:
 lbz %r6, 0(%r22)
 lbz %r8, 0(%r7)
 xor %r6, %r6, %r8
@@ -1106,7 +1121,8 @@ addi %r22, %r22, 1
 addi %r7, %r7, 1
 addi %r5, %r5, -1
 cmpldi %cr0, %r5, 0
-bne %cr0, 25b
+bne %cr0, 28b
+26:
 lwz %r8, 48(%r3)
 addi %r8, %r8, 1
 stw %r8, 48(%r3)
