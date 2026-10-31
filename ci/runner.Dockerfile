@@ -63,6 +63,9 @@ RUN printf '%s\n' \
 #   target's architecture;
 # * gcc and libc6-dev, rustc's linker and the benchmarks' C build scripts
 #   (with binutils' readelf);
+# * riscv64 keeps the C compiler, assembler and headers needed by benchmarks,
+#   but excludes unused profiling/OpenMP libraries, binutils tools, character
+#   set converters and Git/Perl programs, as its test-only image did;
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
 # * zstd, for actions/cache (through Swatinem/rust-cache);
@@ -73,7 +76,38 @@ RUN printf '%s\n' \
 RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
-        ppc64el|riscv64) foreign=; packages= ;; \
+        ppc64el) foreign=; packages= ;; \
+        riscv64) foreign=; packages=; \
+            printf '%s\n' \
+                'path-exclude=/usr/libexec/gcc/*/*/cc1plus' \
+                'path-exclude=/usr/lib/gcc/*/*/libgomp*' \
+                'path-exclude=/usr/lib/*/libgomp*' \
+                'path-exclude=/usr/lib/gcc/*/*/libitm*' \
+                'path-exclude=/usr/lib/gcc/*/*/libbacktrace*' \
+                'path-exclude=/usr/lib/gcc/*/*/libgcov*' \
+                'path-exclude=/usr/bin/*gcov*' \
+                'path-exclude=/usr/lib/*/ldscripts/*' \
+                'path-exclude=/usr/bin/*objdump' \
+                'path-exclude=/usr/bin/*objcopy' \
+                'path-exclude=/usr/bin/*gprof*' \
+                'path-exclude=/usr/bin/*-nm' \
+                'path-exclude=/usr/bin/nm' \
+                'path-exclude=/usr/lib/*/libgprofng*' \
+                'path-exclude=/usr/lib/*/gconv/*' \
+                'path-exclude=/usr/lib/git-core/git-http-push' \
+                'path-exclude=/usr/lib/git-core/git-imap-send' \
+                'path-exclude=/usr/lib/git-core/git-http-fetch' \
+                'path-exclude=/usr/lib/git-core/git-http-backend' \
+                'path-exclude=/usr/lib/git-core/git-daemon' \
+                'path-exclude=/usr/lib/git-core/git-shell' \
+                'path-exclude=/usr/bin/git-shell' \
+                'path-exclude=/usr/lib/git-core/scalar' \
+                'path-exclude=/usr/bin/scalar' \
+                'path-exclude=/usr/share/gitweb/*' \
+                'path-exclude=/usr/lib/*/perl/*' \
+                'path-exclude=/usr/share/perl/*' \
+                'path-exclude=/usr/lib/*/libperl.so*' \
+                > /etc/dpkg/dpkg.cfg.d/excludes-riscv64 ;; \
         amd64) foreign="i386 arm64 armhf ppc64el riscv64"; \
             packages="gcc-i686-linux-gnu gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu"; \
             for a in $foreign; do packages="$packages libc6-dev:$a libssl-dev:$a"; done ;; \
