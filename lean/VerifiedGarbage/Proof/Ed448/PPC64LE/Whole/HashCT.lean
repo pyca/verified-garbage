@@ -48,7 +48,7 @@ open VG.Impl.Ed25519.PPC64LE.Whole (mov)
 /-- An instruction that accesses no memory. -/
 def noMem : Instr → Bool
   | .load .. | .store .. | .lbz .. | .stb .. | .loadRev .. | .storeRev .. | .push _ | .pop _
-  | .alloc _ => false
+  | .alloc _ | .lxvd2x .. | .stxvd2x .. => false
   | _ => true
 
 theorem addrs_noMem {i : Instr} (h : noMem i = true) (s : State) : VG.PPC64LE.addrs i s = [] := by
