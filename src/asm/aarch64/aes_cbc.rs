@@ -12,8 +12,6 @@ pub(crate) const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// With FEAT_AES and FEAT_SHA3: seven interleaved inverse-cipher states, with the inverse round keys prepared once and kept in registers. EOR3 combines the final round-key XOR and CBC chaining XOR. Remaining blocks use the same resident keys, one at a time. No stack or scratch memory is used.
-///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -890,8 +888,6 @@ pub(crate) const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// With FEAT_AES: round keys remain in registers. The next plaintext is preloaded during the current block's rounds and combined with the first/last round keys as AESE's key operand, removing the between-block dependent XOR. Key-size dispatch is outside the loop. No stack or scratch memory is used.
-///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -1155,8 +1151,6 @@ pub(crate) const VG_AES_CBC_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// This implementation deciphers one block at a time with `vg_aes_decrypt_blocks_aes`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -1233,8 +1227,6 @@ ret
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -1303,8 +1295,6 @@ ret
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`.
 ///
 /// # Safety
 ///

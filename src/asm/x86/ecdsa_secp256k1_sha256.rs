@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha256_init_scratch`, `vg_sha256_update_scratch` and `vg_hmac_sha256_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_secp256k1_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and our caller's registers are kept in a 196-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes below it.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -839,8 +837,6 @@ pub(crate) const VG_ECDSA_SECP256K1_SHA256_SIGN_SHANI_FEATURES: crate::cpu::Feat
 /// Deterministic ECDSA signature generation over secp256k1 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
-///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha256_init_scratch_shani`, `vg_sha256_update_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_secp256k1_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and our caller's registers are kept in a 196-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes below it.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

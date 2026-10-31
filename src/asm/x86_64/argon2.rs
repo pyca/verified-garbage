@@ -8275,8 +8275,6 @@ pub(crate) const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Argon2.hPrimeContract`. Constant time: only pointers and lengths may affect timing, not the input or the output.
 ///
-/// Calls the selected BLAKE2b streaming backend for every hash; only argument handling, chaining, and output copying are specific to H′.
-///
 /// # Safety
 ///
 /// * `input` must be valid for reads of `input_len` bytes.
@@ -8445,8 +8443,6 @@ pub(crate) const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Argon2.hPrimeContract`. Constant time: only pointers and lengths may affect timing, not the input or the output.
 ///
-/// Calls the selected BLAKE2b streaming backend for every hash; only argument handling, chaining, and output copying are specific to H′.
-///
 /// # Safety
 ///
 /// * `input` must be valid for reads of `input_len` bytes.
@@ -8611,8 +8607,6 @@ ret
 /// Argon2's variable-length hash H′ (RFC 9106 §3.3): hashes the `input_len` bytes at `input` to `out_len` bytes at `out`, including the LE32 output-length prefix and the BLAKE2b chaining required for outputs longer than 64 bytes.
 ///
 /// Contract: `VG.Spec.Argon2.hPrimeContract`. Constant time: only pointers and lengths may affect timing, not the input or the output.
-///
-/// Calls the selected BLAKE2b streaming backend for every hash; only argument handling, chaining, and output copying are specific to H′.
 ///
 /// # Safety
 ///
@@ -8782,8 +8776,6 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = 
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress_avx2`.
 ///
 /// # Safety
 ///
@@ -11642,8 +11634,6 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress_avx512`.
-///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -14500,8 +14490,6 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress`.
 ///
 /// # Safety
 ///
@@ -17360,8 +17348,6 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress_avx2`.
-///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -20218,8 +20204,6 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Feature
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress_avx512`.
 ///
 /// # Safety
 ///
@@ -23078,8 +23062,6 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress`.
-///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -25936,8 +25918,6 @@ pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::F
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress_avx2`.
 ///
 /// # Safety
 ///
@@ -28796,8 +28776,6 @@ pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu:
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress_avx512`.
-///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -31651,8 +31629,6 @@ ret
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every compression calls `vg_argon2_compress`.
 ///
 /// # Safety
 ///

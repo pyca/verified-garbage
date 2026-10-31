@@ -4,8 +4,6 @@
 
 /// Ed25519 scalar multiply-add (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `(r + k*s) mod L` to `*out`. The inputs are unsigned 256-bit little-endian integers; they need not be canonical scalars. Contract: `VG.Spec.Ed25519.scalarMulAddContract`. Constant time: only pointers may affect timing.
 ///
-/// Computes the complete 512-bit multiply-add before reducing modulo the subgroup order. All three input scalars may use all 256 bits. Multiplication uses only the low 32-bit `mul` instruction on 16-bit limbs. Callee-saved registers are saved in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -3549,8 +3547,6 @@ bx lr",
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
-/// Includes SHA-512 of the seed, RFC 8032 pruning, and base-point multiplication. The temporary seed hash and scalar are cleared before returning.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -3824,8 +3820,6 @@ bx lr",
 }
 
 /// Ed25519 scalar reduction (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `wide mod L` to `*out`, using all 64 input bytes. Contract: `VG.Spec.Ed25519.scalarReduceContract`. Constant time: only pointers may affect timing.
-///
-/// Processes all 512 input bits with sixteen 16-bit limbs, subtracting the subgroup order and selecting with a mask. Callee-saved registers are saved in the first 32 bytes of `scratch`.
 ///
 /// # Safety
 ///
@@ -6687,8 +6681,6 @@ bx lr",
 }
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
-///
-/// Uses baseline integer instructions and a fixed schedule for all 256 input bits. A comb over the scalar's 64 nibbles: `[17 G]B` plus, for each nibble `i`, the entry of digit `n_i - 8` of a table of `[k 16^i]B` (`k = 1 … 8`, affine and cached, in the static `VG_ED25519_COMB`), selected by masks from every candidate and negated for a negative digit: 64 additions of seven field products and no doublings. Field products use only low 32-bit `mul` on 16-bit limbs; the inversion's chain to `z^(2^250 - 1)` is a call of `vg_gf25519_r16_pow250` on `scratch`. The scalar's copy, saved registers and `lr` reside in `scratch`.
 ///
 /// # Safety
 ///
@@ -14288,8 +14280,6 @@ bx lr",
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Includes SHA-512, scalar reduction, base-point multiplication, and scalar multiply-add. Secret intermediate buffers are cleared before returning.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
@@ -14733,8 +14723,6 @@ bx lr",
 }
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
-///
-/// Uses baseline integer instructions. Checks canonical point encodings (A's, then R's, by one loop running the decoding twice) and S < L, then evaluates the uncofactored equation using all 512 challenge bits. Point decoding branches depend only on public inputs. Point additions and doublings are calls of `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double`, and the square root's chain to `z^(2^250 - 1)` a call of `vg_gf25519_r16_pow250`, each on `scratch`. Point tables, saved registers and `lr` reside in `scratch`.
 ///
 /// # Safety
 ///
@@ -29057,8 +29045,6 @@ bx lr",
 }
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// Includes SHA-512 of R || A || message, challenge reduction, and strict verification of the Ed25519 equation.
 ///
 /// # Safety
 ///

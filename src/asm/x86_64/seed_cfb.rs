@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: each batch of sixteen blocks is a call of `vg_seed_encrypt_blocks`, with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; one block per batch, of which the other fifteen lanes are unused. The schedule is copied into the working space once per call. The mode is the generic CFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -314,8 +312,6 @@ ret
 /// SEED-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption (also for decryption) under the schedule written by `vg_seed_expand_key`.
 ///
 /// Contract: `VG.Spec.Seed.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline x86-64: each batch of sixteen blocks is a call of `vg_seed_encrypt_blocks`, with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; one block per batch, of which the other fifteen lanes are unused. The schedule is copied into the working space once per call. The mode is the generic CFB of `Impl/Modes/X86_64/`.
 ///
 /// # Safety
 ///

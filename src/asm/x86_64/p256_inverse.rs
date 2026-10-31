@@ -6,8 +6,6 @@
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, and computes the inverse modulo `p` by Bernstein and Yang's divsteps, in batches of 59 (10 batches for four words), each run on the low words of `f` and `g` packed into 64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 2296 to 2615, then multiplies by a constant (`2^(5 B) R³ mod p`) to return to Montgomery form, by `mul` and word-by-word Montgomery reduction; nothing depends on the numbers but through masks and `cmov`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -2111,8 +2109,6 @@ pub(crate) const VG_P256_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, and computes the inverse modulo `p` by Bernstein and Yang's divsteps, in batches of 59 (10 batches for four words), each run on the low words of `f` and `g` packed into 64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 2296 to 2615, then multiplies by a constant (`2^(5 B) R³ mod p`) to return to Montgomery form, by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`); nothing depends on the numbers but through masks and `cmov`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -4128,8 +4124,6 @@ ret
 /// The power `A = x^(n-2)` modulo P-256's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 1248 of `ws`. Numbers are 4 64-bit words (`32` bytes), little-endian, in Montgomery's form modulo P-256's order `n`. The function reads `n` at byte 96 and the number to invert at byte 1248, and writes the result at bytes 992 to 1023, below `n`. Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invNContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
-///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, and computes the inverse modulo `n` by Bernstein and Yang's divsteps, in batches of 59 (10 batches for four words), each run on the low words of `f` and `g` packed into 64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 2296 to 2615, then multiplies by a constant (`2^(5 B) R³ mod n`) to return to Montgomery form, by `mul` and word-by-word Montgomery reduction; nothing depends on the numbers but through masks and `cmov`.
 ///
 /// # Safety
 ///
@@ -6317,8 +6311,6 @@ pub(crate) const VG_P256_INV_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::c
 /// The power `A = x^(n-2)` modulo P-256's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 1248 of `ws`. Numbers are 4 64-bit words (`32` bytes), little-endian, in Montgomery's form modulo P-256's order `n`. The function reads `n` at byte 96 and the number to invert at byte 1248, and writes the result at bytes 992 to 1023, below `n`. Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invNContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
-///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, and computes the inverse modulo `n` by Bernstein and Yang's divsteps, in batches of 59 (10 batches for four words), each run on the low words of `f` and `g` packed into 64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 2296 to 2615, then multiplies by a constant (`2^(5 B) R³ mod n`) to return to Montgomery form, by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`); nothing depends on the numbers but through masks and `cmov`.
 ///
 /// # Safety
 ///

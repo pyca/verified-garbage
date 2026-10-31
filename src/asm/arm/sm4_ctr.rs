@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
-/// Baseline ARMv7: prepare the bitsliced round-key table once per message, then encrypt up to eight independent counters per batch with full 128-bit big-endian increments. The 1512-byte working space is kept on the stack and zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

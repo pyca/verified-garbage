@@ -1572,8 +1572,6 @@ pub(crate) const VG_SHA1_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Sha1.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// Uses the AArch64 SHA-1 instructions. The four round constants are built in AdvSIMD registers once, before the first block, and the state stays in registers between blocks.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 20 bytes.

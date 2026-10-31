@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `imul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic OFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.

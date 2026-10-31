@@ -214,8 +214,6 @@ pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX2_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.MlKem.sampleNTT4_16Contract`. Not constant time in the seeds: timing may depend on the pointer and on `*seeds` (public in ML-KEM: the seed `ρ` of the matrix and indices), but not on anything else.
 ///
-/// The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; it then samples from the output of each in turn, eight candidates at a time in AVX2 registers (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), storing 16-bit coefficients. For a seed whose instance needs more than it squeezed of all four, it calls `vg_mlkem16_sample_ntt`.
-///
 /// # Safety
 ///
 /// * `seeds` must be valid for reads of 136 bytes.
@@ -2492,8 +2490,6 @@ pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX512_FEATURES: crate::cpu::Features = 
 /// `SampleNTT` (FIPS 203 Algorithm 7) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 3329), and returns 1. Returns 0 if the loop reaches its bound for one of them, which is at least 280 iterations (FIPS 203 Appendix B; this happens with probability less than 2^-261 for each): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
 /// Contract: `VG.Spec.MlKem.sampleNTT4_16Contract`. Not constant time in the seeds: timing may depend on the pointer and on `*seeds` (public in ML-KEM: the seed `ρ` of the matrix and indices), but not on anything else.
-///
-/// The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; it then samples from the output of each in turn, eight candidates at a time in AVX2 registers (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), storing 16-bit coefficients. For a seed whose instance needs more than it squeezed of all four, it calls `vg_mlkem16_sample_ntt`. It uses AVX-512VL quadword rotates in Keccak.
 ///
 /// # Safety
 ///

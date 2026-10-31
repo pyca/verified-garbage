@@ -9,8 +9,6 @@ pub(crate) const VG_GF448_R64_POW223_ADX_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `pow223Contract` of `VG.Spec.X448.Field64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses the selected Curve448 field backend. Saves `rbx`, `rbp` and `r12`–`r15` at bytes 1472–1519 of `ws`, runs the shared addition chain on slot 12, and restores those registers. Squaring runs use public loop counters.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -9272,8 +9270,6 @@ ret
 /// Powers in curve448's field: for `a` the element at byte 832 (slot 12) of the working space `ws`, writes an element congruent to `a^(2^223 - 1)` modulo `p = 2^448 - 2^224 - 1` to byte 1408 (slot 21), and one congruent to `a^(2^222 - 1)` to byte 1344 (slot 20): the addition chain that inversion (`a^(p-2)`, 225 squarings of the first times two squarings of the second and `a`) and decoding's square root (`a^((p-3)/4)`, 223 squarings of the first times the second) share. An element is 56 bytes, a little-endian number below `2^448`, not necessarily below `p`. Every byte of `ws` but those from byte 960 to byte 1647 (the function's own working space and its results) keeps its value.
 ///
 /// Contract: `pow223Contract` of `VG.Spec.X448.Field64`. Constant time: only the pointer may affect timing.
-///
-/// Uses the selected Curve448 field backend. Saves `rbx`, `rbp` and `r12`–`r15` at bytes 1472–1519 of `ws`, runs the shared addition chain on slot 12, and restores those registers. Squaring runs use public loop counters.
 ///
 /// # Safety
 ///

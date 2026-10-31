@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline AArch64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `mul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/AArch64/`.
-///
-/// The IV's address is kept in `x25`, which the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
@@ -853,10 +849,6 @@ ret
 /// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline AArch64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `mul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/AArch64/`.
-///
-/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///

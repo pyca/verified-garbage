@@ -4216,10 +4216,6 @@ pub(crate) const VG_MLKEM1024_KEYGEN_X2_SHA3_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
-/// Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main squeeze of the matrix's pairs once the rows of `t̂` before them have encoded it; the noise and `ŝ` come after the first two pairs, each row of `t̂` right after its entries, and the blocks left after the last row are absorbed with the single-state permutation.
-///
-/// Computes `PRF₂(σ, N)` for the first six noise polynomials in the third state of the matrix's first two pairs, which absorb no block of `ek`, one per main squeeze, while the vector unit runs their SHAKE128 states.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -14373,10 +14369,6 @@ pub(crate) const VG_MLKEM1024_ENCAPS_X2_SHA3_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
-/// Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states.
-///
-/// Computes `G(m ‖ H(ek))` right after the pairs hashing `ek`, then `PRF₂(r, N)` for the first noise polynomials in the third state of the pairs after it and the second state of the singleton, one per main squeeze, while the vector unit runs their SHAKE128 states.
-///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -24529,10 +24521,6 @@ pub(crate) const VG_MLKEM1024_DECAPS_X2_SHA3_FEATURES: crate::cpu::Features = cr
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// Computes `J(z ‖ c)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of a copy of `z ‖ c` per main squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states.
-///
-/// Computes `PRF₂(r', N)` for the first noise polynomials of the re-encryption in the third state of the pairs after those hashing `z ‖ c` and the second state of the singleton, one per main squeeze, while the vector unit runs their SHAKE128 states.
 ///
 /// # Safety
 ///
@@ -35572,10 +35560,6 @@ pub(crate) const VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
-/// Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main squeeze of the matrix's pairs once the rows of `t̂` before them have encoded it; the noise and `ŝ` come after the first two pairs, each row of `t̂` right after its entries, and the blocks left after the last row are absorbed with the single-state permutation.
-///
-/// Computes `PRF₂(σ, N)` for the first six noise polynomials in the third state of the matrix's first two pairs, which absorb no block of `ek`, one per main squeeze, while the vector unit runs their SHAKE128 states.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -45729,10 +45713,6 @@ pub(crate) const VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
-/// Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states.
-///
-/// Computes `G(m ‖ H(ek))` right after the pairs hashing `ek`, then `PRF₂(r, N)` for the first noise polynomials in the third state of the pairs after it and the second state of the singleton, one per main squeeze, while the vector unit runs their SHAKE128 states.
-///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -55885,10 +55865,6 @@ pub(crate) const VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: crate::cpu::F
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// Computes `J(z ‖ c)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of a copy of `z ‖ c` per main squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states.
-///
-/// Computes `PRF₂(r', N)` for the first noise polynomials of the re-encryption in the third state of the pairs after those hashing `z ‖ c` and the second state of the singleton, one per main squeeze, while the vector unit runs their SHAKE128 states.
 ///
 /// # Safety
 ///

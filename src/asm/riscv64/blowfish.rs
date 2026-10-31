@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
 ///
-/// The schedule is built in a frame of 4176 bytes on the stack, which is 16-byte aligned, since the contract states no alignment for it: the initial schedule is written from 1042 immediates, the P-array keyed a byte of the key at a time, and the 521 encryptions run ECB's block function under the schedule as it is written. It is then copied out a byte at a time, and the frame is zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -5057,10 +5055,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// The schedule is copied a byte at a time into a frame of 4176 bytes on the stack, which is 16-byte aligned, since the contract states no alignment for it; the frame is zeroed before returning. Nothing is allocated for no blocks.
-///
-/// One block at a time in general-purpose registers: each S-box lookup reads the 256 entries of its four byte planes, a word (four entries) of each at a time, keeping the bytes of the entry that is the index under masks computed from it, so no address depends on the data or the schedule.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
@@ -5518,10 +5512,6 @@ ret
 /// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// The schedule is copied a byte at a time into a frame of 4176 bytes on the stack, which is 16-byte aligned, since the contract states no alignment for it; the frame is zeroed before returning. Nothing is allocated for no blocks.
-///
-/// One block at a time in general-purpose registers: each S-box lookup reads the 256 entries of its four byte planes, a word (four entries) of each at a time, keeping the bytes of the entry that is the index under masks computed from it, so no address depends on the data or the schedule.
 ///
 /// # Safety
 ///

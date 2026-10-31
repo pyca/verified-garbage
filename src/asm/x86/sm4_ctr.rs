@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
-/// Baseline IA-32: full 128-bit big-endian counter increments and in-place XOR, with each counter encrypted by the bitsliced SM4 core in general-purpose registers, with no table lookups. The key schedule's table of round keys is built once per call, by `vg_sm4_prepare_keys`, and each batch encrypted by `vg_sm4_crypt_prepared`. One block per batch of eight is used.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

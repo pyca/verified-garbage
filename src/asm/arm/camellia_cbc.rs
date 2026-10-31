@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_camellia_ecb_encrypt` (bitsliced, in a batch of eight) on each block with the number of rounds, in a 72-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -135,8 +133,6 @@ bx lr",
 /// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_camellia_ecb_decrypt` (bitsliced, in a batch of eight) on each block in place with the number of rounds, with the chaining value in a 72-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///

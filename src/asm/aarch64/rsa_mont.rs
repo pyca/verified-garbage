@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// Baseline AArch64: in-place squares of array 5 share RSA's verified scheduled eight-limb Montgomery squaring kernel and blocked reduction when the public width allows it. The (5, 5, 6) window product shares the eight-limb product kernel. Other public index tuples use coarsely integrated operand scanning. Preserves callee-saved registers using the existing workspace, with no stack.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// Generator multiplication uses the shared signed 7-bit comb: 37 complete Renes–Costello–Batina additions and a 151552-byte Montgomery table. Each digit scans all 64 entries in its public row and selects coordinates by masks. Field elements and scalars use sixteen 16-bit Montgomery digits. Inversions modulo p and n use Fermat's theorem. Invalid inputs select a zero signature; memory access and control flow depend only on pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
@@ -1922,8 +1920,6 @@ bx lr",
 /// ECDSA signature verification over secp256k1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
-///
-/// The generator term [u]G uses the same signed 7-bit comb as signing, scanning each complete 64-entry table row. The variable-base term [v]Q retains the 256-bit double-and-add ladder. Both use complete Renes–Costello–Batina addition formulas. Public-key validation, scalar checks and Fermat inversions are shared with the original implementation; the result combines all checks as a mask.
 ///
 /// # Safety
 ///

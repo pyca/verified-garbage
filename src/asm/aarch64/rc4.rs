@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
 ///
-/// The permutation stays in `v16`–`v31` for the whole key schedule: a secret-indexed read is four `tbl`/`tbx` lookups of four registers each, and a write sixteen `cmeq`/`bit` pairs, so no address or branch depends on the key, the table or `j`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1043,8 +1041,6 @@ ret
 /// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
-///
-/// The permutation stays in `v16`–`v31` for the whole call, rotated so that the public `S[i]` is at a lane fixed in the code: a secret-indexed read is four `tbl`/`tbx` lookups of four registers each, and a write sixteen `cmeq`/`bit` pairs, so no address or branch depends on the table, `j` or the data.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// Baseline ARMv7: the public operand indices select the specialized Montgomery square when they agree, and coarsely integrated operand scanning otherwise. A shared callable body keeps the arithmetic outside its callers' instruction working sets. The workspace pointer and procedure-call registers occupy a 40-byte stack frame.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -630,8 +628,6 @@ pub(crate) const VG_RSA_MONT_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::c
 /// Montgomery multiplication in the working space of the RSA functions: writes to array `o` the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers in arrays `a` and `b`. The working space is a header of 32 words, then 8 arrays of `w + 2` words each: header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
-///
-/// One shared callable UMAAL kernel handles both Montgomery products and squares. Each pass does the rows of two words of the first operand: one scan of the accumulator loads and stores each word once for both rows, with the products and cancellations of each row on their own carry chains (four in all), preserving the 40-byte frame and the baseline's arithmetic and constant-time contracts.
 ///
 /// # Safety
 ///

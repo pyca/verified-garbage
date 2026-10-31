@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function uses the generic Weierstrass ladder and inversion of `Z`: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are sixteen 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_brainpoolp512r1_mul_mod_p` and the other functions of `brainpoolp512r1_mont`) with a final conditional subtraction; `[d]G` is a double-and-add ladder over all 512 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (inlined for eight-word coordinates) and a masked selection for each bit; and `Z⁻¹` is Fermat's, by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

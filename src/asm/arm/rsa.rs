@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.publicCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input.
 ///
-/// Baseline ARMv7: Montgomery multiplication on 32-bit limbs, two to each 64-bit word of the working space (coarsely integrated operand scanning, each 32 × 32-bit product from four 16 × 16-bit `mul`s, since `umull` is not in the model), the final subtraction selected under a mask. `e` and `n` are checked first; then R² mod n by constant-time doublings, and binary exponentiation, its squarings by a dedicated Montgomery square (each cross product once, doubled, the words' squares added, then reduced in place). The input's range check gives a mask: an input out of range takes the same arithmetic, and the output is cleared under the mask.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -4182,8 +4180,6 @@ bx lr",
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), writes the result of step 2.b for the input (`n_len` bytes, most significant first) to `out` (`n_len` bytes, most significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first. For a valid RSA key the result is `input^d mod n`; nothing checks that `p` and `q` are prime or that the exponents match a public exponent.
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
-///
-/// Baseline ARMv7: the checks of the input and the key give a mask; rejected primes are replaced, so that the arithmetic is the same whatever the key, and a rejected result is cleared under the mask. Each prime's working space at the width of `n` reduces the input modulo the prime by two Montgomery products; a narrow working space then takes the prime, its own Montgomery constants and the reduced input at the prime's width (`max(2, ⌈len/8⌉)` limbs of 64 bits for its public length), where the exponentiation follows a fixed schedule over 32-bit limbs, its squarings by a dedicated Montgomery square. `qInv` is reduced as a signed coefficient and the result recombined in a double-width product, at the width of `n`.
 ///
 /// # Safety
 ///
@@ -21980,8 +21976,6 @@ pub(crate) const VG_RSA_PRIVATE_CRT_UMAAL_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
 ///
-/// The shared UMAAL integrated Montgomery scan supplies the private exponentiation's products and squares through the same window and CRT proofs. Other arithmetic rows use the shared exact UMAAL row transformation.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -37107,8 +37101,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
 ///
-/// Baseline ARMv7, frameless (the callee-saved registers are kept in the working space): `n` is checked first, the only branch on data. `n`, `p`, `q` and `d` are read into 32-bit limbs at the width of `n`, and `n` divided by `p` by a fixed-iteration long division. `q⁻¹ mod (p | 1)` and the gcd come from a binary extended Euclidean algorithm of a fixed number of steps, whose subtractions and halvings are selected under masks. `p` odd, `n / p = q`, `n mod p = 0` and a gcd of 1 make a mask; `dP` and `dQ` are `d mod (p - 1)` and `d mod (q - 1)` by the same division, and the three results are written out under the mask, cleared if it is not set.
-///
 /// # Safety
 ///
 /// * `dp` must be valid for reads and writes of `dp_len` bytes.
@@ -38941,8 +38933,6 @@ bx lr",
 /// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
-///
-/// Baseline ARMv7, frameless (the callee-saved registers are kept in the working space): `n` and `e` are checked first, the only branches on data. The numbers are read into 32-bit limbs at the width of `n`, and every check computed and and'ed into a mask: `p q = n` as `p` odd with `n / p = q` and `n mod p = 0`, by a fixed-iteration long division; `d < n`, `dP < p - 1`, `dQ < q - 1` and `qInv < p` by a subtraction's borrow; `e dP ≡ 1`, `e dQ ≡ 1` and `q qInv ≡ 1` by binary multiplication modulo `p - 1`, `q - 1` or `p` (over the 33 bits of `e`, or the bits of `q`), its additions selected under masks; and `d e ≡ 1` modulo `p - 1` and `q - 1` as `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`, by the same division, `dP` and `dQ` being the inverses of `e` once their own checks hold.
 ///
 /// # Safety
 ///
@@ -41023,8 +41013,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// Baseline ARMv7, frameless (the callee-saved registers are kept in the working space): `n` and `e` are checked first, the only branches on data. The numbers are read into 32-bit limbs at the width of `n`, and every check computed and and'ed into a mask: `p q = n` as `p` odd with `n / p = q` and `n mod p = 0`, by a fixed-iteration long division; `dP < p - 1`, `dQ < q - 1` and `qInv < p` by a subtraction's borrow; and `e dP ≡ 1`, `e dQ ≡ 1` and `q qInv ≡ 1` by binary multiplication modulo `p - 1`, `q - 1` or `p` (over the 33 bits of `e`, or the bits of `q`), its additions selected under masks.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -42703,8 +42691,6 @@ bx lr",
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.1 with the candidates `g = 2, 3, …` and at most 100 of them. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or its factors are not found. For a valid RSA key the factors are found, but for a negligible fraction of keys.
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
-///
-/// Baseline ARMv7: check `n`, form `d e - 1`, and prepare Montgomery arithmetic. Each public candidate (2 through 101) uses one fixed-width, most-significant-bit pass over the exponent, fusing exponentiation with root detection. Each bit uses the specialized Montgomery square; multiplication by 2 or 3 uses shared modular additions, and later candidates use Montgomery multiplication. Set bits reset the root chain under masks. Only the number of candidates tried may leak. Shared fixed-iteration GCD and division recover the factors and write the larger first, or zero both outputs when recovery fails.
 ///
 /// # Safety
 ///
@@ -57490,8 +57476,6 @@ pub(crate) const VG_RSA_RECOVER_PRIMES_UMAAL_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
 ///
-/// The baseline prime recovery with the shared UMAAL row transformation used by private RSA, retaining the same arithmetic, checks and timing contract.
-///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `p_len` bytes.
@@ -71550,8 +71534,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
 ///
-/// This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -71723,8 +71705,6 @@ bx lr",
 /// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
-///
-/// ARMv7 with the selected RSA arithmetic: `n` is checked and read into 32-bit limbs, its 64-bit Montgomery inverse computed from pairs of them, and R² mod n by a fixed number of modular doublings. The output is cleared for an invalid modulus.
 ///
 /// # Safety
 ///
@@ -74497,8 +74477,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
 ///
-/// ARMv7 with the selected RSA arithmetic: `pre` is read and checked (`n` odd, its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe; then `vg_rsa_public_checked`'s Montgomery inverse and exponentiation. The input's acceptance and the clearing of the output are under masks.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -76475,8 +76453,6 @@ pub(crate) const VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
 ///
-/// This implementation computes the result `m` with `vg_rsa_private_crt_umaal` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_umaal` and `vg_rsa_public_precomputed_checked_umaal`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -76654,8 +76630,6 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES: crate::cpu::Features =
 /// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
-///
-/// ARMv7 with the selected RSA arithmetic: `n` is checked and read into 32-bit limbs, its 64-bit Montgomery inverse computed from pairs of them, and R² mod n by a fixed number of modular doublings. The output is cleared for an invalid modulus.
 ///
 /// # Safety
 ///
@@ -79212,8 +79186,6 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_UMAAL_FEATURES: crate::cpu::F
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
-///
-/// ARMv7 with the selected RSA arithmetic: `pre` is read and checked (`n` odd, its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe; then `vg_rsa_public_checked`'s Montgomery inverse and exponentiation. The input's acceptance and the clearing of the output are under masks.
 ///
 /// # Safety
 ///

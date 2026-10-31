@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time, with branch-free ⊙ (`mul`, whose timing does not depend on its operands), the subkeys copied to the stack once per call. The mode is the generic OFB of `Impl/Modes/X86/`, over IDEA's ECB block.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// One block at a time: each S-box lookup reads the 256 entries of its four byte planes under masks, as in ECB, and the schedule is read in place through its argument. The mode is the generic CBC of `Impl/Modes/X86/`, over Blowfish's ECB block.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -442,10 +438,6 @@ ret
 /// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Blowfish.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// One block at a time: each S-box lookup reads the 256 entries of its four byte planes under masks, as in ECB, and the schedule is read in place through its argument. The mode is the generic CBC of `Impl/Modes/X86/`, over Blowfish's ECB block.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

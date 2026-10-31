@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.MontMul.mulContract`. Constant time but for the address and length of `ws`, `n` and the offsets: timing does not depend on the numbers.
 ///
-/// Product scanning with SSE2: PMULUDQ multiplies two pairs of 32-bit words at once and PADDQ accumulates each column's products and their high halves in 64-bit lanes. Four-word groups use two 128-bit operand loads and PSHUFD for the odd words, inside an MCDT frame (Intel's MXCSR prologue and epilogue). Each column folds the lanes, adds the carry, and stores a quotient digit or a word of the result; equal operand offsets select a square's half of the products, doubled, and the diagonal. The final subtraction's result is selected by a mask. Pointers, counts and the column index control the loops; they are in registers or in a frame of 28 bytes of parameters, computed from the arguments.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -1055,8 +1053,6 @@ ret
 /// Montgomery multiplication in the working space of the RSA functions: writes to array `o` the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers in arrays `a` and `b`. The working space is a header of 32 words, then 8 arrays of `w + 2` words each: header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
-///
-/// The kernel of `vg_rsa_mont_mul_at` (product scanning with SSE2 PMULUDQ in an MCDT frame), its parameters from the header: the arrays' addresses, `-m⁻¹ mod 2³²` and `w`. Arrays 2 and 3 hold the columns' sums, carry, quotient digits and product.
 ///
 /// # Safety
 ///

@@ -4,8 +4,6 @@
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
-/// Rejection sampling and signing retries are verified against the bounded random-tape specification. The selected Montgomery backend is used for each signing attempt. Every failure zeros the entire output.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -328,8 +326,6 @@ ret
 }
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
-///
-/// Fixed-window exponentiation and streaming modular reduction use the selected Montgomery backend. Leading-zero component padding is supported. Signing derives public-key subgroup membership from g^q = 1 and g^x = y. Scratch is initialized before use; every failure zeros the entire output.
 ///
 /// # Safety
 ///
@@ -6632,8 +6628,6 @@ ret
 }
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
-///
-/// Fixed-window exponentiation and streaming modular reduction use the selected Montgomery backend. Leading-zero component padding is supported. Signature scalars and the digest do not affect the leakage trace.
 ///
 /// # Safety
 ///
@@ -13139,8 +13133,6 @@ ret
 
 /// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
 ///
-/// Checks domain consistency and both public subgroup memberships with the selected Montgomery backend.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -15702,8 +15694,6 @@ ret
 }
 
 /// DSA verification with the same result as vg_dsa_verify, for an already validated packed public key. Signature scalars and digest handling retain the fully checked API's behavior. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
-///
-/// Retains signature range checks and digest handling; the caller establishes validation for the immutable key bytes.
 ///
 /// # Safety
 ///
@@ -20086,8 +20076,6 @@ ret
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
-/// Checks the domain before consuming randomness, samples x with the verified rejection sampler, then derives y = g^x with the selected Montgomery backend. Every failure zeros the entire output.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -20393,8 +20381,6 @@ ret
 }
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
-///
-/// g^q mod p uses the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -22275,8 +22261,6 @@ ret
 }
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
-///
-/// y = g^x mod p uses the selected Montgomery backend. Every failure zeros the entire output.
 ///
 /// # Safety
 ///
@@ -24949,10 +24933,6 @@ ret
 }
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
-///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, shared windowed Miller–Rabin tests, generator selection, domain validation, and output copying or zeroing. The three input tapes are public under the contract. Only 1024/160, 2048/256, and 3072/256 are generated.
-///
-/// The probable-prime tests and the generator search with the domain check are calls of the shared `vg_dsa_probable_prime_*` and `vg_dsa_generator_*` functions.
 ///
 /// # Safety
 ///
@@ -31224,10 +31204,6 @@ ret
 pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
-///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, shared windowed Miller–Rabin tests, generator selection, domain validation, and output copying or zeroing. The three input tapes are public under the contract. Only 1024/160, 2048/256, and 3072/256 are generated.
-///
-/// The probable-prime tests and the generator search with the domain check are calls of the shared `vg_dsa_probable_prime_*` and `vg_dsa_generator_*` functions.
 ///
 /// # Safety
 ///
@@ -37503,10 +37479,6 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: crate::cpu::Feat
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, shared windowed Miller–Rabin tests, generator selection, domain validation, and output copying or zeroing. The three input tapes are public under the contract. Only 1024/160, 2048/256, and 3072/256 are generated.
-///
-/// The probable-prime tests and the generator search with the domain check are calls of the shared `vg_dsa_probable_prime_*` and `vg_dsa_generator_*` functions.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -43781,10 +43753,6 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: crat
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, shared windowed Miller–Rabin tests, generator selection, domain validation, and output copying or zeroing. The three input tapes are public under the contract. Only 1024/160, 2048/256, and 3072/256 are generated.
-///
-/// The probable-prime tests and the generator search with the domain check are calls of the shared `vg_dsa_probable_prime_*` and `vg_dsa_generator_*` functions.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -50058,8 +50026,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.GeneratorStage.contract`. p, q and the h candidates are public: timing may depend on all three.
 ///
-/// Parameter generation's generator search and domain check on p, q and the exponent at their offsets of the generation's scratch space, with the arithmetic of the round's implementation. Its 272-byte frame holds the stage's arguments in the slots where the generation keeps them; the callee-saved registers are saved in the scratch space's control area. Its contract asks for 288 bytes of stack: the frame and the 16 bytes below it, which the generation's frame layout keeps apart.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -54428,8 +54394,6 @@ ret
 /// The last stage of a DSA parameter-generation attempt (FIPS 186-4 A.2.1), for a 2048-bit p and a 256-bit q: the generator search (`VG.Spec.Dsa.generator`) over the 256-byte big-endian h candidates of `hs`, from its front, with p at byte 25472, q at byte 25408 and (p - 1) / q at byte 25856 of `ws`, then the domain check (`VG.Spec.Dsa.parametersValid`) of what it finds. Returns 1 and writes p || q || g at byte 27008 of `ws` when both succeed, and 0 otherwise. Every byte of `ws` but those of the ranges 0..14720, 26240..26496, 27008..27552, 27840..27992, 28672..40960, 40960..56672 keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.GeneratorStage.contract`. p, q and the h candidates are public: timing may depend on all three.
-///
-/// Parameter generation's generator search and domain check on p, q and the exponent at their offsets of the generation's scratch space, with the arithmetic of the round's implementation. Its 272-byte frame holds the stage's arguments in the slots where the generation keeps them; the callee-saved registers are saved in the scratch space's control area. Its contract asks for 288 bytes of stack: the frame and the 16 bytes below it, which the generation's frame layout keeps apart.
 ///
 /// # Safety
 ///
@@ -58800,8 +58764,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.GeneratorStage.contract`. p, q and the h candidates are public: timing may depend on all three.
 ///
-/// Parameter generation's generator search and domain check on p, q and the exponent at their offsets of the generation's scratch space, with the arithmetic of the round's implementation. Its 272-byte frame holds the stage's arguments in the slots where the generation keeps them; the callee-saved registers are saved in the scratch space's control area. Its contract asks for 288 bytes of stack: the frame and the 16 bytes below it, which the generation's frame layout keeps apart.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -63171,8 +63133,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// Parameter generation's test on the candidate at its offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. Its 272-byte frame holds the test's arguments in the slots where the generation keeps them; the test keeps every callee-saved register.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -65905,8 +65865,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 256-bit number of 32 big-endian bytes at byte 25408 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 26624..26656, 28672..40960 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// Parameter generation's test on the candidate at its offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. Its 272-byte frame holds the test's arguments in the slots where the generation keeps them; the test keeps every callee-saved register.
 ///
 /// # Safety
 ///
@@ -68641,8 +68599,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// Parameter generation's test on the candidate at its offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. Its 272-byte frame holds the test's arguments in the slots where the generation keeps them; the test keeps every callee-saved register.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -71376,8 +71332,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// Parameter generation's test on the candidate at its offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. Its 272-byte frame holds the test's arguments in the slots where the generation keeps them; the test keeps every callee-saved register.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -74110,8 +74064,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 3072-bit number of 384 big-endian bytes at byte 25472 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 26624..27008, 28672..40960 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// Parameter generation's test on the candidate at its offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. Its 272-byte frame holds the test's arguments in the slots where the generation keeps them; the test keeps every callee-saved register.
 ///
 /// # Safety
 ///

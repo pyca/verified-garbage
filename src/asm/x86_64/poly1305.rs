@@ -150,8 +150,6 @@ pub(crate) const VG_POLY1305_BLOCKS_AVX2_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
 ///
-/// With AVX2: four blocks at a time, in four interleaved Horner evaluations, once there are at least 32 blocks; fewer, and the last `n mod 4`, with `vg_poly1305_blocks`. It sets MXCSR to Intel's value for data operand-independent timing (`0x1FBF`) around its `vpmuludq`s, and restores it.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -843,8 +841,6 @@ pub(crate) const VG_POLY1305_BLOCKS_AVX512_FEATURES: crate::cpu::Features = crat
 /// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// With AVX-512F: eight blocks at a time, in eight interleaved Horner evaluations in the quadwords of `zmm` registers, once there are at least 40 blocks; fewer with `vg_poly1305_blocks_avx2`, and the last `n mod 8` with `vg_poly1305_blocks`. It sets MXCSR to Intel's value for data operand-independent timing (`0x1FBF`) around its `vpmuludq`s, and restores it.
 ///
 /// # Safety
 ///
@@ -1614,8 +1610,6 @@ pub(crate) const VG_POLY1305_BLOCKS_IFMA_FEATURES: crate::cpu::Features = crate:
 /// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// With AVX-512 IFMA: eight blocks at a time, in eight interleaved Horner evaluations in the quadwords of `zmm` registers, as three limbs of 44 bits multiplied with `vpmadd52luq` and `vpmadd52huq`, once there are at least 28 blocks; fewer with `vg_poly1305_blocks_avx2`, and the last `n mod 8` with `vg_poly1305_blocks`. It sets MXCSR to Intel's value for data operand-independent timing (`0x1FBF`) around its multiply-adds, and restores it.
 ///
 /// # Safety
 ///
@@ -2584,8 +2578,6 @@ pub(crate) const VG_POLY1305_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_avx2`, and saves its caller's callee-saved registers in its working space.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -2767,8 +2759,6 @@ pub(crate) const VG_POLY1305_UPDATE_AVX512_FEATURES: crate::cpu::Features = crat
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_avx512`, and saves its caller's callee-saved registers in its working space.
 ///
 /// # Safety
 ///
@@ -2952,8 +2942,6 @@ pub(crate) const VG_POLY1305_UPDATE_IFMA_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_ifma`, and saves its caller's callee-saved registers in its working space.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -3132,8 +3120,6 @@ ret
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks`, and saves its caller's callee-saved registers in its working space.
 ///
 /// # Safety
 ///

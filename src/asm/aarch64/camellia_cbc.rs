@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline AArch64: a single-block scalar Feistel core with the 256-byte S-box resident in NEON registers. Fixed-address loads prepare the table and raw expanded keys once per call, by a call of `vg_camellia_prepare_encrypt_keys`, and each block is a call of `vg_camellia_encrypt_prepared`; secret indices select bytes only inside registers. Generic CBC encryption retains the IV pointer in x19, which neither function writes, and updates the chaining value after the final block.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -332,8 +330,6 @@ ret
 /// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline AArch64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call, by a call of `vg_camellia_prepare_keys`, and each batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over Camellia's ECB core. The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline PPC64LE: one block at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused: the table of round keys is built once per call, by a call of `vg_sm4_prepare_keys`, and each block is a call of `vg_sm4_crypt_prepared`. The mode is the generic OFB of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`; the prepared functions save them in the working space and restore them.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

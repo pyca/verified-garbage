@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// `KA` and `KB` by the bitsliced rounds of the block functions, on eight copies of the value; the subkeys as rotations of 64-bit words, stored byte-swapped with `stdbrx`. The working space (3312 bytes, our caller's r14-r31 among them) is on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -2878,8 +2876,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
 ///
-/// Bitsliced: 8 blocks at a time in general-purpose registers, copied through the working space, each half as eight 64-bit planes, the S-boxes as Boolean circuits, with no table lookups. The working space (3312 bytes, our caller's r14-r31 among them) is on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -5652,8 +5648,6 @@ blr",
 /// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
-///
-/// Bitsliced: 8 blocks at a time in general-purpose registers, copied through the working space, each half as eight 64-bit planes, the S-boxes as Boolean circuits, with no table lookups; the subkeys bitsliced in decryption's order, then encryption's rounds. The working space (3312 bytes, our caller's r14-r31 among them) is on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
@@ -9272,8 +9266,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Camellia.Prepared.prepareContract`. Constant time: only pointers, `ws_len`, `rounds` and `decrypt` may affect timing, not the subkeys.
 ///
-/// ECB's key setup alone, for the modes: the masks of the layers and the subkeys of 18 or 24 rounds bitsliced into the table of the working space, in the order `decrypt` selects, as eight copies each.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -10661,8 +10653,6 @@ blr",
 /// Camellia ECB (RFC 3713 §2.3, SP 800-38A §6.1) with `rounds` rounds of the 8 16-byte blocks at byte 3088 of `ws`, in place, under the subkeys that `vg_camellia_prepare_keys` wrote for `rounds` rounds at the bytes 384..424, 768..2432 (18 rounds) or 384..424, 768..2944 (24 rounds), in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..384, 424..768, 2944..3216 (the blocks' among them, not the subkeys') keeps its value, so the subkeys serve every batch. It is not part of the library's Rust API.
 ///
 /// Contract: `VG.Spec.Camellia.Prepared.cryptContract`. Constant time: only pointers, `ws_len` and `rounds` may affect timing, not the subkeys or the blocks.
-///
-/// ECB's eight blocks alone, for the modes: bitsliced in general-purpose registers, each half as eight 64-bit planes, the S-boxes as Boolean circuits, with no table lookups, under the table `vg_camellia_prepare_keys` wrote.
 ///
 /// # Safety
 ///

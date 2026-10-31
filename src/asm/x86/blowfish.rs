@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
 ///
-/// The initial schedule is written from immediates, the P-array keyed a byte of the key at a time, and the 521 encryptions run ECB's block function under the schedule as it is written. Our caller's `ebx`, `esi`, `edi` and `ebp`, the halves, the next entries' pointer and the encryptions left are kept in 64 bytes of working space on the stack, whose first 40 are zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -2875,8 +2873,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// One block at a time: each S-box lookup reads the 256 entries of its four byte planes, a word (four entries) of each at a time, keeping the bytes of the entry that is the index under masks made by `cmp` and `sbb`, so no address depends on the data or the schedule. Our caller's `ebx`, `esi`, `edi` and `ebp`, the halves, the data pointer and the blocks left are kept in 256 bytes of working space on the stack, whose first 40 are zeroed before returning.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -3263,8 +3259,6 @@ ret
 /// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// One block at a time: each S-box lookup reads the 256 entries of its four byte planes, a word (four entries) of each at a time, keeping the bytes of the entry that is the index under masks made by `cmp` and `sbb`, so no address depends on the data or the schedule. Our caller's `ebx`, `esi`, `edi` and `ebp`, the halves, the data pointer and the blocks left are kept in 256 bytes of working space on the stack, whose first 40 are zeroed before returning.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

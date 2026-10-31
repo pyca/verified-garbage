@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MlDsa.nttContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function saves `r14` and `r15` in a frame each on the stack (96 bytes), and stores a table of the 256 zetas in `scratch`.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -853,8 +851,6 @@ blr",
 /// The inverse of the ML-DSA number-theoretic transform, `NTT⁻¹` (FIPS 204 Algorithm 42), of `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
 /// Contract: `VG.Spec.MlDsa.nttInvContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function saves `r14` and `r15` in a frame each on the stack (96 bytes), and stores a table of the 256 negated zetas in `scratch`.
 ///
 /// # Safety
 ///
@@ -3417,10 +3413,6 @@ blr",
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTTContract`. Not constant time in the seed: timing may depend on the pointers and on `*seed` (public in ML-DSA: the seed `ρ` of the matrix and two indices), but not on anything else.
 ///
-/// It squeezes 1008 bytes of SHAKE128 output (6 blocks) and runs the loop of `RejNTTPoly` over them.
-///
-/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 34 bytes.
@@ -3539,10 +3531,6 @@ blr",
 /// `RejBoundedPoly` (FIPS 204 Algorithm 31): writes the polynomial with coefficients in `[-eta, eta]` sampled from the SHAKE256 output of the 66 bytes `*seed` to `*a` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 481 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.rejBoundedContract`. Not constant time in which half-bytes of the SHAKE256 output it rejects: timing may depend on the pointers, `eta`, and whether each half-byte of the first 1088 bytes of output is rejected (`rejBoundedLeak`), which is independent of the coefficients sampled from those accepted; but not on anything else of the seed or the output.
-///
-/// It squeezes 544 bytes of SHAKE256 output (4 blocks) and runs the loop of `RejBoundedPoly` over them. The coefficient of an accepted half-byte is computed without a branch or a table, so only whether each half-byte is accepted affects timing.
-///
-/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
 ///
 /// # Safety
 ///
@@ -3764,10 +3752,6 @@ blr",
 ///
 /// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
 ///
-/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks them with the loop of `vg_mldsa_bit_unpack`.
-///
-/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 66 bytes.
@@ -3977,10 +3961,6 @@ blr",
 /// `SampleInBall` (FIPS 204 Algorithm 29): writes the polynomial with `tau` coefficients 1 or -1 and the others 0 sampled from the SHAKE256 output of the `len` bytes at `ctilde` to `*c` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 221 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*c` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.sampleInBallContract`. Not constant time in the seed: timing may depend on the pointers, `len`, `tau` and the seed `c̃` at `ctilde`, but not on anything else.
-///
-/// It squeezes 272 bytes of SHAKE256 output (2 blocks) and runs the loop of `SampleInBall` over the 264 after the sign bits.
-///
-/// The function has no stack frame of its own: it saves `r27`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
 ///
 /// # Safety
 ///

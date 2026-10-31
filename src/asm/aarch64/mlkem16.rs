@@ -70,8 +70,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlKem.ntt16Contract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// mlkem-native's schedule (its `mlkem_ntt_aarch64_asm`, scheduled by SLOTHY): layers 1–3 eight vectors at a time, layers 4–7 32 coefficients at a time, the zetas multiplied by element; then each coefficient reduced to `[0, q)`. The low halves of `v8`–`v15` are kept in `x7`–`x14`. No stack, and the working space is not used.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 512 bytes.
@@ -615,8 +613,6 @@ ret
 /// The inverse of the ML-KEM number-theoretic transform, `NTT⁻¹` (FIPS 203 Algorithm 10), of `*f` (256 `u16` coefficients less than `q` = 3329), in place.
 ///
 /// Contract: `VG.Spec.MlKem.nttInv16Contract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// mlkem-native's schedule (its `mlkem_intt_aarch64_asm`, scheduled by SLOTHY), after the multiplication by `128⁻¹`: layers 7–4 32 coefficients at a time, layers 3–1 eight vectors at a time, the zetas multiplied by element, its Barrett reductions replaced by `x - SQRDMULH(x, 10) · q`; then each coefficient reduced to `[0, q)`. The low halves of `v8`–`v15` are kept in `x7`–`x14`. No stack, and the working space is not used.
 ///
 /// # Safety
 ///

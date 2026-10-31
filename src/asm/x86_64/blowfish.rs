@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
 ///
-/// The initial schedule is written from 521 immediates, the P-array keyed a byte of the key at a time, and the 521 encryptions run ECB's rounds under the schedule as it is written; each output leaves the vector registers through 32 bytes of working space on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -2029,8 +2027,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// One block at a time with SSE2: each S-box lookup scans the 256 entries of its four byte planes, 16 at a time, reusing one combined byte mask across the four planes, so no address depends on the data or the schedule. Each output block goes through 16 bytes of working space on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
@@ -2512,8 +2508,6 @@ ret
 /// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// One block at a time with SSE2: each S-box lookup scans the 256 entries of its four byte planes, 16 at a time, reusing one combined byte mask across the four planes, so no address depends on the data or the schedule. Each output block goes through 16 bytes of working space on the stack, zeroed before returning.
 ///
 /// # Safety
 ///

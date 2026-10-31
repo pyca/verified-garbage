@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline PPC64LE: one block at a time, with ECB's verified block code inlined (each multiplication modulo 2^16 + 1 a `mulld` of the residues and a reduction of the product from its halves, without branches), reading the subkeys in place. The mode is the generic one of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`, with its working space on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.

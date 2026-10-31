@@ -6,10 +6,6 @@
 ///
 /// Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` (`movq`) while it runs, and runs the code `vg_ecdsa_secp256k1_verify` would inline: the result into `D` (bytes 608 to 703), with the temporaries `t0`–`t5` (bytes 800 to 991), copied back to `P`, its field operations those of secp256k1's verification on four 64-bit words modulo `p` read at byte 64, multiplied with `mul` by word-by-word Montgomery multiplication, the products' temporary area bytes 128 to 159.
-///
-/// The doubling for `a = 0` (dbl-2009-l): 2 products and 5 squares, `Z' = 2YZ` a product, into `D` and copied back to `P`; constant time.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -2488,10 +2484,6 @@ ret
 /// The sum `P = P + Q` of points on secp256k1 in Jacobian coordinates, `Q` given with its `Z²` at byte 5408 and `Z³` at byte 5440 (add-1998-cmo-2, with the point at infinity, equal and opposite points decided and handled). Coordinates are numbers of 4 64-bit words (`32` bytes), little-endian, in Montgomery's form modulo secp256k1's prime `p`, and a point is three at consecutive offsets of `ws`: `P` at bytes 512 to 607, `Q` at bytes 704 to 799. The function reads `p` at byte 64. The function's own working space is bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`; every other byte of `ws` but the result's keeps its value.
 ///
 /// Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`. Not constant time: the timing may depend on the coordinates of `P` and `Q` (and `Q`'s `Z²` and `Z³`), which must be public.
-///
-/// The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` (`movq`) while it runs, and runs the code `vg_ecdsa_secp256k1_verify` would inline: the result into `D` (bytes 608 to 703), with the temporaries `t0`–`t5` (bytes 800 to 991), copied back to `P`, its field operations those of secp256k1's verification on four 64-bit words modulo `p` read at byte 64, multiplied with `mul` by word-by-word Montgomery multiplication, the products' temporary area bytes 128 to 159.
-///
-/// Branches on the coordinates, which are public: `Q` copied if `P`'s `Z` is zero, `P` kept if `Q`'s, else `H` and `r` from six products; the doubling of `P` for `a = 0` (dbl-2009-l) if both are zero, `(0 : 1 : 0)` if only `H` is, else the sum's tail, eight products.
 ///
 /// # Safety
 ///
@@ -9356,10 +9348,6 @@ ret
 /// The sum `P = P + Q` of points on secp256k1 in Jacobian coordinates, `Q`'s `Z` 1 (the mixed addition, with the point at infinity `P`, equal and opposite points decided and handled; `Q`'s `Z` is read only to copy `Q` when `P` is the point at infinity). Coordinates are numbers of 4 64-bit words (`32` bytes), little-endian, in Montgomery's form modulo secp256k1's prime `p`, and a point is three at consecutive offsets of `ws`: `P` at bytes 512 to 607, `Q` at bytes 704 to 799. The function reads `p` at byte 64. The function's own working space is bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`; every other byte of `ws` but the result's keeps its value.
 ///
 /// Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`. Not constant time: the timing may depend on the coordinates of `P` and `Q` (and `Q`'s `Z²` and `Z³`), which must be public.
-///
-/// The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` (`movq`) while it runs, and runs the code `vg_ecdsa_secp256k1_verify` would inline: the result into `D` (bytes 608 to 703), with the temporaries `t0`–`t5` (bytes 800 to 991), copied back to `P`, its field operations those of secp256k1's verification on four 64-bit words modulo `p` read at byte 64, multiplied with `mul` by word-by-word Montgomery multiplication, the products' temporary area bytes 128 to 159.
-///
-/// Branches on the coordinates, which are public: `Q` copied if `P`'s `Z` is zero, else `H` and `r` from four products; the doubling of `P` for `a = 0` (dbl-2009-l) if both are zero, `(0 : 1 : 0)` if only `H` is, else the sum's tail, eight products.
 ///
 /// # Safety
 ///

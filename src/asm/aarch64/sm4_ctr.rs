@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
-/// Baseline AArch64: sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call, by a call of `vg_sm4_prepare_keys`, and each batch is a call of `vg_sm4_crypt_prepared`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

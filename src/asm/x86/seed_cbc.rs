@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time (CBC encryption is sequential), through `vg_seed_encrypt_blocks`, called on the block with the first 1088 bytes of the working space, its arguments pushed in a frame (20 bytes of stack with the return address). The mode is the generic CBC encryption of `Impl/Modes/X86/`, whose data pointer and steps left wait in `esi` and `ebp` across the call. The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -422,8 +420,6 @@ ret
 /// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline IA-32: one block at a time, through `vg_seed_decrypt_blocks`, called on the block with the first 1088 bytes of the working space, its arguments pushed in a frame (20 bytes of stack with the return address). The mode is the generic CBC decryption of `Impl/Modes/X86/`, whose data pointer and steps left wait in `esi` and `ebp` across the call. The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

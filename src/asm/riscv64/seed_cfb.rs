@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline RV64IM: one block at a time, through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen (inlined, with ECB's setup), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, the other fifteen lanes unused, reading the round keys in place. The mode is the generic one of `Impl/Modes/RISCV64/`, which keeps its state in `s1`–`s4`; the rounds use every callee-saved register, so around each block our caller's `s0`–`s11` are saved in ECB's working space, the modes' `s1`–`s3` wait in `a1`, `a2` and `ra`, and `ra` in the frame. The frame (1104 bytes, ECB's working space among them) is on the stack, 16-byte aligned, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -2988,8 +2986,6 @@ ret
 /// SEED-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption (also for decryption) under the schedule written by `vg_seed_expand_key`.
 ///
 /// Contract: `VG.Spec.Seed.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline RV64IM: one block at a time, through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen (inlined, with ECB's setup), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, the other fifteen lanes unused, reading the round keys in place. The mode is the generic one of `Impl/Modes/RISCV64/`, which keeps its state in `s1`–`s4`; the rounds use every callee-saved register, so around each block our caller's `s0`–`s11` are saved in ECB's working space, the modes' `s1`–`s3` wait in `a1`, `a2` and `ra`, and `ra` in the frame. The frame (1104 bytes, ECB's working space among them) is on the stack, 16-byte aligned, zeroed before returning.
 ///
 /// # Safety
 ///

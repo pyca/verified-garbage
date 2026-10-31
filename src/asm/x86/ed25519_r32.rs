@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` of `VG.Spec.Ed25519.Point32`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `ebx`, `ebp` and `edi` in its own working space and runs the addition as the x86 Ed25519 code inlined it: nine products of eight-word field elements, by X25519's x86 product (product scanning, folded with `2^256 = 38`), and additions and subtractions (`a - b + 4p`, so that every word is a natural number), with the temporaries in bytes 320 to 575. It then restores the registers.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -7245,8 +7243,6 @@ ret
 ///
 /// Contract: `addAffineContract` of `VG.Spec.Ed25519.Point32`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `ebx`, `ebp` and `edi` in its own working space and runs the addition of the affine point as the x86 comb of `vg_ed25519_scalar_base` inlined it: seven products of eight-word field elements, `2Z₁` by an addition, by X25519's x86 product (product scanning, folded with `2^256 = 38`), and additions and subtractions (`a - b + 4p`, so that every word is a natural number), with the temporaries in bytes 320 to 575. It then restores the registers.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -12762,8 +12758,6 @@ ret
 /// Point doubling on edwards25519: replaces the point at byte 64 of the working space `ws` with its double, by RFC 8032's doubling formula in extended coordinates (§5.1.4). A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575 and 864 to 1023) keeps its value.
 ///
 /// Contract: `doubleContract` of `VG.Spec.Ed25519.Point32`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions. The function saves `ebx`, `ebp` and `edi` in its own working space and runs RFC 8032's doubling with `-E = 2XY` from one product and `F`, `G` and `H` negated: eight products of eight-word field elements, by X25519's x86 product (product scanning, folded with `2^256 = 38`), and additions and subtractions (`a - b + 4p`, so that every word is a natural number), with the temporaries in bytes 320 to 575. It then restores the registers.
 ///
 /// # Safety
 ///

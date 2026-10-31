@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements are eight 56-bit limbs. A multiplication keeps its operands in registers and accumulates two-word coefficients with Karatsuba's identity for `2^224` (48 products, 30 for a square), reduced with `2^448 = 2^224 + 1` (mod p); sums and differences are not reduced. Each ladder step forms its sums and differences from the conditionally swapped coordinates directly, and does four of its ten products as two pairs of AdvSIMD multiplications (sixteen 28-bit limbs, the two products in the two 64-bit lanes), each interleaved with scalar operations independent of it. Inversion uses an addition chain for `p - 2`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -5713,8 +5711,6 @@ ret
 /// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// `X448(k, 5)` is the u-coordinate `y² / x²` of `[k] B` on edwards448, `B` Ed448's base point (RFC 7748 §4.2's 4-isogeny), which the function computes with a comb rather than the ladder: the scalar's 112 signed radix-16 digits select, in constant time (reading every entry), entries `[m 256^j] B` (`m ≤ 8`) of 56 tables in the static `VG_X448_COMB`, added to two projective accumulators with RFC 8032's complete addition (a call of `vg_ed448_r56_comb_base`), then `16 A + B` (five calls of `vg_ed448_r56_point_add`) and `Y² / X²`. Field elements are eight 56-bit limbs, multiplied as `vg_x448`'s are. The function saves its caller's callee-saved registers in `scratch`.
 ///
 /// # Safety
 ///

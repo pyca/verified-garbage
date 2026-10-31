@@ -4,8 +4,6 @@
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
-/// Checks the domain once and retains RSA's five-tooth comb for the sampled private exponent. Public-modulus setup accelerates the subgroup check; private exponentiation uses a fixed schedule and masked selection. Every exit clears the sampled scalar; failure clears the output and reports exact tape consumption. The checker and prevalidated derivation are internal bodies.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -6311,8 +6309,6 @@ ret
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
 ///
-/// Checks the generator subgroup once and derives the public key with fixed-iteration Montgomery exponentiation. The public key subgroup identity follows from the generator check. A mask clears every output component on failure; saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -10910,8 +10906,6 @@ ret
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
 ///
-/// Uses the signer's public-width dispatch and Montgomery arithmetic. The domain's generator range and subgroup power are checked once; the mask also checks that q divides p-1. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -14166,8 +14160,6 @@ ret
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
-/// Rejection sampling and signing retries are verified against the bounded random-tape specification; each signing attempt calls `vg_dsa_sign`. Every failure zeros the entire output. Callee-saved registers and the loop's state reside in a stack frame.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -14469,8 +14461,6 @@ ret
 }
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
-///
-/// Each supported (p, q) width has its own code, chosen by the public lengths. Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`; exponentiation uses fixed-iteration square-and-multiply with a masked selection. The digest's prefix, clamped to q's actual byte width, is reduced byte by byte. Validation accumulates a mask; every failure zeros the entire output. Callee-saved registers reside in `scratch`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -24160,8 +24150,6 @@ ret
 }
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
-///
-/// Each supported (p, q) width has its own code, chosen by the public lengths. Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`. Signature scalars and the digest do not affect the leakage trace. Callee-saved registers reside in `scratch`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -43833,8 +43821,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.reduceContract`. Constant time but for the addresses and lengths of `ws` and `data`: timing does not depend on the numbers or the bytes.
 ///
-/// The context's start (the modulus's inverse), then the bytes reduced one at a time: eight modular doublings and an addition each. The callee-saved registers, and the bytes' address and length, reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -44404,8 +44390,6 @@ ret
 /// Modular reduction at fixed offsets of a working space: writes at byte 496 of `ws` the number of 32 bytes congruent modulo `m` to the big-endian value of the `data_len` bytes at `data`, and below `m`, for the modulus `m` of 32 bytes at byte 64, little-endian. Every byte of `ws` but those of the ranges 0..64, 136..712 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.reduceContract`. Constant time but for the addresses and lengths of `ws` and `data`: timing does not depend on the numbers or the bytes.
-///
-/// The context's start (the modulus's inverse), then the bytes reduced one at a time: eight modular doublings and an addition each. The callee-saved registers, and the bytes' address and length, reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -44977,8 +44961,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.mulContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup of the DSA functions, then two Montgomery multiplications: by R² mod m, which encodes the first operand, and by the second, which decodes their product. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -45367,8 +45349,6 @@ ret
 /// Modular multiplication at fixed offsets of a working space: writes at byte 496 of `ws` the number `a b mod m` of 32 bytes, for the modulus `m` of 32 bytes at byte 64 and the numbers `a` and `b` of 32 bytes at bytes 424 and 640, each little-endian. Every byte of `ws` but those of the ranges 0..64, 136..712 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.mulContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup of the DSA functions, then two Montgomery multiplications: by R² mod m, which encodes the first operand, and by the second, which decodes their product. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -45759,8 +45739,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.mulContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup of the DSA functions, then two Montgomery multiplications: by R² mod m, which encodes the first operand, and by the second, which decodes their product. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -46149,8 +46127,6 @@ ret
 /// Modular multiplication at fixed offsets of a working space: writes at byte 3184 of `ws` the number `a b mod m` of 256 bytes, for the modulus `m` of 256 bytes at byte 64 and the numbers `a` and `b` of 256 bytes at bytes 2664 and 4224, each little-endian. Every byte of `ws` but those of the ranges 0..64, 584..4744 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.mulContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup of the DSA functions, then two Montgomery multiplications: by R² mod m, which encodes the first operand, and by the second, which decodes their product. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -46541,8 +46517,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModArith.mulContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup of the DSA functions, then two Montgomery multiplications: by R² mod m, which encodes the first operand, and by the second, which decodes their product. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -46931,8 +46905,6 @@ ret
 /// Modular exponentiation at fixed offsets of a working space: writes at byte 1648 of `ws` the number `b^x mod m` of 128 bytes, for the modulus `m` of 128 bytes at byte 64, the base `b` of 128 bytes at byte 1384 and the exponent `x` of 20 bytes at byte 2176, each little-endian. Every byte of `ws` but those of the ranges 0..64, 328..2440 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -47363,8 +47335,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -47793,8 +47763,6 @@ ret
 /// Modular exponentiation at fixed offsets of a working space: writes at byte 3184 of `ws` the number `b^x mod m` of 256 bytes, for the modulus `m` of 256 bytes at byte 64, the base `b` of 256 bytes at byte 2664 and the exponent `x` of 20 bytes at byte 4224, each little-endian. Every byte of `ws` but those of the ranges 0..64, 584..4744 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -48225,8 +48193,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -48655,8 +48621,6 @@ ret
 /// Modular exponentiation at fixed offsets of a working space: writes at byte 496 of `ws` the number `b^x mod m` of 32 bytes, for the modulus `m` of 32 bytes at byte 64, the base `b` of 32 bytes at byte 424 and the exponent `x` of 28 bytes at byte 640, each little-endian. Every byte of `ws` but those of the ranges 0..64, 136..712 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -49087,8 +49051,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -49517,8 +49479,6 @@ ret
 /// Modular exponentiation at fixed offsets of a working space: writes at byte 496 of `ws` the number `b^x mod m` of 32 bytes, for the modulus `m` of 32 bytes at byte 64, the base `b` of 32 bytes at byte 424 and the exponent `x` of 32 bytes at byte 640, each little-endian. Every byte of `ws` but those of the ranges 0..64, 136..712 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -49949,8 +49909,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -50379,8 +50337,6 @@ ret
 /// Modular exponentiation at fixed offsets of a working space: writes at byte 1648 of `ws` the number `b^x mod m` of 128 bytes, for the modulus `m` of 128 bytes at byte 64, the base `b` of 128 bytes at byte 1384 and the exponent `x` of 112 bytes at byte 2176, each little-endian. Every byte of `ws` but those of the ranges 0..64, 328..2440 (the function's own, and the result's) keeps its value.
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
-///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
 ///
 /// # Safety
 ///
@@ -50811,8 +50767,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -51242,8 +51196,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ModPow.powContract`. Constant time but for the address and length of `ws`: timing does not depend on the numbers.
 ///
-/// The context's setup and the fixed-schedule square-and-multiply of the DSA functions, with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. The callee-saved registers reside in the header of `ws`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -51672,8 +51624,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 160-bit number of 20 big-endian bytes at byte 1600 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 0..1600 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// RSA's i686 candidate machinery on a given candidate: its big-endian octets are imported into a Montgomery workspace of at least four 64-bit words, sieved with the prepared small-prime inverse table, and tested by the blinded loop with the shared Miller–Rabin round, witnesses cut to the candidate's width. One private call frame supplies the prepared multiplication capacity for the entire test.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -52463,8 +52413,6 @@ ret
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// RSA's i686 candidate machinery on a given candidate: its big-endian octets are imported into a Montgomery workspace of at least four 64-bit words, sieved with the prepared small-prime inverse table, and tested by the blinded loop with the shared Miller–Rabin round, witnesses cut to the candidate's width. One private call frame supplies the prepared multiplication capacity for the entire test.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -53240,8 +53188,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 1024-bit number of 128 big-endian bytes at byte 4288 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 0..4288 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// RSA's i686 candidate machinery on a given candidate: its big-endian octets are imported into a Montgomery workspace of at least four 64-bit words, sieved with the prepared small-prime inverse table, and tested by the blinded loop with the shared Miller–Rabin round, witnesses cut to the candidate's width. One private call frame supplies the prepared multiplication capacity for the entire test.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -54138,8 +54084,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 2048-bit number of 256 big-endian bytes at byte 7872 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 0..7872 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// RSA's i686 candidate machinery on a given candidate: its big-endian octets are imported into a Montgomery workspace of at least four 64-bit words, sieved with the prepared small-prime inverse table, and tested by the blinded loop with the shared Miller–Rabin round, witnesses cut to the candidate's width. One private call frame supplies the prepared multiplication capacity for the entire test.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -55196,8 +55140,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 3072-bit number of 384 big-endian bytes at byte 11456 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 0..11456 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// RSA's i686 candidate machinery on a given candidate: its big-endian octets are imported into a Montgomery workspace of at least four 64-bit words, sieved with the prepared small-prime inverse table, and tested by the blinded loop with the shared Miller–Rabin round, witnesses cut to the candidate's width. One private call frame supplies the prepared multiplication capacity for the entire test.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -56412,8 +56354,6 @@ ret
 }
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
-///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, generator selection and output copying or zeroing, calling the probable-prime tests of each size, the shared exponentiation and the domain check, each verified separately. The three input tapes are public under the contract. Only 1024/160, 2048/256 and 3072/256 are generated.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -61564,8 +61504,6 @@ ret
 pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
-///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, generator selection and output copying or zeroing, calling the probable-prime tests of each size, the shared exponentiation and the domain check, each verified separately. The three input tapes are public under the contract. Only 1024/160, 2048/256 and 3072/256 are generated.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -66718,8 +66656,6 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES: crate::cpu::Fea
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, generator selection and output copying or zeroing, calling the probable-prime tests of each size, the shared exponentiation and the domain check, each verified separately. The three input tapes are public under the contract. Only 1024/160, 2048/256 and 3072/256 are generated.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -71870,8 +71806,6 @@ ret
 pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
-///
-/// The complete bounded parameter search runs in verified code: seed hashing, subgroup construction, prime search, generator selection and output copying or zeroing, calling the probable-prime tests of each size, the shared exponentiation and the domain check, each verified separately. The three input tapes are public under the contract. Only 1024/160, 2048/256 and 3072/256 are generated.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

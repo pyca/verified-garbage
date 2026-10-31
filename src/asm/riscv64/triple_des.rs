@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not key bytes.
 ///
-/// Scalar key expansion with fixed bit permutations (one bit at a time, by shifts and masks) and public round-count branches, in temporaries and argument registers only. The key and the schedule are accessed a byte at a time, since the contract states no alignment for them.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1607,10 +1605,6 @@ ret
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// One block at a time in general-purpose registers, with IP and FP shared across the three DES passes. Each round looks the eight S-boxes up at once in the 64 lanes of a word: E of R and the round key are unpacked into a byte per S-box, each lane's six input bits are spread into masks, and a multiplexer tree over 32 words of constants selects every lane's table entry; P moves the outputs in groups by shift distance.
-///
-/// The schedules are copied a byte at a time into a frame of 944 bytes on the stack, which is 16-byte aligned, since the contract states no alignment for them; the frame also holds the callee-saved registers the rounds use and the rounds' 55 words of constants, which each block stores first, and is zeroed before returning. Nothing is allocated for no blocks.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -2935,10 +2929,6 @@ ret
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// One block at a time in general-purpose registers, with IP and FP shared across the three DES passes, with the reverse EDE key order. Each round looks the eight S-boxes up at once in the 64 lanes of a word: E of R and the round key are unpacked into a byte per S-box, each lane's six input bits are spread into masks, and a multiplexer tree over 32 words of constants selects every lane's table entry; P moves the outputs in groups by shift distance.
-///
-/// The schedules are copied a byte at a time into a frame of 944 bytes on the stack, which is 16-byte aligned, since the contract states no alignment for them; the frame also holds the callee-saved registers the rounds use and the rounds' 55 words of constants, which each block stores first, and is zeroed before returning. Nothing is allocated for no blocks.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -202,8 +200,6 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -316,8 +312,6 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -423,8 +417,6 @@ blr",
 /// Montgomery's product modulo P-224's order `n`: writes the number below the modulus congruent to `a b 2^-256` to `o`. The numbers are 4 64-bit words (`32` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3840 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -620,8 +612,6 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -733,8 +723,6 @@ blr",
 /// The difference modulo P-224's order `n`: writes `(a - b) mod` the modulus to `o`. The numbers are 4 64-bit words (`32` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3840 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///

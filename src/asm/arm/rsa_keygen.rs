@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaKeyGen.keyContract`. Timing may depend on the pointers, the lengths, `e`, and the value returned, not on the primes or the key.
 ///
-/// Baseline ARMv7, on the working space of the RSA key routines, in 32-bit limbs, and their constant-time arithmetic: `p` and `q` swapped under the mask of `p < q`; `lcm(p − 1, q − 1)` as `(p − 1)(q − 1)` divided by `gcd(p − 1, q − 1)`, its power of two found by `8 p_len` halving steps under masks and its odd part by the binary extended Euclidean algorithm; `d` by the inverse of `L mod e` modulo `e` for an odd `e` (then `d = (L (e − x) + 1) / e`), or of `e` modulo `L` for an even one; `qInv`, `dP` and `dQ` by the inverse and the long division; the checks as masks, the outputs stored under the final one. The code branches only on `e` and on whether `d` is too small (the status 2).
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads and writes of `n_len` bytes.
@@ -7570,8 +7568,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, the lengths, `e`, and on what became of the candidate: for a probable prime, on how many octets of `rand` were read; for a candidate rejected for being too close to `p`, on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not on `p`, or on the candidate if it is accepted.
 ///
-/// Baseline ARMv7, on the working space of the RSA key routines, in 32-bit limbs: the candidate's check against `p` under masks; trial division by Montgomery reduction of the candidate's 16-bit halves modulo each small prime, with `−s⁻¹ mod 2^16` by Newton's iteration; `gcd(c − 1, e)` by the binary extended Euclidean algorithm; then Montgomery multiplication modulo the candidate, whose working space is the key arrays from 21 on, and each witness, fixed under masks, in Montgomery form for a call of the shared `vg_miller_rabin_round`, whose frame takes the 56 bytes below this function's. Branches release only the checks and witness results allowed by the RSA candidate contract.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -14745,8 +14741,6 @@ pub(crate) const VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES: crate::cpu::Features = 
 /// One candidate for a prime of an RSA key, as BoringSSL's `generate_prime` tests it (FIPS 186-5 Appendix A.1.3 steps 4 and 5). Reads from the front of `rand` `out_len` octets, most significant first, sets the two most significant bits and the least significant bit, and tests the candidate `c`: too close to `p` (`|p − c| ≤ 2^(8 out_len − 100)`, if `p_len` is not 0); then divisible by one of the first 512 primes (1024 above 1024 bits) but 2; then `gcd(c − 1, e) ≠ 1`; then Miller–Rabin (FIPS 186-5 B.3.1), with the witnesses read from `rand` after the candidate, at least 16 of them and as many as it takes for `BN_prime_checks_for_size` of them to be uniform. Returns 1 and writes `c` to `out` if it passes, 2 if it is too close to `p`, 3 if it fails otherwise, and writes the number of octets of `rand` it read to `used`; or returns 0 if `rand` is too short, for which the caller calls it again with `rand` extended by more random octets. `out` is zeros but for 1, and `used` is 0 for 0. `e` (`e_len` bytes) and `p` (`p_len` bytes) are most significant first.
 ///
 /// Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, the lengths, `e`, and on what became of the candidate: for a probable prime, on how many octets of `rand` were read; for a candidate rejected for being too close to `p`, on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not on `p`, or on the candidate if it is accepted.
-///
-/// Baseline ARMv7, on the working space of the RSA key routines, in 32-bit limbs: the candidate's check against `p` under masks; trial division by Montgomery reduction of the candidate's 16-bit halves modulo each small prime, with `−s⁻¹ mod 2^16` by Newton's iteration; `gcd(c − 1, e)` by the binary extended Euclidean algorithm; then Montgomery multiplication modulo the candidate, whose working space is the key arrays from 21 on, and each witness, fixed under masks, in Montgomery form for a call of the shared `vg_miller_rabin_round`, whose frame takes the 56 bytes below this function's. Branches release only the checks and witness results allowed by the RSA candidate contract.
 ///
 /// # Safety
 ///

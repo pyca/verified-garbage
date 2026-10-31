@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline ARMv7: prepare the bitsliced round keys once, then encrypt each feedback block in order. The 1512-byte working space is kept on the stack and zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

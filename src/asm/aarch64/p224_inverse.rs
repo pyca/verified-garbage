@@ -6,8 +6,6 @@
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
-/// The function keeps `x19` in bytes 2584 to 2591 of `ws` while it runs, and computes the inverse modulo `p` by Bernstein and Yang's divsteps, in batches of 59 (10 batches for four words), each run on the low words of `f` and `g` and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 2296 to 2583, then multiplies by a constant (`2^(5 B) R³ mod p`) to return to Montgomery form, by word-by-word Montgomery multiplication with `mul` and `umulh`, its temporary area at bytes 128 to 159; nothing depends on the numbers but through masks and `csel`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1997,8 +1995,6 @@ ret
 /// The power `A = x^(n-2)` modulo P-224's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 1248 of `ws`. Numbers are 4 64-bit words (`32` bytes), little-endian, in Montgomery's form modulo P-224's order `n`. The function reads `n` at byte 96 and the number to invert at byte 1248, and writes the result at bytes 992 to 1023, below `n`. Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invNContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
-///
-/// The function keeps `x19` in bytes 2584 to 2591 of `ws` while it runs, and computes the inverse modulo `n` by Bernstein and Yang's divsteps, in batches of 59 (10 batches for four words), each run on the low words of `f` and `g` and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 2296 to 2583, then multiplies by a constant (`2^(5 B) R³ mod n`) to return to Montgomery form, by word-by-word Montgomery multiplication with `mul` and `umulh`, its temporary area at bytes 128 to 159; nothing depends on the numbers but through masks and `csel`.
 ///
 /// # Safety
 ///

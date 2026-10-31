@@ -9,8 +9,6 @@ pub(crate) const VG_AES_OFB_AESNI_FEATURES: crate::cpu::Features = crate::cpu::F
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks_aesni`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -73,8 +71,6 @@ ret
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`.
 ///
 /// # Safety
 ///
@@ -140,8 +136,6 @@ pub(crate) const VG_AES_OFB_VAES_FEATURES: crate::cpu::Features = crate::cpu::Fe
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks_vaes`.
 ///
 /// # Safety
 ///

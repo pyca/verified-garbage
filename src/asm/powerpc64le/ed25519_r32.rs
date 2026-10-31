@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` of `VG.Spec.Ed25519.Point32`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions and only volatile registers. The function runs the complete addition formula: nine products of eight-word field elements, by X25519's PPC64LE product inlined (row by row, with `mulld`, then `lo + 38 hi` and the carry folded in), and additions and subtractions (`a - b + 4p`, so that every word is a natural number), with the temporaries in bytes 320 to 575.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.

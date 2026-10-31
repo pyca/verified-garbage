@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch`, `vg_sha512_update_scratch` and `vg_hmac_sha512_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores through `scratch`, and tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, our caller's registers, the candidate and the shifted digest are kept in a 360-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 132 bytes.

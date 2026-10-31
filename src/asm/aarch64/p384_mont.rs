@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, saves the callee-saved registers it writes in lanes of `v16`–`v20`, and keeps all of `[b]` in registers. Its schedule is adapted from s2n-bignum's `bignum_montmul_p384_alt` (Apache-2.0 OR ISC OR MIT-0): the full twelve-word product in registers (`mul` and `umulh`, one word of `[a]` loaded per row), then six short Montgomery reductions of its low half, each multiplying by the three nonzero words of `2^384 - p` rather than by `p`, then the high half added and a final conditional subtraction against `p`, built in registers, selected by `csel`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -342,8 +340,6 @@ ret
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function is the product modulo P-384's `p` (its saves, reductions and final subtraction) with `[a]` loaded in place of `[b]` and a square in place of the product, its schedule adapted from s2n-bignum's `bignum_montsqr_p384_alt` (Apache-2.0 OR ISC OR MIT-0): the fifteen products of distinct words once (a `mul` and `umulh` row for each word), the sum doubled, then the six squares of the words added.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -621,8 +617,6 @@ ret
 /// Montgomery's product modulo P-384's order `n`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets, saves the callee-saved registers it writes in lanes of `v16`–`v19`, writes the modulus's words (`movz`/`movk`) into its own working space, and runs the inline product of the curve's code through pointers to the operands and the result: word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, the accumulator in registers, four words of `[b]` in registers and the others loaded), each reduction step multiplying the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adding that multiple of the modulus, then a final conditional subtraction selected by `csel`.
 ///
 /// # Safety
 ///

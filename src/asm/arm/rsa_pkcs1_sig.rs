@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame and signs it with `vg_rsa_private_checked`, which checks the signature against `e`, then overwrites the frame's encoding with zeros. Only the lengths, the hash function and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -1095,8 +1093,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of `digest` beside the result and compares the two without a branch, and returns the public operation's status masked with the encoding's success and the comparison: nothing after the call branches on its result.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -2165,8 +2161,6 @@ bx lr",
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
-///
-/// ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of the result beside it and compares the two, then copies those bytes to `out` and masks them to zeros, and the result to 0, unless the public operation succeeded and the two are equal: nothing after the call branches on its result.
 ///
 /// # Safety
 ///
@@ -3278,8 +3272,6 @@ pub(crate) const VG_RSA_PKCS1_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame and signs it with `vg_rsa_private_checked_umaal`, which checks the signature against `e`, then overwrites the frame's encoding with zeros. Only the lengths, the hash function and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -4373,8 +4365,6 @@ pub(crate) const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of `digest` beside the result and compares the two without a branch, and returns the public operation's status masked with the encoding's success and the comparison: nothing after the call branches on its result.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -5449,8 +5439,6 @@ pub(crate) const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES: crate::cpu::Fe
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
-///
-/// ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of the result beside it and compares the two, then copies those bytes to `out` and masks them to zeros, and the result to 0, unless the public operation succeeded and the two are equal: nothing after the call branches on its result.
 ///
 /// # Safety
 ///

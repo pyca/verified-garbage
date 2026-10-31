@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
-/// Baseline x86-64: the 32 inputs of `G` from 64-bit rotations of the key, then `G` of sixteen at a time, bitsliced in general-purpose registers through the AES S-box circuit, grouping the affine layer's parity-specific XOR sums before masking.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -1214,8 +1212,6 @@ ret
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline x86-64: calls `vg_seed_encrypt_blocks` with its working space on the stack.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -1377,8 +1373,6 @@ ret
 ///
 /// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline x86-64: calls `vg_seed_decrypt_blocks` with its working space on the stack.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -1539,8 +1533,6 @@ ret
 /// SEED encryption of whole blocks (RFC 4269 §2, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption under the schedule written by `vg_seed_expand_key`, with the working space in `*scratch`. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.blocksContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Baseline x86-64: sixteen blocks at a time, each `G` of a round bitsliced in general-purpose registers through the AES S-box circuit (SEED's S-boxes are affine maps of AES's), grouping the affine layer's parity-specific XOR sums before masking, with no table lookups. Uses the first 1056 bytes of `scratch`.
 ///
 /// # Safety
 ///
@@ -4276,8 +4268,6 @@ ret
 /// SEED decryption of whole blocks (RFC 4269 §2.4, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption under the schedule written by `vg_seed_expand_key` (the encryption procedure with the round keys in reverse order), with the working space in `*scratch`. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.blocksContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Baseline x86-64: sixteen blocks at a time, each `G` of a round bitsliced in general-purpose registers through the AES S-box circuit (SEED's S-boxes are affine maps of AES's), grouping the affine layer's parity-specific XOR sums before masking, with no table lookups. Uses the first 1056 bytes of `scratch`.
 ///
 /// # Safety
 ///

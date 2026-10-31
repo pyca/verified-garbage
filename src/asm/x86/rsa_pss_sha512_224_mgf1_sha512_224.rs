@@ -10,8 +10,6 @@
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then checks EMSA-PSS in its working space without branching on the encoding: `maskedDB` is unmasked with MGF1, and the end of `DB`'s padding is found by a scan of all its bytes. A specified salt length copies that many trailing bytes of `DB` into `M'` and hashes only the blocks it needs; an unknown salt length shifts `DB` into place in ten masked passes and hashes the blocks of the longest salt. Only the lengths, the salt-length mode and the public key decide a branch or an address.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1016,8 +1014,6 @@ ret
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512/224 and MGF1 with SHA-512/224, of a SHA-512/224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
-///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

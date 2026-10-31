@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
 ///
-/// Baseline i686: fixed four-bit windows and a full masked scan of all sixteen powers. Fourteen Montgomery products (calls of `vg_rsa_mont_mul`) build the table once. The candidate's Montgomery header, inverse and constants are reused by every product and across witnesses. Four unconditional squares precede each window; three final squares mask their flag updates with the threshold derived from the prepared exponent marker. The result is returned without branching on it.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.

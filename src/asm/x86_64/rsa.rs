@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// Baseline x86-64: for n whose top bit is set and whose number of words is a multiple of 4, R² mod n from R - n by steps of long division, a word at a time (Knuth's Algorithm D, each quotient digit by Möller and Granlund's division by a reciprocal of n's top word, with its corrections by masks), then two squarings; for any other n, by constant-time doublings and squarings. Montgomery multiplication by calls of `vg_rsa_mont_mul`.
-///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
@@ -494,8 +492,6 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES: crate::cpu::Features = c
 /// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
-///
-/// `vg_rsa_public_precompute`'s code, with Montgomery multiplication by calls of `vg_rsa_mont_mul_adx`, and, for n whose top bit is set and whose number of words is a multiple of 4, R² mod n from R - n by w steps of long division and no squarings: each quotient digit as there, and the step `x 2^64 - q n` in one pass over the words with MULX and two carry chains (ADCX, ADOX), n added back by a branch when the result is negative (n is public).
 ///
 /// # Safety
 ///
@@ -1348,8 +1344,6 @@ ret
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
-///
-/// Baseline x86-64: `e` is checked first, its bytes read into a register saturated at `2^34 - 1` once they reach `2^33`; then Montgomery multiplication on 64-bit words. The result is the input raised to `e - 1` (`e` is odd): for `e = 65537` by sixteen squares, otherwise with the exponent less one scanned left to right from its first set bit, which starts the result as the input, a square per later bit and a multiplication per later set bit; then one multiplication by the input itself adds the last bit and leaves Montgomery form at once. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe.
 ///
 /// # Safety
 ///
@@ -2346,8 +2340,6 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES: crate::cpu::Fea
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
-///
-/// The exponentiation of the baseline, with the last multiplication by the input itself, by Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once) for a number of words that is a multiple of 4 (from 4 to 2^30), and the baseline's otherwise. A product is tiled; a square (all sixteen for `e = 65537`, the operands' indices telling it publicly) computes each product of two different words once, in triangular tiles when the number of words is a multiple of 8, and doubles their sum before adding the words' squares, then reduces.
 ///
 /// # Safety
 ///
@@ -11630,8 +11622,6 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES: crate::cpu::Fe
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
-///
-/// For `e = 65537` and a modulus of 32, 48 or 64 words: the input and `R² mod n` into numbers of 52-bit limbs, then twenty Montgomery multiplications with AVX512_IFMA, as `vg_rsa_private_crt_ifma`'s (one lane, the radix `R' = 2^(52 L)` for `4 L` limbs): `R²` to `R'²` by a square and a product by `2^(208 L - 256 W)`, the input into Montgomery form, sixteen squares and a last product by it; the result back to words and reduced once. Within Intel's MXCSR prologue and epilogue. Otherwise `vg_rsa_public_precomputed_checked_adx`'s code.
 ///
 /// # Safety
 ///
@@ -42145,8 +42135,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
 ///
-/// Baseline x86-64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space, with its own Montgomery multiplication (by calls of `vg_rsa_mont_mul`); the input is reduced modulo it by Montgomery reduction of chunks of its size, and the exponents are scanned left to right over all their bits by a fixed window of 4 bits: four squares and a multiplication by the window's power of the input, from a table of all 16 after the prime's working space, read by a masked selection from every entry.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -44860,8 +44848,6 @@ pub(crate) const VG_RSA_PRIVATE_CRT_ADX_FEATURES: crate::cpu::Features = crate::
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), writes the result of step 2.b for the input (`n_len` bytes, most significant first) to `out` (`n_len` bytes, most significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first. For a valid RSA key the result is `input^d mod n`; nothing checks that `p` and `q` are prime or that the exponents match a public exponent.
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
-///
-/// `vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of `vg_rsa_mont_mul_adx`, and the exponents scanned by a fixed window of 5 bits: five squares and a multiplication by the window's power, from a table of all 32, read by a masked selection four words at a time in AVX2's 256-bit registers.
 ///
 /// # Safety
 ///
@@ -47719,8 +47705,6 @@ pub(crate) const VG_RSA_PRIVATE_CRT_IFMA_FEATURES: crate::cpu::Features = crate:
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), writes the result of step 2.b for the input (`n_len` bytes, most significant first) to `out` (`n_len` bytes, most significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first. For a valid RSA key the result is `input^d mod n`; nothing checks that `p` and `q` are prime or that the exponents match a public exponent.
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
-///
-/// `vg_rsa_private_crt_adx`'s code, but for a modulus of 32, 48 or 64 words and primes of half as many words each (2048-, 3072- and 4096-bit keys), whose exponentiations run at once in radix 2^52 with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` on 256-bit registers, `ymm0` to `ymm31`: almost-Montgomery multiplications modulo both primes, a table of 16 powers of each base, and a fixed window of 4 bits over the exponents padded with zeros to the primes' size, the table read by a masked selection from every entry. MXCSR is set to `0x1FBF` around the vector code, as Intel's guidance for data-operand-independent timing asks, and restored after it.
 ///
 /// # Safety
 ///
@@ -65799,8 +65783,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
 ///
-/// Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p) = 1`) give a mask, the arithmetic is the same whatever the key, and the results are stored masked. The remainders and quotients are computed by bit-serial division, `64 w` steps for `w`-word numbers, and `qInv` by `128 w` steps of the binary extended Euclidean algorithm modulo `p`, each step's swaps and subtractions under masks.
-///
 /// # Safety
 ///
 /// * `dp` must be valid for reads and writes of `dp_len` bytes.
@@ -67298,8 +67280,6 @@ ret
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.1 with the candidates `g = 2, 3, …` and at most 100 of them. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or its factors are not found. For a valid RSA key the factors are found, but for a negligible fraction of keys.
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
-///
-/// Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and the trailing-zero count of `d e - 1` run over `64 Bw` steps for `Bw` words, whatever their values. Set `sigma` to 1 or 2 so `t - sigma` is even. Each candidate scans `(d e - 1) / 2^sigma` over all padded two-bit windows, with two squares and one multiplication per window, by calls of `vg_rsa_mont_mul`. The four powers are read by masked selections. Squarings also capture a root in a separate buffer, resetting the capture masks after nonzero digits. Two fixed final squares complete recovery; the second capture is enabled only when `sigma = 2`. Candidates stop at the first that finds the factors, which is the only branch on the key. `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` `64 w` steps of bit-serial division.
 ///
 /// # Safety
 ///
@@ -69831,8 +69811,6 @@ pub(crate) const VG_RSA_RECOVER_PRIMES_ADX_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
 ///
-/// `vg_rsa_recover_primes`'s code, with Montgomery multiplication by calls of `vg_rsa_mont_mul_adx`. The repeated squarings pass the same operand index twice, using the triangular square tiles when the word count is a multiple of 8, without copying the operand.
-///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `p_len` bytes.
@@ -72361,8 +72339,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// Baseline x86-64: `e` is checked as `vg_rsa_public_precomputed_checked` checks it and `n` as `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check of the private key is computed whatever its outcome and and'ed into a mask: the comparisons by a subtraction's borrow over `w` words, `p q = n` by a product of the two, and each remainder by restoring division with masked subtraction over factor-width numbers. The checks of `d e` process `64 (⌈other_factor_len / 8⌉ + 1)` bits, using the bound from `d < n = p q`. The CRT checks process 64 bits for `e dP` and `e dQ`, and `64 ⌈q_len / 8⌉` bits for `q qInv`.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -73944,8 +73920,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// Baseline x86-64: `vg_rsa_check_key`'s code without the checks of `d`. `e` and `n` are checked first, which are the only branches on the key; then every check of the private key is computed whatever its outcome and and'ed into a mask. Each remainder (`e dP mod (p - 1)`, `e dQ mod (q - 1)`, `q qInv mod p`) is computed by restoring division over numbers as long as the divisor, starting from the product's words above its low `c` (`c = 1`, or `⌈q_len / 8⌉` for `q qInv`), which are below the divisor when the comparison before it holds: `64 c` doublings modulo the divisor rather than one per bit of the product.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -75035,8 +75009,6 @@ pub(crate) const VG_RSA_PRIVATE_CHECKED_ADX_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
 ///
-/// This implementation computes the result `m` with `vg_rsa_private_crt_adx` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_adx` and `vg_rsa_public_precomputed_checked_adx`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -75182,8 +75154,6 @@ ret
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
-///
-/// This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
 ///
 /// # Safety
 ///
@@ -75332,8 +75302,6 @@ pub(crate) const VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES: crate::cpu::Features = cr
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
-///
-/// This implementation computes the result `m` with `vg_rsa_private_crt_ifma` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_adx` and `vg_rsa_public_precomputed_checked_ifma`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
 ///
 /// # Safety
 ///

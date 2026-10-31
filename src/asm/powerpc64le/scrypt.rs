@@ -615,8 +615,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Scrypt.roMixContract`. Not constant time in the indices: timing may depend on the pointers, `r`, `N` and the indices `j` of step 3 (`VG.Spec.Scrypt.roMixIndices`), which are derived from the data and so leak information about it (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// The function has no stack frame of its own: its return address is saved in `scratch`.
-///
 /// # Safety
 ///
 /// * `b` must be valid for reads and writes of `128 * r` bytes.
@@ -724,8 +722,6 @@ blr",
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
-///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The return address, the caller's `r30` and the arguments the calls do not keep are saved in a 112-byte stack frame, to which `r30` points; the calls use the 1008 bytes below it.
 ///
 /// # Safety
 ///

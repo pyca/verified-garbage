@@ -3933,8 +3933,6 @@ ret
 ///
 /// Contract: `VG.Spec.Argon2.hPrimeContract`. Constant time: only pointers and lengths may affect timing, not the input or the output.
 ///
-/// Calls the selected BLAKE2b streaming backend for every hash; only argument handling, chaining, and output copying are specific to H′.
-///
 /// # Safety
 ///
 /// * `input` must be valid for reads of `input_len` bytes.
@@ -4106,8 +4104,6 @@ ret
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// Serial lane evaluation honors every positive worker limit. All hashing uses the selected BLAKE2b streaming backend, including H₀ and every H′ call.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.md5` and `VG.Spec.Mgf1.md5`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
 ///
-/// This implementation builds the encoding in its working space: `M'` is hashed over the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to `em`. Only the lengths decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `em` must be valid for reads and writes of `em_len` bytes.
@@ -470,8 +468,6 @@ ret
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with MD5 and MGF1 with MD5, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 16-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_md5_mgf1_md5_verify`) after the RSA primitive.
 ///
 /// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.md5` and `VG.Spec.Mgf1.md5`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// This implementation copies the encoding to its working space, unmasks `DB` with MGF1 and checks every byte without branching on it: the position of `0x01` and the salt are found by a scan over all of `DB`. A specified salt length copies that many trailing bytes into `M'` and hashes only the blocks needed; an unknown salt length keeps the oblivious shift and the maximum block count. Only the lengths and the salt-length mode decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -1152,8 +1148,6 @@ ret
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.md5` and `VG.Spec.Mgf1.md5`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation calls `vg_rsa_pss_md5_mgf1_md5_encode` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -1320,8 +1314,6 @@ ret
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then `vg_rsa_pss_md5_mgf1_md5_check_encoding` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///

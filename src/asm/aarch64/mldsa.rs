@@ -1082,8 +1082,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.nttContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// Four butterflies per NEON vector; the 256 Montgomery zetas are stored in `scratch`.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -2162,8 +2160,6 @@ ret
 /// The inverse of the ML-DSA number-theoretic transform, `NTT⁻¹` (FIPS 204 Algorithm 42), of `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
 /// Contract: `VG.Spec.MlDsa.nttInvContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// Four butterflies per NEON vector; the 256 negated Montgomery zetas are stored in `scratch`.
 ///
 /// # Safety
 ///
@@ -24236,8 +24232,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTT4Contract`. Not constant time in the seeds: timing may depend on the pointers and on `*seeds` (public in ML-DSA: the seed `ρ` of the matrix and indices), but not on anything else.
 ///
-/// Four SHAKE128 streams in two pairs of NEON lanes, using ARM SHA3 instructions when available. The SHA3 path keeps five blocks resident and squeezes a sixth block only if needed; the portable path always squeezes six.
-///
 /// # Safety
 ///
 /// * `seeds` must be valid for reads of 136 bytes.
@@ -24809,8 +24803,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.sampleInBallContract`. Not constant time in the seed: timing may depend on the pointers, `len`, `tau` and the seed `c̃` at `ctilde`, but not on anything else.
 ///
-/// SHA3 sampling stops once all coefficients are assigned and squeezes the second block only when needed. Both paths retain the same 272-byte limit and exact failure result.
-///
 /// # Safety
 ///
 /// * `ctilde` must be valid for reads of `len` bytes.
@@ -24940,8 +24932,6 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: crate::cpu::Features = cr
 /// `RejNTTPoly` (FIPS 204 Algorithm 30) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output for each (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTT4Contract`. Not constant time in the seeds: timing may depend on the pointers and on `*seeds` (public in ML-DSA: the seed `ρ` of the matrix and indices), but not on anything else.
-///
-/// Four SHAKE128 streams in two pairs of NEON lanes, using ARM SHA3 instructions when available. The SHA3 path keeps five blocks resident and squeezes a sixth block only if needed; the portable path always squeezes six.
 ///
 /// # Safety
 ///
@@ -26956,8 +26946,6 @@ pub(crate) const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.MlDsa.sampleInBallContract`. Not constant time in the seed: timing may depend on the pointers, `len`, `tau` and the seed `c̃` at `ctilde`, but not on anything else.
 ///
-/// SHA3 sampling stops once all coefficients are assigned and squeezes the second block only when needed. Both paths retain the same 272-byte limit and exact failure result.
-///
 /// # Safety
 ///
 /// * `ctilde` must be valid for reads of `len` bytes.
@@ -27208,8 +27196,6 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features =
 /// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
 ///
 /// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
-///
-/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks four coefficients at a time.
 ///
 /// # Safety
 ///

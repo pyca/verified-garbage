@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// n is checked a byte at a time, then read into the working space a byte at a time. `R² mod n` starts from `2^(64 (w - 1))`, below a valid `n`: `64 + w` modular doublings, each with the borrow of the subtraction of n in the sign bit and selected with a mask, give `2^w R mod n`, and six Montgomery squares (radix `2^64`, with the carry bit) raise it to `2^(64 w) R mod n = R² mod n`. The nonvolatile registers it uses are saved in the working space's header.
-///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
@@ -1496,8 +1494,6 @@ blr",
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
-///
-/// Montgomery multiplication in radix `2^64` with the carry bit, `R = 2^(64 w)`. `e` is read a byte at a time into a register saturated at `2^33`; the scan starts at its first set bit with the input in Montgomery form, then each later bit is a Montgomery square and, if set, a multiplication by the input in Montgomery form, but the last, whose multiplication is by the ordinary input (or 1), which also converts out of Montgomery form: for 65537, sixteen squares and one multiplication. The branches depend only on `e`, which is public. `pre` is made safe before any arithmetic (`n` forced odd with its top word not zero, `R² mod n` zeroed unless below `n`), which leaves the values of a valid modulus unchanged. The nonvolatile registers it uses are saved in the working space's header.
 ///
 /// # Safety
 ///
@@ -3402,8 +3398,6 @@ blr",
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), writes the result of step 2.b for the input (`n_len` bytes, most significant first) to `out` (`n_len` bytes, most significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first. For a valid RSA key the result is `input^d mod n`; nothing checks that `p` and `q` are prime or that the exponents match a public exponent.
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
-///
-/// Montgomery multiplication in radix `2^64` with the carry bit. The checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space of 24 numbers of `max(2, ⌈len/8⌉)` words for its public length: `R² mod p` is computed from 1 by `64 w + w` modular doublings on 64-bit words to `2^w R mod p` and six Montgomery squares; the input, loaded again into `X`, is reduced modulo it a chunk of `w` words at a time from the bottom, by two Montgomery multiplications and a modular subtraction per chunk (with `q ≡ -R^(i+1)`, `C_i q R⁻¹ ≡ -C_i R^i`); and the exponent is scanned in four-bit windows from the top, four Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address depends on the exponent. `m₂ mod p` takes `m₂`'s bits from the top, a modular doubling on 64-bit words each. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the working space's header.
 ///
 /// # Safety
 ///
@@ -14666,8 +14660,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
 ///
-/// This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros. Its frame of 3328 bytes holds `m`, the precomputed values of `n`, the statuses, the registers kept across the calls and the stack arguments of the calls, whose callees use no stack.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -14830,8 +14822,6 @@ blr",
 /// The CRT values of an RSA private key `(p, q, d)` (SP 800-56B Rev. 2 §6.2.2's prime-factor format), which bring it to the CRT format `(p, q, dP, dQ, qInv)` that `vg_rsa_private_crt` takes: `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` (§6.2.2's CRT format). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), `p` (`p_len` bytes), `q` (`q_len` bytes) and `d` (`d_len` bytes), all most significant first, writes `dP` to `dp` and `qInv` to `qinv` (`p_len` bytes each) and `dQ` to `dq` (`q_len` bytes), most significant first, and returns 1; or writes zeros to all three and returns 0 if `n` is not such a modulus, `p q ≠ n`, or `q` has no inverse modulo `p`. Nothing checks that `p` and `q` are prime or that `d` is the key's private exponent.
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
-///
-/// `n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p | 1) = 1`) give a mask, the arithmetic is the same whatever the key, and the results are stored masked. Numbers are 32-bit digits; for an even count of them the subtractions (the borrow in the carry bit), selections, copies, comparisons and halvings, and the division's shifts, work on 64-bit words, two digits at a time. The remainders and quotients are computed by bit-serial division, `32 w` steps for `w`-digit numbers, and `qInv` by `64 w` steps of the binary extended Euclidean algorithm modulo `p | 1`, each step's swaps and subtractions under masks. The pointers and lengths stay in nonvolatile registers, saved with the others it uses in the working space's header.
 ///
 /// # Safety
 ///
@@ -18070,8 +18060,6 @@ blr",
 /// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
-///
-/// `e` is checked as `vg_rsa_public_precomputed_checked` checks it and `n` as `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check of the private key is computed whatever its outcome and and'ed into a mask: `p q = n` as `n / p = q`, `n mod p = 0` and `p` odd, by bit-serial division, `32 w` steps for `w`-digit numbers; the comparisons by a subtraction's borrow; `e dP mod (p - 1)` and `e dQ mod (q - 1)` by modular multiplication over the 33 bits of `e`, and `q qInv mod p` over the `8 q_len` bits of `q`, each step's subtraction under a mask; and `d` by `d < n` and `d mod (p - 1) = dP`, `d mod (q - 1) = dQ`. Numbers are 32-bit digits; for an even count of them the subtractions (the borrow in the carry bit), selections, copies, comparisons and halvings, and the division's shifts, work on 64-bit words, two digits at a time. The pointers and lengths stay in nonvolatile registers, saved with the others it uses in the working space's header.
 ///
 /// # Safety
 ///
@@ -21707,8 +21695,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// `vg_rsa_check_key`'s code without the checks of `d`: `e` and `n` are checked first, which are the only branches on the key; then every check of the private key is computed whatever its outcome and and'ed into a mask.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -24611,8 +24597,6 @@ blr",
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.1 with the candidates `g = 2, 3, …` and at most 100 of them. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or its factors are not found. For a valid RSA key the factors are found, but for a negligible fraction of keys.
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
-///
-/// `n` is checked as `vg_rsa_public_precompute` checks it, the only branch on the key but for the number of candidates tried, which is public. `R² mod n` is `64 + w` modular doublings of `2^(64 (w - 1))` and six Montgomery squares. `m = d e - 1` is computed by binary multiplication. Each candidate `g = 2, 3, …` makes one pass over the `⌈c / 32⌉` 32-bit digits of `m` (`c = 8 (e_len + d_len)`, leading zeros included), most significant bit first, fusing the exponentiation with root detection: each bit is a Montgomery square `x = y²` and `x g` (modular additions for the public candidates 2 and 3, a Montgomery product for the others), the new `y` selected by a mask of the bit. A set bit starts root detection again from the new `y` (`done := y = ±1`, `ok := 0`); a clear bit keeps the old `y` as the root under a mask when `x = 1` and not done. Only the trailing zeros of `m` can leave `ok` set, with the root of SP 800-56B Rev. 2 Appendix C.1's search. `p = gcd(y - 1, n)` by `64 w` steps of the binary extended Euclidean algorithm, `q = n / p` by bit-serial division, the order by a subtraction's borrow, and the factors stored masked by `ok`. Montgomery products are on 64-bit words with the carry bit; the other arithmetic is on 32-bit digits, two at a time as 64-bit words (the subtractions' borrow in the carry bit) for an even count of them. The pointers and lengths stay in nonvolatile registers, saved with the others it uses in the working space's arrays 44–45.
 ///
 /// # Safety
 ///

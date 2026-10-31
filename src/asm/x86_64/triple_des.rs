@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not key bytes.
 ///
-/// Baseline x86-64 scalar key expansion with fixed permutations and public round-count branches.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1389,8 +1387,6 @@ ret
 /// Triple DES block encryption (FIPS 46-3): transforms the 8 bytes at `data` in place under the three DES schedules at `schedule`. Each schedule contains sixteen encryption-order 48-bit round keys in little-endian 64-bit slots; upper bits are ignored.
 ///
 /// Contract: `VG.Spec.TripleDes.encryptBlockContract`. Constant time: only pointers may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Baseline x86-64 scalar Boolean S-box circuits; IP and FP shared across all three DES passes.
 ///
 /// # Safety
 ///
@@ -3594,8 +3590,6 @@ ret
 ///
 /// Contract: `VG.Spec.TripleDes.decryptBlockContract`. Constant time: only pointers may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline x86-64 scalar Boolean S-box circuits with reverse EDE key order.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -5797,8 +5791,6 @@ ret
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`, with the 1024 bytes at `scratch` as working space: `vg_triple_des_ecb_encrypt` without its own frame. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptCoreContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// Bitsliced on baseline x86-64: 128 blocks at a time in SSE2 registers while that many are left, then 64 at a time in general-purpose registers, one block in each bit position of 64 state words, through Boolean S-box circuits.
 ///
 /// # Safety
 ///
@@ -12418,8 +12410,6 @@ ret
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptCoreContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// Bitsliced on baseline x86-64: 128 blocks at a time in SSE2 registers while that many are left, then 64 at a time in general-purpose registers, one block in each bit position of 64 state words, through Boolean S-box circuits.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -19038,8 +19028,6 @@ ret
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// Allocates the working space on the stack and calls the core, the SSE2 code, for every block; zeroes the working space before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -19192,8 +19180,6 @@ ret
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// Allocates the working space on the stack and calls the core, the SSE2 code, for every block; zeroes the working space before returning.
 ///
 /// # Safety
 ///
@@ -19350,8 +19336,6 @@ pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: crate::cpu::Features =
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// Bitsliced with AVX2: 256 blocks at a time, in place in the data, in 256-bit words; then calls the core (the SSE2 and 64-block code) for the rest.
 ///
 /// # Safety
 ///
@@ -20893,8 +20877,6 @@ pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// Bitsliced with AVX2: 256 blocks at a time, in place in the data, in 256-bit words; then calls the core (the SSE2 and 64-block code) for the rest.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -22434,8 +22416,6 @@ pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: crate::cpu::Features
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// Bitsliced with AVX-512: 512 blocks at a time, in place in the data, in 512-bit words, the S-box circuits fused into `vpternlogd` functions of up to three words; then the AVX2 batches, and the core (the SSE2 and 64-block code) for the rest.
 ///
 /// # Safety
 ///
@@ -25259,8 +25239,6 @@ pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: crate::cpu::Features
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// Bitsliced with AVX-512: 512 blocks at a time, in place in the data, in 512-bit words, the S-box circuits fused into `vpternlogd` functions of up to three words; then the AVX2 batches, and the core (the SSE2 and 64-block code) for the rest.
 ///
 /// # Safety
 ///

@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// The streaming functions call the verified key expansion (`vg_triple_des_expand_key`) and ECB encryption (`vg_triple_des_ecb_encrypt`) on one block in place, the chaining value in the streaming state, with the state as the key schedule.
-///
-/// The subkeys are derived from the enciphered zero block a byte at a time, each byte shifted left with the top bit of the next entering on the right and the last XORed with `0x1b` under a mask made from the top bit of the first; blocks are XORed into the chaining value and the bytes held back are copied a byte at a time, since the contracts state no alignment for the data and `out`.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes, and aligned for `u64`.
@@ -187,10 +183,6 @@ ret
 /// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// The streaming functions call the verified key expansion (`vg_triple_des_expand_key`) and ECB encryption (`vg_triple_des_ecb_encrypt`) on one block in place, the chaining value in the streaming state, with the state as the key schedule.
-///
-/// The subkeys are derived from the enciphered zero block a byte at a time, each byte shifted left with the top bit of the next entering on the right and the last XORed with `0x1b` under a mask made from the top bit of the first; blocks are XORed into the chaining value and the bytes held back are copied a byte at a time, since the contracts state no alignment for the data and `out`.
 ///
 /// # Safety
 ///
@@ -382,10 +374,6 @@ ret
 /// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// The streaming functions call the verified key expansion (`vg_triple_des_expand_key`) and ECB encryption (`vg_triple_des_ecb_encrypt`) on one block in place, the chaining value in the streaming state, with the state as the key schedule.
-///
-/// The subkeys are derived from the enciphered zero block a byte at a time, each byte shifted left with the top bit of the next entering on the right and the last XORed with `0x1b` under a mask made from the top bit of the first; blocks are XORed into the chaining value and the bytes held back are copied a byte at a time, since the contracts state no alignment for the data and `out`.
 ///
 /// # Safety
 ///

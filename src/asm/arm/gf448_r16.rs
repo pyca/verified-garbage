@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r7`, `r9` and `lr` in its own working space and reads the operands and writes the result through pointers. The product is computed row by row with `mul`, each row's carries propagated so that every sum fits in a word, into 56 limbs in the own working space, folded with `2^448 = 2^224 + 1` (mod p); the sum, the difference (`a + 2p - b`) and the product by 39081 are computed limb by limb there. Three carry passes, with the carry out folded into limbs 0 and 14, then bring every limb below `2^16`. It never writes `r0`, `r8`, `r10` or `r11`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1163,8 +1161,6 @@ bx lr",
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r7`, `r9` and `lr` in its own working space and reads the operands and writes the result through pointers. The product is computed row by row with `mul`, each row's carries propagated so that every sum fits in a word, into 56 limbs in the own working space, folded with `2^448 = 2^224 + 1` (mod p); the sum, the difference (`a + 2p - b`) and the product by 39081 are computed limb by limb there. Three carry passes, with the carry out folded into limbs 0 and 14, then bring every limb below `2^16`. It never writes `r0`, `r8`, `r10` or `r11`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1745,8 +1741,6 @@ bx lr",
 /// Subtraction in curve448's field: writes an element congruent to `a - b` modulo `p` to `o`. An element of GF(p), `p = 2^448 - 2^224 - 1`, is twenty-eight 32-bit little-endian words, least significant first, each a limb below `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily below `p`. The elements are at the byte offsets `o`, `a` (and `b`) of the working space `ws`; `o` may be `a` or `b`. The result's limbs are below `2^16`. Every byte of `ws` but the result's and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `r4`–`r7`, `r9` and `lr` in its own working space and reads the operands and writes the result through pointers. The product is computed row by row with `mul`, each row's carries propagated so that every sum fits in a word, into 56 limbs in the own working space, folded with `2^448 = 2^224 + 1` (mod p); the sum, the difference (`a + 2p - b`) and the product by 39081 are computed limb by limb there. Three carry passes, with the carry out folded into limbs 0 and 14, then bring every limb below `2^16`. It never writes `r0`, `r8`, `r10` or `r11`.
 ///
 /// # Safety
 ///
@@ -2412,8 +2406,6 @@ bx lr",
 /// Multiplication by `a24 = 39081` in curve448's field (RFC 7748 §5): writes an element congruent to `39081 a` modulo `p` to `o`. An element of GF(p), `p = 2^448 - 2^224 - 1`, is twenty-eight 32-bit little-endian words, least significant first, each a limb below `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily below `p`. The elements are at the byte offsets `o`, `a` (and `b`) of the working space `ws`; `o` may be `a` or `b`. The result's limbs are below `2^16`. Every byte of `ws` but the result's and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `r4`–`r7`, `r9` and `lr` in its own working space and reads the operands and writes the result through pointers. The product is computed row by row with `mul`, each row's carries propagated so that every sum fits in a word, into 56 limbs in the own working space, folded with `2^448 = 2^224 + 1` (mod p); the sum, the difference (`a + 2p - b`) and the product by 39081 are computed limb by limb there. Three carry passes, with the carry out folded into limbs 0 and 14, then bring every limb below `2^16`. It never writes `r0`, `r8`, `r10` or `r11`.
 ///
 /// # Safety
 ///

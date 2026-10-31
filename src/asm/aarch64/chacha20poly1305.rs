@@ -6,12 +6,6 @@
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
-///
-/// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
-///
-/// Computes the keystream of the four blocks after the chunks while absorbing the last chunk, and encrypts up to 256 bytes of the rest with it.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -13377,12 +13371,6 @@ b 25b
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
-///
-/// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
-///
-/// From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -26095,8 +26083,6 @@ b 25b
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_chacha20_poly1305_seal_neon`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -26198,8 +26184,6 @@ ret
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
 ///
 /// # Safety
 ///
@@ -29533,10 +29517,6 @@ ret
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
-///
-/// With 64 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
-///
-/// From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions.
 ///
 /// # Safety
 ///
@@ -34439,8 +34419,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_chacha20_poly1305_seal`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -34545,12 +34523,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: crate::cpu::Features =
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
-///
-/// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
-///
-/// Computes the keystream of the four blocks after the chunks while absorbing the last chunk, and encrypts up to 256 bytes of the rest with it.
 ///
 /// # Safety
 ///
@@ -46243,12 +46215,6 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// With 1 to 256 bytes of data, computes the one-time Poly1305 key and the data's keystream in one pass of four NEON blocks and one integer block.
-///
-/// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
-///
-/// From 449 to 511 bytes, decrypts with one chunk of the eight-block NEON ChaCha20 kernel while absorbing the first 448 bytes into Poly1305 with integer instructions.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -57707,8 +57673,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES: crate::cpu::Fea
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
-///
-/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_chacha20_poly1305_seal_sve2`.
 ///
 /// # Safety
 ///

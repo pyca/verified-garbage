@@ -1191,8 +1191,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Calls `vg_chacha20_block` for each 64 bytes.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes.
@@ -1275,8 +1273,6 @@ pub(crate) const VG_CHACHA20_XOR_AVX2_FEATURES: crate::cpu::Features = crate::cp
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
-///
-/// Uses AVX2: eight blocks at a time while at least 512 bytes remain, then at most two computations of four or two blocks, two to a set of `ymm` registers, for the rest, or `vg_chacha20_xor` for at most 64 bytes.
 ///
 /// # Safety
 ///
@@ -7230,8 +7226,6 @@ pub(crate) const VG_CHACHA20_XOR_AVX512_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain; then twelve blocks in three sets of `zmm` registers, four blocks to a set, for 513 to 768 bytes left, one more pass of sixteen for 769 to 1023, and at most two computations of eight or four blocks for fewer.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes.
@@ -12415,8 +12409,6 @@ pub(crate) const VG_CHACHA20_XOR_AVX512VL_FEATURES: crate::cpu::Features = crate
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
-///
-/// For CPUs with AVX-512 whose clock a 512-bit instruction lowers for a while (Skylake-SP, Cascade Lake): fewer than 513 bytes on `ymm` registers, as `vg_chacha20_xor_avx2` does but with AVX-512VL's `vprold` for every rotation (eight blocks with every word in a register, or at most six), so that the code after a short call keeps its speed; more as `vg_chacha20_xor_avx512` does.
 ///
 /// # Safety
 ///
@@ -22102,8 +22094,6 @@ pub(crate) const VG_CHACHA20_APPLY_AVX2_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_avx2`.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.
@@ -22268,8 +22258,6 @@ pub(crate) const VG_CHACHA20_APPLY_AVX512_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512`.
-///
 /// The machine code of this function is that of `vg_chacha20_apply_ifma`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -22288,8 +22276,6 @@ pub(crate) const VG_CHACHA20_APPLY_AVX512VL_FEATURES: crate::cpu::Features = cra
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512vl`.
 ///
 /// # Safety
 ///
@@ -22455,8 +22441,6 @@ pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512`.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.
@@ -22617,8 +22601,6 @@ ret
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor`.
 ///
 /// # Safety
 ///

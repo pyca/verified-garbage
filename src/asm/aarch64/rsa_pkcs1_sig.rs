@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, the hash function and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -965,8 +963,6 @@ ret
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's encoding of `digest`. It combines the padding result with the public operation's status without branching on that status. It uses 2144 bytes of stack: its frame and 16 bytes below it for the call.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -1923,8 +1919,6 @@ ret
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of the result beside it and compares the two, then copies those bytes to `out` and masks them to zeros, and the result to 0, unless the public operation succeeded and the two are equal: nothing after the call branches on its result. It uses 2144 bytes of stack: its frame and 16 bytes below it for the call.
 ///
 /// # Safety
 ///

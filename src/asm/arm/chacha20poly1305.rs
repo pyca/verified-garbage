@@ -790,8 +790,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.

@@ -4,8 +4,6 @@
 
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
-/// Recognizes exact RFC 3526/RFC 7919 groups with the reviewed shorter-exponent policy; other domains retain their full public bound. Initializes one immutable canonical five-tooth comb context using the existing eight-limb product and dedicated squaring implementation.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
@@ -4991,8 +4989,6 @@ ret
 
 /// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
 ///
-/// Uses the context's public width and five-tooth comb schedule for every scalar, including secret leading zeros. Scalar range checks, public-value checks and failure zeroing implement the existing vetted generation contract.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -9847,8 +9843,6 @@ ret
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
-/// The whole cached rejection search is verified, including both budgets, entropy refills, octets consumed, output zeroing and public status leakage. The immutable context is reloaded from the caller's public arguments; a 48-byte attempt frame shares the existing 16-byte link-register frame.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -10082,8 +10076,6 @@ ret
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
-///
-/// Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a working space of `w = ⌈p_len / 8⌉` words with an inner one for p (its 32-entry window table included). y is compared with 1 and with p − 1 by a subtraction's borrow over all the words; with q, `R² mod p` is computed by doublings and squarings and `y^q mod p` by RSA's exponentiation with five-bit windows (the `vg_rsa_square_window5` helper and a constant-time table scan) from q's first nonzero octet.
 ///
 /// # Safety
 ///
@@ -11820,8 +11812,6 @@ ret
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// Exact RFC 3526/RFC 7919 domain matches use kernel-checked fixed-parameter certificates for the existing algebraic validation rules, including the subgroup power. Every byte of p, g and an optional q must match; other inputs retain the general validator.
 ///
 /// # Safety
 ///
@@ -14303,8 +14293,6 @@ ret
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a working space of `w = ⌈p_len / 8⌉` words with an inner one for p. `y^x mod p` is computed by RSA's exponentiation with five-bit windows over all `x_len` octets of x (the `vg_rsa_square_window5` helper and a constant-time table scan); z is compared with 1 and with p − 1 by a subtraction's borrow over all the words, and stored masked by the result, zeros for 0, without a branch.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -15991,8 +15979,6 @@ ret
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a working space of `w = ⌈p_len / 8⌉` words with an inner one for p. x's range and y's are comparisons by a subtraction's borrow over all the words, and the only branch on x is on its range; with q, `y^q mod p` and then `g^x mod p` are computed by RSA's exponentiation with five-bit windows (the `vg_rsa_square_window5` helper and a constant-time table scan), the latter over all `x_len` octets of x, and compared with y over all the words.
 ///
 /// # Safety
 ///
@@ -19048,8 +19034,6 @@ ret
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a working space of `w = ⌈p_len / 8⌉` words with an inner one for p. x's range is a comparison by a subtraction's borrow over all the words, as in `vg_ffdh_check_private`, and the only branch on x is on its range; `g^x mod p` is computed by RSA's exponentiation with five-bit windows (the `vg_rsa_square_window5` helper and a constant-time table scan) over all `x_len` octets of x, compared with 1 and with p − 1 by a subtraction's borrow over all the words, and stored masked by the result, zeros for 3, without a branch. Powers of a checked generator remain in its q subgroup, so y needs only its range check.
-///
 /// # Safety
 ///
 /// * `y` must be valid for reads and writes of `y_len` bytes.
@@ -20893,8 +20877,6 @@ ret
 /// One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For 2 and 3 the caller tries again with fresh random bytes.
 ///
 /// Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on `rand` or x; the exponentiation may run over the bytes of q (`p − 1`).
-///
-/// Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a working space of `w = ⌈p_len / 8⌉` words with an inner one for p. The scalar's octets are cut from `rand` by a loop over all `p_len` of them, written to `x`, and its range is a comparison by a subtraction's borrow over all the words; the only branch on it is on its range. `g^x mod p` is computed by RSA's exponentiation with five-bit windows (the `vg_rsa_square_window5` helper and a constant-time table scan) over x's octets from the bound's first nonzero one, and stored to `y`; with q, `y^q mod p` too. x and y are then masked by y's validity, zeros for 3, without a branch.
 ///
 /// # Safety
 ///
@@ -24159,8 +24141,6 @@ ret
 
 /// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
 ///
-/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in a frame of 32 bytes holding its stack arguments, within a frame saving `x30`. Timing depends on the domain, the controller's public words and the attempts' statuses.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -24388,8 +24368,6 @@ ret
 /// One candidate for the probable safe prime p of finite-field Diffie–Hellman parameters of `bits` bits with the generator 2 or 5 (PKCS #3 §6, with OpenSSL's congruences). Reads from the front of `rand` `out_len` bytes, most significant first, cut to `bits` bits with the most and least significant bits set, as p, and `q = (p − 1) / 2`. Rejects p unless `p mod 24 = 11` (generator 2) or `p mod 10 ∈ {3, 7}` (generator 5) and no odd prime below 256 divides p or q but itself. Then runs Miller–Rabin on q and, if it passes, on p, with 64 witnesses (128 above 2048 bits) for each, every witness for w read from `rand` as the bytes of `w − 1`, cut to its bit length, and read again until it is in `2..w − 1`; the first witness that proves a number composite is the last read for it. Returns 1 and writes p to `out` if both pass, 2 if p is rejected, and writes the number of bytes of `rand` read to `used`; or returns 0 if `rand` is too short, for which the caller calls it again with `rand` extended by more random bytes. `out` is zeros but for 1, and `used` is 0 for 0.
 ///
 /// Contract: `VG.Spec.Ffdh.parameterCandidateContract`. Every value is public: timing may depend on `rand`.
-///
-/// The candidate's shape, congruence and trial division use RSA's verified bignum code. Both primes use the shared `vg_miller_rabin_round` with fixed four-bit windows, with 64 or 128 witnesses for each, every witness drawn from `rand`. Every value is public: branches follow the tape, the shape and the witnesses' results.
 ///
 /// # Safety
 ///
@@ -28621,8 +28599,6 @@ ret
 }
 
 /// Run native finite-field Diffie–Hellman parameter generation. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Contract: `VG.Spec.Ffdh.parameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// The whole candidate search runs in verified code: the attempt limit, the octets each rejected candidate consumed, and the length of the next entropy request. Each candidate calls `vg_ffdh_parameter_candidate` with the same round, in a frame of 16 bytes holding its stack argument, within a frame saving `x30`. The random tape and the controller's four public words are public under the contract.
 ///
 /// # Safety
 ///

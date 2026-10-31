@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.X25519.x25519Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function saves the callee-saved registers it uses (`x19`–`x24`) in `scratch`. The ladder is that of s2n-bignum's `curve25519_x25519_byte_alt`, operation for operation: field elements of four 64-bit words, below 2·(2^255 - 19) between operations, with `mul`/`umulh` products and squares, sums and differences folding one carry, and `mux_4` choosing the point to double rather than swapping the points. As in s2n-bignum, the iterations for the bits clamping sets and clears are specialized: the one for bit 254 computes both points from `(u, 1)` directly, and those for bits 2, 1 and 0 double the point the swap chooses three times. The inversion uses Bernstein–Yang divsteps.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -5256,8 +5254,6 @@ pub(crate) const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// `X25519(k, 9)` is the u-coordinate `(1 + y) / (1 - y)` of `[k] B` on edwards25519, `B` Ed25519's base point (RFC 7748 §4.1's birational map), which the function computes with `vg_ed25519_scalar_base`'s comb rather than the ladder: the scalar's bits are expanded one per byte in `scratch` and clamped there (bits 0-2 and 255 cleared, bit 254 set), the comb's 64 additions accumulate `[k] B` in extended coordinates, and `(Z + Y) / (Z - Y)` takes one inversion. The function saves the callee-saved registers it uses (`x19`-`x24`) in `scratch`.
 ///
 /// It writes at most the first 1024 bytes of `scratch` (`VG_X25519_BASE_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha224` and `VG.Spec.Mgf1.sha224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -695,8 +693,6 @@ bx lr",
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then checks EMSA-PSS in its working space without branching on the encoding: `maskedDB` is unmasked with MGF1, and the end of `DB`'s padding is found by a scan of all its bytes. A specified salt length copies that many trailing bytes of `DB` into `M'` and hashes only the blocks it needs; an unknown salt length shifts `DB` into place in ten masked passes and hashes the blocks of the longest salt. Only the lengths, the salt-length mode and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -1686,8 +1682,6 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_UMAAL_FEATURES: crate::cpu::
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha224` and `VG.Spec.Mgf1.sha224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_umaal`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -2381,8 +2375,6 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_VERIFY_PRECOMPUTED_UMAAL_FEATURES
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then checks EMSA-PSS in its working space without branching on the encoding: `maskedDB` is unmasked with MGF1, and the end of `DB`'s padding is found by a scan of all its bytes. A specified salt length copies that many trailing bytes of `DB` into `M'` and hashes only the blocks it needs; an unknown salt length shifts `DB` into place in ten masked passes and hashes the blocks of the longest salt. Only the lengths, the salt-length mode and the public key decide a branch or an address.
 ///
 /// # Safety
 ///

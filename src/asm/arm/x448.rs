@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements are twenty-eight 16-bit limbs; multiplications, additions, subtractions and the multiplication by a24 are calls of the `vg_gf448_r16_*` functions on `scratch`. Inversion uses an addition chain for `p - 2`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.

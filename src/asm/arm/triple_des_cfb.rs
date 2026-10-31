@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CFB of `Impl/Modes/Arm/`, calling the verified `vg_triple_des_ecb_encrypt` on one block at a time, with the chaining block in a 56-byte working space on the stack, zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -106,8 +104,6 @@ bx lr",
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption (also for decryption) under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline ARMv7: the generic CFB of `Impl/Modes/Arm/`, calling the verified `vg_triple_des_ecb_encrypt` on one block at a time, with the chaining block in a 56-byte working space on the stack, zeroed on return.
 ///
 /// # Safety
 ///

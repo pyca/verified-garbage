@@ -129,8 +129,6 @@ pub(crate) const VG_FFDH_CHECK_PUBLIC_ADX_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
-/// The verified range and optional subgroup checks use fixed four-bit windows with the selected Montgomery backend. Domain bytes and the public key are public under the shared contract.
-///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -1122,8 +1120,6 @@ pub(crate) const VG_FFDH_EXCHANGE_ADX_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// The selected Montgomery backend and fixed four-bit windows process every supplied scalar byte. The result is masked to zero for a degenerate shared value.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -2064,8 +2060,6 @@ pub(crate) const VG_FFDH_CHECK_PRIVATE_ADX_FEATURES: crate::cpu::Features = crat
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// The scalar bound and the public-value equality are checked in verified code. Powers of a checked generator remain in its q subgroup, so the generated power needs only its range check. Fixed four-bit windows use the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -3181,8 +3175,6 @@ pub(crate) const VG_FFDH_DERIVE_PUBLIC_ADX_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// The output is zeroed first; the scalar's range, as `vg_ffdh_check_private` checks it, is the one branch on x. Powers of a checked generator remain in its q subgroup, so the power needs only its range check, which masks the output, as in `vg_ffdh_generate_key`. Fixed four-bit windows over all `x_len` scalar bytes use the selected Montgomery backend.
-///
 /// # Safety
 ///
 /// * `y` must be valid for reads and writes of `y_len` bytes.
@@ -4288,8 +4280,6 @@ pub(crate) const VG_FFDH_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate
 /// One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For 2 and 3 the caller tries again with fresh random bytes.
 ///
 /// Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on `rand` or x; the exponentiation may run over the bytes of q (`p − 1`).
-///
-/// Scalar masking, scalar-range rejection, generator exponentiation, and degenerate-public-value rejection run in verified code. Fixed four-bit windows use the public bound's significant byte width and the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -5509,8 +5499,6 @@ pub(crate) const VG_FFDH_CHECK_DOMAIN_ADX_FEATURES: crate::cpu::Features = crate
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// Exact recognition certifies the ten standard MODP/FFDHE domains. Other inputs retain the verified modulus, generator, subgroup range, divisibility and subgroup checks. Divisibility uses RSA's arbitrary-width Montgomery reduction; fixed four-bit exponentiation uses the selected backend.
 ///
 /// # Safety
 ///
@@ -7444,8 +7432,6 @@ ret
 pub(crate) const VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
 /// Run native finite-field Diffie–Hellman parameter generation. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Contract: `VG.Spec.Ffdh.parameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// The whole candidate search runs in verified code: the attempt limit, the octets each rejected candidate consumed, and the length of the next entropy request. Both primes use the shared Miller–Rabin round with the selected Montgomery backend, with 64 or 128 independent witnesses for each. The random tape and the controller's four public words are public under the contract.
 ///
 /// # Safety
 ///
@@ -31239,8 +31225,6 @@ pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES: crate::cpu::Features 
 
 /// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
 ///
-/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with the same backend, in a 40-byte frame. Timing depends on the domain, the controller's public words and the attempts' statuses.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -31469,8 +31453,6 @@ ret
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
-///
-/// The verified range and optional subgroup checks use fixed four-bit windows with the selected Montgomery backend. Domain bytes and the public key are public under the shared contract.
 ///
 /// # Safety
 ///
@@ -35318,8 +35300,6 @@ ret
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// The selected Montgomery backend and fixed four-bit windows process every supplied scalar byte. The result is masked to zero for a degenerate shared value.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -39115,8 +39095,6 @@ ret
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// The scalar bound and the public-value equality are checked in verified code. Powers of a checked generator remain in its q subgroup, so the generated power needs only its range check. Fixed four-bit windows use the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -43087,8 +43065,6 @@ ret
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// The output is zeroed first; the scalar's range, as `vg_ffdh_check_private` checks it, is the one branch on x. Powers of a checked generator remain in its q subgroup, so the power needs only its range check, which masks the output, as in `vg_ffdh_generate_key`. Fixed four-bit windows over all `x_len` scalar bytes use the selected Montgomery backend.
-///
 /// # Safety
 ///
 /// * `y` must be valid for reads and writes of `y_len` bytes.
@@ -47049,8 +47025,6 @@ ret
 /// One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For 2 and 3 the caller tries again with fresh random bytes.
 ///
 /// Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on `rand` or x; the exponentiation may run over the bytes of q (`p − 1`).
-///
-/// Scalar masking, scalar-range rejection, generator exponentiation, and degenerate-public-value rejection run in verified code. Fixed four-bit windows use the public bound's significant byte width and the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -51125,8 +51099,6 @@ ret
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// Exact recognition certifies the ten standard MODP/FFDHE domains. Other inputs retain the verified modulus, generator, subgroup range, divisibility and subgroup checks. Divisibility uses RSA's arbitrary-width Montgomery reduction; fixed four-bit exponentiation uses the selected backend.
 ///
 /// # Safety
 ///
@@ -56435,8 +56407,6 @@ ret
 }
 
 /// Run native finite-field Diffie–Hellman parameter generation. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Contract: `VG.Spec.Ffdh.parameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// The whole candidate search runs in verified code: the attempt limit, the octets each rejected candidate consumed, and the length of the next entropy request. Both primes use the shared Miller–Rabin round with the selected Montgomery backend, with 64 or 128 independent witnesses for each. The random tape and the controller's four public words are public under the contract.
 ///
 /// # Safety
 ///
@@ -62785,8 +62755,6 @@ ret
 }
 
 /// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
-///
-/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with the same backend, in a 40-byte frame. Timing depends on the domain, the controller's public words and the attempts' statuses.
 ///
 /// # Safety
 ///

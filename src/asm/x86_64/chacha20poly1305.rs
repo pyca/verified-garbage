@@ -9,8 +9,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// This implementation encrypts with `vg_chacha20_xor_avx2` and authenticates with `vg_poly1305_blocks_avx2`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -30642,8 +30640,6 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// This implementation encrypts with `vg_chacha20_xor_avx2` and authenticates with `vg_poly1305_blocks_avx2`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -40819,8 +40815,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, 32 bytes at a time with AVX, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal_avx2`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -40963,10 +40957,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_avx512`.
-///
-/// For fewer than 640 bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while they run 512-bit instructions, which costs short data more than the wider keystream saves.
 ///
 /// # Safety
 ///
@@ -72052,8 +72042,6 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_avx512`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -82691,8 +82679,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// For at most 960 bytes of data, this implementation copies the slices, 32 bytes at a time with AVX, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal_avx512`. For more, it copies the slices but the first to `dst` after the first slice's length, and encrypts the data there, its first slice read from where it is, with `vg_chacha20_poly1305_seal_split_avx512`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -82979,10 +82965,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Fe
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealSplitContract`. Constant time: only the pointers, `src_len` and `len` may affect timing, not the key, the nonce, the additional data or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_avx512`.
-///
-/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`.
 ///
 /// # Safety
 ///
@@ -86414,10 +86396,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: crate::cpu::Featur
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// This implementation encrypts with `vg_chacha20_xor_avx512vl` and authenticates with `vg_poly1305_blocks_avx512`.
-///
-/// For fewer than 768 bytes of data, it runs the code of `vg_chacha20_poly1305_seal_avx2` instead, with no 512-bit instruction: the CPUs with AVX-512 but not IFMA (Skylake-SP, Cascade Lake) lower their clock while they run 512-bit instructions, which costs short data more than the wider keystream saves.
 ///
 /// # Safety
 ///
@@ -114177,8 +114155,6 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: crate::cpu::Featur
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
 ///
-/// This implementation encrypts with `vg_chacha20_xor_avx512vl` and authenticates with `vg_poly1305_blocks_avx512`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -123535,8 +123511,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: crate::cpu:
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// For at most 960 bytes of data, this implementation copies the slices, 32 bytes at a time with AVX, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal_avx512vl`. For more, it copies the slices but the first to `dst` after the first slice's length, and encrypts the data there, its first slice read from where it is, with `vg_chacha20_poly1305_seal_split_avx512vl`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -123823,10 +123797,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES: crate::cpu::
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealSplitContract`. Constant time: only the pointers, `src_len` and `len` may affect timing, not the key, the nonce, the additional data or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// This implementation encrypts with `vg_chacha20_xor_avx512vl` and authenticates with `vg_poly1305_blocks_avx512`.
-///
-/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`.
 ///
 /// # Safety
 ///
@@ -127260,8 +127230,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_ifma`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -127779,10 +127747,6 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features =
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
-///
-/// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_ifma`.
-///
-/// From 449 to 639 bytes of data, it runs the code `vg_chacha20_poly1305_open_avx512vl` runs for short data instead: `vg_chacha20_xor_avx512vl`'s rounds with `vg_poly1305_blocks_avx2`'s Poly1305 inside them, rather than a pass of twelve blocks and then `vg_poly1305_blocks_ifma`.
 ///
 /// # Safety
 ///
@@ -137136,8 +137100,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// For at most 960 bytes of data, this implementation copies the slices, 64 bytes at a time with AVX-512, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal_ifma`. For more, it copies the slices but the first to `dst` after the first slice's length, and encrypts the data there, its first slice read from where it is, with `vg_chacha20_poly1305_seal_split_ifma`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -137442,10 +137404,6 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Feat
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealSplitContract`. Constant time: only the pointers, `src_len` and `len` may affect timing, not the key, the nonce, the additional data or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_ifma`.
-///
-/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`.
 ///
 /// # Safety
 ///
@@ -140875,8 +140833,6 @@ jmp 2186b
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// This implementation encrypts with `vg_chacha20_xor` and authenticates with `vg_poly1305_blocks`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -141285,8 +141241,6 @@ jmp 240b
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
-///
-/// This implementation encrypts with `vg_chacha20_xor` and authenticates with `vg_poly1305_blocks`.
 ///
 /// # Safety
 ///
@@ -141705,8 +141659,6 @@ jmp 211b
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
-///
-/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal`.
 ///
 /// # Safety
 ///

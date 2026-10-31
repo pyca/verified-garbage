@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
 ///
-/// The key, `u` and `t` are read and written a byte at a time, since the contract states no alignment for them; `scratch` is rounded up to a multiple of 8.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 384 bytes.
@@ -960,8 +958,6 @@ ret
 /// PBKDF2-HMAC-SHA-512/224 (RFC 8018 §5.2, with HMAC-SHA-512/224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/224 and HMAC-SHA-512/224 functions and `vg_pbkdf2_hmac_sha512_224_iterate`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
-///
-/// The password, the salt and `out` are read and written a byte at a time, since the contract states no alignment for them.
 ///
 /// # Safety
 ///

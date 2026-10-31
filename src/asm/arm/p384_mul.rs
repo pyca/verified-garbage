@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulInRangeContract` of `VG.Spec.Weierstrass.Mul.Curve`.
 ///
-/// The function keeps `r4`–`r9`, `r11` and `lr` in bytes 2224 to 2259 of `ws` and `r10` in `lr` while it runs, expands `k` into a table of its bits, one per byte, at bytes 4096 to 4479, copies `Q` to bytes 1456 to 1551 (slots 29 and 30), and runs a double-and-add ladder over the 384 bits of `k`'s 48 bytes, from the top, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p384_point_double` and `vg_p384_point_add`, with `a` and `3 b` read from `ws`) and a masked selection for each bit. Field elements are twelve packed 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`; nothing depends on `k` or `Q` but through masks.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -700,8 +698,6 @@ pub(crate) const VG_P384_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::
 /// The multiple `P = [k]Q` of a point `Q` of P-384, for the number `k` of 6 64-bit words (`48` bytes), little-endian, at byte 1552 of `ws`, and `Q`'s affine coordinates `x` and `y` at bytes 736 and 784, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in `Q`'s place, at bytes 736 to 879: coordinates of 6 64-bit words, little-endian, in Montgomery's form modulo P-384's prime `p`, below it, for `k` in `[1, n - 1]`, `n` the order of P-384's base point (for any other `k` the coordinates are unspecified). The function reads `p` at byte 64, zero at byte 208, and one, `a` and `3 b` in Montgomery's form at bytes 304, 352 and 400. Bytes 880 to 1551, 1984 to 2031, 160 to 207 and 2224 to 8191 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `mulInRangeContract` of `VG.Spec.Weierstrass.Mul.Curve`.
-///
-/// `vg_p384_mul`'s code, but for its calls of `vg_p384_point_double_umaal` and `vg_p384_point_add_umaal`. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///

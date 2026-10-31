@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
 ///
-/// Key expansion keeps `x` and `z` in `scratch`, rounded up to a multiple of 8, and runs each half of §2.4 as 40 steps, each one scan of the static `VG_CAST5_S5678`, entry `i` the four words `S8[i], S7[i], S6[i], S5[i]` (as for ECB), for four lookups at once: a group of four lines' extra lookups, or a line's main lookups. The step's bytes and what it does with the four values are chosen by comparing the public step number. Only `key_len` decides the number of bytes copied. The subkeys are written a byte at a time. `scratch` also holds our caller's s0-s10.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1317,8 +1315,6 @@ ret
 ///
 /// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
 ///
-/// Each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, entry `i` the four words `S4[i], S3[i], S2[i], S1[i]`: a loop over the 256 entries in order, at addresses that depend only on the entry's number, loads each of the entry's words (a byte at a time, since the contract states no alignment for the table) and keeps it under a mask that is all ones exactly when the index of the corresponding lookup is the entry's number (`xor`, then `(x - 1) >> 63`, arithmetically), so the four lookups of a round function are made together and no secret is an address or a branch condition. The table's address is formed position-independently with `lla`. The rotation by the secret `Kr` is five rotations by 1, 2, 4, 8 and 16 (each two word shifts and an `or`), each kept or not under a mask made from a bit of `Kr`. One block at a time, one round at a time; the round's type is a public count. The subkeys and the blocks are read and written a byte at a time. `scratch`, rounded up to a multiple of 8, holds our caller's s0-s10.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -1611,8 +1607,6 @@ ret
 /// CAST-128 (CAST5) ECB decryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
-///
-/// Each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, entry `i` the four words `S4[i], S3[i], S2[i], S1[i]`: a loop over the 256 entries in order, at addresses that depend only on the entry's number, loads each of the entry's words (a byte at a time, since the contract states no alignment for the table) and keeps it under a mask that is all ones exactly when the index of the corresponding lookup is the entry's number (`xor`, then `(x - 1) >> 63`, arithmetically), so the four lookups of a round function are made together and no secret is an address or a branch condition. The table's address is formed position-independently with `lla`. The rotation by the secret `Kr` is five rotations by 1, 2, 4, 8 and 16 (each two word shifts and an `or`), each kept or not under a mask made from a bit of `Kr`. One block at a time, one round at a time; the round's type is a public count. The subkeys and the blocks are read and written a byte at a time. `scratch`, rounded up to a multiple of 8, holds our caller's s0-s10.
 ///
 /// # Safety
 ///

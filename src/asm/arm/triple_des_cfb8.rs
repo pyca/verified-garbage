@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
 ///
-/// Baseline ARMv7: the generic CFB8, a byte at a time, of `Impl/Modes/Arm/`, calling the verified `vg_triple_des_ecb_encrypt` on one block per byte, with the chaining block in a 56-byte working space on the stack, zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -118,8 +116,6 @@ bx lr",
 /// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
-///
-/// Baseline ARMv7: the generic CFB8, a byte at a time, of `Impl/Modes/Arm/`, calling the verified `vg_triple_des_ecb_encrypt` on one block per byte, with the chaining block in a 56-byte working space on the stack, zeroed on return.
 ///
 /// # Safety
 ///

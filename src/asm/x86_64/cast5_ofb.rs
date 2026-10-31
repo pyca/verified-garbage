@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cast5.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through the generic OFB of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, selecting among four adjacent entries with SSE2 masks before updating the running result, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

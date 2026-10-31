@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MlKem.sampleNTTContract`. Not constant time in the seed: timing may depend on the pointer and on `*seed` (public in ML-KEM: the seed `ρ` of the matrix and two indices), but not on anything else.
 ///
-/// The function has no stack frame of its own: it saves `r29`–`r31` and its return address in `scratch`; the SHA-3 functions it calls use the 48 bytes of stack below the stack pointer.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 34 bytes.
@@ -133,8 +131,6 @@ blr",
 /// The ML-KEM number-theoretic transform, `NTT` (FIPS 203 Algorithm 9), of the polynomial `*f` (256 coefficients less than `q` = 3329), in place.
 ///
 /// Contract: `VG.Spec.MlKem.nttContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function uses no stack: it saves `r14` and `r15` in `scratch`.
 ///
 /// # Safety
 ///
@@ -464,8 +460,6 @@ blr",
 /// The inverse of the ML-KEM number-theoretic transform, `NTT⁻¹` (FIPS 203 Algorithm 10), of `*f` (256 coefficients less than `q` = 3329), in place.
 ///
 /// Contract: `VG.Spec.MlKem.nttInvContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function uses no stack: it saves `r14` and `r15` in `scratch`.
 ///
 /// # Safety
 ///
@@ -815,8 +809,6 @@ blr",
 /// The product of two NTT representations, `MultiplyNTTs` (FIPS 203 Algorithm 11): writes the product of `*f` and `*g` to `*h`, each of 256 coefficients less than `q` = 3329.
 ///
 /// Contract: `VG.Spec.MlKem.mulContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function uses no stack: it saves `r14` and `r15` in `scratch`.
 ///
 /// # Safety
 ///

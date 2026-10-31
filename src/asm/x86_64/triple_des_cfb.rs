@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through the scalar block function (`vg_triple_des_encrypt_block`'s code, inlined), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -292,8 +290,6 @@ ret
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption (also for decryption) under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline x86-64: one block at a time, through the scalar block function (`vg_triple_des_encrypt_block`'s code, inlined), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CFB of `Impl/Modes/X86_64/`.
 ///
 /// # Safety
 ///

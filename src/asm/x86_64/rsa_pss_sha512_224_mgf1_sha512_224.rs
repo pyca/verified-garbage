@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
 ///
-/// This implementation builds the encoding in its working space: `M'` is hashed over the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to `em`. Only the lengths decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `em` must be valid for reads and writes of `em_len` bytes.
@@ -448,8 +446,6 @@ ret
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512/224 and MGF1 with SHA-512/224, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 28-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_224_mgf1_sha512_224_verify`) after the RSA primitive.
 ///
 /// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// This implementation copies the encoding to its working space, unmasks `DB` with MGF1 and checks every byte without branching on it: the position of `0x01` and the salt are found by a scan over all of `DB`. Only the lengths decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -1433,8 +1429,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_ENCODE_AVX2_FEATURES: cra
 ///
 /// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
 ///
-/// This implementation builds the encoding in its working space: `M'` is hashed over the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to `em`. Only the lengths decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `em` must be valid for reads and writes of `em_len` bytes.
@@ -1879,8 +1873,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_CHECK_ENCODING_AVX2_FEATU
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512/224 and MGF1 with SHA-512/224, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 28-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_224_mgf1_sha512_224_verify`) after the RSA primitive.
 ///
 /// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// This implementation copies the encoding to its working space, unmasks `DB` with MGF1 and checks every byte without branching on it: the position of `0x01` and the salt are found by a scan over all of `DB`. Only the lengths decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -2865,8 +2857,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_ENCODE_SHANI_FEATURES: cr
 ///
 /// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
 ///
-/// This implementation builds the encoding in its working space: `M'` is hashed over the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to `em`. Only the lengths decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `em` must be valid for reads and writes of `em_len` bytes.
@@ -3311,8 +3301,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_CHECK_ENCODING_SHANI_FEAT
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512/224 and MGF1 with SHA-512/224, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 28-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_224_mgf1_sha512_224_verify`) after the RSA primitive.
 ///
 /// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// This implementation copies the encoding to its working space, unmasks `DB` with MGF1 and checks every byte without branching on it: the position of `0x01` and the salt are found by a scan over all of `DB`. Only the lengths decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -4297,8 +4285,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_CRT_ADX_FEATURES: cr
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked_adx`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -4468,8 +4454,6 @@ ret
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512/224 and MGF1 with SHA-512/224, of a SHA-512/224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
-///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -4642,8 +4626,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_CRT_IFMA_FEATURES: c
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512/224 and MGF1 with SHA-512/224, of a SHA-512/224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
-///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked_ifma`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -4818,8 +4800,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_AVX2_CRT_
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_avx2` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked_adx`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -4992,8 +4972,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_AVX2_FEAT
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512/224 and MGF1 with SHA-512/224, of a SHA-512/224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
-///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_avx2` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -5168,8 +5146,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_AVX2_CRT_
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_avx2` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked_ifma`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -5342,8 +5318,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_SHANI_CRT
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512/224 and MGF1 with SHA-512/224, of a SHA-512/224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
-///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_shani` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked_adx`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -5518,8 +5492,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_SHANI_FEA
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_shani` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -5692,8 +5664,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_SHANI_CRT
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512/224 and MGF1 with SHA-512/224, of a SHA-512/224 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 28-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 30`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512_224` and `VG.Spec.Mgf1.sha512_224`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
-///
-/// This implementation calls `vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_shani` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked_ifma`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -5872,8 +5842,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_RSA_AD
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked_adx` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -6004,8 +5972,6 @@ ret
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///
@@ -6139,8 +6105,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_RSA_IF
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked_ifma` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///
@@ -6276,8 +6240,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked_adx` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding_avx2` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -6411,8 +6373,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding_avx2` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///
@@ -6548,8 +6508,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked_ifma` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding_avx2` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -6683,8 +6641,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked_adx` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding_shani` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///
@@ -6820,8 +6776,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding_shani` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -6955,8 +6909,6 @@ pub(crate) const VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked_ifma` with the cached public-key values, then `vg_rsa_pss_sha512_224_mgf1_sha512_224_check_encoding_shani` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///

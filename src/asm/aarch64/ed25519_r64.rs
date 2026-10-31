@@ -6,8 +6,6 @@
 ///
 /// Contract: `doubleContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions, and AdvSIMD moves to keep `x20` to `x24` in lanes of `v16` to `v18` while it runs. Runs RFC 8032's doubling formula (§5.1.4): four squarings and four products, with the temporaries in slots 8–15: Ed25519's field operations on four 64-bit words, multiplied by rows and folded with `2^256 = 38`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -894,8 +892,6 @@ ret
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` with `Z = 1` whose cached form's first three coordinates, `[Y - X, Y + X, 2dT]`, are at byte 192, by RFC 8032's complete addition formula in extended coordinates. The 32 bytes at byte 288, where its `2Z` would be, need not hold anything. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
 /// Contract: `addAffineContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions, and AdvSIMD moves to keep `x20` to `x24` in lanes of `v16` to `v18` while it runs. Runs RFC 8032's complete addition formula of the point in slots 4–6, with `Z₁ · 2Z₂ = Z₁ + Z₁`: seven products, with the temporaries in slots 8–15: Ed25519's field operations on four 64-bit words, multiplied by rows and folded with `2^256 = 38`.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `pow250Contract` of `VG.Spec.X25519.Field64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions, and AdvSIMD moves to keep `x19` to `x24` in lanes of `v16` to `v18` while it runs. The addition chain of `vg_x25519`'s inversion up to `a^(2^250 - 1)`, with Ed25519's field products (four 64-bit words), the runs of squarings in loops counted by `x19`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 4096 bytes.

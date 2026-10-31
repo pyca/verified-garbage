@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit words in Montgomery form, with dedicated Comba field squaring and word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p256_mul_mod_p`, `vg_p256_mul_mod_n` and the other functions of `p256_mont`) with a final conditional subtraction. `[k]G` uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time SSE2 scans of a shared 148 KiB table. Its position-independent table address uses a balanced four-byte CALL frame. Field and scalar inversion each use 20 batches of 30 constant-time divsteps. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -8212,8 +8210,6 @@ ret
 /// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
-///
-/// The function validates the public key and signature without branches. Field elements and scalars are eight 32-bit words in Montgomery form, multiplied, added and subtracted in calls of `vg_p256_mul_mod_p`, `vg_p256_mul_mod_n` and the other functions of `p256_mont`. The fixed-base product `[u]G` uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time SSE2 scans of a 148 KiB precomputed table. Its position-independent table address uses a balanced four-byte CALL frame. The variable-base product `[v]Q` uses 65 signed four-bit windows with Jacobian doublings and constant-time scans of eight projective points, followed by a complete addition of the two products. Scalar inversion uses 20 batches of 30 constant-time divsteps. The final check avoids a field inversion: it compares `X = rZ`, or `X = (r+n)Z` when `r+n < p`, and rejects `Z = 0`. Invalid inputs follow the same path and the result is selected by a mask; timing depends only on pointers and the static table address.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

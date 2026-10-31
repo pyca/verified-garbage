@@ -335,8 +335,6 @@ ret
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation absorbs the whole blocks of data of at least 128 bytes four at a time in NEON (AdvSIMD), and the rest one at a time. It is faster than `vg_poly1305_update` on Apple's cores, and slower on Arm's Neoverse N2, whose two vector pipelines the multiplications saturate.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.

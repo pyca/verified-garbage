@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MlDsa.nttContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function saves `r4`–`r10` on the stack (the 28 bytes below the stack pointer), and stores a table of the 256 zetas in `scratch`.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -1203,8 +1201,6 @@ bx lr",
 /// The inverse of the ML-DSA number-theoretic transform, `NTT⁻¹` (FIPS 204 Algorithm 42), of `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
 /// Contract: `VG.Spec.MlDsa.nttInvContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function saves `r4`–`r10` on the stack (the 28 bytes below the stack pointer), and stores a table of the 256 negated zetas in `scratch`.
 ///
 /// # Safety
 ///
@@ -2430,8 +2426,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.mulContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function saves `r4`–`r9` on the stack (the 24 bytes below the stack pointer).
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads and writes of 1024 bytes.
@@ -2498,8 +2492,6 @@ bx lr",
 /// Adds the product of two elements of `T_q` to a third, `AddNTT(h, MultiplyNTT(f, g))` (FIPS 204 Algorithms 44 and 45): adds the coefficientwise product of `*f` and `*g` to `*h`, modulo `q` = 8380417.
 ///
 /// Contract: `VG.Spec.MlDsa.mulAddContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function saves `r4`–`r9` on the stack (the 24 bytes below the stack pointer).
 ///
 /// # Safety
 ///
@@ -2730,8 +2722,6 @@ bx lr",
 /// `BitPack(f mod± q, a, b)` (FIPS 204 Algorithm 17): writes `b - (fᵢ mod± q)` for the 256 coefficients `fᵢ` of `*f` to `out` as `bitlen (a + b)`-bit little-endian fields.
 ///
 /// Contract: `VG.Spec.MlDsa.bitPackContract`. Constant time: only the pointers, `a`, `b` and `len` may affect timing, not the data.
-///
-/// The function saves `r4` in a frame of 4 bytes on the stack, below the stack pointer.
 ///
 /// # Safety
 ///
@@ -3065,8 +3055,6 @@ bx lr",
 /// `BitUnpack(v, a, b)` (FIPS 204 Algorithm 19): writes `b - x` for the 256 `bitlen (a + b)`-bit little-endian fields `x` of the `len` bytes at `v`, modulo `q` = 8380417, to `*f`.
 ///
 /// Contract: `VG.Spec.MlDsa.bitUnpackContract`. Constant time: only the pointers, `len`, `a` and `b` may affect timing, not the data.
-///
-/// The function saves `r4` in a frame of 4 bytes on the stack, below the stack pointer.
 ///
 /// # Safety
 ///
@@ -3501,8 +3489,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.hintBitPackContract`. Not constant time in the hint: timing may depend on the pointers, `hlen`, `omega`, `len` and the hint at `h` (which the signature it encodes reveals), but not on anything else.
 ///
-/// The function saves `r4` and `r5` in a frame of 8 bytes on the stack, below the stack pointer.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads of `4 * hlen` bytes.
@@ -3557,8 +3543,6 @@ bx lr",
 /// `HintBitUnpack` (FIPS 204 Algorithm 21): if the `len = omega + k` bytes at `y` encode a hint of `k` polynomials, writes it to `h` as `k` polynomials of 256 coefficients 0 or 1 and returns 1; if they are malformed (`⊥`), returns 0, and `h` is unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.hintBitUnpackContract`. Not constant time in the encoding: timing may depend on the pointers, `len`, `omega`, `hlen` and the bytes at `y` (part of a signature), but not on anything else.
-///
-/// The function saves `r4`–`r7` in a frame of 16 bytes on the stack, below the stack pointer.
 ///
 /// # Safety
 ///
@@ -3691,8 +3675,6 @@ bx lr",
 /// `Power2Round` (FIPS 204 Algorithm 35) of each coefficient of `*t`: writes the `r1`s to `*t1` and the `r0`s, modulo `q` = 8380417, to `*t0`.
 ///
 /// Contract: `VG.Spec.MlDsa.power2RoundContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function saves `r4` on the stack (the 4 bytes below the stack pointer).
 ///
 /// # Safety
 ///
@@ -3874,8 +3856,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.normLtContract`. Constant time: only the pointer and `bound` may affect timing, not the data.
 ///
-/// The function saves `r4` on the stack (the 4 bytes below the stack pointer).
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads of 1024 bytes.
@@ -3913,8 +3893,6 @@ bx lr",
 /// `MakeHint` (FIPS 204 Algorithm 39) of each pair of coefficients of `*z` and `*r`, with `gamma2` = `γ₂`: writes 1 for true and 0 for false to `*h`, and returns the number of 1s.
 ///
 /// Contract: `VG.Spec.MlDsa.makeHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
-///
-/// The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer).
 ///
 /// # Safety
 ///
@@ -4036,8 +4014,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.useHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
 ///
-/// The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer).
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads of 1024 bytes.
@@ -4148,10 +4124,6 @@ bx lr",
 /// `RejNTTPoly` (FIPS 204 Algorithm 30): writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes `*seed` to `*a` (256 coefficients less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTTContract`. Not constant time in the seed: timing may depend on the pointers and on `*seed` (public in ML-DSA: the seed `ρ` of the matrix and two indices), but not on anything else.
-///
-/// It squeezes 1008 bytes of SHAKE128 output (6 blocks) and runs the loop of `RejNTTPoly` over them.
-///
-/// The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack below the stack pointer hold the stack arguments of the SHA-3 functions it calls.
 ///
 /// # Safety
 ///
@@ -4308,10 +4280,6 @@ bx lr",
 /// `RejBoundedPoly` (FIPS 204 Algorithm 31): writes the polynomial with coefficients in `[-eta, eta]` sampled from the SHAKE256 output of the 66 bytes `*seed` to `*a` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 481 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.rejBoundedContract`. Not constant time in which half-bytes of the SHAKE256 output it rejects: timing may depend on the pointers, `eta`, and whether each half-byte of the first 1088 bytes of output is rejected (`rejBoundedLeak`), which is independent of the coefficients sampled from those accepted; but not on anything else of the seed or the output.
-///
-/// It squeezes 544 bytes of SHAKE256 output (4 blocks) and runs the loop of `RejBoundedPoly` over them. The coefficient of an accepted half-byte is computed without a branch or a table, so only whether each half-byte is accepted affects timing.
-///
-/// The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack below the stack pointer hold the stack arguments of the SHA-3 functions it calls.
 ///
 /// # Safety
 ///
@@ -4573,10 +4541,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
 ///
-/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks them with the loop of `vg_mldsa_bit_unpack`.
-///
-/// The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack below the stack pointer hold the stack arguments of the SHA-3 functions it calls.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 66 bytes.
@@ -4811,10 +4775,6 @@ bx lr",
 /// `SampleInBall` (FIPS 204 Algorithm 29): writes the polynomial with `tau` coefficients 1 or -1 and the others 0 sampled from the SHAKE256 output of the `len` bytes at `ctilde` to `*c` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 221 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*c` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.sampleInBallContract`. Not constant time in the seed: timing may depend on the pointers, `len`, `tau` and the seed `c̃` at `ctilde`, but not on anything else.
-///
-/// It squeezes 272 bytes of SHAKE256 output (2 blocks) and runs the loop of `SampleInBall` over the 264 after the sign bits.
-///
-/// The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack below the stack pointer hold the stack arguments of the SHA-3 functions it calls.
 ///
 /// # Safety
 ///

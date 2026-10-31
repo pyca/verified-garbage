@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` of `VG.Spec.Ed25519.Point16`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `r4` to `r9` in its own working space and runs the complete addition formula as the ARMv7 Ed25519 code inlined it: nine products of sixteen-limb field elements, by X25519's ARMv7 product (row by row, with only the low 32-bit `mul`, then `lo + 38 hi` and the carry folded in), and additions and subtractions, with the temporaries in bytes 576 to 1087. It then restores the registers.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -5503,8 +5501,6 @@ bx lr",
 /// Point doubling on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with itself, by RFC 8032's complete addition formula in extended coordinates. A point is four coordinates `X, Y, Z, T` of 64 bytes each, consecutive; a coordinate is sixteen 32-bit little-endian words, least significant first, each a limb below `2^16`, standing for the residue of `Σ l_i 2^(16 i)` modulo `p = 2^255 - 19`. The 64 bytes at byte 1088 must hold the curve's constant `d`. The result's limbs are below `2^16`. Every byte of `ws` but the result's and the function's own working space (bytes 576 to 1087 and 1472 to 1631) keeps its value.
 ///
 /// Contract: `doubleContract` of `VG.Spec.Ed25519.Point16`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions. The function saves `r4` to `r9` in its own working space and runs the complete addition formula as the ARMv7 Ed25519 code inlined it: nine products of sixteen-limb field elements, by X25519's ARMv7 product (row by row, with only the low 32-bit `mul`, then `lo + 38 hi` and the carry folded in), and additions and subtractions, with the temporaries in bytes 576 to 1087. It then restores the registers.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not key bytes.
 ///
-/// Baseline PPC64LE scalar key expansion with fixed permutations and public round-count branches, in volatile registers only.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1542,8 +1540,6 @@ blr",
 /// Triple DES block encryption (FIPS 46-3): transforms the 8 bytes at `data` in place under the three DES schedules at `schedule`. Each schedule contains sixteen encryption-order 48-bit round keys in little-endian 64-bit slots; upper bits are ignored.
 ///
 /// Contract: `VG.Spec.TripleDes.encryptBlockContract`. Constant time: only pointers may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Baseline PPC64LE scalar Boolean S-box circuits; IP and FP shared across all three DES passes.
 ///
 /// # Safety
 ///
@@ -3432,8 +3428,6 @@ blr",
 ///
 /// Contract: `VG.Spec.TripleDes.decryptBlockContract`. Constant time: only pointers may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline PPC64LE scalar Boolean S-box circuits with reverse EDE key order.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -5321,8 +5315,6 @@ blr",
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// Baseline PPC64LE, calling the verified Triple DES block primitive for each complete block.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -5492,8 +5484,6 @@ blr",
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// Baseline PPC64LE, calling the verified Triple DES block primitive for each complete block.
 ///
 /// # Safety
 ///

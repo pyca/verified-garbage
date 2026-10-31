@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ct.eqContract`. Constant time: only the pointers, `a_len` and `b_len` may affect timing, not the bytes compared; only the result depends on them.
 ///
-/// The bytes are loaded one at a time, so that every load is naturally aligned.
-///
 /// # Safety
 ///
 /// * `a` must be valid for reads of `a_len` bytes.

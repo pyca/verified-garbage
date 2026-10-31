@@ -11,8 +11,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -623,10 +621,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: crate::cpu::Features = crat
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -1282,8 +1276,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -1894,10 +1886,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -2553,8 +2541,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
 /// The machine code of this function is that of `vg_aes_gcm_siv_seal_aesni_pclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -2580,10 +2566,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
-///
 /// The machine code of this function is that of `vg_aes_gcm_siv_open_aesni_pclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -2608,8 +2590,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Feature
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -3404,10 +3384,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Feature
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -4246,8 +4222,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks` and `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -4858,10 +4832,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: crate::cpu::Features = cra
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks` and `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -5514,8 +5484,6 @@ ret
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks` and `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -6122,10 +6090,6 @@ ret
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks` and `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -6779,8 +6743,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: crate::cpu::Features = crate
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -7575,10 +7537,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: crate::cpu::Features = crate
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -8417,8 +8375,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -9212,10 +9168,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -10053,8 +10005,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -11991,10 +11941,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -14259,8 +14205,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
-///
 /// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -14286,10 +14230,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
-///
 /// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -14314,8 +14254,6 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = cr
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks` and `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -15110,10 +15048,6 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = cr
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_encrypt_blocks` and `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_vpclmul`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///

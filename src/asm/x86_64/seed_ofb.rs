@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: each batch of sixteen blocks is a call of `vg_seed_encrypt_blocks`, with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; one block per batch, of which the other fifteen lanes are unused. The schedule is copied into the working space once per call. The mode is the generic OFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

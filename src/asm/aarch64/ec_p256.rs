@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// Public-key derivation shares signing's width-7 Booth/Jacobian fixed-base comb and its existing 37 rows of 64 affine entries in `VG_P256_COMB`. Every row is scanned in full, interleaved with the previous window's mixed addition; all secret-dependent selections use masks. Mixed additions use specialized P-256 squaring and register forwarding. The Booth/order proof excludes equal nonzero operands; masks handle zero digits and an infinite accumulator. After conversion to homogeneous coordinates, fixed divsteps invert `Z` and the affine coordinates are encoded. The function saves `x19`–`x25` in its 8 KB scratch buffer and returns zeros for an invalid scalar. Timing depends only on the pointers and the static table address.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
 ///
-/// Key expansion keeps `x` and `z` in `scratch` and makes the four main lookups of each line of §2.4 together by a scan of the static `VG_CAST5_S5678`, entry `i` the four words `S8[i], S7[i], S6[i], S5[i]`, like the scans of ECB; a group of four lines makes its four extra lookups by one more scan, kept in an AdvSIMD register. Only `key_len` decides the number of bytes copied.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1998,8 +1996,6 @@ ret
 ///
 /// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
 ///
-/// Each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, entry `i` the four words `S4[i], S3[i], S2[i], S1[i]`: every entry is loaded in order, compared with the four indices in the lanes of an AdvSIMD register (`cmeq`) and kept under the resulting mask, so the four lookups of a round function are made together and no secret is an address. The rotation by the secret `Kr` is five rotations by 1, 2, 4, 8 and 16, each selected or not by `csel` on a bit of `Kr`. One block at a time, rounds three at a time; `scratch` is not used.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -2368,8 +2364,6 @@ ret
 /// CAST-128 (CAST5) ECB decryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
-///
-/// Each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, entry `i` the four words `S4[i], S3[i], S2[i], S1[i]`: every entry is loaded in order, compared with the four indices in the lanes of an AdvSIMD register (`cmeq`) and kept under the resulting mask, so the four lookups of a round function are made together and no secret is an address. The rotation by the secret `Kr` is five rotations by 1, 2, 4, 8 and 16, each selected or not by `csel` on a bit of `Kr`. One block at a time, rounds three at a time; `scratch` is not used.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function saves `lr` in its own working space and computes Renes, Costello and Batina's 40 steps by calls of `vg_brainpoolp256r1_mul_mod_p`, `vg_brainpoolp256r1_add_mod_p` and `vg_brainpoolp256r1_sub_mod_p` on fixed offsets of `ws` (in `r3`, which they keep), `li` immediates in `r4`–`r6`. It writes no register but `r0`, `r4`–`r12` and `lr`, which it restores.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -191,8 +189,6 @@ blr",
 /// The doubling `O = P + P` of a point on brainpoolP256r1, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are read at bytes 3520 and 3552. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
-///
-/// The function saves `lr` in its own working space and computes Renes, Costello and Batina's 40 steps by calls of `vg_brainpoolp256r1_mul_mod_p`, `vg_brainpoolp256r1_add_mod_p` and `vg_brainpoolp256r1_sub_mod_p` on fixed offsets of `ws` (in `r3`, which they keep), `li` immediates in `r4`–`r6`. It writes no register but `r0`, `r4`–`r12` and `lr`, which it restores.
 ///
 /// # Safety
 ///

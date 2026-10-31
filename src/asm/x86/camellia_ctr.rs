@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.ctrContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the counter block or the data.
 ///
-/// Baseline IA-32: the generic CTR mode over Camellia’s bitsliced encryption core, one counter block at a time. The other seven lanes are unused; bitsliced subkeys are built once per call, inline, and each counter block is a call of `vg_camellia_crypt_prepared`, its arguments in a frame on the stack. The full 128-bit big-endian counter increment is verified, and working space is zeroed on return.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

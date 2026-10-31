@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
 ///
-/// Byte stores up to the first 8-byte aligned address, doubleword stores of the aligned part, then a byte tail, so that every store is naturally aligned.
-///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `len` bytes.
