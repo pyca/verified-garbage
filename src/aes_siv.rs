@@ -68,9 +68,10 @@ use crate::arch::aes_siv::{
     vg_aes_siv_init_aesni,
 };
 use crate::arch::aes_siv::{vg_aes_siv_decrypt, vg_aes_siv_encrypt, vg_aes_siv_init};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
+use verified_garbage_cpu::Features;
 
 /// A 16-byte block.
 type Block = [u8; 16];

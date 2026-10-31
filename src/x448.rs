@@ -31,8 +31,9 @@ use crate::arch::x448::vg_x448;
 use crate::arch::x448::vg_x448_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x448::{VG_X448_ADX_FEATURES, vg_x448_adx};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_x448`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -229,7 +230,7 @@ mod tests {
             let adx = VG_X448_ADX_FEATURES;
             assert_eq!(Backend::select(adx), Backend::Adx);
             assert_eq!(
-                Backend::select(Features(crate::cpu::feature::BMI2)),
+                Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
                 Backend::Baseline
             );
         }

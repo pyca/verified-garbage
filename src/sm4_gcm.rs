@@ -76,8 +76,9 @@ use crate::arch::sm4_gcm::{
     vg_sm4_gcm_stream_decrypt, vg_sm4_gcm_stream_encrypt, vg_sm4_gcm_stream_finish,
     vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_verify,
 };
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// A 16-byte block: a tag.
 pub type Block = [u8; 16];
@@ -630,7 +631,8 @@ mod tests {
     extern crate std;
 
     use super::{Error, Ghash, MAX_AAD, MAX_TEXT, Sm4Gcm, Stream, add_len};
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
+    use verified_garbage_cpu::Features;
 
     /// The implementation of GHASH chosen for each set of features.
     #[test]
@@ -645,22 +647,22 @@ mod tests {
     #[test]
     fn ghash_backend_x86() {
         let f = |bits: u32| Ghash::select(Features(bits));
-        assert_eq!(f(crate::cpu::feature::PCLMULQDQ), Ghash::Scalar);
+        assert_eq!(f(verified_garbage_cpu::feature::PCLMULQDQ), Ghash::Scalar);
         assert_eq!(
-            f(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3),
+            f(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3),
             Ghash::Pclmul
         );
-        let all = crate::cpu::feature::AVX
-            | crate::cpu::feature::AVX2
-            | crate::cpu::feature::PCLMULQDQ
-            | crate::cpu::feature::SSSE3
-            | crate::cpu::feature::VPCLMULQDQ;
+        let all = verified_garbage_cpu::feature::AVX
+            | verified_garbage_cpu::feature::AVX2
+            | verified_garbage_cpu::feature::PCLMULQDQ
+            | verified_garbage_cpu::feature::SSSE3
+            | verified_garbage_cpu::feature::VPCLMULQDQ;
         #[cfg(target_arch = "x86_64")]
         assert_eq!(f(all), Ghash::Vpclmul);
         // 32-bit x86 has no `_vpclmul` instances.
         #[cfg(target_arch = "x86")]
         assert_eq!(f(all), Ghash::Pclmul);
-        assert_eq!(f(all & !crate::cpu::feature::AVX), Ghash::Pclmul);
+        assert_eq!(f(all & !verified_garbage_cpu::feature::AVX), Ghash::Pclmul);
     }
 
     /// The instance AArch64's CPUs with PMULL choose.
@@ -668,7 +670,7 @@ mod tests {
     #[test]
     fn ghash_backend_aarch64() {
         assert_eq!(
-            Ghash::select(Features(crate::cpu::feature::AES)),
+            Ghash::select(Features(verified_garbage_cpu::feature::AES)),
             Ghash::Aes
         );
     }

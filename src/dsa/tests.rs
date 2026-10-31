@@ -1,5 +1,5 @@
 use super::*;
-use crate::cpu::feature;
+use verified_garbage_cpu::feature;
 #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};

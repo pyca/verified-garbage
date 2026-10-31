@@ -29,8 +29,9 @@ use crate::arch::ecdsa_p256::{VG_ECDSA_P256_SIGN_ADX_FEATURES, VG_ECDSA_P256_VER
 use crate::arch::ecdsa_p256::{
     VG_ECDSA_P256_SIGN_UMAAL_FEATURES, VG_ECDSA_P256_VERIFY_UMAAL_FEATURES,
 };
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The multiplications of P-256's field elements and scalars.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -116,7 +117,7 @@ pub(crate) fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::*;
-    use crate::cpu::feature;
+    use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with BMI2, ADX and AVX2 (and AVX, which
     /// AVX2 implies), or without one of them.
@@ -149,7 +150,7 @@ mod tests {
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
     use super::*;
-    use crate::cpu::feature;
+    use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with `umaal`, or without it.
     #[test]

@@ -3,7 +3,9 @@
 
 #![cfg(target_arch = "x86_64")]
 
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
+
+use verified_garbage_cpu::Features;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
@@ -143,8 +145,8 @@ validate!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cpu::feature;
     use crate::ecdh::*;
+    use verified_garbage_cpu::feature;
 
     #[test]
     fn select() {

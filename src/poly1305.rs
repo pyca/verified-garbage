@@ -48,8 +48,9 @@ use crate::arch::poly1305::{
     vg_poly1305_update_ifma,
 };
 use crate::arch::poly1305::{vg_poly1305_finalize, vg_poly1305_init, vg_poly1305_update};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 pub use crate::hmac::InvalidMac;
 
@@ -102,7 +103,7 @@ impl Backend {
     /// saturate).
     #[cfg(target_arch = "aarch64")]
     fn select_for(f: Features, apple: bool) -> Backend {
-        if apple && f.contains(const { Features(crate::cpu::feature::NEON) }) {
+        if apple && f.contains(const { Features(verified_garbage_cpu::feature::NEON) }) {
             Backend::Neon
         } else {
             Backend::Scalar
@@ -328,18 +329,18 @@ mod tests {
             // AVX2 one.
             assert_eq!(
                 Backend::select(Features(
-                    crate::cpu::feature::AVX | crate::cpu::feature::AVX512F
+                    verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F
                 )),
                 Backend::Scalar
             );
             assert_eq!(
-                Backend::select(Features(crate::cpu::feature::AVX)),
+                Backend::select(Features(verified_garbage_cpu::feature::AVX)),
                 Backend::Scalar
             );
         }
         #[cfg(target_arch = "aarch64")]
         {
-            let neon = Features(crate::cpu::feature::NEON);
+            let neon = Features(verified_garbage_cpu::feature::NEON);
             assert_eq!(Backend::select_for(neon, true), Backend::Neon);
             assert_eq!(Backend::select_for(neon, false), Backend::Scalar);
             assert_eq!(Backend::select_for(Features(0), true), Backend::Scalar);

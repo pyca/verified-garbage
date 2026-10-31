@@ -64,10 +64,10 @@ macro_rules! blake2 {
 
         impl $backend {
             /// The best implementation a CPU with the features `f` can run.
-            pub(crate) fn select(f: $crate::cpu::Features) -> Self {
+            pub(crate) fn select(f: verified_garbage_cpu::Features) -> Self {
                 $(
                     $(#[$attr])*
-                    if f.contains(const { $crate::cpu::Features::all(&[$($req),*]) }) {
+                    if f.contains(const { verified_garbage_cpu::Features::all(&[$($req),*]) }) {
                         return Self::$variant;
                     }
                 )*

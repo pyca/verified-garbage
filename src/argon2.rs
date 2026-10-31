@@ -38,8 +38,8 @@ use crate::arch::argon2::{
     vg_argon2_blake2b_avx512_g_avx2, vg_argon2_blake2b_avx512_g_avx512, vg_argon2_g_avx2,
     vg_argon2_g_avx512,
 };
-use crate::cpu::Features;
 use crate::hashes::blake2b::Blake2bBackend;
+use verified_garbage_cpu::Features;
 
 /// The implementations of Argon2's compression function G
 /// (`vg_argon2_compress`), which every derivation calls, with each BLAKE2b
@@ -473,14 +473,14 @@ mod tests {
             );
             assert_eq!(
                 CompressBackend::select(Features(
-                    crate::cpu::feature::AVX
-                        | crate::cpu::feature::AVX2
-                        | crate::cpu::feature::AVX512F
+                    verified_garbage_cpu::feature::AVX
+                        | verified_garbage_cpu::feature::AVX2
+                        | verified_garbage_cpu::feature::AVX512F
                 )),
                 CompressBackend::Avx512
             );
             assert_eq!(
-                CompressBackend::select(Features(crate::cpu::feature::AVX)),
+                CompressBackend::select(Features(verified_garbage_cpu::feature::AVX)),
                 CompressBackend::Scalar
             );
         }

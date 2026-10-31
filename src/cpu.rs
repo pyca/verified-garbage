@@ -29,10 +29,10 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
-pub(crate) use verified_garbage_cpu::Features;
+use verified_garbage_cpu::Features;
 // Each target uses only some of the features' bits, and some none.
 #[allow(unused_imports)]
-pub(crate) use verified_garbage_cpu::feature;
+use verified_garbage_cpu::feature;
 
 /// Each feature's name and bit, for reading `VG_CPU_FEATURES` and for the
 /// tests: bit `i` is `NAMES[i]`'s.

@@ -77,8 +77,9 @@ super::streaming_hash!(
 #[cfg(test)]
 mod tests {
     use super::{Sha224, Sha224Backend};
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
     use crate::hashes::sha256::Sha256Backend;
+    use verified_garbage_cpu::Features;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.

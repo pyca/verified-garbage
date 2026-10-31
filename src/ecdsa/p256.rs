@@ -210,7 +210,8 @@ mod tests {
         VG_ECDSA_P256_SHA384_SIGN_AVX2_FEATURES, VG_ECDSA_P256_SHA384_SIGN_SHANI_ADX_FEATURES,
         VG_ECDSA_P256_SHA384_SIGN_SHANI_FEATURES,
     };
-    use crate::cpu::{Features, NAMES};
+    use crate::cpu::NAMES;
+    use verified_garbage_cpu::Features;
 
     /// The CPU features of the signature with SHA-256's backend `s` and the
     /// multiplications `m`.

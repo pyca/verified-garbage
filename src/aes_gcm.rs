@@ -227,9 +227,10 @@ use crate::arch::gcm::{
     vg_aes_gcm_seal_gather_vaes_vpclmul, vg_aes_gcm_seal_gather_vaes_vpclmul_avx512,
     vg_aes_gcm_seal_gather_vpclmul,
 };
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::MaybeUninit;
+use verified_garbage_cpu::Features;
 
 /// A 16-byte block.
 type Block = [u8; 16];
@@ -1773,7 +1774,8 @@ impl AesGcmDecryptor<'_> {
 #[cfg(test)]
 mod tests {
     use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select};
-    use crate::cpu::{Features, detected};
+    use crate::cpu::detected;
+    use verified_garbage_cpu::Features;
 
     /// The implementation chosen for each set of features: AES's and
     /// GHASH's, independently.
@@ -1783,17 +1785,17 @@ mod tests {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
             assert_eq!(
-                f(crate::cpu::feature::AES
-                    | crate::cpu::feature::PCLMULQDQ
-                    | crate::cpu::feature::SSSE3),
+                f(verified_garbage_cpu::feature::AES
+                    | verified_garbage_cpu::feature::PCLMULQDQ
+                    | verified_garbage_cpu::feature::SSSE3),
                 Backend::AesNiPclmul
             );
             assert_eq!(
-                f(crate::cpu::feature::AES | crate::cpu::feature::SSSE3),
+                f(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3),
                 Backend::AesNi
             );
             assert_eq!(
-                f(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3),
+                f(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3),
                 Backend::Pclmul
             );
         }
@@ -1801,97 +1803,100 @@ mod tests {
         // shuffles), not on x86.
         #[cfg(target_arch = "x86_64")]
         assert_eq!(
-            f(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ),
+            f(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ),
             Backend::Scalar
         );
         // VAES and VPCLMULQDQ, each with the other, the other's 128-bit
         // instruction or neither; their 256-bit code needs AVX2 too.
         #[cfg(target_arch = "x86_64")]
         {
-            let all = crate::cpu::feature::AES
-                | crate::cpu::feature::AVX
-                | crate::cpu::feature::AVX2
-                | crate::cpu::feature::PCLMULQDQ
-                | crate::cpu::feature::SSSE3
-                | crate::cpu::feature::VAES
-                | crate::cpu::feature::VPCLMULQDQ;
+            let all = verified_garbage_cpu::feature::AES
+                | verified_garbage_cpu::feature::AVX
+                | verified_garbage_cpu::feature::AVX2
+                | verified_garbage_cpu::feature::PCLMULQDQ
+                | verified_garbage_cpu::feature::SSSE3
+                | verified_garbage_cpu::feature::VAES
+                | verified_garbage_cpu::feature::VPCLMULQDQ;
             assert_eq!(f(all), Backend::VaesVpclmul);
             // The 512-bit loops need AVX512F and AVX512BW too.
-            let avx512 = all | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW;
+            let avx512 = all
+                | verified_garbage_cpu::feature::AVX512F
+                | verified_garbage_cpu::feature::AVX512BW;
             assert_eq!(f(avx512), Backend::VaesVpclmulAvx512);
-            assert_eq!(f(all | crate::cpu::feature::AVX512F), Backend::VaesVpclmul);
             assert_eq!(
-                f(all & !crate::cpu::feature::VPCLMULQDQ),
+                f(all | verified_garbage_cpu::feature::AVX512F),
+                Backend::VaesVpclmul
+            );
+            assert_eq!(
+                f(all & !verified_garbage_cpu::feature::VPCLMULQDQ),
                 Backend::VaesPclmul
             );
             assert_eq!(
-                f(crate::cpu::feature::AES
-                    | crate::cpu::feature::AVX
-                    | crate::cpu::feature::AVX2
-                    | crate::cpu::feature::PCLMULQDQ
-                    | crate::cpu::feature::SSSE3
-                    | crate::cpu::feature::VPCLMULQDQ),
+                f(verified_garbage_cpu::feature::AES
+                    | verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::AVX2
+                    | verified_garbage_cpu::feature::PCLMULQDQ
+                    | verified_garbage_cpu::feature::SSSE3
+                    | verified_garbage_cpu::feature::VPCLMULQDQ),
                 Backend::AesNiVpclmul
             );
             assert_eq!(
-                f(crate::cpu::feature::AES
-                    | crate::cpu::feature::AVX
-                    | crate::cpu::feature::AVX2
-                    | crate::cpu::feature::SSSE3
-                    | crate::cpu::feature::VAES),
+                f(verified_garbage_cpu::feature::AES
+                    | verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::AVX2
+                    | verified_garbage_cpu::feature::SSSE3
+                    | verified_garbage_cpu::feature::VAES),
                 Backend::Vaes
             );
             assert_eq!(
-                f(crate::cpu::feature::AVX
-                    | crate::cpu::feature::AVX2
-                    | crate::cpu::feature::PCLMULQDQ
-                    | crate::cpu::feature::SSSE3
-                    | crate::cpu::feature::VPCLMULQDQ),
+                f(verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::AVX2
+                    | verified_garbage_cpu::feature::PCLMULQDQ
+                    | verified_garbage_cpu::feature::SSSE3
+                    | verified_garbage_cpu::feature::VPCLMULQDQ),
                 Backend::Vpclmul
             );
             // AES-NI and PCLMULQDQ with AVX (and without AVX2, which the
             // 256-bit code needs): one pass.
             assert_eq!(
-                f(crate::cpu::feature::AES
-                    | crate::cpu::feature::AVX
-                    | crate::cpu::feature::PCLMULQDQ
-                    | crate::cpu::feature::SSSE3
-                    | crate::cpu::feature::VAES
-                    | crate::cpu::feature::VPCLMULQDQ),
+                f(verified_garbage_cpu::feature::AES
+                    | verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::PCLMULQDQ
+                    | verified_garbage_cpu::feature::SSSE3
+                    | verified_garbage_cpu::feature::VAES
+                    | verified_garbage_cpu::feature::VPCLMULQDQ),
                 Backend::AesNiPclmulAvx
             );
             assert_eq!(
-                f(crate::cpu::feature::AES
-                    | crate::cpu::feature::AVX
-                    | crate::cpu::feature::PCLMULQDQ
-                    | crate::cpu::feature::SSSE3),
+                f(verified_garbage_cpu::feature::AES
+                    | verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::PCLMULQDQ
+                    | verified_garbage_cpu::feature::SSSE3),
                 Backend::AesNiPclmulAvx
             );
             assert_eq!(
-                f(
-                    crate::cpu::feature::AES
-                        | crate::cpu::feature::AVX
-                        | crate::cpu::feature::SSSE3
-                ),
+                f(verified_garbage_cpu::feature::AES
+                    | verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::SSSE3),
                 Backend::AesNi
             );
         }
         #[cfg(target_arch = "x86")]
         {
-            assert_eq!(f(crate::cpu::feature::AES), Backend::AesNi);
+            assert_eq!(f(verified_garbage_cpu::feature::AES), Backend::AesNi);
             assert_eq!(
-                f(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ),
+                f(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ),
                 Backend::AesNi
             );
         }
         #[cfg(target_arch = "aarch64")]
         {
-            assert_eq!(f(crate::cpu::feature::AES), Backend::Aes);
+            assert_eq!(f(verified_garbage_cpu::feature::AES), Backend::Aes);
             assert_eq!(
-                f(crate::cpu::feature::AES | crate::cpu::feature::SHA3),
+                f(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3),
                 Backend::AesSha3
             );
-            assert_eq!(f(crate::cpu::feature::SHA3), Backend::Scalar);
+            assert_eq!(f(verified_garbage_cpu::feature::SHA3), Backend::Scalar);
         }
         assert_eq!(f(0), Backend::Scalar);
         let best = AesGcm::new(&[0; 16]).unwrap().fns.backend;

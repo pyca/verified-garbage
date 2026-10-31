@@ -91,8 +91,8 @@ ALIAS = re.compile(r"^pub(?:\(crate\))? use self::(vg_\w+) as (vg_\w+);$", re.MU
 SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
 WORD = re.compile(r"\w")
 FEATURES = re.compile(
-    r"^pub(?:\(crate\))? const (VG_\w+)_FEATURES: crate::cpu::Features = "
-    r"crate::cpu::Features\((.*?)\);",
+    r"^pub(?:\(crate\))? const (VG_\w+)_FEATURES: (?:crate::cpu|verified_garbage_cpu)::Features = "
+    r"(?:crate::cpu|verified_garbage_cpu)::Features\((.*?)\);",
     re.MULTILINE,
 )
 
@@ -153,7 +153,7 @@ def features(srcs):
         feats = targets.setdefault(target, {})
         for m in FEATURES.finditer(text):
             feats[m.group(1).lower()] = frozenset(
-                f.lower() for f in re.findall(r"crate::cpu::feature::(\w+)", m.group(2)))
+                f.lower() for f in re.findall(r"(?:crate::cpu|verified_garbage_cpu)::feature::(\w+)", m.group(2)))
     return targets
 
 

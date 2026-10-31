@@ -20,8 +20,9 @@ use crate::arch::ecdh_p224::VG_ECDH_P224_UMAAL_FEATURES;
 use crate::arch::ecdsa_p224::{
     VG_ECDSA_P224_SIGN_UMAAL_FEATURES, VG_ECDSA_P224_VERIFY_UMAAL_FEATURES,
 };
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The multiplications of P-224's field elements.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -83,7 +84,7 @@ pub(crate) fn public_key(d: &[u8; 28]) -> Option<[u8; 57]> {
 #[cfg(all(test, target_arch = "arm"))]
 mod tests {
     use super::*;
-    use crate::cpu::feature;
+    use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with `umaal`, or without it.
     #[test]

@@ -511,10 +511,10 @@ macro_rules! pss_hash {
         // The features are checked by the test below.
         $(
             $(#[$attr])*
-            const _: &[$crate::cpu::Features] = &[$($vreq,)* $($sreq,)*];
+            const _: &[verified_garbage_cpu::Features] = &[$($vreq,)* $($sreq,)*];
             $(
                 #[cfg(target_arch = "x86_64")]
-                const _: &[$crate::cpu::Features] = &[$($vareq,)* $($vireq,)* $($areq,)* $($ireq,)*];
+                const _: &[verified_garbage_cpu::Features] = &[$($vareq,)* $($vireq,)* $($areq,)* $($ireq,)*];
             )?
             $(
                 #[cfg(all(
@@ -527,13 +527,13 @@ macro_rules! pss_hash {
                         target_os = "openbsd"
                     )
                 ))]
-                const _: &[$crate::cpu::Features] = &[$($ureq,)* $($vureq,)*];
+                const _: &[verified_garbage_cpu::Features] = &[$($ureq,)* $($vureq,)*];
             )?
         )*
 
         /// The functions for the implementations that a CPU with the
         /// features `f` runs best.
-        pub(super) fn functions(f: $crate::cpu::Features) -> (super::SignFn<N>, super::VerifyFn<N>) {
+        pub(super) fn functions(f: verified_garbage_cpu::Features) -> (super::SignFn<N>, super::VerifyFn<N>) {
             let crt = $crate::rsa::Backend::select(f);
             match $backend::select(f) {
                 $(
@@ -597,7 +597,7 @@ macro_rules! pss_hash {
             /// it calls are not selected for: on every set of features.
             #[test]
             fn backend_features() {
-                use $crate::cpu::Features;
+                use verified_garbage_cpu::Features;
                 for bits in 0..1u32 << $crate::cpu::NAMES.len() {
                     let f = Features(bits);
                     let crt = $crate::rsa::Backend::select(f);

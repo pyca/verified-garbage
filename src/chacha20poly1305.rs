@@ -89,8 +89,9 @@ use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_seal_ssse3,
 };
 use crate::chacha20::Backend;
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The best implementation a CPU with the features `f` can run (`open`'s
 /// instances need the same features as `seal`'s, see the tests, but for
@@ -372,9 +373,9 @@ impl ChaCha20Poly1305 {
 #[cfg(test)]
 mod tests {
     use super::{Backend, ChaCha20Poly1305, Error, P_MAX, add_len, check_len, select};
-    #[cfg(target_arch = "x86_64")]
-    use crate::cpu::Features;
     use crate::cpu::detected;
+    #[cfg(target_arch = "x86_64")]
+    use verified_garbage_cpu::Features;
 
     /// Decryption undoes encryption, and rejects any change to the data, the
     /// additional data, the nonce or the tag, zeroing the data.
@@ -631,7 +632,10 @@ mod tests {
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
-        assert_eq!(select(Features(crate::cpu::feature::AVX)), Backend::Scalar);
+        assert_eq!(
+            select(Features(verified_garbage_cpu::feature::AVX)),
+            Backend::Scalar
+        );
     }
 
     /// On x86, the SSSE3 instances (`seal`, `open` and `seal_gather`) need
@@ -649,7 +653,7 @@ mod tests {
             VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
         };
-        use crate::cpu::Features;
+        use verified_garbage_cpu::Features;
         let ssse3 = VG_CHACHA20_XOR_SSSE3_FEATURES;
         assert_eq!(VG_CHACHA20_APPLY_SSSE3_FEATURES, ssse3);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
@@ -672,18 +676,21 @@ mod tests {
             VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES,
         };
-        use crate::cpu::Features;
+        use verified_garbage_cpu::Features;
         let sve2 = VG_CHACHA20_XOR_SVE2_FEATURES;
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES, sve2);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES, sve2);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES, sve2);
         assert_eq!(
             select(Features::all(&[
-                Features(crate::cpu::feature::NEON),
+                Features(verified_garbage_cpu::feature::NEON),
                 VG_CHACHA20_XOR_SVE2_FEATURES
             ])),
             Backend::Sve2
         );
-        assert_eq!(select(Features(crate::cpu::feature::NEON)), Backend::Neon);
+        assert_eq!(
+            select(Features(verified_garbage_cpu::feature::NEON)),
+            Backend::Neon
+        );
     }
 }

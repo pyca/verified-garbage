@@ -120,7 +120,8 @@ use crate::arch::{
     rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES,
     rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
 };
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
+use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_rsa_public_precompute`,
 /// `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
@@ -536,7 +537,7 @@ pub(crate) mod tests {
     #[test]
     fn backends_x86_64() {
         assert_eq!(
-            Backend::select(Features(crate::cpu::feature::BMI2)),
+            Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
             Backend::Baseline
         );
         // The private-key operation's `_adx` code reads its table with AVX2.
@@ -552,7 +553,7 @@ pub(crate) mod tests {
             Backend::select(Features::all(&[
                 VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
                 VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
-                Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2),
+                Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2),
             ])),
             Backend::Adx
         );
@@ -563,16 +564,16 @@ pub(crate) mod tests {
         assert_eq!(
             Backend::select(Features::all(&[
                 VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
-                Features(crate::cpu::feature::AVX2),
+                Features(verified_garbage_cpu::feature::AVX2),
             ])),
             Backend::Ifma
         );
         assert_eq!(
             Backend::select(Features(
-                crate::cpu::feature::AVX
-                    | crate::cpu::feature::AVX512F
-                    | crate::cpu::feature::AVX512IFMA
-                    | crate::cpu::feature::AVX512VL
+                verified_garbage_cpu::feature::AVX
+                    | verified_garbage_cpu::feature::AVX512F
+                    | verified_garbage_cpu::feature::AVX512IFMA
+                    | verified_garbage_cpu::feature::AVX512VL
             )),
             Backend::Baseline
         );

@@ -78,11 +78,11 @@ impl Backend {
     }
 
     #[cfg(target_arch = "aarch64")]
-    fn select(features: crate::cpu::Features, apple: bool, requested: bool) -> Self {
+    fn select(features: verified_garbage_cpu::Features, apple: bool, requested: bool) -> Self {
         if (apple || requested)
             && features.contains(
                 const {
-                    crate::cpu::Features::all(&[
+                    verified_garbage_cpu::Features::all(&[
                         VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES,
                         VG_KECCAK_PAD_SHA3_FEATURES,
                         VG_KECCAK_SQUEEZE_SHA3_FEATURES,
@@ -418,7 +418,7 @@ mod tests {
     #[test]
     fn backend_selection() {
         use super::Backend;
-        use crate::cpu::{Features, feature};
+        use verified_garbage_cpu::{Features, feature};
         for apple in [false, true] {
             for requested in [false, true] {
                 assert_eq!(

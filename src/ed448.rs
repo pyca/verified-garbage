@@ -48,10 +48,10 @@ enum Backend {
 
 #[cfg(target_arch = "x86_64")]
 impl Backend {
-    fn select(features: crate::cpu::Features) -> Self {
+    fn select(features: verified_garbage_cpu::Features) -> Self {
         if features.contains(
             const {
-                crate::cpu::Features::all(&[
+                verified_garbage_cpu::Features::all(&[
                     VG_ED448_PUBLIC_KEY_ADX_FEATURES,
                     VG_ED448_SIGN_CACHED_ADX_FEATURES,
                     VG_ED448_VERIFY_ADX_FEATURES,
@@ -77,7 +77,7 @@ fn backend() -> Backend {
     #[cfg(target_arch = "aarch64")]
     if !crate::cpu::detected().contains(
         const {
-            crate::cpu::Features::all(&[
+            verified_garbage_cpu::Features::all(&[
                 VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
                 VG_ED448_SIGN_CACHED_SHA3_FEATURES,
                 VG_ED448_VERIFY_SHA3_FEATURES,
@@ -299,7 +299,7 @@ mod tests {
         let _ = backend();
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::cpu::{Features, feature};
+            use verified_garbage_cpu::{Features, feature};
             assert_eq!(Backend::select(Features(0)), Backend::Scalar);
             assert_eq!(Backend::select(Features(feature::BMI2)), Backend::Scalar);
             assert_eq!(Backend::select(Features(feature::ADX)), Backend::Scalar);

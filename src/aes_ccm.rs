@@ -75,8 +75,9 @@ use crate::arch::aes_ccm::{
     vg_aes_ccm_seal_aesni,
 };
 use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
-use crate::cpu::{Features, detected};
+use crate::cpu::detected;
 use crate::zeroize::zeroize;
+use verified_garbage_cpu::Features;
 
 /// The instance of a function for `backend`; the `_aesni_cbc` one on x86-64
 /// (rather than the `_aesni` or `_vaes` one), and the `_aes_cbc` one on

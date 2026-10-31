@@ -307,8 +307,9 @@ QUOTED = re.compile(r'"([a-z0-9_]+)"')
 # features `src/cpu.rs` knows.
 FEATURES = re.compile(
     r"_FEATURES: (?:&\[&str\] = &\[|crate::cpu::Features = crate::cpu::Features::of\(&\[)([^\]]*)\]"
-    r"|_FEATURES: crate::cpu::Features = crate::cpu::Features\(([^;]*)\);")
-FEATURE_BIT = re.compile(r"crate::cpu::feature::(\w+)")
+    r"|_FEATURES: (?:crate::cpu|verified_garbage_cpu)::Features = "
+    r"(?:crate::cpu|verified_garbage_cpu)::Features\(([^;]*)\);")
+FEATURE_BIT = re.compile(r"(?:crate::cpu|verified_garbage_cpu)::feature::(\w+)")
 # The names of the features `src/cpu.rs` knows: a table of each name and its
 # bit, or, at a base revision from before it was one, a list of the names.
 NAMES = re.compile(r"const NAMES: \[(?:&str|\(&str, u32\)); \d+\] = \[([^\]]*)\];")

@@ -145,6 +145,10 @@ class Aliases(unittest.TestCase):
             "pub const VG_G_FEATURES: crate::cpu::Features = "
             "crate::cpu::Features(crate::cpu::feature::AVX);\n")
         self.assertEqual(check_variants.unread([("x", read)]), [])
+        # Named by its crate rather than its alias, `crate::cpu`.
+        named = read.replace("crate::cpu::", "verified_garbage_cpu::")
+        self.assertEqual(check_variants.unread([("x", named)]), [])
+        self.assertEqual(check_variants.features([("x", named)]), {"x": {"vg_g": frozenset({"avx"})}})
         unread = read.replace("pub(crate) ", "pub(in crate) ").replace("pub const", "pub(in crate) const")
         self.assertEqual(check_variants.unread([("x", unread)]), [
             "x: read 0 of the 1 naked functions of a generated file",

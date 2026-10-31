@@ -23,7 +23,7 @@ use crate::arch::aes::VG_AES_CTR32_VAES_FEATURES;
 use crate::arch::aes::{VG_AES_CTR32_AES_FEATURES, VG_AES_EXPAND_KEY_AES_FEATURES};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes::{VG_AES_CTR32_AESNI_FEATURES, VG_AES_EXPAND_KEY_AESNI_FEATURES};
-use crate::cpu::Features;
+use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_aes_expand_key` and `vg_aes_ctr32`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -109,7 +109,7 @@ impl Backend {
 #[cfg(test)]
 mod tests {
     use super::Backend;
-    use crate::cpu::Features;
+    use verified_garbage_cpu::Features;
 
     /// No features: a caller that needs none of its own.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
@@ -121,16 +121,17 @@ mod tests {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn select() {
-        let aes = Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+        let aes =
+            Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
         assert_eq!(Backend::select_for(aes, NONE, NONE), Backend::AesNi);
         assert_eq!(
-            Backend::select_for(aes, NONE, Features(crate::cpu::feature::AES)),
+            Backend::select_for(aes, NONE, Features(verified_garbage_cpu::feature::AES)),
             Backend::AesNi
         );
         for f in [
             Features(0),
-            Features(crate::cpu::feature::AES),
-            Features(crate::cpu::feature::SSSE3),
+            Features(verified_garbage_cpu::feature::AES),
+            Features(verified_garbage_cpu::feature::SSSE3),
         ] {
             assert_eq!(Backend::select_for(f, NONE, NONE), Backend::Scalar);
         }
@@ -138,44 +139,56 @@ mod tests {
             Backend::select_for(
                 aes,
                 NONE,
-                Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ)
+                Features(
+                    verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ
+                )
             ),
             Backend::Scalar
         );
         let all = Features(
-            crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3,
+            verified_garbage_cpu::feature::AES
+                | verified_garbage_cpu::feature::PCLMULQDQ
+                | verified_garbage_cpu::feature::SSSE3,
         );
         assert_eq!(
-            Backend::select_for(all, NONE, Features(crate::cpu::feature::PCLMULQDQ)),
+            Backend::select_for(
+                all,
+                NONE,
+                Features(verified_garbage_cpu::feature::PCLMULQDQ)
+            ),
             Backend::AesNi
         );
         // VAES needs AVX2 too, and everything the caller's VAES functions
         // need; failing that, AES-NI.
         let vaes = Features(
-            crate::cpu::feature::AES
-                | crate::cpu::feature::AVX
-                | crate::cpu::feature::AVX2
-                | crate::cpu::feature::SSSE3
-                | crate::cpu::feature::VAES,
+            verified_garbage_cpu::feature::AES
+                | verified_garbage_cpu::feature::AVX
+                | verified_garbage_cpu::feature::AVX2
+                | verified_garbage_cpu::feature::SSSE3
+                | verified_garbage_cpu::feature::VAES,
         );
         assert_eq!(Backend::select_for(vaes, NONE, NONE), Backend::Vaes);
         assert_eq!(
-            Backend::select_for(vaes, Features(crate::cpu::feature::PCLMULQDQ), NONE),
+            Backend::select_for(
+                vaes,
+                Features(verified_garbage_cpu::feature::PCLMULQDQ),
+                NONE
+            ),
             Backend::AesNi
         );
         let no_avx2 = Features(
-            crate::cpu::feature::AES
-                | crate::cpu::feature::AVX
-                | crate::cpu::feature::SSSE3
-                | crate::cpu::feature::VAES,
+            verified_garbage_cpu::feature::AES
+                | verified_garbage_cpu::feature::AVX
+                | verified_garbage_cpu::feature::SSSE3
+                | verified_garbage_cpu::feature::VAES,
         );
         assert_eq!(Backend::select_for(no_avx2, NONE, NONE), Backend::AesNi);
         assert_eq!(
             Backend::select_for(
                 Features(
-                    crate::cpu::feature::AVX
-                        | crate::cpu::feature::AVX2
-                        | crate::cpu::feature::VAES
+                    verified_garbage_cpu::feature::AVX
+                        | verified_garbage_cpu::feature::AVX2
+                        | verified_garbage_cpu::feature::VAES
                 ),
                 NONE,
                 NONE
@@ -188,30 +201,34 @@ mod tests {
     #[cfg(target_arch = "x86")]
     #[test]
     fn select() {
-        let aes = Features(crate::cpu::feature::AES);
+        let aes = Features(verified_garbage_cpu::feature::AES);
         assert_eq!(Backend::select_for(aes, NONE), Backend::AesNi);
         assert_eq!(
-            Backend::select_for(aes, Features(crate::cpu::feature::AES)),
+            Backend::select_for(aes, Features(verified_garbage_cpu::feature::AES)),
             Backend::AesNi
         );
-        for f in [Features(0), Features(crate::cpu::feature::SSSE3)] {
+        for f in [Features(0), Features(verified_garbage_cpu::feature::SSSE3)] {
             assert_eq!(Backend::select_for(f, NONE), Backend::Scalar);
         }
         assert_eq!(
-            Backend::select_for(aes, Features(crate::cpu::feature::SSSE3)),
+            Backend::select_for(aes, Features(verified_garbage_cpu::feature::SSSE3)),
             Backend::Scalar
         );
         assert_eq!(
-            Backend::select_for(aes, Features(crate::cpu::feature::PCLMULQDQ)),
+            Backend::select_for(aes, Features(verified_garbage_cpu::feature::PCLMULQDQ)),
             Backend::Scalar
         );
         let all = Features(
-            crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3,
+            verified_garbage_cpu::feature::AES
+                | verified_garbage_cpu::feature::PCLMULQDQ
+                | verified_garbage_cpu::feature::SSSE3,
         );
         assert_eq!(
             Backend::select_for(
                 all,
-                Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3)
+                Features(
+                    verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3
+                )
             ),
             Backend::AesNi
         );
@@ -221,15 +238,15 @@ mod tests {
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn select() {
-        let aes = Features(crate::cpu::feature::AES);
+        let aes = Features(verified_garbage_cpu::feature::AES);
         assert_eq!(Backend::select_for(aes, NONE), Backend::Aes);
         assert_eq!(
-            Backend::select_for(aes, Features(crate::cpu::feature::AES)),
+            Backend::select_for(aes, Features(verified_garbage_cpu::feature::AES)),
             Backend::Aes
         );
         assert_eq!(Backend::select_for(Features(0), NONE), Backend::Scalar);
         assert_eq!(
-            Backend::select_for(aes, Features(crate::cpu::feature::SHA2)),
+            Backend::select_for(aes, Features(verified_garbage_cpu::feature::SHA2)),
             Backend::Scalar
         );
     }

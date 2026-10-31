@@ -100,8 +100,11 @@ ARCH_FEATURES = {"aarch64": {"aes": "AES, PMULL", "sha2": "SHA extensions", "sha
 CFG = re.compile(r"^#!\[cfg\((.*?)\)\]$", re.MULTILINE | re.DOTALL)
 ARCH = re.compile(r'target_arch\s*=\s*"(\w+)"')
 # A generated `_FEATURES` constant: the bits of its features, by name in uppercase.
-FEATURE_CONST = re.compile(r"_FEATURES: crate::cpu::Features = crate::cpu::Features\((.*?)\);")
-FEATURE_BIT = re.compile(r"crate::cpu::feature::(\w+)")
+# (`crate::cpu::` in a crate whose `cpu` is `verified_garbage_cpu`, or that
+# crate's name.)
+FEATURE_CONST = re.compile(
+    r"_FEATURES: (?:crate::cpu|verified_garbage_cpu)::Features = (?:crate::cpu|verified_garbage_cpu)::Features\((.*?)\);")
+FEATURE_BIT = re.compile(r"(?:crate::cpu|verified_garbage_cpu)::feature::(\w+)")
 FUNCTION = re.compile(r"\bfn (vg_\w+)\(")
 
 
