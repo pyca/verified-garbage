@@ -22,40 +22,48 @@ macro_rules! measure {
                 (seed, *key.verifying_key().as_bytes(), sig)
             })
             .collect();
-        for operation in ["sign", "verify"] {
-            for count in [1usize, 2, 4, 8, 16, 100] {
-                let batch = 128usize.div_ceil(count);
-                let mut samples = Vec::new();
-                for sample in 0..16 {
-                    let start = Instant::now();
-                    for life in 0..batch {
-                        let (seed, pk, sig) = &fixtures[(life + sample * 7) % fixtures.len()];
-                        if operation == "sign" {
-                            let key = $sk::from_seed(black_box(seed)).unwrap();
-                            for _ in 0..count {
-                                black_box(key.sign_deterministic(black_box(MESSAGE), b"").unwrap());
+        if std::env::var_os("VG_MLDSA_THREADS_ONLY").is_none() {
+            for operation in ["sign", "verify"] {
+                for count in [1usize, 2, 4, 8, 16, 100] {
+                    let batch = 128usize.div_ceil(count);
+                    let mut samples = Vec::new();
+                    for sample in 0..16 {
+                        let start = Instant::now();
+                        for life in 0..batch {
+                            let (seed, pk, sig) = &fixtures[(life + sample * 7) % fixtures.len()];
+                            if operation == "sign" {
+                                let key = $sk::from_seed(black_box(seed)).unwrap();
+                                for _ in 0..count {
+                                    black_box(
+                                        key.sign_deterministic(black_box(MESSAGE), b"").unwrap(),
+                                    );
+                                }
+                                drop(black_box(key));
+                            } else {
+                                let key = $vk::from_bytes(black_box(pk));
+                                for _ in 0..count {
+                                    black_box(key.verify(black_box(MESSAGE), b"", black_box(sig)))
+                                        .unwrap();
+                                }
+                                drop(black_box(key));
                             }
-                            drop(black_box(key));
-                        } else {
-                            let key = $vk::from_bytes(black_box(pk));
-                            for _ in 0..count {
-                                black_box(key.verify(black_box(MESSAGE), b"", black_box(sig)))
-                                    .unwrap();
-                            }
-                            drop(black_box(key));
                         }
+                        samples.push(start.elapsed().as_secs_f64() * 1e6 / batch as f64);
                     }
-                    samples.push(start.elapsed().as_secs_f64() * 1e6 / batch as f64);
+                    println!(
+                        "life,{},{},{},{:.6}",
+                        $id,
+                        operation,
+                        count,
+                        median(samples)
+                    );
                 }
-                println!(
-                    "life,{},{},{},{:.6}",
-                    $id,
-                    operation,
-                    count,
-                    median(samples)
-                );
             }
         }
+        let thread_ops: usize = std::env::var("VG_MLDSA_THREAD_OPS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(32);
         for operation in ["sign", "verify"] {
             for warm in [false, true] {
                 let mut samples = Vec::new();
@@ -75,12 +83,24 @@ macro_rules! measure {
                     let start_gate = Barrier::new(5);
                     let finish_gate = Barrier::new(5);
                     let elapsed = thread::scope(|scope| {
-                        for _ in 0..4 {
+                        for worker in 0..4 {
                             let (signing, verifying, start_gate, finish_gate) =
                                 (&signing, &verifying, &start_gate, &finish_gate);
                             scope.spawn(move || {
+                                if let Ok(cores) = std::env::var("VG_MLDSA_PIN_CORES") {
+                                    let core = cores.split(',').nth(worker).unwrap();
+                                    let tid =
+                                        std::fs::read_to_string("/proc/thread-self/stat").unwrap();
+                                    let tid = tid.split_whitespace().next().unwrap();
+                                    assert!(std::process::Command::new("taskset")
+                                        .args(["-pc", core, tid])
+                                        .output()
+                                        .unwrap()
+                                        .status
+                                        .success());
+                                }
                                 start_gate.wait();
-                                for _ in 0..32 {
+                                for _ in 0..thread_ops {
                                     if operation == "sign" {
                                         black_box(
                                             signing.sign_deterministic(MESSAGE, b"").unwrap(),
@@ -97,7 +117,15 @@ macro_rules! measure {
                         finish_gate.wait();
                         start.elapsed()
                     });
-                    samples.push(elapsed.as_secs_f64() * 1e6 / 128.0);
+                    samples.push(elapsed.as_secs_f64() * 1e6 / (4 * thread_ops) as f64);
+                    eprintln!(
+                        "thread-sample,{},{},{},{},{:.6}",
+                        $id,
+                        operation,
+                        if warm { "warm" } else { "cold" },
+                        repeat,
+                        samples.last().unwrap()
+                    );
                 }
                 println!(
                     "threads4,{},{},{},{:.6}",

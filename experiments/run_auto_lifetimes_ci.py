@@ -20,7 +20,7 @@ for policy in policies:
 results={}
 for run,order in enumerate([policies,list(reversed(policies)),policies]):
  for policy in order:
-  p=subprocess.run([str(out/f'run-{policy}')],capture_output=True,text=True,check=True)
+  p=subprocess.run([str(out/f'run-{policy}')],capture_output=True,text=True,check=True, env=dict(os.environ, VG_MLDSA_THREADS_ONLY='1', VG_MLDSA_THREAD_OPS='512', VG_MLDSA_PIN_CORES=','.join(map(str,sorted(os.sched_getaffinity(0))[:4]))))
   (out/f'results-{run}-{policy}.csv').write_text(p.stdout)
   (out/f'stderr-{run}-{policy}.log').write_text(p.stderr)
   for line in p.stdout.splitlines():
@@ -32,7 +32,7 @@ summary={k:{p:{'median_us':statistics.median(v),'runs_us':v} for p,v in by.items
 (out/'summary.json').write_text(json.dumps(summary,indent=2))
 (out/'binaries.json').write_text(json.dumps({p:hashlib.sha256((out/f'run-{p}').read_bytes()).hexdigest() for p in policies},indent=2))
 lines=['## UNPROVED ML-DSA automatic-cache lifetime experiment','',
-'Full key construction, operations and drop. Three interleaved passes; each point is a median of 16 samples over 32 fixed-key fixtures. Signing uses deterministic signing, verification uses valid signatures. Four-thread cases include gate overhead and report throughput, not latency; logical CPU and affinity counts are logged.','',
+'Full key construction, operations and drop. Controlled concurrency follow-up only: four pinned worker cores, 512 operations per worker, 12 fixed-key samples, three interleaved passes. Previous short lifetime and concurrency results remain separate. Signing uses deterministic signing, verification uses valid signatures. Four-thread cases include gate overhead and report throughput, not latency; logical CPU and affinity counts are logged.','',
 '| Set | Operation | Uses | Baseline µs | Auto second use µs | Latency reduction |',
 '|---|---|---:|---:|---:|---:|']
 for key,by in summary.items():
