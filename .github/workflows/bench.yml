@@ -28,6 +28,9 @@ on:
       modules:
         description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
         required: false
+      rounds:
+        description: Interleaved comparison rounds (empty for the platform default)
+        required: false
       openssl:
         description: Also run OpenSSL and aws-lc-rs, for reference, in a comparison with a commit (a run without one always does)
         type: boolean
@@ -189,13 +192,14 @@ jobs:
           path: bench-target
           key: ${{ steps.cache-key.outputs.key }}
       - name: Benchmark base and head
+        id: benchmark
         env:
           MODULES: ${{ matrix.modules }}
           SHARD: ${{ matrix.shard }}
           ARCH: ${{ matrix.arch }}
           # Interleaved runs of each side (ci/bench_arches.py's platforms say
           # how many; one but on a shared VM).
-          ROUNDS: ${{ matrix.rounds || 1 }}
+          ROUNDS: ${{ inputs.rounds || matrix.rounds || 1 }}
           # OpenSSL's and aws-lc-rs's times are only a reference: a comparison
           # runs them when asked (a run without a base always does).
           OPENSSL: ${{ inputs.openssl && '--openssl' || '' }}
@@ -207,3 +211,11 @@ jobs:
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
           python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
+      - name: Save raw benchmark samples
+        if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
+        uses: ./head/.github/actions/upload-artifact
+        with:
+          name: benchmark-samples-${{ matrix.arch }}-${{ strategy.job-index }}
+          path: bench-compare/**/new/*.json
+          retention-days: 14
+          if-no-files-found: ignore
