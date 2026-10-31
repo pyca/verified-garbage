@@ -10,19 +10,21 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 
 use super::harness::Hex;
 
-#[derive(Deserialize)]
-pub(super) struct Key {
-    uncompressed: Hex,
+json_struct! {
+    pub(super) struct Key {
+        uncompressed: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-pub(super) struct EcdsaGroup {
-    #[serde(rename = "publicKey")]
-    public_key: Key,
+json_struct! {
+    pub(super) struct EcdsaGroup {
+        #[json(rename = "publicKey")]
+        public_key: Key,
+    }
 }
 
 macro_rules! public_keys {
@@ -50,11 +52,12 @@ macro_rules! public_keys {
     };
 }
 
-#[derive(Deserialize)]
-pub(super) struct EcdhCase {
-    public: Hex,
-    private: Hex,
-    shared: Hex,
+json_struct! {
+    pub(super) struct EcdhCase {
+        public: Hex,
+        private: Hex,
+        shared: Hex,
+    }
 }
 
 macro_rules! compressed_peers {

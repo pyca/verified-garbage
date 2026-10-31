@@ -18,23 +18,25 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::ecdh::{BrainpoolP512r1, Error, PrivateKey};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-struct Group {
-    curve: String,
-    encoding: String,
+json_struct! {
+    struct Group {
+        curve: String,
+        encoding: String,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    public: Hex,
-    private: Hex,
-    shared: Hex,
+json_struct! {
+    struct Case {
+        public: Hex,
+        private: Hex,
+        shared: Hex,
+    }
 }
 
 /// The DER encoding of a `SubjectPublicKeyInfo` up to its point (RFC 5480
