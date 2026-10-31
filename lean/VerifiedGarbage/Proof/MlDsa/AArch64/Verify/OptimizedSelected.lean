@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.VerifyKeyRow
+
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCallPre
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
@@ -1464,6 +1466,780 @@ end VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify
 end
 
 end
+
+/-! # Shared prepared-key verification proof composition -/
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
+open VG.Proof.MlDsa.AArch64.KeyGen VG.Proof.MlDsa.AArch64.Verify
+open VG.Proof.MlDsa.AArch64.Optimized
+
+def CachedVRel (p : Params) (S : Nat) (I : State → State → Prop) (x y : State) : Prop :=
+  Verify.Optimized.RootPair p S
+    (fun σ s => I σ s ∧ (s.gpr .x22 ≠ 0 → PublicCache p S σ s)) x y ∧
+    SameIn [.x21, .x22] x y
+
+theorem cached_v_progress {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hw : ∀ σ s, vPre p S σ → I σ s → (s.gpr .x22 ≠ 0 → PublicCache p S σ s) →
+      WP isa code s fun t => J σ t ∧ (t.gpr .x22 ≠ 0 → PublicCache p S σ t))
+    (ht : RelCT isa (CachedVRel p S I) code fun _ _ => True) :
+    RelCT isa (CachedVRel p S I) code (CachedVRel p S J) := by
+  intro x y tx ty u v h ex ey
+  have trace := (ht _ _ _ _ _ _ h ex ey).1
+  obtain ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, hm⟩ := h
+  obtain ⟨_, u', eu, hu⟩ := hw σ x ps hx.1 hx.2
+  obtain ⟨_, v', ev, hv⟩ := hw τ y pt hy.1 hy.2
+  obtain ⟨_, rfl⟩ := Exec.det ex eu
+  obtain ⟨_, rfl⟩ := Exec.det ey ev
+  refine ⟨trace, ⟨⟨σ, τ, ps, pt, pub, hu, hv⟩, ?_⟩, ?_⟩
+  · simpa only [VG.Proof.MlDsa.AArch64.Sign.RootSymbolsEq,
+      VG.AArch64.Exec.syms ex, VG.AArch64.Exec.syms ey] using roots
+  · refine ⟨fun r hr => ?_, by rw [(hj _ _ hu.1).sp, (hj _ _ hv.1).sp,
+      ← (hi _ _ hx.1).sp, ← (hi _ _ hy.1).sp, hm.2]⟩
+    have hk : r ∈ VG.Proof.MlDsa.AArch64.KeyGen.untouched := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> decide
+    rw [(hj _ _ hu.1).cs r hk, (hj _ _ hv.1).cs r hk,
+      ← (hi _ _ hx.1).cs r hk, ← (hi _ _ hy.1).cs r hk, hm.1 r hr]
+
+theorem cached_v_lift {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hw : ∀ σ s, vPre p S σ → I σ s → WP isa code s (J σ))
+    (ht : RelCT isa (Verify.Optimized.RootPair p S I) code fun _ _ => True)
+    (hd : 16 * code.aarch64Depth ≤ S) (hS : S < 2 ^ 64) :
+    RelCT isa (CachedVRel p S I) code (CachedVRel p S J) := by
+  apply cached_v_progress hi hj
+  · intro σ s hp hs hc
+    exact WP.optionalCache (hw σ s hp hs) hc hd hS
+      (fun t ht => ((hj _ _ ht).cs .x21 (by decide)).trans ((hi _ _ hs).cs .x21 (by decide)).symm)
+      (fun t ht => ((hj _ _ ht).cs .x22 (by decide)).trans ((hi _ _ hs).cs .x22 (by decide)).symm)
+  · refine RelCT.mono ht ?_ (fun _ _ h => h)
+    rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, _⟩
+    exact ⟨⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩, roots⟩
+
+theorem optimized_row_top {p : Params} {S r stage : Nat} {σ s : State}
+    (h : Verify.Optimized.RowI p S r stage σ s) : VG.Proof.MlDsa.AArch64.KeyGen.Top σ s := by
+  obtain ⟨_, _, _, _, h, _⟩ := h
+  exact h.vc.top
+
+theorem keyRow_optimized_tr {c : Impl.Sha3.AArch64.Callee} (hpaired : c.pairedSha3 = true)
+    {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
+    {r : Nat} (hr : r < p.k)
+    (hd : 16 * (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow c P p r).aarch64Depth ≤ S) :
+    RelCT isa (CachedVRel p S (Verify.Optimized.RowI p S r 0))
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow c P p r)
+      (CachedVRel p S (Verify.Optimized.RowI p S r 2)) := by
+  refine cached_v_progress (fun _ _ h => optimized_row_top h) (fun _ _ h => optimized_row_top h) ?_ ?_
+  · intro σ s hp hs cache
+    obtain ⟨h, A, c0, q, state, hw⟩ := hs
+    have main := WP.mono (keyRow_optimized hpaired hP hF hp hr state hw cache)
+      fun t ht => (show Verify.Optimized.RowI p S r 2 σ t from ⟨h, A, c0, q, ht⟩)
+    exact WP.optionalCache main cache hd hP.s64
+      (fun t ht => ((optimized_row_top ht).cs .x21 (by decide)).trans (state.vc.top.cs .x21 (by decide)).symm)
+      (fun t ht => ((optimized_row_top ht).cs .x22 (by decide)).trans (state.vc.top.cs .x22 (by decide)).symm)
+  · unfold Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow
+    refine RelCT.ite ?_ ?_ ?_
+    · intro x y h
+      change some (x.gpr .x22 != 0) = some (y.gpr .x22 != 0)
+      rw [h.2.1 .x22 (by simp)]
+    · apply RelCT.mono (copy_cache_tr _ _) ?_ (fun _ _ _ => trivial)
+      rintro x y ⟨⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, _⟩, hm⟩, _⟩
+      obtain ⟨_, _, _, _, ix, _⟩ := hx.1
+      obtain ⟨_, _, _, _, iy, _⟩ := hy.1
+      have layout := vc_two hF ps pt pub ix.vc iy.vc
+      refine ⟨fun r hr => ?_, layout.same.2⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hm.1 .x21 (by simp)
+      · exact layout.same.1 .x28 (by decide)
+    · have old := RelCT.seq (Verify.Optimized.unpack_tr hP hF hr) (Verify.Optimized.nttT_tr hF hr)
+      apply RelCT.mono (by simpa [Impl.MlDsa.AArch64.PreparedKey.Verify.forward, hpaired] using old) ?_
+        (fun _ _ _ => trivial)
+      rintro x y ⟨⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, _⟩, _⟩
+      exact ⟨⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩, roots⟩
+
+
+theorem optimized_sc_top {p : Params} {S j r : Nat} {cn : Bool} {σ s : State}
+    (h : Verify.Optimized.SCx p S j cn r σ s) : VG.Proof.MlDsa.AArch64.KeyGen.Top σ s := by
+  obtain ⟨_, _, _, _, h⟩ := h
+  exact h.vc.top
+
+theorem row_optimized_tr {c : Impl.Sha3.AArch64.Callee} (hpaired : c.pairedSha3 = true)
+    {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
+    {r : Nat} (hr : r < p.k)
+    (hdot : 16 * (Impl.MlDsa.AArch64.Verify.Optimized.dot p r).aarch64Depth ≤ S)
+    (hkey : 16 * (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow c P p r).aarch64Depth ≤ S)
+    (hrow : 16 * (Impl.MlDsa.AArch64.PreparedKey.Verify.row c P p r).aarch64Depth ≤ S) :
+    RelCT isa (CachedVRel p S (Verify.Optimized.SCx p S p.ℓ true r))
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.row c P p r)
+      (CachedVRel p S (Verify.Optimized.SCx p S p.ℓ true (r + 1))) := by
+  refine cached_v_progress (fun _ _ h => optimized_sc_top h) (fun _ _ h => optimized_sc_top h) ?_ ?_
+  · intro σ s hp hs cache
+    obtain ⟨h, A, c0, q, state⟩ := hs
+    exact WP.mono (row_optimized hpaired hP hF hp hr hdot hrow state cache)
+      fun t ht => ⟨⟨h, A, c0, q, ht.1⟩, ht.2⟩
+  · simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.row, hpaired, ↓reduceIte]
+    refine RelCT.seq (R := CachedVRel p S (Verify.Optimized.RowI p S r 0))
+      (cached_v_lift (fun _ _ h => optimized_sc_top h) (fun _ _ h => optimized_row_top h)
+        (fun σ s hp ⟨h, A, c0, q, state⟩ => WP.mono (Verify.Optimized.dot_ok hF hp hr state)
+          fun _ ht => ⟨h, A, c0, q, ht⟩)
+        (RelCT.mono (Verify.Optimized.dot_tr hF hr) (fun _ _ h => h) (fun _ _ _ => trivial))
+        hdot hP.s64) ?_
+    refine RelCT.seq (keyRow_optimized_tr hpaired hP hF hr hkey) ?_
+    refine RelCT.mono (RelCT.seq (Verify.Optimized.product_tr hF hr)
+      (RelCT.seq (Verify.Optimized.subtract_tr hF hP.s64 hr)
+        (RelCT.seq (Verify.Optimized.inverse_tr hF hr) (Verify.Optimized.hintPack_tr hF hr))))
+      ?_ (fun _ _ _ => trivial)
+    rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, _⟩
+    exact ⟨⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩, roots⟩
+
+def CachedScalarRel (p : Params) (S : Nat) (I : State → State → Prop) (x y : State) : Prop :=
+  VR p S (fun σ s => I σ s ∧ (s.gpr .x22 ≠ 0 → PublicCache p S σ s)) x y ∧
+    SameIn [.x21, .x22] x y
+
+theorem cached_scalar_progress {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hw : ∀ σ s, vPre p S σ → I σ s → (s.gpr .x22 ≠ 0 → PublicCache p S σ s) →
+      WP isa code s fun t => J σ t ∧ (t.gpr .x22 ≠ 0 → PublicCache p S σ t))
+    (ht : RelCT isa (CachedScalarRel p S I) code fun _ _ => True) :
+    RelCT isa (CachedScalarRel p S I) code (CachedScalarRel p S J) := by
+  intro x y tx ty u v h ex ey
+  have trace := (ht _ _ _ _ _ _ h ex ey).1
+  obtain ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, hm⟩ := h
+  obtain ⟨_, u', eu, hu⟩ := hw σ x ps hx.1 hx.2
+  obtain ⟨_, v', ev, hv⟩ := hw τ y pt hy.1 hy.2
+  obtain ⟨_, rfl⟩ := Exec.det ex eu
+  obtain ⟨_, rfl⟩ := Exec.det ey ev
+  refine ⟨trace, ⟨σ, τ, ps, pt, pub, hu, hv⟩, ?_⟩
+  refine ⟨fun r hr => ?_, by rw [(hj _ _ hu.1).sp, (hj _ _ hv.1).sp,
+    ← (hi _ _ hx.1).sp, ← (hi _ _ hy.1).sp, hm.2]⟩
+  have hk : r ∈ VG.Proof.MlDsa.AArch64.KeyGen.untouched := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> decide
+  rw [(hj _ _ hu.1).cs r hk, (hj _ _ hv.1).cs r hk,
+    ← (hi _ _ hx.1).cs r hk, ← (hi _ _ hy.1).cs r hk, hm.1 r hr]
+
+theorem cached_scalar_lift {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hw : ∀ σ s, vPre p S σ → I σ s → WP isa code s (J σ))
+    (ht : RelCT isa (VR p S I) code fun _ _ => True)
+    (hd : 16 * code.aarch64Depth ≤ S) (hS : S < 2 ^ 64) :
+    RelCT isa (CachedScalarRel p S I) code (CachedScalarRel p S J) := by
+  apply cached_scalar_progress hi hj
+  · intro σ s hp hs hc
+    exact WP.optionalCache (hw σ s hp hs) hc hd hS
+      (fun t ht => ((hj _ _ ht).cs .x21 (by decide)).trans ((hi _ _ hs).cs .x21 (by decide)).symm)
+      (fun t ht => ((hj _ _ ht).cs .x22 (by decide)).trans ((hi _ _ hs).cs .x22 (by decide)).symm)
+  · refine RelCT.mono ht ?_ (fun _ _ h => h)
+    rintro x y ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, _⟩
+    exact ⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩
+
+theorem scalar_row_top {p : Params} {r : Nat} {F : State → List (Vector Bool n) →
+    (Nat → Nat → Poly) → Poly → State → Prop} {σ s : State}
+    (h : Verify.RowI p r F σ s) : VG.Proof.MlDsa.AArch64.KeyGen.Top σ s := by
+  obtain ⟨_, _, _, _, h, _⟩ := h
+  exact h.vc.top
+
+theorem scalar_sc_top {p : Params} {j r : Nat} {cn : Bool} {σ s : State}
+    (h : Verify.SCx p j cn r σ s) : VG.Proof.MlDsa.AArch64.KeyGen.Top σ s := by
+  obtain ⟨_, _, _, _, h⟩ := h
+  exact h.vc.top
+
+theorem keyRow_scalar_tr {c : Impl.Sha3.AArch64.Callee} (hpaired : c.pairedSha3 = false)
+    {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
+    {r : Nat} (hr : r < p.k)
+    (hd : 16 * (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow c P p r).aarch64Depth ≤ S) :
+    RelCT isa (CachedScalarRel p S (Verify.RowI p r (Verify.F1 p r p.ℓ)))
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow c P p r)
+      (CachedScalarRel p S (Verify.RowI p r (Verify.F4 p r))) := by
+  refine cached_scalar_progress (fun _ _ h => scalar_row_top h) (fun _ _ h => scalar_row_top h) ?_ ?_
+  · intro σ s hp hs cache
+    exact WP.optionalCache (keyRow_scalar hpaired hP hF hp hr hs cache) cache hd hP.s64
+      (fun t ht => ((scalar_row_top ht).cs .x21 (by decide)).trans ((scalar_row_top hs).cs .x21 (by decide)).symm)
+      (fun t ht => ((scalar_row_top ht).cs .x22 (by decide)).trans ((scalar_row_top hs).cs .x22 (by decide)).symm)
+  · unfold Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow
+    refine RelCT.ite ?_ ?_ ?_
+    · intro x y h
+      change some (x.gpr .x22 != 0) = some (y.gpr .x22 != 0)
+      rw [h.2.1 .x22 (by simp)]
+    · apply RelCT.mono (copy_cache_tr _ _) ?_ (fun _ _ _ => trivial)
+      rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, hm⟩, _⟩
+      obtain ⟨_, _, _, _, ix, _⟩ := hx.1
+      obtain ⟨_, _, _, _, iy, _⟩ := hy.1
+      have layout := vc_two hF ps pt pub ix.vc iy.vc
+      refine ⟨fun r hr => ?_, layout.same.2⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hm.1 .x21 (by simp)
+      · exact layout.same.1 .x28 (by decide)
+    · have old := ((Verify.t1_vpiece hP hF hr).seq (Verify.nttT_vpiece hP hF hr)).tr
+      apply RelCT.mono (by simpa [Impl.MlDsa.AArch64.PreparedKey.Verify.forward, hpaired] using old) ?_
+        (fun _ _ _ => trivial)
+      rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, _⟩, _⟩
+      exact ⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩
+
+theorem row_scalar_tr {c : Impl.Sha3.AArch64.Callee} (hpaired : c.pairedSha3 = false)
+    {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
+    {r : Nat} (hr : r < p.k)
+    (hdot : 16 * (Impl.MlDsa.AArch64.Verify.dot P p r).aarch64Depth ≤ S)
+    (hkey : 16 * (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow c P p r).aarch64Depth ≤ S)
+    (hrow : 16 * (Impl.MlDsa.AArch64.PreparedKey.Verify.row c P p r).aarch64Depth ≤ S) :
+    RelCT isa (CachedScalarRel p S (Verify.SCx p p.ℓ true r))
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.row c P p r)
+      (CachedScalarRel p S (Verify.SCx p p.ℓ true (r + 1))) := by
+  refine cached_scalar_progress (fun _ _ h => scalar_sc_top h) (fun _ _ h => scalar_sc_top h) ?_ ?_
+  · intro σ s hp hs cache
+    exact row_scalar hpaired hP hF hp hr hdot hrow hs cache
+  · simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.row, hpaired, Bool.false_eq_true, ↓reduceIte]
+    refine RelCT.seq (R := CachedScalarRel p S (Verify.RowI p r (Verify.F1 p r p.ℓ)))
+      (cached_scalar_lift (fun _ _ h => scalar_sc_top h) (fun _ _ h => scalar_row_top h)
+        (Verify.dot_vpiece hP hF hr).ok (Verify.dot_vpiece hP hF hr).tr hdot hP.s64) ?_
+    refine RelCT.seq (keyRow_scalar_tr hpaired hP hF hr hkey) ?_
+    have tail := ((Verify.mulT_vpiece hP hF hr).seq ((Verify.sub_vpiece hP hF hr).seq
+      ((Verify.inv_vpiece hP hF hr).seq ((Verify.uh_vpiece hP hF hr).seq
+        (Verify.sbpR_vpiece hP hF hr))))).tr
+    apply RelCT.mono tail ?_ (fun _ _ _ => trivial)
+    rintro x y ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, _⟩
+    exact ⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩
+
+theorem forward_dle (v : Proof.Sha3.AArch64.Permutation) {P : Prims}
+    (hP : PrimsOk P 16) (p : Params) (a : Impl.MlDsa.AArch64.Call.Ptr) :
+    Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.forward v.callee P p a) := by
+  have hn := Message.DLe.of_fd hP.ntt.fd
+  have hp := Message.DLe.of_fd (VG.Proof.MlDsa.AArch64.Optimized.positiveNtt_callee 16).fd
+  unfold Impl.MlDsa.AArch64.PreparedKey.Verify.forward
+  split <;> dle_tac
+
+theorem keyRow_dle (v : Proof.Sha3.AArch64.Permutation) {P : Prims}
+    (hP : PrimsOk P 16) (p : Params) (r : Nat) :
+    Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow v.callee P p r) := by
+  have hc : Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.copy (tmP p) (.x21, 1024 * r) 1024) := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.copy
+    split <;> dle_tac
+  have hu := Message.DLe.of_fd hP.unpackT1.fd
+  have hf := forward_dle v hP p (tmP p)
+  unfold Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow
+  dle_tac
+
+theorem row_dle (v : Proof.Sha3.AArch64.Permutation) {P : Prims}
+    (hP : PrimsOk P 16) (p : Params) (r : Nat) :
+    Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.row v.callee P p r) := by
+  have hk := keyRow_dle v hP p r
+  have hm := Message.DLe.of_fd hP.mul.fd
+  have hma := Message.DLe.of_fd hP.mulAdd.fd
+  have hsub := Message.DLe.of_fd hP.sub.fd
+  have hi := Message.DLe.of_fd hP.invNtt.fd
+  have hh := Message.DLe.of_fd hP.useHint.fd
+  have hb := Message.DLe.of_fd hP.simpleBitPack.fd
+  have hinv := Message.DLe.of_fd (VG.Proof.MlDsa.AArch64.Optimized.Inverse.inverseSingle_callee 16).fd
+  have hdot : Message.DLe 1 (Impl.MlDsa.AArch64.Optimized.MontDot.dot p.ℓ) := by
+    unfold Impl.MlDsa.AArch64.Optimized.MontDot.dot
+    dle_tac
+  have hprod : Message.DLe 1 Impl.MlDsa.AArch64.Optimized.MontProduct.code := by
+    unfold Impl.MlDsa.AArch64.Optimized.MontProduct.code
+    dle_tac
+  have hminus : Message.DLe 1 (Impl.MlDsa.AArch64.Optimized.AddSub.code true) := by
+    unfold Impl.MlDsa.AArch64.Optimized.AddSub.code
+    dle_tac
+  have hpack : Message.DLe 1 Impl.MlDsa.AArch64.Optimized.UseHintPack.prog := by
+    unfold Impl.MlDsa.AArch64.Optimized.UseHintPack.prog
+      Impl.MlDsa.AArch64.Round.zext Impl.MlDsa.AArch64.Round.onGamma
+      Impl.MlDsa.AArch64.Optimized.UseHintPack.code
+    dle_tac
+  unfold Impl.MlDsa.AArch64.PreparedKey.Verify.row
+  split <;> dle_tac
+
+structure CachePiece (p : Params) (S : Nat) (I J : State → State → Prop) (code : Prog isa) : Prop where
+  ok : ∀ σ s, vPre p S σ → I σ s → (s.gpr .x22 ≠ 0 → PublicCache p S σ s) →
+    WP isa code s fun t => J σ t ∧ (t.gpr .x22 ≠ 0 → PublicCache p S σ t)
+  tr : RelCT isa (CachedVRel p S I) code (CachedVRel p S J)
+
+theorem CachePiece.seq {p : Params} {S : Nat} {I J K : State → State → Prop} {a b : Prog isa}
+    (ha : CachePiece p S I J a) (hb : CachePiece p S J K b) : CachePiece p S I K (.seq a b) :=
+  ⟨fun σ s hp hs hc => WP.seq (WP.mono (ha.ok σ s hp hs hc)
+    fun t ht => hb.ok σ t hp ht.1 ht.2), RelCT.seq ha.tr hb.tr⟩
+
+theorem CachePiece.of_old {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hw : ∀ σ s, vPre p S σ → I σ s → WP isa code s (J σ))
+    (ht : RelCT isa (Verify.Optimized.RootPair p S I) code fun _ _ => True)
+    (hd : 16 * code.aarch64Depth ≤ S) (hS : S < 2 ^ 64) : CachePiece p S I J code :=
+  ⟨fun σ s hp hs hc => WP.optionalCache (hw σ s hp hs) hc hd hS
+    (fun t ht => ((hj _ _ ht).cs .x21 (by decide)).trans ((hi _ _ hs).cs .x21 (by decide)).symm)
+    (fun t ht => ((hj _ _ ht).cs .x22 (by decide)).trans ((hi _ _ hs).cs .x22 (by decide)).symm),
+    cached_v_lift hi hj hw ht hd hS⟩
+
+theorem CachePiece.mono {p : Params} {S : Nat} {I J I' J' : State → State → Prop} {code : Prog isa}
+    (h : CachePiece p S I J code)
+    (hi : ∀ σ s, I' σ s → I σ s) (hj : ∀ σ s, J σ s → J' σ s) : CachePiece p S I' J' code := by
+  refine ⟨fun σ s hp hs hc => WP.mono (h.ok σ s hp (hi σ s hs) hc)
+    (fun t ht => ⟨hj σ t ht.1, ht.2⟩), RelCT.mono h.tr ?_ ?_⟩
+  · rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, hm⟩
+    exact ⟨⟨⟨σ, τ, ps, pt, pub, ⟨hi _ _ hx.1, hx.2⟩, ⟨hi _ _ hy.1, hy.2⟩⟩, roots⟩, hm⟩
+  · rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, hm⟩
+    exact ⟨⟨⟨σ, τ, ps, pt, pub, ⟨hj _ _ hx.1, hx.2⟩, ⟨hj _ _ hy.1, hy.2⟩⟩, roots⟩, hm⟩
+
+theorem CachePiece.seqR {p : Params} {S : Nat} {f : Nat → Prog isa}
+    {I : Nat → State → State → Prop} :
+    ∀ n a, (∀ k, a ≤ k → k < a + n → CachePiece p S (I k) (I (k + 1)) (f k)) →
+      CachePiece p S (I a) (I (a + n)) (Impl.MlDsa.AArch64.Call.seqR f a n)
+  | 0, a, _ => by
+    simp only [Impl.MlDsa.AArch64.Call.seqR, Nat.add_zero]
+    exact ⟨fun _ _ _ hs hc => WP.block_nil ⟨hs, hc⟩, RelCT.block_nil (fun _ _ h => h)⟩
+  | n + 1, a, h => by
+    have tail := CachePiece.seqR n (a + 1) (fun k h1 h2 => h k (by omega) (by omega))
+    rw [show a + 1 + n = a + (n + 1) by omega] at tail
+    exact (h a (Nat.le_refl _) (by omega)).seq tail
+
+theorem dle_first {a b : Prog isa} (h : Message.DLe 1 (.seq a b)) : Message.DLe 1 a :=
+  ⟨(Nat.max_le.mp h.le).1⟩
+
+theorem depth16 {code : Prog isa} (h : Message.DLe 1 code) : 16 * code.aarch64Depth ≤ 16 := by
+  simpa using Nat.mul_le_mul_left 16 h.le
+
+theorem finish_dle (v : Proof.Sha3.AArch64.Permutation) (p : Params) :
+    Message.DLe 1 (.seq (shake256With v.callee (hIns p) [⟨.x28, oCT, p.ctildeLen⟩])
+      (cmpAnd (Impl.MlDsa.AArch64.Call.sc oCT) (.x27, 0) p.ctildeLen)) := by
+  obtain ⟨ha, hp, hs⟩ := Message.keccak_dle v
+  dle_tac
+
+theorem compute_optimized_piece (v : Proof.Sha3.AArch64.Permutation) (hpaired : v.callee.pairedSha3 = true)
+    {P : Prims} (hP : PrimsOk P 16) {p : Params} (hF : VFacts p) :
+    CachePiece p 16 (fun σ s => VB p σ s ∧ Sign.StaticRoots 16 s) (VFin p)
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.compute v.callee P p) := by
+  have hf (a : Impl.MlDsa.AArch64.Call.Ptr) : Message.DLe 1
+      (Impl.MlDsa.AArch64.Verify.Optimized.forward a) := by
+    simpa only [Impl.MlDsa.AArch64.PreparedKey.Verify.forward, hpaired, ↓reduceIte] using forward_dle v hP p a
+  have hvec := Message.DLe.seqR (fun i => hf (zP p i)) 0 p.ℓ
+  have hdot (r : Nat) : Message.DLe 1 (Impl.MlDsa.AArch64.Verify.Optimized.dot p r) := by
+    have h := row_dle v hP p r
+    simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.row, hpaired, ↓reduceIte] at h
+    exact dle_first h
+  simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.compute,
+    Impl.MlDsa.AArch64.PreparedKey.Verify.forward, hpaired, ↓reduceIte]
+  refine CachePiece.seq (J := Verify.Optimized.SCx p 16 p.ℓ false 0) ?_
+    (CachePiece.seq (J := Verify.Optimized.SCx p 16 p.ℓ true 0) ?_
+      (CachePiece.seq (J := Verify.Optimized.SCx p 16 p.ℓ true p.k) ?_ ?_))
+  · apply CachePiece.of_old (fun _ _ h => h.1.vz.vc.top) (fun _ _ h => optimized_sc_top h)
+      (fun σ s hp hs => Verify.Optimized.nttZ_vector_ok hF hp (Verify.Optimized.vb_sc hs.1 hs.2))
+      ?_ (depth16 hvec) (by decide)
+    exact RelCT.mono (Verify.Optimized.nttZ_vector_tr hF)
+      (fun _ _ ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩ =>
+        ⟨⟨σ, τ, ps, pt, pub, Verify.Optimized.vb_sc hx.1 hx.2,
+          Verify.Optimized.vb_sc hy.1 hy.2⟩, roots⟩) (fun _ _ _ => trivial)
+  · apply CachePiece.of_old (fun _ _ h => optimized_sc_top h) (fun _ _ h => optimized_sc_top h)
+      (fun σ s hp ⟨h, A, c0, q, state⟩ => WP.mono (Verify.Optimized.nttC_ok hF hp state)
+        fun t ht => ⟨h, A, c0, q, ht⟩)
+      (RelCT.mono (Verify.Optimized.nttC_tr hF) (fun _ _ h => h) (fun _ _ _ => trivial))
+      (depth16 (hf (cP p))) (by decide)
+  · simpa only [Nat.zero_add] using CachePiece.seqR (I := fun r => Verify.Optimized.SCx p 16 p.ℓ true r)
+      p.k 0 (fun r _ hr => (show CachePiece p 16
+        (Verify.Optimized.SCx p 16 p.ℓ true r) (Verify.Optimized.SCx p 16 p.ℓ true (r + 1))
+        (Impl.MlDsa.AArch64.PreparedKey.Verify.row v.callee P p r) from
+        ⟨fun σ s hp ⟨h, A, c0, q, state⟩ cache => WP.mono
+          (row_optimized hpaired hP hF hp (by omega) (depth16 (hdot r))
+            (depth16 (row_dle v hP p r)) state cache)
+          (fun t ht => ⟨⟨h, A, c0, q, ht.1⟩, ht.2⟩),
+          row_optimized_tr hpaired hP hF (by omega) (depth16 (hdot r))
+            (depth16 (keyRow_dle v hP p r)) (depth16 (row_dle v hP p r))⟩))
+  · exact CachePiece.of_old (fun _ _ h => optimized_sc_top h) (fun _ _ h => h.1.top)
+      (Verify.Optimized.finish_vpiece (keccak := v) (by decide) (by decide) hF).ok
+      (RelCT.mono (Verify.Optimized.finish_rootPair (keccak := v) (by decide) (by decide) hF)
+        (fun _ _ h => h) (fun _ _ _ => trivial)) (depth16 (finish_dle v p)) (by decide)
+structure ScalarCachePiece (p : Params) (S : Nat) (I J : State → State → Prop) (code : Prog isa) : Prop where
+  ok : ∀ σ s, vPre p S σ → I σ s → (s.gpr .x22 ≠ 0 → PublicCache p S σ s) →
+    WP isa code s fun t => J σ t ∧ (t.gpr .x22 ≠ 0 → PublicCache p S σ t)
+  tr : RelCT isa (CachedScalarRel p S I) code (CachedScalarRel p S J)
+
+theorem ScalarCachePiece.seq {p : Params} {S : Nat} {I J K : State → State → Prop} {a b : Prog isa}
+    (ha : ScalarCachePiece p S I J a) (hb : ScalarCachePiece p S J K b) : ScalarCachePiece p S I K (.seq a b) :=
+  ⟨fun σ s hp hs hc => WP.seq (WP.mono (ha.ok σ s hp hs hc)
+    fun t ht => hb.ok σ t hp ht.1 ht.2), RelCT.seq ha.tr hb.tr⟩
+
+theorem ScalarCachePiece.of_old {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hw : ∀ σ s, vPre p S σ → I σ s → WP isa code s (J σ))
+    (ht : RelCT isa (VR p S I) code fun _ _ => True)
+    (hd : 16 * code.aarch64Depth ≤ S) (hS : S < 2 ^ 64) : ScalarCachePiece p S I J code :=
+  ⟨fun σ s hp hs hc => WP.optionalCache (hw σ s hp hs) hc hd hS
+    (fun t ht => ((hj _ _ ht).cs .x21 (by decide)).trans ((hi _ _ hs).cs .x21 (by decide)).symm)
+    (fun t ht => ((hj _ _ ht).cs .x22 (by decide)).trans ((hi _ _ hs).cs .x22 (by decide)).symm),
+    cached_scalar_lift hi hj hw ht hd hS⟩
+
+theorem ScalarCachePiece.seqR {p : Params} {S : Nat} {f : Nat → Prog isa}
+    {I : Nat → State → State → Prop} :
+    ∀ n a, (∀ k, a ≤ k → k < a + n → ScalarCachePiece p S (I k) (I (k + 1)) (f k)) →
+      ScalarCachePiece p S (I a) (I (a + n)) (Impl.MlDsa.AArch64.Call.seqR f a n)
+  | 0, a, _ => by
+    simp only [Impl.MlDsa.AArch64.Call.seqR, Nat.add_zero]
+    exact ⟨fun _ _ _ hs hc => WP.block_nil ⟨hs, hc⟩, RelCT.block_nil (fun _ _ h => h)⟩
+  | n + 1, a, h => by
+    have tail := ScalarCachePiece.seqR n (a + 1) (fun k h1 h2 => h k (by omega) (by omega))
+    rw [show a + 1 + n = a + (n + 1) by omega] at tail
+    exact (h a (Nat.le_refl _) (by omega)).seq tail
+
+
+theorem compute_scalar_piece (v : Proof.Sha3.AArch64.Permutation) (hpaired : v.callee.pairedSha3 = false)
+    {P : Prims} (hP : PrimsOk P 16) {p : Params} (hF : VFacts p) :
+    ScalarCachePiece p 16 (VB p) (VFin p)
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.compute v.callee P p) := by
+  have hf (a : Impl.MlDsa.AArch64.Call.Ptr) : Message.DLe 1
+      (nttAt P (Impl.MlDsa.AArch64.Call.sc oSS) a) := by
+    simpa only [Impl.MlDsa.AArch64.PreparedKey.Verify.forward, hpaired,
+      Bool.false_eq_true, ↓reduceIte] using forward_dle v hP p a
+  have hvec := Message.DLe.seqR (fun i => hf (zP p i)) 0 p.ℓ
+  have hdot (r : Nat) : Message.DLe 1 (Impl.MlDsa.AArch64.Verify.dot P p r) := by
+    have h := row_dle v hP p r
+    simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.row, hpaired, Bool.false_eq_true, ↓reduceIte] at h
+    exact dle_first h
+  have vec : VPiece p 16 (Verify.SCx p 0 false 0) (Verify.SCx p p.ℓ false 0)
+      (Impl.MlDsa.AArch64.Call.seqR
+        (fun i => nttAt P (Impl.MlDsa.AArch64.Call.sc oSS) (zP p i)) 0 p.ℓ) := by
+    simpa only [Nat.zero_add] using VPiece.seqR (I := fun i => Verify.SCx p i false 0) p.ℓ 0
+      (fun i _ hi => Verify.nttZ_vpiece hP hF (by omega))
+  simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.compute,
+    Impl.MlDsa.AArch64.PreparedKey.Verify.forward, hpaired, Bool.false_eq_true, ↓reduceIte]
+  refine ScalarCachePiece.seq (J := Verify.SCx p p.ℓ false 0) ?_
+    (ScalarCachePiece.seq (J := Verify.SCx p p.ℓ true 0) ?_
+      (ScalarCachePiece.seq (J := Verify.SCx p p.ℓ true p.k) ?_ ?_))
+  · apply ScalarCachePiece.of_old (fun _ _ h => h.vz.vc.top) (fun _ _ h => scalar_sc_top h)
+      (fun σ s hp hs => vec.ok σ s hp (Verify.vb_sc hs)) ?_ (depth16 hvec) (by decide)
+    exact RelCT.mono vec.tr
+      (fun _ _ ⟨σ, τ, ps, pt, pub, hx, hy⟩ =>
+        ⟨σ, τ, ps, pt, pub, Verify.vb_sc hx, Verify.vb_sc hy⟩) (fun _ _ _ => trivial)
+  · exact ScalarCachePiece.of_old (fun _ _ h => scalar_sc_top h) (fun _ _ h => scalar_sc_top h)
+      (Verify.nttC_vpiece hP hF).ok (Verify.nttC_vpiece hP hF).tr (depth16 (hf (cP p))) (by decide)
+  · simpa only [Nat.zero_add] using ScalarCachePiece.seqR (I := fun r => Verify.SCx p p.ℓ true r)
+      p.k 0 (fun r _ hr => (show ScalarCachePiece p 16
+        (Verify.SCx p p.ℓ true r) (Verify.SCx p p.ℓ true (r + 1))
+        (Impl.MlDsa.AArch64.PreparedKey.Verify.row v.callee P p r) from
+        ⟨fun σ s hp hs cache => row_scalar hpaired hP hF hp (by omega)
+          (depth16 (hdot r)) (depth16 (row_dle v hP p r)) hs cache,
+          row_scalar_tr hpaired hP hF (by omega) (depth16 (hdot r))
+            (depth16 (keyRow_dle v hP p r)) (depth16 (row_dle v hP p r))⟩))
+  · have tail := (Verify.hash_vpiece (keccak := v) hP.s16 hP.s64 hF).seq (Verify.cmp_vpiece hF)
+    exact ScalarCachePiece.of_old (fun _ _ h => scalar_sc_top h) (fun _ _ h => h.1.top)
+      tail.ok tail.tr (depth16 (finish_dle v p)) (by decide)
+
+theorem CachePiece.ifOk {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    {T : State → Prop} [DecidablePred T]
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hx : ∀ σ s, vPre p S σ → I σ s → s.gpr .x24 = if T σ then 1 else 0)
+    (hT : ∀ σ τ, vPre p S σ → vPre p S τ → vPub p S σ τ → (T σ ↔ T τ))
+    (ht : CachePiece p S (fun σ s => I σ s ∧ T σ) J code)
+    (he : ∀ σ s, vPre p S σ → I σ s → ¬ T σ → J σ s) :
+    CachePiece p S I J (Impl.MlDsa.AArch64.KeyGen.ifOk code) := by
+  have ev (σ s : State) (hp : vPre p S σ) (hs : I σ s) :
+      isa.eval (.nonzero .x .x24) s = some (decide (T σ)) := by
+    change some (s.gpr .x24 != 0) = some (decide (T σ))
+    rw [hx σ s hp hs]
+    by_cases h : T σ <;> simp [h]
+  have hw : ∀ σ s, vPre p S σ → I σ s → (s.gpr .x22 ≠ 0 → PublicCache p S σ s) →
+      WP isa (Impl.MlDsa.AArch64.KeyGen.ifOk code) s fun t => J σ t ∧ (t.gpr .x22 ≠ 0 → PublicCache p S σ t) := by
+    intro σ s hp hs hc
+    unfold Impl.MlDsa.AArch64.KeyGen.ifOk
+    exact WP.ite (decide (T σ)) (ev σ s hp hs)
+      (fun hb => ht.ok σ s hp ⟨hs, of_decide_eq_true hb⟩ hc)
+      (fun hb => WP.block_nil ⟨he σ s hp hs (of_decide_eq_false hb), hc⟩)
+  refine ⟨hw, cached_v_progress hi hj hw ?_⟩
+  unfold Impl.MlDsa.AArch64.KeyGen.ifOk
+  refine RelCT.ite ?_ ?_ (RelCT.block_nil (fun _ _ _ => trivial))
+  · rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, hm⟩
+    rw [ev σ x ps hx.1, ev τ y pt hy.1, decide_eq_decide.mpr (hT σ τ ps pt pub)]
+  · refine RelCT.mono ht.tr ?_ (fun _ _ _ => trivial)
+    rintro x y ⟨⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, hm⟩, hflag⟩
+    rw [ev σ x ps hx.1] at hflag
+    have tx : T σ := of_decide_eq_true (Option.some.inj hflag)
+    have ty : T τ := (hT σ τ ps pt pub).mp tx
+    exact ⟨⟨⟨σ, τ, ps, pt, pub, ⟨⟨hx.1, tx⟩, hx.2⟩, ⟨⟨hy.1, ty⟩, hy.2⟩⟩, roots⟩, hm⟩
+
+theorem ScalarCachePiece.ifOk {p : Params} {S : Nat} {I J : State → State → Prop} {code : Prog isa}
+    {T : State → Prop} [DecidablePred T]
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hx : ∀ σ s, vPre p S σ → I σ s → s.gpr .x24 = if T σ then 1 else 0)
+    (hT : ∀ σ τ, vPre p S σ → vPre p S τ → vPub p S σ τ → (T σ ↔ T τ))
+    (ht : ScalarCachePiece p S (fun σ s => I σ s ∧ T σ) J code)
+    (he : ∀ σ s, vPre p S σ → I σ s → ¬ T σ → J σ s) :
+    ScalarCachePiece p S I J (Impl.MlDsa.AArch64.KeyGen.ifOk code) := by
+  have ev (σ s : State) (hp : vPre p S σ) (hs : I σ s) :
+      isa.eval (.nonzero .x .x24) s = some (decide (T σ)) := by
+    change some (s.gpr .x24 != 0) = some (decide (T σ))
+    rw [hx σ s hp hs]
+    by_cases h : T σ <;> simp [h]
+  have hw : ∀ σ s, vPre p S σ → I σ s → (s.gpr .x22 ≠ 0 → PublicCache p S σ s) →
+      WP isa (Impl.MlDsa.AArch64.KeyGen.ifOk code) s fun t => J σ t ∧ (t.gpr .x22 ≠ 0 → PublicCache p S σ t) := by
+    intro σ s hp hs hc
+    unfold Impl.MlDsa.AArch64.KeyGen.ifOk
+    exact WP.ite (decide (T σ)) (ev σ s hp hs)
+      (fun hb => ht.ok σ s hp ⟨hs, of_decide_eq_true hb⟩ hc)
+      (fun hb => WP.block_nil ⟨he σ s hp hs (of_decide_eq_false hb), hc⟩)
+  refine ⟨hw, cached_scalar_progress hi hj hw ?_⟩
+  unfold Impl.MlDsa.AArch64.KeyGen.ifOk
+  refine RelCT.ite ?_ ?_ (RelCT.block_nil (fun _ _ _ => trivial))
+  · rintro x y ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, hm⟩
+    rw [ev σ x ps hx.1, ev τ y pt hy.1, decide_eq_decide.mpr (hT σ τ ps pt pub)]
+  · refine RelCT.mono ht.tr ?_ (fun _ _ _ => trivial)
+    rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, hm⟩, hflag⟩
+    rw [ev σ x ps hx.1] at hflag
+    have tx : T σ := of_decide_eq_true (Option.some.inj hflag)
+    have ty : T τ := (hT σ τ ps pt pub).mp tx
+    exact ⟨⟨σ, τ, ps, pt, pub, ⟨⟨hx.1, tx⟩, hx.2⟩, ⟨⟨hy.1, ty⟩, hy.2⟩⟩, hm⟩
+
+theorem CachePiece.of_piece {p : Params} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (h : Verify.Optimized.Piece p 16 I J code) (hd : 16 * code.aarch64Depth ≤ 16) :
+    CachePiece p 16 I J code := CachePiece.of_old hi hj h.ok h.tr hd (by decide)
+
+theorem body_optimized_piece (v : Proof.Sha3.AArch64.Permutation) (hpaired : v.callee.pairedSha3 = true)
+    {P : Prims} (hP : PrimsOk P 16) {p : Params} (hF : VFacts p) :
+    CachePiece p 16 (fun σ s => (VC p σ s ∧ s.gpr .x24 = 1) ∧ Sign.StaticRoots 16 s)
+      (VFin p) (Impl.MlDsa.AArch64.PreparedKey.Verify.body v.callee P p) := by
+  simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.body, hpaired, ↓reduceIte]
+  refine CachePiece.seq (CachePiece.of_piece (fun _ _ h => h.1.1.top)
+    (fun _ _ h => h.1.1.top) (Verify.Optimized.Piece.of_vpiece
+      (OptimizedSamples.rooted_piece (Verify.hint_vpiece hP hF)
+        (Verify.Optimized.hint_depth hP p) hP.s64)) (Verify.Optimized.hint_depth hP p))
+    (CachePiece.ifOk (T := fun σ => (hintOf p σ).isSome = true)
+      (fun _ _ h => h.1.1.top) (fun _ _ h => h.1.top) (fun _ _ _ h => h.1.2.1)
+      (fun _ _ _ _ pub => by rw [hintOf, hintOf, (vPub_eq pub).2.2.2.1]) ?_ ?_)
+  · refine CachePiece.seq (J := fun σ s => Z0 p p.ℓ σ s ∧ Sign.StaticRoots 16 s) ?_
+      (CachePiece.ifOk (T := fun σ => normOk p σ p.ℓ)
+        (fun _ _ h => h.1.1.vc.top) (fun _ _ h => h.1.top)
+        (fun _ _ _ h => h.1.2)
+        (fun _ _ _ _ pub => by simp only [normOk, zOf, (vPub_eq pub).2.2.2.1]) ?_ ?_)
+    · refine CachePiece.mono (CachePiece.seqR
+        (I := fun j σ s => Z0 p j σ s ∧ Sign.StaticRoots 16 s) p.ℓ 0
+        (fun j _ hj => CachePiece.of_piece (fun _ _ h => h.1.1.vc.top)
+          (fun _ _ h => h.1.1.vc.top) (Verify.Optimized.Piece.of_vpiece
+            (OptimizedSamples.rooted_piece (Verify.zOne_vpiece hP hF (by omega))
+              (Verify.Optimized.zOne_depth hP p j) hP.s64)) (Verify.Optimized.zOne_depth hP p j))) ?_ ?_
+      · intro σ s ⟨⟨⟨hv, hx, hH⟩, roots⟩, ht⟩
+        refine ⟨⟨⟨hv, ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩, ?_⟩, roots⟩
+        · obtain ⟨hh, e⟩ := Option.isSome_iff_exists.mp ht
+          exact ⟨hh, e, hH hh e⟩
+        · rw [hx]
+          exact flag_congr (iff_of_true ht (Verify.normOk_zero p σ))
+      · intro _ _ h; simpa only [Nat.zero_add] using h
+    · refine CachePiece.mono ((CachePiece.of_piece (fun _ _ h => h.1.1.1.vc.top)
+        (fun _ _ h => h.1.vz.vc.top) (Verify.Optimized.Piece.of_vpiece (OptimizedSamples.samples_rooted_vpiece hP hF))
+        (OptimizedSamples.samples_depth hP p)).seq (compute_optimized_piece v hpaired hP hF)) ?_
+        (fun _ _ h => h)
+      intro _ _ ⟨⟨hz, roots⟩, hn⟩
+      exact ⟨⟨hz, hn⟩, roots⟩
+    · intro σ s _ ⟨h, _⟩ hn
+      refine ⟨h.1.vc, .inr ⟨by rw [h.2]; exact VG.Proof.MlDsa.KeyGen.ifn hn _ _, ?_⟩⟩
+      obtain ⟨hh, e, _⟩ := h.1.hint
+      exact Proof.MlDsa.Verify.verifyMu_norm minBounds _ _ e
+        (by rw [Proof.MlDsa.Verify.normR_vZ_iff hF.g1.2.1 p hF.g1.1]; exact hn)
+  · intro σ s _ ⟨h, _⟩ hn
+    refine ⟨h.1, .inr ⟨by rw [h.2.1]; exact VG.Proof.MlDsa.KeyGen.ifn hn _ _, ?_⟩⟩
+    show verifyMu p minBounds _ _ _ ≠ some true
+    rw [Proof.MlDsa.Verify.verifyMu_hint_none minBounds _ _ (Option.not_isSome_iff_eq_none.mp hn)]
+    nofun
+
+theorem ScalarCachePiece.mono {p : Params} {S : Nat} {I J I' J' : State → State → Prop} {code : Prog isa}
+    (h : ScalarCachePiece p S I J code)
+    (hi : ∀ σ s, I' σ s → I σ s) (hj : ∀ σ s, J σ s → J' σ s) : ScalarCachePiece p S I' J' code := by
+  refine ⟨fun σ s hp hs hc => WP.mono (h.ok σ s hp (hi σ s hs) hc)
+    (fun t ht => ⟨hj σ t ht.1, ht.2⟩), RelCT.mono h.tr ?_ ?_⟩
+  · rintro x y ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, hm⟩
+    exact ⟨⟨σ, τ, ps, pt, pub, ⟨hi _ _ hx.1, hx.2⟩, ⟨hi _ _ hy.1, hy.2⟩⟩, hm⟩
+  · rintro x y ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, hm⟩
+    exact ⟨⟨σ, τ, ps, pt, pub, ⟨hj _ _ hx.1, hx.2⟩, ⟨hj _ _ hy.1, hy.2⟩⟩, hm⟩
+
+theorem ScalarCachePiece.of_vpiece {p : Params} {I J : State → State → Prop} {code : Prog isa}
+    (hi : ∀ σ s, I σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (hj : ∀ σ s, J σ s → VG.Proof.MlDsa.AArch64.KeyGen.Top σ s)
+    (h : VPiece p 16 I J code) (hd : 16 * code.aarch64Depth ≤ 16) :
+    ScalarCachePiece p 16 I J code := ScalarCachePiece.of_old hi hj h.ok h.tr hd (by decide)
+
+theorem samples_scalar_dle {P : Prims} (hP : PrimsOk P 16) (p : Params) :
+    Message.DLe 1 (Impl.MlDsa.AArch64.Verify.samples P p) := by
+  have hr := Message.DLe.of_fd hP.rejNtt.fd
+  have hr4 := Message.DLe.of_fd hP.rej4.fd
+  have hb := Message.DLe.of_fd hP.ball.fd
+  unfold Impl.MlDsa.AArch64.Verify.samples
+  dle_tac
+
+theorem body_scalar_piece (v : Proof.Sha3.AArch64.Permutation) (hpaired : v.callee.pairedSha3 = false)
+    {P : Prims} (hP : PrimsOk P 16) {p : Params} (hF : VFacts p) :
+    ScalarCachePiece p 16 (fun σ s => VC p σ s ∧ s.gpr .x24 = 1)
+      (VFin p) (Impl.MlDsa.AArch64.PreparedKey.Verify.body v.callee P p) := by
+  simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.body, hpaired, Bool.false_eq_true, ↓reduceIte]
+  refine ScalarCachePiece.seq (ScalarCachePiece.of_vpiece (fun _ _ h => h.1.top)
+    (fun _ _ h => h.1.top) (Verify.hint_vpiece hP hF) (Verify.Optimized.hint_depth hP p))
+    (ScalarCachePiece.ifOk (T := fun σ => (hintOf p σ).isSome = true)
+      (fun _ _ h => h.1.top) (fun _ _ h => h.1.top) (fun _ _ _ h => h.2.1)
+      (fun _ _ _ _ pub => by rw [hintOf, hintOf, (vPub_eq pub).2.2.2.1]) ?_ ?_)
+  · refine ScalarCachePiece.seq (J := Z0 p p.ℓ) ?_
+      (ScalarCachePiece.ifOk (T := fun σ => normOk p σ p.ℓ)
+        (fun _ _ h => h.1.vc.top) (fun _ _ h => h.1.top) (fun _ _ _ h => h.2)
+        (fun _ _ _ _ pub => by simp only [normOk, zOf, (vPub_eq pub).2.2.2.1]) ?_ ?_)
+    · refine ScalarCachePiece.mono (ScalarCachePiece.seqR (I := fun j => Z0 p j) p.ℓ 0
+        (fun j _ hj => ScalarCachePiece.of_vpiece (fun _ _ h => h.1.vc.top)
+          (fun _ _ h => h.1.vc.top) (Verify.zOne_vpiece hP hF (by omega))
+          (Verify.Optimized.zOne_depth hP p j))) ?_ ?_
+      · intro σ s ⟨⟨hv, hx, hH⟩, ht⟩
+        refine ⟨⟨hv, ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩, ?_⟩
+        · obtain ⟨hh, e⟩ := Option.isSome_iff_exists.mp ht
+          exact ⟨hh, e, hH hh e⟩
+        · rw [hx]
+          exact flag_congr (iff_of_true ht (Verify.normOk_zero p σ))
+      · intro _ _ h; simpa only [Nat.zero_add] using h
+    · exact (ScalarCachePiece.of_vpiece (fun _ _ h => h.1.1.vc.top)
+        (fun _ _ h => h.vz.vc.top) (Verify.samples_vpiece hP hF) (depth16 (samples_scalar_dle hP p))).seq
+        (compute_scalar_piece v hpaired hP hF)
+    · intro σ s _ h hn
+      refine ⟨h.1.vc, .inr ⟨by rw [h.2]; exact VG.Proof.MlDsa.KeyGen.ifn hn _ _, ?_⟩⟩
+      obtain ⟨hh, e, _⟩ := h.1.hint
+      exact Proof.MlDsa.Verify.verifyMu_norm minBounds _ _ e
+        (by rw [Proof.MlDsa.Verify.normR_vZ_iff hF.g1.2.1 p hF.g1.1]; exact hn)
+  · intro σ s _ h hn
+    refine ⟨h.1, .inr ⟨by rw [h.2.1]; exact VG.Proof.MlDsa.KeyGen.ifn hn _ _, ?_⟩⟩
+    show verifyMu p minBounds _ _ _ ≠ some true
+    rw [Proof.MlDsa.Verify.verifyMu_hint_none minBounds _ _ (Option.not_isSome_iff_eq_none.mp hn)]
+    nofun
+
+public theorem verify_core_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp3 : Sign.Ok3 p)
+    (σ : State) (hpre : (verifyCoreK p v.callee.pairedSha3).pre σ) :
+    ∃ tr t, Exec isa (Impl.MlDsa.AArch64.PreparedKey.Verify.core v.callee (primsWith v.callee) p) σ tr t ∧
+      abiPreserved σ t ∧ (verifyCoreK p v.callee.pairedSha3).post σ t := by
+  have hP := KeyGen.prims_okWith (keccak := v)
+  have hF := vfacts hp3
+  have hp := hpre.1
+  have cache := hpre.2.2
+  have main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Verify.core v.callee (primsWith v.callee) p) σ
+      fun t => abiPreserved σ t ∧ (verifyContract p abi 16).post σ t := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.core
+    by_cases hpair : v.callee.pairedSha3 = true
+    · have pro := WP.optionalCache
+        ((OptimizedSamples.rooted_piece (Verify.pro_vpiece hF) (by change 0 ≤ 16; decide) hP.s64).ok
+          σ σ hp ⟨rfl, hpre.2.1 hpair⟩) cache (Nat.zero_le _) hP.s64
+        (fun t ht => ht.1.1.top.cs .x21 (by decide))
+        (fun t ht => ht.1.1.top.cs .x22 (by decide))
+      refine WP.seq (WP.mono pro fun t ⟨ht, hc⟩ => ?_)
+      refine WP.seq (WP.mono ((body_optimized_piece v hpair hP hF).ok σ t hp ht hc)
+        fun u hu => ?_)
+      exact (Verify.epi_vpiece hF).ok σ u hp hu.1
+    · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+      have pro := WP.optionalCache ((Verify.pro_vpiece hF).ok σ σ hp rfl) cache (Nat.zero_le _) hP.s64
+        (fun t ht => ht.1.top.cs .x21 (by decide)) (fun t ht => ht.1.top.cs .x22 (by decide))
+      refine WP.seq (WP.mono pro fun t ⟨ht, hc⟩ => ?_)
+      refine WP.seq (WP.mono ((body_scalar_piece v hfalse hP hF).ok σ t hp ht hc)
+        fun u hu => ?_)
+      exact (Verify.epi_vpiece hF).ok σ u hp hu.1
+  obtain ⟨tr, t, he, hp⟩ := main
+  exact ⟨tr, t, he, hp⟩
+
+def CoreRel (p : Params) (optimized : Bool) (x y : State) : Prop :=
+  (verifyCoreK p optimized).pre x ∧ (verifyCoreK p optimized).pre y ∧ (verifyCoreK p optimized).pub x y
+
+theorem same_cache_metadata {σ τ x y : State} (hx : VG.Proof.MlDsa.AArch64.KeyGen.Top σ x)
+    (hy : VG.Proof.MlDsa.AArch64.KeyGen.Top τ y) (h : SameIn [.x21, .x22] σ τ) :
+    SameIn [.x21, .x22] x y := by
+  refine ⟨fun r hr => ?_, by rw [hx.sp, hy.sp, h.2]⟩
+  have hk : r ∈ VG.Proof.MlDsa.AArch64.KeyGen.untouched := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> decide
+  rw [hx.cs r hk, hy.cs r hk, h.1 r hr]
+
+theorem pro_optimized_tr (v : Proof.Sha3.AArch64.Permutation) (hpair : v.callee.pairedSha3 = true)
+    {p : Params} (hF : VFacts p) :
+    RelCT isa (CoreRel p v.callee.pairedSha3) (.block pro)
+      (CachedVRel p 16 (fun σ s => (VC p σ s ∧ s.gpr .x24 = 1) ∧ Sign.StaticRoots 16 s)) := by
+  intro x y tx ty u w ⟨hx, hy, pub⟩ ex ey
+  have hP := KeyGen.prims_okWith (keccak := v)
+  have trace := ((Verify.pro_vpiece hF).tr _ _ _ _ _ _
+    ⟨x, y, hx.1, hy.1, pub.1, rfl, rfl⟩ ex ey).1
+  have wx := WP.optionalCache
+    ((OptimizedSamples.rooted_piece (Verify.pro_vpiece hF) (by change 0 ≤ 16; decide) hP.s64).ok
+      x x hx.1 ⟨rfl, hx.2.1 hpair⟩) hx.2.2 (Nat.zero_le _) hP.s64
+    (fun t ht => ht.1.1.top.cs .x21 (by decide)) (fun t ht => ht.1.1.top.cs .x22 (by decide))
+  have wy := WP.optionalCache
+    ((OptimizedSamples.rooted_piece (Verify.pro_vpiece hF) (by change 0 ≤ 16; decide) hP.s64).ok
+      y y hy.1 ⟨rfl, hy.2.1 hpair⟩) hy.2.2 (Nat.zero_le _) hP.s64
+    (fun t ht => ht.1.1.top.cs .x21 (by decide)) (fun t ht => ht.1.1.top.cs .x22 (by decide))
+  obtain ⟨_, u', eu, hu⟩ := wx
+  obtain ⟨_, w', ew, hw⟩ := wy
+  obtain ⟨_, rfl⟩ := Exec.det ex eu
+  obtain ⟨_, rfl⟩ := Exec.det ey ew
+  refine ⟨trace, ⟨⟨x, y, hx.1, hy.1, pub.1, hu, hw⟩, ?_⟩,
+    same_cache_metadata hu.1.1.1.top hw.1.1.1.top pub.2.2⟩
+  have symbols := pub.2.1 hpair
+  simpa only [Sign.RootSymbolsEq, VG.AArch64.Exec.syms ex, VG.AArch64.Exec.syms ey] using symbols
+
+theorem pro_scalar_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hF : VFacts p) :
+    RelCT isa (CoreRel p v.callee.pairedSha3) (.block pro)
+      (CachedScalarRel p 16 (fun σ s => VC p σ s ∧ s.gpr .x24 = 1)) := by
+  intro x y tx ty u w ⟨hx, hy, pub⟩ ex ey
+  have hP := KeyGen.prims_okWith (keccak := v)
+  have trace := ((Verify.pro_vpiece hF).tr _ _ _ _ _ _
+    ⟨x, y, hx.1, hy.1, pub.1, rfl, rfl⟩ ex ey).1
+  have wx := WP.optionalCache ((Verify.pro_vpiece hF).ok x x hx.1 rfl) hx.2.2 (Nat.zero_le _) hP.s64
+    (fun t ht => ht.1.top.cs .x21 (by decide)) (fun t ht => ht.1.top.cs .x22 (by decide))
+  have wy := WP.optionalCache ((Verify.pro_vpiece hF).ok y y hy.1 rfl) hy.2.2 (Nat.zero_le _) hP.s64
+    (fun t ht => ht.1.top.cs .x21 (by decide)) (fun t ht => ht.1.top.cs .x22 (by decide))
+  obtain ⟨_, u', eu, hu⟩ := wx
+  obtain ⟨_, w', ew, hw⟩ := wy
+  obtain ⟨_, rfl⟩ := Exec.det ex eu
+  obtain ⟨_, rfl⟩ := Exec.det ey ew
+  exact ⟨trace, ⟨x, y, hx.1, hy.1, pub.1, hu, hw⟩,
+    same_cache_metadata hu.1.1.top hw.1.1.top pub.2.2⟩
+
+public theorem verify_core_ct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp3 : Sign.Ok3 p) :
+    ConstantTime isa (verifyCoreK p v.callee.pairedSha3).pre (verifyCoreK p v.callee.pairedSha3).pub
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.core v.callee (primsWith v.callee) p) := by
+  have hP := KeyGen.prims_okWith (keccak := v)
+  have hF := vfacts hp3
+  have trace : RelCT isa (CoreRel p v.callee.pairedSha3)
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.core v.callee (primsWith v.callee) p) (fun _ _ => True) := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.core
+    by_cases hpair : v.callee.pairedSha3 = true
+    · refine RelCT.seq (pro_optimized_tr v hpair hF)
+        (RelCT.seq (body_optimized_piece v hpair hP hF).tr ?_)
+      refine RelCT.mono (Verify.epi_vpiece (S := 16) hF).tr ?_ (fun _ _ _ => trivial)
+      rintro x y ⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, _⟩, _⟩
+      exact ⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩
+    · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+      refine RelCT.seq (pro_scalar_tr v hF) (RelCT.seq (body_scalar_piece v hfalse hP hF).tr ?_)
+      refine RelCT.mono (Verify.epi_vpiece (S := 16) hF).tr ?_ (fun _ _ _ => trivial)
+      rintro x y ⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, _⟩
+      exact ⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩
+  intro x y tx ty u w hx hy pub ex ey
+  exact (trace _ _ _ _ _ _ ⟨hx, hy, pub⟩ ex ey).1
+
+public theorem verify_core_dle (v : Proof.Sha3.AArch64.Permutation) (p : Params) :
+    Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.core v.callee (primsWith v.callee) p) := by
+  have hP := KeyGen.prims_okWith (keccak := v)
+  have hvec := Message.DLe.seqR (fun i => forward_dle v hP p (zP p i)) 0 p.ℓ
+  have hforward := forward_dle v hP p (cP p)
+  have hrows := Message.DLe.seqR (fun r => row_dle v hP p r) 0 p.k
+  have hfinish := finish_dle v p
+  have hcomp : Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.compute v.callee (primsWith v.callee) p) := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.compute
+    exact Message.DLe.seq hvec (Message.DLe.seq hforward (Message.DLe.seq hrows hfinish))
+  have hhint := Message.DLe.of_fd (Verify.Optimized.hint_depth hP p)
+  have hz := Message.DLe.seqR (fun i => Message.DLe.of_fd (Verify.Optimized.zOne_depth hP p i)) 0 p.ℓ
+  have hsamples : Message.DLe 1 (if v.callee.pairedSha3 then
+      Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples (primsWith v.callee) p
+      else Impl.MlDsa.AArch64.Verify.samples (primsWith v.callee) p) := by
+    split
+    · exact Message.DLe.of_fd (OptimizedSamples.samples_depth hP p)
+    · exact samples_scalar_dle hP p
+  unfold Impl.MlDsa.AArch64.PreparedKey.Verify.core Impl.MlDsa.AArch64.PreparedKey.Verify.body
+  dle_tac
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
 
 @[expose] public section
 

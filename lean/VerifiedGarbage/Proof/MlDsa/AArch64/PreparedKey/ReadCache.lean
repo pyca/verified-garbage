@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Immutable canonical polynomials across shared-kernel phases -/
 
@@ -122,5 +123,31 @@ theorem ReadCache.copy_poly {count S : Nat} {f : Nat → Poly} {s : State}
     exact hw
   · rw [ht.pa hd]
     exact VG.Proof.MlDsa.PreparedKey.polyIs_of_copy hb (cache.values i hi)
+
+abbrev cacheCopyHint : VG.Taint.Hint AArch64.Taint.T :=
+  .seq (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x21, .x28]) (.block [])
+    (.loop (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x21, .x28]) (.block []))
+
+theorem copy_cache_check (od os : Nat) :
+    taint.check (AArch64.Taint.ofRegs [.x21, .x28])
+      (Impl.MlDsa.AArch64.PreparedKey.copy (.x28, od) (.x21, os) 1024) cacheCopyHint =
+      some (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x21, .x28]) := by
+  dsimp only [Impl.MlDsa.AArch64.PreparedKey.copy, cacheCopyHint,
+    Impl.MlDsa.AArch64.Call.lea, Impl.MlDsa.AArch64.Call.movV]
+  simp only [show ¬(1024 : Nat) = 0 by decide, ↓reduceIte]
+  (repeat' split) <;> rfl
+
+theorem copy_cache_tr (od os : Nat) :
+    RelCT isa (SameIn [.x21, .x28])
+      (Impl.MlDsa.AArch64.PreparedKey.copy (.x28, od) (.x21, os) 1024)
+      (SameIn [.x21, .x28]) := by
+  intro x y tx ty x' y' h ex ey
+  have ha : AArch64.Taint.Agree (AArch64.Taint.ofRegs [.x21, .x28]) x y :=
+    ⟨h.2, fun r hr => h.1 r (AArch64.Taint.mem_ofRegs.mp hr)⟩
+  obtain ⟨ht, hp⟩ := VG.Taint.check_sound (copy_cache_check od os) ha ex ey
+  exact ⟨ht, (fun r hr => hp.2 r (by simpa using
+    (show r ∈ ([.x0, .x1, .x2, .x21, .x28] : List Reg) by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl <;> simp))), hp.1⟩
 
 end VG.Proof.MlDsa.AArch64.PreparedKey

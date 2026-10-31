@@ -38,11 +38,13 @@ def compute (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :
       (.seq (shake256With c [⟨.x26, 0, 64⟩, ⟨.x28, (bP p).2, p.k * w1Len p⟩]
         [⟨.x28, oCT, p.ctildeLen⟩]) (cmpAnd (sc oCT) (.x27, 0) p.ctildeLen))))
 
-def core (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
-  let body := .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ)
+def body (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
+  .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ)
     (ifOk (.seq (if c.pairedSha3 then OptimizedSamples.samples P p else samples P p)
       (compute c P p)))))
-  .seq (.block pro) (.seq body (.block epi))
+
+def core (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
+  .seq (.block pro) (.seq (body c P p) (.block epi))
 
 def withCache (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
   .frame (.push .x21) (.frame (.push .x22)

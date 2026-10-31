@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowProduct
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
 
+
 @[expose] public section
 
 /-! ## VerifyCopy -/
@@ -174,5 +175,13 @@ theorem row_scalar {c : Impl.Sha3.AArch64.Callee} (hpaired : c.pairedSha3 = fals
   exact WP.optionalCache main cache hrow hP.s64
     (fun t ht => ((final t ht).cs .x21 (by decide)).trans ((old s hs).cs .x21 (by decide)).symm)
     (fun t ht => ((final t ht).cs .x22 (by decide)).trans ((old s hs).cs .x22 (by decide)).symm)
+
+def verifyCoreK (p : Params) (optimized : Bool) : Contract isa where
+  pre s := vPre p 16 s ∧ (optimized = true → Sign.StaticRoots 16 s) ∧
+    (s.gpr .x22 ≠ 0 → PublicCache p 16 s s)
+  post := (verifyContract p abi 16).post
+  pub x y := vPub p 16 x y ∧
+    (optimized = true → x.syms "VG_MLDSA_NTT_EXPANDED" = y.syms "VG_MLDSA_NTT_EXPANDED" ∧
+      x.syms "VG_MLDSA_INV_FOLDED" = y.syms "VG_MLDSA_INV_FOLDED") ∧ SameIn [.x21, .x22] x y
 
 end VG.Proof.MlDsa.AArch64.PreparedKey

@@ -1,5 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSat
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.MlKem.Mem
+
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignRest
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.RelCT
@@ -55,32 +61,6 @@ open VG VG.AArch64 VG.Spec.MlDsa
 open VG.Impl.MlDsa.AArch64.Call (seqR)
 open VG.Impl.MlDsa.AArch64.Sign
 
-abbrev copySignHint : VG.Taint.Hint AArch64.Taint.T :=
-  .seq (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x21, .x28]) (.block [])
-    (.loop (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x21, .x28]) (.block []))
-
-theorem copy_sign_check (od os : Nat) :
-    taint.check (AArch64.Taint.ofRegs [.x21, .x28])
-      (Impl.MlDsa.AArch64.PreparedKey.copy (.x28, od) (.x21, os) 1024) copySignHint =
-      some (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x21, .x28]) := by
-  dsimp only [Impl.MlDsa.AArch64.PreparedKey.copy, copySignHint,
-    Impl.MlDsa.AArch64.Call.lea, Impl.MlDsa.AArch64.Call.movV]
-  simp only [show ¬(1024 : Nat) = 0 by decide, ↓reduceIte]
-  (repeat' split) <;> rfl
-
-theorem copy_sign_tr (od os : Nat) :
-    RelCT isa (SameIn [.x21, .x28])
-      (Impl.MlDsa.AArch64.PreparedKey.copy (.x28, od) (.x21, os) 1024)
-      (SameIn [.x21, .x28]) := by
-  intro x y tx ty x' y' h ex ey
-  have ha : AArch64.Taint.Agree (AArch64.Taint.ofRegs [.x21, .x28]) x y :=
-    ⟨h.2, fun r hr => h.1 r (AArch64.Taint.mem_ofRegs.mp hr)⟩
-  obtain ⟨ht, hp⟩ := VG.Taint.check_sound (copy_sign_check od os) ha ex ey
-  exact ⟨ht, (fun r hr => hp.2 r (by simpa using
-    (show r ∈ ([.x0, .x1, .x2, .x21, .x28] : List Reg) by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with rfl | rfl <;> simp))), hp.1⟩
-
 theorem restoreSecrets_tr (p : Params) :
     RelCT isa (SameIn [.x21, .x28])
       (Impl.MlDsa.AArch64.PreparedKey.Sign.restoreSecrets p) (SameIn [.x21, .x28]) := by
@@ -88,11 +68,11 @@ theorem restoreSecrets_tr (p : Params) :
   refine RelCT.seq (R := SameIn [.x21, .x28]) ?_
     (RelCT.seq (R := SameIn [.x21, .x28]) ?_ ?_)
   · exact seqR_tr (Q := fun _ => SameIn [.x21, .x28]) p.ℓ 0
-      (fun _ _ _ => copy_sign_tr _ _)
+      (fun _ _ _ => copy_cache_tr _ _)
   · exact seqR_tr (Q := fun _ => SameIn [.x21, .x28]) p.k 0
-      (fun _ _ _ => copy_sign_tr _ _)
+      (fun _ _ _ => copy_cache_tr _ _)
   · exact seqR_tr (Q := fun _ => SameIn [.x21, .x28]) p.k 0
-      (fun _ _ _ => copy_sign_tr _ _)
+      (fun _ _ _ => copy_cache_tr _ _)
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -570,5 +550,473 @@ theorem withCache_verified (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) 
       (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache v.callee (primsWith v.callee) p)
       (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48) :=
   ⟨withCache_correct v hp, withCache_ct v hp, sharedSign_sat hp⟩
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Verify
+
+def verifyingMetadata (s : State) : State :=
+  (s.write .x .x21 (s.gpr .x4)).write .x .x22 (s.gpr .x5)
+
+theorem publicCache_metadata {p : Params} {S : Nat} {s : State} (hp : Sign.Ok3 p)
+    (hlen : (s.gpr .x5).toNat = 1024 * p.k)
+    (hr : Covers [⟨s.gpr .x4, (s.gpr .x5).toNat⟩] (s.rd ++ s.wr))
+    (hw : ∀ R ∈ s.wr, (⟨s.gpr .x4, (s.gpr .x5).toNat⟩ : Region).Disjoint R)
+    (hs : (⟨s.gpr .x4, (s.gpr .x5).toNat⟩ : Region).Disjoint (below s.sp S))
+    (hv : CachedPublicPolys p s.mem (s.gpr .x4) (vPk p s)) :
+    PublicCache p S s (verifyingMetadata s) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rcases hp with rfl | rfl | rfl <;> decide
+  · simpa [verifyingMetadata, State.write, hlen] using hr
+  · simpa [verifyingMetadata, State.write, hlen] using hw
+  · simpa [verifyingMetadata, State.write, hlen] using hs
+  · intro i hi
+    have hpoly := hv i hi
+    rw [VG.Proof.MlDsa.PreparedKey.public_poly p (vPk p s) hi] at hpoly
+    simpa [verifyingMetadata, State.write, pa, n] using hpoly
+
+theorem shared_verify_scalar_input {p : Params} (hp : Sign.Ok3 p) {s : State}
+    (h : (verifyWithCacheContract p abi 48).pre s) :
+    vPre p 48 s ∧ (s.gpr .x5 ≠ 0 → PublicCache p 48 s (verifyingMetadata s)) := by
+  sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs] at h
+  obtain ⟨hsp, hrd, hwr, d1, d2, d3, dc, k1, k2, k3, k4, kc, n1, n2, n3, n4, _nc, hcache⟩ := h
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs]
+    exact ⟨hsp, rfl, hwr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4⟩
+  · intro R hR
+    rw [hrd]
+    simp only [vInputs, List.mem_cons, List.not_mem_nil, or_false] at hR ⊢
+    rcases hR with rfl | rfl | rfl <;> simp
+  · intro hn
+    rcases hcache with hz | ⟨hlen, hv⟩
+    · exact absurd hz hn
+    change (s.gpr .x5).toNat = 1024 * p.k at hlen
+    apply publicCache_metadata hp hlen ?_ ?_ kc.symm hv
+    · apply Covers.one
+      exact ⟨⟨s.gpr .x4, (s.gpr .x5).toNat⟩,
+        List.mem_append_left _ (by rw [hrd]; simp), Region.contains_self _ _⟩
+    · intro R hR
+      rw [hwr] at hR
+      obtain rfl := List.mem_singleton.mp hR
+      exact dc.symm
+
+theorem shared_verify_optimized_input {p : Params} (hp : Sign.Ok3 p) {s : State}
+    (h : (verifyWithCacheContract p (abi.withConsts Sign.signRootConsts) 48).pre s) :
+    vPre p 48 s ∧ Sign.StaticRoots 48 s ∧
+      (s.gpr .x5 ≠ 0 → PublicCache p 48 s (verifyingMetadata s)) := by
+  sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
+    Abi.withConsts, Sign.signRootConsts_eq, Abi.constRegions, Abi.constsHeld,
+    VG.Proof.MlDsa.AArch64.Optimized.TableConstants.staticNttWords_length,
+    VG.Proof.MlDsa.AArch64.Optimized.InverseTable.expandedWords_length, stackBelow] at h
+  obtain ⟨hsp, hd, hf, hi, hff, hfw, hfs, hif, hiw, his, hfa, hia, ht, hwr,
+    d1, d2, d3, dc, k1, k2, k3, k4, kc, n1, n2, n3, n4, _nc, hcache⟩ := h
+  have hrd : s.rd = [⟨s.gpr .x0, p.pkLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, p.sigLen⟩,
+      ⟨s.gpr .x4, (s.gpr .x5).toNat⟩] ++
+      [⟨s.syms "VG_MLDSA_NTT_EXPANDED", 3904⟩, ⟨s.syms "VG_MLDSA_INV_FOLDED", 3904⟩] := by
+    rw [← List.take_append_drop (s.rd.length - 2) s.rd, ht, hd]
+  refine ⟨⟨?_, ?_⟩, ⟨⟨hf, hff, ?_, hfw, hfs, hfa⟩, ⟨hi, hif, ?_, hiw, his, hia⟩⟩, ?_⟩
+  · sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs]
+    exact ⟨hsp, rfl, hwr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4⟩
+  · intro R hR
+    rw [hrd]
+    simp only [vInputs, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl | rfl <;> simp
+  · apply Covers.one
+    exact ⟨⟨s.syms "VG_MLDSA_NTT_EXPANDED", 3904⟩,
+      List.mem_append_left _ (by rw [hrd]; simp), Region.contains_self _ _⟩
+  · apply Covers.one
+    exact ⟨⟨s.syms "VG_MLDSA_INV_FOLDED", 3904⟩,
+      List.mem_append_left _ (by rw [hrd]; simp), Region.contains_self _ _⟩
+  · intro hn
+    rcases hcache with hz | ⟨hlen, hv⟩
+    · exact absurd hz hn
+    change (s.gpr .x5).toNat = 1024 * p.k at hlen
+    apply publicCache_metadata hp hlen ?_ ?_ kc.symm hv
+    · apply Covers.one
+      exact ⟨⟨s.gpr .x4, (s.gpr .x5).toNat⟩,
+        List.mem_append_left _ (by rw [hrd]; simp), Region.contains_self _ _⟩
+    · intro R hR
+      rw [hwr] at hR
+      obtain rfl := List.mem_singleton.mp hR
+      exact dc.symm
+
+theorem shared_verify_input (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p)
+    {s : State} (h : (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre s) :
+    vPre p 48 s ∧ (v.callee.pairedSha3 = true → Sign.StaticRoots 48 s) ∧
+      (s.gpr .x5 ≠ 0 → PublicCache p 48 s (verifyingMetadata s)) := by
+  by_cases hpair : v.callee.pairedSha3 = true
+  · have pre : (verifyWithCacheContract p (abi.withConsts Sign.signRootConsts) 48).pre s := by
+      simpa only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hpair, ↓reduceIte] using h
+    obtain ⟨hp', roots, cache⟩ := shared_verify_optimized_input hp pre
+    exact ⟨hp', fun _ => roots, cache⟩
+  · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+    have pre : (verifyWithCacheContract p abi 48).pre s := by
+      simpa only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hfalse,
+        Bool.false_eq_true, ↓reduceIte, show abi.withConsts [] = abi by rfl] using h
+    obtain ⟨hp', cache⟩ := shared_verify_scalar_input hp pre
+    exact ⟨hp', fun ht => absurd ht hpair, cache⟩
+
+theorem verify_metadata_setup (s : State) :
+    WP isa (.block [.addImm .x .x21 .x4 0, .addImm .x .x22 .x5 0]) s fun t =>
+      VG.Proof.MlKem.AArch64.Only [.x21, .x22] s t ∧
+      t.gpr .x21 = s.gpr .x4 ∧ t.gpr .x22 = s.gpr .x5 := by
+  open VG.Proof.MlKem.AArch64 in
+  refine wp_addImm (by decide) fun u hu h21 => wp_addImm (by decide) fun t ht h22 => wp_nil ?_
+  exact ⟨(hu.trans ht).mono (by simp), by rw [ht.get .x21, h21, BitVec.add_zero],
+    by rw [h22, BitVec.add_zero, hu.get .x5]⟩
+
+theorem setup_verify_inputs (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p)
+    {σ s : State} (hpre : (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre σ)
+    (hs : VG.Proof.MlKem.AArch64.Only [.x21, .x22] (signInner σ) s)
+    (h21 : s.gpr .x21 = σ.gpr .x4) (h22 : s.gpr .x22 = σ.gpr .x5) (hy : s.syms = σ.syms) :
+    (verifyCoreK p v.callee.pairedSha3).pre s ∧ vPk p s = vPk p σ ∧
+      vMu s = vMu σ ∧ vSig p s = vSig p σ := by
+  obtain ⟨pre, roots, cached⟩ := shared_verify_input v hp hpre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := hs.get .x0
+  have e1 : s.gpr .x1 = σ.gpr .x1 := hs.get .x1
+  have e2 : s.gpr .x2 = σ.gpr .x2 := hs.get .x2
+  have e3 : s.gpr .x3 = σ.gpr .x3 := hs.get .x3
+  have er : s.rd = σ.rd := hs.rd
+  have ew : s.wr = σ.wr := hs.wr
+  have esp : s.sp = σ.sp - 32 := hs.sp.trans (signInner_sp σ)
+  have hframe : Frame [below σ.sp 32] σ.mem s.mem := by rw [hs.mem]; exact signInner_frame σ
+  have hsmall : Region.Sub (below σ.sp 32) (below σ.sp 48) := below_sub (by decide) (by decide)
+  have hstack : Region.Sub (below s.sp 16) (below σ.sp 48) := by
+    rw [esp]
+    exact below_below σ.sp 32 16
+  have p0 := pre.1
+  sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs] at p0
+  obtain ⟨hsp, _, hwr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4⟩ := p0
+  have hpk : vPk p s = vPk p σ := by
+    rw [vPk, vPk, e0]
+    exact MlKem.bytesAt_frame hframe (fun R hR => by
+      obtain rfl := List.mem_singleton.mp hR
+      exact (k1.sub_left hsmall).symm) (by rcases hp with rfl | rfl | rfl <;> decide)
+  have hmu : vMu s = vMu σ := by
+    rw [vMu, vMu, e1]
+    exact MlKem.bytesAt_frame hframe (fun R hR => by
+      obtain rfl := List.mem_singleton.mp hR
+      exact (k2.sub_left hsmall).symm) (by decide)
+  have hsig : vSig p s = vSig p σ := by
+    rw [vSig, vSig, e2]
+    exact MlKem.bytesAt_frame hframe (fun R hR => by
+      obtain rfl := List.mem_singleton.mp hR
+      exact (k3.sub_left hsmall).symm) (by rcases hp with rfl | rfl | rfl <;> decide)
+  refine ⟨⟨⟨?_, ?_⟩, ?_, ?_⟩, hpk, hmu, hsig⟩
+  · sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs]
+    rw [ew, e0, e1, e2, e3]
+    refine ⟨?_, (by simp only [vInputs, e0, e1, e2]), hwr, d1, d2, d3, k1.sub_left hstack, k2.sub_left hstack,
+      k3.sub_left hstack, k4.sub_left hstack, n1, n2, n3, n4⟩
+    rw [esp]
+    change 16 ≤ (σ.sp - BitVec.ofNat 64 32).toNat
+    rw [toNat_sub_ofNat' (by omega)]
+    omega
+  · intro R hR
+    rw [er]
+    apply pre.2 R
+    simpa only [vInputs, e0, e1, e2] using hR
+  · intro hpair
+    have hr := roots hpair
+    exact ⟨staticTable_reframe hr.forward hframe (fun R hR => by
+        obtain rfl := List.mem_singleton.mp hR
+        exact hr.forward.stack.sub_right hsmall) er ew hy hstack,
+      staticTable_reframe hr.inverse hframe (fun R hR => by
+        obtain rfl := List.mem_singleton.mp hR
+        exact hr.inverse.stack.sub_right hsmall) er ew hy hstack⟩
+  · intro hn
+    have hc := cached (show σ.gpr .x5 ≠ 0 by rwa [h22] at hn)
+    have e21 : s.gpr .x21 = (verifyingMetadata σ).gpr .x21 := by
+      simpa [verifyingMetadata, State.write] using h21
+    have hc' : PublicCache p 16 σ s := cache_reframe hc hframe (fun R hR => by
+      obtain rfl := List.mem_singleton.mp hR
+      exact hc.stack.sub_right hsmall) e21 er ew hstack
+    change ReadCache p.k 16 (fun r => VG.Proof.MlDsa.Verify.t1Hat (vPk p s) r) s
+    rw [hpk]
+    exact hc'
+
+theorem verify_frame_guards {p : Params} {σ s : State} (pre : vPre p 48 σ)
+    {offset : Nat} (ho : offset ≤ 32) (hw : s.wr = σ.wr)
+    (hsp : s.sp = σ.sp - BitVec.ofNat 64 offset) :
+    16 ≤ s.sp.toNat ∧ ∀ R ∈ s.wr, Region.Disjoint ⟨s.sp - 16, 16⟩ R := by
+  have hp := pre.1
+  sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs] at hp
+  obtain ⟨hstack, _, hwr, _, _, _, _, _, _, k4, _, _, _, _⟩ := hp
+  have hsub : Region.Sub (⟨s.sp - 16, 16⟩ : Region) (below σ.sp 48) := by
+    have h1 := below_below σ.sp offset 16
+    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 48) (by omega) (by decide)
+    rw [hsp]
+    exact fun a ha => h2 a (h1 a ha)
+  refine ⟨?_, ?_⟩
+  · rw [hsp, toNat_sub_ofNat' (by omega)]
+    omega
+  · intro R hR
+    rw [hw, hwr] at hR
+    obtain rfl := List.mem_singleton.mp hR
+    exact k4.sub_left hsub
+
+theorem verify_withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p)
+    (σ : State) (hpre : (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre σ) :
+    ∃ tr t, Exec isa (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee
+      (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) σ tr t ∧ abiPreserved σ t ∧
+      (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).post σ t := by
+  have pre := (shared_verify_input v hp hpre).1
+  have hd := common_frame_bounds (verify_core_dle v p).le
+  have g0 := verify_frame_guards (s := σ) pre (offset := 0) (by decide) rfl (by simp)
+  have g1 := verify_frame_guards (s := pushState .x21 σ) pre (offset := 16) (by decide) rfl rfl
+  have main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee
+      (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) σ
+      fun t => abiPreserved σ t ∧ (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).post σ t := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.withCache
+    refine WP.frameReg g0.1 g0.2 ?_ (by
+      simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.1)
+    refine WP.frameReg g1.1 g1.2 ?_ (by
+      simpa only [Code.aarch64Depth, Nat.zero_max] using hd.2)
+    refine WP.seq (WP.mono_syms (verify_metadata_setup (signInner σ)) fun s ⟨hs, h21, h22⟩ hy => ?_)
+    obtain ⟨hcore, hpk, hmu, hsig⟩ := setup_verify_inputs v hp hpre hs h21 h22 hy
+    obtain ⟨tr, t, he, habi, hpost⟩ := verify_core_correct v hp s hcore
+    refine ⟨tr, t, he, ⟨?_, rfl, ?_⟩, ?_⟩
+    · intro r hr
+      by_cases e21 : r = .x21
+      · subst r; simp [State.write]
+      by_cases e22 : r = .x22
+      · subst r; simp [State.write]
+      simp only [State.write, e21, e22, ite_false]
+      rw [habi.1 r hr, hs.get r (by simp [e21, e22])]
+      rfl
+    · intro r hr
+      exact (habi.2.2 r hr).trans (hs.vcs r hr)
+    · change ((t.gpr .x0).setWidth 32 = 1 ∧ ∃ b, verifyMu p b (vPk p s) (vMu s) (vSig p s) = some true) ∨
+        ((t.gpr .x0).setWidth 32 = 0 ∧ verifyMu p minBounds (vPk p s) (vMu s) (vSig p s) ≠ some true) at hpost
+      rw [hpk, hmu, hsig] at hpost
+      by_cases hpair : v.callee.pairedSha3 = true
+      · have hab : Verify.OptimizedSelected.selectedAbi v = abi.withConsts Sign.signRootConsts := by
+          simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hpair, ↓reduceIte]
+        rw [hab]
+        sig_post [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
+          Abi.withConsts, Sign.signRootConsts_eq]
+        simpa [vPk, vMu, vSig, State.write] using hpost
+      · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+        have hab : Verify.OptimizedSelected.selectedAbi v = abi := by
+          simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hfalse,
+            Bool.false_eq_true, ↓reduceIte, show abi.withConsts [] = abi by rfl]
+        rw [hab]
+        sig_post [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
+        simpa [vPk, vMu, vSig, State.write] using hpost
+  obtain ⟨tr, t, he, habi, hpost⟩ := main
+  exact ⟨tr, t, he, habi, hpost⟩
+
+theorem shared_verify_pub (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} {x y : State}
+    (h : (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pub x y) :
+    vPub p 48 x y ∧ (x.gpr .x4 = y.gpr .x4 ∧ x.gpr .x5 = y.gpr .x5) ∧
+      (v.callee.pairedSha3 = true → Sign.RootSymbolsEq x y) := by
+  by_cases hpair : v.callee.pairedSha3 = true
+  · have hab : Verify.OptimizedSelected.selectedAbi v = abi.withConsts Sign.signRootConsts := by
+      simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hpair, ↓reduceIte]
+    rw [hab] at h
+    sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
+      Abi.withConsts, Sign.signRootConsts_eq] at h
+    obtain ⟨hsp, hf, hi, hb, h0, h1, h2, h3, h4, h5⟩ := h
+    refine ⟨?_, ⟨h4, h5⟩, fun _ => ⟨hf, hi⟩⟩
+    sig_pub [vPub, verifyContract, verifySig, abi, VG.AArch64.argRegs]
+    exact ⟨hsp, hb, h0, h1, h2, h3⟩
+  · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+    have hab : Verify.OptimizedSelected.selectedAbi v = abi := by
+      simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hfalse,
+        Bool.false_eq_true, ↓reduceIte, show abi.withConsts [] = abi by rfl]
+    rw [hab] at h
+    sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs] at h
+    obtain ⟨hsp, hb, h0, h1, h2, h3, h4, h5⟩ := h
+    refine ⟨?_, ⟨h4, h5⟩, fun ht => absurd ht hpair⟩
+    sig_pub [vPub, verifyContract, verifySig, abi, VG.AArch64.argRegs]
+    exact ⟨hsp, hb, h0, h1, h2, h3⟩
+
+def SharedVerifyRel (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) (x y : State) : Prop :=
+  (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre x ∧
+  (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre y ∧
+  (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pub x y
+
+theorem setup_verify_pub (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p)
+    {σ τ x y : State} (h : SharedVerifyRel v p σ τ)
+    (hx : VG.Proof.MlKem.AArch64.Only [.x21, .x22] (signPushed σ) x)
+    (hy : VG.Proof.MlKem.AArch64.Only [.x21, .x22] (signPushed τ) y)
+    (x21 : x.gpr .x21 = σ.gpr .x4) (x22 : x.gpr .x22 = σ.gpr .x5)
+    (y21 : y.gpr .x21 = τ.gpr .x4) (y22 : y.gpr .x22 = τ.gpr .x5)
+    (xs : x.syms = σ.syms) (ys : y.syms = τ.syms) :
+    (verifyCoreK p v.callee.pairedSha3).pub (x.withRegions σ.rd σ.wr) (y.withRegions τ.rd τ.wr) := by
+  have nx := setup_verify_inputs v hp h.1 (sign_setup_narrow hx) x21 x22 xs
+  have ny := setup_verify_inputs v hp h.2.1 (sign_setup_narrow hy) y21 y22 ys
+  obtain ⟨pub, ⟨h4, h5⟩, roots⟩ := shared_verify_pub v h.2.2
+  obtain ⟨hsp, hpk, hmu, hsig, h0, h1, h2, h3⟩ := vPub_eq pub
+  have esp : x.sp = y.sp := by
+    rw [hx.sp, hy.sp]
+    change (σ.sp - 16) - 16 = (τ.sp - 16) - 16
+    rw [hsp]
+  refine ⟨?_, ?_, ?_⟩
+  · sig_pub [vPub, verifyContract, verifySig, abi, VG.AArch64.argRegs]
+    refine ⟨esp, ?_, ?_, ?_, ?_, ?_⟩
+    · change leakBytes (vPk p _ ++ vMu _ ++ vSig p _) = leakBytes (vPk p _ ++ vMu _ ++ vSig p _)
+      have xpk : vPk p x = vPk p σ := nx.2.1
+      have xmu : vMu x = vMu σ := nx.2.2.1
+      have xsig : vSig p x = vSig p σ := nx.2.2.2
+      have ypk : vPk p y = vPk p τ := ny.2.1
+      have ymu : vMu y = vMu τ := ny.2.2.1
+      have ysig : vSig p y = vSig p τ := ny.2.2.2
+      rw [xpk, xmu, xsig, ypk, ymu, ysig, hpk, hmu, hsig]
+    · exact (hx.get .x0).trans (h0.trans (hy.get .x0).symm)
+    · exact (hx.get .x1).trans (h1.trans (hy.get .x1).symm)
+    · exact (hx.get .x2).trans (h2.trans (hy.get .x2).symm)
+    · exact (hx.get .x3).trans (h3.trans (hy.get .x3).symm)
+  · intro hpair
+    simpa only [Sign.RootSymbolsEq, State.withRegions, xs, ys] using roots hpair
+  · refine ⟨fun r hr => ?_, esp⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact x21.trans (h4.trans y21.symm)
+    · exact x22.trans (h5.trans y22.symm)
+
+theorem verify_withCache_ct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p) :
+    ConstantTime isa (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre
+      (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pub
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) := by
+  have hs : ∀ x y, SharedVerifyRel v p x y → x.sp = y.sp := by
+    intro x y h
+    exact (vPub_eq (shared_verify_pub v h.2.2).1).1
+  have trace : RelCT isa (SharedVerifyRel v p)
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p)
+      (fun _ _ => True) := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.withCache
+    refine frame_tr hs (frame_tr (pushRel_sp hs) (R := fun _ _ => True) ?_)
+    intro a b ta tb a' b' h ex ey
+    rcases h with ⟨a1, b1, ⟨σ, τ, h, rfl, rfl⟩, rfl, rfl⟩
+    cases ex with
+    | seq ax bx =>
+      cases ey with
+      | seq ay by' =>
+        have pub := shared_verify_pub v h.2.2
+        have hsp := (vPub_eq pub.1).1
+        have h5 := pub.2.1.1
+        have h6 := pub.2.1.2
+        have ht : RelCT isa (fun x y => AArch64.Taint.Agree (AArch64.Taint.ofRegs [.x4, .x5]) x y)
+            (.block [.addImm .x .x21 .x4 0, .addImm .x .x22 .x5 0]) (fun _ _ => True) :=
+          taintRel [.x4, .x5] (fun _ _ h => ⟨h.1, fun r hr => h.2 r (AArch64.Taint.mem_ofRegs.mpr hr)⟩) (by taint_decide)
+        have agree : AArch64.Taint.Agree (AArch64.Taint.ofRegs [.x4, .x5])
+            (signPushed σ) (signPushed τ) := by
+          refine ⟨?_, fun r hr => ?_⟩
+          · change (σ.sp - 16) - 16 = (τ.sp - 16) - 16
+            rw [hsp]
+          · simp only [AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+            rcases hr with rfl | rfl
+            exacts [h5, h6]
+        have hmeta := (ht _ _ _ _ _ _ agree ax ay).1
+        obtain ⟨_, x, exx, hx, x21, x22⟩ := verify_metadata_setup (signPushed σ)
+        obtain ⟨_, y, eyy, hy, y21, y22⟩ := verify_metadata_setup (signPushed τ)
+        have exeq := (Exec.det ax exx).2
+        have eyeq := (Exec.det ay eyy).2
+        rw [exeq] at ax bx
+        rw [eyeq] at ay by'
+        have xs0 := VG.AArch64.Exec.syms ax
+        have xs : x.syms = σ.syms := xs0
+        have ys0 := VG.AArch64.Exec.syms ay
+        have ys : y.syms = τ.syms := ys0
+        have nx := setup_verify_inputs v hp h.1 (sign_setup_narrow hx) x21 x22 xs
+        have ny := setup_verify_inputs v hp h.2.1 (sign_setup_narrow hy) y21 y22 ys
+        have rx : Covers (σ.rd ++ σ.wr) (x.rd ++ x.wr) := by
+          rw [hx.rd, hx.wr]
+          exact Covers.append (Covers.refl _) (signPushed_wr_cover σ)
+        have ry : Covers (τ.rd ++ τ.wr) (y.rd ++ y.wr) := by
+          rw [hy.rd, hy.wr]
+          exact Covers.append (Covers.refl _) (signPushed_wr_cover τ)
+        have wx : Covers σ.wr x.wr := by rw [hx.wr]; exact signPushed_wr_cover σ
+        have wy : Covers τ.wr y.wr := by rw [hy.wr]; exact signPushed_wr_cover τ
+        have px : (verifyCoreK p v.callee.pairedSha3).pre (x.withRegions σ.rd σ.wr) := nx.1
+        have py : (verifyCoreK p v.callee.pairedSha3).pre (y.withRegions τ.rd τ.wr) := ny.1
+        obtain ⟨u, eu⟩ := trace_narrow (verify_core_correct v hp) px rx wx bx
+        obtain ⟨w, ew⟩ := trace_narrow (verify_core_correct v hp) py ry wy by'
+        have hp' := setup_verify_pub v hp h hx hy x21 x22 y21 y22
+          xs ys
+        have hc := verify_core_ct v hp _ _ _ _ _ _ px py hp' eu ew
+        exact ⟨by rw [hmeta, hc], trivial⟩
+  intro x y tx ty x' y' hx hy hpub ex ey
+  exact (trace _ _ _ _ _ _ ⟨hx, hy, hpub⟩ ex ey).1
+
+
+def sharedVerifyScalarSat (p : Params) : State :=
+  { Verify.Optimized.baseSat p with rd := (Verify.Optimized.baseSat p).rd ++ [⟨0, 0⟩] }
+
+theorem sharedVerifyScalar_sat {p : Params} (hp : Sign.Ok3 p) :
+    (verifyWithCacheContract p abi 48).pre (sharedVerifyScalarSat p) := by
+  rcases hp with rfl | rfl | rfl
+  all_goals
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
+        sharedVerifyScalarSat, Verify.Optimized.baseSat]
+      exact ⟨by decide, Or.inl rfl⟩
+
+def sharedVerifySatWith (p : Params) (m : Mem) : State :=
+  { Verify.Optimized.verifySatWith p m with
+    rd := (Verify.Optimized.baseSat p).rd ++ [⟨0, 0⟩] ++ (Verify.Optimized.verifySatWith p m).rd.drop 3 }
+
+theorem sharedVerifySatWith_pre (p : Params) (hp : Sign.Ok3 p) (m : Mem)
+    (hf : ∀ j < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * j)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD j 0)
+    (hi : ∀ j < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * j)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
+    (verifyWithCacheContract p (abi.withConsts Sign.signRootConsts) 48).pre (sharedVerifySatWith p m) := by
+  have old := Verify.Optimized.verifySatWith_pre p hp m hf hi
+  have held : Abi.constsHeld m (fun name =>
+      if name = "VG_MLDSA_NTT_EXPANDED" then 1048576 else 1052480) Sign.signRootConsts := old.1.2.2.1
+  have regions : Abi.constRegions (fun name =>
+      if name = "VG_MLDSA_NTT_EXPANDED" then 1048576 else 1052480) Sign.signRootConsts =
+      [⟨1048576, 3904⟩, ⟨1052480, 3904⟩] := by
+    rw [Sign.signRootConsts_eq]
+    simp only [Abi.constRegions, List.map_cons, List.map_nil,
+      VG.Proof.MlDsa.AArch64.Optimized.TableConstants.staticNttWords_length, VG.Proof.MlDsa.AArch64.Optimized.InverseTable.expandedWords_length]
+    rfl
+  rcases hp with rfl | rfl | rfl
+  all_goals
+    apply Sig.contract_pre_of_check (sig := verifyWithCacheSig _)
+      (A := abi.withConsts Sign.signRootConsts) (writeArgs := true) (stack := 48)
+    · simp only [Sig.check, sharedVerifySatWith, Verify.Optimized.verifySatWith, Verify.Optimized.baseSat,
+        Sign.signRootConsts_eq, Abi.withConsts, abi, verifyWithCacheSig, verifySig]
+      simp only [Sig.words, Param.words, ArgWord.bits, IntTy.bits,
+        List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append,
+        List.map_cons, List.map_nil, List.length_cons, List.length_nil]
+      simp only [VG.AArch64.argRegs, List.length_cons, List.length_nil,
+        Nat.reduceAdd, show (6 : Nat) ≤ 8 by decide, ↓reduceIte]
+      simp only [List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil]
+      dsimp only [Sig.bufs, Sig.lists, Sig.u64Bufs, Elem.size]
+      rfl
+    · change (48 ≤ (524288#64).toNat ∧ _ ∧ _ ∧ _ ∧ _) ∧ _
+      refine ⟨⟨by decide, ?_, held, ?_, ?_⟩, Or.inl rfl⟩
+      all_goals
+        simp only [sharedVerifySatWith, Verify.Optimized.verifySatWith, Verify.Optimized.baseSat,
+          abi, regions, stackBelow, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+        sig_and_intros
+        all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide +kernel
+
+theorem shared_verify_sat (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p) :
+    ∃ s, (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48).pre s := by
+  by_cases hpair : v.callee.pairedSha3 = true
+  · have hab : Verify.OptimizedSelected.selectedAbi v = abi.withConsts Sign.signRootConsts := by
+      simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hpair, ↓reduceIte]
+    rw [hab]
+    have roots := (Sign.pairedRoots_entry (by decide) (Sign.pairedSign_sat hp)).2.1
+    exact ⟨sharedVerifySatWith p (Sign.pairedSignSat p).mem,
+      sharedVerifySatWith_pre p hp _ roots.forward.held roots.inverse.held⟩
+  · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+    have hab : Verify.OptimizedSelected.selectedAbi v = abi := by
+      simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts, hfalse,
+        Bool.false_eq_true, ↓reduceIte, show abi.withConsts [] = abi by rfl]
+    rw [hab]
+    exact ⟨sharedVerifyScalarSat p, sharedVerifyScalar_sat hp⟩
+
+theorem verify_withCache_verified (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Sign.Ok3 p) :
+    Verified AArch64.target (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee
+      (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p)
+      (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48) :=
+  ⟨verify_withCache_correct v hp, verify_withCache_ct v hp, shared_verify_sat v hp⟩
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
