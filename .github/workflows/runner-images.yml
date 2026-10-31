@@ -128,7 +128,7 @@ jobs:
               # Each C compiler with its OpenSSL.
               for gcc in /usr/bin/*-linux-gnu*-gcc; do
                 if [ -e "$gcc" ]; then
-                  echo "#include <openssl/ssl.h>" | "$gcc" -xc -fsyntax-only -
+                  echo "#include <openssl/ssl.h>" | "$gcc" -xc -c -o /tmp/check-openssl.o -
                 fi
               done
               cd /tmp && cargo new -q hello && cd hello
