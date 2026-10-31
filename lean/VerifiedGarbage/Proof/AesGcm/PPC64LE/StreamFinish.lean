@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
@@ -158,7 +159,7 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame 
     blockAt_frame hf₀ (by simpa using dS (d := 0) (k := 16) (by decide)), hj,
     h22, toNat_of_eq hl, lensBlock_mod, Proof.Gcm.fullTag_eq]
 
-theorem streamFinish_wp {s₀ : State} (h : streamFinishPPC64LE.pre s₀) :
+theorem streamFinish_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamFinishPPC64LE.pre s₀) :
     WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ streamFinishPPC64LE.post s₀ s' := by
   have h' : finPre s₀ := h
   have L₀ := finLay h'

@@ -22,6 +22,9 @@ bits (`Ops.lean`): their classes in the ring of `Proof/Gcm/Poly.lean` are in
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.Gcm.AArch64.Pmull
 
 open VG VG.AArch64
@@ -29,35 +32,7 @@ open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 
 /-! ## Loads and stores of blocks -/
 
-theorem getLsbD_read (m : Mem) : ∀ (n : Nat) (a : Addr) (i : Nat), i < 8 * n →
-    (m.read a n).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8)
-  | 0, _, _, h => absurd h (by omega)
-  | n + 1, a, i, h => by
-    simp only [Mem.read, BitVec.getLsbD_append]
-    by_cases hi : i < 8
-    · simp [hi, Nat.div_eq_of_lt hi, Nat.mod_eq_of_lt hi]
-    · simp only [hi, ite_false]
-      rw [getLsbD_read m n (a + 1) (i - 8) (by omega)]
-      have e1 : (i - 8) / 8 = i / 8 - 1 := by omega
-      have e2 : (i - 8) % 8 = i % 8 := by omega
-      rw [e1, e2]
-      congr 2
-      rw [BitVec.add_assoc]; congr 1
-      apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-      omega
-
-theorem vdword_read16 (m : Mem) (p : Addr) {e : Nat} (he : e < 2) :
-    vdword (m.read p 16) e = m.readW (p + BitVec.ofNat 64 (8 * e)) 64 := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [vdword, Mem.readW, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hi,
-    decide_true, Bool.true_and]
-  rw [getLsbD_read m 16 p _ (by omega), getLsbD_read m 8 _ i (by omega), Offset.add_add,
-    show 8 * e + i / 8 = (64 * e + i) / 8 by omega, show i % 8 = (64 * e + i) % 8 by omega]
-
-theorem read_write16 (m : Mem) (p : Addr) (v : BitVec (8 * 16)) : (m.write p 16 v).read p 16 = v :=
-  Mem.read_eq_of_bytes fun i hi => by
-    simp only [Mem.write, Mem.sub_ofNat_toNat p (show i < 2 ^ 64 by omega), hi, ite_true]
+export VG.Proof.Gcm.Clmul (getLsbD_read vdword_read16 read_write16)
 
 /-- A block, loaded and `rev64`ed: its halves swapped. -/
 theorem rev64b_read (m : Mem) (p : Addr) :
@@ -189,8 +164,7 @@ theorem reduce_ok (d : VReg) (s : State) (hc : s.v C = ofVDwords poly poly) :
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [v_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
-/-- What `mul` computes: `reduce` of the four products of `a` and the key `t`. -/
-def mulV (a t : BitVec 128) : BitVec 128 := reduce (Prod.zero.acc a (ext8 t t) t)
+export VG.Proof.Gcm.Clmul (mulV)
 
 /-- `d ← mulV(a, t)`. -/
 theorem mulV_ok (d a sk t : VReg) (s : State) (ha : Free a) (hs : Free sk) (ht : Free t)

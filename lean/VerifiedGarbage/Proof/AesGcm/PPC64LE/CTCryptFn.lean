@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
@@ -106,7 +107,7 @@ theorem ci_crypt {s : State} (h : CI c st w sp D R N A T s) : WP isa crypt s (TA
   rw [h30, h31] at this
   exact this
 
-theorem di_textAbsorb {s : State} (h : DI c st w sp D R N A T s) :
+theorem di_textAbsorb [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} (h : DI c st w sp D R N A T s) :
     WP isa textAbsorb s (DI c st w sp D R N A T) := by
   obtain ⟨V, h29, h30, h31, h20, h19, h22, h23, h28, hR, he, hd⟩ := h
   refine WP.mono (WP.with_rdwr (textAbsorb_ok (L.v h29 h30 h31) (a := List.replicate (A.toNat % 16) 0)
@@ -114,7 +115,7 @@ theorem di_textAbsorb {s : State} (h : DI c st w sp D R N A T s) :
     (by simp [h23]))) fun s' ⟨ta, rd, wr, _⟩ => ⟨V, h29, h30, h31, h20, h19, h22, h23, h28, hR, ta.env,
       hd.of_eq rd wr⟩
 
-theorem ta_textAbsorb {s : State} (h : TA c st w sp D N A T s) :
+theorem ta_textAbsorb [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} (h : TA c st w sp D N A T s) :
     WP isa textAbsorb s fun s' => s'.gpr .r31 = w ∧ s'.sp = sp := by
   obtain ⟨V, h29, h30, h31, h20, h19, h22, h23, he, hd⟩ := h
   exact WP.mono (textAbsorb_ok (L.v h29 h30 h31) (a := List.replicate (A.toNat % 16) 0)
@@ -143,7 +144,7 @@ theorem sci_DI {σ s : State} (h : SCI σ s) :
   rw [e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
   exact this
 
-theorem streamEncrypt_ct :
+theorem streamEncrypt_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     ConstantTime isa streamEncryptPPC64LE.pre streamEncryptPPC64LE.pub streamEncrypt := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   have h₁' : streamCryptPre σ₁ := h₁
@@ -162,7 +163,7 @@ theorem streamEncrypt_ct :
   obtain ⟨_, hc⟩ := restore_taint
   exact CT.taintEq _ (fun _ => σ₁.gpr .r10) σ₁.sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
 
-theorem streamDecrypt_ct :
+theorem streamDecrypt_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     ConstantTime isa streamDecryptPPC64LE.pre streamDecryptPPC64LE.pub streamDecrypt := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   have h₁' : streamCryptPre σ₁ := h₁

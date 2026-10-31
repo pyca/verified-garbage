@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 import VerifiedGarbage.Proof.Gcm.Compose
@@ -80,7 +81,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
 include L
 
-theorem textAbsorb_ok {s : State} {H : Block} {a ct : List Byte} (he : Env V sp s)
+theorem textAbsorb_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} {H : Block} {a ct : List Byte} (he : Env V sp s)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H)
     (hd : DataOk (V .r30) (V .r31) s (V .r20) (V .r19).toNat)
     (ha : a.length % 16 = (V .r22).toNat % 16) (hP : (V .r23).toNat = ct.length) :

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
@@ -115,7 +116,7 @@ variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)
   (X : XOk (V .r29) (V .r30) (V .r31) (V .r28))
 include L X
 
-theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {s : State} (he : Env V sp s)
+theorem oneTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {s : State} (he : Env V sp s)
     (hxw : Covers [xR (V .r28)] s.wr)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (hl : (V .r22).toNat = a.length)
     (hab : Absorbed s.mem (V .r30 + BitVec.ofNat 64 16) (V .r30 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))

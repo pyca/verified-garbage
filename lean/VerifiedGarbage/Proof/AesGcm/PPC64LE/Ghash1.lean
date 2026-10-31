@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -69,7 +70,7 @@ theorem ghCall_mk {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30)
 
 /-- The call itself, from a state whose registers are its arguments, for `n`
 blocks at `P`. -/
-theorem ghCall_ok {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)) {yo : Nat}
+theorem ghCall_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)) {yo : Nat}
     (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) {P : Addr} {n : Nat}
     (h3 : s.gpr .r3 = V .r29 + BitVec.ofNat 64 240) (h4 : s.gpr .r4 = V .r30 + BitVec.ofNat 64 yo)
     (h5 : s.gpr .r5 = P) (h6 : s.gpr .r6 = BitVec.ofNat 64 n) (h7 : s.gpr .r7 = V .r31 + BitVec.ofNat 64 512)
@@ -97,7 +98,7 @@ theorem ghArgs_ok {V : Reg → BitVec 64} {sp : Addr} {yo : Nat}
     exact ⟨by rw [← hP]; simp only [h30, h31], fun r a b c d e => by simp [a, b, c, d, e], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- `ghash1 yo b o`, for the block at `P = b + o`. -/
-theorem ghash1_ok {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)) {yo : Nat}
+theorem ghash1_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)) {yo : Nat}
     (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) (b : Reg) (o : Nat)
     (hb : b = .r30 ∨ b = .r31) (ho : o < 2 ^ 15) {P : Addr} (hP : s.gpr b + BitVec.ofNat 64 o = P)
     (hpy : (⟨V .r30 + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16⟩)

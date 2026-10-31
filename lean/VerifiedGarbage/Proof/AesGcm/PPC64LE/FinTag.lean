@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
 public import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -54,7 +55,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
 include L
 
-theorem finTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte} {s : State}
+theorem finTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte} {s : State}
     (he : Env V sp s) (h28 : V .r28 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H)
     (ha : a.length % 16 = (V .r22).toNat % 16) (hP : (V .r23).toNat = ct.length) :

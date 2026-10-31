@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.KeysCT
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.PolyCT
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.CryptCT
@@ -87,7 +88,7 @@ theorem entry_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : A
   · rw [b₁, b₂, hsp]
 
 /-- `vg_aes_gcm_siv_seal` in two runs. -/
-theorem seal_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
+theorem seal_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) «seal» TT := by
   have L := A₁.lay
   unfold «seal»
@@ -114,7 +115,7 @@ theorem seal_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Ar
   exact rel_env [] (E₄.of_pk C.pk) (E₄'.of_pk C'.pk) (by rw [C.pk.sp, C'.pk.sp, h₄]) (by simp) ⟨_, by taint_decide⟩
 
 /-- `vg_aes_gcm_siv_open` in two runs. -/
-theorem open_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
+theorem open_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) «open» TT := by
   have L := A₁.lay
   unfold «open»
@@ -162,10 +163,10 @@ theorem open_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Ar
     (Runs.of_wp (tag_wp L E₅' (o := 240) (.inr rfl))) fun s₆ t₆ T T' => ?_
   exact rel_env [] (E₅.of_pk T.pk) (E₅'.of_pk T'.pk) (by rw [T.pk.sp, T'.pk.sp, h₅]) (by simp) ⟨_, by taint_decide⟩
 
-theorem seal_ct : ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» :=
+theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» :=
   ct_of fun _ _ h₁ h₂ hq => seal_rel (args_of_seal h₁).1 (args_two (args_of_seal h₂).1 hq) hq.2.2.2.2.2.2.2.2.1
 
-theorem open_ct : ConstantTime isa openPPC64LE.pre openPPC64LE.pub «open» :=
+theorem open_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa openPPC64LE.pre openPPC64LE.pub «open» :=
   ct_of fun _ _ h₁ h₂ hq => open_rel (args_of_open h₁) (args_two (args_of_open h₂) hq) hq.2.2.2.2.2.2.2.2.1
 
 end VG.Proof.AesGcmSiv.PPC64LE

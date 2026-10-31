@@ -25,6 +25,9 @@ algebra's one fact, a hypothesis here), or loaded from a buffer of
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.AesGcm.AArch64.Stitch
 
 open VG VG.AArch64
@@ -215,7 +218,7 @@ theorem sws_ok {s₀ : State} {H : Block} (hI : PT H 8 s₀)
 
 theorem kpack_eq (a b : BitVec 128) :
     ext8 (ext8 a a ^^^ a) (ext8 b b ^^^ b) = ofVDwords (kkey (ext8 a a)) (kkey (ext8 b b)) := by
-  rw [ext8_eq, ofVDwords, kkey, kkey, vdword_xor, vdword_xor, vdword_ext8_0, vdword_ext8_1, vdword_ext8_0,
+  rw [ext8_eq, VG.Proof.Gcm.Clmul.ofVDwords, kkey, kkey, vdword_xor, vdword_xor, vdword_ext8_0, vdword_ext8_1, vdword_ext8_0,
     vdword_ext8_1, BitVec.xor_comm (vdword a 0)]
 
 theorem nlow {r : VReg} (hr : r ∉ [VReg.v2, .v3, .v4]) : r ≠ .v2 ∧ r ≠ .v3 ∧ r ≠ .v4 := by

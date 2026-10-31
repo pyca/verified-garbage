@@ -18,6 +18,9 @@ reduction are the same instructions.
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.AesGcmSiv.AArch64.Stitch
 
 open VG VG.AArch64

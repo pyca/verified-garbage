@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTOne
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
@@ -123,7 +124,7 @@ variable (L : Lay c (W + BitVec.ofNat 64 16) W) (X : XOk c (W + BitVec.ofNat 64 
 include L X hTW
 
 /-- `seal` after its entry. -/
-theorem sealBody_ct : CT (fun s => OneT c W x sp Np n Ad A D Ln T s ∧ s.gpr .r24 = Np ∧
+theorem sealBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => OneT c W x sp Np n Ad A D Ln T s ∧ s.gpr .r24 = Np ∧
     s.gpr .r25 = BitVec.ofNat 64 n)
     (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore))))) := by
   -- `oneAad`
@@ -177,7 +178,7 @@ theorem sealBody_ct : CT (fun s => OneT c W x sp Np n Ad A D Ln T s ∧ s.gpr .r
 
 end
 
-theorem seal_ct : ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» := by
+theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩ := hq
   have h₁' : sealPre σ₁ := h₁

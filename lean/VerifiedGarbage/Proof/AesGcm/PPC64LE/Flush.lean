@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 public import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
@@ -174,7 +175,7 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn V sp H s)
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 /-- The padded buffer absorbed. -/
-theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
+theorem flushGh_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
     (h : FlMid V sp yo H (x.length % 16) m₀ s) (h0 : x.length % 16 ≠ 0) :
     WP isa (ghash1 yo .r31 tO) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) m₀) := by
   have he := h.env
@@ -190,7 +191,7 @@ theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
   · exact (tFrame_T h.frame).trans (gh_tFrame g.frame)
 
 /-- `flush yo`. -/
-theorem flush_ok {H : Block} {x : List Byte} {s : State} (h : FlIn V sp H s)
+theorem flush_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {s : State} (h : FlIn V sp H s)
     (h26 : s.gpr .r26 = BitVec.ofNat 64 (x.length % 16)) :
     WP isa (flush yo) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) s.mem) := by
   have hlt := Nat.mod_lt x.length (show 16 > 0 by decide)
@@ -235,7 +236,7 @@ variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31)
 include L hyo
 
 /-- The lengths block of `r24` and `r26` bytes, absorbed. -/
-theorem lens_ok {H : Block} {s : State} (he : Env V sp s)
+theorem lens_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {s : State} (he : Env V sp s)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) :
     WP isa (lens yo) s fun s' => Env V sp s' ∧
       blockAt s'.mem (V .r29 + BitVec.ofNat 64 240) = H ∧

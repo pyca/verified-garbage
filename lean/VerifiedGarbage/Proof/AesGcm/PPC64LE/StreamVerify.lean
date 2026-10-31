@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
@@ -100,7 +101,7 @@ def VerPost (s₀ : State) (a ct : List Byte) (s : State) : Prop :=
         (s₀.gpr .r9).toNat then s.gpr .r3 = 1
     else s.gpr .r3 = 0
 
-theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .r6).toNat % 16)
+theorem ver_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .r6).toNat % 16)
     (hP : (s₀.gpr .r7).toNat = ct.length) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' := by
   have L₀ := verLay h
@@ -217,7 +218,7 @@ theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.leng
   have := vp iv hs hl
   rw [h3]; exact this
 
-theorem streamVerify_wp {s₀ : State} (h : streamVerifyPPC64LE.pre s₀) :
+theorem streamVerify_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamVerifyPPC64LE.pre s₀) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyPPC64LE.post s₀ s' := by
   have h' : verPre s₀ := h
   have h₀ := ver_run h' (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)
