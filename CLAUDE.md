@@ -89,8 +89,9 @@ own changes are rebuilt either way, on top of the restored build.
   run one for a change that cannot affect speed, and never rerun one to
   get a better number.
 * **An optimized implementation reaches everything built on it.** An
-  implementation of a function for CPU features (or any other faster
-  version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
+  implementation of a function for CPU features (or, where no feature
+  tells apart the CPUs it is faster on, for a compilation target; see
+  below) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
   with the same signature and contract. Every function that calls a
   function with variants is generic over them (step 4 of the
   `adding-a-primitive` skill), so a new variant is emitted for its callers
@@ -117,9 +118,12 @@ own changes are rebuilt either way, on top of the restored build.
   `python3 ci/algorithms_table.py` (CI fails if they are stale); never edit
   them by hand. A PR that lands a spec adds `docs/algorithms/<alg>.toml`,
   with its `family`; any PR that adds or removes support for an algorithm
-  on an architecture, or optimizes an implementation, reruns the script in
+  on an architecture, or adds or removes a variant, reruns the script in
   the same PR (and after merging main, rather than resolving a conflict in
-  the table by hand).
+  the table by hand). A cell names only what the code states, the CPU
+  features of the algorithm's variants (and a variant that needs none, by
+  its suffix): never describe an implementation's techniques there, or
+  anywhere else that is not its code and proofs.
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a

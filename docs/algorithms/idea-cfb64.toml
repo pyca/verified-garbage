@@ -3,4 +3,3 @@ family = "Ciphers"
 specs = ["Idea", "Cfb"]
 modules = ["src/idea_cfb.rs"]
 asm = ["idea_cfb"]
-optimized = { x86_64 = "low-product multiplication" }

@@ -111,9 +111,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ operations scheduled for latency</td>
+<td>✅</td>
 
-<td>✅ operations scheduled for latency</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -133,7 +133,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅ SHA extensions; round constants and the state kept in registers across blocks</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -153,7 +153,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -173,7 +173,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -191,9 +191,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ lane complementing</td>
+<td>✅</td>
 
-<td>✅ SHA extensions; rounds unrolled, round constants as immediates; whole blocks absorbed with the state in registers</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -539,7 +539,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX-512 IFMA, AVX2</td>
 
-<td>✅ NEON, four blocks at a time, on Apple's cores</td>
+<td>✅ NEON</td>
 
 <td>✅</td>
 
@@ -643,9 +643,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2; bitsliced, 64, 128, 256 or 512 blocks at a time</td>
+<td>✅ AVX-512F, AVX2</td>
 
-<td>✅ bitsliced, 128 blocks at a time</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -763,9 +763,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI</td>
+<td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES</td>
+<td>✅ AES, PMULL</td>
 
 <td>✅</td>
 
@@ -823,7 +823,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans reusing combined byte masks across planes</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -843,7 +843,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans reusing combined byte masks across planes</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -863,7 +863,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans reusing combined byte masks across planes</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -883,7 +883,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans reusing combined byte masks across planes</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -963,13 +963,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ bitsliced, 8 blocks at a time</td>
+<td>✅</td>
 
-<td>✅ bitsliced, 8 blocks at a time</td>
+<td>✅</td>
 
-<td>✅ bitsliced, 8 blocks at a time</td>
+<td>✅</td>
 
-<td>✅ bitsliced, 8 blocks at a time</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1003,7 +1003,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans selecting four entries at a time</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1023,7 +1023,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans selecting four entries at a time</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1043,7 +1043,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans selecting four entries at a time</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1063,7 +1063,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans selecting four entries at a time</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1085,11 +1085,11 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>✅ SVE2; NEON</td>
+<td>✅ SVE2, NEON</td>
 
 <td>✅</td>
 
-<td>✅ SSE2, SSSE3</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1103,7 +1103,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ low-product multiplication</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1123,7 +1123,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ low-product multiplication</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1143,7 +1143,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ low-product multiplication</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1163,7 +1163,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ low-product multiplication</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1183,7 +1183,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSE2 scans returning results directly from registers</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1205,7 +1205,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ permutation kept in AdvSIMD registers</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1223,7 +1223,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1243,7 +1243,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1263,7 +1263,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1283,7 +1283,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1303,7 +1303,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1323,7 +1323,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1343,7 +1343,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1363,7 +1363,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1383,7 +1383,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1469,7 +1469,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2; GHASH with <code>mul</code>; 16 blocks at a time with VAES, 8 with VPCLMULQDQ; counter mode and GHASH interleaved, in 128-bit (AES-NI, PCLMULQDQ, AVX), 256- or 512-bit registers</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2</td>
 
 <td>✅ AES, PMULL, SHA extensions</td>
 
@@ -1531,11 +1531,11 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2</td>
 
-<td>✅ SVE2; NEON</td>
+<td>✅ SVE2, NEON</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1549,9 +1549,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ; SM4 key-byte rearrangement before broadcast</td>
+<td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL; GHASH with PMULL</td>
+<td>✅ AES, PMULL</td>
 
 <td>✅</td>
 
@@ -1861,9 +1861,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>✅ SHA extensions; NEON polynomial arithmetic</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -1881,9 +1881,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>✅ SHA extensions; NEON polynomial arithmetic</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -2149,7 +2149,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅ s2n-bignum's <code>_alt</code> ladder; public keys by a fixed-base comb on edwards25519</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2169,7 +2169,7 @@ yours to keep:
 
 <td>✅ BMI2, ADX</td>
 
-<td>✅ public keys by a fixed-base comb on edwards448</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2415,7 +2415,7 @@ yours to keep:
 
 <td>✅ BMI2, ADX</td>
 
-<td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -2433,7 +2433,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 and AVX2 polynomial arithmetic, rounding and norm check; matrix and masks sampled with four SHAKE128 or SHAKE256 instances at once</td>
+<td>✅ AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2453,7 +2453,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 and AVX2 polynomial arithmetic, rounding and norm check; matrix and masks sampled with four SHAKE128 or SHAKE256 instances at once</td>
+<td>✅ AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2473,7 +2473,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 and AVX2 polynomial arithmetic, rounding and norm check; matrix and masks sampled with four SHAKE128 or SHAKE256 instances at once</td>
+<td>✅ AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2609,7 +2609,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ umaal; Miller–Rabin powers written directly to their final table slots</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2669,9 +2669,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ umaal; Fused multiply-add for key-workspace array addresses</td>
+<td>✅ umaal</td>
 
-<td>✅ SSE2 Montgomery columns reusing operand loads with shuffles</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2728,11 +2728,11 @@ The tables are generated from the code by `ci/algorithms_table.py`.
 * **Spec landed**: the algorithm's specification, transcribed from its
   standard, is in `lean/VerifiedGarbage/Spec/`.
 * **x86-64**, **ARM64**, **ARMv7**, **x86**, **PPC64LE**: ✅ when verified assembly and a
-  public Rust API exist on that architecture, followed by how it has been
-  optimized, if it has (e.g. with SHA-NI or NEON). Where an optimization
-  needs CPU features beyond the architecture's baseline, the features are
-  detected at run time, and CPUs without them run the straightforward
-  scalar code that every other implementation is.
+  public Rust API exist on that architecture, followed by the instruction
+  set extensions of its other implementations, if it has any (e.g. SHA
+  extensions, AVX2). They are detected at run time, and CPUs without them
+  run the baseline implementation. NEON, which every ARM64 CPU has, names
+  another implementation that needs nothing beyond the baseline.
 
 ## How it works
 

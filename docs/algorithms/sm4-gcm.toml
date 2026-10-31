@@ -5,4 +5,3 @@ modules = ["src/sm4_gcm.rs"]
 # Not `gcm`, AES-GCM's module, whose AES-NI and VAES functions SM4-GCM does
 # not call: it calls only `vg_ghash` and its variants, named below.
 asm = ["sm4", "sm4_gcm"]
-optimized = { x86_64 = "GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ; SM4 key-byte rearrangement before broadcast", aarch64 = "GHASH with PMULL" }

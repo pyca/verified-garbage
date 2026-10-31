@@ -3,4 +3,3 @@ family = "Ciphers"
 specs = ["Seed", "Cfb"]
 modules = ["src/seed_cfb.rs"]
 asm = ["seed_cfb"]
-optimized = { x86_64 = "Bitsliced affine layers grouping parity-specific XOR sums" }
