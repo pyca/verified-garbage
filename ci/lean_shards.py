@@ -1120,21 +1120,32 @@ def stale_outputs(build: pathlib.Path) -> list[pathlib.Path]:
     if not mods:
         raise SystemExit(f"no modules under {LEAN}")
     stale = []
+
+    def library(m: str) -> bool:
+        return any(m == lib or m.startswith(f"{lib}.") for lib in LIBRARIES)
+
+    def walk(d: str, parts: tuple[str, ...]) -> None:
+        # `module_of_output`'s namespace of the files in `d`.
+        ns = ".".join(parts[1:] if parts[:1] == ("lean",) else parts)
+        # Its files' modules all start with `ns.`: none is a library's but
+        # under a library's namespace (whose names have no `.`), or at the top.
+        if ns and not library(ns):
+            return
+        with os.scandir(d) as entries:
+            for e in entries:
+                # As `rglob` and `is_file`: directories are walked but links
+                # to them are not, and files are what `is_file` (following
+                # links) says are.
+                if e.is_dir(follow_symlinks=False):
+                    walk(e.path, (*parts, e.name))
+                elif e.is_file():
+                    m = f"{ns}.{e.name.split('.')[0]}" if ns else e.name.split(".")[0]
+                    if library(m) and m not in mods:
+                        stale.append(pathlib.Path(e.path))
+
     for top in ("lib", "ir"):
-        for d, dirs, files in os.walk(build / top):
-            parts = pathlib.PurePath(d).relative_to(build / top).parts
-            if parts and parts[0] == "lean":
-                parts = parts[1:]
-            ns = ".".join(parts)
-            if ns and not any(ns == lib or ns.startswith(f"{lib}.") for lib in LIBRARIES):
-                # Outputs of no module of the libraries, and so is everything below.
-                dirs.clear()
-                continue
-            prefix = f"{ns}." if ns else ""
-            for f in files:
-                m = prefix + f.split(".")[0]
-                if m not in mods and any(m == lib or m.startswith(f"{lib}.") for lib in LIBRARIES):
-                    stale.append(pathlib.Path(d, f))
+        if (build / top).is_dir() and not (build / top).is_symlink():
+            walk(str(build / top), ())
     return sorted(stale)
 
 
@@ -1198,11 +1209,11 @@ def main(args: list[str]) -> int:
         stale = stale_outputs(build)
         for f in stale:
             f.unlink()
-        # The directories left empty, deepest first, and their parents.
-        emptied = {d for f in stale for d in f.parents if build in d.parents}
-        for d in sorted(emptied, key=lambda d: -len(d.parts)):
-            if not any(d.iterdir()):
-                d.rmdir()
+        # Empty directories (of modules that are gone, or left so earlier),
+        # deepest first: `lean_cache.py` would save them.
+        for d, _, _ in os.walk(build, topdown=False):
+            if d != str(build) and not os.listdir(d):
+                os.rmdir(d)
         print(f"Deleted {len(stale)} outputs of modules that no longer exist.", file=sys.stderr)
         return 0
     print(__doc__, file=sys.stderr)
