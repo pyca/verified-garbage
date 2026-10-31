@@ -23,8 +23,8 @@ A naked function has no compiler-generated prologue or epilogue, so the
 machine code that runs is exactly the code that was verified (plus the
 final `ret` from the printer). The functions of each target are a crate
 of their own, `verified-garbage-asm-<target>` (`crateDir`, under `crates/`;
-its `Cargo.toml` is written by hand), one file `src/<module>.rs` per
-`module`, compiled only under the target's `cfg` (`targetRoot`), whose
+its `Cargo.toml` is written by hand), one file `asm/<module>.rs` per
+`module` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
 items are therefore `pub`. The library depends on the crate of the target
 it is built for and names it `crate::arch` (`Cargo.toml`, `src/lib.rs`).
 
@@ -71,7 +71,7 @@ the `doc` must not state them itself (`checkLayout`).
 An artifact that reads tables of constants (`Artifact.consts`, and those
 its instructions carry, `Printer.tables`: `tablesOf`) names each
 by the name of a `static` holding it, which `files` writes once per target,
-each in a file of its own, `src/consts/<name>.rs` of its crate (its name in
+each in a file of its own, `asm/consts/<name>.rs` of its crate (its name in
 lowercase), after checking that every artifact of the target with a table of
 that name gives the same words and that the code names only its own tables
 (`checkConsts`). `consts/mod.rs` declares `Table` and each table's module,
@@ -845,7 +845,15 @@ def targetsOf (as : List Artifact) : List (String × String) :=
 /-- The directory of the target `t`'s crate, under `crates/`: its name. -/
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 
-/-- The root module of the target `t`'s crate, `src/lib.rs`: the macros its
+/-- The directory of a crate of generated code that holds its generated
+files, the code as printed: `asm/`. -/
+def codeSubdir : String := "asm"
+
+/-- The directory of the target `t`'s generated files, under `crates/`:
+`asm/` of its crate (`crateDir`, `codeSubdir`). -/
+def codeDir (t : String) : String := crateDir t ++ "/" ++ codeSubdir
+
+/-- The root module of the target `t`'s crate, `asm/lib.rs`: the macros its
 modules use (`symMacros`) and a `mod`
 declaration of each of its modules `mods`, each compiled only under the
 target's Rust `cfg` `cfg` (so that a build for any other target, of every
@@ -877,7 +885,7 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
     let ts := tables (arts.map (·.art))
     let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
     let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
-    let src := crateDir t ++ "/src"
+    let src := codeDir t
     (s!"{src}/lib.rs", targetRoot t cfg mods) ::
     (if ts.isEmpty then [] else
       (s!"{src}/consts/mod.rs", tablesMod t ts) ::
@@ -892,8 +900,8 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
   ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
 /-- The generated files, as paths relative to `crates/` and their contents:
-for each target, its crate's (`crateDir`) `src/lib.rs` and one
-`src/<module>.rs` per module; an error if an artifact is not made from an `Api` with a
+for each target, its crate's `asm/lib.rs` and one `asm/<module>.rs`
+per module (`codeDir`); an error if an artifact is not made from an `Api` with a
 contract (`checkApi`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants are not as `checkConsts` requires, an

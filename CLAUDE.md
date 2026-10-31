@@ -42,7 +42,7 @@ own changes are rebuilt either way, on top of the restored build.
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
   `global_asm!`, naked functions, `extern` blocks or a `build.rs` by hand, and
-  never edit the generated crates, `crates/verified-garbage-asm-<target>/src/`,
+  never edit the generated crates, `crates/verified-garbage-asm-<target>/`,
   by hand. Add an entry to a registration file,
   `lean/VerifiedGarbage/Artifacts/<Alg>/<Target>.lean`, and run
   `lake env lean --run Emit.lean` in `lean/`.
@@ -213,7 +213,7 @@ should add files, not edit lists that every other PR edits too.
   never run).
 * A construction over many hash functions (HMAC, PBKDF2) gets a file per
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
-  `crates/verified-garbage-asm-<target>/src/hmac_sha256.rs`), its registration files are
+  `crates/verified-garbage-asm-<target>/asm/hmac_sha256.rs`), its registration files are
   `Artifacts/<Family><Hash>/<Target>.lean`, its Rust implementation is
   `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
