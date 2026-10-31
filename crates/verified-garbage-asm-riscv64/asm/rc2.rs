@@ -1677,16 +1677,22 @@ pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: 
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
+andi t0, a0, 7
+beqz t0, 20f
 addi t3, a0, 0
 addi t4, a2, 0
 addi t5, zero, 128
-20:
+22:
 lbu a7, 0(t3)
 sb a7, 0(t4)
 addi t3, t3, 1
 addi t4, t4, 1
 addi t5, t5, -1
-bnez t5, 20b
+bnez t5, 22b
+j 21f
+20:
+addi a2, a0, 0
+21:
 lbu t1, 0(a1)
 lbu a7, 1(a1)
 slli a7, a7, 8
@@ -3391,16 +3397,22 @@ pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: 
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
+andi t0, a0, 7
+beqz t0, 20f
 addi t3, a0, 0
 addi t4, a2, 0
 addi t5, zero, 128
-20:
+22:
 lbu a7, 0(t3)
 sb a7, 0(t4)
 addi t3, t3, 1
 addi t4, t4, 1
 addi t5, t5, -1
-bnez t5, 20b
+bnez t5, 22b
+j 21f
+20:
+addi a2, a0, 0
+21:
 lbu t1, 0(a1)
 lbu a7, 1(a1)
 slli a7, a7, 8
