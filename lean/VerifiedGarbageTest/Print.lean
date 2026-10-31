@@ -910,7 +910,9 @@ def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 #guard Rust.featuresConst "vg_sha256_compress_shani" "" ["sha", "ssse3"] ==
   "/// The CPU features `vg_sha256_compress_shani` requires (`Artifact.features`).\n\
   pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = \
-  crate::cpu::Features::of(&[\"sha\", \"ssse3\"]);\n\n"
+  crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);\n\n"
+#guard Rust.featureConst "avx512ifma" == "AVX512IFMA"
+#guard Rust.featureConst "sse4.1" == "SSE4_1"
 
 -- A feature some of the target's configurations cannot assemble or must
 -- never run compiles its functions and constants only under its `cfg`.
@@ -925,6 +927,6 @@ def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 #guard Rust.featuresConst "vg_f_umaal" "#[cfg(c)]\n" ["umaal"] ==
   "/// The CPU features `vg_f_umaal` requires (`Artifact.features`).\n#[cfg(c)]\n\
   pub(crate) const VG_F_UMAAL_FEATURES: crate::cpu::Features = \
-  crate::cpu::Features::of(&[\"umaal\"]);\n\n"
+  crate::cpu::Features(crate::cpu::feature::UMAAL);\n\n"
 
 end VG.Test

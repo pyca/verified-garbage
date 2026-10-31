@@ -11,9 +11,10 @@
 //! system the code was compiled for (`umaal`, on those that run on A-profile
 //! cores alone). Each object that can use such a function chooses its
 //! implementation when it is created, from the features detected. A feature
-//! detection does not know ([`NAMES`]) cannot be checked for:
-//! [`Features::of`] panics on it, so a generated constant naming one fails
-//! to compile.
+//! detection does not know ([`NAMES`]) cannot be checked for: a generated
+//! constant is the union of the bits in [`feature`] of the features it
+//! names, so naming one without a bit there fails to compile (as
+//! [`Features::of`], which the Rust code uses, panics on one).
 //!
 //! With the `cpu-features-env` Cargo feature, the environment variable
 //! `VG_CPU_FEATURES` restricts the features detected, so that tests and
@@ -103,6 +104,37 @@ const fn bit(name: &str) -> usize {
         b"umaal" => 20,
         _ => panic!("a CPU feature this library does not know"),
     }
+}
+
+/// The bit of each feature of [`NAMES`] in a [`Features`], by its name in
+/// uppercase (`.` and other characters not allowed in a name as `_`): what
+/// the generated `_FEATURES` constants are made of, `Features(feature::AVX |
+/// feature::AVX2)`. rustc evaluates every constant of the crate, and an `|`
+/// of these takes it a few steps, where [`Features::of`] on the names, which
+/// these constants once called, took it a tenth of a build of the crate.
+#[allow(dead_code)]
+pub(crate) mod feature {
+    pub(crate) const SSSE3: u32 = 1 << super::bit("ssse3");
+    pub(crate) const SHA: u32 = 1 << super::bit("sha");
+    pub(crate) const AES: u32 = 1 << super::bit("aes");
+    pub(crate) const PCLMULQDQ: u32 = 1 << super::bit("pclmulqdq");
+    pub(crate) const AVX: u32 = 1 << super::bit("avx");
+    pub(crate) const AVX2: u32 = 1 << super::bit("avx2");
+    pub(crate) const BMI1: u32 = 1 << super::bit("bmi1");
+    pub(crate) const BMI2: u32 = 1 << super::bit("bmi2");
+    pub(crate) const AVX512F: u32 = 1 << super::bit("avx512f");
+    pub(crate) const SHA512: u32 = 1 << super::bit("sha512");
+    pub(crate) const SHA2: u32 = 1 << super::bit("sha2");
+    pub(crate) const SHA3: u32 = 1 << super::bit("sha3");
+    pub(crate) const ADX: u32 = 1 << super::bit("adx");
+    pub(crate) const AVX512IFMA: u32 = 1 << super::bit("avx512ifma");
+    pub(crate) const AVX512VL: u32 = 1 << super::bit("avx512vl");
+    pub(crate) const NEON: u32 = 1 << super::bit("neon");
+    pub(crate) const SVE2: u32 = 1 << super::bit("sve2");
+    pub(crate) const VAES: u32 = 1 << super::bit("vaes");
+    pub(crate) const VPCLMULQDQ: u32 = 1 << super::bit("vpclmulqdq");
+    pub(crate) const AVX512BW: u32 = 1 << super::bit("avx512bw");
+    pub(crate) const UMAAL: u32 = 1 << super::bit("umaal");
 }
 
 /// Whether two names are equal (`==` on strings, which is not `const`).
@@ -526,6 +558,39 @@ fn runtime() -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every feature of `NAMES` has its bit in `feature`, in order.
+    #[test]
+    fn feature_bits() {
+        let bits = [
+            feature::SSSE3,
+            feature::SHA,
+            feature::AES,
+            feature::PCLMULQDQ,
+            feature::AVX,
+            feature::AVX2,
+            feature::BMI1,
+            feature::BMI2,
+            feature::AVX512F,
+            feature::SHA512,
+            feature::SHA2,
+            feature::SHA3,
+            feature::ADX,
+            feature::AVX512IFMA,
+            feature::AVX512VL,
+            feature::NEON,
+            feature::SVE2,
+            feature::VAES,
+            feature::VPCLMULQDQ,
+            feature::AVX512BW,
+            feature::UMAAL,
+        ];
+        assert_eq!(bits.len(), NAMES.len());
+        for (i, (b, n)) in bits.iter().zip(NAMES).enumerate() {
+            assert_eq!(*b, 1 << i);
+            assert_eq!(Features(*b), Features::of(&[n]));
+        }
+    }
 
     #[test]
     fn of_names() {
