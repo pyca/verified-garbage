@@ -34,7 +34,7 @@ cpu-features-env = ["std"]
 getrandom = "0.4"
 # `Features`, the sets of CPU features that the generated `_FEATURES`
 # constants and the detection in `src/cpu.rs` name.
-verified-garbage-cpu = { path = "cpu" }
+verified-garbage-cpu = { path = "crates/verified-garbage-cpu" }
 
 # The verified assembly of each target, generated into `src/asm/<target>/`:
 # a crate per target (see `lean/VerifiedGarbage/TCB/Rust.lean`).
@@ -52,7 +52,7 @@ verified-garbage-asm-x86 = { path = "src/asm/x86" }
 verified-garbage-asm-x86_64 = { path = "src/asm/x86_64" }
 
 [workspace]
-members = ["cpu"]
+members = ["crates/*"]
 # The generated crates are not members, so that `cargo fmt` leaves them as
 # the emitter wrote them and Clippy lints them as it does any dependency.
 exclude = ["src/asm"]

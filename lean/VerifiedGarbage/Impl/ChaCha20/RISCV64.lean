@@ -10,9 +10,10 @@ public import VerifiedGarbage.Impl.Words.RISCV64
 The structure of the PPC64LE implementation, for RV64I, which has no
 rotates and faults on misaligned accesses:
 * Word `k` of the state lives in the low word of `wreg k` (`t0`–`t6`,
-  `a2`–`a7`, `s0`–`s2`) throughout; the ten double rounds are fully
-  unrolled. The additions act on all 64 bits, so the high words of the
-  registers hold carries, which the word shifts and the byte stores ignore.
+  `a2`–`a7`, `s0`–`s2`) throughout; a counted loop runs the ten
+  double rounds, using `U` (`s4`) as its public counter. The additions act
+  on all 64 bits, so the high words hold carries, which the word shifts and
+  the byte stores ignore.
 * A rotation left by `k` is `slliw` by `k` into `T` (`s3`), `srliw` by
   `32 - k` and `or` (`rotl_shifts`).
 * `state` and `buf` are argument buffers, whose alignment the contract does
@@ -24,7 +25,8 @@ rotates and faults on misaligned accesses:
   address), within `buf[64..112)`, which is working space. Only the first
   64 bytes of `buf` are written otherwise.
 * Every address is `a0`, `a1` or `t0` (computed from `a1`) plus a constant,
-  and there are no branches, so only the pointers can affect timing.
+  and the only branch counts ten double rounds, so only the pointers can
+  affect timing.
 -/
 
 @[expose] public section
@@ -74,10 +76,10 @@ def doubleRound : Prog isa :=
   .seq (quarter 3 7 11 15) <| .seq (quarter 0 5 10 15) <| .seq (quarter 1 6 11 12) <|
   .seq (quarter 2 7 8 13) (quarter 3 4 9 14)
 
-/-- `n` double rounds. -/
-def rounds : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds n) doubleRound
+/-- Ten double rounds, with one copy of the round body and a public counter. -/
+def rounds : Prog isa :=
+  .seq (.block [.li U 10])
+    (.loop (.seq doubleRound (.block [.addi U U (-1)])) (.nonzero U))
 
 /-- Load the state into the registers. -/
 def load : List Instr := (List.range 16).flatMap fun k => loadLE32 (wreg k) T .a0 (4 * k)
@@ -89,7 +91,7 @@ def addWord (k : Nat) : List Instr :=
 def finish : List Instr := (List.range 16).flatMap addWord
 
 /-- Load, run the rounds and add. -/
-def main : Prog isa := .seq (.block load) (.seq (rounds 10) (.block finish))
+def main : Prog isa := .seq (.block load) (.seq rounds (.block finish))
 
 def block : Prog isa := .seq (.block save) (.seq main (.block restore))
 

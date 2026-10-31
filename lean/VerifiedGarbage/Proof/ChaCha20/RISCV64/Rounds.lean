@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Impl.ChaCha20.RISCV64
@@ -158,9 +160,68 @@ theorem doubleRound_ok {v : CState} {s₀ s : State} (h : RI v s₀ s) :
   exact WP.mono (quarter_step (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) h₇) fun _ h => h
 
+/-- The counter is separate from the sixteen words and the rotation temporary. -/
+theorem counter_not_words : ¬ Words U := by
+  rintro (⟨k, hk, e⟩ | e)
+  · have key : ∀ k < 16, U ≠ wreg k := by decide
+    exact key k hk e
+  · exact absurd e (by decide)
+
 theorem rounds_ok {v : CState} {s₀ : State} (h : Holds v s₀) :
-    ∀ n, WP isa (rounds n) s₀ (RI (Nat.repeat innerBlock n v) s₀)
-  | 0 => WP.block_nil ⟨h, rfl, rfl, rfl, fun _ _ => rfl⟩
-  | n + 1 => WP.seq (WP.mono (rounds_ok h n) fun _ h' => doubleRound_ok h')
+    WP isa rounds s₀ fun s =>
+      Holds (Nat.repeat innerBlock 10 v) s ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
+      (∀ r, ¬ Words r → r ≠ U → s.gpr r = s₀.gpr r) := by
+  unfold rounds
+  apply WP.seq
+  have hi : WP isa (.block [.li U 10]) s₀ (· = s₀.write U 10) := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, exec_li (show imm12 10 by decide), runStep_some, runBlock_nil,
+      Option.some.injEq, exists_eq_left']
+    rfl
+  refine hi.mono fun a ea => ?_
+  subst ea
+  let Inv : Nat → State → Prop := fun n s =>
+    0 < n ∧ n ≤ 10 ∧ s.gpr U = BitVec.ofNat 64 n ∧
+    Holds (Nat.repeat innerBlock (10 - n) v) s ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
+    (∀ r, ¬ Words r → r ≠ U → s.gpr r = s₀.gpr r)
+  refine WP.loop (M := isa) Inv ?_ 10 (s₀.write U 10) ?_
+  · intro n s ⟨hn, hle, hc, hv, hm, hr, hw, hk⟩
+    apply WP.seq
+    refine (doubleRound_ok (s₀ := s) ⟨hv, rfl, rfl, rfl, fun _ _ => rfl⟩).mono fun b hb => ?_
+    have hcb : b.gpr U = BitVec.ofNat 64 n := (hb.keep U counter_not_words).trans hc
+    have hd : WP isa (.block [.addi U U (-1)]) b (· = b.write U (b.gpr U - (1#64))) := by
+      apply WP.of_runBlock
+      simp only [runBlock_cons, exec_addi (show imm12 (-1) by decide), runStep_some, runBlock_nil,
+        Option.some.injEq, exists_eq_left']
+      rw [show BitVec.ofInt 64 (-1) = -(1#64) from rfl, ← BitVec.sub_eq_add_neg]
+    refine hd.mono fun c ec => ?_
+    subst ec
+    have hcc : (b.write U (b.gpr U - (1#64))).gpr U = BitVec.ofNat 64 (n - 1) := by
+      rw [RegUpd.gpr_write_self, hcb]
+      exact Offset.ofNat_sub_ofNat (k := n) (d := 1) (by omega)
+    have hv' : Holds (Nat.repeat innerBlock (10 - (n - 1)) v) (b.write U (b.gpr U - (1#64))) := by
+      rw [show 10 - (n - 1) = (10 - n) + 1 by omega]
+      intro k hlt
+      rw [RegUpd.gpr_write_of_ne _ _ (fun e => counter_not_words (.inl ⟨k, hlt, e.symm⟩))]
+      exact hb.holds k hlt
+    have hk' : ∀ r, ¬ Words r → r ≠ U →
+        (b.write U (b.gpr U - (1#64))).gpr r = s₀.gpr r := by
+      intro r hwr hru
+      rw [RegUpd.gpr_write_of_ne _ _ hru, hb.keep r hwr, hk r hwr hru]
+    have he := Steps.eval_nonzero_ofNat (b.write U (b.gpr U - (1#64))) U (by omega) hcc
+    by_cases hz : n = 1
+    · left
+      refine ⟨?_, ?_, hb.mem.trans hm, hb.rd.trans hr, hb.wr.trans hw, hk'⟩
+      · simpa only [hz, Nat.sub_self, ne_eq, not_true_eq_false, decide_false] using he
+      · simpa only [hz, Nat.sub_self, Nat.sub_zero] using hv'
+    · right
+      refine ⟨?_, n - 1, by omega, by omega, by omega, hcc, hv', hb.mem.trans hm,
+        hb.rd.trans hr, hb.wr.trans hw, hk'⟩
+      simpa only [decide_eq_true (by omega : n - 1 ≠ 0)] using he
+  · refine ⟨by decide, by decide, RegUpd.gpr_write_self .., ?_, rfl, rfl, rfl,
+      fun r _ hru => RegUpd.gpr_write_of_ne _ _ hru⟩
+    intro k hk
+    rw [RegUpd.gpr_write_of_ne _ _ (fun e => counter_not_words (.inl ⟨k, hk, e.symm⟩))]
+    exact h k hk
 
 end VG.Proof.ChaCha20.RISCV64

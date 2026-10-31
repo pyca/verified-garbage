@@ -16,4 +16,4 @@ build = false
 path = "mod.rs"
 
 [dependencies]
-verified-garbage-cpu = { path = "../../../cpu" }
+verified-garbage-cpu = { path = "../../../crates/verified-garbage-cpu" }
