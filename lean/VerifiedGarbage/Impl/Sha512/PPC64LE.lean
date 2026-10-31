@@ -13,8 +13,9 @@ on whole 64-bit registers:
 * The working variables `a … h` stay in `v4`–`v11`; round `t` names
   variable `k` with `vvar t k`. The high doubleword carries each word.
   The unused low doubleword never influences the result.
-* The message schedule is a 16-word window in `scratch[0..128)`. The words
-  of a block are loaded big-endian with `ldbrx`, indexed by `r0`.
+* The sixteen-word message window occupies eight more vector registers.
+  Two schedule words are generated together; the input pairs use big-endian
+  `ldbrx` loads indexed by `r0`.
 * `Kₜ` is built with `lis`, `ori`, `sldi`, `oris` and `ori` (`movImm64`).
 * `r14`–`r19` are nonvolatile: they are saved in `scratch[128..176)` first
   and restored last.
@@ -64,28 +65,39 @@ def movImm64 (d : Reg) (v : BitVec 64) : List Instr :=
   [.lis d (v.extractLsb' 48 16), .ori d d (v.extractLsb' 32 16), .lsl d d 32,
    .oris d d (v.extractLsb' 16 16), .ori d d (v.extractLsb' 0 16)]
 
-/-- Leave `Wₜ` in `T0` and in its slot. The additions are in the order of the
-specification. -/
-def schedule (t : Nat) : List Instr :=
-  if t < 16 then [
-    .li .r0 (8 * t),
-    .loadRev .d T0 .r4 .r0,
-    .store .d T0 .r6 (slot t)]
-  else [
-    .load .d T1 .r6 (slot (t + 14)), .mtvsrd .v0 T1,
-    .load .d T2 .r6 (slot (t + 1)), .mtvsrd .v1 T2,
-    .vop (.sha512 .v0 .v0 false 8), .vop (.sha512 .v1 .v1 false 0),
-    .load .d T0 .r6 (slot (t + 9)), .mfvsrd T1 .v0, .add T0 T1 T0,
-    .mfvsrd T2 .v1, .add T0 T0 T2,
-    .load .d T2 .r6 (slot t), .add T0 T0 T2, .store .d T0 .r6 (slot t)]
+/-- Each vector holds two consecutive schedule words. -/
+def pairs : List VReg := [.v0, .v1, .v2, .v3, .v16, .v17, .v18, .v19]
 
-/-- Round `t`, with `Wₜ` in `T0`. Only `Kₜ + Wₜ` crosses from scalar
-to vector registers; the state, sigma, choice and majority remain vector values. -/
+def preg (n : Nat) : VReg := pairs.getD (n % 8) .v0
+
+/-- Generate two schedule words at once, retaining all sixteen words in vectors. -/
+def schedulePair (n : Nat) : List Instr :=
+  let p := preg n
+  if n < 8 then [
+    .li .r0 (16*n), .loadRev .d T0 .r4 .r0,
+    .li .r0 (16*n+8), .loadRev .d T1 .r4 .r0,
+    .mtvsrd p T0, .mtvsrd .v12 T1,
+    .vop (.sldoi p p p 8), .vop (.sldoi p p .v12 8)]
+  else [
+    .vop (.sha512 .v12 (preg (n+7)) false 10),
+    .vop (.sldoi .v13 p (preg (n+1)) 8),
+    .vop (.sha512 .v13 .v13 false 0),
+    .vop (.sldoi .v14 (preg (n+4)) (preg (n+5)) 8),
+    .vop (.add true .v12 .v12 p), .vop (.add true .v12 .v12 .v13),
+    .vop (.add true p .v12 .v14)]
+
+/-- The odd word was computed with its predecessor. -/
+def schedule (t : Nat) : List Instr :=
+  if t % 2 = 0 then schedulePair (t/2) ++ [.vop (.logic .or .v15 (preg (t/2)) (preg (t/2)))]
+  else [.vop (.sldoi .v15 (preg (t/2)) (preg (t/2)) 8)]
+
+/-- Round `t`, with `Wₜ` in the high doubleword of `v15`. Only the round
+constant crosses from scalar to vector registers. -/
 def round (t : Nat) : List Instr :=
   let a := vvar t 0; let b := vvar t 1; let c := vvar t 2; let d := vvar t 3
   let e := vvar t 4; let f := vvar t 5; let g := vvar t 6; let h := vvar t 7
   movImm64 T1 (K t) ++
-  [.add T1 T1 T0, .mtvsrd .v15 T1,
+  [.mtvsrd .v12 T1, .vop (.add true .v15 .v12 .v15),
    .vop (.sha512 .v12 e true 8), .vop (.sha512 .v14 a true 0),
    .vop (.logic .xor .v13 f g), .vop (.logic .and .v13 .v13 e), .vop (.logic .xor .v13 .v13 g),
    .vop (.add true .v15 h .v15), .vop (.add true .v15 .v15 .v12), .vop (.add true .v15 .v15 .v13),

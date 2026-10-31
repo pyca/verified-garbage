@@ -80,12 +80,30 @@ theorem vround_nodup (t : Nat) :
   generalize t % 8 = c at *
   revert this; revert c; decide
 
+theorem vvar_mem (t k : Nat) : vvar t k ∈ vwork := by
+  unfold vvar List.getD
+  cases h : vwork[(k + 8 - t % 8) % 8]?
+  · simp [vwork]
+  · exact List.mem_of_getElem? h
+
+theorem round_pairs_frame (t : Nat) : ∀ r ∈ pairs,
+    r ≠ vvar t 3 ∧ r ≠ vvar t 7 ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 ∧ r ≠ .v15 := by
+  intro r hr
+  have h : ∀ a ∈ vwork, r ≠ a := by
+    intro a ha
+    have h : ∀ a ∈ vwork, ∀ b ∈ pairs, a ≠ b := by decide
+    exact (h a ha r hr).symm
+  have ht : ∀ r ∈ pairs, r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 ∧ r ≠ .v15 := by decide
+  exact ⟨h _ (vvar_mem t 3), h _ (vvar_mem t 7), ht r hr⟩
+
 /-- The working state stays in vectors, so neither sigma needs a register-bank transfer. -/
 theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
-    (hv : Vars t s v) (hw : s.gpr T0 = w) :
+    (hv : Vars t s v) (hw : vdword (s.vpr .v15) 0 = w) :
     WP isa (.block (round t)) s fun s' =>
       Vars (t + 1) s' (roundKW v (K t) w) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r ∈ pubRegs, s'.gpr r = s.gpr r) ∧ ∀ r ∈ pairs, s'.vpr r = s.vpr r := by
+  have hpairs := round_pairs_frame t
   have hs := vround_nodup t
   have hs' := List.nodup_reverse.mpr hs
   simp only [Vars, vvar_succ_zero, vvar_succ t _ (show 0 < 7 by omega),
@@ -107,8 +125,8 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hs hs'
   simp only [vdword, Nat.sub_zero, Nat.mul_one] at h0 h1 h2 h3 h4 h5 h6 h7
-  simp only [T0] at hw
-  simp only [T0, T1, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval,
+  simp only [vdword, Nat.sub_zero, Nat.mul_one] at hw
+  simp only [T1, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval,
     Option.map_some, vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
     vdword, Nat.sub_zero, Nat.mul_one, high64_append, BitVec.extractLsb'_xor,
     BitVec.extractLsb'_and, BitVec.extractLsb'_or,
@@ -117,16 +135,20 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     show (0 : Nat).testBit 3 = false by decide, show (0 : Nat).testBit 1 = false by decide,
     and_self, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     hs, hs', h0, h1, h2, h3, h4, h5, h6, h7, hw, Option.some.injEq, exists_eq_left',
-    Nat.reduceAdd, Nat.reduceLT, reduceCtorEq, ↓reduceIte, true_and]
-  refine ⟨?_, fun r hr => ?_⟩
+    Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, true_and]
+  refine ⟨?_, ?_, ?_⟩
   · simp only [roundKW, bsig1, ch_eq, bsig0, maj_eq, VG.PPC64LE.sigma512,
       ite_true, ite_false, Bool.false_eq_true, movImm64_eq, Vector.getElem_mk,
       List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ]
     simp only [t1_add_tree, and_self]
-  · have hn : r ≠ .r17 := by
+  · intro r hr
+    have hn : r ≠ .r17 := by
       simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     simp only [hn, ite_false]
+  · intro r hr
+    obtain ⟨h0,h1,h2,h3,h4,h5⟩ := hpairs r hr
+    simp only [h0,h1,h2,h3,h4,h5,ite_false]
 
 theorem slot_ok (j : Nat) : slot j < 2 ^ 15 ∧ slot j % 4 = 0 := by
   simp only [slot]; omega
@@ -134,59 +156,214 @@ theorem slot_ok (j : Nat) : slot j < 2 ^ 15 ∧ slot j % 4 = 0 := by
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofNat 64 (slot j)
 
-theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
-    (hr4 : s.gpr .r4 = bp) (hr6 : s.gpr .r6 = scr)
-    (hin : ∀ j, InRegions (s.rd ++ s.wr) (slotAddr scr j) 8)
-    (hout : ∀ j, InRegions s.wr (slotAddr scr j) 8)
-    (hbin : t < 16 → InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (8 * t)) 8)
-    (hblk : t < 16 → rev64 (s.mem.readW (bp + BitVec.ofNat 64 (8 * t)) 64) = W M t)
-    (hwin : 16 ≤ t → ∀ j, j < t → t ≤ j + 16 → s.mem.readW (slotAddr scr j) 64 = W M j) :
-    WP isa (.block (schedule t)) s fun s' =>
-      s'.gpr T0 = W M t ∧
-      s'.mem = s.mem.writeW (slotAddr scr t) (W M t) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, r ≠ T0 → r ≠ T1 → r ≠ T2 → r ≠ T3 → r ≠ .r0 → s'.gpr r = s.gpr r) ∧
-      ∀ r ∈ vwork, s'.vpr r = s.vpr r := by
-  simp only [slotAddr] at hin hout hwin ⊢
-  apply WP.of_runBlock
-  by_cases ht : t < 16
-  · have hi := hbin ht
-    have hb := hblk ht
-    simp only [Impl.Sha512.PPC64LE.schedule, ht, ite_true, T0, T1, T2, T3]
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li (show 8 * t < 2 ^ 15 by omega),
-      exec_loadRev_d, exec_store_d, slot_ok, isa, vpr_write, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr4, hr6, hi, hout, hb,
-      Option.some.injEq, exists_eq_left', reduceCtorEq, ↓reduceIte, ne_eq, not_false_eq_true,
-      and_self, true_and]
-    refine ⟨fun r h0 _ _ _ h4 => ?_, fun _ _ => True.intro⟩
-    simp [h0, h4]
-  · have hw := hwin (by omega)
-    have e2 := hw (t - 2) (by omega) (by omega)
-    have e7 := hw (t - 7) (by omega) (by omega)
-    have e15 := hw (t - 15) (by omega) (by omega)
-    have e16 := hw (t - 16) (by omega) (by omega)
-    rw [show slot (t - 2) = slot (t + 14) by simp only [slot]; omega] at e2
-    rw [show slot (t - 7) = slot (t + 9) by simp only [slot]; omega] at e7
-    rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega] at e15
-    rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
-    simp only [Impl.Sha512.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3]
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_d, exec_store_d, slot_ok,
-      exec_add, reduceExec, reduceVOpEval, Option.map_some,
-      vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword, Nat.sub_zero, Nat.mul_one,
-      high64_append, VG.PPC64LE.sigma512, Bool.false_eq_true,
-      show (8 : Nat) &&& 5 = 0 by decide, show (0 : Nat) &&& 5 = 0 by decide,
-      show (8 : Nat).testBit 3 = true by decide, show (8 : Nat).testBit 1 = false by decide,
-      show (0 : Nat).testBit 3 = false by decide, show (0 : Nat).testBit 1 = false by decide,
-      isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, e2, e7, e15,
-      e16, Option.some.injEq, exists_eq_left', Nat.reduceLT, reduceCtorEq, ↓reduceIte, ne_eq,
-      not_false_eq_true, and_self, true_and]
-    have hW := W_ge M (t := t) (by omega)
-    refine ⟨by rw [hW]; rfl, by rw [hW]; rfl, (fun r h0 h1 h2 h3 _ => ?_), fun r hr => ?_⟩
-    · simp [h0, h1, h2]
-    · have hn : r ≠ .v0 ∧ r ≠ .v1 := by
-        simp only [vwork, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-      simp only [hn.1, hn.2, ite_false]
+theorem low64_append (a b : BitVec 64) : (a ++ b).extractLsb' 0 64 = b :=
+  BitVec.extractLsb'_append_eq_right
 
+theorem preg_mem (n : Nat) : preg n ∈ pairs := by
+  unfold preg List.getD
+  cases h : pairs[n % 8]?
+  · simp [pairs]
+  · exact List.mem_of_getElem? h
+
+theorem preg_eq_iff (i j : Nat) : preg i = preg j ↔ i % 8 = j % 8 := by
+  simp only [preg]
+  have hi := Nat.mod_lt i (show 8 > 0 by decide)
+  have hj := Nat.mod_lt j (show 8 > 0 by decide)
+  generalize i % 8 = a at *
+  generalize j % 8 = b at *
+  revert hj; revert b; revert hi; revert a; decide
+
+/-- All complete pairs generated so far that remain in the ring. -/
+def PairWin (n : Nat) (s : State) (M : Block) : Prop :=
+  ∀ j, j < n → n ≤ j+8 → s.vpr (preg j) = W M (2*j) ++ W M (2*j+1)
+
+/-- The schedule changes one pair, temporary vectors, and scalar temporaries. -/
+def PairPost (n : Nat) (M : Block) (s u : State) : Prop :=
+  u.vpr (preg n) = W M (2*n) ++ W M (2*n+1) ∧
+  (∀ r ∈ pairs, r ≠ preg n → u.vpr r = s.vpr r) ∧
+  (∀ r ∈ vwork, u.vpr r = s.vpr r) ∧
+  (∀ r, r ≠ T0 → r ≠ T1 → r ≠ .r0 → u.gpr r = s.gpr r) ∧
+  u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr
+
+theorem pairPost_win {n : Nat} {M : Block} {s u : State}
+    (h : PairWin n s M) (hp : PairPost n M s u) : PairWin (n+1) u M := by
+  intro j hj hj'
+  by_cases he : j = n
+  · subst j; exact hp.1
+  · have hn : preg j ≠ preg n := by
+      simp only [ne_eq, preg_eq_iff]; omega
+    rw [hp.2.1 _ (preg_mem j) hn]
+    exact h j (by omega) (by omega)
+
+theorem pair_work_disjoint : ∀ r ∈ vwork, ∀ p ∈ pairs,
+    r ≠ p ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 := by decide
+
+theorem pair_temps_disjoint : ∀ p ∈ pairs, p ≠ .v12 ∧ p ≠ .v13 ∧ p ≠ .v14 := by decide
+
+theorem pair_load_ok (n : Nat) (hn : n < 8) (M : Block) (s : State) (bp : Addr)
+    (hr4 : s.gpr .r4 = bp)
+    (hin : ∀ j < 16, InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (8*j)) 8)
+    (hblk : ∀ j < 16, rev64 (s.mem.readW (bp + BitVec.ofNat 64 (8*j)) 64) = W M j) :
+    WP isa (.block (schedulePair n)) s (PairPost n M s) := by
+  have i0 := hin (2*n) (by omega)
+  have i1 := hin (2*n+1) (by omega)
+  have b0 := hblk (2*n) (by omega)
+  have b1 := hblk (2*n+1) (by omega)
+  have he0 : 8*(2*n) = 16*n := by omega
+  have he1 : 8*(2*n+1) = 16*n+8 := by omega
+  rw [he0] at i0 b0
+  rw [he1] at i1 b1
+  have hp := pair_temps_disjoint _ (preg_mem n)
+  have hw : ∀ r ∈ vwork, r ≠ preg n ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 :=
+    fun r hr => pair_work_disjoint r hr _ (preg_mem n)
+  have hpair : ∀ r ∈ pairs, r ≠ .v12 := fun r hr => (pair_temps_disjoint r hr).1
+  apply WP.of_runBlock
+  simp only [schedulePair, hn, ite_true, T0, T1, PairPost]
+  simp only [runBlock_cons, runStep_some, runBlock_nil,
+    exec_li (show 16*n < 2^15 by omega), exec_li (show 16*n+8 < 2^15 by omega),
+    exec_loadRev_d (show (Reg.r4 : Reg) ≠ .r0 by decide), exec_sldoi8, reduceExec, isa,
+    vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    hr4, i0, i1, b0, b1, hp.1, hp.1.symm, high64_append, low64_append,
+    Option.some.injEq, exists_eq_left', reduceCtorEq, ↓reduceIte, ne_eq, and_self, true_and]
+  refine ⟨?_, ?_, ?_⟩
+  · intro r hr hne
+    simp only [hne, hpair r hr, ite_false]
+  · intro r hr
+    obtain ⟨a,b,_,_⟩ := hw r hr
+    simp only [a,b,ite_false]
+  · refine ⟨?_, True.intro⟩
+    intro r h0 h1 h2
+    simp only [h0,h1,h2,ite_false]
+
+theorem pair_regs_nodup (n : Nat) :
+    ([preg n, preg (n+1), preg (n+4), preg (n+5), preg (n+7), .v12, .v13, .v14] : List VReg).Nodup := by
+  have h1 : (n+1)%8 = (n%8+1)%8 := by omega
+  have h4 : (n+4)%8 = (n%8+4)%8 := by omega
+  have h5 : (n+5)%8 = (n%8+5)%8 := by omega
+  have h7 : (n+7)%8 = (n%8+7)%8 := by omega
+  simp only [preg, h1,h4,h5,h7]
+  clear h1 h4 h5 h7
+  have h := Nat.mod_lt n (show 8 > 0 by decide)
+  generalize n % 8 = a at *
+  revert h; revert a; decide
+
+theorem pair_compute_ok (n : Nat) (hn : 8 ≤ n) (M : Block) (s : State)
+    (hwin : PairWin n s M) :
+    WP isa (.block (schedulePair n)) s (PairPost n M s) := by
+  have e0 := hwin (n-8) (by omega) (by omega)
+  have e1 := hwin (n-7) (by omega) (by omega)
+  have e4 := hwin (n-4) (by omega) (by omega)
+  have e5 := hwin (n-3) (by omega) (by omega)
+  have e7 := hwin (n-1) (by omega) (by omega)
+  rw [show preg (n-8) = preg n by apply (preg_eq_iff _ _).mpr; omega] at e0
+  rw [show preg (n-7) = preg (n+1) by apply (preg_eq_iff _ _).mpr; omega] at e1
+  rw [show preg (n-4) = preg (n+4) by apply (preg_eq_iff _ _).mpr; omega] at e4
+  rw [show preg (n-3) = preg (n+5) by apply (preg_eq_iff _ _).mpr; omega] at e5
+  rw [show preg (n-1) = preg (n+7) by apply (preg_eq_iff _ _).mpr; omega] at e7
+  have hs := pair_regs_nodup n
+  have hs' := List.nodup_reverse.mpr hs
+  have hw : ∀ r ∈ vwork, r ≠ preg n ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 :=
+    fun r hr => pair_work_disjoint r hr _ (preg_mem n)
+  have hp : ∀ r ∈ pairs, r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 := pair_temps_disjoint
+  apply WP.of_runBlock
+  simp only [schedulePair, show ¬n < 8 by omega, ite_false, PairPost]
+  generalize preg n = a at *
+  generalize preg (n+1) = b at *
+  generalize preg (n+4) = c at *
+  generalize preg (n+5) = d at *
+  generalize preg (n+7) = e at *
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.reverse_cons,
+    List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
+    List.nodup_nil, and_true] at hs hs'
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_sldoi8, reduceExec, reduceVOpEval,
+    Option.map_some, vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    vdword, Nat.sub_zero, Nat.mul_one, Nat.mul_zero, high64_append, low64_append,
+    show (10 : Nat) &&& 5 = 0 by decide, show (0 : Nat) &&& 5 = 0 by decide,
+    show (10 : Nat).testBit 3 = true by decide, show (10 : Nat).testBit 1 = true by decide,
+    show (0 : Nat).testBit 3 = false by decide, show (0 : Nat).testBit 1 = false by decide,
+    isa, e0, e1, e4, e5, e7, hs, hs',
+    Option.some.injEq, exists_eq_left', Nat.reduceSub, Nat.reduceLT,
+    ↓reduceIte, and_self]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [W_ge M (t := 2*n) (by omega), W_ge M (t := 2*n+1) (by omega)]
+    simp only [VG.PPC64LE.sigma512, Bool.false_eq_true, ite_true, ite_false]
+    have a0 : 2*(n-1) = 2*n-2 := by omega
+    have a1 : 2*(n-1)+1 = 2*n-1 := by omega
+    have a2 : 2*(n-8) = 2*n-16 := by omega
+    have a3 : 2*(n-8)+1 = 2*n-15 := by omega
+    have a4 : 2*(n-7) = 2*n-14 := by omega
+    have a5 : 2*(n-4)+1 = 2*n-7 := by omega
+    have a6 : 2*(n-3) = 2*n-6 := by omega
+    have b0 : 2*n+1-2 = 2*n-1 := by omega
+    have b1 : 2*n+1-7 = 2*n-6 := by omega
+    have b2 : 2*n+1-15 = 2*n-14 := by omega
+    have b3 : 2*n+1-16 = 2*n-15 := by omega
+    simp only [a0,a2,a4,a5,a6,b0,b1,b2,b3,ssig0,ssig1,
+      show 2*n-16+1 = 2*n-15 by omega, show 2*n-2+1 = 2*n-1 by omega]
+    apply congrArg₂ (· ++ ·) <;> ac_rfl
+  · intro r hr hne
+    obtain ⟨h0,h1,h2⟩ := hp r hr
+    simp only [hne,h0,h1,h2,ite_false]
+  · refine ⟨?_, ⟨fun _ _ _ _ => True.intro, True.intro⟩⟩
+    intro r hr
+    obtain ⟨h0,h1,h2,h3⟩ := hw r hr
+    simp only [h0,h1,h2,h3,ite_false]
+
+theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
+    (hr4 : s.gpr .r4 = bp)
+    (hin : ∀ j < 16, InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (8*j)) 8)
+    (hblk : ∀ j < 16, rev64 (s.mem.readW (bp + BitVec.ofNat 64 (8*j)) 64) = W M j)
+    (hwin : PairWin ((t+1)/2) s M) :
+    WP isa (.block (schedule t)) s fun u =>
+      vdword (u.vpr .v15) 0 = W M t ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      (∀ r, r ≠ T0 → r ≠ T1 → r ≠ .r0 → u.gpr r = s.gpr r) ∧
+      (∀ r ∈ vwork, u.vpr r = s.vpr r) ∧ PairWin ((t+2)/2) u M := by
+  have hp15 : ∀ r ∈ pairs, r ≠ .v15 := by decide
+  have hw15 : ∀ r ∈ vwork, r ≠ .v15 := by decide
+  by_cases ht : t % 2 = 0
+  · have hr : (t+1)/2 = t/2 := by omega
+    have hr' : (t+2)/2 = t/2+1 := by omega
+    have he : 2*(t/2) = t := by omega
+    rw [hr] at hwin
+    have hp : WP isa (.block (schedulePair (t/2))) s (PairPost (t/2) M s) := by
+      by_cases hn : t/2 < 8
+      · exact pair_load_ok _ hn M s bp hr4 hin hblk
+      · exact pair_compute_ok _ (by omega) M s hwin
+    simp only [schedule, ht, ite_true]
+    rw [WP.block_append_iff]
+    refine WP.mono hp fun v hv => ?_
+    have hwin' := pairPost_win hwin hv
+    obtain ⟨hv, hpf, hw, hgp, hm, hrd, hwr⟩ := hv
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some, isa,
+      vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, BitVec.or_self,
+      vdword, Nat.sub_zero, Nat.mul_one, hv, high64_append, he, hm, hrd, hwr,
+      Option.some.injEq, exists_eq_left', ite_true, true_and]
+    refine ⟨hgp, ?_, ?_⟩
+    · intro r hr
+      simp only [hw15 r hr, ite_false]
+      exact hw r hr
+    · intro j hj hj'
+      simp only [vpr_writeV, hp15 _ (preg_mem j), ite_false]
+      exact hwin' j (by omega) (by omega)
+  · have hr : (t+1)/2 = t/2+1 := by omega
+    have hr' : (t+2)/2 = (t+1)/2 := by omega
+    have he : 2*(t/2)+1 = t := by omega
+    have hp := hwin (t/2) (by omega) (by omega)
+    have hn := (pair_temps_disjoint _ (preg_mem (t/2))).1
+    simp only [schedule, ht, ite_false]
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_sldoi8, isa,
+      vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+      vdword, Nat.sub_zero, Nat.mul_one, hp, high64_append, low64_append, he,
+      Option.some.injEq, exists_eq_left', ite_true, true_and]
+    refine ⟨fun _ _ _ _ => True.intro, ?_, ?_⟩
+    · intro r hr
+      simp only [hw15 r hr, ite_false]
+    · intro j hj hj'
+      simp only [vpr_writeV, hp15 _ (preg_mem j), ite_false]
+      exact hwin j (by omega) (by omega)
 
 /-! ## The 80 rounds -/
 
@@ -223,55 +400,49 @@ structure RInv (H : HashValue) (M : Block) (scr : Addr) (sB : State) (t : Nat) (
   rd : s.rd = sB.rd
   wr : s.wr = sB.wr
   frame : Frame [winRegion scr] sB.mem s.mem
-  win : ∀ j < t, t ≤ j + 16 → s.mem.readW (slotAddr scr j) 64 = W M j
+  win : PairWin ((t+1)/2) s M
 
+/-- The 80 rounds, with the complete message window in vectors. -/
 theorem rounds_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
-    (hrsi : sB.gpr .r4 = bp) (hrcx : sB.gpr .r6 = scr)
-    (hin : ∀ j, InRegions (sB.rd ++ sB.wr) (slotAddr scr j) 8)
-    (hout : ∀ j, InRegions sB.wr (slotAddr scr j) 8)
-    (hbin : ∀ t : Nat, t < 16 → InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofNat 64 (8 * t)) 8)
-    (hblk : ∀ m, Frame [winRegion scr] sB.mem m →
-      ∀ t : Nat, t < 16 → rev64 (m.readW (bp + BitVec.ofNat 64 (8 * t)) 64) = W M t)
+    (hrsi : sB.gpr .r4 = bp) (_hrcx : sB.gpr .r6 = scr)
+    (_hin : ∀ j, InRegions (sB.rd ++ sB.wr) (slotAddr scr j) 8)
+    (_hout : ∀ j, InRegions sB.wr (slotAddr scr j) 8)
+    (hbin : ∀ t : Nat, t < 16 → InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofNat 64 (8*t)) 8)
+    (hblk : ∀ m, Frame [winRegion scr] sB.mem m → ∀ t : Nat, t < 16 →
+      rev64 (m.readW (bp + BitVec.ofNat 64 (8*t)) 64) = W M t)
     (h0 : Vars 0 sB H) :
     ∀ t ≤ 80, WP isa (rounds t) sB (RInv H M scr sB t) := by
   intro t ht
   induction t with
   | zero =>
-    refine WP.block_nil (M := isa) ⟨?_, fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
-    rw [rounds_zero]; exact h0
+    refine WP.block_nil (M := isa) ⟨?_, fun _ _ => rfl, rfl, rfl, Frame.refl _ _, ?_⟩
+    · rw [rounds_zero]; exact h0
+    · intro j hj _; omega
   | succ t ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
     rw [WP.block_append_iff]
-    have hs_rsi : s.gpr .r4 = bp := (hs.pub .r4 (by decide)).trans hrsi
-    have hs_rcx : s.gpr .r6 = scr := (hs.pub .r6 (by decide)).trans hrcx
-    refine WP.mono (schedule_ok t s M bp scr hs_rsi hs_rcx
-      (by rw [hs.rd, hs.wr]; exact hin) (by rw [hs.wr]; exact hout)
-      (fun h => by rw [hs.rd, hs.wr]; exact hbin t h) (hblk _ hs.frame t)
-      (fun _ => hs.win)) fun s₁ ⟨hT0, hm₁, hrd₁, hwr₁, hr₁, hvr₁⟩ => ?_
+    have hr4 : s.gpr .r4 = bp := (hs.pub .r4 (by decide)).trans hrsi
+    refine WP.mono (schedule_ok t s M bp hr4
+      (fun j hj => by rw [hs.rd, hs.wr]; exact hbin j hj) (hblk _ hs.frame) hs.win)
+      fun s₁ ⟨hT0, hm₁, hrd₁, hwr₁, hr₁, hvr₁, hw₁⟩ => ?_
     have hv₁ : Vars t s₁ (VG.Spec.Sha512.rounds H M t) := by
       have hv := hs.vars
-      have e : ∀ k, s₁.vpr (vvar t k) = s.vpr (vvar t k) := fun k => hvr₁ _ (by
-        unfold vvar List.getD
-        cases h : vwork[(k + 8 - t % 8) % 8]?
-        · simp [vwork]
-        · exact List.mem_of_getElem? h)
+      have e : ∀ k, s₁.vpr (vvar t k) = s.vpr (vvar t k) :=
+        fun k => hvr₁ _ (vvar_mem t k)
       simp only [Vars, e] at hv ⊢
       exact hv
-    refine WP.mono (round_ok t s₁ _ _ hv₁ hT0) fun s₂ ⟨hv₂, hm₂, hrd₂, hwr₂, hr₂⟩ => ?_
-    refine ⟨?_, fun r hr => ?_, by rw [hrd₂, hrd₁, hs.rd], by rw [hwr₂, hwr₁, hs.wr], ?_, ?_⟩
-    · have e : VG.Spec.Sha512.rounds H M (t + 1) =
-          roundKW (VG.Spec.Sha512.rounds H M t) (K t) (W M t) := by
-        rw [rounds_succ, round_eq]
-      rw [e]; exact hv₂
-    · have := pubRegs_ne hr
-      rw [hr₂ r hr, hr₁ r this.1 this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2, hs.pub r hr]
-    · rw [hm₂, hm₁]
-      exact hs.frame.writeW (List.mem_singleton_self _) _ (win_contains scr t)
+    refine WP.mono (round_ok t s₁ _ _ hv₁ hT0)
+      fun s₂ ⟨hv₂, hm₂, hrd₂, hwr₂, hr₂, hp₂⟩ => ?_
+    refine ⟨?_, fun r hr => ?_, by rw [hrd₂, hrd₁, hs.rd],
+      by rw [hwr₂, hwr₁, hs.wr], ?_, ?_⟩
+    · rw [rounds_succ, round_eq]; exact hv₂
+    · have hn : r ≠ T0 ∧ r ≠ T1 ∧ r ≠ .r0 := by
+        have h : ∀ r ∈ pubRegs, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ .r0 := by decide
+        exact h r hr
+      rw [hr₂ r hr, hr₁ r hn.1 hn.2.1 hn.2.2, hs.pub r hr]
+    · rw [hm₂, hm₁]; exact hs.frame
     · intro j hj hj'
-      rw [hm₂, hm₁]
-      by_cases hjt : j = t
-      · subst hjt; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (slot_sep scr (by omega)) (by decide)]
-        exact hs.win j (by omega) (by omega)
+      rw [hp₂ _ (preg_mem j)]
+      exact hw₁ j hj hj'
 
 end VG.Proof.Sha512.PPC64LE
