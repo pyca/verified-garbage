@@ -501,6 +501,12 @@ def main():
     groups = None
     if shards > 1:
         groups = shard_groups(listed, shard, shards)
+    # Focus this temporary measurement branch on representative public APIs.
+    focused = {"aes-128-gcm-encrypt", "aes-128-gcm-tls-seal", "aes-256-gcm-tls-seal", "sm4-gcm-encrypt"}
+    groups = sorted(set(listed) & focused)
+    if set(groups) != focused:
+        raise RuntimeError("focused experiment groups missing from the benchmark registry")
+    print("Focused experiment groups: " + ", ".join(groups), file=sys.stderr)
     # Interleaved, every group is named (base's runs of a benchmark it lacks
     # measure nothing); otherwise, unsharded, each side runs all of its own.
     selected = groups if groups is not None or owner is None else sorted(listed)
