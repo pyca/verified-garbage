@@ -3582,90 +3582,57 @@ bl {vg_mldsa_ntt_positive}
 movz x24, #1, lsl #0
 movz x9, #0, lsl #0
 str x9, [x28, #912]
-movz x0, #6144, lsl #0
+movz x0, #5120, lsl #0
 add x0, x28, x0
-movz x1, #5120, lsl #0
+movz x1, #32768, lsl #0
 add x1, x28, x1
-movz x2, #32768, lsl #0
+movz x2, #16384, lsl #0
 add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #16384, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
+movz x3, #6144, lsl #0
+add x3, x28, x3
+movz x4, #6144, lsl #0
+add x4, x28, x4
+movz x5, #0, lsl #0
+movk x5, #8, lsl #16
+movk x5, #0, lsl #32
+movk x5, #0, lsl #48
+movz x6, #65340, lsl #0
+movk x6, #7, lsl #16
+movk x6, #0, lsl #32
+movk x6, #0, lsl #48
+bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
 cbnz w24, 233f
 b 234f
 233:
-movz x0, #6144, lsl #0
+movz x0, #5120, lsl #0
 add x0, x28, x0
-movz x1, #5120, lsl #0
+movz x1, #34816, lsl #0
 add x1, x28, x1
-movz x2, #33792, lsl #0
+movz x2, #18432, lsl #0
 add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #17408, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
+movz x3, #6144, lsl #0
+add x3, x28, x3
+movz x4, #6144, lsl #0
+add x4, x28, x4
+movz x5, #0, lsl #0
+movk x5, #8, lsl #16
+movk x5, #0, lsl #32
+movk x5, #0, lsl #48
+movz x6, #65340, lsl #0
+movk x6, #7, lsl #16
+movk x6, #0, lsl #32
+movk x6, #0, lsl #48
+bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
 cbnz w24, 235f
 b 236f
 235:
-movz x0, #6144, lsl #0
-add x0, x28, x0
-movz x1, #5120, lsl #0
-add x1, x28, x1
-movz x2, #34816, lsl #0
-add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #18432, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
-and w24, w24, w0
+236:
+234:
 cbnz w24, 237f
 b 238f
 237:
-movz x0, #6144, lsl #0
-add x0, x28, x0
-movz x1, #5120, lsl #0
-add x1, x28, x1
-movz x2, #35840, lsl #0
-add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #19456, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
-and w24, w24, w0
-cbnz w24, 239f
-b 240f
-239:
 movz x0, #6144, lsl #0
 add x0, x28, x0
 movz x1, #5120, lsl #0
@@ -3684,20 +3651,13 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
-cbnz w24, 241f
-b 242f
-241:
-242:
-240:
 238:
-236:
-234:
-cbnz w24, 243f
+cbnz w24, 239f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 244f
-243:
+b 240f
+239:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #37888, lsl #0
@@ -3718,9 +3678,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 245f
-b 246f
-245:
+cbnz w24, 241f
+b 242f
+241:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #39936, lsl #0
@@ -3741,9 +3701,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 247f
-b 248f
-247:
+cbnz w24, 243f
+b 244f
+243:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #41984, lsl #0
@@ -3764,18 +3724,18 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 249f
-b 250f
-249:
-250:
-248:
+cbnz w24, 245f
+b 246f
+245:
 246:
-cbnz w24, 251f
+244:
+242:
+cbnz w24, 247f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 252f
-251:
+b 248f
+247:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #44032, lsl #0
@@ -3852,25 +3812,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #56
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 253f
+cbnz w24, 249f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 254f
-253:
+b 250f
+249:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
-254:
-252:
-244:
+250:
+248:
+240:
 232:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 210b
-cbnz w24, 255f
-b 256f
-255:
+cbnz w24, 251f
+b 252f
+251:
 movz x0, #16384, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -3889,13 +3849,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #48, lsl #0
-257:
+253:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 257b
+cbnz x2, 253b
 movz x0, #16384, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -3968,7 +3928,7 @@ movz x2, #55, lsl #0
 add x3, x23, #3248
 movz x4, #61, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-256:
+252:
 29:
 add x0, x24, #0
 ldr x23, [x28, #840]
@@ -3990,6 +3950,7 @@ ret
         vg_mldsa_dot_inverse5 = sym super::mldsa::vg_mldsa_dot_inverse5,
         vg_mldsa_high_pack4 = sym super::mldsa::vg_mldsa_high_pack4,
         vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
+        vg_mldsa_fused_pair_z = sym super::mldsa::vg_mldsa_fused_pair_z,
         vg_mldsa_multiply_inverse_raw = sym super::mldsa::vg_mldsa_multiply_inverse_raw,
         vg_mldsa_signed_add_norm = sym super::mldsa::vg_mldsa_signed_add_norm,
         vg_mldsa_fused_pair_r0 = sym super::mldsa::vg_mldsa_fused_pair_r0,
@@ -7971,90 +7932,57 @@ bl {vg_mldsa_ntt_positive}
 movz x24, #1, lsl #0
 movz x9, #0, lsl #0
 str x9, [x28, #912]
-movz x0, #6144, lsl #0
+movz x0, #5120, lsl #0
 add x0, x28, x0
-movz x1, #5120, lsl #0
+movz x1, #32768, lsl #0
 add x1, x28, x1
-movz x2, #32768, lsl #0
+movz x2, #16384, lsl #0
 add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #16384, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
+movz x3, #6144, lsl #0
+add x3, x28, x3
+movz x4, #6144, lsl #0
+add x4, x28, x4
+movz x5, #0, lsl #0
+movk x5, #8, lsl #16
+movk x5, #0, lsl #32
+movk x5, #0, lsl #48
+movz x6, #65340, lsl #0
+movk x6, #7, lsl #16
+movk x6, #0, lsl #32
+movk x6, #0, lsl #48
+bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
 cbnz w24, 28f
 b 29f
 28:
-movz x0, #6144, lsl #0
+movz x0, #5120, lsl #0
 add x0, x28, x0
-movz x1, #5120, lsl #0
+movz x1, #34816, lsl #0
 add x1, x28, x1
-movz x2, #33792, lsl #0
+movz x2, #18432, lsl #0
 add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #17408, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
+movz x3, #6144, lsl #0
+add x3, x28, x3
+movz x4, #6144, lsl #0
+add x4, x28, x4
+movz x5, #0, lsl #0
+movk x5, #8, lsl #16
+movk x5, #0, lsl #32
+movk x5, #0, lsl #48
+movz x6, #65340, lsl #0
+movk x6, #7, lsl #16
+movk x6, #0, lsl #32
+movk x6, #0, lsl #48
+bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
 cbnz w24, 210f
 b 211f
 210:
-movz x0, #6144, lsl #0
-add x0, x28, x0
-movz x1, #5120, lsl #0
-add x1, x28, x1
-movz x2, #34816, lsl #0
-add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #18432, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
-and w24, w24, w0
+211:
+29:
 cbnz w24, 212f
 b 213f
 212:
-movz x0, #6144, lsl #0
-add x0, x28, x0
-movz x1, #5120, lsl #0
-add x1, x28, x1
-movz x2, #35840, lsl #0
-add x2, x28, x2
-add x3, x28, #3072
-bl {vg_mldsa_multiply_inverse_raw}
-movz x0, #19456, lsl #0
-add x0, x28, x0
-movz x1, #6144, lsl #0
-add x1, x28, x1
-movz x2, #65340, lsl #0
-movk x2, #7, lsl #16
-movk x2, #0, lsl #32
-movk x2, #0, lsl #48
-bl {vg_mldsa_signed_add_norm}
-and w24, w24, w0
-cbnz w24, 214f
-b 215f
-214:
 movz x0, #6144, lsl #0
 add x0, x28, x0
 movz x1, #5120, lsl #0
@@ -8073,20 +8001,13 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
-cbnz w24, 216f
-b 217f
-216:
-217:
-215:
 213:
-211:
-29:
-cbnz w24, 218f
+cbnz w24, 214f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 219f
-218:
+b 215f
+214:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #37888, lsl #0
@@ -8107,9 +8028,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 220f
-b 221f
-220:
+cbnz w24, 216f
+b 217f
+216:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #39936, lsl #0
@@ -8130,9 +8051,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 222f
-b 223f
-222:
+cbnz w24, 218f
+b 219f
+218:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #41984, lsl #0
@@ -8153,18 +8074,18 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 224f
-b 225f
-224:
-225:
-223:
+cbnz w24, 220f
+b 221f
+220:
 221:
-cbnz w24, 226f
+219:
+217:
+cbnz w24, 222f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 227f
-226:
+b 223f
+222:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #44032, lsl #0
@@ -8241,25 +8162,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #56
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 228f
+cbnz w24, 224f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 229f
-228:
+b 225f
+224:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
-229:
-227:
-219:
+225:
+223:
+215:
 27:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 230f
-b 231f
-230:
+cbnz w24, 226f
+b 227f
+226:
 movz x0, #16384, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -8278,13 +8199,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #48, lsl #0
-232:
+228:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 232b
+cbnz x2, 228b
 movz x0, #16384, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -8357,7 +8278,7 @@ movz x2, #55, lsl #0
 add x3, x23, #3248
 movz x4, #61, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-231:
+227:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]
@@ -8384,6 +8305,7 @@ ret
         vg_mldsa_high_pack4 = sym super::mldsa::vg_mldsa_high_pack4,
         vg_mldsa_commit_tail65 = sym super::mldsa::vg_mldsa_commit_tail65,
         vg_mldsa_sample_in_ball_sha3 = sym super::mldsa::vg_mldsa_sample_in_ball_sha3,
+        vg_mldsa_fused_pair_z = sym super::mldsa::vg_mldsa_fused_pair_z,
         vg_mldsa_multiply_inverse_raw = sym super::mldsa::vg_mldsa_multiply_inverse_raw,
         vg_mldsa_signed_add_norm = sym super::mldsa::vg_mldsa_signed_add_norm,
         vg_mldsa_fused_pair_r0 = sym super::mldsa::vg_mldsa_fused_pair_r0,
