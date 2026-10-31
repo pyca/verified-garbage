@@ -28,8 +28,8 @@ It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 job's matrix (`rust=`, `thumb=`, `cpu=`): the JSON list of its entries,
 each with `tests`, and each CPU with shards as one entry per shard. Each
 `rust` entry also has `bench`: whether the Benchmarks workflow measures its
-architecture (ci/bench_arches.py's `PLATFORMS`), for which a push to main
-caches the benchmarks' dependencies. `lint=` is the JSON list of the targets
+architecture in the same container (ci/bench_arches.py's `PLATFORMS`),
+for which a push to main caches the benchmarks' dependencies. `lint=` is the JSON list of the targets
 `rust-lint` lints (ci/rust_lint.py): those of the architectures tested, or
 every one when the benchmarks changed, or on a push to main (for its
 caches).
@@ -164,7 +164,9 @@ def output(matrix, selected, tests=True, bench=False):
         keep = [dict(e, tests=tests) for e in entries(matrix, job)
                 if not tests or arch_of(e) in selected]
         if job == "rust":
-            keep = [dict(e, bench=arch_of(e) in bench_arches.PLATFORMS) for e in keep]
+            keep = [dict(e, bench=arch_of(e) in bench_arches.PLATFORMS and
+                              bench_arches.PLATFORMS[arch_of(e)].get("image", "") ==
+                              e.get("container", {}).get("image", "")) for e in keep]
         if not tests and job == "cpu":
             first = {}
             for e in keep:
