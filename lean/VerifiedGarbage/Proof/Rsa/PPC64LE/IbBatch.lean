@@ -345,4 +345,66 @@ theorem update_ok {s : State} {B : Addr} {Z w N n c p iv cap : Nat} {st : Divste
   · rw [keep_val K8 hk (by decide) (by simp) (fit _ nA), e7, Divstep.W32.batch_a]
   · rw [e8, Divstep.W32.batch_b]
 
+/-! ## A batch -/
+
+theorem dec_eq {n c : Nat} (hn : n < 2 ^ 15) (hc : c < 2 ^ 40) :
+    BitVec.ofNat 64 (n + 32768 * (c + 1)) - BitVec.ofNat 64 32768 = BitVec.ofNat 64 (n + 32768 * c) ∧
+      (BitVec.ofNat 64 (n + 32768 * c) >>> 15).toNat = c := by
+  refine ⟨BitVec.eq_of_toNat_eq ?_, ?_⟩
+  · rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+  · rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega
+
+/-- A batch: the next state, and the count of the batches left, `c`, in `r10`
+and whether it is zero in `r3`. -/
+theorem batch_ok {s : State} {B : Addr} {Z w N n c p iv cap : Nat} {st : Divstep.W32.IState}
+    (h : Ctx s B Z w N n (c + 1)) (hst : StateAt s B w n p iv st) (hN : N ≤ 256)
+    (hd : |st.d| + 60 < 2 ^ 62) (hodd : st.f % 2 = 1) (hfc : |st.f| ≤ cap) (hgc : |st.g| ≤ cap)
+    (hcap : cap < 2 ^ (32 * n + 1)) (ha0 : 0 ≤ st.a) (ha1 : st.a < p) (hb0 : 0 ≤ st.b) (hb1 : st.b < p)
+    (hpA : p < 2 ^ (32 * n)) (hp0 : 0 < p) (hinv : (p * iv + 1) % 2 ^ 32 = 0) :
+    WP isa batch s fun t => Ctx t B Z w N n c ∧ StateAt t B w n p iv (Divstep.W32.batch 30 p iv st) ∧
+      ((t.gpr .r3).toNat ≠ 0 ↔ c ≠ 0) ∧
+      KeyWorkspace.Keep B w [aF, aG, aA, aB, aT1, aT2, aT3, aW] [] s.mem t.mem ∧ Keep (.r10 :: kRegs) s t := by
+  have room := h.room
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.wbig
+  have hnw := h.ws.nowrap
+  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
+  have nW : aW < N := by unfold aW; omega
+  have nM : aMz < N := by unfold aMz; omega
+  have nF : aF < N := by unfold aF; omega
+  have nG : aG < N := by unfold aG; omega
+  have nA : aA < N := by unfold aA; omega
+  have nB : aB < N := by unfold aB; omega
+  have hk : n + 1 ≤ w + 2 := by have := h.nw; omega
+  simp only [batch, seqs]
+  rw [WP.seq_iff]
+  refine WP.mono (head_ok h hst hN hd hodd) fun t1 ⟨h1, K1, out1, d1, u1, v1, q1, r1, k1⟩ => ?_
+  have fW := fit _ nW
+  have iv1 : (t1.mem.readW (off B (arr w aW + wIv)) 64).toNat = iv := by
+    rw [Outside.readW64 out1 (by unfold wIv; omega) (by unfold wIv; omega)]; exact hst.iv
+  rw [WP.seq_iff]
+  refine WP.mono (update_ok h1 hN (cap := cap)
+    (by rw [keep_sv K1 (by omega) (by decide) (by simp) (fit _ nF)]; exact hst.f)
+    (by rw [keep_sv K1 (by omega) (by decide) (by simp) (fit _ nG)]; exact hst.g)
+    (by rw [keep_val K1 hk (by decide) (by simp) (fit _ nA)]; exact hst.a)
+    (by rw [keep_val K1 hk (by decide) (by simp) (fit _ nB)]; exact hst.b)
+    (by rw [keep_val K1 hk (by decide) (by simp) (fit _ nM)]; exact hst.p) iv1 u1 v1 q1 r1
+    hodd hfc hgc hcap ha0 ha1 hb0 hb1 hpA hp0 hinv) fun t2 ⟨h2, K2, ef, eg, ea, eb, k2⟩ => ?_
+  have wd : ∀ o, o + 8 ≤ 48 → t2.mem.readW (off B (arr w aW + o)) 64 = t1.mem.readW (off B (arr w aW + o)) 64 :=
+    fun o ho => keep_word K2 (by omega) (by decide) (by simp) (fit _ nW)
+  refine WP.mono (WP.keep [.r3, .r10] (Q := fun u => u.gpr .r10 = BitVec.ofNat 64 (n + 2 ^ 15 * c) ∧
+      (u.gpr .r3).toNat = c ∧ u.mem = t2.mem) ?_ (by decide)) fun t3 ⟨⟨r10, r3, m3⟩, k3⟩ => ?_
+  · have e := dec_eq (c := c) h2.nlt (by have := h.cb; omega)
+    prun [h2.r10]
+    rw [e.1]
+    exact ⟨rfl, e.2⟩
+  have k : Keep (.r10 :: kRegs) s t3 := ((k1.trans' k2).mono (by decide)).trans' (k3.mono (by decide))
+  refine ⟨⟨h2.ws.of_keep k3, r10, h.npos, h.nw, h.room, by have := h.cb; omega, h.wbig⟩,
+    ⟨by rw [m3]; exact ef, by rw [m3]; exact eg, by rw [m3]; exact ea, by rw [m3]; exact eb, ?_, ?_, ?_⟩,
+    by rw [r3], by rw [m3]; exact (K1.mono (by simp)).trans (K2.mono (by simp)), k⟩
+  · rw [m3, wd _ (by decide), d1, Divstep.W32.batch_d]
+  · rw [m3, wd _ (by decide)]; exact iv1
+  · rw [m3, keep_val K2 hk (by decide) (by simp) (fit _ nM), keep_val K1 hk (by decide) (by simp) (fit _ nM)]
+    exact hst.p
+
 end VG.Proof.Rsa.PPC64LE.InvBatch
