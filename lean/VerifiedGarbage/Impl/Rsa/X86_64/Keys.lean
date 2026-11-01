@@ -235,6 +235,21 @@ def oMi : Nat := 80
 /-- A word of the window. -/
 def wm (d : Nat) : MemOp := { base := .rdi, disp := d }
 
+/-- `r12 := w` from the stride in `r9` (`8 (w + 2)`), rather than from the
+header as `ws` does: the inverse reads no memory for its counts, so a single
+check of its taint covers it. -/
+def wsR : List Instr := [.mov .r12 (.reg .r9), .shift .shr .r12 3, .alu .sub .r12 (.imm 2)]
+
+/-- `zeroA`, with `wsR`. -/
+def zeroI (j : Nat) : Prog isa := .seq (.block (wsR ++ base j .r8)) zeroAccLoop
+
+/-- `copyA`, with `wsR`. -/
+def copyI (o a : Nat) : Prog isa := .seq (.block (wsR ++ base a .rsi ++ base o .rbx)) copyWords
+
+/-- `setOneA`, with `wsR`. -/
+def setOneI (j : Nat) : List Instr :=
+  wsR ++ base j .rbx ++ ([.mov32 .rax (.imm 1), .store (at0 .rbx) .rax] : List Instr)
+
 /-- `r := rdi + k r9`: array `16 + k`'s base, from the window's. -/
 def wa (k : Nat) (r : Reg) : List Instr :=
   ([.mov r (.reg .rdi)] : List Instr) ++ List.replicate k (.alu .add r (.reg .r9))
@@ -243,7 +258,7 @@ def wa (k : Nat) (r : Reg) : List Instr :=
 
 /-- `g := a + (m if a is even)` over `w + 1` words, from `a` in `aT` and `m` in `aP`. -/
 def gInit : List (Prog isa) := [
-  .block (ws ++ base aT .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .alu .sub .rax (.imm 1),
+  .block (wsR ++ base aT .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .alu .sub .rax (.imm 1),
     .mov .r15 (.reg .rax), .alu .add .r12 (.imm 1), .mov32 .rbp (.imm 0)] : List Instr) ++ base aG .rbx ++
     base aP .r10),
   wordLoop 0 addMBody]
@@ -251,7 +266,7 @@ def gInit : List (Prog isa) := [
 /-- `d = 1` and `-m⁻¹ mod 2^64` into the window, `r15 := n`, the count of
 batches `3 n + 2` into `rsi`, and `rdi` to the window. -/
 def setup : List Instr :=
-  ws ++ base aP .r8 ++ ([.mov .rbx (.mem (at0 .r8))] : List Instr) ++ minv ++ base aWin .r8 ++
+  wsR ++ base aP .r8 ++ ([.mov .rbx (.mem (at0 .r8))] : List Instr) ++ minv ++ base aWin .r8 ++
   ([.store { base := .r8, disp := oMi } .r15, .mov32 .rax (.imm 1), .store { base := .r8, disp := oD } .rax,
     .mov .r15 (.reg .r13), .mov .rsi (.reg .r13), .alu .add .rsi (.reg .r13), .alu .add .rsi (.reg .r13),
     .alu .add .rsi (.imm 2)] : List Instr) ++ base aWin .rdi
@@ -259,15 +274,15 @@ def setup : List Instr :=
 /-- `m`'s low bit set in `aP`: an odd modulus for the batches whatever `m` is
 (`m` itself when it is odd). -/
 def setOdd : List Instr :=
-  ws ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .shift .shr .rax 1, .alu .add .rax (.reg .rax),
+  wsR ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .shift .shr .rax 1, .alu .add .rax (.reg .rax),
     .alu .add .rax (.imm 1), .store (at0 .r8) .rax] : List Instr)
 
 /-- The start: the arrays zeroed, `m` into `aP` (made odd) and `f`, `a` into
 `aT`, `g`, `(a, b) = (0, 1)`, then `setup`. -/
 def start (iU iM : Nat) : List (Prog isa) :=
-  [zeroA aF, zeroA aG, zeroA aA, zeroA aB, zeroA aT, zeroA aS, zeroA aP, copyA aP iM, .block setOdd, copyA aF aP,
-    copyA aT iU] ++
-  gInit ++ [.block (setOneA aB), .block setup]
+  [zeroI aF, zeroI aG, zeroI aA, zeroI aB, zeroI aT, zeroI aS, zeroI aP, copyI aP iM, .block setOdd, copyI aF aP,
+    copyI aT iU] ++
+  gInit ++ [.block (setOneI aB), .block setup]
 
 /-! ### A batch (`rdi` the window, `r9` the stride, `r15` `n`) -/
 
@@ -385,7 +400,7 @@ it), `t := m - t` if `f < 0`, `5 B` doublings and a last subtraction, so
 `-f` if `f < 0`), so its words above `n` are zero; then `[v] = |f|` and
 `[x₂] = t`. -/
 def finish (iV iX₂ : Nat) : List (Prog isa) := [
-  .block unwin, zeroA aT,
+  .block unwin, zeroI aT,
   .block (countN ++ base aA .r8 ++ ([.mov .rax (.mem (ix .r8 .r13)), .shift .shr .rax 63, .mov32 .r15 (.imm 0),
     .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base aT .rbx ++ base aP .r10),
   wordLoop 0 addMBody] ++ csubT ++ [
@@ -393,12 +408,12 @@ def finish (iV iX₂ : Nat) : List (Prog isa) := [
   .block (nonNeg aF ++ base aT .r8 ++ base aS .rsi), wordLoop 0 selBody,
   .block [.mov .r11 (.reg .r13), .shift .shl .r11 4, .alu .sub .r11 (.reg .r13), .alu .add .r11 (.imm 10)],
   .loop dbl .ne] ++ csubT ++ [
-  zeroA aA,
+  zeroI aA,
   .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
   wordLoop 0 subBody,
   .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
   .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
-  copyA iV aA, copyA iX₂ aT]
+  copyI iV aA, copyI iX₂ aT]
 
 end Inv
 

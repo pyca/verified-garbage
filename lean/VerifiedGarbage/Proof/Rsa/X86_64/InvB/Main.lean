@@ -71,7 +71,7 @@ theorem finish_eq (iV iX₂ : Nat) : finish iV iX₂ = fin1L ++ fin2L ++ fin3L i
 /-- The inverse at the width `n` in `r13`: from `a` in `[u]` and `m` in `[m]`, both below
 `2^(64 n)`, `[v] = gcd(a, m)`, `m ∣ [x₂] a - [v]` and `[x₂] < m` for an odd `m`. -/
 theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws s B Z w) (hZ : slot w 26 ≤ Z)
-    (h13 : s.gpr .r13 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hnw : n ≤ w) (hn20 : n < 2 ^ 20)
+    (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))) (h13 : s.gpr .r13 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hnw : n ≤ w) (hn20 : n < 2 ^ 20)
     (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16) (hVX : iV ≠ iX₂)
     (hu : wv s.mem B (slot w iU) w < 2 ^ (64 * n)) (hm : wv s.mem B (slot w iM) w < 2 ^ (64 * n)) :
     WP isa (inverseN iU iV iX₂ iM) s fun t => t.gpr .rdi = B ∧
@@ -96,7 +96,7 @@ theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws 
   rw [finish_eq, show start iU iM ++ [.loop batch .ne] ++ (fin1L ++ fin2L ++ fin3L iV iX₂) =
     start iU iM ++ ([.loop batch .ne] ++ (fin1L ++ (fin2L ++ fin3L iV iX₂))) by simp only [List.append_assoc],
     seqs_append_iff _ _ (by simp [start]) (by simp)]
-  refine WP.mono (start_ok h hZ h13 hn1 hnw hU hM (by rw [hu']; exact hu) (by rw [hm']; exact hm))
+  refine WP.mono (start_ok h hZ h9 h13 hn1 hnw hU hM (by rw [hu']; exact hu) (by rw [hm']; exact hm))
     fun s₁ ⟨mi, hb₁, hmi, hP₁, hrsi₁, F₁, k₁⟩ => ?_
   rw [hu', hm', hp, hx] at hb₁
   rw [hm', hp] at hmi hP₁
@@ -179,12 +179,12 @@ theorem inverse_ok {s : State} {B : Addr} {Z w iU iV iX₂ iM : Nat} (h : Ws s B
           (wv t.mem B (slot w iX₂) w : Int) * wv s.mem B (slot w iU) w - wv t.mem B (slot w iV) w ∧
         wv t.mem B (slot w iX₂) w < wv s.mem B (slot w iM) w) := by
   unfold inverse
-  refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨h12, _, m₁, k₁⟩ => ?_))
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨h12, h9₁, m₁, k₁⟩ => ?_))
   refine WP.mono (WP.keep [.r13] (Q := fun t => t.gpr .r13 = BitVec.ofNat 64 w ∧ t.mem = s₁.mem) (by xrun [h12]) rfl)
     fun s₂ ⟨⟨r13₂, m₂⟩, k₂⟩ => ?_
   have hm : s₂.mem = s.mem := by rw [m₂, m₁]
   have h₂ : Ws s₂ B Z w := h.congr (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k₁.trans k₂) (by decide)
-  refine WP.mono (inverseN_ok h₂ hZ r13₂ (by have := h.w1; omega) (Nat.le_refl _) hw20 hU hV hX hM hVX (wv_lt _ _ _ _) (wv_lt _ _ _ _))
+  refine WP.mono (inverseN_ok h₂ hZ ((k₂.gpr (by decide)).trans h9₁) r13₂ (by have := h.w1; omega) (Nat.le_refl _) hw20 hU hV hX hM hVX (wv_lt _ _ _ _) (wv_lt _ _ _ _))
     fun t ⟨dt, ft, kt, ht⟩ => ⟨dt, by rw [← hm]; exact ft, ((k₁.trans k₂).trans kt).mono (by decide), by
       rw [← hm]; exact ht⟩
 

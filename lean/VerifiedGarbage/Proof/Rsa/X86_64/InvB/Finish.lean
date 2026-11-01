@@ -128,7 +128,7 @@ theorem fin1Blk_ok {s : State} {B : Addr} {Z w n : Nat} (h : FS B Z w n s) {a : 
       bx, b10, by rw [mt, m₃], (((k₁.trans k₂).trans k₃).trans kt).mono (by decide)⟩
 
 /-- The end's first part. -/
-def fin1L : List (Prog isa) := [.block unwin, zeroA aT,
+def fin1L : List (Prog isa) := [.block unwin, zeroI aT,
   .block (countN ++ base aA .r8 ++ ([.mov .rax (.mem (ix .r8 .r13)), .shift .shr .rax 63, .mov32 .r15 (.imm 0),
     .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base aT .rbx ++ base aP .r10),
   wordLoop 0 addMBody] ++ csubT
@@ -171,7 +171,7 @@ theorem fin1_ok {s₀ s : State} {B : Addr} {Z w n p mi : Nat} {I : Divstep.ISta
   have h₁ : FS B Z w n s₁ := ⟨Ws.of_frm h0 (by rw [m₁]; exact hF) (hb.scr.congr k₁.2.2) di₁, hZ,
     (k₁.gpr (by decide)).trans hb.r9, r13₁, hn1, hnw⟩
   -- `t := 0`.
-  refine WP.seq (WP.mono (zeroAI_ok h₁.ws hZ (j := aT) (by decide)) fun s₂ ⟨zT₂, o₂, r9₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₁.ws hZ h₁.r9 (j := aT) (by decide)) fun s₂ ⟨zT₂, o₂, r9₂, k₂⟩ => ?_)
   have h₂ : FS B Z w n s₂ := ⟨wsOut h₁.ws o₂ k₂ (by decide), hZ, r9₂, (k₂.gpr (by decide)).trans r13₁, hn1, hnw⟩
   have zT := h₁.sl (show aT < 26 by decide)
   have tA : wv s₂.mem B (slot w aA) (n + 1) = wv s.mem B (slot w aA) (n + 1) := by
@@ -409,12 +409,12 @@ theorem countN_ok {s : State} {n : Nat} (h13 : s.gpr .r13 = BitVec.ofNat 64 n) :
     fun t ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
 
 /-- The end's last part. -/
-def fin3L (iV iX₂ : Nat) : List (Prog isa) := [zeroA aA,
+def fin3L (iV iX₂ : Nat) : List (Prog isa) := [zeroI aA,
   .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
   wordLoop 0 subBody,
   .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
   .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
-  copyA iV aA, copyA iX₂ aT]
+  copyI iV aA, copyI iX₂ aT]
 
 /-- `[v] = |f|` and `[x₂] = t`. -/
 theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w n s) {iV iX₂ : Nat}
@@ -453,7 +453,7 @@ theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w
   unfold fin3L
   simp only [seqs]
   -- `a := 0`.
-  refine WP.seq (WP.mono (zeroAI_ok h.ws hZ (j := aA) (by decide)) fun s₁ ⟨zA₁, o₁, r9₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h.ws hZ h.r9 (j := aA) (by decide)) fun s₁ ⟨zA₁, o₁, r9₁, k₁⟩ => ?_)
   have h₁ : FS B Z w n s₁ := ⟨wsOut h.ws o₁ k₁ (by decide), hZ, r9₁, (k₁.gpr (by decide)).trans h.r13, hn1, hnw⟩
   have F₁ : wv s₁.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) := by
     rw [o₁.wv (Or.inl (by omega)) (by omega)]
@@ -524,12 +524,12 @@ theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w
   have Tw : wv s₅.mem B (slot w aT) w = x :=
     wv_lowK (by rw [T₅, hZT.wv_eq (by omega), hT]) hxw (by omega)
   -- The copies.
-  refine WP.seq (WP.mono (copyAI_ok h₅.ws hZ (o := iV) (a := aA) (by omega) (by decide) (by unfold aA; omega))
+  refine WP.seq (WP.mono (copyAI_ok h₅.ws hZ h₅.r9 (o := iV) (a := aA) (by omega) (by decide) (by unfold aA; omega))
     fun s₆ ⟨v₆, o₆, k₆⟩ => ?_)
   have sVA := slot_far (w := w) (show iV ≠ aT by unfold aT; omega)
   have sVX := slot_far (w := w) hVX
   have sXA := slot_far (w := w) (show iX₂ ≠ aT by unfold aT; omega)
-  refine WP.mono (copyAI_ok (wsOut h₅.ws o₆ k₆ (by decide)) hZ (o := iX₂) (a := aT) (by omega) (by decide)
+  refine WP.mono (copyAI_ok (wsOut h₅.ws o₆ k₆ (by decide)) hZ ((k₆.gpr (by decide)).trans h₅.r9) (o := iX₂) (a := aT) (by omega) (by decide)
     (by unfold aT; omega)) fun t ⟨v₇, o₇, k₇⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
   · exact ((((((k₁.trans k23).trans k₄).trans k₅).trans k₆).trans k₇).gpr (by decide)).trans h.ws.rdi
   · rw [o₇.wv (by omega) (by omega), v₆, Aw]
