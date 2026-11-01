@@ -13,7 +13,8 @@ pub const USES: &[&str] = &["sm4_cfb", "sm4"];
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -73,6 +74,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
