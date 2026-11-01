@@ -35,11 +35,12 @@ libraries, Lake's checkouts of the dependencies, but not the dependencies'
 executables) to `.lake/ltar/files.tar.gz`, then, as `bundle` does, a tar
 of the archives with `files.tar` (decompressed) first, to stdout.
 
-It packs with `leantar-batch` (`--leantar`), the release of reaperhulk/leangz
-that `ci/leantar_release.py` downloads (`.github/actions/leantar`), which
-packs every module in one process at zstd level `--level` (default 5); the
-toolchain's own `leantar` takes half a CPU-second for each module. `restore`
-unpacks with it too, in a third of the toolchain's CPU time.
+Every command packs and unpacks with the project's leantar (`--leantar` for
+another): the release of reaperhulk/leangz that `ci/leantar_release.py`
+downloads once, which packs every module in one process at zstd level
+`--level` (default 5), where the toolchain's own `leantar` takes half a
+CPU-second for each module, and unpacks in a third of its CPU time. The
+archives' format is the toolchain's, Lake's `ltar` facet's.
 
 `store` does the same but for the tar to stdout, so that `.lake/ltar`
 alone holds the build: CI's Actions cache keeps it, and each job that
@@ -66,7 +67,7 @@ and all indexed archives. It leaves both source caches unchanged.
 extracts `files.tar` in the background, as `restore` does: its files are
 most of the files, each small, and `tarfile` would create them one at a
 time, as long as `leantar` takes for all the archives. The archives go to
-the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
+`leantar` in batches of `--batch` bytes, each unpacked while
 the next arrives. The outputs come out byte for byte as they were packed;
 the `.trace` keeps what Lake needs (the dependency hash and the outputs'
 hashes), without the build's messages or the record of its inputs that
@@ -76,9 +77,8 @@ Lake writes only for people to read. The messages, with the profile
 
 `restore --empty-private` and `unpack --empty-private` write each module's
 `.olean.private` (but the trusted base's) as an empty file, half of what
-unpacking writes: nothing that imports a module as a module reads it. It
-needs the release's leantar (`ci/leantar_release.py`), which `unpack` then
-downloads (once) unless given `--leantar`. `unpack` keeps the archives of the
+unpacking writes: nothing that imports a module as a module reads it (the
+toolchain's `leantar` has no such option). `unpack` keeps the archives of the
 project's modules (`KEPT`), from which `fill-private` writes the private parts
 a tool reads (`lake shake`, a file that is not a module, an `import all`) when
 it needs them: `check_lean_public_imports.py` and `lit_imports.py` run it
@@ -126,11 +126,9 @@ INDEX = "index.json"
 LOGS = "logs.json.gz"
 
 
-def leantar(lean):
-    """The `leantar` of the project's toolchain, next to its `lean`."""
-    prefix = subprocess.run(["lean", "--print-prefix"], cwd=lean, check=True,
-                            capture_output=True, text=True).stdout.strip()
-    return Path(prefix) / "bin" / "leantar"
+def leantar(tool=None):
+    """`tool`, or the project's leantar (`ci/leantar_release.py`)."""
+    return tool or str(leantar_release.fetch())
 
 
 def build_dirs(lean, roots):
@@ -278,7 +276,7 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
     (ltars / INDEX).unlink(missing_ok=True)
     (ltars / LOGS).unlink(missing_ok=True)
     if tasks:
-        subprocess.run([tool, "--jobs", str(jobs), "--level", str(level), "-p", "-"], cwd=lean,
+        subprocess.run([leantar(tool), "--jobs", str(jobs), "--level", str(level), "-p", "-"], cwd=lean,
                        input=json.dumps(tasks).encode(), check=True)
     # The archives of modules that no longer exist.
     removed = 0
@@ -494,7 +492,7 @@ def fill_private(lean, modules, tool=None, jobs=None):
         out = Path(tmp)
         records = [{"file": str(archive), "base": [str(out / "lib/lean"), str(out / "ir")]}
                    for _, archive, _ in found]
-        subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs or os.cpu_count()),
+        subprocess.run([leantar(tool), "-f", "--jobs", str(jobs or os.cpu_count()),
                         "-x", "-j", "-"], cwd=lean, input=json.dumps(records).encode(), check=True)
         for rel, _, private in found:
             os.replace(out / "lib/lean" / (str(rel) + ".olean.private"), private)
@@ -537,7 +535,7 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None, empty
             if batch:
                 # `-f`: a trace already there (from a build of other sources) would
                 # otherwise keep that build's outputs.
-                subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs), "-x"] +
+                subprocess.run([leantar(tool), "-f", "--jobs", str(jobs), "-x"] +
                                (["--empty-private"] if empty else []) + ["-j", "-"],
                                cwd=lean, input=json.dumps(batch).encode(), check=True)
     finally:
@@ -585,10 +583,8 @@ def build_of(rel):
 
 
 def unpack(lean, jobs, tmp, batch, tool, stream, logs=False, empty_private=False):
-    """With `empty_private`, as `restore`'s: it needs a leantar with
-    `--empty-private` (`ci/leantar_release.py`, its default then)."""
-    if tool is None:
-        tool = str(leantar_release.fetch()) if empty_private else str(leantar(lean))
+    """With `empty_private`, as `restore`'s."""
+    tool = leantar(tool)
     stage = Path(tempfile.mkdtemp(prefix="lean-cache-", dir=tmp))
     # Another restore's archives would not be this build's.
     shutil.rmtree(lean / KEPT, ignore_errors=True)
@@ -696,8 +692,7 @@ def main(argv=None):
     st.add_argument("roots", nargs="+", type=Path, help="directories to store, relative to it")
     r = sub.add_parser("restore", help="restore what `store` stored, keeping `.lake/ltar`")
     r.add_argument("lean", type=Path, help="the Lean project (lean/)")
-    r.add_argument("--leantar", default="leantar-batch",
-                   help="the leantar to unpack with (default: leantar-batch)")
+    r.add_argument("--leantar", help="the leantar to unpack with (default: the project's)")
     only = r.add_mutually_exclusive_group()
     only.add_argument("--modules", type=Path,
                       help="a file of modules: unpack only their archives (and every package's)")
@@ -710,13 +705,12 @@ def main(argv=None):
     fp.add_argument("lean", type=Path, help="the Lean project (lean/)")
     fp.add_argument("modules", nargs="+",
                     help="module names, or files (`.lean`, e.g. a script `lake env lean` runs) whose imports")
-    fp.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
+    fp.add_argument("--leantar", help="the leantar to unpack with (default: the project's)")
     u = sub.add_parser("unpack", help="extract a tar of `pack` from stdin")
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
                    help="bytes of archives to stage before unpacking them (default: 256 MiB)")
-    u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's, or with "
-                   "--empty-private the release ci/leantar_release.py downloads)")
+    u.add_argument("--leantar", help="the leantar to unpack with (default: the project's)")
     u.add_argument("--empty-private", action="store_true",
                    help="as restore's, keeping the project's archives for fill-private")
     u.add_argument("--logs", action="store_true",
@@ -728,8 +722,7 @@ def main(argv=None):
                        help="archive directory relative to lean (default: .lake/ltar)")
     for q in (p, st):
         q.add_argument("--level", type=int, default=5, help="zstd level (default: 5)")
-        q.add_argument("--leantar", default="leantar-batch",
-                       help="a leantar with `-p` (default: leantar-batch)")
+        q.add_argument("--leantar", help="a leantar with `-p` (default: the project's)")
     for q in (p, st, r, u):
         q.add_argument("--jobs", type=int, default=os.cpu_count())
     args = parser.parse_args(argv)

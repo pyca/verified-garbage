@@ -5,9 +5,9 @@ description: >
   then installs Mathlib (`lean-setup`, `lean-mathlib`). Every job that
   builds the proofs starts with it, after checking out the repository. The
   cache holds `lean/.lake/ltar`, a module archive per module
-  (`ci/lean_cache.py store`), which it unpacks with `leantar-batch` (the
-  `leantar` action, which puts it on PATH for the rest of the job: the
-  restores here and `lean-assemble`'s `store`) while Lean installs.
+  (`ci/lean_cache.py store`), which it unpacks with the project's leantar
+  (the `leantar` action downloads it, for the rest of the job: the restores
+  here and `lean-assemble`'s `store`) while Lean installs.
 
 inputs:
   key:
@@ -135,7 +135,7 @@ runs:
         path: lean/.lake/ltar
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}
-    # With `leantar-batch`, not the toolchain's, so while Lean installs
+    # With the project's leantar, not the toolchain's, so while Lean installs
     # (`lean-setup` waits for it). The archives stay, for the next `store`
     # (lean-assemble).
     - name: Unpack this project's build

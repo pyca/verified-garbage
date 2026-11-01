@@ -117,8 +117,8 @@ runs:
       working-directory: lean
       run: find .lake/build/ir -name '*.setup.json' -delete
     # The build's module archives, packing only the modules whose outputs
-    # changed since the archives `lean-prepare` restored (with the
-    # `leantar-batch` it put on PATH).
+    # changed since the archives `lean-prepare` restored (with the project's
+    # leantar, which it downloaded).
     - name: Store this project's build
       if: ${{ steps.manifest.outcome == 'success' }}
       shell: bash

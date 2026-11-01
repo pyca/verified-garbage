@@ -8,7 +8,7 @@ before compiling proofs; see [Restoring the CI build cache](lean/README.md#resto
 The README streams it straight from the registry API with
 `ci/fetch_lean_cache.py`, which resumes a dropped connection, into
 `ci/lean_cache.py unpack`, which unpacks its per-module archives with the
-toolchain's `leantar` (install the toolchain first); it needs the `zstd`
+project's `leantar`, which it downloads once (`ci/leantar_release.py`); it needs the `zstd`
 command to decompress the stream: install it (`apt-get install zstd`,
 `brew install zstd`), and only where you cannot, `pip install zstandard` and
 use the README's Python one-liner.

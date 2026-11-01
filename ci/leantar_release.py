@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """The project's `leantar`, from a release of reaperhulk/leangz.
 
-  python3 ci/leantar_release.py                 # prints its path, downloading it once
-  python3 ci/leantar_release.py --install DEST  # copies it to DEST (CI's `leantar-batch`)
+  python3 ci/leantar_release.py   # prints its path, downloading it once
 
 leangz, the toolchain's compressor for Lake's per-module `.ltar` archives, with
 what this project needs and digama0/leangz does not have yet: a faster unpack
@@ -10,6 +9,7 @@ what this project needs and digama0/leangz does not have yet: a faster unpack
 build's 16,000 modules in one process, and `--level`, digama0/leangz#13), and
 `-x --empty-private` (each module's `.olean.private` written as an empty file;
 `ci/lean_cache.py restore --empty-private` and `unpack --empty-private`).
+`ci/lean_cache.py` packs and unpacks with it.
 
 The fork's release workflow builds it for each platform and attaches the
 archives to the release, with their `SHA256SUMS`. `ci/leantar/release.toml`
@@ -23,7 +23,6 @@ import hashlib
 import io
 import os
 import platform
-import shutil
 import sys
 import tarfile
 import tempfile
@@ -96,15 +95,8 @@ def fetch(rel=None, plat=None, cache=None, opener=urllib.request.urlopen):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--install", type=Path, metavar="DEST", help="copy it to DEST")
-    args = p.parse_args(argv)
-    path = fetch()
-    if args.install:
-        args.install.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, args.install)
-        path = args.install
-    print(path)
+    argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args(argv)
+    print(fetch())
 
 
 if __name__ == "__main__":

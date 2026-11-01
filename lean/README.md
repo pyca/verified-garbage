@@ -346,9 +346,12 @@ Restore it with `ci/fetch_lean_cache.py`, which streams the layer straight
 from the registry API with an anonymous pull token, resumes from where it
 stopped when the connection drops, and checks the download against the
 layer's digest, and `ci/lean_cache.py unpack`, which extracts `files.tar`
-with `tar` in the background and unpacks the archives with the toolchain's
-`leantar` as they arrive. Install the toolchain in `lean/lean-toolchain`
-first (with elan, `lean --version` in `lean/` installs it), and the `zstd`
+with `tar` in the background and unpacks the archives as they arrive with the
+project's `leantar`: a release of reaperhulk/leangz, faster than the
+toolchain's and with `--empty-private` (below), which `ci/leantar_release.py`
+downloads once (on Linux or macOS, x86-64 or arm64) into
+`~/.cache/verified-garbage/leantar/`, checked against the SHA-256
+`ci/leantar/release.toml` pins (`--leantar` for another). Install the `zstd`
 command if you do not have it (`apt-get install zstd`, `dnf install zstd`,
 `brew install zstd`). Then, with `python3`, `tar` and `zstd` installed, from
 the repository root:
@@ -430,7 +433,4 @@ Run it yourself before what else reads them, which otherwise fails with
   on that module).
 
 Restoring again without `--empty-private` writes every private part and
-deletes the kept archives. `--empty-private` needs the project's leantar, a
-release of reaperhulk/leangz that `ci/leantar_release.py` downloads once (on
-Linux or macOS, x86-64 or arm64) into `~/.cache/verified-garbage/leantar/`,
-checked against the SHA-256 `ci/leantar/release.toml` pins.
+deletes the kept archives.
