@@ -84,6 +84,9 @@ theorem copy_ok : ∀ (k : Nat) {s : State} {base : Addr} {o a : Nat},
     rw [wordsVal, wordsVal, O₂.word (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega), m₁,
       word_writeW_self]
 
+/-- The mask of a bit. -/
+abbrev maskOf (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0
+
 /-- The selection by a mask. -/
 theorem sel_mask' (x e : BitVec 64) (c : Bool) :
     x ^^^ ((e ^^^ x) &&& (if c then BitVec.allOnes 64 else 0)) = if c then e else x := by

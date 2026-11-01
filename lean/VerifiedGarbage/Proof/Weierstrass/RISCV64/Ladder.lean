@@ -120,9 +120,6 @@ theorem testBit_wordsVal (m : Mem) (base : Addr) : ∀ (n src j : Nat), j < 64 *
     · rw [ite_eq_right_iff.mpr (fun h => absurd h hj), ← testBit_wordsVal m base n (src + 8) (j - 64) (by omega),
         show src + 8 * (j / 64) = src + 8 + 8 * ((j - 64) / 64) by omega, show j % 64 = (j - 64) % 64 by omega]
 
-/-- The mask of a bit. -/
-abbrev maskOf (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0
-
 /-- `a7 = -bit` of bit `j = s1` of the `n`-word number at `src`. -/
 theorem bitMask_ok {s : State} {base : Addr} (hw : WsReg s base) {src n j : Nat} (hj : j < 64 * n)
     (hj64 : j < 2 ^ 58) (h1 : s.gpr .s1 = BitVec.ofNat 64 j) (hsrc : src + 8 * n ≤ 2048) (hs8 : src % 8 = 0) :
