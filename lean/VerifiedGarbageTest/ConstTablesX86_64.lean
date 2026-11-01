@@ -109,10 +109,8 @@ def expected : String := "/// Returns word 1 of its table.
 #[unsafe(naked)]
 pub unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
-        r\"lea rax, [rip + {VG_TEST_TABLE}]\",
-        // mov rax, QWORD PTR [rax+8]
-        // ret
-        r\".byte 0x48,0x8b,0x40,0x08,0xc3
+        r\"lea rax, [rip + {VG_TEST_TABLE}]
+.byte 0x48,0x8b,0x40,0x08,0xc3
 .p2align 6\",
         VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
     )

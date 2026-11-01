@@ -11,6 +11,9 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 build = false
+# The listings of the code (`listing/`), which it does not compile, are for
+# reading it in the repository.
+exclude = ["listing/"]
 
 # Stated, though it is the default, so that the manifest is valid where
 # only it is checked out (CI's jobs of the other targets), as Cargo reads it

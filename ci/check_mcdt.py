@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Checks that the generated x86 code only runs the instructions affected by
 MXCSR-configuration-dependent timing (MCDT) under Intel's mitigation, from
-the generated code of `crates/verified-garbage-asm-x86_64/` and
-`crates/verified-garbage-asm-x86/`: the text of each instruction, which for
-an instruction the printer encodes is the comment above its bytes (`TOKEN`).
+the listings of the generated code of `crates/verified-garbage-asm-x86_64/`
+and `crates/verified-garbage-asm-x86/`, `listing/<module>.s`: the text of
+each instruction of `src/<module>.rs`, whose machine code that file holds
+(the emitter writes both from the same printed code, `TCB/Rust.lean`).
 
 On some Intel processors, a few vector multiplies (Intel's list, "MCDT Data
 Operand Independent Timing Instructions": `pmuludq`, `pmullw`, `pmulhw`,
@@ -39,7 +40,6 @@ import sys
 import asm_layout
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ASM = ROOT / "src" / "asm"
 TARGETS = ("x86", "x86_64")
 
 # Intel, "MCDT Data Operand Independent Timing Instructions", Table 1.
@@ -51,54 +51,34 @@ AFFECTED = {
     "vpmullq", "vpmullw", "vpmuludq",
 }  # fmt: skip
 
-# A generated function: `pub`, in a target's crate, or `pub(crate)`, as the
-# emitter wrote them when they were modules of the library.
-FN = re.compile(
-    r"^pub(?:\(crate\))? unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
-    re.MULTILINE | re.DOTALL,
-)
-# A comment of the template, `// <an instruction's text>`, which the emitter
-# writes above the string literal holding that instruction's machine code
-# (`Rust.template`, from the printer's `// ` lines: `TCB/X86/Print.lean` and
-# `TCB/X86_64/Print.lean` print each straight-line instruction as its text,
-# then its bytes, `Encode.lean`), or a string literal of the template: one
-# line of it, or several separated by newlines. A literal's comments are
-# those of the encoded instructions at its start, so the function's
-# instructions, in order, are each literal's comments, then the lines of it
-# that are not those instructions' bytes (`DATA`): labels, branches, calls
-# and the text the printer does not encode.
-# (Unrolled, `[^"\\]*(?:\\.[^"\\]*)*` rather than `(?:[^"\\]|\\.)*`, which
-# matches the same strings a character at a time: 20 times slower.)
-TOKEN = re.compile(r'^[ \t]*// ([^\n]*)$|"([^"\\]*(?:\\.[^"\\]*)*)"', re.MULTILINE | re.DOTALL)
-# The directives of encoded instructions' bytes, whose text is the comments.
-DATA = (".byte ", ".octa ")
+# A function of a listing (`Rust.moduleListing`): its name, then its lines,
+# each instruction indented by a tab, each label not.
+FN = re.compile(r"^(vg_\w+):$")
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
 
 
-def code(body, first_line):
-    """The function's instructions, the line of the file each is on, and
-    where each numeric label is: the index of the instruction it precedes."""
-    instrs, lines, labels = [], [], {}
-    offset = 0
-    line_number = first_line
-    for m in TOKEN.finditer(body):
-        # Count each newline once, rather than rescanning the growing prefix
-        # for every literal in large generated functions.
-        line_number += body.count("\n", offset, m.start())
-        offset = m.start()
-        if m.group(1) is not None:
-            instrs.append(m.group(1))
-            lines.append(line_number)
+def functions(text):
+    """The functions of a listing, in order: each one's name, its
+    instructions, the line of the file each is on, and where each numeric
+    label is (the index of the instruction it precedes); and the lines that
+    are none of these."""
+    fns, unread = [], []
+    for number, line in enumerate(text.split("\n"), 1):
+        if m := FN.match(line):
+            fns.append((m.group(1), [], [], {}))
+        elif not line or line.startswith("//"):
             continue
-        for i, line in enumerate(m.group(2).split("\n")):
-            label = line.endswith(":") and LABEL.match(line)
-            if label:
-                labels.setdefault(label.group(1), []).append(len(instrs))
-            elif not line.startswith(DATA):
-                instrs.append(line)
-                lines.append(line_number + i)
-    return instrs, lines, labels
+        elif not fns:
+            unread.append(number)
+        elif line.startswith("\t"):
+            fns[-1][1].append(line[1:])
+            fns[-1][2].append(number)
+        elif m := LABEL.match(line):
+            fns[-1][3].setdefault(m.group(1), []).append(len(fns[-1][1]))
+        else:
+            unread.append(number)
+    return fns, unread
 
 
 def mnemonic(instr):
@@ -242,26 +222,27 @@ def main():
     errors = []
     regions = 0
     for target_name in TARGETS:
-        for path in sorted(asm_layout.target_dir(ROOT, target_name).glob("*.rs")):
-            text = path.read_text()
-            offset = 0
-            first_line = 1
-            found = 0
-            for m in FN.finditer(text):
-                found += 1
-                name, body = m.groups()
-                first_line += text.count("\n", offset, m.start(2))
-                offset = m.start(2)
-                instrs, lines, labels = code(body, first_line)
-                where = f"{path.relative_to(ROOT)} ({name})"
-                errs, n = check_function(where, instrs, lines, labels)
+        src = asm_layout.target_dir(ROOT, target_name)
+        for path in sorted(src.glob("*.rs")):
+            # Every naked function is checked: each is in its module's listing,
+            # which must be read in full, and this not pass on a function left
+            # unread.
+            naked = path.read_text().count("#[unsafe(naked)]")
+            listing = src.parent / "listing" / f"{path.stem}.s"
+            if not listing.is_file():
+                if naked:
+                    errors.append(f"{path.relative_to(ROOT)}: has no listing {listing.relative_to(ROOT)}")
+                continue
+            fns, unread = functions(listing.read_text())
+            where = listing.relative_to(ROOT)
+            errors += [f"{where}:{n}: neither a function, an instruction nor a label" for n in unread]
+            for name, instrs, lines, labels in fns:
+                errs, n = check_function(f"{where} ({name})", instrs, lines, labels)
                 errors += errs
                 regions += n
-            # Every naked function is checked: a change to how the emitter
-            # writes them must not leave them unread, and this passing.
-            naked = text.count("#[unsafe(naked)]")
-            if found < naked:
-                errors.append(f"{path.relative_to(ROOT)}: read {found} of its {naked} naked functions")
+            if len(fns) != naked:
+                errors.append(f"{where}: lists {len(fns)} of the {naked} naked functions of "
+                              f"{path.relative_to(ROOT)}")
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

@@ -23,7 +23,8 @@ It runs the same trusted printer (`VG.Emit.run`) and the same audits
 (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
 `#assert_spec_origin`) as `Emit.lean`, on these artifacts only, into
 `.lake/emit/one`, and then copies (or compares) each file it generated but the
-crate's root `lib.rs` and `consts/mod.rs`. It refuses a file that does not
+crate's root `lib.rs` and `consts/mod.rs`, and each module's listing
+(`listing/<module>.s`). It refuses a file that does not
 exist yet (a new module also changes `lib.rs`) or that has functions it did not generate (another
 registration file emits into it): `Emit.lean` handles those. Each table of
 constants has a file of its own (`consts/<name>.rs` of the crate, which
@@ -153,11 +154,20 @@ def main (args : List String) : IO UInt32 := do
       IO.eprintln s!"{target} also has {others}, from other registration files: run Emit.lean"
       ok := false
       continue
-    if current == text then continue
-    if check then
-      IO.eprintln s!"{target} is out of date"
-      ok := false
-    else
-      IO.FS.writeFile target text
-      IO.println s!"wrote {target}"
+    -- The file, and its module's listing (`Rust.listingFile`), which has the
+    -- same functions.
+    let mut pairs := #[(target, text)]
+    if let [crate, m] := rel.splitOn "/src/" then
+      if m.endsWith ".rs" && !m.contains '/' then
+        let l := s!"{crate}/{VG.Rust.listingFile (m.dropEnd 3).toString}"
+        pairs := pairs.push (dest / l, ← IO.FS.readFile (out / l))
+    for (tgt, text) in pairs do
+      let current ← if ← tgt.pathExists then IO.FS.readFile tgt else pure ""
+      if current == text then continue
+      if check then
+        IO.eprintln s!"{tgt} is out of date"
+        ok := false
+      else
+        IO.FS.writeFile tgt text
+        IO.println s!"wrote {tgt}"
   return if ok then 0 else 1

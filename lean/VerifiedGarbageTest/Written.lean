@@ -80,14 +80,12 @@ def artifact (w : List (String × Nat)) : Artifact where
 
 /-- The rendering: the constant of the bound, and the paragraph documenting
 it before the `# Safety` section. -/
-def expected : String := "/// The bytes of `buf` that `vg_test_written` may write: it changes no byte of `buf` \
-at this offset or beyond (`Artifact.written`).
+def expected : String := "/// The bytes of `buf` that `vg_test_written` may write: it changes no byte of `buf` at this offset or beyond (`Artifact.written`).
 pub const VG_TEST_WRITTEN_BUF_WRITTEN: usize = 8;
 
 /// Writes nothing.
 ///
-/// It writes at most the first 8 bytes of `buf` (`VG_TEST_WRITTEN_BUF_WRITTEN`): no byte of \
-`buf` beyond them changes.
+/// It writes at most the first 8 bytes of `buf` (`VG_TEST_WRITTEN_BUF_WRITTEN`): no byte of `buf` beyond them changes.
 ///
 /// # Safety
 ///
@@ -96,13 +94,10 @@ pub const VG_TEST_WRITTEN_BUF_WRITTEN: usize = 8;
 /// * `key` must be valid for reads of 32 bytes.
 /// * None.
 /// * `buf` and `other` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `buf`, `other` and `key` may wrap around the end of the address space (no Rust \
-object does).
+/// * None of `buf`, `other` and `key` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 16], \
-key: *const [u8; 32]) {
+pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        // ret
         r\".inst 0xd65f03c0
 .p2align 6\",
     )

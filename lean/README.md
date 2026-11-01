@@ -107,9 +107,11 @@ never import proofs.
    CI fails if the checked-in files differ from what Lean generates, so the
    Rust crate contains exactly the verified code. Every printer but ARM's
    emits each straight-line instruction as its machine code
-   (`TCB/<ISA>/Encode.lean`), after a comment of its text, so that the
-   assembler only copies those bytes; ARM's crate, one for both A32 and
-   Thumb, is assembled from its text.
+   (`TCB/<ISA>/Encode.lean`), so that the assembler only copies those bytes;
+   ARM's crate, one for both A32 and Thumb, is assembled from its text. The
+   text of every function's code is in its crate's
+   `listing/<module>.s`, which the emitter writes with it and the crate does
+   not compile (nor publish).
 
 A function can call another (`Code.call name body`): the model runs the
 callee's code `body` between the call and return instructions, so the
