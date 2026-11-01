@@ -10,11 +10,11 @@ vg_aes_ccm_seal:
 	addi sp, sp, -2032
 	addi sp, sp, -560
 	addi t0, sp, 0
-	addi t2, sp, 1296
-	addi t2, t2, 1296
-	ld t1, 0(t2)
+	addi t1, t0, 2032
+	ld t1, 560(t1)
 	sd t1, 0(t0)
-	ld t1, 8(t2)
+	addi t1, t0, 2032
+	ld t1, 568(t1)
 	sd t1, 8(t0)
 	addi t1, t0, 24
 	sd t1, 16(t0)
@@ -533,11 +533,11 @@ vg_aes_ccm_open:
 	addi sp, sp, -2032
 	addi sp, sp, -560
 	addi t0, sp, 0
-	addi t2, sp, 1296
-	addi t2, t2, 1296
-	ld t1, 0(t2)
+	addi t1, t0, 2032
+	ld t1, 560(t1)
 	sd t1, 0(t0)
-	ld t1, 8(t2)
+	addi t1, t0, 2032
+	ld t1, 568(t1)
 	sd t1, 8(t0)
 	addi t1, t0, 24
 	sd t1, 16(t0)
