@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -42,7 +43,7 @@ text and the working space, holding the prepared powers. -/
 def sealPrepN (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 384⟩
   sealPreX [ctx] s ∧ ctx.Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧ ctx.Disjoint ⟨stackArg s 1, 2560⟩ ∧
-    (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ Spec.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
+    (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ Proof.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
 
 /-- What `vg_aes_gcm_seal_prepared` needs: `sealPreX`, with the 384 bytes of
 the context readable in place of its first 256, holding the prepared powers. -/
@@ -60,7 +61,7 @@ def sealPrepW (s : State) : Prop :=
     (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 2 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
-    Spec.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
+    Proof.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
 
 /-- `vg_aes_gcm_seal_prepared`. -/
 def sealPreparedAArch64 : Contract isa where
@@ -185,22 +186,22 @@ theorem sealPrepared_verified :
   Verified.of_correct (sealPrepared_correct v gp hMK) (sealPrepared_ct v gp hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Spec.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
+          Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
           sealPrepW, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         sig_implies_post [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Spec.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
+          Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
           sealPrepW, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       pub := by
         sig_implies_pub [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Spec.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
+          Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
           sealPrepW, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨sealSatP, by
         sig_pre [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Spec.Gcm.sealPrepared8Pre, AArch64.abi, AArch64.argRegs,
+          Proof.Gcm.sealPrepared8Pre, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop, sealSatP, sealSat,
           stackArg, stackArgAddr, Mem.readW, Mem.read]
         sig_and_intros
@@ -221,10 +222,10 @@ end
 def sealFrameSatP : State :=
   { sealFrameSat with rd := [⟨0x1000, 384⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x8000, 8⟩] }
 
-theorem sealFrameSatP_pre : ∃ s, (Spec.Gcm.sealPrepared8Contract AArch64.abi 2576).pre s := by
+theorem sealFrameSatP_pre : ∃ s, (Proof.Gcm.sealPrepared8Contract AArch64.abi 2576).pre s := by
   refine ⟨sealFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.sealPrepared8Contract, Spec.Gcm.sealPrepared8Sig,
-    Spec.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+  sig_pre [Proof.Gcm.sealPrepared8Contract, Proof.Gcm.sealPrepared8Sig,
+    Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
     AArch64.stackArgAddr, List.getD, List.range, List.range.loop, sealFrameSatP, sealFrameSat, sealSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -240,9 +241,9 @@ theorem sealFrameSatP_pre : ∃ s, (Spec.Gcm.sealPrepared8Contract AArch64.abi 2
 theorem sealPrepared_framed (v : GcmImpl) (gp : GhashPreparedImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.Fast.sealWith v.callees gp.fn))
-      (Spec.Gcm.sealPrepared8Contract AArch64.abi 2576) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealPrepared8Sig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealPrepared8Pre AArch64.abi.ptrBits)
+      (Proof.Gcm.sealPrepared8Contract AArch64.abi 2576) :=
+  AArch64.Verified.stackArgScratch (sig := Proof.Gcm.sealPrepared8Sig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.sealPrepared8Pre AArch64.abi.ptrBits)
     (post := Spec.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
     (sealPrepared_verified v gp hMK) (by decide) (by decide) (Proof.AesGcm.sealPrepared8Pre_local _)
     (Proof.AesGcm.sealPrepared8Post_local _) sealFrameSatP_pre

@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
@@ -92,24 +93,24 @@ def blocksToSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x4000, 0⟩, ⟨0x8008, 24⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0, 0⟩, ⟨0, 2112⟩]
 
-theorem blocksTo_pre : ∀ s, (Spec.Gcm.encryptBlocksToContract X86_64.abi 24).pre s →
+theorem blocksTo_pre : ∀ s, (Proof.Gcm.encryptBlocksToContract X86_64.abi 24).pre s →
     (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s := by
   intro s h
-  sig_pre [Spec.Gcm.encryptBlocksToContract, Spec.Gcm.encryptBlocksToSig, Spec.Gcm.encryptBlocksToPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+  sig_pre [Proof.Gcm.encryptBlocksToContract, Proof.Gcm.encryptBlocksToSig, Proof.Gcm.encryptBlocksToPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.base] at h
   sig_split h
-  sig_reduce [Spec.Gcm.encryptBlocksToContract, Spec.Gcm.encryptBlocksToSig, Spec.Gcm.encryptBlocksToPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+  sig_reduce [Proof.Gcm.encryptBlocksToContract, Proof.Gcm.encryptBlocksToSig, Proof.Gcm.encryptBlocksToPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.base]
-  sig_simp [Spec.Gcm.encryptBlocksToContract, Spec.Gcm.encryptBlocksToSig, Spec.Gcm.encryptBlocksToPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+  sig_simp [Proof.Gcm.encryptBlocksToContract, Proof.Gcm.encryptBlocksToSig, Proof.Gcm.encryptBlocksToPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
@@ -128,22 +129,22 @@ theorem blocksTo_pre : ∀ s, (Spec.Gcm.encryptBlocksToContract X86_64.abi 24).p
        first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
 
 theorem blocksTo_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.CtxMode.base).Implies
-    (Spec.Gcm.encryptBlocksToContract X86_64.abi 24) := by
+    (Proof.Gcm.encryptBlocksToContract X86_64.abi 24) := by
   exact { pre := blocksTo_pre
-          post := by sig_implies_post [Spec.Gcm.encryptBlocksToContract, Spec.Gcm.encryptBlocksToSig, Spec.Gcm.encryptBlocksToPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+          post := by sig_implies_post [Proof.Gcm.encryptBlocksToContract, Proof.Gcm.encryptBlocksToSig, Proof.Gcm.encryptBlocksToPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.base]
-          pub := by sig_implies_pub [Spec.Gcm.encryptBlocksToContract, Spec.Gcm.encryptBlocksToSig, Spec.Gcm.encryptBlocksToPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+          pub := by sig_implies_pub [Proof.Gcm.encryptBlocksToContract, Proof.Gcm.encryptBlocksToSig, Proof.Gcm.encryptBlocksToPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.base]
-          sat := by sig_implies_sat [Spec.Gcm.encryptBlocksToContract, Spec.Gcm.encryptBlocksToSig, Spec.Gcm.encryptBlocksToPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+          sat := by sig_implies_sat [Proof.Gcm.encryptBlocksToContract, Proof.Gcm.encryptBlocksToSig, Proof.Gcm.encryptBlocksToPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
@@ -153,24 +154,24 @@ theorem blocksTo_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitc
 `blocksToSat`, with a key context of 1024 bytes. -/
 def blocksToSatP : State := { blocksToSat with rd := [⟨0x1000, 1024⟩, ⟨0x4000, 0⟩, ⟨0x8008, 24⟩] }
 
-theorem blocksToP_pre : ∀ s, (Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24).pre s →
+theorem blocksToP_pre : ∀ s, (Proof.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24).pre s →
     (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.CtxMode.powers).pre s := by
   intro s h
-  sig_pre [Spec.Gcm.encryptBlocksToPrecomputedContract, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrecomputedPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+  sig_pre [Proof.Gcm.encryptBlocksToPrecomputedContract, Proof.Gcm.encryptBlocksToPrecomputedSig, Proof.Gcm.encryptBlocksToPrecomputedPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.powers] at h
   sig_split h
-  sig_reduce [Spec.Gcm.encryptBlocksToPrecomputedContract, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrecomputedPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+  sig_reduce [Proof.Gcm.encryptBlocksToPrecomputedContract, Proof.Gcm.encryptBlocksToPrecomputedSig, Proof.Gcm.encryptBlocksToPrecomputedPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.powers]
-  sig_simp [Spec.Gcm.encryptBlocksToPrecomputedContract, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrecomputedPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+  sig_simp [Proof.Gcm.encryptBlocksToPrecomputedContract, Proof.Gcm.encryptBlocksToPrecomputedSig, Proof.Gcm.encryptBlocksToPrecomputedPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
@@ -189,23 +190,23 @@ theorem blocksToP_pre : ∀ s, (Spec.Gcm.encryptBlocksToPrecomputedContract X86_
        first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
 
 theorem blocksToP_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stitch.CtxMode.powers).Implies
-    (Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24) := by
+    (Proof.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24) := by
   exact { pre := blocksToP_pre
-          post := by sig_implies_post [Spec.Gcm.encryptBlocksToPrecomputedContract, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrecomputedPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+          post := by sig_implies_post [Proof.Gcm.encryptBlocksToPrecomputedContract, Proof.Gcm.encryptBlocksToPrecomputedSig, Proof.Gcm.encryptBlocksToPrecomputedPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.powers]
-          pub := by sig_implies_pub [Spec.Gcm.encryptBlocksToPrecomputedContract, Spec.Gcm.encryptBlocksToPrecomputedSig, Spec.Gcm.encryptBlocksToPrecomputedPre,
-      Spec.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
+          pub := by sig_implies_pub [Proof.Gcm.encryptBlocksToPrecomputedContract, Proof.Gcm.encryptBlocksToPrecomputedSig, Proof.Gcm.encryptBlocksToPrecomputedPre,
+      Proof.Gcm.encryptBlocksToPost, Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost,
       Proof.AesGcm.blocksToPreM, Proof.AesGcm.blocksToPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs,
       Gcm.X86_64.Stitch.CtxMode.powers]
           sat := ⟨blocksToSatP, by
-            sig_pre [Spec.Gcm.encryptBlocksToPrecomputedContract, Spec.Gcm.encryptBlocksToPrecomputedSig,
-              Spec.Gcm.encryptBlocksToPrecomputedPre, X86_64.abi, X86_64.argRegs, blocksToSatP, blocksToSat]
+            sig_pre [Proof.Gcm.encryptBlocksToPrecomputedContract, Proof.Gcm.encryptBlocksToPrecomputedSig,
+              Proof.Gcm.encryptBlocksToPrecomputedPre, X86_64.abi, X86_64.argRegs, blocksToSatP, blocksToSat]
             sig_and_intros
             all_goals first
               | rfl
@@ -214,13 +215,13 @@ theorem blocksToP_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stit
               | exact Region.disjoint_of_sep (by decide)⟩ }
 
 theorem encryptBlocksTo_verified (B : BlkFn CtxMode.base) (st : Option (StitchToCode CtxMode.base)) :
-    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) false (encFullTo st)) (Spec.Gcm.encryptBlocksToContract X86_64.abi 24) :=
+    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) false (encFullTo st)) (Proof.Gcm.encryptBlocksToContract X86_64.abi 24) :=
   Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M CtxMode.base) (encryptToM_correct st B)
     (BlocksTo.encrypt_ct B st) blocksTo_implies
 
 theorem encryptBlocksToP_verified (B : BlkFn CtxMode.powers) (st : Option (StitchToCode CtxMode.powers)) :
     Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) false (encFullTo st))
-      (Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24) :=
+      (Proof.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24) :=
   Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M CtxMode.powers) (encryptToM_correct st B)
     (BlocksTo.encrypt_ct B st) blocksToP_implies
 

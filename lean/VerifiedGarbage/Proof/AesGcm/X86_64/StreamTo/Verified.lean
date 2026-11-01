@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
@@ -112,7 +113,7 @@ def streamToSat : State where
 theorem streamTo_implies : (Proof.AesGcm.streamEncryptToX86_64M CtxMode.base).Implies
     (Proof.AesGcm.streamEncryptToScratchContract X86_64.abi 2624) := by
   sig_implies [Proof.AesGcm.streamEncryptToScratchContract, Proof.AesGcm.streamEncryptToScratchSig,
-      Spec.Gcm.streamEncryptToPre, Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
+      Proof.Gcm.streamEncryptToPre, Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -124,29 +125,29 @@ def streamToSatP : State := { streamToSat with rd := [⟨0x1000, 1024⟩, ⟨0x4
 theorem streamToP_implies : (Proof.AesGcm.streamEncryptToX86_64M CtxMode.powers).Implies
     (Proof.AesGcm.streamEncryptToPrecomputedScratchContract X86_64.abi 2624) := by
   exact { pre := by sig_implies_pre [Proof.AesGcm.streamEncryptToPrecomputedScratchContract,
-      Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrecomputedPre,
-      Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
+      Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Proof.Gcm.streamEncryptToPrecomputedPre,
+      Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs, CtxMode.powers]
           post := by sig_implies_post [Proof.AesGcm.streamEncryptToPrecomputedScratchContract,
-      Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrecomputedPre,
-      Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
+      Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Proof.Gcm.streamEncryptToPrecomputedPre,
+      Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs, CtxMode.powers]
           pub := by sig_implies_pub [Proof.AesGcm.streamEncryptToPrecomputedScratchContract,
-      Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrecomputedPre,
-      Spec.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
+      Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Proof.Gcm.streamEncryptToPrecomputedPre,
+      Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs, CtxMode.powers]
           sat := ⟨streamToSatP, by
             sig_pre [Proof.AesGcm.streamEncryptToPrecomputedScratchContract,
-              Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Spec.Gcm.streamEncryptToPrecomputedPre,
+              Proof.AesGcm.streamEncryptToPrecomputedScratchSig, Proof.Gcm.streamEncryptToPrecomputedPre,
               X86_64.abi, X86_64.argRegs, streamToSatP, streamToSat]
             sig_and_intros
             all_goals first
@@ -173,17 +174,17 @@ without the working space. -/
 def streamToFrameSat : State :=
   { streamToSat with rd := [⟨0x1000, 256⟩, ⟨0x4000, 0⟩, ⟨0x9008, 24⟩], wr := [⟨0x3000, 80⟩, ⟨0, 0⟩] }
 
-theorem streamToFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptToContract X86_64.abi 4856).pre s := by
-  implies_sat [Spec.Gcm.streamEncryptToContract, Spec.Gcm.streamEncryptToSig, Spec.Gcm.streamEncryptToPre,
-    Spec.Gcm.streamEncryptToPost, X86_64.abi, X86_64.argRegs] [streamToFrameSat, streamToSat]
+theorem streamToFrameSat_pre : ∃ s, (Proof.Gcm.streamEncryptToContract X86_64.abi 4856).pre s := by
+  implies_sat [Proof.Gcm.streamEncryptToContract, Proof.Gcm.streamEncryptToSig, Proof.Gcm.streamEncryptToPre,
+    Proof.Gcm.streamEncryptToPost, X86_64.abi, X86_64.argRegs] [streamToFrameSat, streamToSat]
     using streamToFrameSat
 
 theorem streamEncryptTo_framed (T : BlkToFn CtxMode.base) (E : EncFn CtxMode.base) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
-      (Spec.Gcm.streamEncryptToContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamEncryptToSig) (nm := "scratch") (e := .u64)
-    (n := 274) (pre := Spec.Gcm.streamEncryptToPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
+      (Proof.Gcm.streamEncryptToContract X86_64.abi 4856) :=
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToSig) (nm := "scratch") (e := .u64)
+    (n := 274) (pre := Proof.Gcm.streamEncryptToPre X86_64.abi.ptrBits)
+    (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptTo_core T E) (by decide) (by decide) (by decide)
     (encrypt_spAll T E) (encrypt_xdepth T E) (Proof.AesGcm.streamEncryptToPre_local _)
     (Proof.AesGcm.streamEncryptToPost_local _) streamToFrameSat_pre
@@ -191,10 +192,10 @@ theorem streamEncryptTo_framed (T : BlkToFn CtxMode.base) (E : EncFn CtxMode.bas
 /-- `streamToFrameSat`, with a key context of 1024 bytes. -/
 def streamToFrameSatP : State := { streamToFrameSat with rd := [⟨0x1000, 1024⟩, ⟨0x4000, 0⟩, ⟨0x9008, 24⟩] }
 
-theorem streamToFrameSatP_pre : ∃ s, (Spec.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856).pre s := by
+theorem streamToFrameSatP_pre : ∃ s, (Proof.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856).pre s := by
   refine ⟨streamToFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.streamEncryptToPrecomputedContract, Spec.Gcm.streamEncryptToPrecomputedSig,
-    Spec.Gcm.streamEncryptToPrecomputedPre, Spec.Gcm.streamEncryptToPost, X86_64.abi, X86_64.argRegs,
+  sig_pre [Proof.Gcm.streamEncryptToPrecomputedContract, Proof.Gcm.streamEncryptToPrecomputedSig,
+    Proof.Gcm.streamEncryptToPrecomputedPre, Proof.Gcm.streamEncryptToPost, X86_64.abi, X86_64.argRegs,
     streamToFrameSatP, streamToFrameSat, streamToSat]
   sig_and_intros
   all_goals first
@@ -205,10 +206,10 @@ theorem streamToFrameSatP_pre : ∃ s, (Spec.Gcm.streamEncryptToPrecomputedContr
 
 theorem streamEncryptToP_framed (T : BlkToFn CtxMode.powers) (E : EncFn CtxMode.powers) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
-      (Spec.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamEncryptToPrecomputedSig) (nm := "scratch")
-    (e := .u64) (n := 274) (pre := Spec.Gcm.streamEncryptToPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
+      (Proof.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856) :=
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToPrecomputedSig) (nm := "scratch")
+    (e := .u64) (n := 274) (pre := Proof.Gcm.streamEncryptToPrecomputedPre X86_64.abi.ptrBits)
+    (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToP_core T E) (by decide) (by decide) (by decide)
     (encrypt_spAll T E) (encrypt_xdepth T E) (Proof.AesGcm.streamEncryptToPrecomputedPre_local _)
     (Proof.AesGcm.streamEncryptToPrecomputedPost_local _) streamToFrameSatP_pre

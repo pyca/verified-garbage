@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 
 `vg_aes_gcm_derive_prepared8(src = x0, dst = x1)` copies the 256-byte key
 context at `src` to `dst`, then writes after it the 8 powers
-`H'ᵏ = Hᵏ · x⁻¹` of `Spec.Gcm.PreparedPowers8Repr`, which are exactly the
+`H'ᵏ = Hᵏ · x⁻¹` of `Proof.Gcm.PreparedPowers8Repr`, which are exactly the
 keys `vg_ghash_prepared8_aes` multiplies by (`tReg k` of
 `Impl.Gcm.AArch64.Pmull`): `preparedPower` shifts a block left by one bit,
 reducing, which multiplies it by `x⁻¹`. The register value of such a key,

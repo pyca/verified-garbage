@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.InvokeLayout
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -12,9 +13,9 @@ namespace VG.Proof.AesGcm.PPC64LE.GatherSplit
 open VG VG.PPC64LE
 open VG.Proof.AesGcm.PPC64LE.Gather
 
-abbrev SplitOk : Prop := ∀ s,(Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre s →
+abbrev SplitOk : Prop := ∀ s,(Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre s →
   ∃ t z,Exec isa Impl.AesGcm.PPC64LE.GatherSplit.sealCode s t z ∧ abiPreserved s z ∧
-    (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).post s z
+    (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).post s z
 
 
 theorem Prepared.covers {s e c : State} (h : Gather.Lay s) (he : Gather.Entered s e)
@@ -68,7 +69,7 @@ theorem called_wp (hv : SplitOk) {s e c : State} (h : Layout s) (he : Gather.Ent
     WP isa (.call "vg_aes_gcm_seal_split" Impl.AesGcm.PPC64LE.GatherSplit.sealCode) c (Gather.Called s) := by
   have hl := prepared_layout h he hc hp
   obtain ⟨hcov,hw⟩ := hp.covers h.base he hc
-  refine WP.callAny (k := Spec.Gcm.sealSplitContract PPC64LE.abi 2800) hv (call_pre hl) hcov hw (fun z hrd hwr hsp hfr hpres hpost => ?_)
+  refine WP.callAny (k := Proof.Gcm.sealSplitContract PPC64LE.abi 2800) hv (call_pre hl) hcov hw (fun z hrd hwr hsp hfr hpres hpost => ?_)
     (by rw [split_sdepth]; decide)
   have out := call_post hpost hl.rounds hl.bound
   have g9 : (callView s e c).gpr .r9=e.mem.readW (Src s) 64 := by

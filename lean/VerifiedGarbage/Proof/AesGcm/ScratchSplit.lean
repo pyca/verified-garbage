@@ -1,5 +1,7 @@
 module
 public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Proof.Gcm.PreparedContract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -25,7 +27,7 @@ nonce, the additional data, `src` and `dst`.
 
 namespace VG.Proof.AesGcm
 
-open VG.Spec.Gcm
+open VG.Spec.Gcm Proof.Gcm
 
 /-- `vg_aes_gcm_seal_split` with `work: *mut [u64; 320]`. -/
 def sealSplitScratchSig : Sig where

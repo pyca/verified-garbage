@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Gcm.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
@@ -36,7 +37,7 @@ def blockWrites (s : State) : List Region :=
   [⟨s.gpr .r5,16⟩,⟨s.gpr .r6,16⟩,⟨s.gpr .r7,(s.gpr .r8).toNat*16⟩,⟨s.gpr .r9,2112⟩]
 
 structure BlockCall (s : State) : Prop where
-  pre : (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pre
+  pre : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre
     (s.callEntry.withRegions (blockReads s) (blockWrites s))
   reads : Covers (blockReads s++blockWrites s) (s.rd++s.wr)
   writes : Covers (blockWrites s) s.wr
@@ -47,18 +48,18 @@ structure BlockPost (s t : State) : Prop where
   sp : t.sp=s.sp
   saved : ∀ r ∈ preserved, t.gpr r=s.gpr r
   frame : Frame (blockWrites s) s.mem t.mem
-  out : (Spec.Gcm.encryptBlocksContract PPC64LE.abi).post s t
+  out : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).post s t
 
 
 theorem block_call [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s : State} (h : BlockCall s) :
     WP isa (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt) s (BlockPost s) := by
-  refine WP.call (k := Spec.Gcm.encryptBlocksContract PPC64LE.abi)
+  refine WP.call (k := Proof.Gcm.encryptBlocksContract PPC64LE.abi)
     VG.Proof.AesGcm.PPC64LE.Blocks.encrypt_correct (rd := blockReads s) (wr := blockWrites s)
     h.pre h.reads h.writes ?_
   intro t hrd hwr hsp hf hcs _ hp
   refine ⟨hrd,hwr,hsp,hcs,hf,?_⟩
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp ⊢
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp ⊢
   exact hp
 
 def argsState (s : State) : State :=
@@ -110,7 +111,7 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
     (L : Lay (V .r29) (V .r30) (V .r31)) (he : Env V sp s)
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
     (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14) :
-    (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pre
+    (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre
       ((argsState s).callEntry.withRegions (blockReads (argsState s)) (blockWrites (argsState s))) := by
   have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
   have h8 : (s.gpr .r23 >>> 4).toNat=(V .r23).toNat/16 := by
@@ -119,7 +120,7 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
   have hr : (s.gpr .r28).toNat=R := by
     rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega)]
   have hc := hd.take (k := ((V .r23).toNat/16)*16) (by omega)
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,
     blockReads,blockWrites]
   simp only [he.r29,he.r30,he.r31,he.fr .r27 (by decide),h8,hr]
   refine ⟨?_,?_,hc.ctx,?_,?_,?_,?_,?_,?_,?_,L.cw,?_,?_,hc.ok.fit,?_,?_⟩
@@ -208,7 +209,7 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
   have hr : (s.gpr .r28).toNat=R := by
     rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega)]
   have hp := ht.out
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp
   simp only [he.r29,he.r30,he.fr .r27 (by decide),hr,h8] at hp
   refine ⟨(args_env he).of_saved ht.saved ht.sp ht.rd ht.wr,hp.1,hp.2.1,?_,?_⟩
   · rw [hp.1]; exact hp.2.2

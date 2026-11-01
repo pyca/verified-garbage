@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -43,9 +44,9 @@ def streamEncryptToScratchSig : Sig where
 def streamEncryptToScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamEncryptToScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen src len dst dstLen _scratch =>
-      Spec.Gcm.streamEncryptToPre A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
+      Proof.Gcm.streamEncryptToPre A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
     (post := fun ctx rounds state aadLen textLen src len dst dstLen _scratch =>
-      Spec.Gcm.streamEncryptToPost A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
+      Proof.Gcm.streamEncryptToPost A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_encrypt_to_precomputed` with `scratch: *mut [u64; 274]`. -/
@@ -58,9 +59,9 @@ def streamEncryptToPrecomputedScratchSig : Sig where
 def streamEncryptToPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamEncryptToPrecomputedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen src len dst dstLen _scratch =>
-      Spec.Gcm.streamEncryptToPrecomputedPre A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
+      Proof.Gcm.streamEncryptToPrecomputedPre A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
     (post := fun ctx rounds state aadLen textLen src len dst dstLen _scratch =>
-      Spec.Gcm.streamEncryptToPost A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
+      Proof.Gcm.streamEncryptToPost A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
     (writeArgs := true) (stack := stack)
 
 /-- The stack the code uses: the frame of the argument of

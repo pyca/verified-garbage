@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Input
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Sig
@@ -67,7 +68,7 @@ def writes (s : State) : List Region :=
     ⟨s.mem.readW (s.sp+96) 64,2112⟩]
 
 structure Config (s : State) : Prop where
-  pre : (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre (s.callEntry.withRegions (reads s) (writes s))
+  pre : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre (s.callEntry.withRegions (reads s) (writes s))
   reads : Covers (Call.reads s++writes s) (s.rd++s.wr)
   writes : Covers (Call.writes s) s.wr
 
@@ -91,11 +92,11 @@ structure Result (s t : State) : Prop where
 theorem ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s : State} (cfg : Config s) :
     WP isa (.call "vg_aes_gcm_encrypt_blocks_split" Impl.AesGcm.PPC64LE.SplitBlocks.encrypt) s (Result s) := by
-  refine WP.call (k := Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi)
+  refine WP.call (k := Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi)
     VG.Proof.AesGcm.PPC64LE.SplitBlocks.encrypt_correct (rd := reads s) (wr := writes s)
     cfg.pre cfg.reads cfg.writes ?_
   intro t hrd hwr hsp hf hcs _ hp
-  sig_eval [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,Spec.Gcm.encryptBlocksSplitPost,
+  sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPost,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop] at hp
   exact ⟨hrd,hwr,hsp,hcs,hf,hp.1,hp.2.1,by rw [hp.1]; exact hp.2.2⟩
 

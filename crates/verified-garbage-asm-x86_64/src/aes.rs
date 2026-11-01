@@ -894,3 +894,283 @@ jmp 219f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vaes.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vaes.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vaes.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split.rs"]
+pub(crate) mod vg_aes_gcm_seal_split;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_aesni.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_vaes.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_split_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_vaes.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_to_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_to_vpclmul;

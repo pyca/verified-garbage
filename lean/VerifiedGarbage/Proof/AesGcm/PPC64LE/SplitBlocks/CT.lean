@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Lit
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -31,14 +32,14 @@ theorem rest_taint : ∃ h, (VG.Taint.check vectorTaint
 
 
 
-theorem encrypt_ct : ConstantTime isa (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre
-    (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pub Impl.AesGcm.PPC64LE.SplitBlocks.encrypt := by
+theorem encrypt_ct : ConstantTime isa (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre
+    (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pub Impl.AesGcm.PPC64LE.SplitBlocks.encrypt := by
   refine ct_of fun a b ha hb hp => ?_
-  sig_pub [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,
+  sig_pub [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop] at hp
   obtain ⟨hsp,h3,h4,h5,h6,h7,h8,h9,h10,hw⟩ := hp
   let rs : List Reg := [.r3,.r4,.r5,.r6,.r7,.r8,.r9,.r10]
-  let I : State → Prop := fun s => (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s ∧
+  let I : State → Prop := fun s => (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s ∧
     s.sp=a.sp ∧ (∀ r ∈ rs, s.gpr r=a.gpr r) ∧ Contract.scratch s=Contract.scratch a
   have ib : I b := by
     refine ⟨hb,hsp.symm,fun r hr => ?_,hw.symm⟩

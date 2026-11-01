@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Powers
 import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-public import VerifiedGarbage.Spec.Gcm.Prepared8
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Framework.Offset
@@ -26,7 +26,8 @@ namespace VG.Proof.AesGcm.AArch64
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 open VG.Proof.Gcm.AArch64.Pmull
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (Block blockAt ctxH PreparedPowers8Repr)
+open VG.Spec.Gcm (Block blockAt ctxH)
+open VG.Proof.Gcm (PreparedPowers8Repr)
 
 /-- `vg_aes_gcm_derive_prepared8(src = x0, dst = x1)`. -/
 def derivePrepared8AArch64 : Contract isa where
@@ -109,7 +110,7 @@ theorem bytesAt_of_blocks {m m' : Mem} {p q : Addr}
 
 /-! ## The powers -/
 
-/-- The slots, as `Spec.Gcm.PreparedPowers8Repr` reads them. -/
+/-- The slots, as `Proof.Gcm.PreparedPowers8Repr` reads them. -/
 theorem repr8_of_slots {H : Block} {Ctx : Addr} {m : Mem} (hs : Slots H Ctx m 8) (hH : ctxH m Ctx = H) :
     PreparedPowers8Repr m Ctx := by
   intro k hk

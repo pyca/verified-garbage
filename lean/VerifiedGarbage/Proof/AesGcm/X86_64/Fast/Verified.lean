@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
+public import VerifiedGarbage.Proof.Gcm.PreparedContract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.OnePassZ
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
@@ -249,10 +251,10 @@ theorem sealSplitPrepared_core (hF : ShortFacts) :
 theorem sealSplitPrepared_framed (hF : ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)))
-      (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealSplitPreparedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
+      (Proof.Gcm.sealSplitPreparedContract X86_64.abi 2672) :=
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.sealSplitPreparedPre X86_64.abi.ptrBits)
+    (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitPrepared_core v B T hF) (by decide) (by decide) (by decide)
     (sealSplitR_spSafe v B T) (sealSplitR_xdepth v B T) (Proof.AesGcm.sealSplitPreparedPre_local _)
     (Proof.AesGcm.sealSplitPrecomputedPost_local _) splitFrameSatPrepared_pre

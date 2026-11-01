@@ -4,11 +4,13 @@ public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.Print
 public import VerifiedGarbage.TCB.Sig
+public import VerifiedGarbage.Proof.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 
 /-!
 # AES-GCM whole blocks with an external plaintext prefix
 
-**Trusted** (as every file in `Spec/`). This is `encryptBlocksContract`
+Not trusted: the contracts of internal functions (`Rust.Internal`), which only verified code calls. This is `encryptBlocksContract`
 with the prefix convention of `sealSplitContract`: the first `src_n`
 plaintext blocks come from `src`, and the remaining blocks are already at
 `dst`. The prefix length is measured in 16-byte blocks.
@@ -26,7 +28,9 @@ contracts are unchanged.
 
 @[expose] public section
 
-namespace VG.Spec.Gcm
+namespace VG.Proof.Gcm
+
+open VG.Spec VG.Spec.Gcm
 
 /-- `vg_aes_gcm_encrypt_blocks_split(ctx, rounds, counter, y, src, src_n,
 dst, n, scratch)`. Counts are in whole blocks; `scratch` is 2112 bytes. -/
@@ -58,22 +62,4 @@ def encryptBlocksSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
   encryptBlocksSplitSig.contract A (pre := encryptBlocksSplitPre A.ptrBits)
     (post := encryptBlocksSplitPost A.ptrBits) (stack := stack)
 
-/-- A shared whole-block helper for in-place and out-of-place callers. -/
-def encryptBlocksSplitApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_encrypt_blocks_split"
-  sig := encryptBlocksSplitSig
-  contracts := some fun A stack => encryptBlocksSplitContract A stack
-  summary := "AES-GCM encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5) with an \
-    external plaintext prefix: with the key context `*ctx` that `vg_aes_gcm_init` wrote for \
-    `rounds` rounds, encrypts the `src_n` blocks at `src` followed by the original blocks \
-    `dst[src_n..n]`, writes all `n` ciphertext blocks at `dst`, advances `*counter` by `n` \
-    applications of `inc32`, and continues `*y` through GHASH over that ciphertext. Pass \
-    `src_n = 0` for in-place encryption or `src_n = n` for encryption entirely out of place.\n\n\
-    Contract: `VG.Spec.Gcm.encryptBlocksSplitContract`. Constant time: only the pointers, \
-    `rounds`, `src_n` and `n` may affect timing, not the key context, counter, hash \
-    accumulator or plaintext."
-  safety := ["`rounds` must be 10, 12 or 14.", "`src_n` must be at most `n`.",
-    "The contents of `scratch` on return are unspecified."]
-
-end VG.Spec.Gcm
+end VG.Proof.Gcm

@@ -20,16 +20,6 @@ namespace VG.Artifacts.AesGcm.PPC64LE
 open VG.Proof.AesGcm.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Gcm.sealSplitApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 3 Impl.AesGcm.PPC64LE.SealSplit.seal
-    stack := 2800
-    verified := SealSplit.framed },
-  Spec.Gcm.encryptBlocksSplitApi.artifact PPC64LE.target {
-    code := Impl.AesGcm.PPC64LE.SplitBlocks.encrypt
-    verified := SplitBlocks.encrypt_verified },
-  Spec.Gcm.encryptBlocksApi.artifact PPC64LE.target {
-    code := Impl.AesGcm.PPC64LE.Blocks.encrypt
-    verified := Blocks.encrypt_verified },
   Spec.Gcm.initApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init
     stack := 2592

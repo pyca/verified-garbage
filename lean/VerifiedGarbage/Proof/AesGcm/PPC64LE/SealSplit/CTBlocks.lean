@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Whole
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFusedCT
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.CT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -72,7 +73,7 @@ theorem call_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   refine ⟨Call.reads (Call.argsState s),Call.writes (Call.argsState s),
     Call.reads (Call.argsState t),Call.writes (Call.argsState t),cs.pre,ct.pre,?_,
     cs.reads,cs.writes,ct.reads,ct.writes⟩
-  sig_pub [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,
+  sig_pub [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
   simp only [he.r29,he'.r29,he.r30,he'.r30,he.r31,he'.r31,he.r28,he'.r28,
     he.fr .r27 (by decide),he'.fr .r27 (by decide),he.fr .r23 (by decide),he'.fr .r23 (by decide),

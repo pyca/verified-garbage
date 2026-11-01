@@ -89,12 +89,6 @@ def prepared16Summary (name contract : String) : String :=
 /-! ## Preconditions -/
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def cryptBlocksPrepared16Pre (pb : Nat) : Curry (cryptBlocksPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _data _n _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      PreparedPowers16Repr m ctx
-
-/-- The existing round-count and length requirements, plus 16 prepared powers. -/
 def sealPrepared16Pre (pb : Nat) : Curry (sealPreparedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
@@ -113,70 +107,12 @@ def streamCryptPrepared16Pre (pb : Nat) : Curry (streamCryptPreparedSig.words pb
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def encryptBlocksToPrepared16Pre (pb : Nat) :
-    Curry (encryptBlocksToPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _src n _dst dstN _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstN = n ∧ PreparedPowers16Repr m ctx
-
-/-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def streamEncryptToPrepared16Pre (pb : Nat) :
-    Curry (streamEncryptToPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _state _aadLen _textLen _src len _dst dstLen m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstLen = len ∧ PreparedPowers16Repr m ctx
-
-/-- The existing round-count and length requirements, plus 16 prepared powers. -/
 def sealGatherPrepared16Pre (pb : Nat) : Curry (sealGatherPreparedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
 
-/-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def sealSplitPrepared16Pre (pb : Nat) : Curry (sealSplitPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _nonce _nonceLen _aad _aadLen _src srcLen _dst len _tag m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ srcLen.toNat ≤ len.toNat ∧
-      PreparedPowers16Repr m ctx
-
 /-! ## Contracts and APIs -/
-
-/-- The unchanged `encryptBlocksContract` postcondition with 16 prepared powers. -/
-def encryptBlocksPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPreparedSig.contract A (pre := cryptBlocksPrepared16Pre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
-      blocksAt m' data n.toNat = c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- `vg_aes_gcm_encrypt_blocks_prepared16` on every target. -/
-def encryptBlocksPrepared16Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_encrypt_blocks_prepared16"
-  sig := cryptBlocksPreparedSig
-  contracts := some fun A stack => encryptBlocksPrepared16Contract A stack
-  summary := prepared16Summary "vg_aes_gcm_encrypt_blocks" "encryptBlocksPrepared16Contract"
-  safety := encryptBlocksApi.safety ++ [prepared16Safety]
-
-/-- The unchanged `decryptBlocksContract` postcondition with 16 prepared powers. -/
-def decryptBlocksPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPreparedSig.contract A (pre := cryptBlocksPrepared16Pre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := blocksAt m data n.toNat
-      blocksAt m' data n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- `vg_aes_gcm_decrypt_blocks_prepared16` on every target. -/
-def decryptBlocksPrepared16Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_decrypt_blocks_prepared16"
-  sig := cryptBlocksPreparedSig
-  contracts := some fun A stack => decryptBlocksPrepared16Contract A stack
-  summary := prepared16Summary "vg_aes_gcm_decrypt_blocks" "decryptBlocksPrepared16Contract"
-  safety := decryptBlocksApi.safety ++ [prepared16Safety]
 
 /-- The unchanged `sealContract` postcondition with 16 prepared powers. -/
 def sealPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -242,37 +178,6 @@ def streamDecryptPrepared16Api : Api where
   summary := prepared16Summary "vg_aes_gcm_stream_decrypt" "streamDecryptPrepared16Contract"
   safety := streamDecryptApi.safety ++ [prepared16Safety]
 
-/-- The unchanged `encryptBlocksToContract` postcondition with 16 prepared powers. -/
-def encryptBlocksToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptBlocksToPreparedSig.contract A (pre := encryptBlocksToPrepared16Pre A.ptrBits)
-    (post := encryptBlocksToPost A.ptrBits)
-    (stack := stack)
-
-/-- `vg_aes_gcm_encrypt_blocks_to_prepared16` on every target. -/
-def encryptBlocksToPrepared16Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_encrypt_blocks_to_prepared16"
-  sig := encryptBlocksToPreparedSig
-  contracts := some fun A stack => encryptBlocksToPrepared16Contract A stack
-  summary := prepared16Summary "vg_aes_gcm_encrypt_blocks_to" "encryptBlocksToPrepared16Contract"
-  safety := encryptBlocksToApi.safety ++ [prepared16Safety]
-
-/-- The unchanged `streamEncryptToContract` postcondition with 16 prepared powers. -/
-def streamEncryptToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamEncryptToPreparedSig.contract A (pre := streamEncryptToPrepared16Pre A.ptrBits)
-    (post := streamEncryptToPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_stream_encrypt_to_prepared16` on every target. -/
-def streamEncryptToPrepared16Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_stream_encrypt_to_prepared16"
-  sig := streamEncryptToPreparedSig
-  writeArgs := true
-  contracts := some fun A stack => streamEncryptToPrepared16Contract A stack
-  summary := prepared16Summary "vg_aes_gcm_stream_encrypt_to" "streamEncryptToPrepared16Contract"
-  safety := streamEncryptToApi.safety ++ [prepared16Safety]
-
 /-- The unchanged `sealGatherContract` postcondition with 16 prepared powers. -/
 def sealGatherPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealGatherPreparedSig.contract A (pre := sealGatherPrepared16Pre A.ptrBits)
@@ -288,21 +193,5 @@ def sealGatherPrepared16Api : Api where
   contracts := some fun A stack => sealGatherPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_seal_gather" "sealGatherPrepared16Contract"
   safety := sealGatherApi.safety ++ [prepared16Safety]
-
-/-- The unchanged `sealSplitContract` postcondition with 16 prepared powers. -/
-def sealSplitPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealSplitPreparedSig.contract A (pre := sealSplitPrepared16Pre A.ptrBits)
-    (post := sealSplitPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_split_prepared16` on every target. -/
-def sealSplitPrepared16Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_split_prepared16"
-  sig := sealSplitPreparedSig
-  writeArgs := true
-  contracts := some fun A stack => sealSplitPrepared16Contract A stack
-  summary := prepared16Summary "vg_aes_gcm_seal_split" "sealSplitPrepared16Contract"
-  safety := sealSplitApi.safety ++ [prepared16Safety]
 
 end VG.Spec.Gcm

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Verified
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 import VerifiedGarbage.Proof.Framework.Sig
@@ -21,9 +22,9 @@ def frameSat : State := {sat with
   wr := [⟨0x4000,0⟩,⟨0x5000,16⟩]}
 
 
-theorem frameSat_pre : ∃ s, (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre s := by
+theorem frameSat_pre : ∃ s, (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre s := by
   refine ⟨frameSat,?_⟩
-  sig_eval [Spec.Gcm.sealSplitContract,Spec.Gcm.sealSplitSig,Spec.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,
+  sig_eval [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,Proof.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,
     stackArg,stackArgAddr,List.getD,List.range,List.range.loop,stackBelow,frameSat,sat,Mem.readW,Mem.read]
   sig_and_intros
   all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
@@ -31,9 +32,9 @@ theorem frameSat_pre : ∃ s, (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre 
 
 theorem framed [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 3 Impl.AesGcm.PPC64LE.SealSplit.seal)
-      (Spec.Gcm.sealSplitContract PPC64LE.abi 2800) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSplitSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Gcm.sealSplitPre PPC64LE.abi.ptrBits) (post := Spec.Gcm.sealSplitPost PPC64LE.abi.ptrBits)
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.sealSplitPre PPC64LE.abi.ptrBits) (post := Proof.Gcm.sealSplitPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 112) (bytes := 2688) (m := 3) scratch_verified (by decide) (by decide)
     (Proof.AesGcm.sealSplitPre_local _) (Proof.AesGcm.sealSplitPost_local _) frameSat_pre
 

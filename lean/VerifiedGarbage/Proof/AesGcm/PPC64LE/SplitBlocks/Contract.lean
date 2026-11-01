@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.SplitBlocks
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Wrapper
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -23,11 +23,11 @@ def scratch (s : State) : Addr := s.mem.readW (s.sp+96) 64
 def prepared (s : State) : State := Wrapper.restState (Wrapper.headState s)
 
 
-theorem shared_pre (s : State) (hs : (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s) :
+theorem shared_pre (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s) :
     Wrapper.Layout (prepared s) (s.gpr .r10).toNat (s.gpr .r8).toNat ∧
     ((s.gpr .r4).toNat=10 ∨ (s.gpr .r4).toNat=12 ∨ (s.gpr .r4).toNat=14) ∧
     InRegions (s.rd++s.wr) (s.sp+96) 8 ∧ Covers [⟨scratch s,2112⟩] s.wr := by
-  sig_eval [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,Spec.Gcm.encryptBlocksSplitPre,
+  sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPre,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop] at hs
   obtain ⟨_,hrd,hwr,hkc,hky,hkd,hks,hcy,hcsrc,hcd,hcs,_,hysrc,hyd,hys,_,hsrcd,hsrcs,hds,_,_,
     hK,hC,hY,hSrc,hD,hS,hnr,hbound⟩ := hs

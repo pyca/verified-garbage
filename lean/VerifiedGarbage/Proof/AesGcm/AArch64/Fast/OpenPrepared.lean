@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Offset
@@ -38,7 +39,7 @@ text and the working space, holding the prepared powers. -/
 def openPrepN (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 384⟩
   openPreX [ctx] s ∧ ctx.Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧ ctx.Disjoint ⟨stackArg s 2, 2560⟩ ∧
-    (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ Spec.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
+    (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ Proof.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
 
 /-- What `vg_aes_gcm_open_prepared` needs: `openPreX`, with the 384 bytes of
 the context readable in place of its first 256, holding the prepared powers. -/
@@ -56,7 +57,7 @@ def openPrepW (s : State) : Prop :=
     (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 3 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
-    Spec.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
+    Proof.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0)
 
 /-- `vg_aes_gcm_open_prepared`. -/
 def openPreparedAArch64 : Contract isa where
@@ -177,22 +178,22 @@ theorem openPrepared_verified :
   Verified.of_correct (openPrepared_correct v gp hMK) (openPrepared_ct v gp hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openPrepared8ScratchContract, Proof.AesGcm.openPrepared8ScratchSig,
-          Spec.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
+          Proof.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
           openPreparedAArch64, openPrepW, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         sig_implies_post [Proof.AesGcm.openPrepared8ScratchContract, Proof.AesGcm.openPrepared8ScratchSig,
-          Spec.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
+          Proof.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
           openPreparedAArch64, openPrepW, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       pub := by
         sig_implies_pub [Proof.AesGcm.openPrepared8ScratchContract, Proof.AesGcm.openPrepared8ScratchSig,
-          Spec.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
+          Proof.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
           openPreparedAArch64, openPrepW, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨openSatP, by
         sig_pre [Proof.AesGcm.openPrepared8ScratchContract, Proof.AesGcm.openPrepared8ScratchSig,
-          Spec.Gcm.openPrepared8Pre, AArch64.abi, AArch64.argRegs,
+          Proof.Gcm.openPrepared8Pre, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop, openSatP, openSat,
           stackArg, stackArgAddr, Mem.readW, Mem.read]
         sig_and_intros
@@ -213,10 +214,10 @@ end
 def openFrameSatP : State :=
   { openFrameSat with rd := [⟨0x1000, 384⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 16⟩] }
 
-theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrepared8Contract AArch64.abi 2592).pre s := by
+theorem openFrameSatP_pre : ∃ s, (Proof.Gcm.openPrepared8Contract AArch64.abi 2592).pre s := by
   refine ⟨openFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.openPrepared8Contract, Spec.Gcm.openPrepared8Sig,
-    Spec.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs,
+  sig_pre [Proof.Gcm.openPrepared8Contract, Proof.Gcm.openPrepared8Sig,
+    Proof.Gcm.openPrepared8Pre, Spec.Gcm.openPost, Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs,
     AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop, openFrameSatP, openFrameSat,
     openSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -232,9 +233,9 @@ theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrepared8Contract AArch64.abi 2
 theorem openPrepared_framed (v : GcmImpl) (gp : GhashPreparedImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fast.openWith v.callees gp.fn))
-      (Spec.Gcm.openPrepared8Contract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openPrepared8Sig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.openPrepared8Pre AArch64.abi.ptrBits)
+      (Proof.Gcm.openPrepared8Contract AArch64.abi 2592) :=
+  AArch64.Verified.stackArgScratch (sig := Proof.Gcm.openPrepared8Sig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.openPrepared8Pre AArch64.abi.ptrBits)
     (post := Spec.Gcm.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
     (openPrepared_verified v gp hMK) (by decide) (by decide) (Proof.AesGcm.openPrepared8Pre_local _)

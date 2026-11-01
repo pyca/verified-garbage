@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Correct
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.CT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -26,8 +27,8 @@ def sat : State where
 
 
 theorem sat_pre : scratchContract.pre sat := by
-  sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Spec.Gcm.sealSplitSig,
-    Spec.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop,
+  sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Proof.Gcm.sealSplitSig,
+    Proof.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop,
     stackBelow,sat,Mem.readW,Mem.read]
   sig_and_intros
   all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)

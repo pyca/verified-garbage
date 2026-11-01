@@ -162,11 +162,11 @@ def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 
 /-- The instance of `vg_aes_gcm_encrypt_blocks_to` of a variant. -/
 def blkTo (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
-  .ofBlocks (Spec.Gcm.encryptBlocksToApi.name ++ v.impl.suffix) v.impl.blkB v.stitchTo
+  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to" ++ v.impl.suffix) v.impl.blkB v.stitchTo
 
 /-- The instance of `vg_aes_gcm_encrypt_blocks_to_precomputed` of a variant. -/
 def blkToP (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofBlocks (Spec.Gcm.encryptBlocksToPrecomputedApi.name ++ v.impl.suffix) v.impl.blkP v.stitchToP
+  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_precomputed" ++ v.impl.suffix) v.impl.blkP v.stitchToP
 
 /-- The instance of `vg_aes_gcm_stream_encrypt` calling the implementations `v`. -/
 def encFn (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
@@ -316,7 +316,7 @@ def finFn (v : GcmImpl) : Gather.FinFn :=
 
 /-- The instance of `vg_aes_gcm_stream_encrypt_to` of a variant. -/
 def toFn (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
-  .ofBase ⟨Spec.Gcm.streamEncryptToApi.name ++ v.impl.suffix,
+  .ofBase ⟨"vg_aes_gcm_stream_encrypt_to" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkTo v).fn (encFn v.impl).fn)⟩
     (StreamTo.streamEncryptTo_framed (blkTo v) (encFn v.impl))
@@ -326,7 +326,7 @@ def toFn (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
 
 /-- The instance of `vg_aes_gcm_stream_encrypt_to_precomputed` of a variant. -/
 def toFnP (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨Spec.Gcm.streamEncryptToPrecomputedApi.name ++ v.impl.suffix,
+  .ofPowers ⟨"vg_aes_gcm_stream_encrypt_to_precomputed" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToP v).fn (encFnP v.impl).fn)⟩
     (StreamTo.streamEncryptToP_framed (blkToP v) (encFnP v.impl))
@@ -336,7 +336,7 @@ def toFnP (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers 
 
 /-- The instance of `vg_aes_gcm_seal_split` of a variant. -/
 def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
-  .ofBase ⟨Spec.Gcm.sealSplitApi.name ++ v.impl.suffix,
+  .ofBase ⟨"vg_aes_gcm_seal_split" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))⟩
     (Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v))
@@ -346,7 +346,7 @@ def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.ba
 
 /-- The instance of `vg_aes_gcm_seal_split_precomputed` of a variant. -/
 def splitFnP (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨Spec.Gcm.sealSplitPrecomputedApi.name ++ v.impl.suffix,
+  .ofPowers ⟨"vg_aes_gcm_seal_split_precomputed" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))⟩
     (Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v))
@@ -366,11 +366,11 @@ def shortFnP (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.p
 
 /-- Prepared whole-block implementations, propagated through all callers. -/
 def blkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  v.impl.blkM v.stitchR (Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix)
-    (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)
+  v.impl.blkM v.stitchR ("vg_aes_gcm_encrypt_blocks_prepared" ++ v.impl.suffix)
+    ("vg_aes_gcm_decrypt_blocks_prepared" ++ v.impl.suffix)
 
 def blkToR (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofBlocks (Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix) (blkR v) v.stitchToR
+  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) (blkR v) v.stitchToR
 
 def encFnR (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix,
@@ -380,7 +380,7 @@ def encFnR (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.pre
     (StreamTo.framed_xdepth (streamEncryptM_xdepth v.impl (blkR v))) (StreamTo.framed_mx (streamEncryptM_mx v.impl (blkR v)))
 
 def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofPrepared ⟨Spec.Gcm.streamEncryptToPreparedApi.name ++ v.impl.suffix,
+  .ofPrepared ⟨"vg_aes_gcm_stream_encrypt_to_prepared" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR v).fn (encFnR v).fn)⟩
     (StreamTo.streamEncryptToPrepared_framed (blkToR v) (encFnR v))
@@ -398,7 +398,7 @@ def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.pre
 
 /-- The instance of `vg_aes_gcm_seal_split_prepared` of a variant. -/
 def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofPrepared ⟨Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix,
+  .ofPrepared ⟨"vg_aes_gcm_seal_split_prepared" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
     (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
@@ -494,11 +494,11 @@ def GcmVariant.r16 (v : GcmVariant) : Option (PLift (R16 v)) :=
 
 /-- Whole-block implementations for a key context of `vg_aes_gcm_prepare16`. -/
 def blkR16 (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  v.impl.blkM v.stitchR16 (Spec.Gcm.encryptBlocksPrepared16Api.name ++ v.impl.suffix)
-    (Spec.Gcm.decryptBlocksPrepared16Api.name ++ v.impl.suffix)
+  v.impl.blkM v.stitchR16 ("vg_aes_gcm_encrypt_blocks_prepared16" ++ v.impl.suffix)
+    ("vg_aes_gcm_decrypt_blocks_prepared16" ++ v.impl.suffix)
 
 def blkToR16 (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofBlocks (Spec.Gcm.encryptBlocksToPrepared16Api.name ++ v.impl.suffix) (blkR16 v) v.stitchToR16
+  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) (blkR16 v) v.stitchToR16
 
 def encFnR16 (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
   .ofPrepared16 ⟨Spec.Gcm.streamEncryptPrepared16Api.name ++ v.impl.suffix,
@@ -508,7 +508,7 @@ def encFnR16 (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.p
     (StreamTo.framed_xdepth (streamEncryptM_xdepth v.impl (blkR16 v))) (StreamTo.framed_mx (streamEncryptM_mx v.impl (blkR16 v)))
 
 def toFnR16 (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofPrepared16 ⟨Spec.Gcm.streamEncryptToPrepared16Api.name ++ v.impl.suffix,
+  .ofPrepared16 ⟨"vg_aes_gcm_stream_encrypt_to_prepared16" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR16 v).fn (encFnR16 v).fn)⟩
     (StreamTo.streamEncryptToPrepared16_framed (blkToR16 v) (encFnR16 v))
@@ -526,7 +526,7 @@ def sealFnR16 (v : GcmVariant) (hs : v.impl.short = false) : Gather.SealFn Proof
 
 /-- The instance of `vg_aes_gcm_seal_split_prepared16` of a variant. -/
 def splitFnR16 (v : GcmVariant) (hz : ∀ n, v.impl.onePass = some n → n ≠ .z) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofPrepared16 ⟨Spec.Gcm.sealSplitPrepared16Api.name ++ v.impl.suffix,
+  .ofPrepared16 ⟨"vg_aes_gcm_seal_split_prepared16" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR16 v)) (blkToR16 v).fn))⟩
     (Split.sealSplitPrepared16_framed v.impl (blkR16 v) (blkToR16 v) Short.shortFacts hz)

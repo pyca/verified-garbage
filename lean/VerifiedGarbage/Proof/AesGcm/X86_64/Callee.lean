@@ -560,10 +560,10 @@ def suffix : String := v.ctr.suffix ++ v.gh.suffix ++ (v.stitch.map (·.suffix))
 
 def callees : Callees :=
   ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn,
-    ⟨Spec.Gcm.encryptBlocksApi.name ++ v.suffix,
+    ⟨"vg_aes_gcm_encrypt_blocks" ++ v.suffix,
       Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.enc)) false
         (v.stitch.any (·.full))⟩,
-    ⟨Spec.Gcm.decryptBlocksApi.name ++ v.suffix,
+    ⟨"vg_aes_gcm_decrypt_blocks" ++ v.suffix,
       Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.dec))⟩⟩
 
 end GcmImpl

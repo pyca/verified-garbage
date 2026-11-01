@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Gcm.Prepared
 /-!
 # AES-GCM with eight prepared GHASH powers
 
-**Trusted.** A 384-byte key-context format for implementations that read only
+Not trusted: the contracts of internal functions (`Rust.Internal`), which only verified code calls. A 384-byte key-context format for implementations that read only
 the first eight prepared powers. The first 256 bytes are the existing key
 context (`KeyRepr`'s layout: the key schedule, and the hash subkey at byte
 240); the remaining 128 bytes hold 4 pairs, laid out exactly as the first 4
@@ -31,7 +31,9 @@ remain usable. Existing specifications and contracts are unchanged.
 
 @[expose] public section
 
-namespace VG.Spec.Gcm
+namespace VG.Proof.Gcm
+
+open VG.Spec VG.Spec.Gcm
 
 /-- The first 4 pairs of `PreparedPowersRepr`: pair `k`, at byte `256 + 32 k`,
 contains the encoded `H^(2k+2)` then `H^(2k+1)`, each as a little-endian
@@ -142,4 +144,4 @@ def ghashPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
       blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
     (stack := stack)
 
-end VG.Spec.Gcm
+end VG.Proof.Gcm

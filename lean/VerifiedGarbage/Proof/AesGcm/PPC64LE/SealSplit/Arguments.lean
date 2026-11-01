@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Call
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -53,13 +54,13 @@ theorem args_pre {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : Stat
     (L : Lay (V .r29) (V .r30) (V .r31)) (he : Env V sp s)
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
     (lay : Layout V sp S count s) (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14) :
-    (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre
+    (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre
       ((argsState s).callEntry.withRegions (reads (argsState s)) (writes (argsState s))) := by
   obtain ⟨h3,h4,h5,h6,h7,h8,h9,h10,hw⟩ := args_values he lay
   have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega
   have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
   have hr : R<2^64 := by rcases hv with h | h | h <;> omega
-  sig_eval [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,Spec.Gcm.encryptBlocksSplitPre,
+  sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPre,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
   simp only [reads,writes,argsState,argsRegs,RegUpd.gpr_write,RegUpd.sp_write,reduceCtorEq,ite_false,ite_true,
     Mem.readW_writeW_self64,he.r29,he.r30,he.r31,he.fr .r28 (by decide),he.fr .r27 (by decide),

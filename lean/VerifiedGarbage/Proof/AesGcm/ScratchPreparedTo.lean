@@ -3,8 +3,10 @@ module
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
 public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Proof.Gcm.PreparedContract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
@@ -16,16 +18,16 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm
-open VG.Spec.Gcm
+open VG.Spec.Gcm Proof.Gcm
 
 abbrev streamEncryptToPreparedScratchSig := streamEncryptToPrecomputedScratchSig
 
 def streamEncryptToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamEncryptToPreparedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen src len dst dstLen _scratch =>
-      Spec.Gcm.streamEncryptToPreparedPre A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
+      Proof.Gcm.streamEncryptToPreparedPre A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
     (post := fun ctx rounds state aadLen textLen src len dst dstLen _scratch =>
-      Spec.Gcm.streamEncryptToPost A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
+      Proof.Gcm.streamEncryptToPost A.ptrBits ctx rounds state aadLen textLen src len dst dstLen)
     (writeArgs := true) (stack := stack)
 
 

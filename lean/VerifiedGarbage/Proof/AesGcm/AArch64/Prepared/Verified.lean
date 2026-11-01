@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Derive
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
@@ -61,9 +62,9 @@ def deriveSat : State where
 
 theorem derive_verified (hP : PrepPow) :
     Verified AArch64.target Impl.AesGcm.AArch64.Prepared.derive
-      (Spec.Gcm.derivePrepared8Contract AArch64.abi) :=
+      (Proof.Gcm.derivePrepared8Contract AArch64.abi) :=
   Verified.of_correct (derive_correct hP) derive_ct (by
-    sig_implies [Spec.Gcm.derivePrepared8Contract, Spec.Gcm.derivePrepared8Sig, Spec.Gcm.derivePrepared8Post,
+    sig_implies [Proof.Gcm.derivePrepared8Contract, Proof.Gcm.derivePrepared8Sig, Proof.Gcm.derivePrepared8Post,
       derivePrepared8AArch64, AArch64.abi, AArch64.argRegs] [deriveSat] using deriveSat)
 
 end VG.Proof.AesGcm.AArch64
