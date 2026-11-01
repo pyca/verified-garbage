@@ -164,11 +164,6 @@ abbrev hkeyAlu : List Instr :=
 
 theorem e1_56 : (BitVec.ofNat 64 0xe1 : BitVec 64) <<< 56 = 0xE100000000000000#64 := by decide
 
-theorem wp_and {s : State} {is : List Instr} {Q : State → Prop} {d n m : Reg}
-    (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
-    WP isa (.block (.logic .and d n m :: is)) s Q :=
-  Steps.WP.cons exec_logic (k _ (Steps.Upd.write _ _ _))
-
 theorem hkeyAlu_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
     WP isa (.block hkeyAlu) t fun t' => PK t t' ∧ t'.mem = t.mem ∧ t'.gpr .s0 = c.W ∧
       t'.gpr .a1 = hkHi (t.mem.readW (c.W + BitVec.ofNat 64 24) 64) (t.mem.readW (c.W + BitVec.ofNat 64 16) 64) ∧
@@ -250,7 +245,8 @@ theorem hkey_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
 /-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
 the calls use, the encryption key's schedule and the working spaces. -/
 abbrev keyR (W : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 256, 3584⟩]
+  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 256, 240⟩,
+    ⟨W + BitVec.ofNat 64 1792, 2048⟩]
 
 /-- What `keys` leaves, from `σ`. -/
 structure KeysPost (c : Cx) (σ t : State) : Prop where
@@ -272,15 +268,15 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
   refine WP.seq (WP.mono (derive_wp L E) fun t₂ I => ?_)
   have k0 : (⟨c.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR c.W := List.mem_cons_self
   have k1 : (⟨c.W + BitVec.ofNat 64 240, 16⟩ : Region) ∈ keyR c.W := List.mem_cons_of_mem _ List.mem_cons_self
-  have k2 : (⟨c.W + BitVec.ofNat 64 256, 3584⟩ : Region) ∈ keyR c.W :=
-    List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  have k2 : (⟨c.W + BitVec.ofNat 64 256, 240⟩ : Region) ∈ keyR c.W := by simp
+  have k3 : (⟨c.W + BitVec.ofNat 64 1792, 2048⟩ : Region) ∈ keyR c.W := by simp
   have f₂ : Frame (keyR c.W) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, k1, fun _ h => h⟩
-    · exact ⟨_, k2, Offset.sub _ (by decide) (by decide)⟩
+    · exact ⟨_, k3, fun _ h => h⟩
   refine WP.seq (WP.mono (expand_wp L I.env) fun t₃ X => ?_)
   have E₃ := I.env.of_pk X.pk
   refine WP.mono (hkey_wp L E₃) fun t₄ ⟨pk₄, hm₄⟩ => ?_
@@ -291,7 +287,9 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
       rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by decide)
   have f₃ : Frame (keyR c.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub _ (by decide) (by decide)⟩
+    rcases hr with rfl | rfl
+    · exact ⟨_, k2, fun _ h => h⟩
+    · exact ⟨_, k3, Offset.sub _ (by decide) (by decide)⟩
   have f₄ : Frame (keyR c.W) t₃.mem t₄.mem := by
     rw [hm₄]; exact (hkeyMem_frame _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr

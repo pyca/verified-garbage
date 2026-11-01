@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 
 /-!
 # AES-GCM-SIV on RISC-V: arithmetic and the arguments of calls
@@ -24,6 +26,11 @@ namespace VG.Proof.AesGcmSiv.RISCV64
 
 open VG VG.RISCV64
 open VG.Proof.AesGcm.RISCV64 (CtrCall LoopOut)
+
+theorem wp_and {s : State} {is : List Instr} {Q : State → Prop} {d n m : Reg}
+    (k : ∀ s', Steps.Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .and d n m :: is)) s Q :=
+  Steps.WP.cons exec_logic (k _ (Steps.Upd.write _ _ _))
 
 theorem ofNat_shl (a k : Nat) : BitVec.ofNat 64 a <<< k = BitVec.ofNat 64 (2 ^ k * a) := by
   apply BitVec.eq_of_toNat_eq
