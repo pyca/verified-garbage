@@ -492,7 +492,7 @@ theorem modeK_correct (M : AesCbc.Mode) {body : Prog isa}
             frame := c.frame.mono fun r hr => by
               simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
               rcases hr with rfl | rfl
-              exacts [.inl rfl, .inr (.inr (.inr rfl))]
+              exacts [.inl rfl, .inr (.inr (.inr (.inr rfl)))]
             res := ⟨c.st, c.data⟩ }
   · show Spec.Cbc.blocksAt s'.mem D n = M.out R w (Spec.Aes.bytesAt s₀.mem St 16) (Spec.Cbc.blocksAt s₀.mem D n) ∧
       Spec.Aes.bytesAt s'.mem St 16 = M.chain R w (Spec.Aes.bytesAt s₀.mem St 16) (Spec.Cbc.blocksAt s₀.mem D n)

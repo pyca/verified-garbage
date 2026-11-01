@@ -4,9 +4,9 @@ public import VerifiedGarbage.Impl.AesCfb.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.AesCfb.Spec
 public import VerifiedGarbage.Spec.Cfb.Contract
-import VerifiedGarbage.Proof.AesCfb.RISCV64.Body
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Verified
 import VerifiedGarbage.Proof.Aes.RISCV64.ChainModes
+import VerifiedGarbage.Proof.Aes.RISCV64.WideCfb
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 
@@ -14,9 +14,10 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 # AES-CFB128 on RISC-V: `Verified`
 
 Correctness and constant time, of encryption from the CFB128 chain's
-(`Proof/Aes/RISCV64/ChainModes.lean`) and its call's (`wrap_wp`, `wrap_ct`,
-`Proof/AesCbc/RISCV64/Chain.lean`), of decryption from the loop AES-CBC's
-proofs share, a state satisfying the precondition, and the shared contracts of
+(`Proof/Aes/RISCV64/ChainModes.lean`) and of decryption from the wide CFB128
+decryption's (`Proof/Aes/RISCV64/WideCfb.lean`), and their calls'
+(`wrap_wp`, `wrap_ct`, `Proof/AesCbc/RISCV64/Chain.lean`), a state
+satisfying the precondition, and the shared contracts of
 `Spec/Cfb/Contract.lean` (with no stack: a call stores nothing in memory, and
 the return address is saved in the scratch buffer).
 -/
@@ -43,8 +44,15 @@ theorem encrypt_ct : ConstantTime isa (modeRISCV64 (cfbMode true)).pre (modeRISC
 
 theorem decrypt_correct (s : State) (hs : (modeRISCV64 (cfbMode false)).pre s) :
     ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 (cfbMode false)).post s s' := by
-  obtain ⟨t, s', he, hg, hra, hp⟩ := whole_wp decBody_ok hs
-  exact ⟨t, s', he, ⟨hg, Exec.sp he, hra⟩, hp⟩
+  obtain ⟨t, s', he, hg, hra, hsp, hp⟩ :=
+    wrap_wp Proof.Aes.RISCV64.cfbDecWide_k (name := "vg_aes_cfb_dec_wide") (encrypt_wpre hs)
+  exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hp⟩
+
+theorem decrypt_ct : ConstantTime isa (modeRISCV64 (cfbMode false)).pre (modeRISCV64 (cfbMode false)).pub
+    decrypt :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
+    wrap_ct Proof.Aes.RISCV64.cfbDecWide_k "vg_aes_cfb_dec_wide" _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂)
+      hq e₁ e₂
 
 theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Cfb.aesEncryptContract RISCV64.abi) :=
   Verified.of_correct encrypt_correct encrypt_ct (by
@@ -52,7 +60,7 @@ theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Cfb.aesEncryptC
       RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 
 theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Cfb.aesDecryptContract RISCV64.abi) :=
-  Verified.of_correct decrypt_correct (whole_ct decBody_ok decBody_ct) (by
+  Verified.of_correct decrypt_correct decrypt_ct (by
     sig_implies [Spec.Cfb.aesDecryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
       RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 

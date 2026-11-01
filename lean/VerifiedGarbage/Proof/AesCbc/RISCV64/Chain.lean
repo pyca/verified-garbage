@@ -104,6 +104,9 @@ structure ChainK (out : Bool) (len : Nat → Nat) (k : Contract isa) (c : Prog i
     (∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4], s.gpr r = s₀.gpr r) → s.mem = chMem s₀ → t'.mem = t.mem →
     k.post s t → k.post s₀ t'
 
+theorem preserved_ne {r : Reg} (hr : r ∈ preserved) : r ≠ .t0 := by
+  revert hr; cases r <;> decide
+
 theorem chSaved_bound : ∀ p ∈ chSaved, 16 ≤ p.2 ∧ p.2 + 8 ≤ 32 := by decide
 
 theorem chMem_frame (s₀ : State) : Frame [chSlots s₀] s₀.mem (chMem s₀) :=
@@ -262,7 +265,7 @@ theorem save_wp {out : Bool} {len : Nat → Nat} {s₀ : State} (h : WPre out le
   · rw [u₂.other _ (by decide), gt _ (by decide)]
   · rw [u₂.other _ (by decide), gt _ (by decide)]
   · rw [u₂.gpr, gt _ (by decide)]
-  · rw [u₂.other _ h1, gt _ (preserved_ne hr).2.1]
+  · rw [u₂.other _ h1, gt _ (preserved_ne hr)]
   · rw [u₂.mem, memt]
   · rw [u₂.rd, rdt]
   · rw [u₂.wr, wrt]
@@ -324,7 +327,7 @@ theorem wrap_wp {name : String} {s₀ : State} (h : WPre out len s₀) :
       (by rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega))
   have g₀ (r : Reg) (hr : r ≠ .t0) : saveG s₀ r = s₀.gpr r := RegUpd.gpr_write_of_ne _ _ hr
   refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
-  · have h0 := (preserved_ne hr).2.1
+  · have h0 := preserved_ne hr
     rw [r₄.gpr_of (r := r) ?_, g₀ r h0]
     by_cases h1 : r = .s1
     · left; subst h1; decide
