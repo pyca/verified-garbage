@@ -26,9 +26,9 @@ jobs:
           from pathlib import Path
           import struct
           inp=Path('gh-power-probe-input.bin').read_bytes();exp=Path('gh-power-probe-expected.bin').read_bytes();actual=Path('actual.bin').read_bytes()
-          want=b''.join(exp[i:i+16]*3 for i in range(0,len(exp),16))
+          want=b''.join(exp[i:i+16]*4 for i in range(0,len(exp),16))
           assert actual==want
-          print(f'{len(exp)//16} Spec-derived cases x 3 kernels pass')
+          print(f'{len(exp)//16} Spec-derived cases x 4 kernels pass')
           PY
       - name: Interleaved native timings
         run: |
