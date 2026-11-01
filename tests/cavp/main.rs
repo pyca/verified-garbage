@@ -86,6 +86,50 @@ fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
     records
 }
 
+/// The vectors of the curve `curve` (`"P-192"`) of the SP 800-56A ECC CDH
+/// primitive test, its integers `len` bytes long: each `QCAVS`
+/// (uncompressed), `dIUT`, `QIUT` (uncompressed) and `ZIUT`.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
+fn ecdh_vectors(curve: &str, len: usize) -> Vec<[Vec<u8>; 4]> {
+    // An integer, which the file writes with up to two more leading zero
+    // bytes (P-521's).
+    let int = |hex: &str| {
+        let bytes = unhex(hex);
+        let (zeros, value) = bytes.split_at(bytes.len() - len);
+        assert!(crate::bytes::all_equal(zeros, 0));
+        value.to_vec()
+    };
+    let point = |x: &str, y: &str| [vec![4], int(x), int(y)].concat();
+    let text = crate::vectors::text("vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
+    let text = text.split_once(&format!("[{curve}]")).unwrap().1;
+    let text = text.split_once("\n[").unwrap().0;
+    let fields = fields(text);
+    assert_eq!(fields.len(), 25 * 7);
+    let mut vectors = Vec::new();
+    for v in fields.chunks(7) {
+        let names = [v[0].0, v[1].0, v[2].0, v[3].0, v[4].0, v[5].0, v[6].0];
+        assert_eq!(
+            names,
+            [
+                "COUNT", "QCAVSx", "QCAVSy", "dIUT", "QIUTx", "QIUTy", "ZIUT"
+            ]
+        );
+        vectors.push([
+            point(v[1].1, v[2].1),
+            int(v[3].1),
+            point(v[4].1, v[5].1),
+            int(v[6].1),
+        ]);
+    }
+    vectors
+}
+
 /// The `key = value` lines of a CAVP response file, in order, without the
 /// comments, blank lines and `[L = ...]` section headers.
 fn fields(text: &str) -> Vec<(&str, &str)> {

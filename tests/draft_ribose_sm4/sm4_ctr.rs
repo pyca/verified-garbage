@@ -17,16 +17,7 @@ use verified_garbage::sm4_ctr::Sm4Ctr;
 use verified_garbage::sm4_ecb::Sm4Ecb;
 
 use super::{field, section};
-
-/// `ctr` plus `k`, modulo `2¹²⁸`.
-fn add(mut ctr: [u8; 16], mut k: usize) -> [u8; 16] {
-    for byte in ctr.iter_mut().rev() {
-        let (sum, carry) = byte.overflowing_add(k as u8);
-        *byte = sum;
-        k = (k >> 8) + usize::from(carry);
-    }
-    ctr
-}
+use crate::bytes::counter_add;
 
 /// CTR from ECB: `data` XORed with the encryptions of `ctr`, `ctr + 1`, ….
 fn reference(key: &[u8; 16], ctr: [u8; 16], data: &[u8]) -> Vec<u8> {
@@ -39,7 +30,7 @@ fn reference(key: &[u8; 16], ctr: [u8; 16], data: &[u8]) -> Vec<u8> {
 /// `apply_keystream` on `data` from `ctr`, whole and split at every block
 /// boundary, gives `expected` and leaves `ctr` plus the number of blocks.
 fn check(ctx: &Sm4Ctr, ctr: [u8; 16], data: &[u8], expected: &[u8]) {
-    let after = add(ctr, data.len().div_ceil(16));
+    let after = counter_add(&ctr, data.len().div_ceil(16));
     let mut c = ctr;
     let mut output = data.to_vec();
     ctx.apply_keystream(&mut c, &mut output);
@@ -51,7 +42,7 @@ fn check(ctx: &Sm4Ctr, ctr: [u8; 16], data: &[u8], expected: &[u8]) {
         ctx.apply_keystream(&mut c, &mut []);
         assert_eq!(c, ctr);
         ctx.apply_keystream(&mut c, &mut output[..offset]);
-        assert_eq!(c, add(ctr, offset / 16));
+        assert_eq!(c, counter_add(&ctr, offset / 16));
         ctx.apply_keystream(&mut c, &mut output[offset..]);
         assert_eq!(output, expected);
         assert_eq!(c, after);
@@ -78,7 +69,7 @@ fn draft_examples() {
             let mut output = plaintext[..len].to_vec();
             ctx.apply_keystream(&mut c, &mut output);
             assert_eq!(output, ciphertext[..len]);
-            assert_eq!(c, add(iv, len.div_ceil(16)));
+            assert_eq!(c, counter_add(&iv, len.div_ceil(16)));
         }
     }
 }
@@ -107,7 +98,7 @@ fn from_ecb() {
             let mut output = input.to_vec();
             ctx.apply_keystream(&mut c, &mut output);
             assert_eq!(output, expected);
-            assert_eq!(c, add(ctr, len.div_ceil(16)));
+            assert_eq!(c, counter_add(&ctr, len.div_ceil(16)));
         }
         check(&ctx, ctr, &data, &reference(&key, ctr, &data));
     }
@@ -127,7 +118,7 @@ fn unaligned_batches() {
             let mut c = ctr;
             ctx.apply_keystream(&mut c, &mut buffer[offset..offset + len]);
             assert_eq!(&buffer[offset..offset + len], expected);
-            assert_eq!(c, add(ctr, len.div_ceil(16)));
+            assert_eq!(c, counter_add(&ctr, len.div_ceil(16)));
             assert!(crate::bytes::all_equal(&buffer[..offset], 0xa5));
             assert!(crate::bytes::all_equal(&buffer[offset + len..], 0xa5));
         }

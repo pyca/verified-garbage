@@ -67,6 +67,13 @@ pub fn trim_zeros(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
+/// The counter block `n` blocks after `ctr`, modulo `2¹²⁸`.
+pub fn counter_add(ctr: &[u8; 16], n: usize) -> [u8; 16] {
+    u128::from_be_bytes(*ctr)
+        .wrapping_add(n as u128)
+        .to_be_bytes()
+}
+
 /// The counter blocks `start`, `start + 1`, … (modulo 2¹²⁸), `blocks` of
 /// them, big endian: a CTR keystream before it is encrypted.
 pub fn counter_blocks(start: u128, blocks: usize) -> Vec<u8> {

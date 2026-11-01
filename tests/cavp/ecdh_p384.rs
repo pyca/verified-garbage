@@ -19,37 +19,17 @@ use super::unhex;
 /// `ZIUT`.
 type Vector = ([u8; 97], [u8; 48], [u8; 97], [u8; 48]);
 
-fn point(x: &str, y: &str) -> [u8; 97] {
-    let mut p = [4; 97];
-    p[1..49].copy_from_slice(&unhex(x));
-    p[49..].copy_from_slice(&unhex(y));
-    p
-}
-
 fn vectors() -> Vec<Vector> {
-    let text = crate::vectors::text("vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
-    let text = text.split_once("[P-384]").unwrap().1;
-    let text = text.split_once("\n[").unwrap().0;
-    let fields = super::fields(text);
-    assert_eq!(fields.len(), 25 * 7);
-    fields
-        .chunks(7)
-        .map(|v| {
-            let names: Vec<&str> = v.iter().map(|(k, _)| *k).collect();
-            assert_eq!(
-                names,
-                [
-                    "COUNT", "QCAVSx", "QCAVSy", "dIUT", "QIUTx", "QIUTy", "ZIUT"
-                ]
-            );
-            (
-                point(v[1].1, v[2].1),
-                unhex(v[3].1).try_into().unwrap(),
-                point(v[4].1, v[5].1),
-                unhex(v[6].1).try_into().unwrap(),
-            )
-        })
-        .collect()
+    let mut vectors = Vec::new();
+    for [peer, d, public, shared] in super::ecdh_vectors("P-384", 48) {
+        vectors.push((
+            peer.try_into().unwrap(),
+            d.try_into().unwrap(),
+            public.try_into().unwrap(),
+            shared.try_into().unwrap(),
+        ));
+    }
+    vectors
 }
 
 #[test]
