@@ -70,6 +70,11 @@ theorem ptr_add (p : BitVec 64) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
 
+/-- A pointer advanced by a multiple of `4` keeps its 4-alignment. -/
+theorem align4_add {p : BitVec 64} (hp : p.toNat % 4 = 0) (k : Nat) :
+    (p + BitVec.ofNat 64 (4 * k)).toNat % 4 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+
 /-- Two pointers from `p` differ exactly when their offsets do. -/
 theorem ptr_ne (p : BitVec 64) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     (p + BitVec.ofNat 64 a - (p + BitVec.ofNat 64 b) != 0) = decide (a ≠ b) := by

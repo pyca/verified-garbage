@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Impl.MlKem.RISCV64.Poly
+public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Spec.MlKem.Poly
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Impl.MlKem.RISCV64.Poly
+meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Spec.MlKem.Poly
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -50,19 +52,20 @@ section
 variable {s : State} {x y c : BitVec 64} (h3 : s.gpr .a0 = x) (h4 : s.gpr .a1 = y) (h5 : s.gpr .a2 = c)
   (h8 : s.gpr .a5 = 3329)
   (ia : InRegions (s.rd ++ s.wr) x 4) (ib : InRegions (s.rd ++ s.wr) y 4) (oa : InRegions s.wr x 4)
-include h3 h4 h5 h8 ia ib oa
+  (ax : x.toNat % 4 = 0) (ay : y.toNat % 4 = 0)
+include h3 h4 h5 h8 ia ib oa ax ay
 
 theorem addBody_ok :
     WP isa (.block addBody) s (Step s x y c ((fixq ((s.mem.readW x 32).setWidth 64 +
       (s.mem.readW y 32).setWidth 64 - 3329)).setWidth 32)) := by
-  crun [addBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, preserved,
+  crun [addBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, ax, ay, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 
 theorem subBody_ok :
     WP isa (.block subBody) s (Step s x y c ((fixq ((s.mem.readW x 32).setWidth 64 -
       (s.mem.readW y 32).setWidth 64)).setWidth 32)) := by
-  crun [subBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, preserved,
+  crun [subBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, ax, ay, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 
@@ -87,13 +90,15 @@ structure Pre (s₀ : State) : Prop where
   fitG : (G s₀).toNat + 1024 ≤ 2 ^ 64
   redF : Reduced s₀.mem (F s₀)
   redG : Reduced s₀.mem (G s₀)
+  alF : (F s₀).toNat % 4 = 0
+  alG : (G s₀).toNat % 4 = 0
 
 /-- After `i` iterations, writing `out j` to coefficient `j`. -/
 structure Inv (out : Nat → BitVec 32) (s₀ : State) (i : Nat) (s : State) : Prop where
-  r3 : s.gpr .a0 = F s₀ + BitVec.ofNat 64 (4 * i)
-  r4 : s.gpr .a1 = G s₀ + BitVec.ofNat 64 (4 * i)
-  r5 : s.gpr .a2 = BitVec.ofNat 64 (256 - i)
-  r8 : s.gpr .a5 = 3329
+  a0 : s.gpr .a0 = F s₀ + BitVec.ofNat 64 (4 * i)
+  a1 : s.gpr .a1 = G s₀ + BitVec.ofNat 64 (4 * i)
+  a2 : s.gpr .a2 = BitVec.ofNat 64 (256 - i)
+  a5 : s.gpr .a5 = 3329
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
@@ -107,11 +112,12 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
     {s : State} (h : Inv out s₀ i s) {body : List Instr}
     (hb : ∀ {x y c : BitVec 64}, s.gpr .a0 = x → s.gpr .a1 = y → s.gpr .a2 = c →
       InRegions (s.rd ++ s.wr) x 4 → InRegions (s.rd ++ s.wr) y 4 → InRegions s.wr x 4 →
-      WP isa (.block body) s (Step s x y c (out i))) :
+      x.toNat % 4 = 0 → y.toNat % 4 = 0 → WP isa (.block body) s (Step s x y c (out i))) :
     WP isa (.block body) s fun s' => Inv out s₀ (i + 1) s' ∧ (s'.gpr .a2 != 0) = decide (i + 1 ≠ 256) := by
   have cF := coeff_contains (F s₀) (i := i) hi
   have cG := coeff_contains (G s₀) (i := i) hi
-  refine WP.mono (hb h.a0 h.a1 h.a2 ?_ ?_ ?_) fun s' ⟨r3, r4, r5, r8, m, rd, wr, sp, ra, pres⟩ => ⟨⟨?_, ?_, ?_,
+  refine WP.mono (hb h.a0 h.a1 h.a2 ?_ ?_ ?_ (align4_add hp.alF i)
+    (align4_add hp.alG i)) fun s' ⟨r3, r4, r5, r8, m, rd, wr, sp, ra, pres⟩ => ⟨⟨?_, ?_, ?_,
     r8.trans h.a5, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, ra.trans h.ra,
     fun r hr => (pres r hr).trans (h.pres r hr), ?_, ?_⟩, ?_⟩
   · rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨_, by simp, cF⟩
@@ -133,20 +139,27 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
       · rw [ite_eq_right hj', ite_eq_right (by omega)]
   · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
+/-- The loop's initialization. -/
+theorem init_ok {out : Nat → BitVec 32} {s₀ : State} :
+    WP isa (.block polyInit) s₀ (Inv out s₀ 0) := by
+  simp only [polyInit, liq, Nat.reduceLT, ite_false, List.cons_append, List.nil_append,
+    Int.reduceSub, Int.reduceNeg, Int.cast_ofNat_Int]
+  crun []
+  refine ⟨by simp, by simp, by simp, by simp; decide, rfl, rfl, rfl, by simp, fun r hr => ?_, Frame.refl _ _,
+    fun j _ => rfl⟩
+  have : r ≠ .a2 ∧ r ≠ .a5 := by revert r hr; decide
+  simp [this.1, this.2]
+
 /-- The whole loop. -/
 theorem loop_ok {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {body : List Instr}
     (hb : ∀ i < 256, ∀ s, Inv out s₀ i s → ∀ {x y c : BitVec 64}, s.gpr .a0 = x → s.gpr .a1 = y →
       s.gpr .a2 = c → InRegions (s.rd ++ s.wr) x 4 → InRegions (s.rd ++ s.wr) y 4 →
-      InRegions s.wr x 4 → WP isa (.block body) s (Step s x y c (out i))) :
+      InRegions s.wr x 4 → x.toNat % 4 = 0 → y.toNat % 4 = 0 → WP isa (.block body) s (Step s x y c (out i))) :
     WP isa (.seq (.block polyInit) (.loop (.block body) (.nonzero .a2))) s₀
       (Inv out s₀ 256) := by
-  refine WP.seq (WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (wp_nil ?_)))
-  refine wp_loop_nz (Inv out s₀) (N := 256) (by decide)
-    (fun i hi s h => inv_step hp hi h (hb i hi s h)) (fun _ h => h) ?_
-  refine ⟨by simp [State.write], by simp [State.write], by simp [State.write], by simp [State.write], rfl, rfl,
-    rfl, rfl, fun r hr => ?_, Frame.refl _ _, fun j _ => rfl⟩
-  have : r ≠ .a2 ∧ r ≠ .a5 := by revert r hr; decide
-  simp [State.write, this.1, this.2]
+  refine WP.seq (WP.mono (init_ok (out := out)) fun s h => ?_)
+  exact wp_loop_nz (Inv out s₀) (N := 256) (by decide)
+    (fun i hi s h => inv_step hp hi h (hb i hi s h)) (fun _ h => h) h
 
 /-! ## Correctness -/
 
@@ -173,10 +186,10 @@ theorem reads {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : Nat}
 theorem add_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (addOut s₀) s₀ i s →
     ∀ {x y c : BitVec 64}, s.gpr .a0 = x → s.gpr .a1 = y → s.gpr .a2 = c →
       InRegions (s.rd ++ s.wr) x 4 → InRegions (s.rd ++ s.wr) y 4 → InRegions s.wr x 4 →
-      WP isa (.block addBody) s (Step s x y c (addOut s₀ i)) := by
-  intro i hi s h x y c h3 h4 h5 ia ib oa
+      x.toNat % 4 = 0 → y.toNat % 4 = 0 → WP isa (.block addBody) s (Step s x y c (addOut s₀ i)) := by
+  intro i hi s h x y c h3 h4 h5 ia ib oa ax ay
   obtain ⟨ea, eb⟩ := reads hp hi h h3 h4
-  refine WP.mono (addBody_ok h3 h4 h5 h.a5 ia ib oa) fun s' hs => ?_
+  refine WP.mono (addBody_ok h3 h4 h5 h.a5 ia ib oa ax ay) fun s' hs => ?_
   rw [ea, eb] at hs
   refine (?_ : _ = addOut s₀ i) ▸ hs
   refine ofNat_val_eq ?_
@@ -190,10 +203,10 @@ theorem add_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (addOut 
 theorem sub_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (subOut s₀) s₀ i s →
     ∀ {x y c : BitVec 64}, s.gpr .a0 = x → s.gpr .a1 = y → s.gpr .a2 = c →
       InRegions (s.rd ++ s.wr) x 4 → InRegions (s.rd ++ s.wr) y 4 → InRegions s.wr x 4 →
-      WP isa (.block subBody) s (Step s x y c (subOut s₀ i)) := by
-  intro i hi s h x y c h3 h4 h5 ia ib oa
+      x.toNat % 4 = 0 → y.toNat % 4 = 0 → WP isa (.block subBody) s (Step s x y c (subOut s₀ i)) := by
+  intro i hi s h x y c h3 h4 h5 ia ib oa ax ay
   obtain ⟨ea, eb⟩ := reads hp hi h h3 h4
-  refine WP.mono (subBody_ok h3 h4 h5 h.a5 ia ib oa) fun s' hs => ?_
+  refine WP.mono (subBody_ok h3 h4 h5 h.a5 ia ib oa ax ay) fun s' hs => ?_
   rw [ea, eb] at hs
   refine (?_ : _ = subOut s₀ i) ▸ hs
   refine ofNat_val_eq ?_
@@ -215,13 +228,13 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 theorem pre_of {s : State} (h : (Spec.MlKem.addContract RISCV64.abi).pre s) : Pre s := by
   sig_pre [Spec.MlKem.addContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
 theorem pre_of_sub {s : State} (h : (Spec.MlKem.subContract RISCV64.abi).pre s) : Pre s := by
   sig_pre [Spec.MlKem.subContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
 /-- A state satisfying the precondition. -/
 def satState : State where
