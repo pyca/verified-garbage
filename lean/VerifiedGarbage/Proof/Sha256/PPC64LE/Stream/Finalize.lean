@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Common
 import all Init.Data.Nat.Bitwise.Basic
@@ -845,7 +850,7 @@ theorem finalize_verified : Verified PPC64LE.target finalize Proof.Sha256.finali
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h⟩ := correct (pre_of hs).1 (pre_of hs).2
     exact ⟨t, s', he, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
       (fun _ _ _ _ hp => agree₀ (N := 8) hp) (by taint_decide)
   · refine ⟨sat, rfl, rfl, ?_, ?_, ?_, by decide, ?_, ?_, ?_⟩ <;>
     exact Region.disjoint_of_sep (by decide)
@@ -856,7 +861,7 @@ theorem finalize224_verified : Verified PPC64LE.target finalize224 (Proof.Sha256
   · obtain ⟨t, s', he, h⟩ := correctN (preN_of hs).1 (preN_of hs).2 (by decide)
       (untouched_of (untouched_main _ (by decide))) (by decide) (fdepth_main _) (pushFrames_main _)
     exact ⟨t, s', he, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
       (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
   · refine ⟨sat224, rfl, rfl, ?_, ?_, ?_, by decide, ?_, ?_, ?_⟩ <;>
     exact Region.disjoint_of_sep (by decide)

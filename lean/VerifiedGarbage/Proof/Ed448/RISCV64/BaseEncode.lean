@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Invert
+public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 
 /-!
 # Ed448 on RISCV64: the encoding of `R`
@@ -80,11 +82,11 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .a0 = o)
     · exact absurd rfl hqR
     all_goals decide)
   unfold baseEncode
-  refine WP.seq (WP.mono (invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) hc hv rfl)
+  refine WP.seq (WP.mono (R64.invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) hc hv rfl)
     fun s1 ⟨hst1, hc1, hS1⟩ => ?_)
-  refine WP.seq (WP.mono (mulS (o := X2) (x := RX) (y := R) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (R64.mulS (o := X2) (x := RX) (y := R) (by decide) (by decide) (by decide)
     (by decide) hc1 hS1) fun s2 ⟨hr2, _, hS2⟩ => ?_)
-  have hr2' : Rest [.t2, .a1, .a2, .a4, .a5, .a6, .a7, .t0, .t1] s s2 := hst1.rest.trans (hr2.mono (by decide))
+  have hr2' : Rest R64.work s s2 := hst1.rest.trans (hr2.mono (by decide))
   have hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
   have h32 : s2.gpr .a0 = o := by rw [hr2'.gpr _ (by decide), h3]
   refine WP.seq (WP.append (freeze_ok hc2 h32
@@ -113,7 +115,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .a0 = o)
   have hS7 := hS3
   rw [← hm7] at hS7
   -- `y`.
-  refine WP.seq (WP.mono (mulS (o := X2) (x := RY) (y := R) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (R64.mulS (o := X2) (x := RY) (y := R) (by decide) (by decide) (by decide)
     (by decide) hc7 hS7) fun s8 ⟨hr8, _, hS8⟩ => ?_)
   have hc8 : Ctx b s8 := hc7.of_rest hr8 (by decide)
   have h38 : s8.gpr .a0 = o := by rw [hr8.gpr _ (by decide), hr7.gpr _ (by decide), h33]
