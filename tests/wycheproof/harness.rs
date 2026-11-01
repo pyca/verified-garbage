@@ -389,7 +389,8 @@ impl<P, T> TestFile<P, T> {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 pub fn par_each<I: Sync>(items: &[I], f: impl Fn(&I) + Sync) {
     par_indices(items.len(), &|i| f(&items[i]));
