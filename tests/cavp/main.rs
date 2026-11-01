@@ -99,7 +99,14 @@ fn fields(text: &str) -> Vec<(&str, &str)> {
 /// Checks every `Len`/`Msg`/`MD` vector of a message test file for a hash
 /// function `digest` with `N`-byte digests, and returns how many there were.
 fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> usize {
-    assert!(text.contains(&format!("[L = {N}]")));
+    messages(text, &format!("[L = {N}]"), &|msg| digest(msg).to_vec())
+}
+
+/// [`check_messages`], for a file with the header `header` (which gives the
+/// digest length); not generic, so that it is compiled once rather than for
+/// every digest length.
+fn messages(text: &str, header: &str, digest: &dyn Fn(&[u8]) -> Vec<u8>) -> usize {
+    assert!(text.contains(header));
     let fields = fields(text);
     assert_eq!(fields.len() % 3, 0);
     for v in fields.chunks(3) {
@@ -108,7 +115,7 @@ fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> u
         let len: usize = v[0].1.parse().unwrap();
         assert_eq!(len % 8, 0);
         let msg = unhex(v[1].1);
-        assert_eq!(digest(&msg[..len / 8])[..], unhex(v[2].1));
+        assert_eq!(digest(&msg[..len / 8]), unhex(v[2].1));
     }
     fields.len() / 3
 }
@@ -117,20 +124,29 @@ fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> u
 /// digests: 100 checkpoints, each after 1000 iterations of hashing the
 /// concatenation of the previous three digests.
 fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
-    assert!(text.contains(&format!("[L = {N}]")));
+    monte_carlo(text, N, &|msg| digest(msg).to_vec());
+}
+
+/// [`check_monte_carlo`], for `n`-byte digests; not generic, as
+/// [`messages`].
+fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8]) -> Vec<u8>) {
+    assert!(text.contains(&format!("[L = {n}]")));
     let fields = fields(text);
     assert_eq!(fields[0].0, "Seed");
-    let mut seed: [u8; N] = unhex(fields[0].1).try_into().unwrap();
+    let mut seed = unhex(fields[0].1);
+    assert_eq!(seed.len(), n);
     let checkpoints = &fields[1..];
     assert_eq!(checkpoints.len(), 2 * 100);
     for (j, v) in checkpoints.chunks(2).enumerate() {
         assert_eq!([v[0].0, v[1].0], ["COUNT", "MD"]);
         assert_eq!(v[0].1, j.to_string());
-        let mut md = [seed; 3];
+        let mut md = [seed.clone(), seed.clone(), seed];
         for _ in 3..1003 {
-            md = [md[1], md[2], digest(&md.concat())];
+            let next = digest(&md.concat());
+            md = [std::mem::take(&mut md[1]), std::mem::take(&mut md[2]), next];
         }
-        seed = md[2];
-        assert_eq!(seed[..], unhex(v[1].1));
+        let [_, _, last] = md;
+        seed = last;
+        assert_eq!(seed, unhex(v[1].1));
     }
 }

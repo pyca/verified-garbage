@@ -55,14 +55,25 @@ fn reference<H: Pbkdf2Hash>(password: &[u8], salt: &[u8], c: u32, len: usize) ->
 /// of up to three blocks (the last one partial or whole), and iteration
 /// counts from 1, derived with `derive` (`pbkdf2_hmac::<H>`).
 pub(crate) fn check<H: Pbkdf2Hash>(derive: fn(&[u8], &[u8], NonZeroU32, &mut [u8])) {
-    let d = H::OUTPUT_SIZE;
-    for plen in [0, 1, H::BLOCK_SIZE, H::BLOCK_SIZE + 1] {
+    check_with(H::OUTPUT_SIZE, H::BLOCK_SIZE, derive, reference::<H>);
+}
+
+/// [`check`], for a hash function of `d`-byte outputs and `block`-byte
+/// blocks and its [`reference`]; not generic, so that it is compiled once
+/// rather than for every hash function.
+fn check_with(
+    d: usize,
+    block: usize,
+    derive: fn(&[u8], &[u8], NonZeroU32, &mut [u8]),
+    reference: fn(&[u8], &[u8], u32, usize) -> Vec<u8>,
+) {
+    for plen in [0, 1, block, block + 1] {
         let password: Vec<u8> = (0..plen).map(|i| i as u8 ^ 0x5c).collect();
         for (c, len) in [(1, d), (2, 1), (3, d + 1), (5, 2 * d), (17, 3 * d - 1)] {
             let salt: Vec<u8> = (0..len as u8).collect();
             let mut dk = vec![0; len];
             derive(&password, &salt, NonZeroU32::new(c).unwrap(), &mut dk);
-            assert_eq!(dk, reference::<H>(&password, &salt, c, len));
+            assert_eq!(dk, reference(&password, &salt, c, len));
         }
     }
 }
