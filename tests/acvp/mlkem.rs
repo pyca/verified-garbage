@@ -65,17 +65,13 @@ pub fn array<const N: usize>(s: &str) -> [u8; N] {
 /// function `function` (if any).
 fn tests<T: FromJson>(text: &str, name: &str, function: Option<&str>) -> Vec<T> {
     let file: File<T> = crate::json::parse(name, text);
-    let mut groups = Vec::new();
+    let mut tests = Vec::new();
     for g in file.groups {
         if g.parameter_set == name && g.function.as_deref() == function {
-            groups.push(g.tests);
+            tests.extend(g.tests);
         }
     }
-    assert!(!groups.is_empty());
-    let mut tests = Vec::new();
-    for g in groups {
-        tests.extend(g);
-    }
+    assert!(!tests.is_empty());
     tests
 }
 
