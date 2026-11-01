@@ -450,8 +450,16 @@ call {vg_aes_xts_decrypt}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_xts_dec_wide.rs"]
+pub(crate) mod vg_aes_xts_dec_wide;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_xts_decrypt.rs"]
 pub(crate) mod vg_aes_xts_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_enc_wide.rs"]
+pub(crate) mod vg_aes_xts_enc_wide;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_xts_encrypt.rs"]
