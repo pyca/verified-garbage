@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.J0
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
@@ -92,6 +93,15 @@ theorem Lay.of {c st w : Addr} (cw : c.toNat + 256 ≤ 2 ^ 64) (sw : st.toNat + 
     Lay c st w :=
   ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)),
     sW.sub_right (Offset.sub_base _ (by decide)), ca, sal, wal⟩
+
+/-- `StkOk` from a precondition's `stkOk`. -/
+theorem stkOk.stk {s : State} {rs : List Region} (h : stkOk s rs) {c st w : Addr} (hc : ⟨c, 256⟩ ∈ rs)
+    (hs : ⟨st, 80⟩ ∈ rs) (hw : ⟨w, 2560⟩ ∈ rs) : StkOk c st w s.sp :=
+  ⟨(h.2.2 _ hc).symm, (h.2.2 _ hs).symm, (h.2.2 _ hw).symm, h.1, h.2.1⟩
+
+/-- A buffer of a precondition's `stkOk` is apart from the stack below `sp`. -/
+theorem stkOk.buf {s : State} {rs : List Region} (h : stkOk s rs) {r : Region} (hr : r ∈ rs) :
+    r.Disjoint (below s.sp 2048) := (h.2.2 _ hr).symm
 
 /-- A run that satisfies `R`, and for each `i` with `P i`, `Q i`. -/
 theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop} {Q : ι → State → Prop}
