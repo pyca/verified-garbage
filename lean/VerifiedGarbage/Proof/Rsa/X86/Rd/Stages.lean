@@ -69,27 +69,27 @@ theorem deMinus_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {de : Nat}
   · simp [upd, deX, sub32_wsub, hde', wX, wOne, wT, VG.Impl.Rsa.X86.Recover.wM]
   · simp [upd, hz', wX, wOne, wT, VG.Impl.Rsa.X86.Recover.wZ]
 
-/-- The GCD of `u` and the halved `x`. -/
-theorem gcdPart_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {u x : Nat}
+/-- The GCD's inputs: `u` into narrow array 8 and the halved `x` into narrow array 0. -/
+theorem gcdSet_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {u x : Nat}
     (h : KS g s0 A [aU, aX2, VG.Impl.Rsa.X86.Recover.aN] AW [wX3] V [sK, sOkDE] s)
-    (hu : A aU = u) (hx : A aX2 = x) (odd : u % 2 = 1) :
-    WP isa (.seq gcdSet (VG.Impl.Rsa.X86.GcdBatchRt.body wid)) s fun t => ∃ A',
-      KS g s0 A' [1, aZero, VG.Impl.Rsa.X86.Recover.aN] AW [wX3] V [sOkDE] t ∧
-      A' 1 = Nat.gcd u x ∧ A' aZero = 0 ∧ A' VG.Impl.Rsa.X86.Recover.aN = A VG.Impl.Rsa.X86.Recover.aN := by
-  unfold gcdSet
-  simp only [seqs]
-  refine WP.seq (WP.seq (WP.mono (h.copy_w (o := aGm) (a := aU) (by decide) (by simp) (by decide) (by decide))
-    fun u1 ⟨h1, _, _⟩ => ?_))
-  refine WP.mono (h1.copy_w (o := aGx) (a := aX2) (by decide) (by simp) (by decide) (by decide)) fun u2 ⟨h2, _, _⟩ => ?_
+    (hu : A aU = u) (hx : A aX2 = x) :
+    WP isa gcdSet s fun t => ∃ A',
+      KS g s0 A' [VG.Impl.Rsa.X86.Keys.aM, 0, VG.Impl.Rsa.X86.Recover.aN] AW [wX3] V [sOkDE] t ∧
+      A' VG.Impl.Rsa.X86.Keys.aM = u ∧ A' 0 = x ∧
+      A' VG.Impl.Rsa.X86.Recover.aN = A VG.Impl.Rsa.X86.Recover.aN := by
   have hu' : A 24 = u := hu
   have hx' : A 20 = x := hx
-  have h3 := h2.mono (live' := [VG.Impl.Rsa.X86.Keys.aM, 0, VG.Impl.Rsa.X86.Recover.aN]) (ls' := [sOkDE])
-    (fun j hj => ⟨by simp [VG.Impl.Rsa.X86.Keys.aM, aGm, aGx] at hj ⊢; omega, rfl⟩)
-    (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩)
-  refine WP.mono (gcdDet_ok h3 (m := u) (x := x) (by simp [upd, VG.Impl.Rsa.X86.Keys.aM, aGm, aGx, aU, hu'])
-    (by simp [upd, aGx, aGm, aX2, hx']) odd)
-    fun t ht => ⟨_, ht, by simp [upd, aZero], by simp [upd], by simp [upd, aZero, aGm, aGx,
-      VG.Impl.Rsa.X86.Recover.aN]⟩
+  unfold gcdSet
+  simp only [seqs]
+  refine WP.seq (WP.mono (h.copy_w (o := aGm) (a := aU) (by decide) (by simp) (by decide) (by decide))
+    fun u1 ⟨h1, _, _⟩ => ?_)
+  refine WP.mono (h1.copy_w (o := aGx) (a := aX2) (by decide) (by simp) (by decide) (by decide)) fun u2 ⟨h2, _, _⟩ => ?_
+  refine ⟨_, h2.mono (live' := [VG.Impl.Rsa.X86.Keys.aM, 0, VG.Impl.Rsa.X86.Recover.aN]) (ls' := [sOkDE])
+    (fun j hj => ⟨by revert hj; revert j; decide, rfl⟩)
+    (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨by revert hd; revert d; decide, rfl⟩), ?_, ?_, ?_⟩
+  · simp [upd, VG.Impl.Rsa.X86.Keys.aM, aGm, aGx, aU, hu']
+  · simp [upd, aGx, aGm, aX2, hx']
+  · simp [upd, aGx, aGm, VG.Impl.Rsa.X86.Recover.aN]
 
 /-- `a`: the GCD times the doubled `x`. -/
 theorem aProduct_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {g1 x3 : Nat}
