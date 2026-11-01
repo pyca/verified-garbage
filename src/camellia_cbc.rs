@@ -12,7 +12,7 @@
 //! S-boxes as Boolean circuits. On x86-64 and AArch64, decryption
 //! transforms eight blocks at a time, and encryption, in which each block
 //! needs the one before, one block at a time (in a batch of eight, so about
-//! eight times ECB's cost). On x86 and PPC64LE, both transform one block at a
+//! eight times ECB's cost). On x86, PPC64LE and RISC-V, both transform one block at a
 //! time in a batch of eight, and on ARMv7 both call the verified ECB function once
 //! per block (a batch of eight), so about eight times ECB's cost. This
 //! module checks the lengths and holds the subkeys.
@@ -22,7 +22,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
