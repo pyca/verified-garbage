@@ -27,140 +27,16 @@ pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: 
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
-.insn 4, 0x0322b023
-.insn 4, 0x0332b423
-.insn 4, 0x0342b823
-.insn 4, 0x0352bc23
-.insn 4, 0x0562b023
-.insn 2, 0x84aa
-.insn 2, 0x892e
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x8aba
-.insn 2, 0x8b3e
-beqz s5, 20f
-22:
-.insn 4, 0x000a4e03
-.insn 4, 0x0009ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0023
-.insn 4, 0x001a4e03
-.insn 4, 0x0019ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca00a3
-.insn 4, 0x002a4e03
-.insn 4, 0x0029ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0123
-.insn 4, 0x003a4e03
-.insn 4, 0x0039ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca01a3
-.insn 4, 0x004a4e03
-.insn 4, 0x0049ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0223
-.insn 4, 0x005a4e03
-.insn 4, 0x0059ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca02a3
-.insn 4, 0x006a4e03
-.insn 4, 0x0069ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0323
-.insn 4, 0x007a4e03
-.insn 4, 0x0079ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca03a3
-.insn 4, 0x008a4e03
-.insn 4, 0x0089ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0423
-.insn 4, 0x009a4e03
-.insn 4, 0x0099ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca04a3
-.insn 4, 0x00aa4e03
-.insn 4, 0x00a9ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0523
-.insn 4, 0x00ba4e03
-.insn 4, 0x00b9ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca05a3
-.insn 4, 0x00ca4e03
-.insn 4, 0x00c9ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0623
-.insn 4, 0x00da4e03
-.insn 4, 0x00d9ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca06a3
-.insn 4, 0x00ea4e03
-.insn 4, 0x00e9ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca0723
-.insn 4, 0x00fa4e03
-.insn 4, 0x00f9ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01ca07a3
-.insn 2, 0x8526
-.insn 2, 0x85ca
-.insn 2, 0x8652
-.insn 2, 0x4685
-.insn 2, 0x875a
-call {vg_aes_encrypt_blocks}
-.insn 4, 0x000a4e03
-.insn 4, 0x01c98023
-.insn 4, 0x001a4e03
-.insn 4, 0x01c980a3
-.insn 4, 0x002a4e03
-.insn 4, 0x01c98123
-.insn 4, 0x003a4e03
-.insn 4, 0x01c981a3
-.insn 4, 0x004a4e03
-.insn 4, 0x01c98223
-.insn 4, 0x005a4e03
-.insn 4, 0x01c982a3
-.insn 4, 0x006a4e03
-.insn 4, 0x01c98323
-.insn 4, 0x007a4e03
-.insn 4, 0x01c983a3
-.insn 4, 0x008a4e03
-.insn 4, 0x01c98423
-.insn 4, 0x009a4e03
-.insn 4, 0x01c984a3
-.insn 4, 0x00aa4e03
-.insn 4, 0x01c98523
-.insn 4, 0x00ba4e03
-.insn 4, 0x01c985a3
-.insn 4, 0x00ca4e03
-.insn 4, 0x01c98623
-.insn 4, 0x00da4e03
-.insn 4, 0x01c986a3
-.insn 4, 0x00ea4e03
-.insn 4, 0x01c98723
-.insn 4, 0x00fa4e03
-.insn 4, 0x01c987a3
-.insn 2, 0x0a41
-.insn 2, 0x1afd
-bnez s5, 22b
-j 21f
-20:
-21:
-.insn 4, 0x7ffb0293
+.insn 2, 0x84be
+call {vg_aes_cbc_chain}
+.insn 4, 0x7ff48293
 .insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
-.insn 4, 0x0202b903
-.insn 4, 0x0282b983
-.insn 4, 0x0302ba03
-.insn 4, 0x0382ba83
-.insn 4, 0x0402bb03
 .insn 2, 0x8082
 .option pop",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_cbc_chain = sym super::aes_cbc::vg_aes_cbc_chain::vg_aes_cbc_chain,
     )
 }
 
@@ -362,3 +238,7 @@ j 21f
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_chain.rs"]
+pub(crate) mod vg_aes_cbc_chain;

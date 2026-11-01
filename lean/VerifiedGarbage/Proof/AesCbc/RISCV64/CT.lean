@@ -175,7 +175,8 @@ theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Ae
   exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((c.mono (fun _ _ h => h) fun _ _ h => h.2).seq b)
 
-/-- The code before encryption's call. -/
+/-- The block XORed with the one at `s3`, and the arguments of a call on it (as before AES-XTS's
+encryption, `Proof/AesXts/RISCV64/Body.lean`). -/
 theorem encA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : LInv M s₀ k s) :
     WP isa (.block (xorInto .s4 .s3 ++ callArgs)) s fun s₁ => ∃ m, Pre s₀ (blk s₀ k) m s s₁ :=
@@ -204,20 +205,12 @@ theorem decA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N
 theorem encPre_taint : ∃ h, (taint.check (Taint.ofRegs vars)
     (.block (xorInto .s4 .s3 ++ callArgs)) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem encPost_taint : ∃ h, (taint.check (Taint.ofRegs [.s3, .s4, .s5, .s6])
-    (.block (copy .s3 .s4 ++ advance)) h).isSome = true := ⟨_, by taint_decide⟩
-
 theorem decPre_taint : ∃ h, (taint.check (Taint.ofRegs vars)
     (.block (savePtr .s6 ++ copy .t0 .s4 ++ callArgs)) h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs [.s3, .s4, .s5, .s6])
     (.block (xorInto .s4 .s3 ++ savePtr .s6 ++ copy .s3 .t0 ++ advance)) h).isSome = true :=
   ⟨_, by taint_decide⟩
-
-theorem encBody_ct : BodyCt (cbcMode true) encBody :=
-  fun hp hp' hq k => body_ct (fun hq k => pub_blk hq k)
-    Proof.Aes.RISCV64.encryptBlocks_correct Proof.Aes.RISCV64.encryptBlocks_ct encryptBlocks_noFrames
-    encPre_taint encPost_taint (@fun _ hp _ hk _ h => encA_wp hp hk h) hp hp' hq k
 
 theorem decBody_ct : BodyCt (cbcMode false) decBody :=
   fun hp hp' hq k => body_ct (fun hq k => pub_blk hq k)

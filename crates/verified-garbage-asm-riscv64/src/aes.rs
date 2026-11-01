@@ -9164,3 +9164,7 @@ j 22f
 .option pop",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_mac_chain.rs"]
+pub(crate) mod vg_aes_mac_chain;
