@@ -22,7 +22,7 @@ theorem scratch_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
   obtain ⟨hsp,h3,h4,h5,h6,h7,h8,h9,h10,a0,a1,a2,a3⟩ := hp
   have ib : Initial a b := by
     refine ⟨hb,hsp.symm,fun r hr => ?_,fun i hi => ?_⟩
-    · simp only [CTEntry.entryRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
+    · simp only [SealEntry.entryRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> symm <;> with_reducible assumption
     · match i with
       | 0 => exact a0.symm
