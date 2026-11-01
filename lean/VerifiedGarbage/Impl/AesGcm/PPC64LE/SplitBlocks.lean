@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 namespace VG.Impl.AesGcm.PPC64LE.SplitBlocks
 open VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE.Blocks
+open VG.Impl.Aes.PPC64LE.Crypto (mov)
 
 -- r17 points to the unconsumed external prefix; r19 counts its blocks.
 -- Only the batch crossing its end needs a choice for each vector load.
@@ -29,9 +30,37 @@ def load : Prog isa :=
    (.seq (partialLoadsFrom 0 8)
      (.block [.lsl .r12 .r19 4,.add .r17 .r17 .r12,.li .r19 0]))))
 
-def batch : Prog isa := batchWith
- (.seq load (.block (storesFinish ++ ghStart ++ ghCode)))
+def batch : Prog isa := batchWithStore (.seq load (.block storesFinish))
 
 def code : Prog isa := codeWith batch
+
+-- The kernel leaves these registers available to track the external prefix.
+-- Their caller values fit between the core's spills and its tables.
+def extraSaved : List (Reg × Nat) := [(.r17,152),(.r19,160)]
+
+def argsHead : List Instr := [.addSp .r12 0,.load .d .r11 .r12 96]
+
+def argsRest : List Instr := extraSaved.map (fun (r,o) => .store .d r .r11 o) ++
+ [mov .r17 .r7,mov .r19 .r8,mov .r7 .r9,mov .r8 .r10,mov .r9 .r11]
+
+def bulk : Prog isa := .seq (.block bulkArgs) (.seq code (.block bulkRest))
+
+-- Only short inputs, or at most seven blocks after the bulk loop, need
+-- their external prefix copied before the existing CTR/GHASH tail.
+def copyStep : List Instr := [.lxvd2x U .r17 .r0,.stxvd2x U .r11 .r0,
+ .addi .r17 .r17 16,.addi .r11 .r11 16,.subi .r19 .r19 1]
+
+def copyPrefix : Prog isa := .ite (.zero .d .r19) (.block [])
+ (.seq (.block [mov .r11 .r30,.li .r0 0])
+ (.loop (.block copyStep) (.nonzero .d .r19)))
+
+def restoreExtra : List Instr := extraSaved.map (fun (r,o) => .load .d r .r31 o)
+
+/-- Nine-argument whole-block helper; `scratch` is at the incoming `sp+96`.
+Restore the extra saves before the leaf calls reuse the core's scratch. -/
+def encrypt : Prog isa := .ite (.zero .d .r10) (.block [])
+ (.seq (.block argsHead) (.seq (.block argsRest) (.seq (.block wrapperEntry)
+ (.seq (.ite (.zero .d .r12) (.block []) bulk)
+ (.seq copyPrefix (.seq (.block restoreExtra) (.seq tail (.block wrapperExit))))))))
 
 end VG.Impl.AesGcm.PPC64LE.SplitBlocks
