@@ -241,9 +241,6 @@ macro_rules! streaming_hash {
             ///
             /// If the message reaches 2⁶⁴ bytes.
             pub fn update(&mut self, data: &[u8]) {
-                // `overflowing_add` is inlined even in unoptimized builds,
-                // where `checked_add` and `expect` were two calls for every
-                // `update`.
                 let (length, overflow) = self.length.overflowing_add(data.len() as u64);
                 assert!(!overflow, "message too long");
                 // SAFETY: `self.state` is valid for reads and writes of its
