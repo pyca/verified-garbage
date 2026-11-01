@@ -489,8 +489,7 @@ structure PowInv (P : PowCfg) (k : Nat) (base : Addr) (m e : Nat) [NeZero m] (s�
 /-- An iteration. -/
 theorem powBody_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
     (hk : P.M.n = F.S.k) (hL : PowLayR P F.S.k) (hm : UnitMod F.S.m (2 ^ (64 * F.S.k))) {base : Addr}
-    {s₀ : State} (hB : wordsVal s₀.mem base P.base F.S.k < F.S.m)
-    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits)
+    {s₀ : State} {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits)
     (hI : PowInv P F.S.k base F.S.m (wordsVal s₀.mem base P.bits F.S.k) s₀ s j) :
     WP isa (powBody P F) s fun s' => PowInv P F.S.k base F.S.m (wordsVal s₀.mem base P.bits F.S.k) s₀ s' (j - 1) := by
   have hn := hI.ws.nowrap
@@ -528,10 +527,10 @@ theorem powBody_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
       rcases hw with rfl | rfl
       · exact hba
       · exact .inl hL.base) (by omega), hBs]
-  -- `tmp = acc · base`.
+  -- `tmp = base · acc`.
   have w₂ := w₁.of_kp K₂.kp
-  refine WP.seq (WP.mono (mulCall_ok hF w₂ hL.tmp hL.acc hL.base (by omega) (by omega) (by omega)
-    (by rw [hB₂]; exact hB)) fun s₃ ⟨K₃, lt₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (mulCall_ok hF w₂ hL.tmp hL.base hL.acc (by omega) (by omega) (by omega) lt₂)
+    fun s₃ ⟨K₃, lt₃, e₃⟩ => ?_)
   have U₃ : Unch base [(P.tmp, 8 * F.S.k), (own F.S.k, 64 * F.S.k)] s₂.mem s₃.mem := K₃.mem
   have hA₃ : wordsVal s₃.mem base P.acc F.S.k = wordsVal s₂.mem base P.acc F.S.k :=
     U₃.wordsVal (fun w hw => by
@@ -542,7 +541,7 @@ theorem powBody_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
   have v₃ : toM F.S.m (2 ^ (64 * F.S.k)) (wordsVal s₃.mem base P.tmp F.S.k) =
       toM F.S.m (2 ^ (64 * F.S.k)) (wordsVal s₂.mem base P.acc F.S.k) *
         toM F.S.m (2 ^ (64 * F.S.k)) (wordsVal s₀.mem base P.base F.S.k) := by
-    rw [toM_mul hm e₃, hB₂]
+    rw [toM_mul hm e₃, hB₂, Lean.Grind.CommSemiring.mul_comm]
   -- The mask of bit `j - 1`, and the selection.
   have hU₃ : Unch base (powWx P F.S.k) s₀.mem s₃.mem := by
     refine ((hI.unch.trans U₂).trans U₃).mono fun w hw => ?_
@@ -578,7 +577,7 @@ theorem powBody_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
 change. -/
 theorem pow_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
     (hk : P.M.n = F.S.k) (hL : PowLayR P F.S.k) (hm : UnitMod F.S.m (2 ^ (64 * F.S.k))) {base : Addr}
-    {s : State} (hs : WsReg s base) (hB : wordsVal s.mem base P.base F.S.k < F.S.m)
+    {s : State} (hs : WsReg s base) (hm0 : 0 < F.S.m)
     (hO : wordsVal s.mem base P.one F.S.k = 2 ^ (64 * F.S.k) % F.S.m)
     (he : wordsVal s.mem base P.bits F.S.k < 2 ^ P.nbits) :
     WP isa (pow P F) s fun s' => Kc s s' ∧ Unch base (powWx P F.S.k) s.mem s'.mem ∧
@@ -588,7 +587,6 @@ theorem pow_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
   have hn := hs.nowrap
   have hnb := hL.nbits
   have hsh := hL.short
-  have hm0 : 0 < F.S.m := Nat.lt_of_le_of_lt (Nat.zero_le _) hB
   have := hL.acc; have := hL.one
   have hao := hL.acc_one
   have hba := hL.base_acc
@@ -602,8 +600,7 @@ theorem pow_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
     rw [m₂]; exact O₁.wordsVal (by have := hL.bits_w _ (List.mem_cons_self ..); exact this) (by omega)
   refine countLoop_ok (Inv := fun j s' => PowInv P F.S.k base F.S.m (wordsVal s₂.mem base P.bits F.S.k) s₂ s' j)
     (n := P.nbits)
-    (fun j s' hi => hi.ctr) (fun j s' h1 h2 hi => powBody_ok hF hk hL hm (by
-      rw [m₂, O₁.wordsVal (by omega) (by omega)]; exact hB) h1 h2 hi)
+    (fun j s' hi => hi.ctr) (fun j s' h1 h2 hi => powBody_ok hF hk hL hm h1 h2 hi)
     (fun s' hi => ?_) hnb.1 (by omega) ?_
   · have hB₂ : wordsVal s₂.mem base P.base F.S.k = wordsVal s.mem base P.base F.S.k := by
       rw [m₂, O₁.wordsVal (by omega) (by omega)]

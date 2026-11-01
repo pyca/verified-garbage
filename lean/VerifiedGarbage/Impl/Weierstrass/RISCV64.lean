@@ -132,11 +132,12 @@ def ladderBody (L : LadderCfg) (F : Field) : Prog isa :=
 def ladder (L : LadderCfg) (F : Field) : Prog isa :=
   .seq (.block [.li ctr L.nbits]) (.loop (ladderBody L F) more)
 
-/-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
-exponent's bit `s1 - 1` is set. -/
+/-- One iteration: `acc = acc²`, `tmp = base · acc`, and `acc = tmp` if the
+exponent's bit `s1 - 1` is set (the base the multiplication's first operand,
+which the functions take below `2^(64 k)` rather than below the modulus). -/
 def powBody (P : PowCfg) (F : Field) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (mulCall F P.acc P.acc P.acc) <|
-  .seq (mulCall F P.tmp P.acc P.base) <|
+  .seq (mulCall F P.tmp P.base P.acc) <|
     .block (bitMask P.bits ++ sel P.M.n P.acc P.acc P.tmp)
 
 /-- `[acc] = [base]^e` (in Montgomery form), for the exponent at `P.bits`,
