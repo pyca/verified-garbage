@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
 public import VerifiedGarbage.Spec.TripleDes.Contract
+public import VerifiedGarbage.Proof.TripleDes.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.TripleDes.X86.Block
 import VerifiedGarbage.Proof.Framework.Contract
@@ -24,17 +25,17 @@ def blockSatState : State where
   rd := [⟨0x1000, 384⟩, ⟨0x4004, 12⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 512⟩]
 
-theorem encrypt_verified : Verified target encryptBlock (Spec.TripleDes.encryptBlockContract abi) := by
+theorem encrypt_verified : Verified target encryptBlock (Proof.TripleDes.encryptBlockContract abi) := by
   refine Verified.of_correct (block_correct .encrypt)
     (encryptBlock_constantTime _ _ (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)) ?_
-  sig_implies [Spec.TripleDes.encryptBlockContract, Spec.TripleDes.blockSig, abi, argSlots, argVal,
+  sig_implies [Proof.TripleDes.encryptBlockContract, Proof.TripleDes.blockSig, abi, argSlots, argVal,
     argBytes, addr32, blockContract, blockResult]
     [blockSatState, arg, argAddr, Mem.readW, Mem.read] using blockSatState
 
-theorem decrypt_verified : Verified target decryptBlock (Spec.TripleDes.decryptBlockContract abi) := by
+theorem decrypt_verified : Verified target decryptBlock (Proof.TripleDes.decryptBlockContract abi) := by
   refine Verified.of_correct (block_correct .decrypt)
     (decryptBlock_constantTime _ _ (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)) ?_
-  sig_implies [Spec.TripleDes.decryptBlockContract, Spec.TripleDes.blockSig, abi, argSlots, argVal,
+  sig_implies [Proof.TripleDes.decryptBlockContract, Proof.TripleDes.blockSig, abi, argSlots, argVal,
     argBytes, addr32, blockContract, blockResult]
     [blockSatState, arg, argAddr, Mem.readW, Mem.read] using blockSatState
 

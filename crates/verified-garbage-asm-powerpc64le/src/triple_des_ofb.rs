@@ -28,6 +28,6 @@ b 21f
 20:
 21:
 .base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }

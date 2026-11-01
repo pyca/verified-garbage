@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Pre
 public import VerifiedGarbage.Spec.TripleDes.Contract
+public import VerifiedGarbage.Proof.TripleDes.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.TCB.PPC64LE.Target
@@ -60,16 +61,16 @@ theorem publicRegs_three (s t : State) : PublicRegs [.r3, .r4, .r5] s t ↔
     s.sp = t.sp ∧ s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4 ∧ s.gpr .r5 = t.gpr .r5 := by
   simp [PublicRegs]
 
-theorem encrypt_verified : Verified target encryptBlock (Spec.TripleDes.encryptBlockContract abi) := by
+theorem encrypt_verified : Verified target encryptBlock (Proof.TripleDes.encryptBlockContract abi) := by
   refine Verified.of_correct encrypt_correct
     (encryptBlock_constantTime _) ?_
-  sig_implies [Spec.TripleDes.encryptBlockContract, Spec.TripleDes.blockSig, abi, argRegs,
+  sig_implies [Proof.TripleDes.encryptBlockContract, Proof.TripleDes.blockSig, abi, argRegs,
     blockContract, publicRegs_three, blockResult] [satState] using satState
 
-theorem decrypt_verified : Verified target decryptBlock (Spec.TripleDes.decryptBlockContract abi) := by
+theorem decrypt_verified : Verified target decryptBlock (Proof.TripleDes.decryptBlockContract abi) := by
   refine Verified.of_correct decrypt_correct
     (decryptBlock_constantTime _) ?_
-  sig_implies [Spec.TripleDes.decryptBlockContract, Spec.TripleDes.blockSig, abi, argRegs,
+  sig_implies [Proof.TripleDes.decryptBlockContract, Proof.TripleDes.blockSig, abi, argRegs,
     blockContract, publicRegs_three, blockResult] [satState] using satState
 
 end VG.Proof.TripleDes.PPC64LE

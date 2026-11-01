@@ -194,8 +194,6 @@ run_cmd do
   | .error e => throwError "Triple DES: {e}"
 
 #assert_standard_axioms VG.Spec.TripleDes.expandKeyContract
-#assert_standard_axioms VG.Spec.TripleDes.encryptBlockContract
-#assert_standard_axioms VG.Spec.TripleDes.decryptBlockContract
 #assert_standard_axioms VG.Spec.TripleDes.ecbEncryptContract
 #assert_standard_axioms VG.Spec.TripleDes.ecbDecryptContract
 

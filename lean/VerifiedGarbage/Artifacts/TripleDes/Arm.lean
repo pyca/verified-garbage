@@ -32,14 +32,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey
     stack := 512
     verified := Proof.TripleDes.Arm.expandKey_framed },
-  Spec.TripleDes.encryptBlockApi.artifact Arm.target {
-    code := Impl.TripleDes.Arm.encryptBlock
-    stack := 0
-    verified := Proof.TripleDes.Arm.encrypt_verified },
-  Spec.TripleDes.decryptBlockApi.artifact Arm.target {
-    code := Impl.TripleDes.Arm.decryptBlock
-    stack := 0
-    verified := Proof.TripleDes.Arm.decrypt_verified },
   Spec.TripleDes.ecbEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.encrypt
     stack := 1024

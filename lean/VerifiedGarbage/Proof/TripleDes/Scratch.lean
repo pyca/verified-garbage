@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.TripleDes.Contract
+public import VerifiedGarbage.Proof.TripleDes.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority

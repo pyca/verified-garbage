@@ -58,14 +58,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 Impl.TripleDes.AArch64.Key.expandKey
     stack := 512
     verified := Proof.TripleDes.AArch64.expandKey_framed },
-  Spec.TripleDes.encryptBlockApi.artifact AArch64.target {
-    code := Impl.TripleDes.AArch64.encryptBlock
-    stack := 0
-    verified := Proof.TripleDes.AArch64.encrypt_verified },
-  Spec.TripleDes.decryptBlockApi.artifact AArch64.target {
-    code := Impl.TripleDes.AArch64.decryptBlock
-    stack := 0
-    verified := Proof.TripleDes.AArch64.decrypt_verified },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
       Impl.TripleDes.AArch64.BitsliceNeon.encrypt

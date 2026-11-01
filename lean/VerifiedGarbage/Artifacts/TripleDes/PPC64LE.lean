@@ -16,12 +16,6 @@ def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact PPC64LE.target {
     code := Impl.TripleDes.PPC64LE.Key.expandKey
     verified := Proof.TripleDes.PPC64LE.Key.verified },
-  Spec.TripleDes.encryptBlockApi.artifact PPC64LE.target {
-    code := Impl.TripleDes.PPC64LE.encryptBlock
-    verified := Proof.TripleDes.PPC64LE.encrypt_verified },
-  Spec.TripleDes.decryptBlockApi.artifact PPC64LE.target {
-    code := Impl.TripleDes.PPC64LE.decryptBlock
-    verified := Proof.TripleDes.PPC64LE.decrypt_verified },
   Spec.TripleDes.ecbEncryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1056 .r6 128
       Impl.TripleDes.PPC64LE.Ecb.encrypt
