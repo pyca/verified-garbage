@@ -69,14 +69,17 @@ def cacheStep : List Instr := copyKey ++ [.addi .r9 .r9 16, .addi .r11 .r11 16, 
 def cache : Prog isa := .seq (.loop (.block cacheStep) (.nonzero .d .r12))
  (.block ([mov .r3 .r24, .li .r23 64, .li .r24 80] ++ load .v0 .r5 ++ [.stxvd2x .v0 .r16 .r15]))
 
-def counters (n : Nat) : List Instr :=
+def counterStart : List Instr :=
  [.lxvd2x .v0 .r16 .r15, .lxvd2x U .r16 .r20, .vop (.add false T U U),
-  .vop (.add false .v1 .v0 U)] ++
- (List.range (n-2)).map (fun i => .vop (.add false (reg (i+2)) (reg i) T)) ++
+  .vop (.add false .v1 .v0 U)]
+
+def counterNext (n : Nat) : List Instr :=
  [.vop (.add false T (reg (n-2)) T), .stxvd2x T .r16 .r15, .addi .r8 .r8 n]
 
-def initial (n : Nat) : List Instr := keyStart false ++ [.lxvd2x .v8 .r9 .r0] ++
- (rs n).map (fun r => .vop (.logic .xor r r .v8)) ++ [keyStep false] ++ [.subi .r10 .r4 1]
+def counters (n : Nat) : List Instr := counterStart ++
+ (List.range (n-2)).map (fun i => .vop (.add false (reg (i+2)) (reg i) T)) ++
+ counterNext n
+
 def roundRaw (n : Nat) (last : Bool) : List Instr := [.lxvd2x .v8 .r9 .r0] ++
  cipherRegs false last .v8 (rs n)
 def middle (n : Nat) : List Instr := roundRaw n false ++ [keyStep false] ++ [.subi .r10 .r10 1]
@@ -88,10 +91,16 @@ def ghAcc (j : Nat) : List Instr :=
   [.vop (.logic .xor LO LO Y), .vop (.logic .xor MID MID .v11), .vop (.logic .xor HI HI .v12)]
  else [.vop (.logic .xor Y Y LO), .vop (.logic .xor .v11 .v11 MID), .vop (.logic .xor .v12 .v12 HI)]
 
-def ghPair (j : Nat) : List Instr :=
- (if j=0 then [.vop (.logic .xor .v0 .v0 Y)] else []) ++
+def ghRead : List Instr :=
  [.lxvd2x .v8 .r16 .r21, .lxvd2x .v9 .r16 .r22,
-  .addi .r21 .r21 32, .addi .r22 .r22 32] ++ Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith
+  .addi .r21 .r21 32, .addi .r22 .r22 32]
+
+def ghInject (j : Nat) : List Instr :=
+ if j=0 then [.vop (.logic .xor .v0 .v0 Y)] else []
+
+def ghPair (j : Nat) : List Instr :=
+ ghInject j ++
+ ghRead ++ Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith
   (reg (2*j)) (reg (2*j+1)) U T LO MID HI .v8 .v9 true ++ ghAcc j
 
 def ghFinish : List Instr := [.vop (.logic .xor U U U)] ++ reduce Y U .v13 ++
@@ -117,10 +126,15 @@ def keyOffsets : List Reg := [.r20,.r21,.r22,.r23,.r24,.r18,.r11,.r12]
 
 def roundKeyRegs : List VReg := dataRegs ++ [T]
 
-def keyReads : List Instr :=
- (keyOffsets.zipIdx).flatMap (fun (r,i) =>
-  (if [.r21,.r22,.r11,.r12].contains r then [.li r (16*(i+1))] else []) ++
-  [.lxvd2x dataRegs[i]! .r3 r]) ++
+def keyOffset (i : Nat) : Reg := keyOffsets.getD i .r0
+
+def keyOffsetRegs : List Reg := [.r21,.r22,.r11,.r12]
+
+def keyRead (i : Nat) : List Instr :=
+ (if keyOffsetRegs.contains (keyOffset i) then [.li (keyOffset i) (16*(i+1))] else []) ++
+ [.lxvd2x (dataReg i) .r3 (keyOffset i)]
+
+def keyReads : List Instr := (List.range 8).flatMap keyRead ++
  [.addi .r9 .r3 144, .lxvd2x T .r9 .r0]
 
 def keyRounds : List Instr := roundKeyRegs.flatMap (fun k => cipherRegs false false k (rs 8))
