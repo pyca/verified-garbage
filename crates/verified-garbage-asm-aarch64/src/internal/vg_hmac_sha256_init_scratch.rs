@@ -39,6 +39,6 @@ bl {vg_sha256_compress}
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
 .p2align 6",
         vg_sha256_init = sym crate::sha256::vg_sha256_init,
-        vg_sha256_compress = sym crate::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

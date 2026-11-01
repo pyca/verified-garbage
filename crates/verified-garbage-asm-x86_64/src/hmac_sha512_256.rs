@@ -58,9 +58,9 @@ call {vg_hmac_sha512_256_init_scratch}
 jmp 21b
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch::vg_hmac_sha512_256_init_scratch,
     )
 }
@@ -86,8 +86,8 @@ call {vg_sha512_finalize_scratch}
 call {vg_sha512_compress}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEEmLn2AFAABJi69oBQAATYuncAUAAE2Lr3gFAABNi7eABQAATYu/iAUAAEiNpCRYBwAAww=="
 .p2align 6"#,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -150,9 +150,9 @@ call {vg_hmac_sha512_256_init_scratch_avx2}
 jmp 21b
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_hmac_sha512_256_init_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx2::vg_hmac_sha512_256_init_scratch_avx2,
     )
 }
@@ -182,8 +182,8 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEEmLn2AFAABJi69oBQAATYuncAUAAE2Lr3gFAABNi7eABQAATYu/iAUAAEiNpCRYBwAAww=="
 .p2align 6"#,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -246,9 +246,9 @@ call {vg_hmac_sha512_256_init_scratch_shani}
 jmp 21b
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
+        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_hmac_sha512_256_init_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_shani::vg_hmac_sha512_256_init_scratch_shani,
     )
 }
@@ -278,8 +278,8 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEEmLn2AFAABJi69oBQAATYuncAUAAE2Lr3gFAABNi7eABQAATYu/iAUAAEiNpCRYBwAAww=="
 .p2align 6"#,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 

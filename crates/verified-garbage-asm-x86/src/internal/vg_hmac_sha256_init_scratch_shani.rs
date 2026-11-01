@@ -33,6 +33,6 @@ call {vg_sha256_compress_shani}
 .base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
 .p2align 6"#,
         vg_sha256_init = sym crate::sha256::vg_sha256_init,
-        vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani,
+        vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }

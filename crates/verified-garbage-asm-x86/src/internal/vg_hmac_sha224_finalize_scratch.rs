@@ -17,7 +17,7 @@ call {vg_sha256_finalize_scratch}
 call {vg_sha256_compress}
 .base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
 .p2align 6"#,
-        vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym crate::sha256::vg_sha256_compress,
+        vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

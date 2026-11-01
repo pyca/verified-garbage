@@ -53,6 +53,6 @@ b 210f
 bl {vg_md5_update_scratch}
 .base64 "cACV6oAA1eqIAPXqkAAV65gANet4ALXqIAAB6DAAITimAwh8IACATg==""#,
         vg_md5_init = sym crate::md5::vg_md5_init,
-        vg_md5_update_scratch = sym crate::md5::vg_md5_update_scratch,
+        vg_md5_update_scratch = sym crate::md5::vg_md5_update_scratch::vg_md5_update_scratch,
     )
 }

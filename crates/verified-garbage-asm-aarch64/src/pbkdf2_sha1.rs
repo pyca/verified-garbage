@@ -83,8 +83,8 @@ b 25f
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
         vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch::vg_hmac_sha1_finalize_scratch,
         vg_pbkdf2_hmac_sha1_iterate = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate::vg_pbkdf2_hmac_sha1_iterate,
@@ -177,8 +177,8 @@ b 25f
 .arch_extension nosha2
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
         vg_hmac_sha1_init_scratch_sha2 = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_sha2::vg_hmac_sha1_init_scratch_sha2,
         vg_hmac_sha1_finalize_scratch_sha2 = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_sha2::vg_hmac_sha1_finalize_scratch_sha2,
         vg_pbkdf2_hmac_sha1_iterate_sha2 = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate_sha2::vg_pbkdf2_hmac_sha1_iterate_sha2,

@@ -676,6 +676,6 @@ j 21f
 .insn 4, 0x06093903
 .insn 2, 0x8082
 .option pop",
-        vg_sha256_compress = sym crate::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

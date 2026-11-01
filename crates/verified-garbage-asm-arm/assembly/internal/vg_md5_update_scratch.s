@@ -1,0 +1,129 @@
+// The functions of `src/internal/vg_md5_update_scratch.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_md5_update_scratch:
+	ldr r12, [sp, #8]
+	str r4, [r12, #64]
+	str r5, [r12, #68]
+	str r6, [r12, #72]
+	str r7, [r12, #76]
+	str r8, [r12, #80]
+	str r9, [r12, #84]
+	str r10, [r12, #88]
+	str r11, [r12, #92]
+	str lr, [r12, #96]
+	mov r3, r12
+	and r4, r2, #63
+	ldr r5, [sp, #0]
+	ldr r6, [sp, #4]
+	cmp r6, #0
+	beq 20f
+22:
+	mov r7, #0
+	cmp r4, #0
+	beq 23f
+	mov r8, #64
+	sub r8, r8, r4
+	lsr r12, r6, #6
+	cmp r12, #0
+	beq 25f
+	b 26f
+25:
+	add r12, r6, r4
+	lsr r12, r12, #6
+	cmp r12, #0
+	beq 27f
+	b 28f
+27:
+	mov r8, r6
+28:
+26:
+	sub r6, r6, r8
+29:
+	ldrb r12, [r5, #0]
+	add r1, r0, r4
+	strb r12, [r1, #16]
+	add r5, r5, #1
+	add r4, r4, #1
+	subs r8, r8, #1
+	bne 29b
+	cmp r4, #64
+	beq 210f
+	b 211f
+210:
+	add r1, r0, #16
+	mov r4, #0
+	mov r7, #1
+211:
+	b 24f
+23:
+	lsr r12, r6, #6
+	cmp r12, #0
+	beq 212f
+	mov r1, r5
+	lsr r7, r6, #6
+	lsl r12, r7, #6
+	add r5, r5, r12
+	sub r6, r6, r12
+	b 213f
+212:
+	mov r8, #64
+	sub r8, r8, r4
+	lsr r12, r6, #6
+	cmp r12, #0
+	beq 214f
+	b 215f
+214:
+	add r12, r6, r4
+	lsr r12, r12, #6
+	cmp r12, #0
+	beq 216f
+	b 217f
+216:
+	mov r8, r6
+217:
+215:
+	sub r6, r6, r8
+218:
+	ldrb r12, [r5, #0]
+	add r1, r0, r4
+	strb r12, [r1, #16]
+	add r5, r5, #1
+	add r4, r4, #1
+	subs r8, r8, #1
+	bne 218b
+	cmp r4, #64
+	beq 219f
+	b 220f
+219:
+	add r1, r0, #16
+	mov r4, #0
+	mov r7, #1
+220:
+213:
+24:
+	cmp r7, #0
+	beq 221f
+	mov r2, r7
+	bl {vg_md5_compress}
+	b 222f
+221:
+222:
+	cmp r6, #0
+	bne 22b
+	b 21f
+20:
+21:
+	ldr r4, [r3, #64]
+	ldr r5, [r3, #68]
+	ldr r6, [r3, #72]
+	ldr r7, [r3, #76]
+	ldr r8, [r3, #80]
+	ldr r9, [r3, #84]
+	ldr r10, [r3, #88]
+	ldr r11, [r3, #92]
+	ldr lr, [r3, #96]
+	bx lr

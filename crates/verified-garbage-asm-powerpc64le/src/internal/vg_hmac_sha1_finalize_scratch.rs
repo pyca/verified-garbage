@@ -18,7 +18,7 @@ bl {vg_sha1_update_scratch}
 .base64 "AAB0OFQAgDjQALU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
 .base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfCAAgE4=""#,
-        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
     )
 }

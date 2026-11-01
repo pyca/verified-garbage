@@ -178,7 +178,7 @@ ldr r10, [r11, #296]
 ldr lr, [r11, #300]
 ldr r11, [r11, #304]
 bx lr",
-        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym crate::sha512::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

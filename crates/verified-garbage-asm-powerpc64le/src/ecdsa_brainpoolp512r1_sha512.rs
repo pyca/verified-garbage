@@ -76,7 +76,7 @@ bl {vg_hmac_sha512_finalize_scratch}
 bne %cr0, 20b
 .base64 "AABhOQAAgDkgAIv5KACL+TAAi/k4AIv5QACL+UgAi/lQAIv5WACL+WAAi/loAIv5cACL+XgAi/mAAIv5iACL+ZAAi/mYAIv5oACL+agAi/mwAIv5uACL+cAAi/nIAIv5AAGL+QgBi/kQAYv5GAGL+SABi/koAYv5MAGL+TgBi/lAASE4IAAB6DAAITimAwh8IACATg==""#,
         vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
         vg_ecdsa_brainpoolp512r1_sign = sym super::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign,
     )

@@ -188,7 +188,7 @@ jmp 21f
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
@@ -381,7 +381,7 @@ jmp 21f
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
 
@@ -527,7 +527,7 @@ jne 226b
 .base64 "jaQkkAAAAIs8JIt0JASLbCQIW1tbW8M="
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -678,7 +678,7 @@ jne 226b
 .base64 "jaQkkAAAAIs8JIt0JASLbCQIW1tbW8M="
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }

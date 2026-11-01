@@ -125,7 +125,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -386,7 +386,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -516,7 +516,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -781,7 +781,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -911,7 +911,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -1176,7 +1176,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 

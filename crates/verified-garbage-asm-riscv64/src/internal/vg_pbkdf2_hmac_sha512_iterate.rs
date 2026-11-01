@@ -1432,6 +1432,6 @@ j 21f
 .insn 4, 0x0a093903
 .insn 2, 0x8082
 .option pop",
-        vg_sha512_compress = sym crate::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

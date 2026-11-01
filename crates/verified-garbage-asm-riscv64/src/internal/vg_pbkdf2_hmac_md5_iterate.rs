@@ -448,6 +448,6 @@ j 21f
 .insn 4, 0x06093903
 .insn 2, 0x8082
 .option pop",
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

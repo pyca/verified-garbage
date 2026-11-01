@@ -20,34 +20,6 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     )
 }
 
-/// The SHA-1 compression function (FIPS 180-4 §6.1.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha1.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 20 bytes.
-/// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 112 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `blocks` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkEIlYQIlwRIl4SIloTInFi0wkCIlNUItMJAyJTVSFyQ=="
-je 20f
-22:
-.base64 "i3wkBIsHi18Ei08Ii1cMi3cQi31Qiz8Pz4l9AAH+ic8x1yHfMdcB/onHwc8bAf6Bxpl5glrBywKLfVCLfwQPz4l9BAH6id8xzyHHMc8B+on3wc8bAfqBwpl5glrByAKLfVCLfwgPz4l9CAH5iccx3yH3Md8B+YnXwc8bAfmBwZl5glrBzgKLfVCLfwwPz4l9DAH7ifcxxyHXMccB+4nPwc8bAfuBw5l5glrBygKLfVCLfxAPz4l9EAH4idcx9yHPMfcB+Infwc8bAfgFmXmCWsHJAot9UIt/FA/PiX0UAf6JzzHXId8x1wH+icfBzxsB/oHGmXmCWsHLAot9UIt/GA/PiX0YAfqJ3zHPIccxzwH6iffBzxsB+oHCmXmCWsHIAot9UIt/HA/PiX0cAfmJxzHfIfcx3wH5idfBzxsB+YHBmXmCWsHOAot9UIt/IA/PiX0gAfuJ9zHHIdcxxwH7ic/BzxsB+4HDmXmCWsHKAot9UIt/JA/PiX0kAfiJ1zH3Ic8x9wH4id/BzxsB+AWZeYJawckCi31Qi38oD8+JfSgB/onPMdch3zHXAf6Jx8HPGwH+gcaZeYJawcsCi31Qi38sD8+JfSwB+onfMc8hxzHPAfqJ98HPGwH6gcKZeYJawcgCi31Qi38wD8+JfTAB+YnHMd8h9zHfAfmJ18HPGwH5gcGZeYJawc4Ci31Qi380D8+JfTQB+4n3Mcch1zHHAfuJz8HPGwH7gcOZeYJawcoCi31Qi384D8+JfTgB+InXMfchzzH3AfiJ38HPGwH4BZl5glrByQKLfVCLfzwPz4l9PAH+ic8x1yHfMdcB/onHwc8bAf6Bxpl5glrBywKLfTQzfSAzfQgzfQDBzx+JfQAB+onfMc8hxzHPAfqJ98HPGwH6gcKZeYJawcgCi304M30kM30MM30Ewc8fiX0EAfmJxzHfIfcx3wH5idfBzxsB+YHBmXmCWsHOAot9PDN9KDN9EDN9CMHPH4l9CAH7ifcxxyHXMccB+4nPwc8bAfuBw5l5glrBygKLfQAzfSwzfRQzfQzBzx+JfQwB+InXMfchzzH3AfiJ38HPGwH4BZl5glrByQKLfQQzfTAzfRgzfRDBzx+JfRAB/onfMc8x1wH+icfBzxsB/oHGoevZbsHLAot9CDN9NDN9HDN9FMHPH4l9FAH6iccx3zHPAfqJ98HPGwH6gcKh69luwcgCi30MM304M30gM30Ywc8fiX0YAfmJ9zHHMd8B+YnXwc8bAfmBwaHr2W7BzgKLfRAzfTwzfSQzfRzBzx+JfRwB+4nXMfcxxwH7ic/BzxsB+4HDoevZbsHKAot9FDN9ADN9KDN9IMHPH4l9IAH4ic8x1zH3AfiJ38HPGwH4BaHr2W7ByQKLfRgzfQQzfSwzfSTBzx+JfSQB/onfMc8x1wH+icfBzxsB/oHGoevZbsHLAot9HDN9CDN9MDN9KMHPH4l9KAH6iccx3zHPAfqJ98HPGwH6gcKh69luwcgCi30gM30MM300M30swc8fiX0sAfmJ9zHHMd8B+YnXwc8bAfmBwaHr2W7BzgKLfSQzfRAzfTgzfTDBzx+JfTAB+4nXMfcxxwH7ic/BzxsB+4HDoevZbsHKAot9KDN9FDN9PDN9NMHPH4l9NAH4ic8x1zH3AfiJ38HPGwH4BaHr2W7ByQKLfSwzfRgzfQAzfTjBzx+JfTgB/onfMc8x1wH+icfBzxsB/oHGoevZbsHLAot9MDN9HDN9BDN9PMHPH4l9PAH6iccx3zHPAfqJ98HPGwH6gcKh69luwcgCi300M30gM30IM30Awc8fiX0AAfmJ9zHHMd8B+YnXwc8bAfmBwaHr2W7BzgKLfTgzfSQzfQwzfQTBzx+JfQQB+4nXMfcxxwH7ic/BzxsB+4HDoevZbsHKAot9PDN9KDN9EDN9CMHPH4l9CAH4ic8x1zH3AfiJ38HPGwH4BaHr2W7ByQKLfQAzfSwzfRQzfQzBzx+JfQwB/onfMc8x1wH+icfBzxsB/oHGoevZbsHLAot9BDN9MDN9GDN9EMHPH4l9EAH6iccx3zHPAfqJ98HPGwH6gcKh69luwcgCi30IM300M30cM30Uwc8fiX0UAfmJ9zHHMd8B+YnXwc8bAfmBwaHr2W7BzgKLfQwzfTgzfSAzfRjBzx+JfRgB+4nXMfcxxwH7ic/BzxsB+4HDoevZbsHKAot9EDN9PDN9JDN9HMHPH4l9HAH4ic8x1zH3AfiJ38HPGwH4BaHr2W7ByQKLfRQzfQAzfSgzfSDBzx+JfSAB/onfIc8B/onfMc8h1wH+icfBzxsB/oHG3Lwbj8HLAot9GDN9BDN9LDN9JMHPH4l9JAH6icch3wH6iccx3yHPAfqJ98HPGwH6gcLcvBuPwcgCi30cM30IM30wM30owc8fiX0oAfmJ9yHHAfmJ9zHHId8B+YnXwc8bAfmBwdy8G4/BzgKLfSAzfQwzfTQzfSzBzx+JfSwB+4nXIfcB+4nXMfchxwH7ic/BzxsB+4HD3Lwbj8HKAot9JDN9EDN9ODN9MMHPH4l9MAH4ic8h1wH4ic8x1yH3AfiJ38HPGwH4Bdy8G4/ByQKLfSgzfRQzfTwzfTTBzx+JfTQB/onfIc8B/onfMc8h1wH+icfBzxsB/oHG3Lwbj8HLAot9LDN9GDN9ADN9OMHPH4l9OAH6icch3wH6iccx3yHPAfqJ98HPGwH6gcLcvBuPwcgCi30wM30cM30EM308wc8fiX08AfmJ9yHHAfmJ9zHHId8B+YnXwc8bAfmBwdy8G4/BzgKLfTQzfSAzfQgzfQDBzx+JfQAB+4nXIfcB+4nXMfchxwH7ic/BzxsB+4HD3Lwbj8HKAot9ODN9JDN9DDN9BMHPH4l9BAH4ic8h1wH4ic8x1yH3AfiJ38HPGwH4Bdy8G4/ByQKLfTwzfSgzfRAzfQjBzx+JfQgB/onfIc8B/onfMc8h1wH+icfBzxsB/oHG3Lwbj8HLAot9ADN9LDN9FDN9DMHPH4l9DAH6icch3wH6iccx3yHPAfqJ98HPGwH6gcLcvBuPwcgCi30EM30wM30YM30Qwc8fiX0QAfmJ9yHHAfmJ9zHHId8B+YnXwc8bAfmBwdy8G4/BzgKLfQgzfTQzfRwzfRTBzx+JfRQB+4nXIfcB+4nXMfchxwH7ic/BzxsB+4HD3Lwbj8HKAot9DDN9ODN9IDN9GMHPH4l9GAH4ic8h1wH4ic8x1yH3AfiJ38HPGwH4Bdy8G4/ByQKLfRAzfTwzfSQzfRzBzx+JfRwB/onfIc8B/onfMc8h1wH+icfBzxsB/oHG3Lwbj8HLAot9FDN9ADN9KDN9IMHPH4l9IAH6icch3wH6iccx3yHPAfqJ98HPGwH6gcLcvBuPwcgCi30YM30EM30sM30kwc8fiX0kAfmJ9yHHAfmJ9zHHId8B+YnXwc8bAfmBwdy8G4/BzgKLfRwzfQgzfTAzfSjBzx+JfSgB+4nXIfcB+4nXMfchxwH7ic/BzxsB+4HD3Lwbj8HKAot9IDN9DDN9NDN9LMHPH4l9LAH4ic8h1wH4ic8x1yH3AfiJ38HPGwH4Bdy8G4/ByQKLfSQzfRAzfTgzfTDBzx+JfTAB/onfMc8x1wH+icfBzxsB/oHG1sFiysHLAot9KDN9FDN9PDN9NMHPH4l9NAH6iccx3zHPAfqJ98HPGwH6gcLWwWLKwcgCi30sM30YM30AM304wc8fiX04AfmJ9zHHMd8B+YnXwc8bAfmBwdbBYsrBzgKLfTAzfRwzfQQzfTzBzx+JfTwB+4nXMfcxxwH7ic/BzxsB+4HD1sFiysHKAot9NDN9IDN9CDN9AMHPH4l9AAH4ic8x1zH3AfiJ38HPGwH4BdbBYsrByQKLfTgzfSQzfQwzfQTBzx+JfQQB/onfMc8x1wH+icfBzxsB/oHG1sFiysHLAot9PDN9KDN9EDN9CMHPH4l9CAH6iccx3zHPAfqJ98HPGwH6gcLWwWLKwcgCi30AM30sM30UM30Mwc8fiX0MAfmJ9zHHMd8B+YnXwc8bAfmBwdbBYsrBzgKLfQQzfTAzfRgzfRDBzx+JfRAB+4nXMfcxxwH7ic/BzxsB+4HD1sFiysHKAot9CDN9NDN9HDN9FMHPH4l9FAH4ic8x1zH3AfiJ38HPGwH4BdbBYsrByQKLfQwzfTgzfSAzfRjBzx+JfRgB/onfMc8x1wH+icfBzxsB/oHG1sFiysHLAot9EDN9PDN9JDN9HMHPH4l9HAH6iccx3zHPAfqJ98HPGwH6gcLWwWLKwcgCi30UM30AM30oM30gwc8fiX0gAfmJ9zHHMd8B+YnXwc8bAfmBwdbBYsrBzgKLfRgzfQQzfSwzfSTBzx+JfSQB+4nXMfcxxwH7ic/BzxsB+4HD1sFiysHKAot9HDN9CDN9MDN9KMHPH4l9KAH4ic8x1zH3AfiJ38HPGwH4BdbBYsrByQKLfSAzfQwzfTQzfSzBzx+JfSwB/onfMc8x1wH+icfBzxsB/oHG1sFiysHLAot9JDN9EDN9ODN9MMHPH4l9MAH6iccx3zHPAfqJ98HPGwH6gcLWwWLKwcgCi30oM30UM308M300wc8fiX00AfmJ9zHHMd8B+YnXwc8bAfmBwdbBYsrBzgKLfSwzfRgzfQAzfTjBzx+JfTgB+4nXMfcxxwH7ic/BzxsB+4HD1sFiysHKAot9MDN9HDN9BDN9PMHPH4l9PAH4ic8x1zH3AfiJ38HPGwH4BdbBYsrByQKLfCQEAwcDXwQDTwgDVwwDdxCJB4lfBIlPCIlXDIl3EItFUIPAQIlFUItFVIPoAYlFVA=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i11Ai3VEi31Ii21Mww=="
-.p2align 6"#,
-    )
-}
-
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -127,7 +99,7 @@ call {vg_sha1_compress}
 jne 20b
 .base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
 .p2align 6"#,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -180,179 +152,7 @@ call {vg_sha1_compress}
 je 22b
 .base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
 .p2align 6"#,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-    )
-}
-
-/// `vg_sha1_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha1.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 84 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 160 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGIlYcIlwdIl4eIlofItcJASLbCQQi3QkFIt8JAiD5z8="
-20:
-.base64 "hf8="
-je 21f
-.base64 "uEAAAAAp+DnG"
-jb 23f
-jmp 24f
-23:
-.base64 "ifA="
-24:
-.base64 "KcYB34XA"
-je 25f
-27:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "Kd+5AAAAAIP/QA=="
-je 28f
-jmp 29f
-28:
-.base64 "idiDwBS/AAAAALkBAAAA"
-29:
-jmp 22f
-21:
-.base64 "g/5A"
-jae 210f
-.base64 "uEAAAAAp+DnG"
-jb 212f
-jmp 213f
-212:
-.base64 "ifA="
-213:
-.base64 "KcYB34XA"
-je 214f
-216:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "Kd+5AAAAAIP/QA=="
-je 217f
-jmp 218f
-217:
-.base64 "idiDwBS/AAAAALkBAAAA"
-218:
-jmp 211f
-210:
-.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
-211:
-22:
-.base64 "hck="
-jne 219f
-jmp 220f
-219:
-.base64 "i1QkGFJRUFM="
-call {vg_sha1_compress}
-.base64 "WFhYWLkBAAAAhck="
-220:
-jne 20b
-.base64 "i0QkGItYcItwdIt4eItofMM="
-.p2align 6"#,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-    )
-}
-
-/// `vg_sha1_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha1.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * `scratch` must be valid for reads and writes of 160 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
-jae 20f
-jmp 21f
-20:
-.base64 "vgEAAAA="
-21:
-22:
-.base64 "uEAAAACF9g=="
-je 23f
-jmp 24f
-23:
-.base64 "uDgAAAA="
-24:
-.base64 "uQAAAAAp+A=="
-je 25f
-27:
-.base64 "idoB+ohKFIPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "hfY="
-je 28f
-jmp 29f
-28:
-.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
-29:
-.base64 "idiDwBS5AQAAAFVRUFM="
-call {vg_sha1_compress}
-.base64 "WFhYWL8AAAAAg+4B"
-je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXzD"
-.p2align 6"#,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-    )
-}
-
-/// The CPU features `vg_sha1_compress_shani` requires (`Artifact.features`).
-pub const VG_SHA1_COMPRESS_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// The SHA-1 compression function (FIPS 180-4 §6.1.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha1.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 20 bytes.
-/// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 112 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `blocks` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_compress_shani(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
-    core::arch::naked_asm!(
-        r#".base64 "i1QkBPMPbwJmD3DAG/MPb0oEZg9z2QxmD3P5DLgPDg0MZg9u+LgLCgkIZg9u0GYPYvq4BwYFBGYPbtBmD2z6uAMCAQBmD27QZg9z+gxmD+v6i0wkCItUJBCLRCQMhcA="
-je 20f
-22:
-.base64 "8w9/AvMPf0oQ8w9vGWYPOADfZg9v0GYP/ssPOszBAGYPb8rzD29hEGYPOADnZg9v0A84yMwPOszBAGYPb8rzD29pIGYPOADvZg9v0A84yM0POszBAGYPb8rzD29xMGYPOAD3Zg9v0A84yM4POszBAGYPb8oPOMncZg/v3Q84yt5mD2/QDzjIyw86zMEAZg9vyg84yeVmD+/mDzjK42YPb9APOMjMDzrMwQFmD2/KDzjJ7mYP7+sPOMrsZg9v0A84yM0POszBAWYPb8oPOMnzZg/v9A84yvVmD2/QDzjIzg86zMEBZg9vyg84ydxmD+/dDzjK3mYPb9APOMjLDzrMwQFmD2/KDzjJ5WYP7+YPOMrjZg9v0A84yMwPOszBAWYPb8oPOMnuZg/v6w84yuxmD2/QDzjIzQ86zMECZg9vyg84yfNmD+/0DzjK9WYPb9APOMjODzrMwQJmD2/KDzjJ3GYP790POMreZg9v0A84yMsPOszBAmYPb8oPOMnlZg/v5g84yuNmD2/QDzjIzA86zMECZg9vyg84ye5mD+/rDzjK7GYPb9APOMjNDzrMwQJmD2/KDzjJ82YP7/QPOMr1Zg9v0A84yM4POszBA2YPb8oPOMncZg/v3Q84yt5mD2/QDzjIyw86zMEDZg9vyg84yeVmD+/mDzjK42YPb9APOMjMDzrMwQNmD2/KDzjJ7mYP7+sPOMrsZg9v0A84yM0POszBA2YPb8oPOMnzZg/v9A84yvVmD2/QDzjIzg86zMEDZg9vyvMPbxJmD/7C8w9vUhAPOMjKg8FAg+gB"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i1QkBGYPcMAbZg9v0GYPc9oEZg/r0fMPf1IE8w9/AsM="
-.p2align 6"#,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -439,7 +239,7 @@ call {vg_sha1_compress_shani}
 jne 20b
 .base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
 .p2align 6"#,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 
@@ -496,154 +296,30 @@ call {vg_sha1_compress_shani}
 je 22b
 .base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
 .p2align 6"#,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 
-/// The CPU features `vg_sha1_update_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_compress.rs"]
+pub(crate) mod vg_sha1_compress;
 
-/// `vg_sha1_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha1.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 84 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 160 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update_scratch_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGIlYcIlwdIl4eIlofItcJASLbCQQi3QkFIt8JAiD5z8="
-20:
-.base64 "hf8="
-je 21f
-.base64 "uEAAAAAp+DnG"
-jb 23f
-jmp 24f
-23:
-.base64 "ifA="
-24:
-.base64 "KcYB34XA"
-je 25f
-27:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "Kd+5AAAAAIP/QA=="
-je 28f
-jmp 29f
-28:
-.base64 "idiDwBS/AAAAALkBAAAA"
-29:
-jmp 22f
-21:
-.base64 "g/5A"
-jae 210f
-.base64 "uEAAAAAp+DnG"
-jb 212f
-jmp 213f
-212:
-.base64 "ifA="
-213:
-.base64 "KcYB34XA"
-je 214f
-216:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "Kd+5AAAAAIP/QA=="
-je 217f
-jmp 218f
-217:
-.base64 "idiDwBS/AAAAALkBAAAA"
-218:
-jmp 211f
-210:
-.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
-211:
-22:
-.base64 "hck="
-jne 219f
-jmp 220f
-219:
-.base64 "i1QkGFJRUFM="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWLkBAAAAhck="
-220:
-jne 20b
-.base64 "i0QkGItYcItwdIt4eItofMM="
-.p2align 6"#,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_compress_shani.rs"]
+pub(crate) mod vg_sha1_compress_shani;
 
-/// The CPU features `vg_sha1_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_finalize_scratch.rs"]
+pub(crate) mod vg_sha1_finalize_scratch;
 
-/// `vg_sha1_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha1.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * `scratch` must be valid for reads and writes of 160 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize_scratch_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
-jae 20f
-jmp 21f
-20:
-.base64 "vgEAAAA="
-21:
-22:
-.base64 "uEAAAACF9g=="
-je 23f
-jmp 24f
-23:
-.base64 "uDgAAAA="
-24:
-.base64 "uQAAAAAp+A=="
-je 25f
-27:
-.base64 "idoB+ohKFIPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "hfY="
-je 28f
-jmp 29f
-28:
-.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
-29:
-.base64 "idiDwBS5AQAAAFVRUFM="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWL8AAAAAg+4B"
-je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXzD"
-.p2align 6"#,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_finalize_scratch_shani.rs"]
+pub(crate) mod vg_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_update_scratch.rs"]
+pub(crate) mod vg_sha1_update_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_update_scratch_shani.rs"]
+pub(crate) mod vg_sha1_update_scratch_shani;

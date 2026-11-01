@@ -25,6 +25,6 @@ jmp 21f
 21:
 .base64 "ieiLmBABAACLsBQBAACLuBgBAACLqBwBAADD"
 .p2align 6"#,
-        vg_sha512_compress = sym crate::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

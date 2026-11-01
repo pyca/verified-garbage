@@ -134,6 +134,6 @@ ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 bx lr",
         vg_sha224_init = sym crate::sha256::vg_sha224_init,
-        vg_sha256_compress = sym crate::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

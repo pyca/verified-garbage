@@ -18,7 +18,7 @@ bl {vg_sha512_update_scratch}
 .base64 "AAB0OLAAgDgQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
 .base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeR4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8IACATg==""#,
-        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
     )
 }

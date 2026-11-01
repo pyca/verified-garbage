@@ -160,7 +160,7 @@ b 21f
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -392,7 +392,7 @@ b 22f
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -559,7 +559,7 @@ b 21f
 .arch_extension nosha2
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
+        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
 }
 
@@ -797,7 +797,7 @@ b 22f
 .arch_extension nosha2
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
+        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
 }
 

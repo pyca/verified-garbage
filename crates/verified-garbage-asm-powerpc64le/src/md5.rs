@@ -3,33 +3,6 @@
 //! `assembly/md5.s`.
 #![allow(dead_code)]
 
-/// The MD5 compression function (RFC 1321 §3.4): updates the MD buffer `*state` (`A, B, C, D`) with the `n` 64-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Md5.compressContract`. Constant time: only the pointers and `n` may affect timing, not the MD buffer or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 8]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAAlKA=="
-beq %cr0, 20f
-22:
-.base64 "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"
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "IACATg==""#,
-    )
-}
-
 /// Starts an MD5 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Md5.initContract`. The streaming state is the MD buffer followed by a buffered partial block (`VG.Spec.Md5.Repr`).
@@ -151,7 +124,7 @@ b 21f
 20:
 21:
 .base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8kAAhOCAAgE4=""#,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
 
@@ -204,173 +177,18 @@ bl {vg_md5_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
 .base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHyQACE4IACATg==""#,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
 
-/// `vg_md5_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Md5.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 112 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_update_scratch(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 14]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4QABH+0gAZ/tQAIf7WACn+2AAx/toAOf7AABDOwAAZzsAAIU7AACmOz8AADk4QJ58AAA9KA=="
-beq %cr0, 20f
-22:
-.base64 "AAAgOQAAPig="
-beq %cr0, 23f
-.base64 "QABAOVBQXn2C0ah7AAAoKA=="
-beq %cr0, 25f
-b 26f
-25:
-.base64 "FPIdfYLRCHkAACgo"
-beq %cr0, 27f
-b 28f
-27:
-.base64 "AABdOQ=="
-28:
-26:
-.base64 "UOiqf8LoTHkAACwo"
-beq %cr0, 29f
-211:
-.base64 "AAAc6RTyen0QAAv5CACcOwgA3jv4/0o5wuhMeQAALCg="
-bne %cr0, 211b
-b 210f
-29:
-210:
-.base64 "AAAqKA=="
-beq %cr0, 212f
-214:
-.base64 "AAAciRTyen0QAAuZAQCcOwEA3jv//0o5AAAqKA=="
-bne %cr0, 214b
-b 213f
-212:
-213:
-.base64 "wP8eOQAAKCg="
-beq %cr0, 215f
-b 216f
-215:
-.base64 "EACaOAAAwDsBACA5"
-216:
-b 24f
-23:
-.base64 "gtGoewAAKCg="
-beq %cr0, 217f
-.base64 "AACcOILRqXtkNih5FEKcf1DoqH8="
-b 218f
-217:
-.base64 "QABAOVBQXn2C0ah7AAAoKA=="
-beq %cr0, 219f
-b 220f
-219:
-.base64 "FPIdfYLRCHkAACgo"
-beq %cr0, 221f
-b 222f
-221:
-.base64 "AABdOQ=="
-222:
-220:
-.base64 "UOiqf8LoTHkAACwo"
-beq %cr0, 223f
-225:
-.base64 "AAAc6RTyen0QAAv5CACcOwgA3jv4/0o5wuhMeQAALCg="
-bne %cr0, 225b
-b 224f
-223:
-224:
-.base64 "AAAqKA=="
-beq %cr0, 226f
-228:
-.base64 "AAAciRTyen0QAAuZAQCcOwEA3jv//0o5AAAqKA=="
-bne %cr0, 228b
-b 227f
-226:
-227:
-.base64 "wP8eOQAAKCg="
-beq %cr0, 229f
-b 230f
-229:
-.base64 "EACaOAAAwDsBACA5"
-230:
-218:
-24:
-.base64 "AAApKA=="
-beq %cr0, 231f
-.base64 "AAB6OAAAqTgAANs4"
-bl {vg_md5_compress}
-b 232f
-231:
-232:
-.base64 "AAA9KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8IACATg==""#,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_md5_compress.rs"]
+pub(crate) mod vg_md5_compress;
 
-/// `vg_md5_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Md5.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 112 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_finalize_scratch(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 14]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4QABG+0gAZvtQAIb7WACm+2AAxvtoAOb7AABDOwAAZjsAAIU7AACkOz8AADk4QL5/gAAAORTyen0QAAuZAQDeOwcA/juC0f97"
-20:
-.base64 "QABAOQAAPyg="
-beq %cr0, 21f
-b 22f
-21:
-.base64 "OABAOQ=="
-22:
-.base64 "AAAAOVBQXn3C6Ex5AAAsKA=="
-beq %cr0, 23f
-25:
-.base64 "FPJ6fRAAC/kIAN47+P9KOcLoTHkAACwo"
-bne %cr0, 25b
-b 24f
-23:
-24:
-.base64 "AAAqKA=="
-beq %cr0, 26f
-28:
-.base64 "FPJ6fRAAC5kBAN47//9KOQAAKig="
-bne %cr0, 28b
-b 27f
-26:
-27:
-.base64 "AAA/KA=="
-beq %cr0, 29f
-b 210f
-29:
-.base64 "FOodfRRCCH0UQgh9SAAa+Q=="
-210:
-.base64 "EACaOAAAejgBAKA4AADbOA=="
-bl {vg_md5_compress}
-.base64 "AADAO////zsAAD8o"
-beq %cr0, 20b
-.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHwgAIBO""#,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_md5_finalize_scratch.rs"]
+pub(crate) mod vg_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_update_scratch.rs"]
+pub(crate) mod vg_md5_update_scratch;

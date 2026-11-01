@@ -3,44 +3,6 @@
 //! `assembly/sha512.s`.
 #![allow(dead_code)]
 
-/// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 1328 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
-    core::arch::naked_asm!(
-        r#".base64 "CABG+qYCCHw="
-bcl 20, 31, 2f
-2:
-mflr %r18
-addis %r18, %r18, ({VG_SHA512_PPC64LE_K} - 2b)@ha
-addi %r18, %r18, ({VG_SHA512_PPC64LE_K} - 2b)@l
-.base64 "pgMIfIAAxvmIAOb5kAAG+pgAJvqgAGb6AAAlKA=="
-beq %cr0, 20f
-22:
-.base64 "AAAj6mcBkXwIACPqZwGxfBAAI+pnAdF8GAAj6mcB8XwgACPqZwERfSgAI+pnATF9MAAj6mcBUX04ACPqZwFxfYpCAD6YLxBixgcQeijXEGYirhBiZwGQfcBgaxEIAGA6AAAAOCgEBH4IAAA4KAQkfmcBEHxnAZF9LAIAECxiABCEBOARmZ7SfQgAczrCxogRKkqqEcBwShHChsQRwHjrEcBo7xHAYO8RwHjnEMQshBEqM4URwGDOEcBwbxEsAuARmZ7SfQgAczrCxocR6kGpEcBwKRHChssRwHjqEcBo7xHAYO8RwHjGEMQkixEqK4QRwGDOEcBwTxEQAAA4KAQEfhgAADgoBCR+ZwEwfGcBkX0sCiEQLGIhEIQM4RGZntJ9CABzOsLGhhGqOagRwHAIEcKGyhHAeOkRwGjvEcBg7xHAeKUQxFyKESojixHAYM4RwHAvESwK4RGZntJ9CABzOsLGhRFqMacRwHDnEMKGyRHAeOgRwGjvEcBg7xHAeIQQxFSJESpbihHAYM4RwHAPESAAADgoBAR+KAAAOCgEJH5nAVB8ZwGRfSwSQhAsYkIQhBTiEZme0n0IAHM6wsaEESopphHAcMYQwobIEcB45xHAaO8RwGDvEcB4axHETIgRKlOJEcBgzhHAcO8QLBLiEZme0n0IAHM6wsaLEeoipRHAcKUQwobHEcB45hHAaO8RwGDvEcB4ShHERIcRKkuIEcBgzhHAcM8QMAAAOCgEBH44AAA4KAQkfmcBcHxnAZF9LBpjECxiYxCEHOMRmZ7SfQgAczrCxooRqlqkEcBwhBDChsYRwHjlEcBo7xHAYO8RwHgpEcQ8hhEqQ4cRwGDOEcBwrxAsGuMRmZ7SfQgAczrCxokRalKrEcBwaxHChsURwHjkEcBo7xHAYO8RwHgIEcQ0hREqO4YRwGDOEcBwjxBAAAA4KAQEfkgAADgoBCR+ZwEQfmcBkX0sghASLGIQEoSE8BGZntJ9CABzOsLGiBEqSqoRwHBKEcKGxBHAeOsRwGjvEcBg7xHAeOcQxCyEESozhRHAYM4RwHBvESyC8BGZntJ9CABzOsLGhxHqQakRwHApEcKGyxHAeOoRwGjvEcBg7xHAeMYQxCSLESorhBHAYM4RwHBPEVAAADgoBAR+WAAAOCgEJH5nATB+ZwGRfSyKMRIsYjEShIzxEZme0n0IAHM6wsaGEao5qBHAcAgRwobKEcB46RHAaO8RwGDvEcB4pRDEXIoRKiOLEcBgzhHAcC8RLIrxEZme0n0IAHM6wsaFEWoxpxHAcOcQwobJEcB46BHAaO8RwGDvEcB4hBDEVIkRKluKEcBgzhHAcA8RYAAAOCgEBH5oAAA4KAQkfmcBUH5nAZF9LJJSEixiUhKElPIRmZ7SfQgAczrCxoQRKimmEcBwxhDChsgRwHjnEcBo7xHAYO8RwHhrEcRMiBEqU4kRwGDOEcBw7xAskvIRmZ7SfQgAczrCxosR6iKlEcBwpRDChscRwHjmEcBo7xHAYO8RwHhKEcREhxEqS4gRwGDOEcBwzxBwAAA4KAQEfngAADgoBCR+ZwFwfmcBkX0smnMSLGJzEoSc8xGZntJ9CABzOsLGihGqWqQRwHCEEMKGxhHAeOURwGjvEcBg7xHAeCkRxDyGESpDhxHAYM4RwHCvECya8xGZntJ9CABzOsLGiRFqUqsRwHBrEcKGxRHAeOQRwGjvEcBg7xHAeAgRxDSFESo7hhHAYM4RwHCPEAQAwDk="
-23:
-.base64 "wlaTESwKoBHCBq0RLIrQEcAAjBHAaIwRwHAMEIQE4BGZntJ9CABzOsLGiBEqSqoRwHBKEcKGxBHAeOsRwGjvEcBg7xHAeOcQxCyEESozhRHAYM4RwHBvESwC4BGZntJ9CABzOsLGhxHqQakRwHApEcKGyxHAeOoRwGjvEcBg7xHAeMYQxCSLESorhBHAYM4RwHBPEcJWgBEsEqERwgatESyS0RHACIwRwGiMEcBwLBCEDOERmZ7SfQgAczrCxoYRqjmoEcBwCBHChsoRwHjpEcBo7xHAYO8RwHilEMRcihEqI4sRwGDOEcBwLxEsCuERmZ7SfQgAczrCxoURajGnEcBw5xDChskRwHjoEcBo7xHAYO8RwHiEEMRUiREqW4oRwGDOEcBwDxHCVoERLBqiEcIGrREsmtIRwBCMEcBojBHAcEwQhBTiEZme0n0IAHM6wsaEESopphHAcMYQwobIEcB45xHAaO8RwGDvEcB4axHETIgRKlOJEcBgzhHAcO8QLBLiEZme0n0IAHM6wsaLEeoipRHAcKUQwobHEcB45hHAaO8RwGDvEcB4ShHERIcRKkuIEcBgzhHAcM8QwlaCESyCoxHCBq0RLALTEcAYjBHAaIwRwHBsEIQc4xGZntJ9CABzOsLGihGqWqQRwHCEEMKGxhHAeOURwGjvEcBg7xHAeCkRxDyGESpDhxHAYM4RwHCvECwa4xGZntJ9CABzOsLGiRFqUqsRwHBrEcKGxRHAeOQRwGjvEcBg7xHAeAgRxDSFESo7hhHAYM4RwHCPEMJWgxEsirARwgatESwKwBHAgIwRwGiMEcBwDBKEhPARmZ7SfQgAczrCxogRKkqqEcBwShHChsQRwHjrEcBo7xHAYO8RwHjnEMQshBEqM4URwGDOEcBwbxEsgvARmZ7SfQgAczrCxocR6kGpEcBwKRHChssRwHjqEcBo7xHAYO8RwHjGEMQkixEqK4QRwGDOEcBwTxHCVpARLJKxEcIGrREsEsERwIiMEcBojBHAcCwShIzxEZme0n0IAHM6wsaGEao5qBHAcAgRwobKEcB46RHAaO8RwGDvEcB4pRDEXIoRKiOLEcBgzhHAcC8RLIrxEZme0n0IAHM6wsaFEWoxpxHAcOcQwobJEcB46BHAaO8RwGDvEcB4hBDEVIkRKluKEcBgzhHAcA8RwlaRESyashHCBq0RLBrCEcCQjBHAaIwRwHBMEoSU8hGZntJ9CABzOsLGhBEqKaYRwHDGEMKGyBHAeOcRwGjvEcBg7xHAeGsRxEyIESpTiRHAYM4RwHDvECyS8hGZntJ9CABzOsLGixHqIqURwHClEMKGxxHAeOYRwGjvEcBg7xHAeEoRxESHESpLiBHAYM4RwHDPEMJWkhEsArMRwgatESyCwxHAmIwRwGiMEcBwbBKEnPMRmZ7SfQgAczrCxooRqlqkEcBwhBDChsYRwHjlEcBo7xHAYO8RwHgpEcQ8hhEqQ4cRwGDOEcBwrxAsmvMRmZ7SfQgAczrCxokRalKrEcBwaxHChsURwHjkEcBo7xHAYO8RwHgIEcQ0hREqO4YRwGDOEcBwjxD//845AAAuKA=="
-bne %cr0, 23b
-.base64 "ZwCHfGcAqHxnAMl8ZwDqfGcAC31nACx9ZwBOfWcAb30AAAPqCAAj6hAAA+gYAGPqFILnfBSKCH0UAil9FJpKfSAAA+ooACPqMAAD6DgAY+oUgmt9FIqMfRQCzn0Umu99AADj+AgAA/kQACP5GABD+SAAY/koAIP5MADD+TgA4/mAAIQ4//+lOAAAJSg="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqIACATg==""#,
-        VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
-    )
-}
-
 /// Starts a SHA-384 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-384 (`VG.Spec.Sha512.H0_384`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
@@ -266,175 +228,6 @@ beq %cr0, 20b
     )
 }
 
-/// `vg_sha512_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "sABH+7gAZ/vAAIf7yACn+9AAx/vYAOf7AABDOwAAZzsAAIU7AACmO38AADk4QJ58AAA9KA=="
-beq %cr0, 20f
-22:
-.base64 "AAAgOQAAPig="
-beq %cr0, 23f
-.base64 "gABAOVBQXn3Cyah7AAAoKA=="
-beq %cr0, 25f
-b 26f
-25:
-.base64 "FPIdfcLJCHkAACgo"
-beq %cr0, 27f
-b 28f
-27:
-.base64 "AABdOQ=="
-28:
-26:
-.base64 "UOiqfw=="
-29:
-.base64 "AAAciRTyen1AAAuZAQCcOwEA3jv//0o5AAAqKA=="
-bne %cr0, 29b
-.base64 "gP8eOQAAKCg="
-beq %cr0, 210f
-b 211f
-210:
-.base64 "QACaOAAAwDsBACA5"
-211:
-b 24f
-23:
-.base64 "wsmoewAAKCg="
-beq %cr0, 212f
-.base64 "AACcOIAAnDuA/707AQAgOQ=="
-b 213f
-212:
-.base64 "gABAOVBQXn3Cyah7AAAoKA=="
-beq %cr0, 214f
-b 215f
-214:
-.base64 "FPIdfcLJCHkAACgo"
-beq %cr0, 216f
-b 217f
-216:
-.base64 "AABdOQ=="
-217:
-215:
-.base64 "UOiqfw=="
-218:
-.base64 "AAAciRTyen1AAAuZAQCcOwEA3jv//0o5AAAqKA=="
-bne %cr0, 218b
-.base64 "gP8eOQAAKCg="
-beq %cr0, 219f
-b 220f
-219:
-.base64 "QACaOAAAwDsBACA5"
-220:
-213:
-24:
-.base64 "AAApKA=="
-beq %cr0, 221f
-.base64 "AAB6OAEAoDgAANs4CABG+qYCCHw="
-bcl 20, 31, 2f
-2:
-mflr %r18
-addis %r18, %r18, ({VG_SHA512_PPC64LE_K} - 2b)@ha
-addi %r18, %r18, ({VG_SHA512_PPC64LE_K} - 2b)@l
-.base64 "pgMIfIAAxvmIAOb5kAAG+pgAJvqgAGb6AAAlKA=="
-beq %cr0, 223f
-225:
-.base64 "AAAj6mcBkXwIACPqZwGxfBAAI+pnAdF8GAAj6mcB8XwgACPqZwERfSgAI+pnATF9MAAj6mcBUX04ACPqZwFxfYpCAD6YLxBixgcQeijXEGYirhBiZwGQfcBgaxEIAGA6AAAAOCgEBH4IAAA4KAQkfmcBEHxnAZF9LAIAECxiABCEBOARmZ7SfQgAczrCxogRKkqqEcBwShHChsQRwHjrEcBo7xHAYO8RwHjnEMQshBEqM4URwGDOEcBwbxEsAuARmZ7SfQgAczrCxocR6kGpEcBwKRHChssRwHjqEcBo7xHAYO8RwHjGEMQkixEqK4QRwGDOEcBwTxEQAAA4KAQEfhgAADgoBCR+ZwEwfGcBkX0sCiEQLGIhEIQM4RGZntJ9CABzOsLGhhGqOagRwHAIEcKGyhHAeOkRwGjvEcBg7xHAeKUQxFyKESojixHAYM4RwHAvESwK4RGZntJ9CABzOsLGhRFqMacRwHDnEMKGyRHAeOgRwGjvEcBg7xHAeIQQxFSJESpbihHAYM4RwHAPESAAADgoBAR+KAAAOCgEJH5nAVB8ZwGRfSwSQhAsYkIQhBTiEZme0n0IAHM6wsaEESopphHAcMYQwobIEcB45xHAaO8RwGDvEcB4axHETIgRKlOJEcBgzhHAcO8QLBLiEZme0n0IAHM6wsaLEeoipRHAcKUQwobHEcB45hHAaO8RwGDvEcB4ShHERIcRKkuIEcBgzhHAcM8QMAAAOCgEBH44AAA4KAQkfmcBcHxnAZF9LBpjECxiYxCEHOMRmZ7SfQgAczrCxooRqlqkEcBwhBDChsYRwHjlEcBo7xHAYO8RwHgpEcQ8hhEqQ4cRwGDOEcBwrxAsGuMRmZ7SfQgAczrCxokRalKrEcBwaxHChsURwHjkEcBo7xHAYO8RwHgIEcQ0hREqO4YRwGDOEcBwjxBAAAA4KAQEfkgAADgoBCR+ZwEQfmcBkX0sghASLGIQEoSE8BGZntJ9CABzOsLGiBEqSqoRwHBKEcKGxBHAeOsRwGjvEcBg7xHAeOcQxCyEESozhRHAYM4RwHBvESyC8BGZntJ9CABzOsLGhxHqQakRwHApEcKGyxHAeOoRwGjvEcBg7xHAeMYQxCSLESorhBHAYM4RwHBPEVAAADgoBAR+WAAAOCgEJH5nATB+ZwGRfSyKMRIsYjEShIzxEZme0n0IAHM6wsaGEao5qBHAcAgRwobKEcB46RHAaO8RwGDvEcB4pRDEXIoRKiOLEcBgzhHAcC8RLIrxEZme0n0IAHM6wsaFEWoxpxHAcOcQwobJEcB46BHAaO8RwGDvEcB4hBDEVIkRKluKEcBgzhHAcA8RYAAAOCgEBH5oAAA4KAQkfmcBUH5nAZF9LJJSEixiUhKElPIRmZ7SfQgAczrCxoQRKimmEcBwxhDChsgRwHjnEcBo7xHAYO8RwHhrEcRMiBEqU4kRwGDOEcBw7xAskvIRmZ7SfQgAczrCxosR6iKlEcBwpRDChscRwHjmEcBo7xHAYO8RwHhKEcREhxEqS4gRwGDOEcBwzxBwAAA4KAQEfngAADgoBCR+ZwFwfmcBkX0smnMSLGJzEoSc8xGZntJ9CABzOsLGihGqWqQRwHCEEMKGxhHAeOURwGjvEcBg7xHAeCkRxDyGESpDhxHAYM4RwHCvECya8xGZntJ9CABzOsLGiRFqUqsRwHBrEcKGxRHAeOQRwGjvEcBg7xHAeAgRxDSFESo7hhHAYM4RwHCPEAQAwDk="
-226:
-.base64 "wlaTESwKoBHCBq0RLIrQEcAAjBHAaIwRwHAMEIQE4BGZntJ9CABzOsLGiBEqSqoRwHBKEcKGxBHAeOsRwGjvEcBg7xHAeOcQxCyEESozhRHAYM4RwHBvESwC4BGZntJ9CABzOsLGhxHqQakRwHApEcKGyxHAeOoRwGjvEcBg7xHAeMYQxCSLESorhBHAYM4RwHBPEcJWgBEsEqERwgatESyS0RHACIwRwGiMEcBwLBCEDOERmZ7SfQgAczrCxoYRqjmoEcBwCBHChsoRwHjpEcBo7xHAYO8RwHilEMRcihEqI4sRwGDOEcBwLxEsCuERmZ7SfQgAczrCxoURajGnEcBw5xDChskRwHjoEcBo7xHAYO8RwHiEEMRUiREqW4oRwGDOEcBwDxHCVoERLBqiEcIGrREsmtIRwBCMEcBojBHAcEwQhBTiEZme0n0IAHM6wsaEESopphHAcMYQwobIEcB45xHAaO8RwGDvEcB4axHETIgRKlOJEcBgzhHAcO8QLBLiEZme0n0IAHM6wsaLEeoipRHAcKUQwobHEcB45hHAaO8RwGDvEcB4ShHERIcRKkuIEcBgzhHAcM8QwlaCESyCoxHCBq0RLALTEcAYjBHAaIwRwHBsEIQc4xGZntJ9CABzOsLGihGqWqQRwHCEEMKGxhHAeOURwGjvEcBg7xHAeCkRxDyGESpDhxHAYM4RwHCvECwa4xGZntJ9CABzOsLGiRFqUqsRwHBrEcKGxRHAeOQRwGjvEcBg7xHAeAgRxDSFESo7hhHAYM4RwHCPEMJWgxEsirARwgatESwKwBHAgIwRwGiMEcBwDBKEhPARmZ7SfQgAczrCxogRKkqqEcBwShHChsQRwHjrEcBo7xHAYO8RwHjnEMQshBEqM4URwGDOEcBwbxEsgvARmZ7SfQgAczrCxocR6kGpEcBwKRHChssRwHjqEcBo7xHAYO8RwHjGEMQkixEqK4QRwGDOEcBwTxHCVpARLJKxEcIGrREsEsERwIiMEcBojBHAcCwShIzxEZme0n0IAHM6wsaGEao5qBHAcAgRwobKEcB46RHAaO8RwGDvEcB4pRDEXIoRKiOLEcBgzhHAcC8RLIrxEZme0n0IAHM6wsaFEWoxpxHAcOcQwobJEcB46BHAaO8RwGDvEcB4hBDEVIkRKluKEcBgzhHAcA8RwlaRESyashHCBq0RLBrCEcCQjBHAaIwRwHBMEoSU8hGZntJ9CABzOsLGhBEqKaYRwHDGEMKGyBHAeOcRwGjvEcBg7xHAeGsRxEyIESpTiRHAYM4RwHDvECyS8hGZntJ9CABzOsLGixHqIqURwHClEMKGxxHAeOYRwGjvEcBg7xHAeEoRxESHESpLiBHAYM4RwHDPEMJWkhEsArMRwgatESyCwxHAmIwRwGiMEcBwbBKEnPMRmZ7SfQgAczrCxooRqlqkEcBwhBDChsYRwHjlEcBo7xHAYO8RwHgpEcQ8hhEqQ4cRwGDOEcBwrxAsmvMRmZ7SfQgAczrCxokRalKrEcBwaxHChsURwHjkEcBo7xHAYO8RwHgIEcQ0hREqO4YRwGDOEcBwjxD//845AAAuKA=="
-bne %cr0, 226b
-.base64 "ZwCHfGcAqHxnAMl8ZwDqfGcAC31nACx9ZwBOfWcAb30AAAPqCAAj6hAAA+gYAGPqFILnfBSKCH0UAil9FJpKfSAAA+ooACPqMAAD6DgAY+oUgmt9FIqMfRQCzn0Umu99AADj+AgAA/kQACP5GABD+SAAY/koAIP5MADD+TgA4/mAAIQ4//+lOAAAJSg="
-bne %cr0, 225b
-b 224f
-223:
-224:
-.base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbq"
-b 222f
-221:
-222:
-.base64 "AAA9KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "sABb68AAm+vIALvr0ADb69gA++u4AHvrIACATg==""#,
-        VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
-    )
-}
-
-/// `vg_sha512_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "sABG+7gAZvvAAIb7yACm+9AAxvvYAOb7AABDOwAAZjsAAIU7AACkO38AADk4QL5/gAAAORTyen1AAAuZAQDeOw8A/jvCyf97"
-20:
-.base64 "gABAOQAAPyg="
-beq %cr0, 21f
-b 22f
-21:
-.base64 "cABAOQ=="
-22:
-.base64 "AAAAOVBQXn0AACoo"
-beq %cr0, 23f
-25:
-.base64 "FPJ6fUAAC5kBAN47//9KOQAAKig="
-bne %cr0, 25b
-b 24f
-23:
-24:
-.base64 "AAA/KA=="
-beq %cr0, 26f
-b 27f
-26:
-.base64 "YB+oe7AAYDkoXRp9FOodfRRCCH0UQgh9uABgOShdGn0="
-27:
-.base64 "QACaOAAAejgBAKA4AADbOAgARvqmAgh8"
-bcl 20, 31, 2f
-2:
-mflr %r18
-addis %r18, %r18, ({VG_SHA512_PPC64LE_K} - 2b)@ha
-addi %r18, %r18, ({VG_SHA512_PPC64LE_K} - 2b)@l
-.base64 "pgMIfIAAxvmIAOb5kAAG+pgAJvqgAGb6AAAlKA=="
-beq %cr0, 28f
-210:
-.base64 "AAAj6mcBkXwIACPqZwGxfBAAI+pnAdF8GAAj6mcB8XwgACPqZwERfSgAI+pnATF9MAAj6mcBUX04ACPqZwFxfYpCAD6YLxBixgcQeijXEGYirhBiZwGQfcBgaxEIAGA6AAAAOCgEBH4IAAA4KAQkfmcBEHxnAZF9LAIAECxiABCEBOARmZ7SfQgAczrCxogRKkqqEcBwShHChsQRwHjrEcBo7xHAYO8RwHjnEMQshBEqM4URwGDOEcBwbxEsAuARmZ7SfQgAczrCxocR6kGpEcBwKRHChssRwHjqEcBo7xHAYO8RwHjGEMQkixEqK4QRwGDOEcBwTxEQAAA4KAQEfhgAADgoBCR+ZwEwfGcBkX0sCiEQLGIhEIQM4RGZntJ9CABzOsLGhhGqOagRwHAIEcKGyhHAeOkRwGjvEcBg7xHAeKUQxFyKESojixHAYM4RwHAvESwK4RGZntJ9CABzOsLGhRFqMacRwHDnEMKGyRHAeOgRwGjvEcBg7xHAeIQQxFSJESpbihHAYM4RwHAPESAAADgoBAR+KAAAOCgEJH5nAVB8ZwGRfSwSQhAsYkIQhBTiEZme0n0IAHM6wsaEESopphHAcMYQwobIEcB45xHAaO8RwGDvEcB4axHETIgRKlOJEcBgzhHAcO8QLBLiEZme0n0IAHM6wsaLEeoipRHAcKUQwobHEcB45hHAaO8RwGDvEcB4ShHERIcRKkuIEcBgzhHAcM8QMAAAOCgEBH44AAA4KAQkfmcBcHxnAZF9LBpjECxiYxCEHOMRmZ7SfQgAczrCxooRqlqkEcBwhBDChsYRwHjlEcBo7xHAYO8RwHgpEcQ8hhEqQ4cRwGDOEcBwrxAsGuMRmZ7SfQgAczrCxokRalKrEcBwaxHChsURwHjkEcBo7xHAYO8RwHgIEcQ0hREqO4YRwGDOEcBwjxBAAAA4KAQEfkgAADgoBCR+ZwEQfmcBkX0sghASLGIQEoSE8BGZntJ9CABzOsLGiBEqSqoRwHBKEcKGxBHAeOsRwGjvEcBg7xHAeOcQxCyEESozhRHAYM4RwHBvESyC8BGZntJ9CABzOsLGhxHqQakRwHApEcKGyxHAeOoRwGjvEcBg7xHAeMYQxCSLESorhBHAYM4RwHBPEVAAADgoBAR+WAAAOCgEJH5nATB+ZwGRfSyKMRIsYjEShIzxEZme0n0IAHM6wsaGEao5qBHAcAgRwobKEcB46RHAaO8RwGDvEcB4pRDEXIoRKiOLEcBgzhHAcC8RLIrxEZme0n0IAHM6wsaFEWoxpxHAcOcQwobJEcB46BHAaO8RwGDvEcB4hBDEVIkRKluKEcBgzhHAcA8RYAAAOCgEBH5oAAA4KAQkfmcBUH5nAZF9LJJSEixiUhKElPIRmZ7SfQgAczrCxoQRKimmEcBwxhDChsgRwHjnEcBo7xHAYO8RwHhrEcRMiBEqU4kRwGDOEcBw7xAskvIRmZ7SfQgAczrCxosR6iKlEcBwpRDChscRwHjmEcBo7xHAYO8RwHhKEcREhxEqS4gRwGDOEcBwzxBwAAA4KAQEfngAADgoBCR+ZwFwfmcBkX0smnMSLGJzEoSc8xGZntJ9CABzOsLGihGqWqQRwHCEEMKGxhHAeOURwGjvEcBg7xHAeCkRxDyGESpDhxHAYM4RwHCvECya8xGZntJ9CABzOsLGiRFqUqsRwHBrEcKGxRHAeOQRwGjvEcBg7xHAeAgRxDSFESo7hhHAYM4RwHCPEAQAwDk="
-211:
-.base64 "wlaTESwKoBHCBq0RLIrQEcAAjBHAaIwRwHAMEIQE4BGZntJ9CABzOsLGiBEqSqoRwHBKEcKGxBHAeOsRwGjvEcBg7xHAeOcQxCyEESozhRHAYM4RwHBvESwC4BGZntJ9CABzOsLGhxHqQakRwHApEcKGyxHAeOoRwGjvEcBg7xHAeMYQxCSLESorhBHAYM4RwHBPEcJWgBEsEqERwgatESyS0RHACIwRwGiMEcBwLBCEDOERmZ7SfQgAczrCxoYRqjmoEcBwCBHChsoRwHjpEcBo7xHAYO8RwHilEMRcihEqI4sRwGDOEcBwLxEsCuERmZ7SfQgAczrCxoURajGnEcBw5xDChskRwHjoEcBo7xHAYO8RwHiEEMRUiREqW4oRwGDOEcBwDxHCVoERLBqiEcIGrREsmtIRwBCMEcBojBHAcEwQhBTiEZme0n0IAHM6wsaEESopphHAcMYQwobIEcB45xHAaO8RwGDvEcB4axHETIgRKlOJEcBgzhHAcO8QLBLiEZme0n0IAHM6wsaLEeoipRHAcKUQwobHEcB45hHAaO8RwGDvEcB4ShHERIcRKkuIEcBgzhHAcM8QwlaCESyCoxHCBq0RLALTEcAYjBHAaIwRwHBsEIQc4xGZntJ9CABzOsLGihGqWqQRwHCEEMKGxhHAeOURwGjvEcBg7xHAeCkRxDyGESpDhxHAYM4RwHCvECwa4xGZntJ9CABzOsLGiRFqUqsRwHBrEcKGxRHAeOQRwGjvEcBg7xHAeAgRxDSFESo7hhHAYM4RwHCPEMJWgxEsirARwgatESwKwBHAgIwRwGiMEcBwDBKEhPARmZ7SfQgAczrCxogRKkqqEcBwShHChsQRwHjrEcBo7xHAYO8RwHjnEMQshBEqM4URwGDOEcBwbxEsgvARmZ7SfQgAczrCxocR6kGpEcBwKRHChssRwHjqEcBo7xHAYO8RwHjGEMQkixEqK4QRwGDOEcBwTxHCVpARLJKxEcIGrREsEsERwIiMEcBojBHAcCwShIzxEZme0n0IAHM6wsaGEao5qBHAcAgRwobKEcB46RHAaO8RwGDvEcB4pRDEXIoRKiOLEcBgzhHAcC8RLIrxEZme0n0IAHM6wsaFEWoxpxHAcOcQwobJEcB46BHAaO8RwGDvEcB4hBDEVIkRKluKEcBgzhHAcA8RwlaRESyashHCBq0RLBrCEcCQjBHAaIwRwHBMEoSU8hGZntJ9CABzOsLGhBEqKaYRwHDGEMKGyBHAeOcRwGjvEcBg7xHAeGsRxEyIESpTiRHAYM4RwHDvECyS8hGZntJ9CABzOsLGixHqIqURwHClEMKGxxHAeOYRwGjvEcBg7xHAeEoRxESHESpLiBHAYM4RwHDPEMJWkhEsArMRwgatESyCwxHAmIwRwGiMEcBwbBKEnPMRmZ7SfQgAczrCxooRqlqkEcBwhBDChsYRwHjlEcBo7xHAYO8RwHgpEcQ8hhEqQ4cRwGDOEcBwrxAsmvMRmZ7SfQgAczrCxokRalKrEcBwaxHChsURwHjkEcBo7xHAYO8RwHgIEcQ0hREqO4YRwGDOEcBwjxD//845AAAuKA=="
-bne %cr0, 211b
-.base64 "ZwCHfGcAqHxnAMl8ZwDqfGcAC31nACx9ZwBOfWcAb30AAAPqCAAj6hAAA+gYAGPqFILnfBSKCH0UAil9FJpKfSAAA+ooACPqMAAD6DgAY+oUgmt9FIqMfRQCzn0Umu99AADj+AgAA/kQACP5GABD+SAAY/koAIP5MADD+TgA4/mAAIQ4//+lOAAAJSg="
-bne %cr0, 210b
-b 29f
-28:
-29:
-.base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqAADAO////zsAAD8o"
-beq %cr0, 20b
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9MAAa6TAAYDkoXRx9OAAa6TgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrIACATg==""#,
-        VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
-    )
-}
-
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
@@ -620,3 +413,15 @@ beq %cr0, 20b
         VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress.rs"]
+pub(crate) mod vg_sha512_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch.rs"]
+pub(crate) mod vg_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch.rs"]
+pub(crate) mod vg_sha512_update_scratch;

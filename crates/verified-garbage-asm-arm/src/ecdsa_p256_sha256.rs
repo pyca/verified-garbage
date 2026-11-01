@@ -741,7 +741,7 @@ ldr r8, [r12, #212]
 add sp, sp, #216
 bx lr",
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
         vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
     )
@@ -1491,7 +1491,7 @@ ldr r8, [r12, #212]
 add sp, sp, #216
 bx lr",
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
         vg_ecdsa_p256_sign_umaal = sym super::ecdsa_p256::vg_ecdsa_p256_sign_umaal,
     )

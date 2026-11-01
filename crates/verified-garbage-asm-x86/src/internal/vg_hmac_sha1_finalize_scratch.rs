@@ -17,7 +17,7 @@ call {vg_sha1_finalize_scratch}
 call {vg_sha1_compress}
 .base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAMM="
 .p2align 6"#,
-        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_compress = sym crate::sha1::vg_sha1_compress,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }

@@ -188,7 +188,7 @@ jmp 21f
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -334,7 +334,7 @@ jne 226b
 .base64 "jaQkkAAAAIs8JIt0JASLbCQIW1tbW8M="
 .p2align 6"#,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }

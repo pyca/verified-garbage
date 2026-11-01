@@ -44,6 +44,6 @@ bl {vg_sha256_compress_sha2}
 .arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym crate::sha256::vg_sha224_init,
-        vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2,
+        vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
 }

@@ -76,8 +76,8 @@ jmp 24f
 .base64 "ieiLmEADAACLsEQDAACLuEgDAACLqEwDAACNpCRkBgAAww=="
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
         vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
         vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
@@ -161,8 +161,8 @@ jmp 24f
 .base64 "ieiLmEADAACLsEQDAACLuEgDAACLqEwDAACNpCRkBgAAww=="
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani::vg_hmac_sha224_init_scratch_shani,
         vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani::vg_hmac_sha224_finalize_scratch_shani,
         vg_pbkdf2_hmac_sha224_iterate_shani = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_shani::vg_pbkdf2_hmac_sha224_iterate_shani,

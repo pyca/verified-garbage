@@ -629,9 +629,9 @@ str r2, [r12, #1596]
 add sp, sp, #1632
 b 21b",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
     )
 }
@@ -766,8 +766,8 @@ ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 add sp, sp, #864
 bx lr",
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 

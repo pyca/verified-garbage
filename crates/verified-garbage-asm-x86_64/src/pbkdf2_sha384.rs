@@ -74,8 +74,8 @@ jmp 24f
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
         vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
@@ -157,8 +157,8 @@ jmp 24f
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2::vg_hmac_sha384_init_scratch_avx2,
         vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2::vg_hmac_sha384_finalize_scratch_avx2,
         vg_pbkdf2_hmac_sha384_iterate_avx2 = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_avx2::vg_pbkdf2_hmac_sha384_iterate_avx2,
@@ -240,8 +240,8 @@ jmp 24f
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
+        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
         vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani::vg_hmac_sha384_finalize_scratch_shani,
         vg_pbkdf2_hmac_sha384_iterate_shani = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_shani::vg_pbkdf2_hmac_sha384_iterate_shani,

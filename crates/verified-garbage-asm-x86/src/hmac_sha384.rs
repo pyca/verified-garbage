@@ -60,9 +60,9 @@ call {vg_hmac_sha384_init_scratch}
 jmp 21b
 .p2align 6"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
     )
 }
@@ -90,8 +90,8 @@ call {vg_sha512_finalize_scratch}
 call {vg_sha512_compress}
 .base64 "WFhYWInYg8BAi0sED8mJCIsLD8mJSASLSwwPyYlICItLCA/JiUgMi0sUD8mJSBCLSxAPyYlIFItLHA/JiUgYi0sYD8mJSByLSyQPyYlIIItLIA/JiUgki0ssD8mJSCiLSygPyYlILItLNA/JiUgwi0swD8mJSDSLSzwPyYlIOItLOA/JiUg8i0tAiQ+LS0SJTwSLS0iJTwiLS0yJTwyLS1CJTxCLS1SJTxSLS1iJTxiLS1yJTxyLS2CJTyCLS2SJTySLS2iJTyiLS2yJTyyJ6IuYEAEAAIuwFAEAAIu4GAEAAIuoHAEAAI2kJGwHAADD"
 .p2align 6"#,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 

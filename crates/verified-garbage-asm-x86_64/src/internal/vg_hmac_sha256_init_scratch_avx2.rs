@@ -33,6 +33,6 @@ call {vg_sha256_compress_avx2}
 .base64 "SIn7SYnPSYufYAIAAEmLr2gCAABNi6dwAgAATYuveAIAAE2Lt4ACAABNi7+IAgAAww=="
 .p2align 6"#,
         vg_sha256_init = sym crate::sha256::vg_sha256_init,
-        vg_sha256_compress_avx2 = sym crate::sha256::vg_sha256_compress_avx2,
+        vg_sha256_compress_avx2 = sym crate::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
     )
 }

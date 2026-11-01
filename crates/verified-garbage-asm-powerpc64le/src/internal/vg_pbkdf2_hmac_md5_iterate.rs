@@ -24,6 +24,6 @@ b 21f
 20:
 21:
 .base64 "cAAb6EAAW+tQAJvrWAC762AA2+toAPvrSAB766YDCHwgAIBO""#,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

@@ -20,7 +20,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPTIntSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
 .p2align 6"#,
-        vg_sha512_finalize_scratch_shani = sym crate::sha512::vg_sha512_finalize_scratch_shani,
-        vg_sha512_compress_shani = sym crate::sha512::vg_sha512_compress_shani,
+        vg_sha512_finalize_scratch_shani = sym crate::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_compress_shani = sym crate::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }

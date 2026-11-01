@@ -31,7 +31,7 @@ bl {vg_sha512_compress_sha3}
 .inst 0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_sha512_finalize_scratch_sha3 = sym crate::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym crate::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }

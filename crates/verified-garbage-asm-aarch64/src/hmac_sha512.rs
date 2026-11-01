@@ -110,9 +110,9 @@ bl {vg_hmac_sha512_init_scratch}
 b 21b
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
     )
 }
@@ -148,8 +148,8 @@ bl {vg_sha512_compress}
 .inst 0xf9001ea9,0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7
 .inst 0x911d43ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -266,9 +266,9 @@ b 21b
 .arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
-        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
+        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
         vg_hmac_sha512_init_scratch_sha3 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_sha3::vg_hmac_sha512_init_scratch_sha3,
     )
 }
@@ -310,8 +310,8 @@ bl {vg_sha512_compress_sha3}
 .inst 0x911d43ff,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
+        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 

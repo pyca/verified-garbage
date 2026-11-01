@@ -25,7 +25,7 @@ bl {vg_sha256_compress}
 .inst 0x91000315,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf94052f3
 .inst 0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
 .p2align 6",
-        vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym crate::sha256::vg_sha256_compress,
+        vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

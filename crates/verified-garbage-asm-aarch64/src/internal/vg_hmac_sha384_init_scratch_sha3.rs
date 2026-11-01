@@ -52,6 +52,6 @@ bl {vg_sha512_compress_sha3}
 .arch_extension nosha3
 .p2align 6",
         vg_sha384_init = sym crate::sha512::vg_sha384_init,
-        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
