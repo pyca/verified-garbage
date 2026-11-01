@@ -142,7 +142,7 @@ theorem seal_wp {s₀ : State} (h : sealRISCV64.pre s₀) :
   have hab₃ := oa.abs.congr (blockAt_frame oc.frame (stp_crFrame L hd₂ (by decide)))
     (bytesAt_frame oc.frame (stp_crFrame L hd₂ (by omega)) (by omega))
   have hD₃s : s₃.mem.readW (s₁.gpr .s0 + BitVec.ofNat 64 dataO) 64 = s₀.gpr .a6 := by
-    rw [slot_keep oc.frame (slot_crFrame L hd₂)]; exact hD₂s
+    rw [slot_keep oc.frame (slot_crFrame L hd₂ (by decide))]; exact hD₂s
   refine WP.seq (WP.mono (WP.with_rdwr (oneTag_ok L (o := 0) (.inl rfl) oc.env h28 hR hH₃
     (length_bytesAt _ _ _).symm hab₃ (hd₂.ok.of_eq rd₃ wr₃ sp₃) hD₃s)) fun s₄ ⟨ot, rd₄, wr₄, _⟩ => ?_)
   -- the tag copied out
