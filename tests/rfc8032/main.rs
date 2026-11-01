@@ -14,8 +14,10 @@ mod ed448;
 
 use verified_garbage::ed25519::{Error, SigningKey, VerifyingKey};
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc8032/rfc8032.txt"));
+/// The vectors' file (`crate::vectors`).
+fn text() -> &'static str {
+    crate::vectors::text("vectors/rfc8032/rfc8032.txt")
+}
 
 fn hex_lines(text: &str) -> Vec<u8> {
     text.lines()
@@ -32,7 +34,7 @@ fn hex_lines(text: &str) -> Vec<u8> {
 
 #[test]
 fn ed25519_vectors() {
-    let section = TEXT
+    let section = text()
         .split_once("\n7.1.  Test Vectors for Ed25519\n")
         .unwrap()
         .1
@@ -72,7 +74,7 @@ fn ed25519_vectors() {
 }
 
 fn rfc_seed() -> [u8; 32] {
-    let section = TEXT
+    let section = text()
         .split_once("\n7.1.  Test Vectors for Ed25519\n")
         .unwrap()
         .1;

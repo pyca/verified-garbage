@@ -28,9 +28,6 @@ fn errors() {
     );
 }
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc6979/rfc6979.txt"));
-
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
     (0..s.len())
@@ -67,7 +64,10 @@ fn section<const Q: usize, const U: usize, const S: usize>(
     title: &str,
     hashes: &[&'static str],
 ) -> ([u8; Q], [u8; Q], [u8; U], Signatures<S>) {
-    let text = TEXT.split_once(title).unwrap().1;
+    let text = crate::vectors::text("vectors/rfc6979/rfc6979.txt")
+        .split_once(title)
+        .unwrap()
+        .1;
     let text = text.split_once("\nA.").unwrap().0;
     let lines: Vec<&str> = text.lines().map(str::trim).collect();
     let mut i = 0;

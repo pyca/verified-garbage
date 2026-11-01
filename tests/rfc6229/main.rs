@@ -11,9 +11,6 @@
 
 use verified_garbage::rc4::{Error, Rc4};
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc6229/rfc6229.txt"));
-
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
     assert_eq!(hex.len() % 2, 0);
@@ -27,7 +24,10 @@ fn unhex(text: &str) -> Vec<u8> {
 fn every_published_answer_and_streaming_split() {
     let mut keys = 0;
     let mut answers = 0;
-    for record in TEXT.split(" Key length: ").skip(1) {
+    for record in crate::vectors::text("vectors/rfc6229/rfc6229.txt")
+        .split(" Key length: ")
+        .skip(1)
+    {
         let bits: usize = record.split_once(" bits.").unwrap().0.parse().unwrap();
         let key = record
             .lines()

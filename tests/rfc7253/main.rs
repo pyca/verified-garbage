@@ -19,12 +19,10 @@
 
 use verified_garbage::aes_ocb::{AesOcb, Error};
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc7253/rfc7253.txt"));
-
 /// The lines of Appendix A, without the page breaks.
 fn appendix() -> impl Iterator<Item = &'static str> {
-    TEXT.lines()
+    crate::vectors::text("vectors/rfc7253/rfc7253.txt")
+        .lines()
         .skip_while(|l| !l.starts_with("Appendix A.  Sample Results"))
         .take_while(|l| !l.starts_with("Authors' Addresses"))
         .map(str::trim)

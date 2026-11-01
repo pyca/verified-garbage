@@ -16,9 +16,10 @@
 
 use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
 
-static TEXT: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
+/// The vectors' file (`crate::vectors`).
+fn text() -> &'static str {
     crate::vectors::text("vectors/schneier-blowfish-vectors/vectors-2.txt")
-});
+}
 
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
@@ -48,7 +49,8 @@ fn decrypt(key: &[u8], input: &[u8]) -> Vec<u8> {
 /// The lines of the file after the one starting with `start`, up to the
 /// one starting with `end`, trimmed (the file has CRLF line endings).
 fn section(start: &str, end: &str) -> Vec<&'static str> {
-    TEXT.lines()
+    text()
+        .lines()
         .map(str::trim)
         .skip_while(|line| !line.starts_with(start))
         .skip(1)
@@ -106,12 +108,12 @@ fn set_key_records() {
 #[test]
 fn cbc_record() {
     let value = |name: &str| {
-        let line = TEXT.lines().find(|line| line.starts_with(name)).unwrap();
+        let line = text().lines().find(|line| line.starts_with(name)).unwrap();
         unhex(line.split_once("= ").unwrap().1.trim())
     };
     let key = value("key[16]");
     let iv = value("iv[8]");
-    let data = TEXT
+    let data = text()
         .lines()
         .filter(|line| line.starts_with("data[29]  = 3"))
         .map(|line| unhex(line.split_once("= ").unwrap().1.trim()))

@@ -14,9 +14,6 @@
 use verified_garbage::aes_ctr::{AesCtr, InvalidKeyLength};
 use verified_garbage::aes_ecb::AesEcb;
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc3686/rfc3686.txt"));
-
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
     assert_eq!(hex.len() % 2, 0);
@@ -104,7 +101,10 @@ fn check(ctx: &AesCtr, ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
 #[test]
 fn rfc3686_test_vectors() {
     // The section itself, not its line in the table of contents.
-    let section = TEXT.rsplit_once("6.  Test Vectors").unwrap().1;
+    let section = crate::vectors::text("vectors/rfc3686/rfc3686.txt")
+        .rsplit_once("6.  Test Vectors")
+        .unwrap()
+        .1;
     let section = section.split_once("7.  Security Considerations").unwrap().0;
     let mut key_lens = Vec::new();
     for vector in section.split("Test Vector #").skip(1) {

@@ -23,9 +23,6 @@ use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
 use verified_garbage::hmac::{Hmac, HmacHash};
 
-static RFC: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc4231/rfc4231.txt"));
-
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
     (0..s.len())
@@ -57,7 +54,7 @@ impl Case {
 fn cases() -> Vec<Case> {
     let mut out: Vec<Case> = Vec::new();
     let mut in_case = false;
-    for l in RFC.lines() {
+    for l in crate::vectors::text("vectors/rfc4231/rfc4231.txt").lines() {
         if !l.starts_with(' ') {
             if l.starts_with("4.") && l.contains("Test Case") {
                 let n = l.rsplit(' ').next().unwrap();

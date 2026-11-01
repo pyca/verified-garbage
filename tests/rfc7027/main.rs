@@ -17,14 +17,14 @@ mod brainpoolp384r1_ecdsa;
 mod brainpoolp512r1;
 mod brainpoolp512r1_ecdsa;
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc7027/rfc7027.txt"));
-
 /// The hex value labelled `label` (as `dA =`) in the test vectors of the
 /// curve `curve`, on the label's line and the lines after it that are only
 /// hex digits, in `N` bytes.
 fn value<const N: usize>(curve: &str, label: &str) -> [u8; N] {
-    let lines: Vec<&str> = TEXT.lines().map(str::trim).collect();
+    let lines: Vec<&str> = crate::vectors::text("vectors/rfc7027/rfc7027.txt")
+        .lines()
+        .map(str::trim)
+        .collect();
     let mut i = lines
         .iter()
         .position(|l| *l == format!("Curve {curve}"))

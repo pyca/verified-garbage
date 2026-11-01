@@ -20,10 +20,6 @@ mod sm4_ctr;
 mod sm4_ecb;
 mod sm4_ofb;
 
-static DRAFT: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
-    crate::vectors::text("vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt")
-});
-
 fn unhex(s: &str) -> Vec<u8> {
     (0..s.len())
         .step_by(2)
@@ -33,10 +29,11 @@ fn unhex(s: &str) -> Vec<u8> {
 
 /// The text of the appendix between the headings starting `from` and `to`.
 fn section(from: &str, to: &str) -> &'static str {
-    let appendix = DRAFT
-        .split("Appendix A.  Appendix A: Example Calculations")
-        .last()
-        .unwrap();
+    let appendix =
+        crate::vectors::text("vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt")
+            .split("Appendix A.  Appendix A: Example Calculations")
+            .last()
+            .unwrap();
     let start = appendix.find(from).unwrap();
     let end = start + appendix[start..].find(to).unwrap();
     &appendix[start..end]

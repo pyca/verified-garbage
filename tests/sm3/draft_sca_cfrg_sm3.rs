@@ -3,16 +3,17 @@
 
 use super::{check, unhex};
 
-static DRAFT: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
+/// The vectors' file (`crate::vectors`).
+fn draft() -> &'static str {
     crate::vectors::text("vectors/draft-sca-cfrg-sm3/draft-sca-cfrg-sm3-02.txt")
-});
+}
 
 /// The text from the heading starting `from` (at the start of a line, unlike
 /// its entry in the table of contents) to the one starting `to`.
 fn section(from: &str, to: &str) -> &'static str {
-    let start = DRAFT.find(&format!("\n{from}")).unwrap();
-    let end = start + 1 + DRAFT[start + 1..].find(&format!("\n{to}")).unwrap();
-    &DRAFT[start..end]
+    let start = draft().find(&format!("\n{from}")).unwrap();
+    let end = start + 1 + draft()[start + 1..].find(&format!("\n{to}")).unwrap();
+    &draft()[start..end]
 }
 
 /// The bytes of the lines of `text` made only of hex numbers of whole

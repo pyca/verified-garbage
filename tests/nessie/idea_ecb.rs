@@ -14,9 +14,6 @@ use std::collections::BTreeMap;
 
 use verified_garbage::idea_ecb::{Error, IdeaEcb};
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/cryptography-idea/idea-ecb.txt"));
-
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0);
     (0..s.len())
@@ -57,7 +54,10 @@ fn nessie() {
     let mut by_key: BTreeMap<Vec<u8>, (Vec<u8>, Vec<u8>)> = BTreeMap::new();
     let mut count = 0;
     let mut iterated = 0;
-    for record in TEXT.replace('\r', "").split("\n\n") {
+    for record in crate::vectors::text("vectors/cryptography-idea/idea-ecb.txt")
+        .replace('\r', "")
+        .split("\n\n")
+    {
         let fields: BTreeMap<_, _> = record
             .lines()
             .filter_map(|line| line.trim().split_once(" = "))

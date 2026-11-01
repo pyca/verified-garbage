@@ -11,10 +11,11 @@
 
 use verified_garbage::x448::{BASE_POINT, PrivateKey, x448};
 
-use super::TEXT;
+use super::text;
 
 fn section(from: &str, to: &str) -> &'static str {
-    TEXT.split_once(&format!("\n{from}"))
+    text()
+        .split_once(&format!("\n{from}"))
         .unwrap()
         .1
         .split_once(&format!("\n{to}"))

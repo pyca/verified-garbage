@@ -9,13 +9,11 @@
 
 use verified_garbage::cast5_ofb::{Cast5Ofb, InvalidKeyLength};
 
-static VECTORS: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
-    crate::vectors::text("vectors/cryptography-cast5-ofb/cast5-ofb.txt")
-});
-
 #[test]
 fn vectors() {
-    let records = super::records(*VECTORS);
+    let records = super::records(crate::vectors::text(
+        "vectors/cryptography-cast5-ofb/cast5-ofb.txt",
+    ));
     assert_eq!(records.len(), 20);
     for (key, iv, plaintext, ciphertext) in records {
         let cipher = Cast5Ofb::new(&key).unwrap();

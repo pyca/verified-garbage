@@ -22,9 +22,6 @@ mod chacha20;
 mod chacha20poly1305;
 mod poly1305;
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc8439/rfc8439.txt"));
-
 /// A test vector: the lines of its text that are not rows of hex, each with
 /// the bytes of the rows of hex that follow it (none if it is not the label
 /// of a value).
@@ -91,7 +88,7 @@ impl Vector {
 /// lines, `====` underlines and page breaks are skipped, so a value continues
 /// on the next page.
 fn vectors(from: &str, to: &str) -> Vec<Vector> {
-    let lines = TEXT
+    let lines = crate::vectors::text("vectors/rfc8439/rfc8439.txt")
         .lines()
         .skip_while(|l| !l.starts_with(from))
         .take_while(|l| !l.starts_with(to))

@@ -19,9 +19,6 @@
 use verified_garbage::hashes::md5::Md5;
 use verified_garbage::hmac::Hmac;
 
-static RFC: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc2202/rfc2202.txt"));
-
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
     (0..s.len())
@@ -58,7 +55,7 @@ struct Case {
 /// the previous one's value; the page footers and headers are skipped.
 fn cases(start: &str, stop: &str) -> Vec<Case> {
     let mut groups: Vec<(String, Vec<(String, String)>)> = Vec::new();
-    let section = RFC
+    let section = crate::vectors::text("vectors/rfc2202/rfc2202.txt")
         .lines()
         .skip_while(|l| *l != start)
         .skip(1)
