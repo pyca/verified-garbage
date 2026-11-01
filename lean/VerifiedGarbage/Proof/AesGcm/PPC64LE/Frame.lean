@@ -177,12 +177,12 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract PPC64LE.abi 2672).pre s
 
 /-- `seal`, whose `tag` arrives on the stack: the frame copies it, then the
 working space's address, above its stack pointer (`Verified.stackScratchArgs`). -/
-theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 «seal»)
+theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal)
       (Spec.Gcm.sealContract PPC64LE.abi 2672) :=
   PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Gcm.sealPre PPC64LE.abi.ptrBits) (post := Spec.Gcm.sealPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2672) (m := 1) seal_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 2672) (m := 1) sealFused_verified (by decide) (by decide)
     (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
