@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: the entry of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
+# AES-GCM on RISC-V: the entry of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. `oneEntry off` loads the
 working space `W`, the stack argument at `sp + off`, saves our caller's

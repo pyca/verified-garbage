@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad` are constant time
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad` are constant time
 
 Untrusted: everything here is checked by Lean. The entry by the taint
 analysis from the public arguments; then `j0` (`j0_ct`) or `absorb 16`

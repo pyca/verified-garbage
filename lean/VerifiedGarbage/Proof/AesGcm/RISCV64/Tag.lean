@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: the tag (`tag o`)
+# AES-GCM on RISC-V: the tag (`tag o`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/Tag.lean`): `tag o` absorbs the lengths block of `s4`

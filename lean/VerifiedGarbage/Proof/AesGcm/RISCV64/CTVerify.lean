@@ -25,15 +25,14 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_verify` is constant time
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_verify` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTVerify.lean`): the invariant fixes what `finish`'s
-does (`FinI`), and the received tag's address and length (`r20`, `r19`);
+does (`FinI`), and the received tag's address and length (`s9`, `s8`);
 the branch on the tag length is on that public length, and the comparison
 does not branch.
 -/
@@ -105,7 +104,7 @@ theorem verOk_ct (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
   · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), j₁, j₂]
   · rw [h₁.s0, h₂.s0, d₁, d₂]
 
-/-- The same, for correctness: `W` is kept in `r31`. -/
+/-- The same, for correctness: `W` is kept in `s0`. -/
 theorem verOk_wp (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w sp R A T Tp tl s) :
     WP isa (.seq recv (.seq (finTag 0) (cmp 0))) s fun s' => s'.gpr .s0 = w ∧ s'.sp = sp := by
   obtain ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ := h

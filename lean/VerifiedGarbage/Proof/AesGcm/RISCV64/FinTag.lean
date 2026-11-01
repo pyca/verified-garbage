@@ -11,12 +11,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: the tag after the last piece (`finTag o`)
+# AES-GCM on RISC-V: the tag after the last piece (`finTag o`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/FinTag.lean`): `finTag o` pads and absorbs the buffered
 bytes (`flush`), of the text if there is any and else of the additional
-data, then puts the tag into `W + o` (`tag`), for `aad_len` (`r22`) bytes
+data, then puts the tag into `W + o` (`tag`), for `aad_len` (`s10`) bytes
 of additional data and `text_len` (`s11`) of text (`finTag_ok`).
 -/
 
@@ -63,7 +63,7 @@ theorem finTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List 
     WP isa (finTag o) s (FinOut V sp o R H a ct s.mem) := by
   have h22 := he.fr .s10 (by decide)
   have h23 := he.fr .s11 (by decide)
-  -- `r26`: the length of the buffered bytes, modulo 16
+  -- `s6`: the length of the buffered bytes, modulo 16
   have mid : WP isa (.ite (.zero .s11) (.block [.logicImm .and .s6 .s10 15])
       (.block [.logicImm .and .s6 .s11 15])) s fun s₂ =>
       s₂.gpr .s6 = BitVec.ofNat 64 ((ghashInput a ct).length % 16) ∧

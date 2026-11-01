@@ -16,13 +16,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.Spec.TripleDes
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `ghash1`, `absorb`, `flush` and `lens` are constant time
+# AES-GCM on RISC-V: `ghash1`, `absorb`, `flush` and `lens` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTAbsorb.lean`): the invariants fix the context, the

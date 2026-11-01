@@ -23,14 +23,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: the pre-counter block (`j0`)
+# AES-GCM on RISC-V: the pre-counter block (`j0`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/J0.lean`): `j0` writes `J₀` for the `r25`-byte nonce at
-`r24` to the state: its words and `0x00000001` for a 12-byte nonce
+(`Proof/AesGcm/Arm/J0.lean`): `j0` writes `J₀` for the `s5`-byte nonce at
+`s4` to the state: its words and `0x00000001` for a 12-byte nonce
 (`j012_ok`), and otherwise GHASH of the nonce padded with zeros and the
 lengths block, with `absorb`, `flush` and `lens` on the accumulator at the
-state's first block (`j0hash_ok`), the nonce's length in `r18`. `initState`
+state's first block (`j0hash_ok`), the nonce's length in `s7`. `initState`
 then zeroes the accumulator and writes the first counter block `inc₃₂(J₀)`
 (`initState_ok`).
 -/

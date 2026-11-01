@@ -19,7 +19,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_verify`
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_verify`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/StreamVerify.lean`): the entry saves our caller's

@@ -16,15 +16,15 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: checking a received tag (`tagLenOk`, `recv`, `cmp`)
+# AES-GCM on RISC-V: checking a received tag (`tagLenOk`, `recv`, `cmp`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Compare.lean`): `tagLenOk` leaves 1 in `r25` iff
-`tagLenOk` allows a tag of `r19` bytes, and 0 if not, branching on that
+(`Proof/AesGcm/Arm/Compare.lean`): `tagLenOk` leaves 1 in `s5` iff
+`tagLenOk` allows a tag of `s8` bytes, and 0 if not, branching on that
 public length (`tagLenOk_ok`); `recv` and `cmp o` copy the received tag (at
-`r20`) and the computed one (at `W + o`), `r19` bytes of each, padded with
+`s9`) and the computed one (at `W + o`), `s8` bytes of each, padded with
 zeros, to `W + rO` and `W + vO` (`recv_ok`, `cmp_ok`), and `cmpTail` sets
-`r3` to 1 if they are equal and 0 if not, without a branch (`cmpTail_ok`).
+`a0` to 1 if they are equal and 0 if not, without a branch (`cmpTail_ok`).
 -/
 
 @[expose] public section
@@ -113,7 +113,7 @@ theorem pad_bytes {m : Mem} {P : Addr} (hz : bytesAt m P 16 = zeros 16) (xs : Li
 
 /-! ## The length -/
 
-/-- `tagLenOk`: `r25` is 1 iff the tag length is allowed. -/
+/-- `tagLenOk`: `s5` is 1 iff the tag length is allowed. -/
 theorem tagLenOk_ok {s : State} {t : Nat} (h19 : s.gpr .s8 = BitVec.ofNat 64 t) (ht : t < 2 ^ 64) :
     WP isa tagLenOk s fun s' => s'.gpr .s5 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk t then 1 else 0) ∧
       (∀ r, r ≠ .t0 → r ≠ .s5 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
@@ -185,7 +185,7 @@ theorem padCopy_ok {s : State} (he : Env V sp s) {S : Addr} {d tl : Nat} (hd : d
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix h16⟩
 
-/-- `recv`: the received tag (`tl` bytes at `r20`), padded with zeros at `W + rO`. -/
+/-- `recv`: the received tag (`tl` bytes at `s9`), padded with zeros at `W + rO`. -/
 theorem recv_ok {s : State} (he : Env V sp s) (hal : (V .s0).toNat % 8 = 0) {tl : Nat}
     (h19 : V .s8 = BitVec.ofNat 64 tl) (h1 : 1 ≤ tl)
     (h16 : tl ≤ 16) (hTr : Covers [⟨V .s9, tl⟩] (s.rd ++ s.wr))
@@ -219,7 +219,7 @@ theorem recv_ok {s : State} (he : Env V sp s) (hal : (V .s0).toNat % 8 = 0) {tl 
     fun s' ⟨hb, hf, lo⟩ => ⟨by rw [hb, hT₁], fz.trans hf, fun r a b c d e => by rw [lo.other r a b c d e,
       g₁ r a b c d], ⟨lo.keeps.1.trans k₁.rd, lo.keeps.2.1.trans k₁.wr, lo.keeps.2.2.trans k₁.sp⟩⟩
 
-/-- `cmpTail`: `r3` is 1 iff the 16 bytes at `W + vO` and `W + rO` (272 and 256) are equal. -/
+/-- `cmpTail`: `a0` is 1 iff the 16 bytes at `W + vO` and `W + rO` (272 and 256) are equal. -/
 theorem cmpTail_ok {s : State} (he : Env V sp s) (hal : (V .s0).toNat % 8 = 0) :
     WP isa (.block cmpTail) s fun s' =>
       s'.gpr .a0 = (if bytesAt s.mem (V .s0 + BitVec.ofNat 64 272) 16 =

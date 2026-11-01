@@ -28,13 +28,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
-public import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 
 /-!
-# AES-GCM on RISCV64: the pieces of `seal` and `open` are constant time
+# AES-GCM on RISC-V: the pieces of `seal` and `open` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTOne.lean`): the invariants fix the context, the state

@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTFin
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_seal` is constant time
+# AES-GCM on RISC-V: `vg_aes_gcm_seal` is constant time
 
 Untrusted: everything here is checked by Lean. The entry loads `W` from the
 stack argument at `sp + 8`, a public address, and then saves our caller's
@@ -99,7 +99,7 @@ abbrev oneRest : List Instr :=
     .store .d .a4 .s0 aadO, mov .s10 .a5, .store .d .a6 .s0 dataO, mov .s11 .a7, .addSp .t1 0,
     .load .d .s9 .t1 0] : List Instr)
 
-theorem oneEntry_eq (off : Nat) : oneEntry off = [.addSp .t1 0, .load .d .t1 .t1 off] ++ oneRest := by
+theorem oneEntry_eq (off : Nat) : oneEntry off = ([.addSp .t1 0, .load .d .t1 .t1 off] : List Instr) ++ oneRest := by
   rw [oneEntry, List.append_assoc]
 
 theorem oneHead_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])

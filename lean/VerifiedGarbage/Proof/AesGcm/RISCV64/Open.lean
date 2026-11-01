@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_open`
+# AES-GCM on RISC-V: `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/Open.lean`): `open` checks the tag length; if it is

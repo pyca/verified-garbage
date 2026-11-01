@@ -29,11 +29,10 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `tag`, `finTag` and `vg_aes_gcm_stream_finish` are constant time
+# AES-GCM on RISC-V: `tag`, `finTag` and `vg_aes_gcm_stream_finish` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTFin.lean`): the invariants fix the context, the state,
@@ -50,11 +49,11 @@ open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- An environment with `R` rounds in `r28`. -/
+/-- An environment with `R` rounds in `s3`. -/
 def EnvR (c st w sp : Addr) (R : Nat) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ Env V sp s
 
-/-- Before `finTag`: also `aad_len` (`A`) and `text_len` (`T`) in `r22` and `r23`. -/
+/-- Before `finTag`: also `aad_len` (`A`) and `text_len` (`T`) in `s10` and `s11`. -/
 def FTI (c st w sp : Addr) (R : Nat) (A T : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ V .s10 = A ∧
     V .s11 = T ∧ Env V sp s
@@ -165,7 +164,7 @@ theorem finTag_ct {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 �
 
 end
 
-/-- In `finish`, after the entry: also the tag's address `Tp` in `r20`, which
+/-- In `finish`, after the entry: also the tag's address `Tp` in `s9`, which
 the state may write. -/
 def FinI (c st w sp : Addr) (R : Nat) (A T Tp : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ V .s10 = A ∧

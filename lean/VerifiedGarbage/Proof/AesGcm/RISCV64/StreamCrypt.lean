@@ -14,11 +14,11 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/StreamCrypt.lean`): the entry saves our caller's
-registers and keeps the arguments in `r19`–`r30` (`sc1_wp`); `encrypt` runs
+registers and keeps the arguments in `s1`–`s11` (`sc1_wp`); `encrypt` runs
 `crypt` on the data and then absorbs what it wrote (`textAbsorb`), `decrypt`
 absorbs the data first; both keep `J₀` (`enc_run`, `dec_run`), which is a
 state for the text so far followed by the new text (`streamEncrypt_wp`,

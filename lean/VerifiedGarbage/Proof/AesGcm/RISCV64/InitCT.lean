@@ -17,7 +17,7 @@ public import VerifiedGarbage.Spec.Aes
 meta import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_init` is constant time
+# AES-GCM on RISC-V: `vg_aes_gcm_init` is constant time
 
 Untrusted: everything here is checked by Lean. The code around the calls by
 the taint analysis, from the public arguments and the registers the

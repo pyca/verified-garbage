@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
-# AES-GCM on RISCV64: constant time, the combinators
+# AES-GCM on RISC-V: constant time, the combinators
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTBase.lean`): `CT I c`, two runs of `c` from states that

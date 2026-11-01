@@ -15,11 +15,11 @@ meta import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `j0` is constant time
+# AES-GCM on RISC-V: `j0` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTJ0.lean`): the invariants fix the context, the state,
-`W`, the nonce's address and length (also in `r18`), and leave the rest
+`W`, the nonce's address and length (also in `s7`), and leave the rest
 existential.
 -/
 
@@ -31,7 +31,7 @@ open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- An environment with the nonce's length `n` in `r18`. -/
+/-- An environment with the nonce's length `n` in `s7`. -/
 def EnvN (c st w sp : Addr) (n : Nat) (s : State) : Prop :=
   n < 2 ^ 64 ∧ ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s7 = BitVec.ofNat 64 n ∧
     Env V sp s

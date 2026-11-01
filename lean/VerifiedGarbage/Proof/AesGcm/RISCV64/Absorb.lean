@@ -20,7 +20,7 @@ public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: GHASH absorbing a piece (`absorb`)
+# AES-GCM on RISC-V: GHASH absorbing a piece (`absorb`)
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/AesGcm/PPC64LE/Absorb.lean`): `absorb yo` absorbs the `s5` bytes at
@@ -59,7 +59,7 @@ abbrev absFrame (st w : Addr) (yo : Nat) (sp : Addr) : List Region :=
     below sp 2048]
 
 /-- Before `absorb yo`: GHASH has absorbed `x` (with hash subkey `H`), and
-`r24`, `r25`, `r26` hold the data, its length and `len(x) mod 16`. -/
+`s4`, `s5`, `s6` hold the data, its length and `len(x) mod 16`. -/
 structure AbsIn (V : Reg → BitVec 64) (sp : Addr) (yo : Nat) (H : Block) (x : List Byte) (D : Addr)
     (n : Nat) (s : State) : Prop where
   env : Env V sp s
@@ -149,7 +149,7 @@ theorem ctx_ghFrame (hk : StkOk (V .s2) (V .s1) (V .s0) sp) : ∀ r ∈ [(⟨V .
 end
 
 /-- After `headPre`: `k = min (16 - o, n)` bytes copied into the buffer, the
-arguments advanced, and `r6` zero iff the buffer is full. -/
+arguments advanced, and `a3` zero iff the buffer is full. -/
 structure HeadMid (V : Reg → BitVec 64) (sp : Addr) (yo : Nat) (H : Block) (x : List Byte) (D : Addr)
     (n : Nat) (m₀ : Mem) (k : Nat) (s : State) : Prop where
   env : Env V sp s
@@ -167,7 +167,7 @@ structure HeadMid (V : Reg → BitVec 64) (sp : Addr) (yo : Nat) (H : Block) (x 
   hY : blockAt s.mem (V .s1 + BitVec.ofNat 64 yo) = blockAt m₀ (V .s1 + BitVec.ofNat 64 yo)
   fw : Frame [⟨V .s1 + BitVec.ofNat 64 (32 + x.length % 16), k⟩] m₀ s.mem
 
-/-- `r6 = a - 16` is zero iff `a = 16`, for `a ≤ 16`. -/
+/-- `a3 = a - 16` is zero iff `a = 16`, for `a ≤ 16`. -/
 theorem eval_sub16 {s : State} {a : Nat} (h : s.gpr .a3 = BitVec.ofNat 64 a - BitVec.ofNat 64 16)
     (ha : a ≤ 16) : isa.eval (.zero .a3) s = some (decide (a = 16)) := by
   show some (s.gpr .a3 == 0) = _

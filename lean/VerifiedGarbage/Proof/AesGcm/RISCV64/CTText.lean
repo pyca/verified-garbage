@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `textAbsorb` is constant time
+# AES-GCM on RISC-V: `textAbsorb` is constant time
 
 Untrusted: everything here is checked by Lean. The invariant fixes the
 context, the state, `W`, the stack pointer, the data's address and length

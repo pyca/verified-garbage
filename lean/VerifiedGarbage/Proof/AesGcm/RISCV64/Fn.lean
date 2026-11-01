@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: the functions' entry and exit
+# AES-GCM on RISC-V: the functions' entry and exit
 
 Untrusted: everything here is checked by Lean. Every function saves our
 caller's `s0`–`s11` and its return address `ra` in `W` on entry (`save_ok`,

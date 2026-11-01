@@ -3,6 +3,2838 @@
 //! `assembly/gcm.s`.
 #![allow(dead_code)]
 
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes, and aligned for `u64`.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x868a
+.insn 2, 0xe2c0
+.insn 2, 0xe6c4
+.insn 4, 0x0926b823
+.insn 4, 0x0936bc23
+.insn 4, 0x0b46b023
+.insn 4, 0x0b56b423
+.insn 4, 0x0b66b823
+.insn 4, 0x0b76bc23
+.insn 4, 0x0d86b023
+.insn 4, 0x0d96b423
+.insn 4, 0x0da6b823
+.insn 4, 0x0db6bc23
+.insn 4, 0x0e16b023
+.insn 2, 0x8436
+.insn 2, 0x8932
+.insn 4, 0x0025d993
+.insn 2, 0x0999
+.insn 4, 0x20040693
+call {vg_aes_expand_key_scratch}
+.insn 2, 0x4281
+.insn 4, 0x0e593823
+.insn 4, 0x0e593c23
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x06040613
+.insn 4, 0x0f090693
+.insn 2, 0x4705
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x870a
+.insn 2, 0xe340
+.insn 2, 0xe744
+.insn 4, 0x09273823
+.insn 4, 0x09373c23
+.insn 4, 0x0b473023
+.insn 4, 0x0b573423
+.insn 4, 0x0b673823
+.insn 4, 0x0b773c23
+.insn 4, 0x0d873023
+.insn 4, 0x0d973423
+.insn 4, 0x0da73823
+.insn 4, 0x0db73c23
+.insn 4, 0x0e173023
+.insn 2, 0x843a
+.insn 2, 0x84b6
+.insn 2, 0x892a
+.insn 2, 0x8a2e
+.insn 2, 0x8ab2
+.insn 2, 0x8bb2
+.insn 4, 0xff4a8613
+beqz a2, 20f
+.insn 2, 0x4281
+.insn 4, 0x0054b023
+.insn 4, 0x0054b423
+.insn 2, 0x4b01
+beqz s5, 22f
+beqz s6, 24f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 26f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 28f
+j 29f
+28:
+.insn 2, 0x8656
+29:
+j 27f
+26:
+27:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+210:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 210b
+.insn 4, 0xff0b0693
+beqz a3, 211f
+j 212f
+211:
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+212:
+j 25f
+24:
+25:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 213f
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x20040713
+call {vg_ghash}
+j 214f
+213:
+214:
+beqz s5, 215f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+217:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 217b
+j 216f
+215:
+216:
+j 23f
+22:
+23:
+.insn 4, 0x00fbfb13
+beqz s6, 218f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+220:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 220b
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 219f
+218:
+219:
+.insn 2, 0x4a01
+.insn 2, 0x8b5e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 21f
+20:
+.insn 4, 0x000a4283
+.insn 4, 0x00548023
+.insn 4, 0x001a4283
+.insn 4, 0x005480a3
+.insn 4, 0x002a4283
+.insn 4, 0x00548123
+.insn 4, 0x003a4283
+.insn 4, 0x005481a3
+.insn 4, 0x004a4283
+.insn 4, 0x00548223
+.insn 4, 0x005a4283
+.insn 4, 0x005482a3
+.insn 4, 0x006a4283
+.insn 4, 0x00548323
+.insn 4, 0x007a4283
+.insn 4, 0x005483a3
+.insn 4, 0x008a4283
+.insn 4, 0x00548423
+.insn 4, 0x009a4283
+.insn 4, 0x005484a3
+.insn 4, 0x00aa4283
+.insn 4, 0x00548523
+.insn 4, 0x00ba4283
+.insn 4, 0x005485a3
+.insn 2, 0x4281
+.insn 4, 0x00548623
+.insn 2, 0x4281
+.insn 4, 0x005486a3
+.insn 2, 0x4281
+.insn 4, 0x00548723
+.insn 2, 0x4285
+.insn 4, 0x005487a3
+21:
+.insn 4, 0x0004b283
+.insn 4, 0x0254b823
+.insn 4, 0x0084e283
+.insn 4, 0x0254ac23
+.insn 4, 0x00c4c503
+.insn 2, 0x0562
+.insn 4, 0x00d4c283
+.insn 2, 0x02c2
+.insn 4, 0x00556533
+.insn 4, 0x00e4c283
+.insn 2, 0x02a2
+.insn 4, 0x00556533
+.insn 4, 0x00f4c283
+.insn 4, 0x00556533
+.insn 2, 0x0505
+.insn 4, 0x01855293
+.insn 4, 0x02548e23
+.insn 4, 0x01055293
+.insn 4, 0x02548ea3
+.insn 4, 0x00855293
+.insn 4, 0x02548f23
+.insn 4, 0x00055293
+.insn 4, 0x02548fa3
+.insn 2, 0x4281
+.insn 4, 0x0054b823
+.insn 4, 0x0054bc23
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x878a
+.insn 2, 0xe3c0
+.insn 2, 0xe7c4
+.insn 4, 0x0927b823
+.insn 4, 0x0937bc23
+.insn 4, 0x0b47b023
+.insn 4, 0x0b57b423
+.insn 4, 0x0b67b823
+.insn 4, 0x0b77bc23
+.insn 4, 0x0d87b023
+.insn 4, 0x0d97b423
+.insn 4, 0x0da7b823
+.insn 4, 0x0db7bc23
+.insn 4, 0x0e17b023
+.insn 2, 0x843e
+.insn 2, 0x84ae
+.insn 2, 0x892a
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 4, 0x00f67b13
+beqz s5, 20f
+beqz s6, 22f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 24f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 26f
+j 27f
+26:
+.insn 2, 0x8656
+27:
+j 25f
+24:
+25:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+28:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 28b
+.insn 4, 0xff0b0693
+beqz a3, 29f
+j 210f
+29:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+210:
+j 23f
+22:
+23:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 211f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 212f
+211:
+212:
+beqz s5, 213f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+215:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 215b
+j 214f
+213:
+214:
+j 21f
+20:
+21:
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x888a
+.insn 4, 0x0888b023
+.insn 4, 0x0898b423
+.insn 4, 0x0928b823
+.insn 4, 0x0938bc23
+.insn 4, 0x0b48b023
+.insn 4, 0x0b58b423
+.insn 4, 0x0b68b823
+.insn 4, 0x0b78bc23
+.insn 4, 0x0d88b023
+.insn 4, 0x0d98b423
+.insn 4, 0x0da8b823
+.insn 4, 0x0db8bc23
+.insn 4, 0x0e18b023
+.insn 2, 0x8446
+.insn 2, 0x84b2
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8d36
+.insn 2, 0x8dba
+.insn 2, 0x8cbe
+.insn 2, 0x8c42
+.insn 2, 0x8a66
+.insn 2, 0x8ae2
+.insn 4, 0x00fdfb13
+beqz s5, 20f
+beqz s6, 22f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 24f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 26f
+j 27f
+26:
+.insn 2, 0x8656
+27:
+j 25f
+24:
+25:
+.insn 4, 0x04048513
+.insn 2, 0x955a
+.insn 2, 0x85d2
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+28:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 28b
+j 23f
+22:
+23:
+.insn 2, 0x86d2
+.insn 4, 0x004ad713
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a4, 29f
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+j 210f
+29:
+210:
+beqz s5, 211f
+.insn 2, 0x4281
+.insn 4, 0x0454b023
+.insn 4, 0x0454b423
+.insn 4, 0x04048693
+.insn 2, 0x4705
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 4, 0x04048513
+.insn 2, 0x85d2
+.insn 2, 0x8656
+213:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 213b
+j 212f
+211:
+212:
+j 21f
+20:
+21:
+beqz s8, 214f
+beqz s11, 216f
+j 217f
+216:
+.insn 4, 0x00fd7b13
+beqz s6, 218f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+220:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 220b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 219f
+218:
+219:
+217:
+.insn 2, 0x8a66
+.insn 2, 0x8ae2
+.insn 4, 0x00fdfb13
+beqz s5, 221f
+beqz s6, 223f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 225f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 227f
+j 228f
+227:
+.insn 2, 0x8656
+228:
+j 226f
+225:
+226:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+229:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 229b
+.insn 4, 0xff0b0693
+beqz a3, 230f
+j 231f
+230:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+231:
+j 224f
+223:
+224:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 232f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 233f
+232:
+233:
+beqz s5, 234f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+236:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 236b
+j 235f
+234:
+235:
+j 222f
+221:
+222:
+j 215f
+214:
+215:
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x888a
+.insn 4, 0x0888b023
+.insn 4, 0x0898b423
+.insn 4, 0x0928b823
+.insn 4, 0x0938bc23
+.insn 4, 0x0b48b023
+.insn 4, 0x0b58b423
+.insn 4, 0x0b68b823
+.insn 4, 0x0b78bc23
+.insn 4, 0x0d88b023
+.insn 4, 0x0d98b423
+.insn 4, 0x0da8b823
+.insn 4, 0x0db8bc23
+.insn 4, 0x0e18b023
+.insn 2, 0x8446
+.insn 2, 0x84b2
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8d36
+.insn 2, 0x8dba
+.insn 2, 0x8cbe
+.insn 2, 0x8c42
+beqz s8, 20f
+beqz s11, 22f
+j 23f
+22:
+.insn 4, 0x00fd7b13
+beqz s6, 24f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+26:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 26b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 25f
+24:
+25:
+23:
+.insn 2, 0x8a66
+.insn 2, 0x8ae2
+.insn 4, 0x00fdfb13
+beqz s5, 27f
+beqz s6, 29f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 211f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 213f
+j 214f
+213:
+.insn 2, 0x8656
+214:
+j 212f
+211:
+212:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+215:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 215b
+.insn 4, 0xff0b0693
+beqz a3, 216f
+j 217f
+216:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+217:
+j 210f
+29:
+210:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 218f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 219f
+218:
+219:
+beqz s5, 220f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+222:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 222b
+j 221f
+220:
+221:
+j 28f
+27:
+28:
+j 21f
+20:
+21:
+.insn 2, 0x8a66
+.insn 2, 0x8ae2
+.insn 4, 0x00fdfb13
+beqz s5, 223f
+beqz s6, 225f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 227f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 229f
+j 230f
+229:
+.insn 2, 0x8656
+230:
+j 228f
+227:
+228:
+.insn 4, 0x04048513
+.insn 2, 0x955a
+.insn 2, 0x85d2
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+231:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 231b
+j 226f
+225:
+226:
+.insn 2, 0x86d2
+.insn 4, 0x004ad713
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a4, 232f
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+j 233f
+232:
+233:
+beqz s5, 234f
+.insn 2, 0x4281
+.insn 4, 0x0454b023
+.insn 4, 0x0454b423
+.insn 4, 0x04048693
+.insn 2, 0x4705
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 4, 0x04048513
+.insn 2, 0x85d2
+.insn 2, 0x8656
+236:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 236b
+j 235f
+234:
+235:
+j 224f
+223:
+224:
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x880a
+.insn 4, 0x08883023
+.insn 4, 0x08983423
+.insn 4, 0x09283823
+.insn 4, 0x09383c23
+.insn 4, 0x0b483023
+.insn 4, 0x0b583423
+.insn 4, 0x0b683823
+.insn 4, 0x0b783c23
+.insn 4, 0x0d883023
+.insn 4, 0x0d983423
+.insn 4, 0x0da83823
+.insn 4, 0x0db83c23
+.insn 4, 0x0e183023
+.insn 2, 0x8442
+.insn 2, 0x84b2
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8d36
+.insn 2, 0x8dba
+.insn 2, 0x8cbe
+beqz s11, 20f
+.insn 4, 0x00fdfb13
+j 21f
+20:
+.insn 4, 0x00fd7b13
+21:
+beqz s6, 22f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+24:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 24b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 23f
+22:
+23:
+.insn 2, 0x8a6a
+.insn 2, 0x8b6e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+.insn 4, 0x0104b283
+.insn 4, 0x00543023
+.insn 4, 0x0184b283
+.insn 4, 0x00543423
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 2, 0x8626
+.insn 2, 0x86a2
+.insn 2, 0x4705
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 4, 0x00044283
+.insn 4, 0x005c8023
+.insn 4, 0x00144283
+.insn 4, 0x005c80a3
+.insn 4, 0x00244283
+.insn 4, 0x005c8123
+.insn 4, 0x00344283
+.insn 4, 0x005c81a3
+.insn 4, 0x00444283
+.insn 4, 0x005c8223
+.insn 4, 0x00544283
+.insn 4, 0x005c82a3
+.insn 4, 0x00644283
+.insn 4, 0x005c8323
+.insn 4, 0x00744283
+.insn 4, 0x005c83a3
+.insn 4, 0x00844283
+.insn 4, 0x005c8423
+.insn 4, 0x00944283
+.insn 4, 0x005c84a3
+.insn 4, 0x00a44283
+.insn 4, 0x005c8523
+.insn 4, 0x00b44283
+.insn 4, 0x005c85a3
+.insn 4, 0x00c44283
+.insn 4, 0x005c8623
+.insn 4, 0x00d44283
+.insn 4, 0x005c86a3
+.insn 4, 0x00e44283
+.insn 4, 0x005c8723
+.insn 4, 0x00f44283
+.insn 4, 0x005c87a3
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdf010113
+.insn 2, 0x888a
+.insn 4, 0x0888b023
+.insn 4, 0x0898b423
+.insn 4, 0x0928b823
+.insn 4, 0x0938bc23
+.insn 4, 0x0b48b023
+.insn 4, 0x0b58b423
+.insn 4, 0x0b68b823
+.insn 4, 0x0b78bc23
+.insn 4, 0x0d88b023
+.insn 4, 0x0d98b423
+.insn 4, 0x0da8b823
+.insn 4, 0x0db8bc23
+.insn 4, 0x0e18b023
+.insn 2, 0x8446
+.insn 2, 0x84b2
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8d36
+.insn 2, 0x8dba
+.insn 2, 0x8cbe
+.insn 2, 0x8c42
+.insn 2, 0x4a81
+.insn 4, 0x002c5293
+beqz t0, 20f
+.insn 4, 0x004c5293
+beqz t0, 22f
+.insn 4, 0xff0c0293
+beqz t0, 24f
+j 25f
+24:
+.insn 2, 0x4a85
+25:
+j 23f
+22:
+.insn 2, 0x4a85
+23:
+j 21f
+20:
+21:
+beqz s5, 26f
+.insn 2, 0x4281
+.insn 4, 0x10543023
+.insn 4, 0x10543423
+.insn 2, 0x8566
+.insn 4, 0x10040593
+.insn 2, 0x8662
+28:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 28b
+beqz s11, 29f
+.insn 4, 0x00fdfb13
+j 210f
+29:
+.insn 4, 0x00fd7b13
+210:
+beqz s6, 211f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+213:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 213b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 212f
+211:
+212:
+.insn 2, 0x8a6a
+.insn 2, 0x8b6e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+.insn 4, 0x0104b283
+.insn 4, 0x00543023
+.insn 4, 0x0184b283
+.insn 4, 0x00543423
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 2, 0x8626
+.insn 2, 0x86a2
+.insn 2, 0x4705
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 2, 0x4281
+.insn 4, 0x10543823
+.insn 4, 0x10543c23
+.insn 2, 0x8522
+.insn 4, 0x11040593
+.insn 2, 0x8662
+214:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 214b
+.insn 4, 0x11043503
+.insn 4, 0x10043583
+.insn 2, 0x8d2d
+.insn 4, 0x11843583
+.insn 4, 0x10843603
+.insn 2, 0x8db1
+.insn 2, 0x8d4d
+.insn 2, 0x4581
+.insn 2, 0x8d89
+.insn 2, 0x8d4d
+.insn 2, 0x917d
+.insn 2, 0x4585
+.insn 4, 0x40a58533
+j 27f
+26:
+.insn 2, 0x4501
+27:
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x21010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xde010113
+.insn 2, 0x828a
+.insn 4, 0x7f028313
+.insn 4, 0x22033303
+.insn 4, 0x0062b023
+.insn 4, 0x01028313
+.insn 4, 0x0062b423
+.insn 2, 0x830a
+.insn 4, 0x00833303
+.insn 4, 0x08833023
+.insn 4, 0x08933423
+.insn 4, 0x09233823
+.insn 4, 0x09333c23
+.insn 4, 0x0b433023
+.insn 4, 0x0b533423
+.insn 4, 0x0b633823
+.insn 4, 0x0b733c23
+.insn 4, 0x0d833023
+.insn 4, 0x0d933423
+.insn 4, 0x0da33823
+.insn 4, 0x0db33c23
+.insn 4, 0x0e133023
+.insn 2, 0x841a
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 4, 0x01040493
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8bb6
+.insn 2, 0xf478
+.insn 2, 0x8d3e
+.insn 4, 0x0f043823
+.insn 2, 0x8dc6
+.insn 2, 0x830a
+.insn 4, 0x00033c83
+.insn 4, 0xff4a8613
+beqz a2, 20f
+.insn 2, 0x4281
+.insn 4, 0x0054b023
+.insn 4, 0x0054b423
+.insn 2, 0x4b01
+beqz s5, 22f
+beqz s6, 24f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 26f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 28f
+j 29f
+28:
+.insn 2, 0x8656
+29:
+j 27f
+26:
+27:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+210:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 210b
+.insn 4, 0xff0b0693
+beqz a3, 211f
+j 212f
+211:
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+212:
+j 25f
+24:
+25:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 213f
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x20040713
+call {vg_ghash}
+j 214f
+213:
+214:
+beqz s5, 215f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+217:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 217b
+j 216f
+215:
+216:
+j 23f
+22:
+23:
+.insn 4, 0x00fbfb13
+beqz s6, 218f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+220:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 220b
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 219f
+218:
+219:
+.insn 2, 0x4a01
+.insn 2, 0x8b5e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 21f
+20:
+.insn 4, 0x000a4283
+.insn 4, 0x00548023
+.insn 4, 0x001a4283
+.insn 4, 0x005480a3
+.insn 4, 0x002a4283
+.insn 4, 0x00548123
+.insn 4, 0x003a4283
+.insn 4, 0x005481a3
+.insn 4, 0x004a4283
+.insn 4, 0x00548223
+.insn 4, 0x005a4283
+.insn 4, 0x005482a3
+.insn 4, 0x006a4283
+.insn 4, 0x00548323
+.insn 4, 0x007a4283
+.insn 4, 0x005483a3
+.insn 4, 0x008a4283
+.insn 4, 0x00548423
+.insn 4, 0x009a4283
+.insn 4, 0x005484a3
+.insn 4, 0x00aa4283
+.insn 4, 0x00548523
+.insn 4, 0x00ba4283
+.insn 4, 0x005485a3
+.insn 2, 0x4281
+.insn 4, 0x00548623
+.insn 2, 0x4281
+.insn 4, 0x005486a3
+.insn 2, 0x4281
+.insn 4, 0x00548723
+.insn 2, 0x4285
+.insn 4, 0x005487a3
+21:
+.insn 4, 0x0004b283
+.insn 4, 0x0254b823
+.insn 4, 0x0084e283
+.insn 4, 0x0254ac23
+.insn 4, 0x00c4c503
+.insn 2, 0x0562
+.insn 4, 0x00d4c283
+.insn 2, 0x02c2
+.insn 4, 0x00556533
+.insn 4, 0x00e4c283
+.insn 2, 0x02a2
+.insn 4, 0x00556533
+.insn 4, 0x00f4c283
+.insn 4, 0x00556533
+.insn 2, 0x0505
+.insn 4, 0x01855293
+.insn 4, 0x02548e23
+.insn 4, 0x01055293
+.insn 4, 0x02548ea3
+.insn 4, 0x00855293
+.insn 4, 0x02548f23
+.insn 4, 0x00055293
+.insn 4, 0x02548fa3
+.insn 2, 0x4281
+.insn 4, 0x0054b823
+.insn 4, 0x0054bc23
+.insn 4, 0x0e843a03
+.insn 2, 0x8aea
+.insn 2, 0x4b01
+beqz s5, 221f
+beqz s6, 223f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 225f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 227f
+j 228f
+227:
+.insn 2, 0x8656
+228:
+j 226f
+225:
+226:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+229:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 229b
+.insn 4, 0xff0b0693
+beqz a3, 230f
+j 231f
+230:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+231:
+j 224f
+223:
+224:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 232f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 233f
+232:
+233:
+beqz s5, 234f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+236:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 236b
+j 235f
+234:
+235:
+j 222f
+221:
+222:
+.insn 4, 0x00fd7b13
+beqz s6, 237f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+239:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 239b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 238f
+237:
+238:
+.insn 4, 0x0f043a03
+.insn 2, 0x8aee
+.insn 2, 0x4b01
+beqz s5, 240f
+beqz s6, 242f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 244f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 246f
+j 247f
+246:
+.insn 2, 0x8656
+247:
+j 245f
+244:
+245:
+.insn 4, 0x04048513
+.insn 2, 0x955a
+.insn 2, 0x85d2
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+248:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 248b
+j 243f
+242:
+243:
+.insn 2, 0x86d2
+.insn 4, 0x004ad713
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a4, 249f
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+j 250f
+249:
+250:
+beqz s5, 251f
+.insn 2, 0x4281
+.insn 4, 0x0454b023
+.insn 4, 0x0454b423
+.insn 4, 0x04048693
+.insn 2, 0x4705
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 4, 0x04048513
+.insn 2, 0x85d2
+.insn 2, 0x8656
+253:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 253b
+j 252f
+251:
+252:
+j 241f
+240:
+241:
+.insn 4, 0x0f043a03
+.insn 2, 0x8aee
+.insn 2, 0x4b01
+beqz s5, 254f
+beqz s6, 256f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 258f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 260f
+j 261f
+260:
+.insn 2, 0x8656
+261:
+j 259f
+258:
+259:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+262:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 262b
+.insn 4, 0xff0b0693
+beqz a3, 263f
+j 264f
+263:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+264:
+j 257f
+256:
+257:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 265f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 266f
+265:
+266:
+beqz s5, 267f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+269:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 269b
+j 268f
+267:
+268:
+j 255f
+254:
+255:
+.insn 4, 0x00fdfb13
+beqz s6, 270f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+272:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 272b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 271f
+270:
+271:
+.insn 2, 0x8a6a
+.insn 2, 0x8b6e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+.insn 4, 0x0104b283
+.insn 4, 0x00543023
+.insn 4, 0x0184b283
+.insn 4, 0x00543423
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 2, 0x8626
+.insn 2, 0x86a2
+.insn 2, 0x4705
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 4, 0x00044283
+.insn 4, 0x005c8023
+.insn 4, 0x00144283
+.insn 4, 0x005c80a3
+.insn 4, 0x00244283
+.insn 4, 0x005c8123
+.insn 4, 0x00344283
+.insn 4, 0x005c81a3
+.insn 4, 0x00444283
+.insn 4, 0x005c8223
+.insn 4, 0x00544283
+.insn 4, 0x005c82a3
+.insn 4, 0x00644283
+.insn 4, 0x005c8323
+.insn 4, 0x00744283
+.insn 4, 0x005c83a3
+.insn 4, 0x00844283
+.insn 4, 0x005c8423
+.insn 4, 0x00944283
+.insn 4, 0x005c84a3
+.insn 4, 0x00a44283
+.insn 4, 0x005c8523
+.insn 4, 0x00b44283
+.insn 4, 0x005c85a3
+.insn 4, 0x00c44283
+.insn 4, 0x005c8623
+.insn 4, 0x00d44283
+.insn 4, 0x005c86a3
+.insn 4, 0x00e44283
+.insn 4, 0x005c8723
+.insn 4, 0x00f44283
+.insn 4, 0x005c87a3
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x22010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xdd010113
+.insn 2, 0x828a
+.insn 4, 0x7f028313
+.insn 4, 0x23033303
+.insn 4, 0x0062b023
+.insn 4, 0x7f028313
+.insn 4, 0x23833303
+.insn 4, 0x0062b423
+.insn 4, 0x01828313
+.insn 4, 0x0062b823
+.insn 2, 0x830a
+.insn 4, 0x01033303
+.insn 4, 0x08833023
+.insn 4, 0x08933423
+.insn 4, 0x09233823
+.insn 4, 0x09333c23
+.insn 4, 0x0b433023
+.insn 4, 0x0b533423
+.insn 4, 0x0b633823
+.insn 4, 0x0b733c23
+.insn 4, 0x0d833023
+.insn 4, 0x0d933423
+.insn 4, 0x0da33823
+.insn 4, 0x0db33c23
+.insn 4, 0x0e133023
+.insn 2, 0x841a
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 4, 0x01040493
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8bb6
+.insn 2, 0xf478
+.insn 2, 0x8d3e
+.insn 4, 0x0f043823
+.insn 2, 0x8dc6
+.insn 2, 0x830a
+.insn 4, 0x00033c83
+.insn 4, 0x00833c03
+.insn 2, 0x4a81
+.insn 4, 0x002c5293
+beqz t0, 20f
+.insn 4, 0x004c5293
+beqz t0, 22f
+.insn 4, 0xff0c0293
+beqz t0, 24f
+j 25f
+24:
+.insn 2, 0x4a85
+25:
+j 23f
+22:
+.insn 2, 0x4a85
+23:
+j 21f
+20:
+21:
+beqz s5, 26f
+.insn 2, 0x8ade
+.insn 4, 0xff4a8613
+beqz a2, 28f
+.insn 2, 0x4281
+.insn 4, 0x0054b023
+.insn 4, 0x0054b423
+.insn 2, 0x4b01
+beqz s5, 210f
+beqz s6, 212f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 214f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 216f
+j 217f
+216:
+.insn 2, 0x8656
+217:
+j 215f
+214:
+215:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+218:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 218b
+.insn 4, 0xff0b0693
+beqz a3, 219f
+j 220f
+219:
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+220:
+j 213f
+212:
+213:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 221f
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x20040713
+call {vg_ghash}
+j 222f
+221:
+222:
+beqz s5, 223f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+225:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 225b
+j 224f
+223:
+224:
+j 211f
+210:
+211:
+.insn 4, 0x00fbfb13
+beqz s6, 226f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+228:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 228b
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 227f
+226:
+227:
+.insn 2, 0x4a01
+.insn 2, 0x8b5e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 2, 0x85a6
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 29f
+28:
+.insn 4, 0x000a4283
+.insn 4, 0x00548023
+.insn 4, 0x001a4283
+.insn 4, 0x005480a3
+.insn 4, 0x002a4283
+.insn 4, 0x00548123
+.insn 4, 0x003a4283
+.insn 4, 0x005481a3
+.insn 4, 0x004a4283
+.insn 4, 0x00548223
+.insn 4, 0x005a4283
+.insn 4, 0x005482a3
+.insn 4, 0x006a4283
+.insn 4, 0x00548323
+.insn 4, 0x007a4283
+.insn 4, 0x005483a3
+.insn 4, 0x008a4283
+.insn 4, 0x00548423
+.insn 4, 0x009a4283
+.insn 4, 0x005484a3
+.insn 4, 0x00aa4283
+.insn 4, 0x00548523
+.insn 4, 0x00ba4283
+.insn 4, 0x005485a3
+.insn 2, 0x4281
+.insn 4, 0x00548623
+.insn 2, 0x4281
+.insn 4, 0x005486a3
+.insn 2, 0x4281
+.insn 4, 0x00548723
+.insn 2, 0x4285
+.insn 4, 0x005487a3
+29:
+.insn 4, 0x0004b283
+.insn 4, 0x0254b823
+.insn 4, 0x0084e283
+.insn 4, 0x0254ac23
+.insn 4, 0x00c4c503
+.insn 2, 0x0562
+.insn 4, 0x00d4c283
+.insn 2, 0x02c2
+.insn 4, 0x00556533
+.insn 4, 0x00e4c283
+.insn 2, 0x02a2
+.insn 4, 0x00556533
+.insn 4, 0x00f4c283
+.insn 4, 0x00556533
+.insn 2, 0x0505
+.insn 4, 0x01855293
+.insn 4, 0x02548e23
+.insn 4, 0x01055293
+.insn 4, 0x02548ea3
+.insn 4, 0x00855293
+.insn 4, 0x02548f23
+.insn 4, 0x00055293
+.insn 4, 0x02548fa3
+.insn 2, 0x4281
+.insn 4, 0x0054b823
+.insn 4, 0x0054bc23
+.insn 4, 0x0e843a03
+.insn 2, 0x8aea
+.insn 2, 0x4b01
+beqz s5, 229f
+beqz s6, 231f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 233f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 235f
+j 236f
+235:
+.insn 2, 0x8656
+236:
+j 234f
+233:
+234:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+237:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 237b
+.insn 4, 0xff0b0693
+beqz a3, 238f
+j 239f
+238:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+239:
+j 232f
+231:
+232:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 240f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 241f
+240:
+241:
+beqz s5, 242f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+244:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 244b
+j 243f
+242:
+243:
+j 230f
+229:
+230:
+.insn 4, 0x00fd7b13
+beqz s6, 245f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+247:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 247b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 246f
+245:
+246:
+.insn 4, 0x0f043a03
+.insn 2, 0x8aee
+.insn 2, 0x4b01
+beqz s5, 248f
+beqz s6, 250f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 252f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 254f
+j 255f
+254:
+.insn 2, 0x8656
+255:
+j 253f
+252:
+253:
+.insn 4, 0x02048593
+.insn 2, 0x95da
+.insn 2, 0x8552
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+.insn 2, 0x9b32
+256:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 256b
+.insn 4, 0xff0b0693
+beqz a3, 257f
+j 258f
+257:
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x02048613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+258:
+j 251f
+250:
+251:
+.insn 2, 0x8652
+.insn 4, 0x004ad693
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a3, 259f
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x20040713
+call {vg_ghash}
+j 260f
+259:
+260:
+beqz s5, 261f
+.insn 2, 0x8552
+.insn 4, 0x02048593
+.insn 2, 0x8656
+263:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 263b
+j 262f
+261:
+262:
+j 249f
+248:
+249:
+.insn 4, 0x00fdfb13
+beqz s6, 264f
+.insn 2, 0x4281
+.insn 4, 0x06543023
+.insn 4, 0x06543423
+.insn 4, 0x02048513
+.insn 4, 0x06040593
+.insn 2, 0x865a
+266:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 266b
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+j 265f
+264:
+265:
+.insn 2, 0x8a6a
+.insn 2, 0x8b6e
+.insn 4, 0x003a1513
+.insn 4, 0x003b1593
+.insn 4, 0x03855293
+.insn 4, 0x06540023
+.insn 4, 0x03055293
+.insn 4, 0x065400a3
+.insn 4, 0x02855293
+.insn 4, 0x06540123
+.insn 4, 0x02055293
+.insn 4, 0x065401a3
+.insn 4, 0x01855293
+.insn 4, 0x06540223
+.insn 4, 0x01055293
+.insn 4, 0x065402a3
+.insn 4, 0x00855293
+.insn 4, 0x06540323
+.insn 4, 0x00055293
+.insn 4, 0x065403a3
+.insn 4, 0x0385d293
+.insn 4, 0x06540423
+.insn 4, 0x0305d293
+.insn 4, 0x065404a3
+.insn 4, 0x0285d293
+.insn 4, 0x06540523
+.insn 4, 0x0205d293
+.insn 4, 0x065405a3
+.insn 4, 0x0185d293
+.insn 4, 0x06540623
+.insn 4, 0x0105d293
+.insn 4, 0x065406a3
+.insn 4, 0x0085d293
+.insn 4, 0x06540723
+.insn 4, 0x0005d293
+.insn 4, 0x065407a3
+.insn 4, 0x0f090513
+.insn 4, 0x01048593
+.insn 4, 0x06040613
+.insn 2, 0x4685
+.insn 4, 0x20040713
+call {vg_ghash}
+.insn 4, 0x0104b283
+.insn 4, 0x06543823
+.insn 4, 0x0184b283
+.insn 4, 0x06543c23
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 2, 0x8626
+.insn 4, 0x07040693
+.insn 2, 0x4705
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 2, 0x4281
+.insn 4, 0x10543023
+.insn 4, 0x10543423
+.insn 2, 0x8566
+.insn 4, 0x10040593
+.insn 2, 0x8662
+267:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 267b
+.insn 2, 0x4281
+.insn 4, 0x10543823
+.insn 4, 0x10543c23
+.insn 4, 0x07040513
+.insn 4, 0x11040593
+.insn 2, 0x8662
+268:
+.insn 4, 0x00054283
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 268b
+.insn 4, 0x11043503
+.insn 4, 0x10043583
+.insn 2, 0x8d2d
+.insn 4, 0x11843583
+.insn 4, 0x10843603
+.insn 2, 0x8db1
+.insn 2, 0x8d4d
+.insn 2, 0x4581
+.insn 2, 0x8d89
+.insn 2, 0x8d4d
+.insn 2, 0x917d
+.insn 2, 0x4585
+.insn 4, 0x40a58533
+.insn 2, 0x8c2a
+beqz s8, 269f
+.insn 4, 0x0f043a03
+.insn 2, 0x8aee
+.insn 2, 0x4b01
+beqz s5, 271f
+beqz s6, 273f
+.insn 2, 0x4641
+.insn 4, 0x41660633
+.insn 4, 0x004ad693
+bnez a3, 275f
+.insn 4, 0x40ca86b3
+.insn 2, 0x92fd
+bnez a3, 277f
+j 278f
+277:
+.insn 2, 0x8656
+278:
+j 276f
+275:
+276:
+.insn 4, 0x04048513
+.insn 2, 0x955a
+.insn 2, 0x85d2
+.insn 2, 0x9a32
+.insn 4, 0x40ca8ab3
+279:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 279b
+j 274f
+273:
+274:
+.insn 2, 0x86d2
+.insn 4, 0x004ad713
+.insn 4, 0x00faf793
+.insn 4, 0x40fa8833
+.insn 2, 0x9a42
+.insn 2, 0x8abe
+beqz a4, 280f
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+j 281f
+280:
+281:
+beqz s5, 282f
+.insn 2, 0x4281
+.insn 4, 0x0454b023
+.insn 4, 0x0454b423
+.insn 4, 0x04048693
+.insn 2, 0x4705
+.insn 2, 0x854a
+.insn 2, 0x85ce
+.insn 4, 0x03048613
+.insn 4, 0x20040793
+call {vg_aes_ctr32}
+.insn 4, 0x04048513
+.insn 2, 0x85d2
+.insn 2, 0x8656
+284:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 284b
+j 283f
+282:
+283:
+j 272f
+271:
+272:
+j 270f
+269:
+270:
+.insn 2, 0x8562
+j 27f
+26:
+.insn 2, 0x4501
+27:
+.insn 2, 0x8322
+.insn 4, 0x08033403
+.insn 4, 0x08833483
+.insn 4, 0x09033903
+.insn 4, 0x09833983
+.insn 4, 0x0a033a03
+.insn 4, 0x0a833a83
+.insn 4, 0x0b033b03
+.insn 4, 0x0b833b83
+.insn 4, 0x0c033c03
+.insn 4, 0x0c833c83
+.insn 4, 0x0d033d03
+.insn 4, 0x0d833d83
+.insn 4, 0x0e033083
+.insn 4, 0x23010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_ghash = sym super::gcm::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1141
+.insn 2, 0xe406
+.insn 2, 0x828a
+.insn 4, 0x0202b303
+.insn 4, 0x0062b023
+.insn 2, 0x8f3a
+.insn 2, 0x8fbe
+.insn 2, 0x8742
+.insn 2, 0x87c6
+.insn 4, 0x0102b803
+.insn 4, 0x0182b883
+beqz a5, 20f
+22:
+.insn 4, 0x00074283
+.insn 4, 0x00174e03
+.insn 2, 0x0e22
+.insn 4, 0x01c2e2b3
+.insn 4, 0x00274e03
+.insn 2, 0x0e42
+.insn 4, 0x01c2e2b3
+.insn 4, 0x00374e03
+.insn 2, 0x0e62
+.insn 4, 0x01c2e2b3
+.insn 4, 0x00474e83
+.insn 4, 0x00574e03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00674e03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00774e03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d2e2b3
+.insn 4, 0x00874303
+.insn 4, 0x00974e03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x00a74e03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x00b74e03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x00c74e83
+.insn 4, 0x00d74e03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00e74e03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x00f74e03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 2, 0x0741
+beqz t1, 23f
+25:
+.insn 4, 0x0002c383
+.insn 4, 0x00780023
+.insn 2, 0x0285
+.insn 2, 0x0805
+.insn 2, 0x137d
+bnez t1, 25b
+j 24f
+23:
+24:
+.insn 2, 0x17fd
+bnez a5, 22b
+j 21f
+20:
+21:
+.insn 2, 0x877a
+.insn 2, 0x87fe
+.insn 2, 0x828a
+.insn 4, 0x0102b803
+call {vg_aes_gcm_seal}
+.insn 2, 0x60a2
+.insn 2, 0x0141
+.insn 2, 0x8082
+.option pop",
+        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+    )
+}
+
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.

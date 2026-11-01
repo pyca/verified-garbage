@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_finish`
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_finish`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/StreamFinish.lean`): the entry saves our caller's

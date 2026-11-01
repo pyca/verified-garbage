@@ -11,7 +11,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 
 /-!
-# AES-GCM on RISCV64: GHASH over blocks of the state, `T` or the data
+# AES-GCM on RISC-V: GHASH over blocks of the state, `T` or the data
 
 Untrusted: everything here is checked by Lean. As on PPC64LE: `ghCall_ok`
 is a call of `vg_ghash` from a state whose registers are its arguments (the

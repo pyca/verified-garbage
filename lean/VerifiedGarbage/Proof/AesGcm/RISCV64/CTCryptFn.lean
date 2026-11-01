@@ -24,7 +24,7 @@ public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` are constant time
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` are constant time
 
 Untrusted: everything here is checked by Lean. The entry by the taint
 analysis from the public arguments, which it keeps in registers the pieces

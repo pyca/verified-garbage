@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
+# AES-GCM on RISC-V: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/OneShot.lean`): both keep a streaming state at `W + 16`;

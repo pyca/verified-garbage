@@ -15,11 +15,11 @@ meta import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `crypt` is constant time
+# AES-GCM on RISC-V: `crypt` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTCrypt.lean`): the invariants fix the context, the
-state, `W`, the stack pointer, the number of rounds (in `r28`), the data's
+state, `W`, the stack pointer, the number of rounds (in `s3`), the data's
 address and length, and the length of the text so far modulo 16.
 -/
 
@@ -37,7 +37,7 @@ def CrI (c st w sp : Addr) (R : Nat) (D : Addr) (n q : Nat) (s : State) : Prop :
 def CrM (c st w sp : Addr) (R : Nat) (D : Addr) (n q j : Nat) (s : State) : Prop :=
   ∃ V icb P m₀, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ P % 16 = q ∧ CrMid V sp R icb P D n m₀ j s
 
-/-- Environments that agree on `r28` to `r31` agree in those registers. -/
+/-- Environments that agree on `s0` to `s3` agree in those registers. -/
 theorem pinK {V₁ V₂ : Reg → BitVec 64} {sp : Addr} {s₁ s₂ : State} (e₁ : Env V₁ sp s₁) (e₂ : Env V₂ sp s₂)
     (h28 : V₁ .s3 = V₂ .s3) (h29 : V₁ .s2 = V₂ .s2) (h30 : V₁ .s1 = V₂ .s1) (h31 : V₁ .s0 = V₂ .s0)
     {r : Reg} (hr : r ∈ [Reg.s3, .s2, .s1, .s0]) : s₁.gpr r = s₂.gpr r := by

@@ -31,7 +31,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_open` is constant time
+# AES-GCM on RISC-V: `vg_aes_gcm_open` is constant time
 
 Untrusted: everything here is checked by Lean. The entry as for `seal`
 (`CTSeal.lean`), then `tag_len` (`s8`), public, and the two branches of

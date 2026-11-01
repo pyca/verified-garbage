@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `crypt`
+# AES-GCM on RISC-V: `crypt`
 
 Untrusted: everything here is checked by Lean (see `Crypt.lean`).
 -/

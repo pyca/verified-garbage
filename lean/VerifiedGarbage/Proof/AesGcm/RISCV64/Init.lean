@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_init`
+# AES-GCM on RISC-V: `vg_aes_gcm_init`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/Init.lean`): `init` saves our caller's registers in

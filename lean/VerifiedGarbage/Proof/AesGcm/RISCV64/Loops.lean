@@ -224,7 +224,7 @@ theorem shr63 {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
   · rw [show (2 ^ 64 - b + a) % 2 ^ 64 = 2 ^ 64 - b + a by omega_arith]; simp; omega_arith
   · rw [show (2 ^ 64 - b + a) % 2 ^ 64 = a - b by omega_arith]; simp; omega_arith
 
-/-- `r5 := min (16 - r26, r25)`. -/
+/-- `a2 := min (16 - s6, s5)`. -/
 theorem minLen_ok (s : State) {o n : Nat} (h26 : s.gpr .s6 = BitVec.ofNat 64 o)
     (h25 : s.gpr .s5 = BitVec.ofNat 64 n) (ho : o ≤ 16) (hn : n < 2 ^ 64) :
     WP isa minLen s fun s' => s'.gpr .a2 = BitVec.ofNat 64 (min (16 - o) n) ∧

@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISCV64: `vg_aes_gcm_stream_init`
+# AES-GCM on RISC-V: `vg_aes_gcm_stream_init`
 
 Untrusted: everything here is checked by Lean. The entry saves our caller's
 registers and sets up `j0`'s arguments (`siEntry_ok`); `j0` writes `J₀`, a

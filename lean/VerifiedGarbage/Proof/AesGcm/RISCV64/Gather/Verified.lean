@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.CT
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Frame
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 
 /-!
 # AES-GCM encryption out of place, from a list of slices, RISC-V: `Verified`

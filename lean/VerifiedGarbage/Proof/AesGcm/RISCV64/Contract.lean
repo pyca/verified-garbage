@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 
 /-!
-# AES-GCM on RISCV64: the contracts the proofs are written against
+# AES-GCM on RISC-V: the contracts the proofs are written against
 
 Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Gcm/Contract.lean`, which imply these
