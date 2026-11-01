@@ -89,15 +89,7 @@ def kIndex (t : Nat) : BitVec 64 := BitVec.ofNat 64 (8*(t+1))
 /-- Round `t` starts with `h + Kₜ`. After choice consumes `g`, prepare it
 as the next round's `h + Kₜ₊₁`, off the current round's sum chain. -/
 def round (t : Nat) : List Instr :=
-  let a := vvar t 0; let b := vvar t 1; let c := vvar t 2; let d := vvar t 3
-  let e := vvar t 4; let f := vvar t 5; let g := vvar t 6; let h := vvar t 7
-  [.lxvd2xTbl .v14 .r18 .r19 kSym kWords, .addi .r19 .r19 8,
-   .vop (.sha512 .v12 e true 8), .vop (.sel .v13 g f e),
-   .vop (.add true g g .v14), .vop (.sha512 .v14 a true 0),
-   .vop (.add true .v15 h .v15), .vop (.add true .v15 .v15 .v13),
-   .vop (.add true .v15 .v15 .v12), .vop (.add true d d .v15),
-   .vop (.logic .xor .v12 a b), .vop (.sel .v12 b c .v12),
-   .vop (.add true .v14 .v14 .v12), .vop (.add true h .v15 .v14)]
+  Impl.Sha2.PPC64LE.round true (vvar t) kSym kWords
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
