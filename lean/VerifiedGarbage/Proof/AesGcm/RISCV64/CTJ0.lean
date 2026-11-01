@@ -86,12 +86,12 @@ theorem j0hash_ct {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0hash := by
     have hand := and15 (BitVec.ofNat 64 n)
     rw [toNat64 hlt] at hand
     have h₃ : WP isa (.block [.logicImm .and .s6 .s7 15]) s fun s₃ =>
-        s₃.gpr .s6 = BitVec.ofNat 64 (n % 16) ∧ (∀ r, r ≠ .t0 → r ≠ .s6 → s₃.gpr r = s.gpr r) ∧
+        s₃.gpr .s6 = BitVec.ofNat 64 (n % 16) ∧ (∀ r, r ≠ .s6 → s₃.gpr r = s.gpr r) ∧
           Keeps s s₃ := by
       crun [Int.reduceNatCast', h18, hand]
-      exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
-    exact WP.mono h₃ fun s₃ ⟨h26, hg, hk⟩ => ⟨hs.keep (fun r hr => hg r (by revert r; decide)
-      (by revert r; decide)) hk.sp hk.rd hk.wr, h26⟩
+      exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
+    exact WP.mono h₃ fun s₃ ⟨h26, hg, hk⟩ => ⟨hs.keep (fun r hr => hg r (by revert r; decide))
+      hk.sp hk.rd hk.wr, h26⟩
   refine CT.seq (J := EnvN c st w sp n) ((flush_ct L (.inl rfl) (Nat.mod_lt _ (by decide))).mono
       fun s h => ⟨h.1.c, h.2⟩)
     (fun s ⟨hn', h26⟩ => ?_) ?_
@@ -113,22 +113,22 @@ theorem j0hash_ct {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0hash := by
       (by revert r; decide)) hk.sp hk.rd hk.wr
 
 theorem j0_ct {Np : Addr} {n : Nat} : CT (J0I c st w sp Np n) j0 := by
-  refine CT.seq (J := fun s => J0I c st w sp Np n s ∧ s.gpr .a3 = BitVec.ofNat 64 n - BitVec.ofNat 64 12) ?_
+  refine CT.seq (J := fun s => J0I c st w sp Np n s ∧ s.gpr .a2 = BitVec.ofNat 64 n - BitVec.ofNat 64 12) ?_
     (fun s ⟨V, H, h29, h30, h31, hs⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s5])
-        (.block [.subi .a3 .s5 12]) h).isSome = true := ⟨_, by taint_decide⟩
+        (.block [.addi .a2 .s5 (-12)]) h).isSome = true := ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, h₂⟩ =>
       ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.s5, h₂.s5]⟩) hc
-  · have h₁ : WP isa (.block [.subi .a3 .s5 12]) s fun s₁ =>
-        s₁.gpr .a3 = BitVec.ofNat 64 n - BitVec.ofNat 64 12 ∧ (∀ r, r ≠ .a3 → s₁.gpr r = s.gpr r) ∧
+  · have h₁ : WP isa (.block [.addi .a2 .s5 (-12)]) s fun s₁ =>
+        s₁.gpr .a2 = BitVec.ofNat 64 n - BitVec.ofNat 64 12 ∧ (∀ r, r ≠ .a2 → s₁.gpr r = s.gpr r) ∧
           Keeps s s₁ := by
       crun [Int.reduceNatCast', hs.s5]
       exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
     refine WP.mono h₁ fun s₁ ⟨h6, hg₁, hk₁⟩ => ⟨⟨V, H, h29, h30, h31, ?_⟩, h6⟩
     exact ⟨hs.env.keep (fun r hr => hg₁ r (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr,
       by rw [hk₁.mem]; exact hs.hH, by rw [hg₁ _ (by decide)]; exact hs.s4,
-      by rw [hg₁ _ (by decide)]; exact hs.s5, hs.s7, hs.data.of_eq hk₁.rd hk₁.wr⟩
+      by rw [hg₁ _ (by decide)]; exact hs.s5, hs.s7, hs.data.of_eq hk₁.rd hk₁.wr hk₁.sp⟩
   refine CT.seq (J := J0M c st w sp) ?_ (fun s ⟨⟨V, H, h29, h30, h31, hs⟩, h6⟩ => ?_) ?_
   · refine CT.ite (decide (n = 12)) (fun s ⟨⟨_, _, _, _, _, hs⟩, h6⟩ => eval_subk h6 hs.data.lt (by decide))
       (fun _ => ?_) fun _ => (j0hash_ct L).mono fun s h => h.1
