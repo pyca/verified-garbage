@@ -538,6 +538,43 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
     rw [hc.wr, wr]
     exact List.mem_cons_of_mem _ hr
 
+/-- Changes confined to the caller frame and destination keep the encryption inputs. -/
+theorem Lay.encrypt_frame {s : State} (h : Lay s) {m : Mem} (hf : Frame [FA s,dR s] s.mem m)
+    (plaintext : List Byte) :
+    encryptWith (ctxCiph m (C s) (Rn s)) (ctxH m (C s)) 16 (bytesAt m (Nn s) (NL s)) plaintext
+        (bytesAt m (Ad s) (AL s)) =
+      encryptWith (ctxCiph s.mem (C s) (Rn s)) (ctxH s.mem (C s)) 16 (bytesAt s.mem (Nn s) (NL s)) plaintext
+        (bytesAt s.mem (Ad s) (AL s)) := by
+  obtain ⟨-, -, cd, -, nd, -, ad, -⟩ := h.pre
+  have apart {r : Region} (h₁ : (⟨Bs s,2832⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
+      ∀ r'∈[FA s,dR s],r.Disjoint r' := by
+    intro r' hr'
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr'
+    rcases hr' with rfl|rfl
+    · exact h₁.symm.sub_right (stk_sub s 2672 160 (by decide))
+    · exact h₂
+  obtain ⟨hctx,hhash⟩ := Proof.AesGcm.ctx_frame hf (apart h.bc cd) h.hR
+  have hn : bytesAt m (Nn s) (NL s)=bytesAt s.mem (Nn s) (NL s) :=
+    Proof.Cmac.bytesAt_frame hf (apart h.bn nd) (Nat.le_of_lt (s.gpr .r6).isLt)
+  have ha : bytesAt m (Ad s) (AL s)=bytesAt s.mem (Ad s) (AL s) :=
+    Proof.Cmac.bytesAt_frame hf (apart h.ba ad) (Nat.le_of_lt (s.gpr .r8).isLt)
+  rw [hctx,hhash,hn,ha]
+
+/-- The original full-gather view encrypts the same plaintext as the caller. -/
+theorem Lay.gMem_encrypt {s : State} (h : Lay s) :
+    encryptWith (ctxCiph (gMem s) (C s) (Rn s)) (ctxH (gMem s) (C s)) 16
+        (bytesAt (gMem s) (Nn s) (NL s)) (bytesAt (gMem s) (Dst s) (L s)) (bytesAt (gMem s) (Ad s) (AL s)) =
+      encryptWith (ctxCiph s.mem (C s) (Rn s)) (ctxH s.mem (C s)) 16
+        (bytesAt s.mem (Nn s) (NL s)) (pt s (Cnt s)) (bytesAt s.mem (Ad s) (AL s)) := by
+  have hf : Frame [FA s,dR s] s.mem (gMem s) :=
+    ((frame_eMem s).mono (fun r hr => by rw [List.mem_singleton] at hr; subst r; simp)).trans
+      (h.frame_gMem.mono (fun r hr => by rw [List.mem_singleton] at hr; subst r; simp))
+  have hd : bytesAt (gMem s) (Dst s) (L s)=pt s (Cnt s) := by
+    rw [← h.hlen]
+    exact Proof.AesGcm.bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
+  rw [hd]
+  exact h.encrypt_frame hf _
+
 /-- After the call. -/
 structure Called (s z : State) : Prop where
   ra : z.mem.readW (slot s 6) 64 = s.lr
@@ -596,27 +633,9 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
   · -- The ciphertext and the tag.
     show encryptWith _ _ _ _ _ _ = (bytesAt u₃.mem (Dst s) (L s), bytesAt u₃.mem (Tg s) 16)
     rw [v₃.mem, v₂.mem, v₁.mem]
-    have hfc : Frame [FA s, dR s] s.mem (gMem s) :=
-      ((frame_eMem s).mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans
-        (h.frame_gMem.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp))
-    have apart {r : Region} (h₁ : (⟨Bs s, 2832⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
-        ∀ r' ∈ [FA s, dR s], r.Disjoint r' := by
-      intro r' hr'
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl
-      · exact h₁.symm.sub_right (stk_sub s 2672 160 (by decide))
-      · exact h₂
-    obtain ⟨hc₁, hh₁⟩ := Proof.AesGcm.ctx_frame hfc (apart h.bc cd) h.hR
-    have hn : bytesAt (gMem s) (Nn s) (NL s) = bytesAt s.mem (Nn s) (NL s) :=
-      Proof.Cmac.bytesAt_frame hfc (apart h.bn nd) (by omega_arith)
-    have ha : bytesAt (gMem s) (Ad s) (AL s) = bytesAt s.mem (Ad s) (AL s) :=
-      Proof.Cmac.bytesAt_frame hfc (apart h.ba ad) (by omega_arith)
-    have hd : bytesAt (gMem s) (Dst s) (L s) = pt s (Cnt s) := by
-      rw [← h.hlen]
-      exact Proof.AesGcm.bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
-    have := hz.out
-    rw [hc₁, hh₁, hn, ha, hd] at this
-    exact this
+    have out := hz.out
+    rw [h.gMem_encrypt] at out
+    exact out
 
 theorem sealGather_wp (hv : SealOk) {s : State} (hs : gatherPre s) :
     WP isa sealGather s fun z => abiPreserved s z ∧ gatherPost s z := by

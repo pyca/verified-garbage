@@ -4862,47 +4862,118 @@ vg_aes_gcm_seal_gather:
 	or %r7, %r9, %r9
 	or %r8, %r10, %r10
 	ld %r9, 256(%r12)
-	cmpldi %cr0, %r8, 0
+	ld %r0, 264(%r12)
+	rldicl %r0, %r0, 55, 9
+	cmpldi %cr0, %r0, 0
 	beq %cr0, 20f
-22:
+	ld %r3, 8(%r7)
+	add %r9, %r9, %r3
+	addi %r7, %r7, 16
+	addi %r8, %r8, -1
+	cmpldi %cr0, %r8, 0
+	beq %cr0, 22f
+24:
 	ld %r3, 0(%r7)
 	ld %r4, 8(%r7)
 	addi %r7, %r7, 16
 	rldicl %r5, %r4, 61, 3
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 23f
-25:
+	beq %cr0, 25f
+27:
 	ld %r0, 0(%r3)
 	std %r0, 0(%r9)
 	addi %r3, %r3, 8
 	addi %r9, %r9, 8
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 25b
-	b 24f
-23:
-24:
+	bne %cr0, 27b
+	b 26f
+25:
+26:
 	li %r6, 7
 	and %r4, %r4, %r6
 	cmpldi %cr0, %r4, 0
-	beq %cr0, 26f
-28:
+	beq %cr0, 28f
+210:
 	lbz %r0, 0(%r3)
 	stb %r0, 0(%r9)
 	addi %r3, %r3, 1
 	addi %r9, %r9, 1
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 28b
-	b 27f
-26:
-27:
+	bne %cr0, 210b
+	b 29f
+28:
+29:
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
-	bne %cr0, 22b
+	bne %cr0, 24b
+	b 23f
+22:
+23:
+	rldicr %r11, %r10, 4, 59
+	subf %r11, %r11, %r7
+	ld %r9, 0(%r11)
+	ld %r10, 8(%r11)
+	ld %r3, 104(%r12)
+	ld %r4, 112(%r12)
+	ld %r5, 120(%r12)
+	ld %r6, 128(%r12)
+	ld %r7, 136(%r12)
+	ld %r8, 144(%r12)
+	ld %r0, 256(%r12)
+	std %r0, 96(%r12)
+	ld %r0, 264(%r12)
+	std %r0, 104(%r12)
+	ld %r0, 272(%r12)
+	std %r0, 112(%r12)
+	bl {vg_aes_gcm_seal_split}
+	addi %r12, %r1, 0
+	ld %r0, 152(%r12)
+	mtlr %r0
 	b 21f
 20:
-21:
+	cmpldi %cr0, %r8, 0
+	beq %cr0, 211f
+213:
+	ld %r3, 0(%r7)
+	ld %r4, 8(%r7)
+	addi %r7, %r7, 16
+	rldicl %r5, %r4, 61, 3
+	cmpldi %cr0, %r5, 0
+	beq %cr0, 214f
+216:
+	ld %r0, 0(%r3)
+	std %r0, 0(%r9)
+	addi %r3, %r3, 8
+	addi %r9, %r9, 8
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 216b
+	b 215f
+214:
+215:
+	li %r6, 7
+	and %r4, %r4, %r6
+	cmpldi %cr0, %r4, 0
+	beq %cr0, 217f
+219:
+	lbz %r0, 0(%r3)
+	stb %r0, 0(%r9)
+	addi %r3, %r3, 1
+	addi %r9, %r9, 1
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 219b
+	b 218f
+217:
+218:
+	addi %r8, %r8, -1
+	cmpldi %cr0, %r8, 0
+	bne %cr0, 213b
+	b 212f
+211:
+212:
 	ld %r3, 104(%r12)
 	ld %r4, 112(%r12)
 	ld %r5, 120(%r12)
@@ -4915,6 +4986,7 @@ vg_aes_gcm_seal_gather:
 	addi %r12, %r1, 0
 	ld %r0, 152(%r12)
 	mtlr %r0
+21:
 	addi %r1, %r1, 160
 	blr
 
