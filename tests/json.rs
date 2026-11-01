@@ -9,14 +9,13 @@
 //! derive's did: an `Option` field may be left out or `null`, a field marked
 //! `default` may be left out, and keys that no field reads are ignored.
 //!
-//! A value that is not what its type reads panics, naming the field, and
-//! the file (and, in the Wycheproof harness, the test) being read: a test
-//! of a malformed file fails, as it would on any other broken assumption.
+//! A value that is not what its type reads panics, naming the field: a
+//! test of a malformed file fails, as it would on any other broken
+//! assumption.
 //! Returning `Result`s instead made each field's read return early, past
 //! code dropping every field read before it: four times as much code.
 
 use std::collections::BTreeMap;
-use std::thread;
 
 use serde_json::{Map, Value};
 
@@ -33,23 +32,12 @@ pub trait FromJson: Sized {
     }
 }
 
-/// While it lives, a panic (in its thread) also says that it was reading
-/// the file named `.0`, once the panic's message is printed.
-pub struct Reading<'a>(pub &'a str);
-
-impl Drop for Reading<'_> {
-    fn drop(&mut self) {
-        thread::panicking().then(|| eprintln!("  reading {}", self.0));
-    }
-}
-
 /// Parses `json`, the text of the file `name`, as a `T`; panics if it is
 /// not one.
 pub fn parse<T: FromJson>(name: &str, json: &str) -> T {
-    let _reading = Reading(name);
     // `Value`'s `FromStr` is compiled (optimized) in `serde_json`, rather
     // than generically in the test binary.
-    let value: Value = json.parse().unwrap_or_else(|e| panic!("{e}"));
+    let value: Value = json.parse().unwrap_or_else(|e| panic!("{name}: {e}"));
     T::from_json(&value, name)
 }
 

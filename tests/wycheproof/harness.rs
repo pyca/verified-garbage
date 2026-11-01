@@ -226,25 +226,13 @@ pub struct Test<T> {
 impl<T: FromJson> FromJson for Test<T> {
     fn from_json(v: &Value, key: &str) -> Self {
         let o = json::object(v, key);
-        let tc_id = json::field(o, "tcId");
-        let _reading = ReadingTest(tc_id);
         Test {
-            tc_id,
+            tc_id: json::field(o, "tcId"),
             comment: json::field_or_default(o, "comment"),
             flags: json::field_or_default(o, "flags"),
             result: json::field(o, "result"),
             case: T::from_json(v, key),
         }
-    }
-}
-
-/// While it lives, a panic (in its thread) also says that it was reading
-/// the test whose `tcId` is `.0`, once the panic's message is printed.
-struct ReadingTest(u64);
-
-impl Drop for ReadingTest {
-    fn drop(&mut self) {
-        std::thread::panicking().then(|| eprintln!("  reading tcId {}", self.0));
     }
 }
 
