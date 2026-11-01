@@ -14,8 +14,40 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0x4182000c282900007d26205038e00000,0x28240000390000004800004438600000,0x7d454214896a00007d43421441820030,0x390800017ce75b787d6b6278898a0000
-.octa 0x480000044082ffdc282900007d244050
-.byte 255,255,231,56,224,15,227,120,32,0,128,78",
+        // li %r7, 0
+        // subf %r9, %r6, %r4
+        // cmpldi %cr0, %r9, 0
+        r".long 0x38e00000,0x7d262050,0x28290000
+beq %cr0, 20f",
+        // li %r3, 0
+        r".long 0x38600000
+b 21f
+20:",
+        // li %r8, 0
+        // cmpldi %cr0, %r4, 0
+        r".long 0x39000000,0x28240000
+beq %cr0, 22f
+24:",
+        // add %r10, %r3, %r8
+        // lbz %r11, 0(%r10)
+        // add %r10, %r5, %r8
+        // lbz %r12, 0(%r10)
+        // xor %r11, %r11, %r12
+        // or %r7, %r7, %r11
+        // addi %r8, %r8, 1
+        // subf %r9, %r4, %r8
+        // cmpldi %cr0, %r9, 0
+        r".long 0x7d434214,0x896a0000,0x7d454214,0x898a0000,0x7d6b6278,0x7ce75b78,0x39080001,0x7d244050
+.long 0x28290000
+bne %cr0, 24b
+b 23f
+22:
+23:",
+        // addi %r7, %r7, -1
+        // rldicl %r3, %r7, 1, 63
+        r".long 0x38e7ffff,0x78e30fe0
+21:",
+        // blr
+        r".long 0x4e800020",
     )
 }

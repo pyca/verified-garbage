@@ -17,11 +17,91 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        r".octa 0x38630008f9050000e90300007c872378,0x4082ffe8282400003884fff838a50008,0x78e4f082398000003965fffc7d472850,0x38c000013884001c7c8442147d042214
-.octa 0x380cfff041820038282c0000812b0000,0x3807ffe0480000244182000828200000,0x7c090167480000144182000828200000,0x480000405529003e7c090067100005c8
-.octa 0x5529003e7c090067100005c87c090167,0x3900000078c0c9c27d2932785529c03e,0x7cc632147c0040383900001b7c004050,0x810a00007cc64038390000ff7cc60278
-.octa 0x394a0004396b0004912b00047d294278,0x41820008282000007c076050398c0004,0x282400003884ffff3980000048000008
-.byte 80,255,130,64,32,0,128,78",
+        // or %r7, %r4, %r4
+        r".long 0x7c872378
+20:",
+        // ld %r8, 0(%r3)
+        // std %r8, 0(%r5)
+        // addi %r3, %r3, 8
+        // addi %r5, %r5, 8
+        // addi %r4, %r4, -8
+        // cmpldi %cr0, %r4, 0
+        r".long 0xe9030000,0xf9050000,0x38630008,0x38a50008,0x3884fff8,0x28240000
+bne %cr0, 20b",
+        // subf %r10, %r7, %r5
+        // addi %r11, %r5, -4
+        // li %r12, 0
+        // rldicl %r4, %r7, 62, 2
+        // add %r8, %r4, %r4
+        // add %r4, %r4, %r8
+        // addi %r4, %r4, 28
+        // li %r6, 1
+        r".long 0x7d472850,0x3965fffc,0x39800000,0x78e4f082,0x7d042214,0x7c844214,0x3884001c,0x38c00001
+21:",
+        // lwz %r9, 0(%r11)
+        // cmpldi %cr0, %r12, 0
+        r".long 0x812b0000,0x282c0000
+beq %cr0, 22f",
+        // addi %r0, %r12, -16
+        // cmpldi %cr0, %r0, 0
+        r".long 0x380cfff0,0x28200000
+beq %cr0, 24f
+b 25f
+24:",
+        // addi %r0, %r7, -32
+        // cmpldi %cr0, %r0, 0
+        r".long 0x3807ffe0,0x28200000
+beq %cr0, 26f
+b 27f
+26:",
+        // mtvsrd 32, %r9
+        // vsbox %v0, %v0
+        // mfvsrd %r9, 32
+        // rlwinm %r9, %r9, 0, 0, 31
+        r".long 0x7c090167,0x100005c8,0x7c090067,0x5529003e
+27:
+25:
+b 23f
+22:",
+        // mtvsrd 32, %r9
+        // vsbox %v0, %v0
+        // mfvsrd %r9, 32
+        // rlwinm %r9, %r9, 0, 0, 31
+        // rlwinm %r9, %r9, 24, 0, 31
+        // xor %r9, %r9, %r6
+        // rldicl %r0, %r6, 57, 7
+        // li %r8, 0
+        // subf %r0, %r0, %r8
+        // li %r8, 27
+        // and %r0, %r0, %r8
+        // add %r6, %r6, %r6
+        // xor %r6, %r6, %r0
+        // li %r8, 255
+        // and %r6, %r6, %r8
+        r".long 0x7c090167,0x100005c8,0x7c090067,0x5529003e,0x5529c03e,0x7d293278,0x78c0c9c2,0x39000000
+.long 0x7c004050,0x3900001b,0x7c004038,0x7cc63214,0x7cc60278,0x390000ff,0x7cc64038
+23:",
+        // lwz %r8, 0(%r10)
+        // xor %r9, %r9, %r8
+        // stw %r9, 4(%r11)
+        // addi %r11, %r11, 4
+        // addi %r10, %r10, 4
+        // addi %r12, %r12, 4
+        // subf %r0, %r7, %r12
+        // cmpldi %cr0, %r0, 0
+        r".long 0x810a0000,0x7d294278,0x912b0004,0x396b0004,0x394a0004,0x398c0004,0x7c076050,0x28200000
+beq %cr0, 28f
+b 29f
+28:",
+        // li %r12, 0
+        r".long 0x39800000
+29:",
+        // addi %r4, %r4, -1
+        // cmpldi %cr0, %r4, 0
+        r".long 0x3884ffff,0x28240000
+bne %cr0, 21b",
+        // blr
+        r".long 0x4e800020",
     )
 }
 
@@ -42,11 +122,91 @@ pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, sched
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r".octa 0x38630008f9050000e90300007c872378,0x4082ffe8282400003884fff838a50008,0x78e4f082398000003965fffc7d472850,0x38c000013884001c7c8442147d042214
-.octa 0x380cfff041820038282c0000812b0000,0x3807ffe0480000244182000828200000,0x7c090167480000144182000828200000,0x480000405529003e7c090067100005c8
-.octa 0x5529003e7c090067100005c87c090167,0x3900000078c0c9c27d2932785529c03e,0x7cc632147c0040383900001b7c004050,0x810a00007cc64038390000ff7cc60278
-.octa 0x394a0004396b0004912b00047d294278,0x41820008282000007c076050398c0004,0x282400003884ffff3980000048000008
-.byte 80,255,130,64,32,0,128,78",
+        // or %r7, %r4, %r4
+        r".long 0x7c872378
+20:",
+        // ld %r8, 0(%r3)
+        // std %r8, 0(%r5)
+        // addi %r3, %r3, 8
+        // addi %r5, %r5, 8
+        // addi %r4, %r4, -8
+        // cmpldi %cr0, %r4, 0
+        r".long 0xe9030000,0xf9050000,0x38630008,0x38a50008,0x3884fff8,0x28240000
+bne %cr0, 20b",
+        // subf %r10, %r7, %r5
+        // addi %r11, %r5, -4
+        // li %r12, 0
+        // rldicl %r4, %r7, 62, 2
+        // add %r8, %r4, %r4
+        // add %r4, %r4, %r8
+        // addi %r4, %r4, 28
+        // li %r6, 1
+        r".long 0x7d472850,0x3965fffc,0x39800000,0x78e4f082,0x7d042214,0x7c844214,0x3884001c,0x38c00001
+21:",
+        // lwz %r9, 0(%r11)
+        // cmpldi %cr0, %r12, 0
+        r".long 0x812b0000,0x282c0000
+beq %cr0, 22f",
+        // addi %r0, %r12, -16
+        // cmpldi %cr0, %r0, 0
+        r".long 0x380cfff0,0x28200000
+beq %cr0, 24f
+b 25f
+24:",
+        // addi %r0, %r7, -32
+        // cmpldi %cr0, %r0, 0
+        r".long 0x3807ffe0,0x28200000
+beq %cr0, 26f
+b 27f
+26:",
+        // mtvsrd 32, %r9
+        // vsbox %v0, %v0
+        // mfvsrd %r9, 32
+        // rlwinm %r9, %r9, 0, 0, 31
+        r".long 0x7c090167,0x100005c8,0x7c090067,0x5529003e
+27:
+25:
+b 23f
+22:",
+        // mtvsrd 32, %r9
+        // vsbox %v0, %v0
+        // mfvsrd %r9, 32
+        // rlwinm %r9, %r9, 0, 0, 31
+        // rlwinm %r9, %r9, 24, 0, 31
+        // xor %r9, %r9, %r6
+        // rldicl %r0, %r6, 57, 7
+        // li %r8, 0
+        // subf %r0, %r0, %r8
+        // li %r8, 27
+        // and %r0, %r0, %r8
+        // add %r6, %r6, %r6
+        // xor %r6, %r6, %r0
+        // li %r8, 255
+        // and %r6, %r6, %r8
+        r".long 0x7c090167,0x100005c8,0x7c090067,0x5529003e,0x5529c03e,0x7d293278,0x78c0c9c2,0x39000000
+.long 0x7c004050,0x3900001b,0x7c004038,0x7cc63214,0x7cc60278,0x390000ff,0x7cc64038
+23:",
+        // lwz %r8, 0(%r10)
+        // xor %r9, %r9, %r8
+        // stw %r9, 4(%r11)
+        // addi %r11, %r11, 4
+        // addi %r10, %r10, 4
+        // addi %r12, %r12, 4
+        // subf %r0, %r7, %r12
+        // cmpldi %cr0, %r0, 0
+        r".long 0x810a0000,0x7d294278,0x912b0004,0x396b0004,0x394a0004,0x398c0004,0x7c076050,0x28200000
+beq %cr0, 28f
+b 29f
+28:",
+        // li %r12, 0
+        r".long 0x39800000
+29:",
+        // addi %r4, %r4, -1
+        // cmpldi %cr0, %r4, 0
+        r".long 0x3884ffff,0x28240000
+bne %cr0, 21b",
+        // blr
+        r".long 0x4e800020",
     )
 }
 
@@ -67,19 +227,232 @@ pub unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usiz
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".octa 0x100004c438000000418202e428270000,0x656b0302796b07c6616b05043d600706,0x798c07c6618c0d0c3d800f0e616b0100,0x7c2c01677e6b0167618c0908658c0b0a
-.octa 0x616b02033d60000112730a2c12609a2c,0x3d800809616b0607656b0405796b07c6,0x618c1617658c1415798c07c6618c0a0b,0x12520a2c1240922c7c2c01677e4b0167
-.octa 0x114a54eb7d4506997d055c2c3960000c,0x7d680167418201cc282c000078ece8c2,0x102a5cab7d68016739080001100a5cab,0x39080001104a5cab7d68016739080001
-.octa 0x7d68016739080001106a5cab7d680167,0x10aa5cab7d68016739080001108a5cab,0x3908000110ca5cab7d68016739080001,0x7c691b783908000110ea5cab7d680167
-.octa 0x102144c4100044c4110844eb7d090699,0x10a544c4108444c4106344c4104244c4,0x3944ffff3929001010e744c410c644c4,0x1021450810004508110844eb7d090699
-.octa 0x10a54508108445081063450810424508,0x394affff3929001010e7450810c64508,0x110844eb7d0906994082ffcc282a0000,0x10634509104245091021450910004509
-.octa 0x10e7450910c6450910a5450910844509,0x100004eb10004cc411294ceb7d260699,0x11294ceb7d26069938c600107c060799,0x38c600107c26079910210ceb10214cc4
-.octa 0x104214eb10424cc411294ceb7d260699,0x11294ceb7d26069938c600107c460799,0x38c600107c66079910631ceb10634cc4,0x108424eb10844cc411294ceb7d260699
-.octa 0x11294ceb7d26069938c600107c860799,0x38c600107ca6079910a52ceb10a54cc4,0x10c634eb10c64cc411294ceb7d260699,0x11294ceb7d26069938c600107cc60799
-.octa 0x38c600107ce6079910e73ceb10e74cc4,0x4082fe40282c000078ece8c238e7fff8,0x7d680167418200782827000048000004,0x7d0906997c691b7839080001100a5cab
-.octa 0x3944ffff39290010100044c4110844eb,0x3929001010004508110844eb7d090699,0x7d0906994082ffe8282a0000394affff,0x11294ceb7d26069910004509110844eb
-.octa 0x38c600107c060799100004eb10004cc4,0x480000044082ff942827000038e7ffff
-.byte 44,93,5,125,4,0,0,72,32,0,128,78",
+        // cmpldi %cr0, %r7, 0
+        r".long 0x28270000
+beq %cr0, 20f",
+        // li %r0, 0
+        // vxor %v0, %v0, %v0
+        // lis %r11, 1798
+        // ori %r11, %r11, 1284
+        // rldicr %r11, %r11, 32, 31
+        // oris %r11, %r11, 770
+        // ori %r11, %r11, 256
+        // lis %r12, 3854
+        // ori %r12, %r12, 3340
+        // rldicr %r12, %r12, 32, 31
+        // oris %r12, %r12, 2826
+        // ori %r12, %r12, 2312
+        // mtvsrd 51, %r11
+        // mtvsrd 33, %r12
+        // vsldoi %v19, %v0, %v19, 8
+        // vsldoi %v19, %v19, %v1, 8
+        // lis %r11, 1
+        // ori %r11, %r11, 515
+        // rldicr %r11, %r11, 32, 31
+        // oris %r11, %r11, 1029
+        // ori %r11, %r11, 1543
+        // lis %r12, 2057
+        // ori %r12, %r12, 2571
+        // rldicr %r12, %r12, 32, 31
+        // oris %r12, %r12, 5141
+        // ori %r12, %r12, 5655
+        // mtvsrd 50, %r11
+        // mtvsrd 33, %r12
+        // vsldoi %v18, %v0, %v18, 8
+        // vsldoi %v18, %v18, %v1, 8
+        // li %r11, 12
+        // lwbrx %r8, %r5, %r11
+        // lxvd2x 42, %r5, %r0
+        // vperm %v10, %v10, %v10, %v19
+        // rldicl %r12, %r7, 61, 3
+        // cmpldi %cr0, %r12, 0
+        r".long 0x38000000,0x100004c4,0x3d600706,0x616b0504,0x796b07c6,0x656b0302,0x616b0100,0x3d800f0e
+.long 0x618c0d0c,0x798c07c6,0x658c0b0a,0x618c0908,0x7e6b0167,0x7c2c0167,0x12609a2c,0x12730a2c
+.long 0x3d600001,0x616b0203,0x796b07c6,0x656b0405,0x616b0607,0x3d800809,0x618c0a0b,0x798c07c6
+.long 0x658c1415,0x618c1617,0x7e4b0167,0x7c2c0167,0x1240922c,0x12520a2c,0x3960000c,0x7d055c2c
+.long 0x7d450699,0x114a54eb,0x78ece8c2,0x282c0000
+beq %cr0, 22f
+24:",
+        // mtvsrd 43, %r8
+        // vperm %v0, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v1, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v2, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v3, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v4, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v5, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v6, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // mtvsrd 43, %r8
+        // vperm %v7, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // or %r9, %r3, %r3
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vxor %v0, %v0, %v8
+        // vxor %v1, %v1, %v8
+        // vxor %v2, %v2, %v8
+        // vxor %v3, %v3, %v8
+        // vxor %v4, %v4, %v8
+        // vxor %v5, %v5, %v8
+        // vxor %v6, %v6, %v8
+        // vxor %v7, %v7, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r4, -1
+        r".long 0x7d680167,0x100a5cab,0x39080001,0x7d680167,0x102a5cab,0x39080001,0x7d680167,0x104a5cab
+.long 0x39080001,0x7d680167,0x106a5cab,0x39080001,0x7d680167,0x108a5cab,0x39080001,0x7d680167
+.long 0x10aa5cab,0x39080001,0x7d680167,0x10ca5cab,0x39080001,0x7d680167,0x10ea5cab,0x39080001
+.long 0x7c691b78,0x7d090699,0x110844eb,0x100044c4,0x102144c4,0x104244c4,0x106344c4,0x108444c4
+.long 0x10a544c4,0x10c644c4,0x10e744c4,0x39290010,0x3944ffff
+25:",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipher %v0, %v0, %v8
+        // vcipher %v1, %v1, %v8
+        // vcipher %v2, %v2, %v8
+        // vcipher %v3, %v3, %v8
+        // vcipher %v4, %v4, %v8
+        // vcipher %v5, %v5, %v8
+        // vcipher %v6, %v6, %v8
+        // vcipher %v7, %v7, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r10, -1
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7d090699,0x110844eb,0x10004508,0x10214508,0x10424508,0x10634508,0x10844508,0x10a54508
+.long 0x10c64508,0x10e74508,0x39290010,0x394affff,0x282a0000
+bne %cr0, 25b",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipherlast %v0, %v0, %v8
+        // vcipherlast %v1, %v1, %v8
+        // vcipherlast %v2, %v2, %v8
+        // vcipherlast %v3, %v3, %v8
+        // vcipherlast %v4, %v4, %v8
+        // vcipherlast %v5, %v5, %v8
+        // vcipherlast %v6, %v6, %v8
+        // vcipherlast %v7, %v7, %v8
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v0, %v0, %v9
+        // vperm %v0, %v0, %v0, %v19
+        // stxvd2x 32, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v1, %v1, %v9
+        // vperm %v1, %v1, %v1, %v19
+        // stxvd2x 33, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v2, %v2, %v9
+        // vperm %v2, %v2, %v2, %v19
+        // stxvd2x 34, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v3, %v3, %v9
+        // vperm %v3, %v3, %v3, %v19
+        // stxvd2x 35, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v4, %v4, %v9
+        // vperm %v4, %v4, %v4, %v19
+        // stxvd2x 36, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v5, %v5, %v9
+        // vperm %v5, %v5, %v5, %v19
+        // stxvd2x 37, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v6, %v6, %v9
+        // vperm %v6, %v6, %v6, %v19
+        // stxvd2x 38, %r6, %r0
+        // addi %r6, %r6, 16
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v7, %v7, %v9
+        // vperm %v7, %v7, %v7, %v19
+        // stxvd2x 39, %r6, %r0
+        // addi %r6, %r6, 16
+        // addi %r7, %r7, -8
+        // rldicl %r12, %r7, 61, 3
+        // cmpldi %cr0, %r12, 0
+        r".long 0x7d090699,0x110844eb,0x10004509,0x10214509,0x10424509,0x10634509,0x10844509,0x10a54509
+.long 0x10c64509,0x10e74509,0x7d260699,0x11294ceb,0x10004cc4,0x100004eb,0x7c060799,0x38c60010
+.long 0x7d260699,0x11294ceb,0x10214cc4,0x10210ceb,0x7c260799,0x38c60010,0x7d260699,0x11294ceb
+.long 0x10424cc4,0x104214eb,0x7c460799,0x38c60010,0x7d260699,0x11294ceb,0x10634cc4,0x10631ceb
+.long 0x7c660799,0x38c60010,0x7d260699,0x11294ceb,0x10844cc4,0x108424eb,0x7c860799,0x38c60010
+.long 0x7d260699,0x11294ceb,0x10a54cc4,0x10a52ceb,0x7ca60799,0x38c60010,0x7d260699,0x11294ceb
+.long 0x10c64cc4,0x10c634eb,0x7cc60799,0x38c60010,0x7d260699,0x11294ceb,0x10e74cc4,0x10e73ceb
+.long 0x7ce60799,0x38c60010,0x38e7fff8,0x78ece8c2,0x282c0000
+bne %cr0, 24b
+b 23f
+22:
+23:",
+        // cmpldi %cr0, %r7, 0
+        r".long 0x28270000
+beq %cr0, 26f
+28:",
+        // mtvsrd 43, %r8
+        // vperm %v0, %v10, %v11, %v18
+        // addi %r8, %r8, 1
+        // or %r9, %r3, %r3
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vxor %v0, %v0, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r4, -1
+        r".long 0x7d680167,0x100a5cab,0x39080001,0x7c691b78,0x7d090699,0x110844eb,0x100044c4,0x39290010
+.long 0x3944ffff
+29:",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipher %v0, %v0, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r10, -1
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7d090699,0x110844eb,0x10004508,0x39290010,0x394affff,0x282a0000
+bne %cr0, 29b",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipherlast %v0, %v0, %v8
+        // lxvd2x 41, %r6, %r0
+        // vperm %v9, %v9, %v9, %v19
+        // vxor %v0, %v0, %v9
+        // vperm %v0, %v0, %v0, %v19
+        // stxvd2x 32, %r6, %r0
+        // addi %r6, %r6, 16
+        // addi %r7, %r7, -1
+        // cmpldi %cr0, %r7, 0
+        r".long 0x7d090699,0x110844eb,0x10004509,0x7d260699,0x11294ceb,0x10004cc4,0x100004eb,0x7c060799
+.long 0x38c60010,0x38e7ffff,0x28270000
+bne %cr0, 28b
+b 27f
+26:
+27:",
+        // stwbrx %r8, %r5, %r11
+        r".long 0x7d055d2c
+b 21f
+20:
+21:",
+        // blr
+        r".long 0x4e800020",
     )
 }
 
@@ -99,16 +472,183 @@ pub unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize,
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".octa 0x7ca62b787cc733784182023c28260000,0x616b05043d600706100004c438000000,0x3d800f0e616b0100656b0302796b07c6,0x618c0908658c0b0a798c07c6618c0d0c
-.octa 0x12730a2c12609a2c7c2c01677e6b0167,0x7c06069941820170282c000078ece8c2,0x10210ceb7c26069938c60010100004eb,0x38c60010104214eb7c46069938c60010
-.octa 0x7c86069938c6001010631ceb7c660699,0x10a52ceb7ca6069938c60010108424eb,0x38c6001010c634eb7cc6069938c60010,0x38c6ff8038c6001010e73ceb7ce60699
-.octa 0x100044c4110844eb7d0906997c691b78,0x108444c4106344c4104244c4102144c4,0x3929001010e744c410c644c410a544c4,0x10004508110844eb7d0906993944ffff
-.octa 0x10844508106345081042450810214508,0x3929001010e7450810c6450810a54508,0x7d0906994082ffcc282a0000394affff,0x104245091021450910004509110844eb
-.octa 0x10c6450910a545091084450910634509,0x38c600107c060799100004eb10e74509,0x104214eb38c600107c26079910210ceb,0x7c66079910631ceb38c600107c460799
-.octa 0x38c600107c860799108424eb38c60010,0x10c634eb38c600107ca6079910a52ceb,0x7ce6079910e73ceb38c600107cc60799,0x282c000078ece8c238e7fff838c60010
-.octa 0x4182007028270000480000044082fe9c,0x38c6fff038c60010100004eb7c060699,0x100044c4110844eb7d0906997c691b78,0x110844eb7d0906993944ffff39290010
-.octa 0x282a0000394affff3929001010004508,0x10004509110844eb7d0906994082ffe8,0x38e7ffff38c600107c060799100004eb,0x48000004480000044082ff9c28270000
-.byte 32,0,128,78",
+        // cmpldi %cr0, %r6, 0
+        r".long 0x28260000
+beq %cr0, 20f",
+        // or %r7, %r6, %r6
+        // or %r6, %r5, %r5
+        // li %r0, 0
+        // vxor %v0, %v0, %v0
+        // lis %r11, 1798
+        // ori %r11, %r11, 1284
+        // rldicr %r11, %r11, 32, 31
+        // oris %r11, %r11, 770
+        // ori %r11, %r11, 256
+        // lis %r12, 3854
+        // ori %r12, %r12, 3340
+        // rldicr %r12, %r12, 32, 31
+        // oris %r12, %r12, 2826
+        // ori %r12, %r12, 2312
+        // mtvsrd 51, %r11
+        // mtvsrd 33, %r12
+        // vsldoi %v19, %v0, %v19, 8
+        // vsldoi %v19, %v19, %v1, 8
+        // rldicl %r12, %r7, 61, 3
+        // cmpldi %cr0, %r12, 0
+        r".long 0x7cc73378,0x7ca62b78,0x38000000,0x100004c4,0x3d600706,0x616b0504,0x796b07c6,0x656b0302
+.long 0x616b0100,0x3d800f0e,0x618c0d0c,0x798c07c6,0x658c0b0a,0x618c0908,0x7e6b0167,0x7c2c0167
+.long 0x12609a2c,0x12730a2c,0x78ece8c2,0x282c0000
+beq %cr0, 22f
+24:",
+        // lxvd2x 32, %r6, %r0
+        // vperm %v0, %v0, %v0, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 33, %r6, %r0
+        // vperm %v1, %v1, %v1, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 34, %r6, %r0
+        // vperm %v2, %v2, %v2, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 35, %r6, %r0
+        // vperm %v3, %v3, %v3, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 36, %r6, %r0
+        // vperm %v4, %v4, %v4, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 37, %r6, %r0
+        // vperm %v5, %v5, %v5, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 38, %r6, %r0
+        // vperm %v6, %v6, %v6, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 39, %r6, %r0
+        // vperm %v7, %v7, %v7, %v19
+        // addi %r6, %r6, 16
+        // addi %r6, %r6, -128
+        // or %r9, %r3, %r3
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vxor %v0, %v0, %v8
+        // vxor %v1, %v1, %v8
+        // vxor %v2, %v2, %v8
+        // vxor %v3, %v3, %v8
+        // vxor %v4, %v4, %v8
+        // vxor %v5, %v5, %v8
+        // vxor %v6, %v6, %v8
+        // vxor %v7, %v7, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r4, -1
+        r".long 0x7c060699,0x100004eb,0x38c60010,0x7c260699,0x10210ceb,0x38c60010,0x7c460699,0x104214eb
+.long 0x38c60010,0x7c660699,0x10631ceb,0x38c60010,0x7c860699,0x108424eb,0x38c60010,0x7ca60699
+.long 0x10a52ceb,0x38c60010,0x7cc60699,0x10c634eb,0x38c60010,0x7ce60699,0x10e73ceb,0x38c60010
+.long 0x38c6ff80,0x7c691b78,0x7d090699,0x110844eb,0x100044c4,0x102144c4,0x104244c4,0x106344c4
+.long 0x108444c4,0x10a544c4,0x10c644c4,0x10e744c4,0x39290010,0x3944ffff
+25:",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipher %v0, %v0, %v8
+        // vcipher %v1, %v1, %v8
+        // vcipher %v2, %v2, %v8
+        // vcipher %v3, %v3, %v8
+        // vcipher %v4, %v4, %v8
+        // vcipher %v5, %v5, %v8
+        // vcipher %v6, %v6, %v8
+        // vcipher %v7, %v7, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r10, -1
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7d090699,0x110844eb,0x10004508,0x10214508,0x10424508,0x10634508,0x10844508,0x10a54508
+.long 0x10c64508,0x10e74508,0x39290010,0x394affff,0x282a0000
+bne %cr0, 25b",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipherlast %v0, %v0, %v8
+        // vcipherlast %v1, %v1, %v8
+        // vcipherlast %v2, %v2, %v8
+        // vcipherlast %v3, %v3, %v8
+        // vcipherlast %v4, %v4, %v8
+        // vcipherlast %v5, %v5, %v8
+        // vcipherlast %v6, %v6, %v8
+        // vcipherlast %v7, %v7, %v8
+        // vperm %v0, %v0, %v0, %v19
+        // stxvd2x 32, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v1, %v1, %v1, %v19
+        // stxvd2x 33, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v2, %v2, %v2, %v19
+        // stxvd2x 34, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v3, %v3, %v3, %v19
+        // stxvd2x 35, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v4, %v4, %v4, %v19
+        // stxvd2x 36, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v5, %v5, %v5, %v19
+        // stxvd2x 37, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v6, %v6, %v6, %v19
+        // stxvd2x 38, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v7, %v7, %v7, %v19
+        // stxvd2x 39, %r6, %r0
+        // addi %r6, %r6, 16
+        // addi %r7, %r7, -8
+        // rldicl %r12, %r7, 61, 3
+        // cmpldi %cr0, %r12, 0
+        r".long 0x7d090699,0x110844eb,0x10004509,0x10214509,0x10424509,0x10634509,0x10844509,0x10a54509
+.long 0x10c64509,0x10e74509,0x100004eb,0x7c060799,0x38c60010,0x10210ceb,0x7c260799,0x38c60010
+.long 0x104214eb,0x7c460799,0x38c60010,0x10631ceb,0x7c660799,0x38c60010,0x108424eb,0x7c860799
+.long 0x38c60010,0x10a52ceb,0x7ca60799,0x38c60010,0x10c634eb,0x7cc60799,0x38c60010,0x10e73ceb
+.long 0x7ce60799,0x38c60010,0x38e7fff8,0x78ece8c2,0x282c0000
+bne %cr0, 24b
+b 23f
+22:
+23:",
+        // cmpldi %cr0, %r7, 0
+        r".long 0x28270000
+beq %cr0, 26f
+28:",
+        // lxvd2x 32, %r6, %r0
+        // vperm %v0, %v0, %v0, %v19
+        // addi %r6, %r6, 16
+        // addi %r6, %r6, -16
+        // or %r9, %r3, %r3
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vxor %v0, %v0, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r4, -1
+        r".long 0x7c060699,0x100004eb,0x38c60010,0x38c6fff0,0x7c691b78,0x7d090699,0x110844eb,0x100044c4
+.long 0x39290010,0x3944ffff
+29:",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipher %v0, %v0, %v8
+        // addi %r9, %r9, 16
+        // addi %r10, %r10, -1
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7d090699,0x110844eb,0x10004508,0x39290010,0x394affff,0x282a0000
+bne %cr0, 29b",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vcipherlast %v0, %v0, %v8
+        // vperm %v0, %v0, %v0, %v19
+        // stxvd2x 32, %r6, %r0
+        // addi %r6, %r6, 16
+        // addi %r7, %r7, -1
+        // cmpldi %cr0, %r7, 0
+        r".long 0x7d090699,0x110844eb,0x10004509,0x100004eb,0x7c060799,0x38c60010,0x38e7ffff,0x28270000
+bne %cr0, 28b
+b 27f
+26:
+27:
+b 21f
+20:
+21:",
+        // blr
+        r".long 0x4e800020",
     )
 }
 
@@ -128,15 +668,184 @@ pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], round
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".octa 0x7ca62b787cc733784182024428260000,0x616b05043d600706100004c438000000,0x3d800f0e616b0100656b0302796b07c6,0x618c0908658c0b0a798c07c6618c0d0c
-.octa 0x12730a2c12609a2c7c2c01677e6b0167,0x7c06069941820174282c000078ece8c2,0x10210ceb7c26069938c60010100004eb,0x38c60010104214eb7c46069938c60010
-.octa 0x7c86069938c6001010631ceb7c660699,0x10a52ceb7ca6069938c60010108424eb,0x38c6001010c634eb7cc6069938c60010,0x38c6ff8038c6001010e73ceb7ce60699
-.octa 0x110844eb7d0906997d234a14788926e4,0x106344c4104244c4102144c4100044c4,0x10e744c410c644c410a544c4108444c4,0x110844eb7d0906993944ffff3929fff0
-.octa 0x10634548104245481021454810004548,0x10e7454810c6454810a5454810844548,0x4082ffcc282a0000394affff3929fff0,0x1021454910004549110844eb7d090699
-.octa 0x10a54549108445491063454910424549,0x7c060799100004eb10e7454910c64549,0x38c600107c26079910210ceb38c60010,0x10631ceb38c600107c460799104214eb
-.octa 0x7c860799108424eb38c600107c660799,0x38c600107ca6079910a52ceb38c60010,0x10e73ceb38c600107cc6079910c634eb,0x78ece8c238e7fff838c600107ce60799
-.octa 0x28270000480000044082fe98282c0000,0x38c60010100004eb7c06069941820074,0x7d0906997d234a14788926e438c6fff0,0x3944ffff3929fff0100044c4110844eb
-.octa 0x3929fff010004548110844eb7d090699,0x7d0906994082ffe8282a0000394affff,0x7c060799100004eb10004549110844eb,0x4082ff982827000038e7ffff38c60010
-.byte 4,0,0,72,4,0,0,72,32,0,128,78",
+        // cmpldi %cr0, %r6, 0
+        r".long 0x28260000
+beq %cr0, 20f",
+        // or %r7, %r6, %r6
+        // or %r6, %r5, %r5
+        // li %r0, 0
+        // vxor %v0, %v0, %v0
+        // lis %r11, 1798
+        // ori %r11, %r11, 1284
+        // rldicr %r11, %r11, 32, 31
+        // oris %r11, %r11, 770
+        // ori %r11, %r11, 256
+        // lis %r12, 3854
+        // ori %r12, %r12, 3340
+        // rldicr %r12, %r12, 32, 31
+        // oris %r12, %r12, 2826
+        // ori %r12, %r12, 2312
+        // mtvsrd 51, %r11
+        // mtvsrd 33, %r12
+        // vsldoi %v19, %v0, %v19, 8
+        // vsldoi %v19, %v19, %v1, 8
+        // rldicl %r12, %r7, 61, 3
+        // cmpldi %cr0, %r12, 0
+        r".long 0x7cc73378,0x7ca62b78,0x38000000,0x100004c4,0x3d600706,0x616b0504,0x796b07c6,0x656b0302
+.long 0x616b0100,0x3d800f0e,0x618c0d0c,0x798c07c6,0x658c0b0a,0x618c0908,0x7e6b0167,0x7c2c0167
+.long 0x12609a2c,0x12730a2c,0x78ece8c2,0x282c0000
+beq %cr0, 22f
+24:",
+        // lxvd2x 32, %r6, %r0
+        // vperm %v0, %v0, %v0, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 33, %r6, %r0
+        // vperm %v1, %v1, %v1, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 34, %r6, %r0
+        // vperm %v2, %v2, %v2, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 35, %r6, %r0
+        // vperm %v3, %v3, %v3, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 36, %r6, %r0
+        // vperm %v4, %v4, %v4, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 37, %r6, %r0
+        // vperm %v5, %v5, %v5, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 38, %r6, %r0
+        // vperm %v6, %v6, %v6, %v19
+        // addi %r6, %r6, 16
+        // lxvd2x 39, %r6, %r0
+        // vperm %v7, %v7, %v7, %v19
+        // addi %r6, %r6, 16
+        // addi %r6, %r6, -128
+        // rldicr %r9, %r4, 4, 59
+        // add %r9, %r3, %r9
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vxor %v0, %v0, %v8
+        // vxor %v1, %v1, %v8
+        // vxor %v2, %v2, %v8
+        // vxor %v3, %v3, %v8
+        // vxor %v4, %v4, %v8
+        // vxor %v5, %v5, %v8
+        // vxor %v6, %v6, %v8
+        // vxor %v7, %v7, %v8
+        // addi %r9, %r9, -16
+        // addi %r10, %r4, -1
+        r".long 0x7c060699,0x100004eb,0x38c60010,0x7c260699,0x10210ceb,0x38c60010,0x7c460699,0x104214eb
+.long 0x38c60010,0x7c660699,0x10631ceb,0x38c60010,0x7c860699,0x108424eb,0x38c60010,0x7ca60699
+.long 0x10a52ceb,0x38c60010,0x7cc60699,0x10c634eb,0x38c60010,0x7ce60699,0x10e73ceb,0x38c60010
+.long 0x38c6ff80,0x788926e4,0x7d234a14,0x7d090699,0x110844eb,0x100044c4,0x102144c4,0x104244c4
+.long 0x106344c4,0x108444c4,0x10a544c4,0x10c644c4,0x10e744c4,0x3929fff0,0x3944ffff
+25:",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vncipher %v0, %v0, %v8
+        // vncipher %v1, %v1, %v8
+        // vncipher %v2, %v2, %v8
+        // vncipher %v3, %v3, %v8
+        // vncipher %v4, %v4, %v8
+        // vncipher %v5, %v5, %v8
+        // vncipher %v6, %v6, %v8
+        // vncipher %v7, %v7, %v8
+        // addi %r9, %r9, -16
+        // addi %r10, %r10, -1
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7d090699,0x110844eb,0x10004548,0x10214548,0x10424548,0x10634548,0x10844548,0x10a54548
+.long 0x10c64548,0x10e74548,0x3929fff0,0x394affff,0x282a0000
+bne %cr0, 25b",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vncipherlast %v0, %v0, %v8
+        // vncipherlast %v1, %v1, %v8
+        // vncipherlast %v2, %v2, %v8
+        // vncipherlast %v3, %v3, %v8
+        // vncipherlast %v4, %v4, %v8
+        // vncipherlast %v5, %v5, %v8
+        // vncipherlast %v6, %v6, %v8
+        // vncipherlast %v7, %v7, %v8
+        // vperm %v0, %v0, %v0, %v19
+        // stxvd2x 32, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v1, %v1, %v1, %v19
+        // stxvd2x 33, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v2, %v2, %v2, %v19
+        // stxvd2x 34, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v3, %v3, %v3, %v19
+        // stxvd2x 35, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v4, %v4, %v4, %v19
+        // stxvd2x 36, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v5, %v5, %v5, %v19
+        // stxvd2x 37, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v6, %v6, %v6, %v19
+        // stxvd2x 38, %r6, %r0
+        // addi %r6, %r6, 16
+        // vperm %v7, %v7, %v7, %v19
+        // stxvd2x 39, %r6, %r0
+        // addi %r6, %r6, 16
+        // addi %r7, %r7, -8
+        // rldicl %r12, %r7, 61, 3
+        // cmpldi %cr0, %r12, 0
+        r".long 0x7d090699,0x110844eb,0x10004549,0x10214549,0x10424549,0x10634549,0x10844549,0x10a54549
+.long 0x10c64549,0x10e74549,0x100004eb,0x7c060799,0x38c60010,0x10210ceb,0x7c260799,0x38c60010
+.long 0x104214eb,0x7c460799,0x38c60010,0x10631ceb,0x7c660799,0x38c60010,0x108424eb,0x7c860799
+.long 0x38c60010,0x10a52ceb,0x7ca60799,0x38c60010,0x10c634eb,0x7cc60799,0x38c60010,0x10e73ceb
+.long 0x7ce60799,0x38c60010,0x38e7fff8,0x78ece8c2,0x282c0000
+bne %cr0, 24b
+b 23f
+22:
+23:",
+        // cmpldi %cr0, %r7, 0
+        r".long 0x28270000
+beq %cr0, 26f
+28:",
+        // lxvd2x 32, %r6, %r0
+        // vperm %v0, %v0, %v0, %v19
+        // addi %r6, %r6, 16
+        // addi %r6, %r6, -16
+        // rldicr %r9, %r4, 4, 59
+        // add %r9, %r3, %r9
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vxor %v0, %v0, %v8
+        // addi %r9, %r9, -16
+        // addi %r10, %r4, -1
+        r".long 0x7c060699,0x100004eb,0x38c60010,0x38c6fff0,0x788926e4,0x7d234a14,0x7d090699,0x110844eb
+.long 0x100044c4,0x3929fff0,0x3944ffff
+29:",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vncipher %v0, %v0, %v8
+        // addi %r9, %r9, -16
+        // addi %r10, %r10, -1
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7d090699,0x110844eb,0x10004548,0x3929fff0,0x394affff,0x282a0000
+bne %cr0, 29b",
+        // lxvd2x 40, %r9, %r0
+        // vperm %v8, %v8, %v8, %v19
+        // vncipherlast %v0, %v0, %v8
+        // vperm %v0, %v0, %v0, %v19
+        // stxvd2x 32, %r6, %r0
+        // addi %r6, %r6, 16
+        // addi %r7, %r7, -1
+        // cmpldi %cr0, %r7, 0
+        r".long 0x7d090699,0x110844eb,0x10004549,0x100004eb,0x7c060799,0x38c60010,0x38e7ffff,0x28270000
+bne %cr0, 28b
+b 27f
+26:
+27:
+b 21f
+20:
+21:",
+        // blr
+        r".long 0x4e800020",
     )
 }

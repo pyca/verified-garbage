@@ -23,12 +23,11 @@ copied as it is. This script is not trusted: `ci/check_preassembled.py`
 checks that compiling `src/` gives each function the same bytes,
 relocations and symbols as compiling `asm/`.
 
-Three crates compile the emitter's output itself, and are not pre-assembled:
-ARM's (`asm/`), which is built both as ARM and as Thumb code, whose bytes
-differ, and which Rust cannot tell apart at compile time; and RISC-V's and
-AArch64's (`src/`), whose printers already emit each instruction's machine
-code (`lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`,
-`lean/VerifiedGarbage/TCB/AArch64/Encode.lean`).
+The other crates compile the emitter's output itself, and are not
+pre-assembled: ARM's (`asm/`), which is built both as ARM and as Thumb code,
+whose bytes differ, and which Rust cannot tell apart at compile time; and
+RISC-V's, AArch64's and PPC64LE's (`src/`), whose printers already emit each
+instruction's machine code (`lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`).
 
     python3 ci/preassemble.py [TARGET ...]          # rewrite src/
     python3 ci/preassemble.py --check [TARGET ...]  # fail if src/ is stale
@@ -53,7 +52,6 @@ CPU_CRATE = CRATES / "verified-garbage-cpu"
 TRIPLES = {
     "x86_64": "x86_64-unknown-linux-gnu",
     "x86": "i686-unknown-linux-gnu",
-    "powerpc64le": "powerpc64le-unknown-linux-gnu",
 }
 
 NAKED = re.compile(r"^    core::arch::naked_asm!\(\n(.*?)^    \)\n", re.M | re.S)
@@ -234,7 +232,7 @@ def octa(b):
 def encode(target, b):
     if not b:
         return []
-    if target in ("x86_64", "x86", "powerpc64le"):
+    if target in ("x86_64", "x86"):
         return octa(b)
     raise ValueError(target)
 

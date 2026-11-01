@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.TCB.PPC64LE.Encode
 public import VerifiedGarbage.TCB.Print
 
 /-!
@@ -11,18 +11,18 @@ public import VerifiedGarbage.TCB.Print
 so that they cannot be read as numbers. The rotates and shifts are printed
 as the base instructions (`rlwinm`, `rldicl`, `rldicr`) whose operands the
 model's semantics describes, not as extended mnemonics.
+
+Each straight-line instruction, the comparison of each branch and the
+return are printed as their machine code (`Encode.lean`), `.long <word>`,
+each after a line `// <the instruction's text>`, which the emitter writes as
+a Rust comment (`Rust.template`): the assembler only copies the words. The
+branches (`beq`, `bne`, `b`), the call (`bl`) and the address of a static
+(`symLines`) are printed as text, for the assembler and linker to lay out.
 -/
 
 @[expose] public section
 
 namespace VG.PPC64LE
-
-def Reg.index : Reg → Nat
-  | .r0 => 0 | .r2 => 2 | .r3 => 3 | .r4 => 4 | .r5 => 5 | .r6 => 6 | .r7 => 7 | .r8 => 8
-  | .r9 => 9 | .r10 => 10 | .r11 => 11 | .r12 => 12 | .r14 => 14 | .r15 => 15 | .r16 => 16
-  | .r17 => 17 | .r18 => 18 | .r19 => 19 | .r20 => 20 | .r21 => 21 | .r22 => 22 | .r23 => 23
-  | .r24 => 24 | .r25 => 25 | .r26 => 26 | .r27 => 27 | .r28 => 28 | .r29 => 29 | .r30 => 30
-  | .r31 => 31
 
 /-- `%r<n>`. -/
 def Reg.name (r : Reg) : String := s!"%r{r.index}"
@@ -110,11 +110,20 @@ def Cond.branch : Cond → String
   | .zero .. => "beq"
   | .nonzero .. => "bne"
 
+/-- The lines of an instruction: each of its instructions' text (`asm`) as a
+comment, then that instruction's word (`encode`); its text if it has no
+encoding (`adrSym`, printed by `symLines`, or an instruction that
+`unencodable` reports, which the emitter refuses). -/
+def Instr.code (i : Instr) : List String :=
+  match i.encode with
+  | some ws => (i.asm.zip ws).flatMap fun (t, w) => [s!"// {t}", longLine w]
+  | none => i.asm
+
 def printer : Printer isa where
-  instr := Instr.asm
-  branch c l := [c.cmp, s!"{c.branch} %cr0, {l}"]
+  instr := Instr.code
+  branch c l := [s!"// {c.cmp}", longLine c.cmpWord, s!"{c.branch} %cr0, {l}"]
   jump l := s!"b {l}"
-  ret := ["blr"]
+  ret := ["// blr", longLine retWord]
   call := "bl"
   -- Label 2 is private to `adrSym`, the `mflr` after its `bcl`: structured
   -- control flow uses 20, 21, …; repeated sequences use the nearest 2b.
@@ -126,5 +135,8 @@ def printer : Printer isa where
   tables
     | .lxvd2xTbl _ _ _ name ws => [(name, ws)]
     | _ => []
+  unencodable
+    | .adrSym .. => none
+    | i => if i.encode.isNone then some "an operand does not fit its field" else none
 
 end VG.PPC64LE

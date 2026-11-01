@@ -465,60 +465,60 @@ def samplePPC : Prog PPC64LE.isa :=
       .mflr .r0, .mtlr .r0]) (.nonzero .w .r5)))
 
 #guard text (PPC64LE.printer.function samplePPC) == [
-  "cmpldi %cr0, %r5, 0",
+  "// cmpldi %cr0, %r5, 0", ".long 0x28250000",
   "beq %cr0, 20f",
   "b 21f",
   "20:",
   "21:",
-  "cmplwi %cr0, %r6, 0",
+  "// cmplwi %cr0, %r6, 0", ".long 0x28060000",
   "beq %cr0, 22f",
   "24:",
-  "add %r3, %r4, %r5",
-  "subf %r6, %r8, %r7",
-  "mulld %r3, %r4, %r5",
-  "mulhdu %r6, %r7, %r8",
-  "addc %r3, %r4, %r5",
-  "adde %r6, %r7, %r8",
-  "addze %r9, %r10",
-  "subfc %r3, %r5, %r4",
-  "subfe %r6, %r8, %r7",
-  "addi %r4, %r4, 64",
-  "addi %r5, %r5, -1",
-  "addi %r5, %r5, -32768",
-  "li %r9, 32767",
-  "lis %r10, 17034",
-  "lis %r10, -19008",
-  "ori %r10, %r10, 12184",
-  "oris %r11, %r11, 65535",
-  "and %r0, %r2, %r31",
-  "or %r14, %r15, %r16",
-  "xor %r17, %r18, %r19",
-  "rlwinm %r12, %r8, 7, 0, 31",
-  "rlwinm %r12, %r8, 0, 0, 31",
-  "rldicl %r12, %r8, 36, 0",
-  "rldicl %r12, %r8, 0, 0",
-  "rlwinm %r20, %r21, 22, 10, 31",
-  "rlwinm %r20, %r21, 0, 0, 31",
-  "rldicl %r22, %r23, 57, 7",
-  "rldicr %r24, %r25, 32, 31",
-  "lwz %r12, 60(%r4)",
-  "ld %r26, 32764(%r27)",
-  "stw %r12, 4(%r3)",
-  "std %r28, 8(%r29)",
-  "lbz %r30, 0(%r4)",
-  "stb %r30, 32767(%r3)",
-  "lwbrx %r7, %r4, %r8",
-  "ldbrx %r7, %r4, %r8",
-  "stwbrx %r7, %r3, %r8",
-  "stdbrx %r7, %r3, %r0",
-  "mflr %r0",
-  "mtlr %r0",
-  "cmplwi %cr0, %r5, 0",
+  "// add %r3, %r4, %r5", ".long 0x7c642a14",
+  "// subf %r6, %r8, %r7", ".long 0x7cc83850",
+  "// mulld %r3, %r4, %r5", ".long 0x7c6429d2",
+  "// mulhdu %r6, %r7, %r8", ".long 0x7cc74012",
+  "// addc %r3, %r4, %r5", ".long 0x7c642814",
+  "// adde %r6, %r7, %r8", ".long 0x7cc74114",
+  "// addze %r9, %r10", ".long 0x7d2a0194",
+  "// subfc %r3, %r5, %r4", ".long 0x7c652010",
+  "// subfe %r6, %r8, %r7", ".long 0x7cc83910",
+  "// addi %r4, %r4, 64", ".long 0x38840040",
+  "// addi %r5, %r5, -1", ".long 0x38a5ffff",
+  "// addi %r5, %r5, -32768", ".long 0x38a58000",
+  "// li %r9, 32767", ".long 0x39207fff",
+  "// lis %r10, 17034", ".long 0x3d40428a",
+  "// lis %r10, -19008", ".long 0x3d40b5c0",
+  "// ori %r10, %r10, 12184", ".long 0x614a2f98",
+  "// oris %r11, %r11, 65535", ".long 0x656bffff",
+  "// and %r0, %r2, %r31", ".long 0x7c40f838",
+  "// or %r14, %r15, %r16", ".long 0x7dee8378",
+  "// xor %r17, %r18, %r19", ".long 0x7e519a78",
+  "// rlwinm %r12, %r8, 7, 0, 31", ".long 0x550c383e",
+  "// rlwinm %r12, %r8, 0, 0, 31", ".long 0x550c003e",
+  "// rldicl %r12, %r8, 36, 0", ".long 0x790c2002",
+  "// rldicl %r12, %r8, 0, 0", ".long 0x790c0000",
+  "// rlwinm %r20, %r21, 22, 10, 31", ".long 0x56b4b2be",
+  "// rlwinm %r20, %r21, 0, 0, 31", ".long 0x56b4003e",
+  "// rldicl %r22, %r23, 57, 7", ".long 0x7af6c9c2",
+  "// rldicr %r24, %r25, 32, 31", ".long 0x7b3807c6",
+  "// lwz %r12, 60(%r4)", ".long 0x8184003c",
+  "// ld %r26, 32764(%r27)", ".long 0xeb5b7ffc",
+  "// stw %r12, 4(%r3)", ".long 0x91830004",
+  "// std %r28, 8(%r29)", ".long 0xfb9d0008",
+  "// lbz %r30, 0(%r4)", ".long 0x8bc40000",
+  "// stb %r30, 32767(%r3)", ".long 0x9bc37fff",
+  "// lwbrx %r7, %r4, %r8", ".long 0x7ce4442c",
+  "// ldbrx %r7, %r4, %r8", ".long 0x7ce44428",
+  "// stwbrx %r7, %r3, %r8", ".long 0x7ce3452c",
+  "// stdbrx %r7, %r3, %r0", ".long 0x7ce30528",
+  "// mflr %r0", ".long 0x7c0802a6",
+  "// mtlr %r0", ".long 0x7c0803a6",
+  "// cmplwi %cr0, %r5, 0", ".long 0x28050000",
   "bne %cr0, 24b",
   "b 23f",
   "22:",
   "23:",
-  "blr"
+  "// blr", ".long 0x4e800020"
 ]
 
 -- Every register name.
@@ -630,12 +630,13 @@ def sampleRV : Prog RISCV64.isa :=
     .alloc 4096, .free 4096].all (·.unencodable.isSome)
 #guard RISCV64.Instr.unencodable (.lla .a0 "VG_TABLE") == none
 #guard RISCV64.Instr.unencodable (.alloc 4064) == none
--- RISC-V's and AArch64's generated files, already machine code, are in
+-- RISC-V's, AArch64's and PPC64LE's generated files, already machine code, are in
 -- their crates' `src/`, which they compile; every other target's, the code
 -- as printed, in its `asm/`.
 #guard Rust.codeDir "riscv64" == "verified-garbage-asm-riscv64/src"
 #guard Rust.codeDir "aarch64" == "verified-garbage-asm-aarch64/src"
-#guard ["x86_64", "x86", "arm", "powerpc64le"].all fun t =>
+#guard Rust.codeDir "powerpc64le" == "verified-garbage-asm-powerpc64le/src"
+#guard ["x86_64", "x86", "arm"].all fun t =>
   Rust.codeDir t == s!"verified-garbage-asm-{t}/asm"
 -- Consecutive `.inst` lines are joined, 8 words a line at most; nothing
 -- else is.
@@ -644,6 +645,8 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
     .call "vg_f", .text ".inst 0x4"] ==
   "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
+#guard Rust.template "bl" [.text ".long 0x1", .text ".long 0x2", .text ".inst 0x3"] ==
+  "        r\".long 0x1,0x2\n.inst 0x3\",\n"
 #guard Rust.template "bl" [.text ".insn 4, 0x1", .text ".insn 4, 0x2"] ==
   "        r\".insn 4, 0x1\n.insn 4, 0x2\",\n"
 -- A comment line is a printer's `// ` line of one line: anything else is
@@ -771,7 +774,7 @@ def callSample : Prog X86_64.isa :=
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) == [.call "vg_f", .text "ret"]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 #guard PPC64LE.printer.function (.call "vg_f" (.block []) : Prog PPC64LE.isa) ==
-  [.call "vg_f", .text "blr"]
+  [.call "vg_f", .text "// blr", .text ".long 0x4e800020"]
 #guard Rust.line PPC64LE.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 
 #guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
@@ -833,7 +836,7 @@ instructions. -/
 -- 2. `asm` gives the text `Rust.line` writes, for reading.
 #guard text (PPC64LE.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog PPC64LE.isa)) == [
   "bcl 20, 31, 2f", "2:", "mflr %r4", "addis %r4, %r4, (<ppcha VG_TABLE>",
-  "addi %r4, %r4, (<ppclo VG_TABLE>", "blr"]
+  "addi %r4, %r4, (<ppclo VG_TABLE>", "// blr", ".long 0x4e800020"]
 #guard Rust.line PPC64LE.printer.call (.sym "addis %r4, %r4, (" .ppcHa "VG_TABLE") ==
   "        r\"addis %r4, %r4, ({VG_TABLE} - 2b)@ha\",\n"
 #guard Rust.line PPC64LE.printer.call (.sym "addi %r4, %r4, (" .ppcLo "VG_TABLE") ==
@@ -880,13 +883,13 @@ instructions. -/
     (.seq (.block [.mflr .r0])
       (.seq (.frame (.push .r0) (.call "vg_f" (.block [])) (.pop .r0)) (.block [.mtlr .r0])) :
       Prog PPC64LE.isa)) == [
-  "mflr %r0", "stdu %r1, -48(%r1)", "std %r0, 32(%r1)", "<call vg_f>", "ld %r0, 32(%r1)",
-  "addi %r1, %r1, 48", "mtlr %r0", "blr"]
+  "// mflr %r0", ".long 0x7c0802a6", "// stdu %r1, -48(%r1)", ".long 0xf821ffd1", "// std %r0, 32(%r1)", ".long 0xf8010020", "<call vg_f>", "// ld %r0, 32(%r1)", ".long 0xe8010020",
+  "// addi %r1, %r1, 48", ".long 0x38210030", "// mtlr %r0", ".long 0x7c0803a6", "// blr", ".long 0x4e800020"]
 
 -- A buffer on the stack (PPC64LE): a frame of 112 bytes, the buffer above its 32-byte header.
 #guard text (PPC64LE.printer.function
     (.frame (.alloc 112) (.block [.addSp .r6 32]) (.free 112) : Prog PPC64LE.isa)) == [
-  "stdu %r1, -112(%r1)", "addi %r6, %r1, 32", "addi %r1, %r1, 112", "blr"]
+  "// stdu %r1, -112(%r1)", ".long 0xf821ff91", "// addi %r6, %r1, 32", ".long 0x38c10020", "// addi %r1, %r1, 112", ".long 0x38210070", "// blr", ".long 0x4e800020"]
 
 #guard Rust.line Arm.printer.call (.text "push {r4, lr}") == "        r\"push {{r4, lr}}\",\n"
 

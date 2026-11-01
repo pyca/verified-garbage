@@ -16,15 +16,69 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r".octa 0xfa660088fa46008038c10020f821f5e1,0xfae600a8fac600a0faa60098fa860090,0xfb6600c8fb4600c0fb2600b8fb0600b0,0xfbe600e8fbc600e0fba600d8fb8600d0
-.octa 0x7cbd2b787cdf3378f80600f07c0802a6
-.byte 130,240,156,120,6,0,156,59,0,2,223,56",
-        r"bl {vg_aes_expand_key_scratch}",
-        r".octa 0xf81f0060f81d00f8f81d00f038000000,0x38bf00607f84e3787fa3eb78f81f0068
-.byte 240,0,221,56,1,0,224,56,0,2,31,57",
-        r"bl {vg_aes_ctr32}",
-        r".octa 0xea4c00807c0803a6e80c00f07fecfb78,0xeacc00a0eaac0098ea8c0090ea6c0088,0xeb4c00c0eb2c00b8eb0c00b0eaec00a8,0xebcc00e0ebac00d8eb8c00d0eb6c00c8
-.byte 232,0,236,235,32,10,33,56,32,0,128,78",
+        // stdu %r1, -2592(%r1)
+        // addi %r6, %r1, 32
+        // std %r18, 128(%r6)
+        // std %r19, 136(%r6)
+        // std %r20, 144(%r6)
+        // std %r21, 152(%r6)
+        // std %r22, 160(%r6)
+        // std %r23, 168(%r6)
+        // std %r24, 176(%r6)
+        // std %r25, 184(%r6)
+        // std %r26, 192(%r6)
+        // std %r27, 200(%r6)
+        // std %r28, 208(%r6)
+        // std %r29, 216(%r6)
+        // std %r30, 224(%r6)
+        // std %r31, 232(%r6)
+        // mflr %r0
+        // std %r0, 240(%r6)
+        // or %r31, %r6, %r6
+        // or %r29, %r5, %r5
+        // rldicl %r28, %r4, 62, 2
+        // addi %r28, %r28, 6
+        // addi %r6, %r31, 512
+        r".long 0xf821f5e1,0x38c10020,0xfa460080,0xfa660088,0xfa860090,0xfaa60098,0xfac600a0,0xfae600a8
+.long 0xfb0600b0,0xfb2600b8,0xfb4600c0,0xfb6600c8,0xfb8600d0,0xfba600d8,0xfbc600e0,0xfbe600e8
+.long 0x7c0802a6,0xf80600f0,0x7cdf3378,0x7cbd2b78,0x789cf082,0x3b9c0006,0x38df0200
+bl {vg_aes_expand_key_scratch}",
+        // li %r0, 0
+        // std %r0, 240(%r29)
+        // std %r0, 248(%r29)
+        // std %r0, 96(%r31)
+        // std %r0, 104(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r5, %r31, 96
+        // addi %r6, %r29, 240
+        // li %r7, 1
+        // addi %r8, %r31, 512
+        r".long 0x38000000,0xf81d00f0,0xf81d00f8,0xf81f0060,0xf81f0068,0x7fa3eb78,0x7f84e378,0x38bf0060
+.long 0x38dd00f0,0x38e00001,0x391f0200
+bl {vg_aes_ctr32}",
+        // or %r12, %r31, %r31
+        // ld %r0, 240(%r12)
+        // mtlr %r0
+        // ld %r18, 128(%r12)
+        // ld %r19, 136(%r12)
+        // ld %r20, 144(%r12)
+        // ld %r21, 152(%r12)
+        // ld %r22, 160(%r12)
+        // ld %r23, 168(%r12)
+        // ld %r24, 176(%r12)
+        // ld %r25, 184(%r12)
+        // ld %r26, 192(%r12)
+        // ld %r27, 200(%r12)
+        // ld %r28, 208(%r12)
+        // ld %r29, 216(%r12)
+        // ld %r30, 224(%r12)
+        // ld %r31, 232(%r12)
+        // addi %r1, %r1, 2592
+        // blr
+        r".long 0x7fecfb78,0xe80c00f0,0x7c0803a6,0xea4c0080,0xea6c0088,0xea8c0090,0xeaac0098,0xeacc00a0
+.long 0xeaec00a8,0xeb0c00b0,0xeb2c00b8,0xeb4c00c0,0xeb6c00c8,0xeb8c00d0,0xebac00d8,0xebcc00e0
+.long 0xebec00e8,0x38210a20,0x4e800020",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -48,62 +102,805 @@ pub unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *m
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        r".octa 0xf80c0060e80c0ae039810000f821f581,0xf80c0070380c0078f80c0068e80c0ae8,0xfa6c0088fa4c0080e98c007039810000,0xfaec00a8facc00a0faac0098fa8c0090
-.octa 0xfb6c00c8fb4c00c0fb2c00b8fb0c00b0,0xfbec00e8fbcc00e0fbac00d8fb8c00d0,0x7c7d1b787d9f6378f80c00f07c0802a6,0x7cd933787cb82b783bdf00107c9c2378
-.octa 0x7d3b4b787d1643787cf53b787cd23378,0xea6c0068ea8c0060398100007d575378,0x7c9d0428380000f87c7d0428380000f0,0x38c000877ca5305038c0000078650fe0
-.octa 0x7c63337878860fe078630fa47ca53038,0x7c7f0528380000407c842a7878840fa4,0x7c7f0428380000407c9f052838000048,0x38c0000078650fe07c9f042838000048
-.octa 0x78630fa47ca5303838c000877ca53050,0x7c842a7878840fa47c63337878860fe0,0x7c9f0528380000587c7f052838000050,0x38000000f81f0028f81f002038000000
-.octa 0x7c992050389f007ff81f0078f81f0070,0x7f03c378388400019804000038000001,0x3863000198040000880300007f25cb78,0x4082ffe82825000038a5ffff38840001
-.octa 0x889f0070786326e47e6300383800000f,0x3800003f889f007f989f00707c841b78,0x7c840038380000c0f87f01207c830038,0x38ff02007f84e3787fa3eb78989f007f
-.byte 112,0,191,56,1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0x7c9f0428380000787c7f042838000070,0x7ca51a787ca5437878884620786545e4,0x390000007cc7003838000001e8df0120,0x7d084b7878890fe078680fa47ce74050
-.octa 0x78880fa47c6342787d0838387d081a78,0x7d0838387d0822787d084b7878a90fe0,0x7d0838387d082a7878a80fa47c844278,0x7ce700383800000178c7f8427ca54278
-.octa 0x788917a0786817647ce7405039000000,0x7c6342787d0838387d081a787d084b78,0x7d0822787d084b7878a917a078881764,0x7d082a7878a817647c8442787d083838
-.octa 0x3800000178c7f0827ca542787d083838,0x786826e47ce74050390000007ce70038,0x7d0838387d081a787d084b7878892720,0x7d084b7878a92720788826e47c634278
-.octa 0x78a826e47c8442787d0838387d082278,0x78c7e8c27ca542787d0838387d082a78,0x7ce74050390000007ce7003838000001,0x7d081a787d084b7878894620786845e4
-.octa 0x78a94620788845e47c6342787d083838,0x7c8442787d0838387d0822787d084b78,0x7ca542787d0838387d082a7878a845e4,0x390000007ce700383800000178c7e102
-.octa 0x7d084b7878898420786883e47ce74050,0x788883e47c6342787d0838387d081a78,0x7d0838387d0822787d084b7878a98420,0x7d0838387d082a7878a883e47c844278
-.octa 0x7ce700383800000178c7d9427ca54278,0x78890022786807c67ce7405039000000,0x7c6342787d0838387d081a787d084b78,0x7d0822787d084b7878a90022788807c6
-.octa 0x7d082a7878a807c67c8442787d083838,0x7c7f0528380000107ca542787d083838,0x7c7f0528380001407c9f052838000018,0xf81f0030380000007c9f052838000148
-.octa 0xf81f0118f81f011038000000f81f0038,0x3b400001f87f01307ac3e1027eb8ab78,0x7864e8c2e87f01304182017028230000,0x480000083b2000084182000c28240000
-.octa 0x7c791850e87f0130fb3f01287c791b78,0xe89f0058e87f0050397f0180f87f0130,0x380000017f4cd378f89f0068f87f0060,0x4800006041820008282500007d850038
-.octa 0x7c9f0428380000687c7f042838000060,0x38c000877ca5305038c0000078650fe0,0x7c63337878860fe078630fa47ca53038,0x7c7f0528380000607c842a7878840fa4
-.octa 0x38000001798cf8427c9f052838000068,0xe87f01104182ffa8282500007d850038,0xe87f0118f87f01107c632278e89f0060,0xe8780000f87f01187c632278e89f0068
-.octa 0xe8780008f86b00007c632278e89f0110,0x396b0010f86b00087c632278e89f0118,0x283900003b39ffff3b5a00013b180010,0x38ff02007f84e3787fa3eb784082ff28
-.byte 128,1,191,56,40,1,223,232",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xe88b0000e87f0030eb3f0128397f0180,0xe88b0008e87f0038f87f00307c632278,0x3b39ffff396b0010f87f00387c632278,0x28230000e87f01304082ffd428390000
-.octa 0x7ed900383800000f480000044082fe9c,0xe89d00f0e87f0110418200bc28390000,0xe89d00f8e87f0118f87f01107c632278,0xf81f018038000000f87f01187c632278
-.octa 0x7f25cb787f03c378389f0180f81f0188,0x38840001386300019804000088030000,0x380000804082ffe82825000038a5ffff,0x7c632278e89f0110e87f018098040000
-.octa 0x7c632278e89f0118e87f0188f87f0180,0x38ff02007f84e3787fa3eb78f87f0188
-.byte 128,1,191,56,1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xf87f00307c632278e89f0180e87f0030,0xf87f00387c632278e89f0188e87f0038,0x41820218282300007ae3e10248000004,0xe87f00503b4000017af9e1027f78db78
-.octa 0x7f4cd378f89f0068f87f0060e89f0058,0x41820008282500007d85003838000001,0x380000687c7f04283800006048000060,0x7ca5305038c0000078650fe07c9f0428
-.octa 0x78860fe078630fa47ca5303838c00087,0x380000607c842a7878840fa47c633378,0x798cf8427c9f0528380000687c7f0528,0x4182ffa8282500007d85003838000001
-.octa 0xf87f00107c632278e89f0060e87f0010,0xf87f00187c632278e89f0068e87f0018,0xf87f00207c632278e8980000e87f0020,0xf87f00287c632278e8980008e87f0028
-.octa 0xf87800007c632278e89f0010e8780000,0xf87800087c632278e89f0018e8780008,0x283900003b39ffff3b5a00013b180010,0x38ff02007f84e3787fa3eb784082ff0c
-.byte 120,219,101,127,2,225,230,122",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xf89f0018f87f0010e89f0148e87f0140,0xe87f00503b4000017af9e1027f78db78,0x7f4cd378f89f0068f87f0060e89f0058,0x41820008282500007d85003838000001
-.octa 0x380000687c7f04283800006048000060,0x7ca5305038c0000078650fe07c9f0428,0x78860fe078630fa47ca5303838c00087,0x380000607c842a7878840fa47c633378
-.octa 0x798cf8427c9f0528380000687c7f0528,0x4182ffa8282500007d85003838000001,0xf87f00107c632278e89f0060e87f0010,0xf87f00187c632278e89f0068e87f0018
-.octa 0xf87800007c632278e89f0010e8780000,0xf87800087c632278e89f0018e8780008,0x283900003b39ffff3b5a00013b180010,0x7ef900383800000f480000044082ff2c
-.octa 0x418200dc283900007f18da147f19b850,0xf87f00107c632278e89d00f0e87f0010,0xf87f00187c632278e89d00f8e87f0018,0xf89f0078f87f0070e89f0018e87f0010
-.octa 0x38bf007038ff02007f84e3787fa3eb78
-.byte 1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0x389f0100f81f0108f81f010038000000,0x98040000880300007f25cb787f03c378,0x2825000038a5ffff3884000138630001,0xe87f002098040000380000804082ffe8
-.octa 0xe87f0028f87f00207c632278e89f0100,0x387f0070f87f00287c632278e89f0108,0x88c30000880400007f25cb787f04c378,0x3884000138630001980400007c003278
-.octa 0x480000044082ffe02825000038a5ffff,0xf89f0078f87f0070e89f0028e87f0020,0xf87f00707c632278e89f0010e87f0070,0xf87f00787c632278e89f0018e87f0078
-.octa 0xf87f00707c632278e89f0040e87f0070,0xf87f00787c632278e89f0048e87f0078,0x38bf007038ff02007f84e3787fa3eb78
-.byte 1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xf89f0008f87f0000e89f0078e87f0070,0xf87f00007c632278e89f0030e87f0000,0xf87f00087c632278e89f0038e87f0008,0x880300007e659b787e84a3787fe3fb78
-.octa 0x38a5ffff388400013863000198040000,0xe80c00f07fecfb784082ffe828250000,0xea8c0090ea6c0088ea4c00807c0803a6,0xeb0c00b0eaec00a8eacc00a0eaac0098
-.octa 0xeb8c00d0eb6c00c8eb4c00c0eb2c00b8,0x38210a80ebec00e8ebcc00e0ebac00d8
-.byte 32,0,128,78",
+        // stdu %r1, -2688(%r1)
+        // addi %r12, %r1, 0
+        // ld %r0, 2784(%r12)
+        // std %r0, 96(%r12)
+        // ld %r0, 2792(%r12)
+        // std %r0, 104(%r12)
+        // addi %r0, %r12, 120
+        // std %r0, 112(%r12)
+        // addi %r12, %r1, 0
+        // ld %r12, 112(%r12)
+        // std %r18, 128(%r12)
+        // std %r19, 136(%r12)
+        // std %r20, 144(%r12)
+        // std %r21, 152(%r12)
+        // std %r22, 160(%r12)
+        // std %r23, 168(%r12)
+        // std %r24, 176(%r12)
+        // std %r25, 184(%r12)
+        // std %r26, 192(%r12)
+        // std %r27, 200(%r12)
+        // std %r28, 208(%r12)
+        // std %r29, 216(%r12)
+        // std %r30, 224(%r12)
+        // std %r31, 232(%r12)
+        // mflr %r0
+        // std %r0, 240(%r12)
+        // or %r31, %r12, %r12
+        // or %r29, %r3, %r3
+        // or %r28, %r4, %r4
+        // addi %r30, %r31, 16
+        // or %r24, %r5, %r5
+        // or %r25, %r6, %r6
+        // or %r18, %r6, %r6
+        // or %r21, %r7, %r7
+        // or %r22, %r8, %r8
+        // or %r27, %r9, %r9
+        // or %r23, %r10, %r10
+        // addi %r12, %r1, 0
+        // ld %r20, 96(%r12)
+        // ld %r19, 104(%r12)
+        // li %r0, 240
+        // ldbrx %r3, %r29, %r0
+        // li %r0, 248
+        // ldbrx %r4, %r29, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 64
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 72
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 64
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 72
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 80
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 88
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 0
+        // std %r0, 32(%r31)
+        // std %r0, 40(%r31)
+        // li %r0, 0
+        // std %r0, 112(%r31)
+        // std %r0, 120(%r31)
+        // addi %r4, %r31, 127
+        // subf %r4, %r25, %r4
+        // li %r0, 1
+        // stb %r0, 0(%r4)
+        // addi %r4, %r4, 1
+        // or %r3, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0xf821f581,0x39810000,0xe80c0ae0,0xf80c0060,0xe80c0ae8,0xf80c0068,0x380c0078,0xf80c0070
+.long 0x39810000,0xe98c0070,0xfa4c0080,0xfa6c0088,0xfa8c0090,0xfaac0098,0xfacc00a0,0xfaec00a8
+.long 0xfb0c00b0,0xfb2c00b8,0xfb4c00c0,0xfb6c00c8,0xfb8c00d0,0xfbac00d8,0xfbcc00e0,0xfbec00e8
+.long 0x7c0802a6,0xf80c00f0,0x7d9f6378,0x7c7d1b78,0x7c9c2378,0x3bdf0010,0x7cb82b78,0x7cd93378
+.long 0x7cd23378,0x7cf53b78,0x7d164378,0x7d3b4b78,0x7d575378,0x39810000,0xea8c0060,0xea6c0068
+.long 0x380000f0,0x7c7d0428,0x380000f8,0x7c9d0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000040,0x7c7f0528
+.long 0x38000048,0x7c9f0528,0x38000040,0x7c7f0428,0x38000048,0x7c9f0428,0x78650fe0,0x38c00000
+.long 0x7ca53050,0x38c00087,0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78
+.long 0x38000050,0x7c7f0528,0x38000058,0x7c9f0528,0x38000000,0xf81f0020,0xf81f0028,0x38000000
+.long 0xf81f0070,0xf81f0078,0x389f007f,0x7c992050,0x38000001,0x98040000,0x38840001,0x7f03c378
+.long 0x7f25cb78
+20:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 20b",
+        // li %r0, 15
+        // and %r3, %r19, %r0
+        // rldicr %r3, %r3, 4, 59
+        // lbz %r4, 112(%r31)
+        // or %r4, %r4, %r3
+        // stb %r4, 112(%r31)
+        // lbz %r4, 127(%r31)
+        // li %r0, 63
+        // and %r3, %r4, %r0
+        // std %r3, 288(%r31)
+        // li %r0, 192
+        // and %r4, %r4, %r0
+        // stb %r4, 127(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 112
+        // li %r6, 1
+        r".long 0x3800000f,0x7e630038,0x786326e4,0x889f0070,0x7c841b78,0x989f0070,0x889f007f,0x3800003f
+.long 0x7c830038,0xf87f0120,0x380000c0,0x7c840038,0x989f007f,0x7fa3eb78,0x7f84e378,0x38ff0200
+.long 0x38bf0070,0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // li %r0, 112
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 120
+        // ldbrx %r4, %r31, %r0
+        // rldicr %r5, %r3, 8, 55
+        // rldicl %r8, %r4, 8, 56
+        // or %r5, %r5, %r8
+        // xor %r5, %r5, %r3
+        // ld %r6, 288(%r31)
+        // li %r0, 1
+        // and %r7, %r6, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 1, 62
+        // rldicl %r9, %r4, 1, 63
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 1, 62
+        // rldicl %r9, %r5, 1, 63
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 1, 62
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 63, 1
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 2, 61
+        // rldicl %r9, %r4, 2, 62
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 2, 61
+        // rldicl %r9, %r5, 2, 62
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 2, 61
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 62, 2
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 4, 59
+        // rldicl %r9, %r4, 4, 60
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 4, 59
+        // rldicl %r9, %r5, 4, 60
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 4, 59
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 61, 3
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 8, 55
+        // rldicl %r9, %r4, 8, 56
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 8, 55
+        // rldicl %r9, %r5, 8, 56
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 8, 55
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 60, 4
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 16, 47
+        // rldicl %r9, %r4, 16, 48
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 16, 47
+        // rldicl %r9, %r5, 16, 48
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 16, 47
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 59, 5
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 32, 31
+        // rldicl %r9, %r4, 32, 32
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 32, 31
+        // rldicl %r9, %r5, 32, 32
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 32, 31
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // li %r0, 16
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 24
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 320
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 328
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 0
+        // std %r0, 48(%r31)
+        // std %r0, 56(%r31)
+        // li %r0, 0
+        // std %r0, 272(%r31)
+        // std %r0, 280(%r31)
+        // or %r24, %r21, %r21
+        // rldicl %r3, %r22, 60, 4
+        // std %r3, 304(%r31)
+        // li %r26, 1
+        // cmpldi %cr0, %r3, 0
+        r".long 0x38000070,0x7c7f0428,0x38000078,0x7c9f0428,0x786545e4,0x78884620,0x7ca54378,0x7ca51a78
+.long 0xe8df0120,0x38000001,0x7cc70038,0x39000000,0x7ce74050,0x78680fa4,0x78890fe0,0x7d084b78
+.long 0x7d081a78,0x7d083838,0x7c634278,0x78880fa4,0x78a90fe0,0x7d084b78,0x7d082278,0x7d083838
+.long 0x7c844278,0x78a80fa4,0x7d082a78,0x7d083838,0x7ca54278,0x78c7f842,0x38000001,0x7ce70038
+.long 0x39000000,0x7ce74050,0x78681764,0x788917a0,0x7d084b78,0x7d081a78,0x7d083838,0x7c634278
+.long 0x78881764,0x78a917a0,0x7d084b78,0x7d082278,0x7d083838,0x7c844278,0x78a81764,0x7d082a78
+.long 0x7d083838,0x7ca54278,0x78c7f082,0x38000001,0x7ce70038,0x39000000,0x7ce74050,0x786826e4
+.long 0x78892720,0x7d084b78,0x7d081a78,0x7d083838,0x7c634278,0x788826e4,0x78a92720,0x7d084b78
+.long 0x7d082278,0x7d083838,0x7c844278,0x78a826e4,0x7d082a78,0x7d083838,0x7ca54278,0x78c7e8c2
+.long 0x38000001,0x7ce70038,0x39000000,0x7ce74050,0x786845e4,0x78894620,0x7d084b78,0x7d081a78
+.long 0x7d083838,0x7c634278,0x788845e4,0x78a94620,0x7d084b78,0x7d082278,0x7d083838,0x7c844278
+.long 0x78a845e4,0x7d082a78,0x7d083838,0x7ca54278,0x78c7e102,0x38000001,0x7ce70038,0x39000000
+.long 0x7ce74050,0x786883e4,0x78898420,0x7d084b78,0x7d081a78,0x7d083838,0x7c634278,0x788883e4
+.long 0x78a98420,0x7d084b78,0x7d082278,0x7d083838,0x7c844278,0x78a883e4,0x7d082a78,0x7d083838
+.long 0x7ca54278,0x78c7d942,0x38000001,0x7ce70038,0x39000000,0x7ce74050,0x786807c6,0x78890022
+.long 0x7d084b78,0x7d081a78,0x7d083838,0x7c634278,0x788807c6,0x78a90022,0x7d084b78,0x7d082278
+.long 0x7d083838,0x7c844278,0x78a807c6,0x7d082a78,0x7d083838,0x7ca54278,0x38000010,0x7c7f0528
+.long 0x38000018,0x7c9f0528,0x38000140,0x7c7f0528,0x38000148,0x7c9f0528,0x38000000,0xf81f0030
+.long 0xf81f0038,0x38000000,0xf81f0110,0xf81f0118,0x7eb8ab78,0x7ac3e102,0xf87f0130,0x3b400001
+.long 0x28230000
+beq %cr0, 21f
+23:",
+        // ld %r3, 304(%r31)
+        // rldicl %r4, %r3, 61, 3
+        // cmpldi %cr0, %r4, 0
+        r".long 0xe87f0130,0x7864e8c2,0x28240000
+beq %cr0, 24f",
+        // li %r25, 8
+        r".long 0x3b200008
+b 25f
+24:",
+        // or %r25, %r3, %r3
+        r".long 0x7c791b78
+25:",
+        // std %r25, 296(%r31)
+        // ld %r3, 304(%r31)
+        // subf %r3, %r25, %r3
+        // std %r3, 304(%r31)
+        // addi %r11, %r31, 384
+        r".long 0xfb3f0128,0xe87f0130,0x7c791850,0xf87f0130,0x397f0180
+26:",
+        // ld %r3, 80(%r31)
+        // ld %r4, 88(%r31)
+        // std %r3, 96(%r31)
+        // std %r4, 104(%r31)
+        // or %r12, %r26, %r26
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe87f0050,0xe89f0058,0xf87f0060,0xf89f0068,0x7f4cd378,0x38000001,0x7d850038,0x28250000
+beq %cr0, 27f
+b 28f
+27:
+29:",
+        // li %r0, 96
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 104
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 96
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 104
+        // stdbrx %r4, %r31, %r0
+        // rldicl %r12, %r12, 63, 1
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38000060,0x7c7f0428,0x38000068,0x7c9f0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000060,0x7c7f0528
+.long 0x38000068,0x7c9f0528,0x798cf842,0x38000001,0x7d850038,0x28250000
+beq %cr0, 29b
+28:",
+        // ld %r3, 272(%r31)
+        // ld %r4, 96(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 272(%r31)
+        // ld %r3, 280(%r31)
+        // ld %r4, 104(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 280(%r31)
+        // ld %r3, 0(%r24)
+        // ld %r4, 272(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r11)
+        // ld %r3, 8(%r24)
+        // ld %r4, 280(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r11)
+        // addi %r11, %r11, 16
+        // addi %r24, %r24, 16
+        // addi %r26, %r26, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0110,0xe89f0060,0x7c632278,0xf87f0110,0xe87f0118,0xe89f0068,0x7c632278,0xf87f0118
+.long 0xe8780000,0xe89f0110,0x7c632278,0xf86b0000,0xe8780008,0xe89f0118,0x7c632278,0xf86b0008
+.long 0x396b0010,0x3b180010,0x3b5a0001,0x3b39ffff,0x28390000
+bne %cr0, 26b",
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 384
+        // ld %r6, 296(%r31)
+        r".long 0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0180,0xe8df0128
+bl {vg_aes_encrypt_blocks}",
+        // addi %r11, %r31, 384
+        // ld %r25, 296(%r31)
+        r".long 0x397f0180,0xeb3f0128
+210:",
+        // ld %r3, 48(%r31)
+        // ld %r4, 0(%r11)
+        // xor %r3, %r3, %r4
+        // std %r3, 48(%r31)
+        // ld %r3, 56(%r31)
+        // ld %r4, 8(%r11)
+        // xor %r3, %r3, %r4
+        // std %r3, 56(%r31)
+        // addi %r11, %r11, 16
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0030,0xe88b0000,0x7c632278,0xf87f0030,0xe87f0038,0xe88b0008,0x7c632278,0xf87f0038
+.long 0x396b0010,0x3b39ffff,0x28390000
+bne %cr0, 210b",
+        // ld %r3, 304(%r31)
+        // cmpldi %cr0, %r3, 0
+        r".long 0xe87f0130,0x28230000
+bne %cr0, 23b
+b 22f
+21:
+22:",
+        // li %r0, 15
+        // and %r25, %r22, %r0
+        // cmpldi %cr0, %r25, 0
+        r".long 0x3800000f,0x7ed90038,0x28390000
+beq %cr0, 211f",
+        // ld %r3, 272(%r31)
+        // ld %r4, 240(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 272(%r31)
+        // ld %r3, 280(%r31)
+        // ld %r4, 248(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 280(%r31)
+        // li %r0, 0
+        // std %r0, 384(%r31)
+        // std %r0, 392(%r31)
+        // addi %r4, %r31, 384
+        // or %r3, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0xe87f0110,0xe89d00f0,0x7c632278,0xf87f0110,0xe87f0118,0xe89d00f8,0x7c632278,0xf87f0118
+.long 0x38000000,0xf81f0180,0xf81f0188,0x389f0180,0x7f03c378,0x7f25cb78
+213:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 213b",
+        // li %r0, 128
+        // stb %r0, 0(%r4)
+        // ld %r3, 384(%r31)
+        // ld %r4, 272(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 384(%r31)
+        // ld %r3, 392(%r31)
+        // ld %r4, 280(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 392(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 384
+        // li %r6, 1
+        r".long 0x38000080,0x98040000,0xe87f0180,0xe89f0110,0x7c632278,0xf87f0180,0xe87f0188,0xe89f0118
+.long 0x7c632278,0xf87f0188,0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0180,0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // ld %r3, 48(%r31)
+        // ld %r4, 384(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 48(%r31)
+        // ld %r3, 56(%r31)
+        // ld %r4, 392(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 56(%r31)
+        r".long 0xe87f0030,0xe89f0180,0x7c632278,0xf87f0030,0xe87f0038,0xe89f0188,0x7c632278,0xf87f0038
+b 212f
+211:
+212:",
+        // rldicl %r3, %r23, 60, 4
+        // cmpldi %cr0, %r3, 0
+        r".long 0x7ae3e102,0x28230000
+beq %cr0, 214f",
+        // or %r24, %r27, %r27
+        // rldicl %r25, %r23, 60, 4
+        // li %r26, 1
+        r".long 0x7f78db78,0x7af9e102,0x3b400001
+216:",
+        // ld %r3, 80(%r31)
+        // ld %r4, 88(%r31)
+        // std %r3, 96(%r31)
+        // std %r4, 104(%r31)
+        // or %r12, %r26, %r26
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe87f0050,0xe89f0058,0xf87f0060,0xf89f0068,0x7f4cd378,0x38000001,0x7d850038,0x28250000
+beq %cr0, 217f
+b 218f
+217:
+219:",
+        // li %r0, 96
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 104
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 96
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 104
+        // stdbrx %r4, %r31, %r0
+        // rldicl %r12, %r12, 63, 1
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38000060,0x7c7f0428,0x38000068,0x7c9f0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000060,0x7c7f0528
+.long 0x38000068,0x7c9f0528,0x798cf842,0x38000001,0x7d850038,0x28250000
+beq %cr0, 219b
+218:",
+        // ld %r3, 16(%r31)
+        // ld %r4, 96(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 16(%r31)
+        // ld %r3, 24(%r31)
+        // ld %r4, 104(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 24(%r31)
+        // ld %r3, 32(%r31)
+        // ld %r4, 0(%r24)
+        // xor %r3, %r3, %r4
+        // std %r3, 32(%r31)
+        // ld %r3, 40(%r31)
+        // ld %r4, 8(%r24)
+        // xor %r3, %r3, %r4
+        // std %r3, 40(%r31)
+        // ld %r3, 0(%r24)
+        // ld %r4, 16(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r24)
+        // ld %r3, 8(%r24)
+        // ld %r4, 24(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r24)
+        // addi %r24, %r24, 16
+        // addi %r26, %r26, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0010,0xe89f0060,0x7c632278,0xf87f0010,0xe87f0018,0xe89f0068,0x7c632278,0xf87f0018
+.long 0xe87f0020,0xe8980000,0x7c632278,0xf87f0020,0xe87f0028,0xe8980008,0x7c632278,0xf87f0028
+.long 0xe8780000,0xe89f0010,0x7c632278,0xf8780000,0xe8780008,0xe89f0018,0x7c632278,0xf8780008
+.long 0x3b180010,0x3b5a0001,0x3b39ffff,0x28390000
+bne %cr0, 216b",
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // or %r5, %r27, %r27
+        // rldicl %r6, %r23, 60, 4
+        r".long 0x7fa3eb78,0x7f84e378,0x38ff0200,0x7f65db78,0x7ae6e102
+bl {vg_aes_encrypt_blocks}",
+        // ld %r3, 320(%r31)
+        // ld %r4, 328(%r31)
+        // std %r3, 16(%r31)
+        // std %r4, 24(%r31)
+        // or %r24, %r27, %r27
+        // rldicl %r25, %r23, 60, 4
+        // li %r26, 1
+        r".long 0xe87f0140,0xe89f0148,0xf87f0010,0xf89f0018,0x7f78db78,0x7af9e102,0x3b400001
+220:",
+        // ld %r3, 80(%r31)
+        // ld %r4, 88(%r31)
+        // std %r3, 96(%r31)
+        // std %r4, 104(%r31)
+        // or %r12, %r26, %r26
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe87f0050,0xe89f0058,0xf87f0060,0xf89f0068,0x7f4cd378,0x38000001,0x7d850038,0x28250000
+beq %cr0, 221f
+b 222f
+221:
+223:",
+        // li %r0, 96
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 104
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 96
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 104
+        // stdbrx %r4, %r31, %r0
+        // rldicl %r12, %r12, 63, 1
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38000060,0x7c7f0428,0x38000068,0x7c9f0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000060,0x7c7f0528
+.long 0x38000068,0x7c9f0528,0x798cf842,0x38000001,0x7d850038,0x28250000
+beq %cr0, 223b
+222:",
+        // ld %r3, 16(%r31)
+        // ld %r4, 96(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 16(%r31)
+        // ld %r3, 24(%r31)
+        // ld %r4, 104(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 24(%r31)
+        // ld %r3, 0(%r24)
+        // ld %r4, 16(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r24)
+        // ld %r3, 8(%r24)
+        // ld %r4, 24(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r24)
+        // addi %r24, %r24, 16
+        // addi %r26, %r26, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0010,0xe89f0060,0x7c632278,0xf87f0010,0xe87f0018,0xe89f0068,0x7c632278,0xf87f0018
+.long 0xe8780000,0xe89f0010,0x7c632278,0xf8780000,0xe8780008,0xe89f0018,0x7c632278,0xf8780008
+.long 0x3b180010,0x3b5a0001,0x3b39ffff,0x28390000
+bne %cr0, 220b
+b 215f
+214:
+215:",
+        // li %r0, 15
+        // and %r25, %r23, %r0
+        // subf %r24, %r25, %r23
+        // add %r24, %r24, %r27
+        // cmpldi %cr0, %r25, 0
+        r".long 0x3800000f,0x7ef90038,0x7f19b850,0x7f18da14,0x28390000
+beq %cr0, 224f",
+        // ld %r3, 16(%r31)
+        // ld %r4, 240(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 16(%r31)
+        // ld %r3, 24(%r31)
+        // ld %r4, 248(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 24(%r31)
+        // ld %r3, 16(%r31)
+        // ld %r4, 24(%r31)
+        // std %r3, 112(%r31)
+        // std %r4, 120(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 112
+        // li %r6, 1
+        r".long 0xe87f0010,0xe89d00f0,0x7c632278,0xf87f0010,0xe87f0018,0xe89d00f8,0x7c632278,0xf87f0018
+.long 0xe87f0010,0xe89f0018,0xf87f0070,0xf89f0078,0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0070
+.long 0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // li %r0, 0
+        // std %r0, 256(%r31)
+        // std %r0, 264(%r31)
+        // addi %r4, %r31, 256
+        // or %r3, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0x38000000,0xf81f0100,0xf81f0108,0x389f0100,0x7f03c378,0x7f25cb78
+226:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 226b",
+        // li %r0, 128
+        // stb %r0, 0(%r4)
+        // ld %r3, 32(%r31)
+        // ld %r4, 256(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 32(%r31)
+        // ld %r3, 40(%r31)
+        // ld %r4, 264(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 40(%r31)
+        // addi %r3, %r31, 112
+        // or %r4, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0x38000080,0x98040000,0xe87f0020,0xe89f0100,0x7c632278,0xf87f0020,0xe87f0028,0xe89f0108
+.long 0x7c632278,0xf87f0028,0x387f0070,0x7f04c378,0x7f25cb78
+227:",
+        // lbz %r0, 0(%r4)
+        // lbz %r6, 0(%r3)
+        // xor %r0, %r0, %r6
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88040000,0x88c30000,0x7c003278,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 227b
+b 225f
+224:
+225:",
+        // ld %r3, 32(%r31)
+        // ld %r4, 40(%r31)
+        // std %r3, 112(%r31)
+        // std %r4, 120(%r31)
+        // ld %r3, 112(%r31)
+        // ld %r4, 16(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 112(%r31)
+        // ld %r3, 120(%r31)
+        // ld %r4, 24(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 120(%r31)
+        // ld %r3, 112(%r31)
+        // ld %r4, 64(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 112(%r31)
+        // ld %r3, 120(%r31)
+        // ld %r4, 72(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 120(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 112
+        // li %r6, 1
+        r".long 0xe87f0020,0xe89f0028,0xf87f0070,0xf89f0078,0xe87f0070,0xe89f0010,0x7c632278,0xf87f0070
+.long 0xe87f0078,0xe89f0018,0x7c632278,0xf87f0078,0xe87f0070,0xe89f0040,0x7c632278,0xf87f0070
+.long 0xe87f0078,0xe89f0048,0x7c632278,0xf87f0078,0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0070
+.long 0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // ld %r3, 112(%r31)
+        // ld %r4, 120(%r31)
+        // std %r3, 0(%r31)
+        // std %r4, 8(%r31)
+        // ld %r3, 0(%r31)
+        // ld %r4, 48(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r31)
+        // ld %r3, 8(%r31)
+        // ld %r4, 56(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r31)
+        // or %r3, %r31, %r31
+        // or %r4, %r20, %r20
+        // or %r5, %r19, %r19
+        r".long 0xe87f0070,0xe89f0078,0xf87f0000,0xf89f0008,0xe87f0000,0xe89f0030,0x7c632278,0xf87f0000
+.long 0xe87f0008,0xe89f0038,0x7c632278,0xf87f0008,0x7fe3fb78,0x7e84a378,0x7e659b78
+228:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 228b",
+        // or %r12, %r31, %r31
+        // ld %r0, 240(%r12)
+        // mtlr %r0
+        // ld %r18, 128(%r12)
+        // ld %r19, 136(%r12)
+        // ld %r20, 144(%r12)
+        // ld %r21, 152(%r12)
+        // ld %r22, 160(%r12)
+        // ld %r23, 168(%r12)
+        // ld %r24, 176(%r12)
+        // ld %r25, 184(%r12)
+        // ld %r26, 192(%r12)
+        // ld %r27, 200(%r12)
+        // ld %r28, 208(%r12)
+        // ld %r29, 216(%r12)
+        // ld %r30, 224(%r12)
+        // ld %r31, 232(%r12)
+        // addi %r1, %r1, 2688
+        // blr
+        r".long 0x7fecfb78,0xe80c00f0,0x7c0803a6,0xea4c0080,0xea6c0088,0xea8c0090,0xeaac0098,0xeacc00a0
+.long 0xeaec00a8,0xeb0c00b0,0xeb2c00b8,0xeb4c00c0,0xeb6c00c8,0xeb8c00d0,0xebac00d8,0xebcc00e0
+.long 0xebec00e8,0x38210a80,0x4e800020",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -126,64 +923,860 @@ pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, n
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0xf80c0060e80c0ae039810000f821f581,0xf80c0070380c0078f80c0068e80c0ae8,0xfa6c0088fa4c0080e98c007039810000,0xfaec00a8facc00a0faac0098fa8c0090
-.octa 0xfb6c00c8fb4c00c0fb2c00b8fb0c00b0,0xfbec00e8fbcc00e0fbac00d8fb8c00d0,0x7c7d1b787d9f6378f80c00f07c0802a6,0x7cd933787cb82b783bdf00107c9c2378
-.octa 0x7d3b4b787d1643787cf53b787cd23378,0xea6c0068ea8c0060398100007d575378,0x7c9d0428380000f87c7d0428380000f0,0x38c000877ca5305038c0000078650fe0
-.octa 0x7c63337878860fe078630fa47ca53038,0x7c7f0528380000407c842a7878840fa4,0x7c7f0428380000407c9f052838000048,0x38c0000078650fe07c9f042838000048
-.octa 0x78630fa47ca5303838c000877ca53050,0x7c842a7878840fa47c63337878860fe0,0x7c9f0528380000587c7f052838000050,0x38000000f81f0028f81f002038000000
-.octa 0x7c992050389f007ff81f0078f81f0070,0x7f03c378388400019804000038000001,0x3863000198040000880300007f25cb78,0x4082ffe82825000038a5ffff38840001
-.octa 0x889f0070786326e47e6300383800000f,0x3800003f889f007f989f00707c841b78,0x7c840038380000c0f87f01207c830038,0x38ff02007f84e3787fa3eb78989f007f
-.byte 112,0,191,56,1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0x7c9f0428380000787c7f042838000070,0x7ca51a787ca5437878884620786545e4,0x390000007cc7003838000001e8df0120,0x7d084b7878890fe078680fa47ce74050
-.octa 0x78880fa47c6342787d0838387d081a78,0x7d0838387d0822787d084b7878a90fe0,0x7d0838387d082a7878a80fa47c844278,0x7ce700383800000178c7f8427ca54278
-.octa 0x788917a0786817647ce7405039000000,0x7c6342787d0838387d081a787d084b78,0x7d0822787d084b7878a917a078881764,0x7d082a7878a817647c8442787d083838
-.octa 0x3800000178c7f0827ca542787d083838,0x786826e47ce74050390000007ce70038,0x7d0838387d081a787d084b7878892720,0x7d084b7878a92720788826e47c634278
-.octa 0x78a826e47c8442787d0838387d082278,0x78c7e8c27ca542787d0838387d082a78,0x7ce74050390000007ce7003838000001,0x7d081a787d084b7878894620786845e4
-.octa 0x78a94620788845e47c6342787d083838,0x7c8442787d0838387d0822787d084b78,0x7ca542787d0838387d082a7878a845e4,0x390000007ce700383800000178c7e102
-.octa 0x7d084b7878898420786883e47ce74050,0x788883e47c6342787d0838387d081a78,0x7d0838387d0822787d084b7878a98420,0x7d0838387d082a7878a883e47c844278
-.octa 0x7ce700383800000178c7d9427ca54278,0x78890022786807c67ce7405039000000,0x7c6342787d0838387d081a787d084b78,0x7d0822787d084b7878a90022788807c6
-.octa 0x7d082a7878a807c67c8442787d083838,0x7c7f0528380000107ca542787d083838,0x7c7f0528380001407c9f052838000018,0xf81f0030380000007c9f052838000148
-.octa 0xf81f0118f81f011038000000f81f0038,0x3b400001f87f01307ac3e1027eb8ab78,0x7864e8c2e87f01304182017028230000,0x480000083b2000084182000c28240000
-.octa 0x7c791850e87f0130fb3f01287c791b78,0xe89f0058e87f0050397f0180f87f0130,0x380000017f4cd378f89f0068f87f0060,0x4800006041820008282500007d850038
-.octa 0x7c9f0428380000687c7f042838000060,0x38c000877ca5305038c0000078650fe0,0x7c63337878860fe078630fa47ca53038,0x7c7f0528380000607c842a7878840fa4
-.octa 0x38000001798cf8427c9f052838000068,0xe87f01104182ffa8282500007d850038,0xe87f0118f87f01107c632278e89f0060,0xe8780000f87f01187c632278e89f0068
-.octa 0xe8780008f86b00007c632278e89f0110,0x396b0010f86b00087c632278e89f0118,0x283900003b39ffff3b5a00013b180010,0x38ff02007f84e3787fa3eb784082ff28
-.byte 128,1,191,56,40,1,223,232",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xe88b0000e87f0030eb3f0128397f0180,0xe88b0008e87f0038f87f00307c632278,0x3b39ffff396b0010f87f00387c632278,0x28230000e87f01304082ffd428390000
-.octa 0x7ed900383800000f480000044082fe9c,0xe89d00f0e87f0110418200bc28390000,0xe89d00f8e87f0118f87f01107c632278,0xf81f018038000000f87f01187c632278
-.octa 0x7f25cb787f03c378389f0180f81f0188,0x38840001386300019804000088030000,0x380000804082ffe82825000038a5ffff,0x7c632278e89f0110e87f018098040000
-.octa 0x7c632278e89f0118e87f0188f87f0180,0x38ff02007f84e3787fa3eb78f87f0188
-.byte 128,1,191,56,1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xf87f00307c632278e89f0180e87f0030,0xf87f00387c632278e89f0188e87f0038,0x41820218282300007ae3e10248000004,0xe87f00503b4000017af9e1027f78db78
-.octa 0x7f4cd378f89f0068f87f0060e89f0058,0x41820008282500007d85003838000001,0x380000687c7f04283800006048000060,0x7ca5305038c0000078650fe07c9f0428
-.octa 0x78860fe078630fa47ca5303838c00087,0x380000607c842a7878840fa47c633378,0x798cf8427c9f0528380000687c7f0528,0x4182ffa8282500007d85003838000001
-.octa 0xf87f00107c632278e89f0060e87f0010,0xf87f00187c632278e89f0068e87f0018,0xf87800007c632278e89f0010e8780000,0xf87800087c632278e89f0018e8780008
-.octa 0x283900003b39ffff3b5a00013b180010,0x38ff02007f84e3787fa3eb784082ff2c
-.byte 120,219,101,127,2,225,230,122",
-        r"bl {vg_aes_decrypt_blocks}",
-        r".octa 0xf89f0018f87f0010e89f0148e87f0140,0xe87f00503b4000017af9e1027f78db78,0x7f4cd378f89f0068f87f0060e89f0058,0x41820008282500007d85003838000001
-.octa 0x380000687c7f04283800006048000060,0x7ca5305038c0000078650fe07c9f0428,0x78860fe078630fa47ca5303838c00087,0x380000607c842a7878840fa47c633378
-.octa 0x798cf8427c9f0528380000687c7f0528,0x4182ffa8282500007d85003838000001,0xf87f00107c632278e89f0060e87f0010,0xf87f00187c632278e89f0068e87f0018
-.octa 0xf87800007c632278e89f0010e8780000,0xf87800087c632278e89f0018e8780008,0xf87f00207c632278e8980000e87f0020,0xf87f00287c632278e8980008e87f0028
-.octa 0x283900003b39ffff3b5a00013b180010,0x7ef900383800000f480000044082ff0c,0x418200dc283900007f18da147f19b850,0xf87f00107c632278e89d00f0e87f0010
-.octa 0xf87f00187c632278e89d00f8e87f0018,0xf89f0078f87f0070e89f0018e87f0010,0x38bf007038ff02007f84e3787fa3eb78
-.byte 1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0x880400007f25cb787f04c378387f0070,0x38630001980400007c00327888c30000,0x4082ffe02825000038a5ffff38840001,0x389f0100f81f0108f81f010038000000
-.octa 0x98040000880300007f25cb787f03c378,0x2825000038a5ffff3884000138630001,0xe87f002098040000380000804082ffe8,0xe87f0028f87f00207c632278e89f0100
-.octa 0x48000004f87f00287c632278e89f0108,0xf89f0078f87f0070e89f0028e87f0020,0xf87f00707c632278e89f0010e87f0070,0xf87f00787c632278e89f0018e87f0078
-.octa 0xf87f00707c632278e89f0040e87f0070,0xf87f00787c632278e89f0048e87f0078,0x38bf007038ff02007f84e3787fa3eb78
-.byte 1,0,192,56",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xf89f0108f87f0100e89f0078e87f0070,0xf87f01007c632278e89f0030e87f0100,0xf87f01087c632278e89f0038e87f0108,0x7e83a378f81f0008f81f000038000000
-.octa 0x98040000880300007e659b787fe4fb78,0x2825000038a5ffff3884000138630001,0xf81f0158f81f0150380000004082ffe8,0x880300007e659b78389f0150387f0100
-.octa 0x38a5ffff388400013863000198040000,0xe89f0150e87f00004082ffe828250000,0x7c842a78e8bf0158e89f00087c632278,0x7c6323787c832050388000007c632378
-.octa 0x7f78db787c6320503880000178630fe0,0x283900007ce32050388000007ef9bb78,0x989800007c8438388898000041820024,0x4082ffe8283900003b39ffff3b180001
-.octa 0x7c0803a6e80c00f07fecfb7848000004,0xeaac0098ea8c0090ea6c0088ea4c0080,0xeb2c00b8eb0c00b0eaec00a8eacc00a0,0xebac00d8eb8c00d0eb6c00c8eb4c00c0
-.octa 0x4e80002038210a80ebec00e8ebcc00e0",
+        // stdu %r1, -2688(%r1)
+        // addi %r12, %r1, 0
+        // ld %r0, 2784(%r12)
+        // std %r0, 96(%r12)
+        // ld %r0, 2792(%r12)
+        // std %r0, 104(%r12)
+        // addi %r0, %r12, 120
+        // std %r0, 112(%r12)
+        // addi %r12, %r1, 0
+        // ld %r12, 112(%r12)
+        // std %r18, 128(%r12)
+        // std %r19, 136(%r12)
+        // std %r20, 144(%r12)
+        // std %r21, 152(%r12)
+        // std %r22, 160(%r12)
+        // std %r23, 168(%r12)
+        // std %r24, 176(%r12)
+        // std %r25, 184(%r12)
+        // std %r26, 192(%r12)
+        // std %r27, 200(%r12)
+        // std %r28, 208(%r12)
+        // std %r29, 216(%r12)
+        // std %r30, 224(%r12)
+        // std %r31, 232(%r12)
+        // mflr %r0
+        // std %r0, 240(%r12)
+        // or %r31, %r12, %r12
+        // or %r29, %r3, %r3
+        // or %r28, %r4, %r4
+        // addi %r30, %r31, 16
+        // or %r24, %r5, %r5
+        // or %r25, %r6, %r6
+        // or %r18, %r6, %r6
+        // or %r21, %r7, %r7
+        // or %r22, %r8, %r8
+        // or %r27, %r9, %r9
+        // or %r23, %r10, %r10
+        // addi %r12, %r1, 0
+        // ld %r20, 96(%r12)
+        // ld %r19, 104(%r12)
+        // li %r0, 240
+        // ldbrx %r3, %r29, %r0
+        // li %r0, 248
+        // ldbrx %r4, %r29, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 64
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 72
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 64
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 72
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 80
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 88
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 0
+        // std %r0, 32(%r31)
+        // std %r0, 40(%r31)
+        // li %r0, 0
+        // std %r0, 112(%r31)
+        // std %r0, 120(%r31)
+        // addi %r4, %r31, 127
+        // subf %r4, %r25, %r4
+        // li %r0, 1
+        // stb %r0, 0(%r4)
+        // addi %r4, %r4, 1
+        // or %r3, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0xf821f581,0x39810000,0xe80c0ae0,0xf80c0060,0xe80c0ae8,0xf80c0068,0x380c0078,0xf80c0070
+.long 0x39810000,0xe98c0070,0xfa4c0080,0xfa6c0088,0xfa8c0090,0xfaac0098,0xfacc00a0,0xfaec00a8
+.long 0xfb0c00b0,0xfb2c00b8,0xfb4c00c0,0xfb6c00c8,0xfb8c00d0,0xfbac00d8,0xfbcc00e0,0xfbec00e8
+.long 0x7c0802a6,0xf80c00f0,0x7d9f6378,0x7c7d1b78,0x7c9c2378,0x3bdf0010,0x7cb82b78,0x7cd93378
+.long 0x7cd23378,0x7cf53b78,0x7d164378,0x7d3b4b78,0x7d575378,0x39810000,0xea8c0060,0xea6c0068
+.long 0x380000f0,0x7c7d0428,0x380000f8,0x7c9d0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000040,0x7c7f0528
+.long 0x38000048,0x7c9f0528,0x38000040,0x7c7f0428,0x38000048,0x7c9f0428,0x78650fe0,0x38c00000
+.long 0x7ca53050,0x38c00087,0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78
+.long 0x38000050,0x7c7f0528,0x38000058,0x7c9f0528,0x38000000,0xf81f0020,0xf81f0028,0x38000000
+.long 0xf81f0070,0xf81f0078,0x389f007f,0x7c992050,0x38000001,0x98040000,0x38840001,0x7f03c378
+.long 0x7f25cb78
+20:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 20b",
+        // li %r0, 15
+        // and %r3, %r19, %r0
+        // rldicr %r3, %r3, 4, 59
+        // lbz %r4, 112(%r31)
+        // or %r4, %r4, %r3
+        // stb %r4, 112(%r31)
+        // lbz %r4, 127(%r31)
+        // li %r0, 63
+        // and %r3, %r4, %r0
+        // std %r3, 288(%r31)
+        // li %r0, 192
+        // and %r4, %r4, %r0
+        // stb %r4, 127(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 112
+        // li %r6, 1
+        r".long 0x3800000f,0x7e630038,0x786326e4,0x889f0070,0x7c841b78,0x989f0070,0x889f007f,0x3800003f
+.long 0x7c830038,0xf87f0120,0x380000c0,0x7c840038,0x989f007f,0x7fa3eb78,0x7f84e378,0x38ff0200
+.long 0x38bf0070,0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // li %r0, 112
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 120
+        // ldbrx %r4, %r31, %r0
+        // rldicr %r5, %r3, 8, 55
+        // rldicl %r8, %r4, 8, 56
+        // or %r5, %r5, %r8
+        // xor %r5, %r5, %r3
+        // ld %r6, 288(%r31)
+        // li %r0, 1
+        // and %r7, %r6, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 1, 62
+        // rldicl %r9, %r4, 1, 63
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 1, 62
+        // rldicl %r9, %r5, 1, 63
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 1, 62
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 63, 1
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 2, 61
+        // rldicl %r9, %r4, 2, 62
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 2, 61
+        // rldicl %r9, %r5, 2, 62
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 2, 61
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 62, 2
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 4, 59
+        // rldicl %r9, %r4, 4, 60
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 4, 59
+        // rldicl %r9, %r5, 4, 60
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 4, 59
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 61, 3
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 8, 55
+        // rldicl %r9, %r4, 8, 56
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 8, 55
+        // rldicl %r9, %r5, 8, 56
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 8, 55
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 60, 4
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 16, 47
+        // rldicl %r9, %r4, 16, 48
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 16, 47
+        // rldicl %r9, %r5, 16, 48
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 16, 47
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // rldicl %r7, %r6, 59, 5
+        // li %r0, 1
+        // and %r7, %r7, %r0
+        // li %r8, 0
+        // subf %r7, %r7, %r8
+        // rldicr %r8, %r3, 32, 31
+        // rldicl %r9, %r4, 32, 32
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r3
+        // and %r8, %r8, %r7
+        // xor %r3, %r3, %r8
+        // rldicr %r8, %r4, 32, 31
+        // rldicl %r9, %r5, 32, 32
+        // or %r8, %r8, %r9
+        // xor %r8, %r8, %r4
+        // and %r8, %r8, %r7
+        // xor %r4, %r4, %r8
+        // rldicr %r8, %r5, 32, 31
+        // xor %r8, %r8, %r5
+        // and %r8, %r8, %r7
+        // xor %r5, %r5, %r8
+        // li %r0, 16
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 24
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 320
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 328
+        // stdbrx %r4, %r31, %r0
+        // li %r0, 0
+        // std %r0, 48(%r31)
+        // std %r0, 56(%r31)
+        // li %r0, 0
+        // std %r0, 272(%r31)
+        // std %r0, 280(%r31)
+        // or %r24, %r21, %r21
+        // rldicl %r3, %r22, 60, 4
+        // std %r3, 304(%r31)
+        // li %r26, 1
+        // cmpldi %cr0, %r3, 0
+        r".long 0x38000070,0x7c7f0428,0x38000078,0x7c9f0428,0x786545e4,0x78884620,0x7ca54378,0x7ca51a78
+.long 0xe8df0120,0x38000001,0x7cc70038,0x39000000,0x7ce74050,0x78680fa4,0x78890fe0,0x7d084b78
+.long 0x7d081a78,0x7d083838,0x7c634278,0x78880fa4,0x78a90fe0,0x7d084b78,0x7d082278,0x7d083838
+.long 0x7c844278,0x78a80fa4,0x7d082a78,0x7d083838,0x7ca54278,0x78c7f842,0x38000001,0x7ce70038
+.long 0x39000000,0x7ce74050,0x78681764,0x788917a0,0x7d084b78,0x7d081a78,0x7d083838,0x7c634278
+.long 0x78881764,0x78a917a0,0x7d084b78,0x7d082278,0x7d083838,0x7c844278,0x78a81764,0x7d082a78
+.long 0x7d083838,0x7ca54278,0x78c7f082,0x38000001,0x7ce70038,0x39000000,0x7ce74050,0x786826e4
+.long 0x78892720,0x7d084b78,0x7d081a78,0x7d083838,0x7c634278,0x788826e4,0x78a92720,0x7d084b78
+.long 0x7d082278,0x7d083838,0x7c844278,0x78a826e4,0x7d082a78,0x7d083838,0x7ca54278,0x78c7e8c2
+.long 0x38000001,0x7ce70038,0x39000000,0x7ce74050,0x786845e4,0x78894620,0x7d084b78,0x7d081a78
+.long 0x7d083838,0x7c634278,0x788845e4,0x78a94620,0x7d084b78,0x7d082278,0x7d083838,0x7c844278
+.long 0x78a845e4,0x7d082a78,0x7d083838,0x7ca54278,0x78c7e102,0x38000001,0x7ce70038,0x39000000
+.long 0x7ce74050,0x786883e4,0x78898420,0x7d084b78,0x7d081a78,0x7d083838,0x7c634278,0x788883e4
+.long 0x78a98420,0x7d084b78,0x7d082278,0x7d083838,0x7c844278,0x78a883e4,0x7d082a78,0x7d083838
+.long 0x7ca54278,0x78c7d942,0x38000001,0x7ce70038,0x39000000,0x7ce74050,0x786807c6,0x78890022
+.long 0x7d084b78,0x7d081a78,0x7d083838,0x7c634278,0x788807c6,0x78a90022,0x7d084b78,0x7d082278
+.long 0x7d083838,0x7c844278,0x78a807c6,0x7d082a78,0x7d083838,0x7ca54278,0x38000010,0x7c7f0528
+.long 0x38000018,0x7c9f0528,0x38000140,0x7c7f0528,0x38000148,0x7c9f0528,0x38000000,0xf81f0030
+.long 0xf81f0038,0x38000000,0xf81f0110,0xf81f0118,0x7eb8ab78,0x7ac3e102,0xf87f0130,0x3b400001
+.long 0x28230000
+beq %cr0, 21f
+23:",
+        // ld %r3, 304(%r31)
+        // rldicl %r4, %r3, 61, 3
+        // cmpldi %cr0, %r4, 0
+        r".long 0xe87f0130,0x7864e8c2,0x28240000
+beq %cr0, 24f",
+        // li %r25, 8
+        r".long 0x3b200008
+b 25f
+24:",
+        // or %r25, %r3, %r3
+        r".long 0x7c791b78
+25:",
+        // std %r25, 296(%r31)
+        // ld %r3, 304(%r31)
+        // subf %r3, %r25, %r3
+        // std %r3, 304(%r31)
+        // addi %r11, %r31, 384
+        r".long 0xfb3f0128,0xe87f0130,0x7c791850,0xf87f0130,0x397f0180
+26:",
+        // ld %r3, 80(%r31)
+        // ld %r4, 88(%r31)
+        // std %r3, 96(%r31)
+        // std %r4, 104(%r31)
+        // or %r12, %r26, %r26
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe87f0050,0xe89f0058,0xf87f0060,0xf89f0068,0x7f4cd378,0x38000001,0x7d850038,0x28250000
+beq %cr0, 27f
+b 28f
+27:
+29:",
+        // li %r0, 96
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 104
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 96
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 104
+        // stdbrx %r4, %r31, %r0
+        // rldicl %r12, %r12, 63, 1
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38000060,0x7c7f0428,0x38000068,0x7c9f0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000060,0x7c7f0528
+.long 0x38000068,0x7c9f0528,0x798cf842,0x38000001,0x7d850038,0x28250000
+beq %cr0, 29b
+28:",
+        // ld %r3, 272(%r31)
+        // ld %r4, 96(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 272(%r31)
+        // ld %r3, 280(%r31)
+        // ld %r4, 104(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 280(%r31)
+        // ld %r3, 0(%r24)
+        // ld %r4, 272(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r11)
+        // ld %r3, 8(%r24)
+        // ld %r4, 280(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r11)
+        // addi %r11, %r11, 16
+        // addi %r24, %r24, 16
+        // addi %r26, %r26, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0110,0xe89f0060,0x7c632278,0xf87f0110,0xe87f0118,0xe89f0068,0x7c632278,0xf87f0118
+.long 0xe8780000,0xe89f0110,0x7c632278,0xf86b0000,0xe8780008,0xe89f0118,0x7c632278,0xf86b0008
+.long 0x396b0010,0x3b180010,0x3b5a0001,0x3b39ffff,0x28390000
+bne %cr0, 26b",
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 384
+        // ld %r6, 296(%r31)
+        r".long 0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0180,0xe8df0128
+bl {vg_aes_encrypt_blocks}",
+        // addi %r11, %r31, 384
+        // ld %r25, 296(%r31)
+        r".long 0x397f0180,0xeb3f0128
+210:",
+        // ld %r3, 48(%r31)
+        // ld %r4, 0(%r11)
+        // xor %r3, %r3, %r4
+        // std %r3, 48(%r31)
+        // ld %r3, 56(%r31)
+        // ld %r4, 8(%r11)
+        // xor %r3, %r3, %r4
+        // std %r3, 56(%r31)
+        // addi %r11, %r11, 16
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0030,0xe88b0000,0x7c632278,0xf87f0030,0xe87f0038,0xe88b0008,0x7c632278,0xf87f0038
+.long 0x396b0010,0x3b39ffff,0x28390000
+bne %cr0, 210b",
+        // ld %r3, 304(%r31)
+        // cmpldi %cr0, %r3, 0
+        r".long 0xe87f0130,0x28230000
+bne %cr0, 23b
+b 22f
+21:
+22:",
+        // li %r0, 15
+        // and %r25, %r22, %r0
+        // cmpldi %cr0, %r25, 0
+        r".long 0x3800000f,0x7ed90038,0x28390000
+beq %cr0, 211f",
+        // ld %r3, 272(%r31)
+        // ld %r4, 240(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 272(%r31)
+        // ld %r3, 280(%r31)
+        // ld %r4, 248(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 280(%r31)
+        // li %r0, 0
+        // std %r0, 384(%r31)
+        // std %r0, 392(%r31)
+        // addi %r4, %r31, 384
+        // or %r3, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0xe87f0110,0xe89d00f0,0x7c632278,0xf87f0110,0xe87f0118,0xe89d00f8,0x7c632278,0xf87f0118
+.long 0x38000000,0xf81f0180,0xf81f0188,0x389f0180,0x7f03c378,0x7f25cb78
+213:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 213b",
+        // li %r0, 128
+        // stb %r0, 0(%r4)
+        // ld %r3, 384(%r31)
+        // ld %r4, 272(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 384(%r31)
+        // ld %r3, 392(%r31)
+        // ld %r4, 280(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 392(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 384
+        // li %r6, 1
+        r".long 0x38000080,0x98040000,0xe87f0180,0xe89f0110,0x7c632278,0xf87f0180,0xe87f0188,0xe89f0118
+.long 0x7c632278,0xf87f0188,0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0180,0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // ld %r3, 48(%r31)
+        // ld %r4, 384(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 48(%r31)
+        // ld %r3, 56(%r31)
+        // ld %r4, 392(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 56(%r31)
+        r".long 0xe87f0030,0xe89f0180,0x7c632278,0xf87f0030,0xe87f0038,0xe89f0188,0x7c632278,0xf87f0038
+b 212f
+211:
+212:",
+        // rldicl %r3, %r23, 60, 4
+        // cmpldi %cr0, %r3, 0
+        r".long 0x7ae3e102,0x28230000
+beq %cr0, 214f",
+        // or %r24, %r27, %r27
+        // rldicl %r25, %r23, 60, 4
+        // li %r26, 1
+        r".long 0x7f78db78,0x7af9e102,0x3b400001
+216:",
+        // ld %r3, 80(%r31)
+        // ld %r4, 88(%r31)
+        // std %r3, 96(%r31)
+        // std %r4, 104(%r31)
+        // or %r12, %r26, %r26
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe87f0050,0xe89f0058,0xf87f0060,0xf89f0068,0x7f4cd378,0x38000001,0x7d850038,0x28250000
+beq %cr0, 217f
+b 218f
+217:
+219:",
+        // li %r0, 96
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 104
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 96
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 104
+        // stdbrx %r4, %r31, %r0
+        // rldicl %r12, %r12, 63, 1
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38000060,0x7c7f0428,0x38000068,0x7c9f0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000060,0x7c7f0528
+.long 0x38000068,0x7c9f0528,0x798cf842,0x38000001,0x7d850038,0x28250000
+beq %cr0, 219b
+218:",
+        // ld %r3, 16(%r31)
+        // ld %r4, 96(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 16(%r31)
+        // ld %r3, 24(%r31)
+        // ld %r4, 104(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 24(%r31)
+        // ld %r3, 0(%r24)
+        // ld %r4, 16(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r24)
+        // ld %r3, 8(%r24)
+        // ld %r4, 24(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r24)
+        // addi %r24, %r24, 16
+        // addi %r26, %r26, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0010,0xe89f0060,0x7c632278,0xf87f0010,0xe87f0018,0xe89f0068,0x7c632278,0xf87f0018
+.long 0xe8780000,0xe89f0010,0x7c632278,0xf8780000,0xe8780008,0xe89f0018,0x7c632278,0xf8780008
+.long 0x3b180010,0x3b5a0001,0x3b39ffff,0x28390000
+bne %cr0, 216b",
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // or %r5, %r27, %r27
+        // rldicl %r6, %r23, 60, 4
+        r".long 0x7fa3eb78,0x7f84e378,0x38ff0200,0x7f65db78,0x7ae6e102
+bl {vg_aes_decrypt_blocks}",
+        // ld %r3, 320(%r31)
+        // ld %r4, 328(%r31)
+        // std %r3, 16(%r31)
+        // std %r4, 24(%r31)
+        // or %r24, %r27, %r27
+        // rldicl %r25, %r23, 60, 4
+        // li %r26, 1
+        r".long 0xe87f0140,0xe89f0148,0xf87f0010,0xf89f0018,0x7f78db78,0x7af9e102,0x3b400001
+220:",
+        // ld %r3, 80(%r31)
+        // ld %r4, 88(%r31)
+        // std %r3, 96(%r31)
+        // std %r4, 104(%r31)
+        // or %r12, %r26, %r26
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe87f0050,0xe89f0058,0xf87f0060,0xf89f0068,0x7f4cd378,0x38000001,0x7d850038,0x28250000
+beq %cr0, 221f
+b 222f
+221:
+223:",
+        // li %r0, 96
+        // ldbrx %r3, %r31, %r0
+        // li %r0, 104
+        // ldbrx %r4, %r31, %r0
+        // rldicl %r5, %r3, 1, 63
+        // li %r6, 0
+        // subf %r5, %r5, %r6
+        // li %r6, 135
+        // and %r5, %r5, %r6
+        // rldicr %r3, %r3, 1, 62
+        // rldicl %r6, %r4, 1, 63
+        // or %r3, %r3, %r6
+        // rldicr %r4, %r4, 1, 62
+        // xor %r4, %r4, %r5
+        // li %r0, 96
+        // stdbrx %r3, %r31, %r0
+        // li %r0, 104
+        // stdbrx %r4, %r31, %r0
+        // rldicl %r12, %r12, 63, 1
+        // li %r0, 1
+        // and %r5, %r12, %r0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38000060,0x7c7f0428,0x38000068,0x7c9f0428,0x78650fe0,0x38c00000,0x7ca53050,0x38c00087
+.long 0x7ca53038,0x78630fa4,0x78860fe0,0x7c633378,0x78840fa4,0x7c842a78,0x38000060,0x7c7f0528
+.long 0x38000068,0x7c9f0528,0x798cf842,0x38000001,0x7d850038,0x28250000
+beq %cr0, 223b
+222:",
+        // ld %r3, 16(%r31)
+        // ld %r4, 96(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 16(%r31)
+        // ld %r3, 24(%r31)
+        // ld %r4, 104(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 24(%r31)
+        // ld %r3, 0(%r24)
+        // ld %r4, 16(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 0(%r24)
+        // ld %r3, 8(%r24)
+        // ld %r4, 24(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 8(%r24)
+        // ld %r3, 32(%r31)
+        // ld %r4, 0(%r24)
+        // xor %r3, %r3, %r4
+        // std %r3, 32(%r31)
+        // ld %r3, 40(%r31)
+        // ld %r4, 8(%r24)
+        // xor %r3, %r3, %r4
+        // std %r3, 40(%r31)
+        // addi %r24, %r24, 16
+        // addi %r26, %r26, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0010,0xe89f0060,0x7c632278,0xf87f0010,0xe87f0018,0xe89f0068,0x7c632278,0xf87f0018
+.long 0xe8780000,0xe89f0010,0x7c632278,0xf8780000,0xe8780008,0xe89f0018,0x7c632278,0xf8780008
+.long 0xe87f0020,0xe8980000,0x7c632278,0xf87f0020,0xe87f0028,0xe8980008,0x7c632278,0xf87f0028
+.long 0x3b180010,0x3b5a0001,0x3b39ffff,0x28390000
+bne %cr0, 220b
+b 215f
+214:
+215:",
+        // li %r0, 15
+        // and %r25, %r23, %r0
+        // subf %r24, %r25, %r23
+        // add %r24, %r24, %r27
+        // cmpldi %cr0, %r25, 0
+        r".long 0x3800000f,0x7ef90038,0x7f19b850,0x7f18da14,0x28390000
+beq %cr0, 224f",
+        // ld %r3, 16(%r31)
+        // ld %r4, 240(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 16(%r31)
+        // ld %r3, 24(%r31)
+        // ld %r4, 248(%r29)
+        // xor %r3, %r3, %r4
+        // std %r3, 24(%r31)
+        // ld %r3, 16(%r31)
+        // ld %r4, 24(%r31)
+        // std %r3, 112(%r31)
+        // std %r4, 120(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 112
+        // li %r6, 1
+        r".long 0xe87f0010,0xe89d00f0,0x7c632278,0xf87f0010,0xe87f0018,0xe89d00f8,0x7c632278,0xf87f0018
+.long 0xe87f0010,0xe89f0018,0xf87f0070,0xf89f0078,0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0070
+.long 0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // addi %r3, %r31, 112
+        // or %r4, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0x387f0070,0x7f04c378,0x7f25cb78
+226:",
+        // lbz %r0, 0(%r4)
+        // lbz %r6, 0(%r3)
+        // xor %r0, %r0, %r6
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88040000,0x88c30000,0x7c003278,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 226b",
+        // li %r0, 0
+        // std %r0, 256(%r31)
+        // std %r0, 264(%r31)
+        // addi %r4, %r31, 256
+        // or %r3, %r24, %r24
+        // or %r5, %r25, %r25
+        r".long 0x38000000,0xf81f0100,0xf81f0108,0x389f0100,0x7f03c378,0x7f25cb78
+227:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 227b",
+        // li %r0, 128
+        // stb %r0, 0(%r4)
+        // ld %r3, 32(%r31)
+        // ld %r4, 256(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 32(%r31)
+        // ld %r3, 40(%r31)
+        // ld %r4, 264(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 40(%r31)
+        r".long 0x38000080,0x98040000,0xe87f0020,0xe89f0100,0x7c632278,0xf87f0020,0xe87f0028,0xe89f0108
+.long 0x7c632278,0xf87f0028
+b 225f
+224:
+225:",
+        // ld %r3, 32(%r31)
+        // ld %r4, 40(%r31)
+        // std %r3, 112(%r31)
+        // std %r4, 120(%r31)
+        // ld %r3, 112(%r31)
+        // ld %r4, 16(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 112(%r31)
+        // ld %r3, 120(%r31)
+        // ld %r4, 24(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 120(%r31)
+        // ld %r3, 112(%r31)
+        // ld %r4, 64(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 112(%r31)
+        // ld %r3, 120(%r31)
+        // ld %r4, 72(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 120(%r31)
+        // or %r3, %r29, %r29
+        // or %r4, %r28, %r28
+        // addi %r7, %r31, 512
+        // addi %r5, %r31, 112
+        // li %r6, 1
+        r".long 0xe87f0020,0xe89f0028,0xf87f0070,0xf89f0078,0xe87f0070,0xe89f0010,0x7c632278,0xf87f0070
+.long 0xe87f0078,0xe89f0018,0x7c632278,0xf87f0078,0xe87f0070,0xe89f0040,0x7c632278,0xf87f0070
+.long 0xe87f0078,0xe89f0048,0x7c632278,0xf87f0078,0x7fa3eb78,0x7f84e378,0x38ff0200,0x38bf0070
+.long 0x38c00001
+bl {vg_aes_encrypt_blocks}",
+        // ld %r3, 112(%r31)
+        // ld %r4, 120(%r31)
+        // std %r3, 256(%r31)
+        // std %r4, 264(%r31)
+        // ld %r3, 256(%r31)
+        // ld %r4, 48(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 256(%r31)
+        // ld %r3, 264(%r31)
+        // ld %r4, 56(%r31)
+        // xor %r3, %r3, %r4
+        // std %r3, 264(%r31)
+        // li %r0, 0
+        // std %r0, 0(%r31)
+        // std %r0, 8(%r31)
+        // or %r3, %r20, %r20
+        // or %r4, %r31, %r31
+        // or %r5, %r19, %r19
+        r".long 0xe87f0070,0xe89f0078,0xf87f0100,0xf89f0108,0xe87f0100,0xe89f0030,0x7c632278,0xf87f0100
+.long 0xe87f0108,0xe89f0038,0x7c632278,0xf87f0108,0x38000000,0xf81f0000,0xf81f0008,0x7e83a378
+.long 0x7fe4fb78,0x7e659b78
+228:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 228b",
+        // li %r0, 0
+        // std %r0, 336(%r31)
+        // std %r0, 344(%r31)
+        // addi %r3, %r31, 256
+        // addi %r4, %r31, 336
+        // or %r5, %r19, %r19
+        r".long 0x38000000,0xf81f0150,0xf81f0158,0x387f0100,0x389f0150,0x7e659b78
+229:",
+        // lbz %r0, 0(%r3)
+        // stb %r0, 0(%r4)
+        // addi %r3, %r3, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+bne %cr0, 229b",
+        // ld %r3, 0(%r31)
+        // ld %r4, 336(%r31)
+        // xor %r3, %r3, %r4
+        // ld %r4, 8(%r31)
+        // ld %r5, 344(%r31)
+        // xor %r4, %r4, %r5
+        // or %r3, %r3, %r4
+        // li %r4, 0
+        // subf %r4, %r3, %r4
+        // or %r3, %r3, %r4
+        // rldicl %r3, %r3, 1, 63
+        // li %r4, 1
+        // subf %r3, %r3, %r4
+        // or %r24, %r27, %r27
+        // or %r25, %r23, %r23
+        // li %r4, 0
+        // subf %r7, %r3, %r4
+        // cmpldi %cr0, %r25, 0
+        r".long 0xe87f0000,0xe89f0150,0x7c632278,0xe89f0008,0xe8bf0158,0x7c842a78,0x7c632378,0x38800000
+.long 0x7c832050,0x7c632378,0x78630fe0,0x38800001,0x7c632050,0x7f78db78,0x7ef9bb78,0x38800000
+.long 0x7ce32050,0x28390000
+beq %cr0, 230f
+232:",
+        // lbz %r4, 0(%r24)
+        // and %r4, %r4, %r7
+        // stb %r4, 0(%r24)
+        // addi %r24, %r24, 1
+        // addi %r25, %r25, -1
+        // cmpldi %cr0, %r25, 0
+        r".long 0x88980000,0x7c843838,0x98980000,0x3b180001,0x3b39ffff,0x28390000
+bne %cr0, 232b
+b 231f
+230:
+231:",
+        // or %r12, %r31, %r31
+        // ld %r0, 240(%r12)
+        // mtlr %r0
+        // ld %r18, 128(%r12)
+        // ld %r19, 136(%r12)
+        // ld %r20, 144(%r12)
+        // ld %r21, 152(%r12)
+        // ld %r22, 160(%r12)
+        // ld %r23, 168(%r12)
+        // ld %r24, 176(%r12)
+        // ld %r25, 184(%r12)
+        // ld %r26, 192(%r12)
+        // ld %r27, 200(%r12)
+        // ld %r28, 208(%r12)
+        // ld %r29, 216(%r12)
+        // ld %r30, 224(%r12)
+        // ld %r31, 232(%r12)
+        // addi %r1, %r1, 2688
+        // blr
+        r".long 0x7fecfb78,0xe80c00f0,0x7c0803a6,0xea4c0080,0xea6c0088,0xea8c0090,0xeaac0098,0xeacc00a0
+.long 0xeaec00a8,0xeb0c00b0,0xeb2c00b8,0xeb4c00c0,0xeb6c00c8,0xeb8c00d0,0xebac00d8,0xebcc00e0
+.long 0xebec00e8,0x38210a80,0x4e800020",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )

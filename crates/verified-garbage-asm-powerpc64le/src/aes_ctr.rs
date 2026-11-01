@@ -19,13 +19,92 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0xf9e80818f9c80810f80808407c0802a6,0xfa680838fa480830fa280828fa080820,0x7cd133787cb02b787c8f23787c6e1b78,0x418200b8283200007d1343787cf23b78
-.octa 0x794a07c6394000017d30542c3940000c,0x39800000796b0fe07d6a90507d495050,0x7d4a62787d8c58387e4c52787d6b6050,0x7e0583787de47b787dc37378f9530800
-.byte 120,139,38,126,120,83,71,125,120,155,104,126",
-        r"bl {vg_aes_ctr32}",
-        r".octa 0x7e314a14792926e47e499050e9330800,0x41820008282900007d30542c3940000c,0x396000017d3054283940000848000038,0x792900227d3055287d295a14796b07c6
-.octa 0x7d7054283940000079290fe03929ffff,0x4082ff54283200007d7055287d6b4a14,0xe9f30818e9d30810e813084048000004,0xea730838ea530830ea330828ea130820
-.byte 166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 2112(%r8)
+        // std %r14, 2064(%r8)
+        // std %r15, 2072(%r8)
+        // std %r16, 2080(%r8)
+        // std %r17, 2088(%r8)
+        // std %r18, 2096(%r8)
+        // std %r19, 2104(%r8)
+        // or %r14, %r3, %r3
+        // or %r15, %r4, %r4
+        // or %r16, %r5, %r5
+        // or %r17, %r6, %r6
+        // or %r18, %r7, %r7
+        // or %r19, %r8, %r8
+        // cmpldi %cr0, %r18, 0
+        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
+.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+beq %cr0, 20f
+22:",
+        // li %r10, 12
+        // lwbrx %r9, %r16, %r10
+        // li %r10, 1
+        // rldicr %r10, %r10, 32, 31
+        // subf %r10, %r9, %r10
+        // subf %r11, %r10, %r18
+        // rldicl %r11, %r11, 1, 63
+        // li %r12, 0
+        // subf %r11, %r11, %r12
+        // xor %r12, %r18, %r10
+        // and %r12, %r12, %r11
+        // xor %r10, %r10, %r12
+        // std %r10, 2048(%r19)
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // or %r5, %r16, %r16
+        // or %r6, %r17, %r17
+        // or %r7, %r10, %r10
+        // or %r8, %r19, %r19
+        r".long 0x3940000c,0x7d30542c,0x39400001,0x794a07c6,0x7d495050,0x7d6a9050,0x796b0fe0,0x39800000
+.long 0x7d6b6050,0x7e4c5278,0x7d8c5838,0x7d4a6278,0xf9530800,0x7dc37378,0x7de47b78,0x7e058378
+.long 0x7e268b78,0x7d475378,0x7e689b78
+bl {vg_aes_ctr32}",
+        // ld %r9, 2048(%r19)
+        // subf %r18, %r9, %r18
+        // rldicr %r9, %r9, 4, 59
+        // add %r17, %r17, %r9
+        // li %r10, 12
+        // lwbrx %r9, %r16, %r10
+        // cmpldi %cr0, %r9, 0
+        r".long 0xe9330800,0x7e499050,0x792926e4,0x7e314a14,0x3940000c,0x7d30542c,0x28290000
+beq %cr0, 23f
+b 24f
+23:",
+        // li %r10, 8
+        // ldbrx %r9, %r16, %r10
+        // li %r11, 1
+        // rldicr %r11, %r11, 32, 31
+        // add %r9, %r9, %r11
+        // stdbrx %r9, %r16, %r10
+        // rldicl %r9, %r9, 32, 32
+        // addi %r9, %r9, -1
+        // rldicl %r9, %r9, 1, 63
+        // li %r10, 0
+        // ldbrx %r11, %r16, %r10
+        // add %r11, %r11, %r9
+        // stdbrx %r11, %r16, %r10
+        r".long 0x39400008,0x7d305428,0x39600001,0x796b07c6,0x7d295a14,0x7d305528,0x79290022,0x3929ffff
+.long 0x79290fe0,0x39400000,0x7d705428,0x7d6b4a14,0x7d705528
+24:",
+        // cmpldi %cr0, %r18, 0
+        r".long 0x28320000
+bne %cr0, 22b
+b 21f
+20:
+21:",
+        // ld %r0, 2112(%r19)
+        // ld %r14, 2064(%r19)
+        // ld %r15, 2072(%r19)
+        // ld %r16, 2080(%r19)
+        // ld %r17, 2088(%r19)
+        // ld %r18, 2096(%r19)
+        // ld %r19, 2104(%r19)
+        // mtlr %r0
+        // blr
+        r".long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
+.long 0x4e800020",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
