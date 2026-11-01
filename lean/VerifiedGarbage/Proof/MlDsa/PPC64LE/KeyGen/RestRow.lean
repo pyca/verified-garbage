@@ -20,8 +20,8 @@ namespace VG.Proof.MlDsa.PPC64LE.KeyGen
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT polyAt natPolyAt coeffAt Reduced PolyIs
-  NatPolyIs bitPack simpleBitPack power2Round ofInt modPm q n)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT bitPack simpleBitPack power2Round ofInt modPm q n)
+open VG.Proof.MlDsa (polyAt natPolyAt coeffAt Reduced PolyIs NatPolyIs)
 open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K ifp ifn idx_lt)
 open VG.Spec.Sha3 (bytesAt)
 

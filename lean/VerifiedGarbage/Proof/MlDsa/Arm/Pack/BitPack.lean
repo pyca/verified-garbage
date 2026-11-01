@@ -226,7 +226,7 @@ def bpSat : State where
   wr := [⟨0x2000, 96⟩]
 
 example : ∃ pre post leak, bitPackContract Arm.abi 4 =
-    bitPackApi.sig.contract Arm.target.abi pre post bitPackApi.writeArgs 4 leak := ⟨_, _, _, rfl⟩
+    bitPackSig.contract Arm.target.abi pre post true 4 leak := ⟨_, _, _, rfl⟩
 
 theorem bitPack_verified :
     Verified Arm.target Impl.MlDsa.Arm.Pack.bitPack (bitPackContract Arm.abi 4) := by

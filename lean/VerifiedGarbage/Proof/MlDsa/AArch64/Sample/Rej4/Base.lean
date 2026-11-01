@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 public import VerifiedGarbage.Proof.Sha3.Seed34
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -37,7 +37,7 @@ structure Pre (s : State) : Prop where
   seed_scr : (seedsR s).Disjoint (scrR s)
   a_scr : (aR s).Disjoint (scrR s)
 
-abbrev B (s : State) (k : Nat) : List Byte := Spec.MlDsa.seed4 s.mem (seedP s) k
+abbrev B (s : State) (k : Nat) : List Byte := Proof.MlDsa.seed4 s.mem (seedP s) k
 abbrev A0 (s : State) (k : Nat) : Spec.Sha3.State := Proof.Sha3.Seed34.A0 (B s k)
 def stateP (s : State) (pair : Nat) : Addr := at' s (400*pair)
 def bufP (s : State) (k : Nat) : Addr := at' s (oBuf+1008*k)

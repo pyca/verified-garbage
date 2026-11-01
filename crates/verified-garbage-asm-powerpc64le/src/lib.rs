@@ -453,10 +453,6 @@ pub mod miller_rabin;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod mldsa;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod mldsa44;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]

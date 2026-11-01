@@ -43,7 +43,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok ifp ifn sel GOnly WP.keep writesOnly
   gprPreserved_of withMxcsr_ok mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
 open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop yconst)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt PolyIs zetas ntt nttInv)
+open VG.Spec.MlDsa (q n Poly Zq zetas ntt nttInv)
+open VG.Proof.MlDsa (coeffAt polyAt PolyIs)
 
 theorem lane_vbfly : laneSseBlock (toY vbfly) = some vbfly := by decide +kernel
 theorem lane_vibfly : laneSseBlock (toY vibfly) = some vibfly := by decide +kernel
@@ -428,14 +429,14 @@ theorem nttY_ct : ConstantTime isa (inPlaceK ntt).pre (inPlaceK ntt).pub nttAvx2
 theorem nttInvY_ct : ConstantTime isa (inPlaceK nttInv).pre (inPlaceK nttInv).pub nttInvAvx2 :=
   VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
 
-theorem nttY_verified : Verified X86_64.target nttAvx2 (Spec.MlDsa.nttContract X86_64.abi) :=
+theorem nttY_verified : Verified X86_64.target nttAvx2 (Proof.MlDsa.nttContract X86_64.abi) :=
   Verified.of_correct nttY_correct nttY_ct (by
-    mldsa_implies [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
-theorem nttInvY_verified : Verified X86_64.target nttInvAvx2 (Spec.MlDsa.nttInvContract X86_64.abi) :=
+theorem nttInvY_verified : Verified X86_64.target nttInvAvx2 (Proof.MlDsa.nttInvContract X86_64.abi) :=
   Verified.of_correct nttInvY_correct nttInvY_ct (by
-    mldsa_implies [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

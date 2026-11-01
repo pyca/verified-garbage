@@ -14,7 +14,8 @@ open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (Tab wp_countdown imm16)
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (Poly Zq PolyIs)
+open VG.Spec.MlDsa (Poly Zq)
+open VG.Proof.MlDsa (PolyIs)
 
 def firstZ (len : Nat) (up : Bool) : Nat := if up then 128/len else 256/len-1
 

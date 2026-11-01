@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlDsa

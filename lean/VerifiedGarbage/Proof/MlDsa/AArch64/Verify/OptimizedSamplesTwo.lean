@@ -15,7 +15,8 @@ namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
 open VG.Proof.MlDsa.AArch64.KeyGen
-open VG.Spec.MlDsa (Params Reduced polyAt coeffAt poly4 seed4 Bounds rejNTTPoly minBounds)
+open VG.Spec.MlDsa (Params Bounds rejNTTPoly minBounds)
+open VG.Proof.MlDsa (Reduced polyAt coeffAt poly4 seed4)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.KeyGen (masked_one masked_zero)
 
@@ -55,7 +56,7 @@ theorem vseed2_eq {p : Params} {σ : State} {e : Nat} {s : State} (h : VS p σ e
   exact h.done k hk
 
 theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
-    (C : CalleeOk S cd (VG.Spec.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : VFacts p)
+    (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : VFacts p)
     {σ : State} (hp : vPre p S σ) {e : Nat} (he : e+2 ≤ p.k*p.ℓ) {s : State} (h : VS p σ (e) 2 s) :
     WP isa (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p))))
       (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (e)) 512))) s (VA p σ (e+2)) := by

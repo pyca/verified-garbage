@@ -34,7 +34,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep writesOnly gprPreserved_of ifp ifn
   ptr_step GOnly wp_rcxLoopY add_ofNat_zero lane_setReg lane_setFlags sx32 State.setMem_ymm)
 open VG.Impl.MlKem.X86_64 (xb xmov toY yconst)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 theorem addFixX_ok (s : State) (hq : s.xmm .xmm15 = qV) :
     WP isa (.block (xb .paddd .xmm0 .xmm1 :: vcsub .xmm0 .xmm2)) s fun s' =>
@@ -223,14 +224,14 @@ theorem addY_ct : ConstantTime isa (accK Spec.MlDsa.add).pre (accK Spec.MlDsa.ad
 theorem subY_ct : ConstantTime isa (accK Spec.MlDsa.sub).pre (accK Spec.MlDsa.sub).pub subAvx2 :=
   VG.Taint.constantTime (A := taint) accτ acc_agree (by taint_decide)
 
-theorem addY_verified : Verified X86_64.target addAvx2 (Spec.MlDsa.addContract X86_64.abi) :=
+theorem addY_verified : Verified X86_64.target addAvx2 (Proof.MlDsa.addContract X86_64.abi) :=
   Verified.of_correct addY_correct addY_ct (by
-    mldsa_implies [Spec.MlDsa.addContract, Spec.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.addContract, Proof.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
-theorem subY_verified : Verified X86_64.target subAvx2 (Spec.MlDsa.subContract X86_64.abi) :=
+theorem subY_verified : Verified X86_64.target subAvx2 (Proof.MlDsa.subContract X86_64.abi) :=
   Verified.of_correct subY_correct subY_ct (by
-    mldsa_implies [Spec.MlDsa.subContract, Spec.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.subContract, Proof.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

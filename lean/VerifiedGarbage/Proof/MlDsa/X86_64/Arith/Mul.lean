@@ -42,7 +42,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly WP.keep writesOnly gprPreserved_of ifn xmm_setXmm wp_rcxLoop
   add_ofNat_zero)
 open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced)
 
 /-! ## Four products -/
 
@@ -429,15 +430,15 @@ def mulSat : State where
   wr := [⟨0x1000, 1024⟩]
 
 theorem mul_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Arith.mul (Spec.MlDsa.mulContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Arith.mul (Proof.MlDsa.mulContract X86_64.abi) :=
   Verified.of_correct mul_correct mul_ct (by
-    mldsa_implies [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
       [mulSat] using mulSat)
 
 theorem mulAdd_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Arith.mulAdd (Spec.MlDsa.mulAddContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Arith.mulAdd (Proof.MlDsa.mulAddContract X86_64.abi) :=
   Verified.of_correct mulAdd_correct mulAdd_ct (by
-    mldsa_implies [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
       [mulSat] using mulSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

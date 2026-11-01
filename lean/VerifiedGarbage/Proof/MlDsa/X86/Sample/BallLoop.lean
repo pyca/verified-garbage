@@ -43,7 +43,8 @@ open VG.Proof.MlKem.X86
 open VG.Proof.MlDsa.X86.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.X86.Sample (argOp bMove bShift bSet bTry bBody qImm)
-open VG.Spec.MlDsa (Zq q H n ofInt coeffAt IPoly)
+open VG.Spec.MlDsa (Zq q H n ofInt IPoly)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.X86.Sample.RejNtt (nil_piece)
 
 /-- The state of iteration `k`. -/

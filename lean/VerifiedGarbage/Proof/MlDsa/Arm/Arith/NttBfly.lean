@@ -18,7 +18,8 @@ butterfly's code, for the loops (`NttLoop.lean`).
 namespace VG.Proof.MlDsa.Arm.Arith
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Arith
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.Arm (addr_ptr inRegions_of)
 

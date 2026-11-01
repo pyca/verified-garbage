@@ -18,7 +18,8 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
 open VG.Proof.MlKem.AArch64
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq coeffAt)
+open VG.Spec.MlDsa (Zq)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG.Proof.MlDsa.AArch64.Arith.Neon (coeffAt_write16)
 

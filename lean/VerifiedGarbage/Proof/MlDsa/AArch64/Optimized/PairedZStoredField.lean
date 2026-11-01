@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField

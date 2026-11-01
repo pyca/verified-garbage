@@ -39,7 +39,6 @@ meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -72,7 +71,8 @@ open VG.Proof.MlKem.PPC64LE (relct_noMem)
 open VG.Proof.MlKem.PPC64LE.Sample (taint_block relct_wp)
 open VG.Impl.MlDsa.PPC64LE.Pack (unpackLoop buFin loadB)
 open VG.Proof.MlDsa.PPC64LE.Pack (RB loadBVal loadB_ok Shape loopRegs)
-open VG.Spec.MlDsa (Zq q H PolyIs toRq bitUnpack bitlen)
+open VG.Spec.MlDsa (Zq q H toRq bitUnpack bitlen)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt rates)
 
 /-- The call, from the entry state: `seed = r3`, `gamma1 = r4`, `a = r5`,
@@ -309,9 +309,9 @@ theorem all_ct {σ₁ σ₂ : State} (h : Two σ₁ σ₂) :
 
 /-! ## `Verified` -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.expandMaskContract PPC64LE.abi 48).pre s) :
+theorem pre_of {s : State} (h : (Proof.MlDsa.expandMaskContract PPC64LE.abi 48).pre s) :
     SpOk (spOf s) s ∧ (gam s = 2 ^ 17 ∨ gam s = 2 ^ 19) := by
-  sig_pre [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  sig_pre [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, hg⟩ := h
   exact ⟨⟨by rw [h1]; exact List.mem_singleton_self _, h2, h3, h4, h5, h6, h7, h8,
     show (66 : Nat) < 2 ^ 64 by decide, h10, h11, h0⟩, hg⟩
@@ -334,14 +334,14 @@ open VG VG.PPC64LE
 open ExpandMask
 
 theorem expandMask_verified :
-    Verified PPC64LE.target Impl.MlDsa.PPC64LE.Sample.expandMask (Spec.MlDsa.expandMaskContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlDsa.PPC64LE.Sample.expandMask (Proof.MlDsa.expandMaskContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨hp, hg⟩ := pre_of hs
     obtain ⟨t, s', he, hpoly, ha⟩ := correct hp hg rfl rfl rfl rfl
     refine ⟨t, s', he, ha, ?_⟩
-    sig_post [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs]
     exact hpoly
-  · sig_pub [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+  · sig_pub [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
     obtain ⟨hsp, h3, h4, h5, h6⟩ := hpub
     obtain ⟨p₁, g₁⟩ := pre_of h₁
     obtain ⟨p₂, g₂⟩ := pre_of h₂
@@ -349,7 +349,7 @@ theorem expandMask_verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

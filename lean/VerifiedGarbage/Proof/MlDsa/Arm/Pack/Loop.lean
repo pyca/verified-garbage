@@ -23,7 +23,8 @@ state that permits the accesses: they change only the output, the registers of
 namespace VG.Proof.MlDsa.Arm.Pack
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Pack
-open VG.Spec.MlDsa (coeffAt bitsToBytes)
+open VG.Spec.MlDsa (bitsToBytes)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.Arm (wp_loop_ne count_z count_sub)
 open VG.Proof.MlKem (digits take_drop_eq bytesAt_getD bytesAt_eq! bytesAt_length)

@@ -359,8 +359,8 @@ theorem piece : Piece (Pre L) Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafP
     (fun _ hp => hp.hW) (fun _ _ _ _ hq => hq.1.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
-theorem Pre.of {s₀ : State} (h : (Spec.MlDsa.rejNTTContract X86.abi 56).pre s₀) : Pre L s₀ := by
-  sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem Pre.of {s₀ : State} (h : (Proof.MlDsa.rejNTTContract X86.abi 56).pre s₀) : Pre L s₀ := by
+  sig_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, show (34 : Nat) < 168 by decide⟩
 
@@ -369,7 +369,7 @@ theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.
 
 /-- The coefficients at `a`, when there are 256. -/
 theorem poly_eq {s₀ s : State} (h : Loop s₀ 336 (LA (L.Msg s₀) 336) s) (hl : (LA (L.Msg s₀) 336).length = 256) :
-    Spec.MlDsa.PolyIs s.mem (L.aA s₀) (toPoly (rnFold [] (G (L.Msg s₀) 1008))) := by
+    Proof.MlDsa.PolyIs s.mem (L.aA s₀) (toPoly (rnFold [] (G (L.Msg s₀) 1008))) := by
   have e : LA (L.Msg s₀) 336 = rnFold [] (G (L.Msg s₀) 1008) := by
     simp only [LA]; rw [List.take_of_length_le (by rw [X_length])]
   rw [← e]
@@ -378,10 +378,10 @@ theorem poly_eq {s₀ s : State} (h : Loop s₀ 336 (LA (L.Msg s₀) 336) s) (hl
 /-- Memory with the arguments `0`, `0x100` and `0x1000` at `0x5004`. -/
 def satMem : Mem := fun a => if a = 0x5009 then 1 else if a = 0x500d then 0x10 else 0
 
-theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Spec.MlDsa.rejNTTContract X86.abi 56) := by
+theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Proof.MlDsa.rejNTTContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => ?_).mono
     (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
-  · sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+  · sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := h
     refine ⟨⟨e₁, fun i hi => ?_⟩, map_toNat_inj e₂⟩
     match i, hi with
@@ -390,7 +390,7 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Spec.MlDsa.
     | 2, _ => exact e₅
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [setWidth_append32, hax, hfin.eax, hm]
     have hl := hfin.len
     by_cases e : (LA (L.Msg s₀) 336).length = 256
@@ -399,7 +399,7 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Spec.MlDsa.
         simp only [LA] at e; rwa [List.take_of_length_le (by rw [X_length])] at e
       rw [e]
       refine ⟨fun _ => hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with rejNTT := 1008 }, ?_⟩⟩
-      show Spec.MlDsa.rejNTTPoly 1008 (L.Msg s₀) = some (Spec.MlDsa.polyAt s.mem (L.aA s₀))
+      show Spec.MlDsa.rejNTTPoly 1008 (L.Msg s₀) = some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
       rw [rejNTT_some hf, hp.2]
     · rw [Nat.div_eq_of_lt (by omega_arith)]
       have hf : (rnFold [] (G (L.Msg s₀) 1008)).length ≠ 256 := by
@@ -408,7 +408,7 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Spec.MlDsa.
         .inr ⟨rfl, rejNTT_none (B := 1008) (by decide) (by decide) hf⟩⟩
   · let st := satState satMem [⟨0, 34⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 12⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_sat_check [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
 
 end VG.Proof.MlDsa.X86.Sample.RejNtt

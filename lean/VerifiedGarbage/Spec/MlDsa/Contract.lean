@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ML-DSA-44, ML-DSA-65 and ML-DSA-87: the contracts, on every target
@@ -68,6 +69,39 @@ which depends on the target.
 namespace VG.Spec.MlDsa
 
 open Sha3 (bytesAt)
+
+/-! ## Bounds and leakage -/
+
+/-- The numbers a contract declares that a function may leak: the bytes `bs`. -/
+def leakBytes (bs : List Byte) : List Nat := bs.map (·.toNat)
+
+/-- The bounds on the loops that the contracts let an implementation use: at
+least `minBounds` (Appendix C, Table 3), and at most these, which the
+functions' leakage is stated for (`rejBoundedLeak`, `signLeak`): 1000
+iterations of the signing loop, 8 blocks of SHAKE256 output (1088 bytes)
+for `RejBoundedPoly` and `SampleInBall`, and 8 blocks of SHAKE128 output
+(1344 bytes) for `RejNTTPoly`. -/
+def maxBounds : Bounds := { sign := 1000, rejBounded := 1088, rejNTT := 1344, ball := 1088 }
+
+/-- The return value `r` of a function that computes, with its loops bounded,
+an algorithm `f b` (bounding the loops by `b`), and outputs `out`: either 1,
+with `out` the output of the algorithm of the standard (the output of `f b`
+for some bounds), or 0, if a loop does not finish within the least bounds
+Appendix C allows (`minBounds`). -/
+def Outcome {α : Type} (f : Bounds → Option α) (r : BitVec 32) (out : α) : Prop :=
+  (r = 1 ∧ ∃ b, f b = some out) ∨ (r = 0 ∧ f minBounds = none)
+
+/-- Whether `RejBoundedPoly` accepts the half-byte `b`: 1 if
+`CoeffFromHalfByte(b)` (Algorithm 15) is not `⊥`, 0 if it is. -/
+def halfByteOk (η b : Nat) : Nat := if (coeffFromHalfByte η b).isSome then 1 else 0
+
+/-- What `RejBoundedPoly(ρ)` may leak: whether it accepts each half-byte of
+the first `maxBounds.rejBounded` bytes `z` of `H(ρ)`, `z mod 16` then
+`⌊z/16⌋` (lines 6 and 7 of Algorithm 31). Which of them it accepts is
+independent of the coefficients it samples from those it accepts, which
+are uniform in `[-η, η]` whichever they are. -/
+def rejBoundedLeak (η : Nat) (ρ : List Byte) : List Nat :=
+  (H ρ maxBounds.rejBounded).flatMap fun z => [halfByteOk η (z.toNat % 16), halfByteOk η (z.toNat / 16)]
 
 /-- The size of the working space, in `u64`s: 1 KiB (`128` of them) for each
 of `kℓ + 4k + 3ℓ + 32` polynomials. -/

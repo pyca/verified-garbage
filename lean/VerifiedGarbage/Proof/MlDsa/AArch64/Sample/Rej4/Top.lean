@@ -47,7 +47,7 @@ theorem parsed_step {σ s : State} (hp : Pre σ) {n : Nat} (hn : n < 4) (h : Par
 def r4K : Contract isa where
   pre := Pre
   post s t := (t.gpr .x0).setWidth 32 = (mask s 4).setWidth 32 ∧
-    ∀ k < 4,(L s k).length = 256 → Spec.MlDsa.PolyIs t.mem (polyP s k) (VG.Proof.MlDsa.Sample.toPoly (L s k))
+    ∀ k < 4,(L s k).length = 256 → Proof.MlDsa.PolyIs t.mem (polyP s k) (VG.Proof.MlDsa.Sample.toPoly (L s k))
   pub s t := seedP s = seedP t ∧ aP s = aP t ∧ scr s = scr t ∧ s.sp = t.sp ∧
     Spec.Sha3.bytesAt s.mem (seedP s) 136 = Spec.Sha3.bytesAt t.mem (seedP t) 136
 

@@ -22,7 +22,8 @@ namespace VG.Proof.MlDsa.AArch64.Round
 
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Round VG.Proof.MlDsa.Round
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (q gamma2s)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
 
 /-- The body of a loop with the constants `cv g` in the registers `fixed`. -/
 def GBody (s₁ : State) (ptrs fixed outs clob : List Reg) (cnt : Reg) (cv : Nat → Reg → BitVec 64)

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-public import VerifiedGarbage.Spec.MlDsa.MontDot
+public import VerifiedGarbage.Proof.MlDsa.MontDotContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes

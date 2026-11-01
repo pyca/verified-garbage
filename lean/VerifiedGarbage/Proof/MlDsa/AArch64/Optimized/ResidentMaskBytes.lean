@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -54,7 +54,7 @@ theorem fieldValue_digits (m : Mem) (a : Addr) {d i : Nat} (hd : d=18 ∨ d=20) 
 `BitUnpack`, with no new public representation or arithmetic contract. -/
 theorem Parsed.poly {m input : Mem} {o a : Addr} {d : Nat} (hd : d=18 ∨ d=20)
     (h : Parsed m o input a d 256) :
-    Spec.MlDsa.PolyIs m o (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack
+    Proof.MlDsa.PolyIs m o (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack
       (bytesAt input a (32*d)) (2^(d-1)-1) (2^(d-1)))) := by
   apply VG.Proof.MlDsa.Pack.polyIs_of_toNat
   intro i hi
@@ -63,7 +63,7 @@ theorem Parsed.poly {m input : Mem} {o a : Addr} {d : Nat} (hd : d=18 ∨ d=20)
   have hy : digits 8 ((bytesAt input a (32*d)).map (·.toNat)) / 2^(d*i) % 2^d < Spec.MlDsa.q := by
     have hh := Nat.mod_lt (digits 8 ((bytesAt input a (32*d)).map (·.toNat)) / 2^(d*i)) (Nat.two_pow_pos d)
     rcases hd with rfl | rfl <;> change _ < 8380417 <;> omega
-  rw [Spec.MlDsa.coeffAt,h i hi,fieldValue_digits input a hd hi,Spec.MlDsa.toRq,Vector.getElem_map,
+  rw [Proof.MlDsa.coeffAt,h i hi,fieldValue_digits input a hd hi,Spec.MlDsa.toRq,Vector.getElem_map,
     VG.Proof.MlDsa.Pack.bitUnpack_get _ _ _ hi,hdlen,VG.Proof.MlDsa.Pack.ofInt_sub hy]
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask

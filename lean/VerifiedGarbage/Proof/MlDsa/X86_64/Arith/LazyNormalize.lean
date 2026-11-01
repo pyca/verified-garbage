@@ -18,7 +18,8 @@ open VG.Proof.MlDsa.Arith.Lazy
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok ifp ifn GOnly
   add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
 open VG.Impl.MlKem.X86_64 (toY rcxLoop)
-open VG.Spec.MlDsa (q n coeffAt)
+open VG.Spec.MlDsa (q n)
+open VG.Proof.MlDsa (coeffAt)
 
 def Normalized (m : Mem) (fP : Addr) (G : Poly) (i : Nat) : Prop :=
   ∀ k < 256, (coeffAt m fP k).toNat = if k < 8 * i then (residue G[k]!).val else G[k]!.val
@@ -88,7 +89,7 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
 theorem normalize_ok {fP : Addr} {G : Poly} {f : VG.Spec.MlDsa.Poly}
     (hr : Rel 17 G f) (s : State) (hc : YConsts s) (hdi : s.gpr .rdi = fP)
     (hS : PolyIs s.mem fP G) (hwf : pR fP ∈ s.wr) :
-    WP isa normalizeLazy s fun s' => VG.Spec.MlDsa.PolyIs s'.mem fP f ∧ BInvY fP s s' := by
+    WP isa normalizeLazy s fun s' => VG.Proof.MlDsa.PolyIs s'.mem fP f ∧ BInvY fP s s' := by
   refine WP.seq ?_
   refine WP.mono (Q := fun (w : State) => w.gpr .rdx = fP ∧ GOnly [.rdx] s w ∧ w.ymmHi = s.ymmHi)
     (by vrund [hdi]; exact ⟨by gonlyd, rfl⟩) fun w ⟨hdx, og, hy⟩ => ?_

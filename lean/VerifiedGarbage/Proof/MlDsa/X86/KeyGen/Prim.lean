@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
@@ -32,7 +32,8 @@ namespace VG.Proof.MlDsa.X86.KeyGen
 open VG VG.X86 VG.Impl.MlKem.X86
 open VG.Proof.MlKem.X86 VG.Proof.MlKem.X86.Top
 open VG.Impl.MlDsa.X86.KeyGen (Arg argRegs setArgs callP callPR)
-open VG.Spec.MlDsa (Poly Reduced PolyIs polyAt)
+open VG.Spec.MlDsa (Poly)
+open VG.Proof.MlDsa (Reduced PolyIs polyAt)
 
 variable {Y : Lay} {lk : State → List Byte} {A B : State → State → Prop}
 
@@ -56,7 +57,7 @@ theorem ent_reduced {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) 
 /-! ## In place: `vg_mldsa_ntt`, `vg_mldsa_inv_ntt` -/
 
 theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
-    (hc : Callee c fun stk => Spec.MlDsa.inPlaceContract X86.abi t stk) (fa fo wa wo : Nat)
+    (hc : Callee c fun stk => Proof.MlDsa.inPlaceContract X86.abi t stk) (fa fo wa wo : Nat)
     (hk : (Y.okW ⟨fa, fo, 1024⟩ && Y.okW ⟨wa, wo, 1024⟩ && Y.sep ⟨fa, fo, 1024⟩ ⟨wa, wo, 1024⟩) = true)
     (hN : 96 ≤ Y.stk) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
@@ -86,19 +87,19 @@ theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
     have a₁ := he.arg 1 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pre [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, aa, List.getElem_cons_zero, List.getElem_cons_succ,
       Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
     exact ⟨by omega_arith, by omega_arith, rfl, d₁, f₁, w₁, f₂, w₂, x₁, f₃, w₃, x₂, f₄, w₄, r₁⟩
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hF', hW']) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pub [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+    sig_post [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, List.getElem_cons_zero, Arg.val, m₂] at post
     rw [ent_polyAt he hF'] at post
     exact hQ s₀ s s' hp ha h' fr post
@@ -108,7 +109,7 @@ theorem toNat_ofNat32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 32 v).toNat = v
 
 /-! ## `vg_mldsa_rej_ntt_poly` -/
 
-theorem rejNtt_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTContract X86.abi stk)
+theorem rejNtt_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejNTTContract X86.abi stk)
     (da dO aa ao wa wo : Nat)
     (hk : (Y.ok ⟨da, dO, 34⟩ && Y.okW ⟨aa, ao, 1024⟩ && Y.okW ⟨wa, wo, 2048⟩ && Y.sep ⟨da, dO, 34⟩ ⟨aa, ao, 1024⟩ &&
       Y.sep ⟨da, dO, 34⟩ ⟨wa, wo, 2048⟩ && Y.sep ⟨aa, ao, 1024⟩ ⟨wa, wo, 2048⟩) = true)
@@ -149,7 +150,7 @@ theorem rejNtt_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTC
     have a₂ := he.arg 2 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
     ent_pre
@@ -160,7 +161,7 @@ theorem rejNtt_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTC
     rw [← Proof.MlKem.bytesAt_congr (he.mem _ hD), ← Proof.MlKem.bytesAt_congr (he'.mem _ hD)] at hs
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [List.getElem_cons_zero, Arg.val] at a₀ a₀'
     simp only [Buf.addr, ← a₀, ← a₀'] at hs
     simp only [arg_withRegions]
@@ -168,7 +169,7 @@ theorem rejNtt_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTC
   · have a₀ := he.arg 0 (by simp)
     have a₁ := he.arg 1 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+    sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, g₂, sw_app] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hD)] at post
     exact hQ s₀ s s' hp ha h' fr post.1 post.2
@@ -188,7 +189,7 @@ theorem chk3_iff {h f g : Buf} (hk : chk3 Y h f g = true) :
   simp only [chk3, Bool.and_eq_true] at hk
   exact ⟨hk.1.1.1.1, (Lay.okW_iff.mp hk.1.1.1.1).1, hk.1.1.1.2, hk.1.1.2, hk.1.2, hk.2⟩
 
-theorem mul_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.mulContract X86.abi stk)
+theorem mul_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.mulContract X86.abi stk)
     (hk : chk3 Y ⟨ha, hao, 1024⟩ ⟨fa, fo, 1024⟩ ⟨ga, go, 1024⟩ = true)
     (hN : 96 ≤ Y.stk) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
@@ -221,26 +222,26 @@ theorem mul_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.mulContrac
     have a₂ := he.arg 2 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pre [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
     ent_pre
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hH, hF, hG]) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pub [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
     have a₁ := he.arg 1 (by simp)
     have a₂ := he.arg 2 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+    sig_post [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
     rw [ent_polyAt he hF, ent_polyAt he hG] at post
     exact hQ s₀ s s' hp ha h' (fr.mono fun r hr => by simp at hr ⊢; grind) post
 
-theorem mulAdd_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.mulAddContract X86.abi stk)
+theorem mulAdd_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.mulAddContract X86.abi stk)
     (hk : chk3 Y ⟨ha, hao, 1024⟩ ⟨fa, fo, 1024⟩ ⟨ga, go, 1024⟩ = true)
     (hN : 96 ≤ Y.stk) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
@@ -275,21 +276,21 @@ theorem mulAdd_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.mulAddC
     have a₂ := he.arg 2 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pre [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
     ent_pre
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hH, hF, hG]) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pub [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
     have a₁ := he.arg 1 (by simp)
     have a₂ := he.arg 2 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+    sig_post [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
     rw [ent_polyAt he hH, ent_polyAt he hF, ent_polyAt he hG] at post
     exact hQ s₀ s s' hp ha h' (fr.mono fun r hr => by simp at hr ⊢; grind) post
@@ -298,7 +299,7 @@ theorem mulAdd_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.mulAddC
 abbrev chkP2 (Y : Lay) (t t1 t0 : Buf) : Bool :=
   Y.ok t && Y.okW t1 && Y.okW t0 && Y.sep t t1 && Y.sep t t0 && Y.sep t1 t0
 
-theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2RoundContract X86.abi stk)
+theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.power2RoundContract X86.abi stk)
     (hk : chkP2 Y ⟨ha, hao, 1024⟩ ⟨fa, fo, 1024⟩ ⟨ga, go, 1024⟩ = true)
     (hN : 96 ≤ Y.stk) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
@@ -306,7 +307,7 @@ theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2Roun
     (hA : ∀ s₀ s, TPre Y s₀ → A s₀ s → Ctx Y s₀ s ∧ Reduced s.mem (Buf.addr s₀ ⟨ha, hao, 1024⟩))
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' →
       Frame (FR s₀ [⟨fa, fo, 1024⟩, ⟨ga, go, 1024⟩] 80) s.mem s'.mem →
-      Spec.MlDsa.NatPolyIs s'.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)
+      Proof.MlDsa.NatPolyIs s'.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)
         ((polyAt s.mem (Buf.addr s₀ ⟨ha, hao, 1024⟩)).map fun c => (Spec.MlDsa.power2Round c).1.toNat) →
       PolyIs s'.mem (Buf.addr s₀ ⟨ga, go, 1024⟩)
         ((polyAt s.mem (Buf.addr s₀ ⟨ha, hao, 1024⟩)).map fun c => Spec.MlDsa.ofInt (Spec.MlDsa.power2Round c).2) →
@@ -337,7 +338,7 @@ theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2Roun
     have a₂ := he.arg 2 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pre [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
@@ -345,7 +346,7 @@ theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2Roun
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hH, hF, hG]) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pub [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp)⟩
@@ -353,7 +354,7 @@ theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2Roun
     have a₁ := he.arg 1 (by simp)
     have a₂ := he.arg 2 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
     rw [ent_polyAt he hH] at post
@@ -364,7 +365,7 @@ end
 /-! ## Two polynomials: `vg_mldsa_add`, `vg_mldsa_sub` -/
 
 theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
-    (hc : Callee c fun stk => Spec.MlDsa.accSig.contract X86.abi
+    (hc : Callee c fun stk => Proof.MlDsa.accSig.contract X86.abi
       (pre := fun f g m => Reduced m f ∧ Reduced m g)
       (post := fun f g m m' _ => PolyIs m' f (op (polyAt m f) (polyAt m g))) (writeArgs := true) (stack := stk))
     (fa fo ga go : Nat)
@@ -398,20 +399,20 @@ theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
     have a₁ := he.arg 1 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pre [Proof.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at *
     ent_pre
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hF, hG]) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_pub [Proof.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
     have a₁ := he.arg 1 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+    sig_post [Proof.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
     rw [ent_polyAt he hF, ent_polyAt he hG] at post
     exact hQ s₀ s s' hp ha h' fr post
@@ -419,7 +420,7 @@ theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
 
 /-! ## `vg_mldsa_rej_bounded_poly` -/
 
-theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejBoundedContract X86.abi stk)
+theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejBoundedContract X86.abi stk)
     (da dO η aa ao wa wo : Nat) (hη : η = 2 ∨ η = 4)
     (hk : (Y.ok ⟨da, dO, 66⟩ && Y.okW ⟨aa, ao, 1024⟩ && Y.okW ⟨wa, wo, 2048⟩ && Y.sep ⟨da, dO, 66⟩ ⟨aa, ao, 1024⟩ &&
       Y.sep ⟨da, dO, 66⟩ ⟨wa, wo, 2048⟩ && Y.sep ⟨aa, ao, 1024⟩ ⟨wa, wo, 2048⟩) = true)
@@ -466,7 +467,7 @@ theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rej
     have a₃ := he.arg 3 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pre [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, a₃, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, eη] at *
@@ -479,7 +480,7 @@ theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rej
     rw [← Proof.MlKem.bytesAt_congr (he.mem _ hD), ← Proof.MlKem.bytesAt_congr (he'.mem _ hD)] at hs
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [List.getElem_cons_zero, List.getElem_cons_succ, Arg.val] at a₀ a₀' a₁
     simp only [Buf.addr, ← a₀, ← a₀'] at hs
@@ -490,7 +491,7 @@ theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rej
     have a₁ := he.arg 1 (by simp)
     have a₂ := he.arg 2 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, g₂, sw_app,
       eη] at post
@@ -499,20 +500,20 @@ theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rej
 
 /-! ## Packing: `vg_mldsa_simple_bit_pack`, `vg_mldsa_bit_pack` -/
 
-theorem sbp_bounds : ∀ b ∈ Spec.MlDsa.simpleBitPackBounds, b < 2 ^ 32 ∧ 32 * Spec.MlDsa.bitlen b < 2 ^ 32 := by
+theorem sbp_bounds : ∀ b ∈ Proof.MlDsa.simpleBitPackBounds, b < 2 ^ 32 ∧ 32 * Spec.MlDsa.bitlen b < 2 ^ 32 := by
   decide
 
-theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitPackContract X86.abi stk)
-    (fa fo b oa oo L : Nat) (hb : b ∈ Spec.MlDsa.simpleBitPackBounds) (hL : L = 32 * Spec.MlDsa.bitlen b)
+theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.simpleBitPackContract X86.abi stk)
+    (fa fo b oa oo L : Nat) (hb : b ∈ Proof.MlDsa.simpleBitPackBounds) (hL : L = 32 * Spec.MlDsa.bitlen b)
     (hk : (Y.ok ⟨fa, fo, 1024⟩ && Y.okW ⟨oa, oo, L⟩ && Y.sep ⟨fa, fo, 1024⟩ ⟨oa, oo, L⟩) = true)
     (hN : 96 ≤ Y.stk) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
       (.block (setArgs Y.sc argRegs [.buf ⟨fa, fo, 1024⟩, .imm b, .buf ⟨oa, oo, L⟩, .imm L])) ht).isSome = true)
     (hA : ∀ s₀ s, TPre Y s₀ → A s₀ s → Ctx Y s₀ s ∧
-      ∀ i < Spec.MlDsa.n, (Spec.MlDsa.coeffAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat ≤ b)
+      ∀ i < Spec.MlDsa.n, (Proof.MlDsa.coeffAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat ≤ b)
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ [⟨oa, oo, L⟩] 80) s.mem s'.mem →
       Spec.Sha3.bytesAt s'.mem (Buf.addr s₀ ⟨oa, oo, L⟩) L =
-        Spec.MlDsa.simpleBitPack (Spec.MlDsa.natPolyAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)) b → B s₀ s') :
+        Spec.MlDsa.simpleBitPack (Proof.MlDsa.natPolyAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)) b → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B
       (callP Y.sc "vg_mldsa_simple_bit_pack" c [.buf ⟨fa, fo, 1024⟩, .imm b, .buf ⟨oa, oo, L⟩, .imm L]) := by
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
@@ -532,7 +533,7 @@ theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitP
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
     have d₁ := Buf.disj hp hF hO dFO
-    have cb : ∀ i < Spec.MlDsa.n, (Spec.MlDsa.coeffAt e.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat ≤ b :=
+    have cb : ∀ i < Spec.MlDsa.n, (Proof.MlDsa.coeffAt e.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat ≤ b :=
       fun i hi => by rw [Proof.MlDsa.KeyGen.coeffAt_congr (he.mem _ hF) hi]; exact (hA s₀ s hp ha).2 i hi
     have := (E1 s₀).isLt
     have a₀ := he.arg 0 (by simp)
@@ -541,7 +542,7 @@ theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitP
     have a₃ := he.arg 3 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pre [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, a₃, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, eb, eL] at *
@@ -551,7 +552,7 @@ theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitP
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hF, hO, hb', hL']) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pub [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp), ags 3 (by simp)⟩
@@ -560,7 +561,7 @@ theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitP
     have a₂ := he.arg 2 (by simp)
     have a₃ := he.arg 3 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, eb,
       eL] at post
@@ -568,21 +569,21 @@ theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitP
     exact hQ s₀ s s' hp ha h' fr post
 
 
-theorem bp_bounds : ∀ ab ∈ Spec.MlDsa.bitPackParams, ab.1 < 2 ^ 32 ∧ ab.2 < 2 ^ 32 ∧
+theorem bp_bounds : ∀ ab ∈ Proof.MlDsa.bitPackParams, ab.1 < 2 ^ 32 ∧ ab.2 < 2 ^ 32 ∧
     32 * Spec.MlDsa.bitlen (ab.1 + ab.2) < 2 ^ 32 := by
   decide
 
-theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackContract X86.abi stk)
-    (fa fo a b oa oo L : Nat) (hab : (a, b) ∈ Spec.MlDsa.bitPackParams) (hL : L = 32 * Spec.MlDsa.bitlen (a + b))
+theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitPackContract X86.abi stk)
+    (fa fo a b oa oo L : Nat) (hab : (a, b) ∈ Proof.MlDsa.bitPackParams) (hL : L = 32 * Spec.MlDsa.bitlen (a + b))
     (hk : (Y.ok ⟨fa, fo, 1024⟩ && Y.okW ⟨oa, oo, L⟩ && Y.sep ⟨fa, fo, 1024⟩ ⟨oa, oo, L⟩) = true)
     (hN : 96 ≤ Y.stk) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
       (.block (setArgs Y.sc argRegs [.buf ⟨fa, fo, 1024⟩, .imm a, .imm b, .buf ⟨oa, oo, L⟩, .imm L])) ht).isSome
       = true)
     (hA : ∀ s₀ s, TPre Y s₀ → A s₀ s → Ctx Y s₀ s ∧ Reduced s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) ∧
-      ∀ i < Spec.MlDsa.n, -(a : Int) ≤ Spec.MlDsa.modPm (Spec.MlDsa.coeffAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat
+      ∀ i < Spec.MlDsa.n, -(a : Int) ≤ Spec.MlDsa.modPm (Proof.MlDsa.coeffAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat
         Spec.MlDsa.q ∧
-        Spec.MlDsa.modPm (Spec.MlDsa.coeffAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat Spec.MlDsa.q ≤ b)
+        Spec.MlDsa.modPm (Proof.MlDsa.coeffAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat Spec.MlDsa.q ≤ b)
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ [⟨oa, oo, L⟩] 80) s.mem s'.mem →
       Spec.Sha3.bytesAt s'.mem (Buf.addr s₀ ⟨oa, oo, L⟩) L =
         Spec.MlDsa.bitPack ((polyAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)).map fun c => Spec.MlDsa.modPm c.val Spec.MlDsa.q)
@@ -609,9 +610,9 @@ theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackCont
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
     have d₁ := Buf.disj hp hF hO dFO
     have rf := ent_reduced he hF (hA s₀ s hp ha).2.1
-    have cb : ∀ i < Spec.MlDsa.n, -(a : Int) ≤ Spec.MlDsa.modPm (Spec.MlDsa.coeffAt e.mem
+    have cb : ∀ i < Spec.MlDsa.n, -(a : Int) ≤ Spec.MlDsa.modPm (Proof.MlDsa.coeffAt e.mem
         (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat Spec.MlDsa.q ∧
-        Spec.MlDsa.modPm (Spec.MlDsa.coeffAt e.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat Spec.MlDsa.q ≤ b :=
+        Spec.MlDsa.modPm (Proof.MlDsa.coeffAt e.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩) i).toNat Spec.MlDsa.q ≤ b :=
       fun i hi => by rw [Proof.MlDsa.KeyGen.coeffAt_congr (he.mem _ hF) hi]; exact (hA s₀ s hp ha).2.2 i hi
     have := (E1 s₀).isLt
     have a₀ := he.arg 0 (by simp)
@@ -621,7 +622,7 @@ theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackCont
     have a₄ := he.arg 4 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
-    sig_pre [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pre [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, a₃, a₄, aa, List.getElem_cons_zero,
       List.getElem_cons_succ, Arg.val, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, ea, eb,
@@ -632,7 +633,7 @@ theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackCont
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hF, hO, hav, hbv, hL']) he he'
     generalize e = e₁ at *
     generalize e' = e₂ at *
-    sig_pub [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pub [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp), ags 3 (by simp), ags 4 (by simp)⟩
@@ -642,7 +643,7 @@ theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackCont
     have a₃ := he.arg 3 (by simp)
     have a₄ := he.arg 4 (by simp)
     generalize e = e' at *
-    sig_post [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, a₃, a₄, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂,
       ea, eb, eL] at post

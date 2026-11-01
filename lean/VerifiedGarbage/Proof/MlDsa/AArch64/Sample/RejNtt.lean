@@ -34,7 +34,8 @@ open VG VG.AArch64
 open VG.Proof.MlKem.AArch64 (Only Keep only_write wp_nil wp_subImm wp_lsr ptr_add toNat_lsr toNat_sub_n agree_of)
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q G PolyIs coeffAt)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Spec.Sha3 (bytesAt shakeSuffix)
 
 /-- `vg_mldsa_rej_ntt_poly(seed = x0, a = x1, scratch = x2) -> w0`, with 16

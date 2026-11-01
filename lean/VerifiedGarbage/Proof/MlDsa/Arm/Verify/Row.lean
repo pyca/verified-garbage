@@ -24,8 +24,8 @@ open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 
   polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD)
 open VG.Impl.MlDsa.Arm.Verify
 open VG.Impl.MlDsa.Arm.KeyGen (seqR)
-open VG.Spec.MlDsa (Params HintIs PolyIs NatPolyIs toRq polyAt natPolyAt coeffAt Reduced ntt nttInv multiplyNTT sub
-  simpleBitPack useHint ofInt simpleBitUnpack t1Max d n q)
+open VG.Spec.MlDsa (Params toRq ntt nttInv multiplyNTT sub simpleBitPack useHint ofInt simpleBitUnpack t1Max d n q)
+open VG.Proof.MlDsa (HintIs PolyIs NatPolyIs polyAt natPolyAt coeffAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ zHat w1Row wRow dotAcc t1Hat vT1)
 open VG.Proof.MlDsa.KeyGen (ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
@@ -304,7 +304,7 @@ theorem uh_m {σ : State} : UhOk (vlay p STK σ) vWb (pH r) pW p.γ₂ pW1 := by
 omit hP hF hS in
 theorem hint_row {σ : State} {m : Mem} {h : List (Vector Bool n)}
     (hh : HintIs m ((vlay p STK σ).A 0 (oP 0)) p.k h) :
-    (Spec.MlDsa.hintAt m (lpa (vlay p STK σ) (pH r)) 1).headD (Vector.replicate n false) =
+    (Proof.MlDsa.hintAt m (lpa (vlay p STK σ) (pH r)) 1).headD (Vector.replicate n false) =
       h.getD r (Vector.replicate n false) := by
   have e : lpa (vlay p STK σ) (pH r) = (vlay p STK σ).A 0 (oP 0) + BitVec.ofNat 64 (1024 * r) := by
     show (vlay p STK σ).A 0 (oP r) = _

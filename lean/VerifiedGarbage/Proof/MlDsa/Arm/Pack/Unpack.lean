@@ -264,7 +264,7 @@ def buSat : State where
   wr := [⟨0x2000, 1024⟩]
 
 example : ∃ pre post leak, bitUnpackContract Arm.abi 4 =
-    bitUnpackApi.sig.contract Arm.target.abi pre post bitUnpackApi.writeArgs 4 leak := ⟨_, _, _, rfl⟩
+    bitUnpackSig.contract Arm.target.abi pre post true 4 leak := ⟨_, _, _, rfl⟩
 
 theorem bitUnpack_verified :
     Verified Arm.target Impl.MlDsa.Arm.Pack.bitUnpack (bitUnpackContract Arm.abi 4) := by
@@ -323,7 +323,7 @@ def t1Sat : State where
   wr := [⟨0x2000, 1024⟩]
 
 example : ∃ pre post leak, unpackT1Contract Arm.abi =
-    unpackT1Api.sig.contract Arm.target.abi pre post unpackT1Api.writeArgs 0 leak := ⟨_, _, _, rfl⟩
+    unpackT1Sig.contract Arm.target.abi pre post true 0 leak := ⟨_, _, _, rfl⟩
 
 theorem unpackT1_verified :
     Verified Arm.target Impl.MlDsa.Arm.Pack.unpackT1 (unpackT1Contract Arm.abi) := by

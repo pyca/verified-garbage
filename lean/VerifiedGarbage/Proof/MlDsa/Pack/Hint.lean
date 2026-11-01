@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 
 /-!
 # ML-DSA: `HintBitPack` and `HintBitUnpack` step by step, for every target

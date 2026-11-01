@@ -523,34 +523,34 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.nttInvContract PPC64LE.abi 96).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, PPC64LE.abi,
+theorem pre_of {s : State} (h : (Proof.MlDsa.nttInvContract PPC64LE.abi 96).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, PPC64LE.abi,
     PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h2, h3, h4, h1, h5, h6, h7, h8, h9⟩
 
-theorem verified : Verified PPC64LE.target nttInv (Spec.MlDsa.nttInvContract PPC64LE.abi 96) := by
+theorem verified : Verified PPC64LE.target nttInv (Proof.MlDsa.nttInvContract PPC64LE.abi 96) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.PPC64LE.Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_)
     (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, PPC64LE.abi,
+    sig_post [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, PPC64LE.abi,
       PPC64LE.argRegs]
     exact h
-  · sig_pub [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, PPC64LE.abi,
+  · sig_pub [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, PPC64LE.abi,
       PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, PPC64LE.abi,
+  · sig_pub [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, PPC64LE.abi,
       PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, PPC64LE.abi,
+    · sig_reduce [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, PPC64LE.abi,
         PPC64LE.argRegs]
       sig_and_intros
       all_goals first

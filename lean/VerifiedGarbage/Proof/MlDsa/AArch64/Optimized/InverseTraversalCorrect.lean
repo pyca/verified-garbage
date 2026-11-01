@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalChecked
 
 /-! ## From `InverseTraversalSpec.lean` -/

@@ -16,7 +16,8 @@ open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.AArch64 (Keep wp_vop wp_ldrq wp_strq VChg)
-open VG.Spec.MlDsa (q n Poly Zq PolyIs zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (PolyIs)
 
 /-- Pointer and counter updates leave all vector registers unchanged. -/
 theorem bodyEnd_ok (s : State) :

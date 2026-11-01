@@ -37,7 +37,8 @@ open VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.Sample
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q G PolyIs)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- Two runs, from entry states that agree on the public data. -/
@@ -152,8 +153,8 @@ end
 
 /-! ## `Verified` -/
 
-theorem spOk_of {s : State} (h : (Spec.MlDsa.rejNTTContract Arm.abi 8).pre s) : SpOk (spOf s) s := by
-  sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem spOk_of {s : State} (h : (Proof.MlDsa.rejNTTContract Arm.abi 8).pre s) : SpOk (spOf s) s := by
+  sig_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h8, -, hrd, hwr, d1, d2, d3, b1, b2, b3, f0, f1, f2⟩ := h
   exact ⟨by rw [hrd]; exact List.mem_singleton_self _, hwr, d1, d2, d3, b1, b2, b3, f0,
@@ -190,11 +191,11 @@ open VG.Proof.MlDsa.Sample
 open RejNtt
 
 theorem rejNTT_verified :
-    Verified Arm.target Impl.MlDsa.Arm.Sample.rejNTT (Spec.MlDsa.rejNTTContract Arm.abi 8) := by
+    Verified Arm.target Impl.MlDsa.Arm.Sample.rejNTT (Proof.MlDsa.rejNTTContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, h0, hpoly, ha⟩ := correct (spOk_of hs)
     refine ⟨t, s', he, ha, ?_⟩
-    sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     rw [setWidth_append32, h0]
     by_cases hf : (rnFold [] (X s)).length = 256
@@ -205,13 +206,13 @@ theorem rejNTT_verified :
         exact (rejNTT_some hf).trans (congrArg some hpi.2.symm)⟩⟩
     · rw [ifF hf]
       exact ⟨fun e => absurd e (by decide), .inr ⟨rfl, rejNTT_none (B := 1008) (by decide) (by decide) hf⟩⟩
-  · sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hb, h0, h1, h2⟩ := hpub
     exact (all_ct ⟨spOk_of h₁, spOk_of h₂, hsp, h0, h1, h2, leakBytes_inj hb⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩
       e₁ e₂).1
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs,
+    sig_sat_check [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
 
 end VG.Proof.MlDsa.Arm.Sample

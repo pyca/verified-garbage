@@ -315,13 +315,13 @@ def rnSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem rejNTT_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Sample.rejNTT (Spec.MlDsa.rejNTTContract X86_64.abi 16) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Sample.rejNTT (Proof.MlDsa.rejNTTContract X86_64.abi 16) :=
   Verified.of_correct rejNTT_correct rejNTT_ct
-    { pre := by sig_implies_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs]
         dsimp only [rnK] at h
         obtain ⟨hr, hp⟩ := h
         by_cases hf : (rnFold [] (G (bytesAt s.mem (s.gpr .rdi) 34) 1008)).length = 256
@@ -335,10 +335,10 @@ theorem rejNTT_verified :
             .inr ⟨hr, rejNTT_none (B := 1008) (by decide) (by decide) hf⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs] at h
+        sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx⟩ := h
         exact ⟨hdi, hsi, hdx, hsp, leakBytes_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, X86_64.abi,
+      sat := by sig_implies_sat [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi,
         X86_64.argRegs] [rnSat] using rnSat }
 
 end VG.Proof.MlDsa.X86_64.Sample

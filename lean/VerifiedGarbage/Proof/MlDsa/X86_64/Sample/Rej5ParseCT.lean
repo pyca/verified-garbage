@@ -24,7 +24,6 @@ open VG.Proof.MlKem.X86_64 (sample4K relInv taintRel relStart Rel2 ofNat64_pred 
 open VG.Proof.MlKem.X86_64.S4 (R4 Pre aP at' pre_of pub_scr pub_aP pub_B env_rbx start_ct RX relInvX bsum bsum_congr)
 open VG.Proof.MlDsa.X86_64.Sample (nil_regs WP.all')
 open VG.Proof.MlDsa.X86_64.Sample.RejNttCT (BPre BRel body_ct)
-open VG.Proof.MlKem (poly4)
 
 open VG.Impl.MlDsa.X86_64.Sample.Rej5 (parse segment batch)
 
@@ -35,7 +34,7 @@ def HI (X : State → State → Prop) (K h off count n : Nat) (s₁ s₂ : State
     X σ₁ s₀₁ ∧ X σ₂ s₀₂ ∧ HAt σ₁ s₀₁ K h off count t s₁ ∧ HAt σ₂ s₀₂ K h off count t s₂
 
 theorem hbpre {σ : State} (hp : Pre σ) {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hspan : off + count ≤ 168) (ht : t < count) {s : State}
-    (hI : HAt σ s₀ K h off count t s) : BPre s (poly4 (aP σ) K) (Lt σ K (168 * h + off + t)) :=
+    (hI : HAt σ s₀ K h off count t s) : BPre s (Proof.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h + off + t)) :=
   ⟨hI.rbp, hI.rdi, Lt_length_le σ K _, coeffsWr hp hK hI.env, hI.stored,
     by simpa using hat_regions hp hK hspan hI (j := 0) (by omega), hat_regions hp hK hspan hI (by omega),
     hat_regions hp hK hspan hI (by omega)⟩
@@ -43,7 +42,7 @@ theorem hbpre {σ : State} (hp : Pre σ) {s₀ : State} {K h off count t : Nat} 
 theorem hi_brel {X : State → State → Prop} {K h off count n : Nat} (hK : K < 4) (hh : h < 2) (hspan : off + count ≤ 168) {s₁ s₂ : State}
     (H : HI X K h off count n s₁ s₂) : BRel s₁ s₂ := by
   obtain ⟨σ₁, σ₂, s₀₁, s₀₂, t, p₁, p₂, hq, _, ht, _, _, l₁, l₂⟩ := H
-  refine ⟨poly4 (aP σ₁) K, Lt σ₁ K (168 * h + off + t), hbpre (pre_of p₁) hK hspan ht l₁,
+  refine ⟨Proof.MlKem.poly4 (aP σ₁) K, Lt σ₁ K (168 * h + off + t), hbpre (pre_of p₁) hK hspan ht l₁,
     by rw [pub_aP hq, pub_Lt4 hq hK]; exact hbpre (pre_of p₂) hK hspan ht l₂,
     by rw [l₁.rsi, l₂.rsi, at', at', pub_scr hq], by rw [l₁.rcx, l₂.rcx], fun k hk => ?_⟩
   rw [hat_byte hh hspan l₁ (by omega), hat_byte hh hspan l₂ (by omega)]

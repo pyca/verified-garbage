@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Spec.MlDsa.Poly
+meta import VerifiedGarbage.Proof.MlDsa.Contract
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 meta import VerifiedGarbage.Proof.Sha3.Arith
@@ -34,8 +34,8 @@ def maskPoly (m : Mem) (a : Addr) (d : Nat) : Spec.MlDsa.Poly :=
     (2^(d-1)-1) (2^(d-1)))
 
 def Decoded (σ t : State) (d : Nat) : Prop := Env σ t ∧
-  Spec.MlDsa.PolyIs t.mem (σ.gpr .x2) (maskPoly σ.mem (σ.gpr .x0) d) ∧
-  Spec.MlDsa.PolyIs t.mem (σ.gpr .x3) (maskPoly σ.mem (σ.gpr .x0+66) d)
+  Proof.MlDsa.PolyIs t.mem (σ.gpr .x2) (maskPoly σ.mem (σ.gpr .x0) d) ∧
+  Proof.MlDsa.PolyIs t.mem (σ.gpr .x3) (maskPoly σ.mem (σ.gpr .x0+66) d)
 
 theorem decode_ok {σ s : State} {d : Nat} (hp : Pre σ) (hd : d=18 ∨ d=20)
     (hs : SpongePost σ s) :
@@ -132,8 +132,8 @@ open VG.Impl.MlDsa.AArch64.Optimized.ResidentMask (rawWith pro zero absorb)
 and restoration of the public AArch64 calling convention. -/
 def Post (σ t : State) (d : Nat) : Prop :=
   abiPreserved σ t ∧ Frame (writes σ) σ.mem t.mem ∧
-  Spec.MlDsa.PolyIs t.mem (σ.gpr .x2) (maskPoly σ.mem (σ.gpr .x0) d) ∧
-  Spec.MlDsa.PolyIs t.mem (σ.gpr .x3) (maskPoly σ.mem (σ.gpr .x0+66) d) ∧
+  Proof.MlDsa.PolyIs t.mem (σ.gpr .x2) (maskPoly σ.mem (σ.gpr .x0) d) ∧
+  Proof.MlDsa.PolyIs t.mem (σ.gpr .x3) (maskPoly σ.mem (σ.gpr .x0+66) d) ∧
   t.rd=σ.rd ∧ t.wr=σ.wr
 
 theorem finish_ok {σ s : State} {d : Nat} (hp : Pre σ) (hd : Decoded σ s d) :

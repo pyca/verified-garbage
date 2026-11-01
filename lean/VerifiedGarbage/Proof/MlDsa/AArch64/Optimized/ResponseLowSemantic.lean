@@ -90,7 +90,7 @@ section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Response
 open VG VG.AArch64
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith.Neon
 
@@ -161,7 +161,7 @@ section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Response
 open VG VG.AArch64
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith.Neon
 

@@ -417,8 +417,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.nttContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, RISCV64.abi,
+theorem pre_of {s : State} (h : (Proof.MlDsa.nttContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, RISCV64.abi,
     RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
@@ -432,27 +432,27 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
-theorem verified : Verified RISCV64.target ntt (Spec.MlDsa.nttContract RISCV64.abi) := by
+theorem verified : Verified RISCV64.target ntt (Proof.MlDsa.nttContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.RISCV64.Add.ctRegs [.a0, .a1] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hra, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hra⟩, ?_⟩
-    sig_post [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, RISCV64.abi,
+    sig_post [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, RISCV64.abi,
       RISCV64.argRegs]
     exact h
-  · sig_pub [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, RISCV64.abi,
+  · sig_pub [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, RISCV64.abi,
       RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, RISCV64.abi,
+  · sig_pub [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, RISCV64.abi,
       RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, RISCV64.abi,
+    · sig_reduce [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, RISCV64.abi,
         RISCV64.argRegs]
       sig_and_intros
       all_goals first

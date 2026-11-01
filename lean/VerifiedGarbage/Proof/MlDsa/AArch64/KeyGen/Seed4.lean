@@ -12,7 +12,8 @@ namespace VG.Proof.MlDsa.AArch64.KeyGen
 open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
 open VG.Proof.MlKem.AArch64 (Keep Only)
-open VG.Spec.MlDsa (Params Poly IPoly Reduced PolyIs polyAt poly4 seed4)
+open VG.Spec.MlDsa (Params Poly IPoly)
+open VG.Proof.MlDsa (Reduced PolyIs polyAt poly4 seed4)
 open VG.Proof.MlDsa.KeyGen (seedA)
 open VG.Spec.Sha3 (bytesAt)
 

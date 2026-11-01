@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Spec.MlDsa.FusedInverse
+import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.TCB.AArch64.Simd
 
 @[expose] public section

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
-public import VerifiedGarbage.Spec.MlDsa.ResponseLow
+public import VerifiedGarbage.Proof.MlDsa.ResponseLowContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
-meta import VerifiedGarbage.Spec.MlDsa.ResponseLow
+meta import VerifiedGarbage.Proof.MlDsa.ResponseLowContract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 meta import VerifiedGarbage.Proof.Framework.Offset

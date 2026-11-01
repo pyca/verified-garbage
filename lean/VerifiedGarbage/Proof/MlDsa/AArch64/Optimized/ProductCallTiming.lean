@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MultiplyInverse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
-public import VerifiedGarbage.Spec.MlDsa.RawInverse
+public import VerifiedGarbage.Proof.MlDsa.RawInverseContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

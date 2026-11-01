@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.ResidentMask
+public import VerifiedGarbage.Proof.MlDsa.ResidentMaskContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.Contract

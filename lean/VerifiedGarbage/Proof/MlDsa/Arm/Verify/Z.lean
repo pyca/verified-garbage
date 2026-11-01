@@ -52,7 +52,8 @@ open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 
   bu_tr nl_ok nl_tr polyIs_keepW keepD)
 open VG.Impl.MlDsa.Arm.Verify
 open VG.Impl.MlDsa.Arm.KeyGen (and11)
-open VG.Spec.MlDsa (Params HintIs PolyIs toRq polyAt normRq Reduced)
+open VG.Spec.MlDsa (Params toRq normRq)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ)
 open VG.Spec.Sha3 (bytesAt)
 

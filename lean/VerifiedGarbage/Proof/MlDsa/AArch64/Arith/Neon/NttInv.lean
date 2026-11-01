@@ -32,7 +32,7 @@ open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (inPlaceK)
-open VG.Spec.MlDsa (PolyIs polyAt)
+open VG.Proof.MlDsa (PolyIs polyAt)
 
 theorem nttInv_noCalls : VG.Impl.MlDsa.AArch64.Arith.Neon.nttInv.noCalls = true := by lit_decide
 
@@ -64,9 +64,9 @@ theorem nttInv_ct : ConstantTime isa (inPlaceK Spec.MlDsa.nttInv).pre (inPlaceK 
     VG.Proof.MlDsa.AArch64.Arith.inPlace_agree (by taint_decide)
 
 theorem nttInv_verified : Verified AArch64.target VG.Impl.MlDsa.AArch64.Arith.Neon.nttInv
-    (Spec.MlDsa.nttInvContract AArch64.abi) :=
+    (Proof.MlDsa.nttInvContract AArch64.abi) :=
   Verified.of_correct nttInv_correct nttInv_ct (by
-    mldsa_implies [Spec.MlDsa.nttInvContract,Spec.MlDsa.inPlaceContract,Spec.MlDsa.inPlaceSig,inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttInvContract,Proof.MlDsa.inPlaceContract,Proof.MlDsa.inPlaceSig,inPlaceK,
       AArch64.abi,AArch64.argRegs] [VG.Proof.MlDsa.AArch64.Arith.inPlaceSat]
       using VG.Proof.MlDsa.AArch64.Arith.inPlaceSat)
 end VG.Proof.MlDsa.AArch64.Arith.Neon

@@ -45,7 +45,8 @@ open VG.Proof.MlKem.X86
 open VG.Proof.MlDsa.X86.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.X86.Sample (argOp bZero bSetup qImm sponge outOff)
-open VG.Spec.MlDsa (Zq q H n ofInt coeffAt IPoly ballParams)
+open VG.Spec.MlDsa (Zq q H n ofInt IPoly)
+open VG.Proof.MlDsa (coeffAt ballParams)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.X86.Sample (cR E1)
 

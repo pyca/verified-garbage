@@ -18,7 +18,8 @@ doubleword (`hbL`, `lbL`), and that it is `r₁` and `r₀` of `Decompose`
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round
-open VG.Spec.MlDsa (q gamma2s ofInt lowBits)
+open VG.Spec.MlDsa (q ofInt lowBits)
+open VG.Proof.MlDsa (gamma2s)
 open VG.Proof.MlDsa.Round (hbF hbM q_eq mem_gamma2s hbF_le hbF_eq hbM_mul lowBits_val)
 open VG.Proof.MlDsa.X86_64.Arith (caddL caddL_toNat sshiftRight31)
 

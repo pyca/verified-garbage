@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: polynomials in memory, for every target
 
-How the stored representation of `Spec/MlDsa/Poly.lean` (a polynomial as
+How the stored representation of `Proof/MlDsa/Contract.lean` (a polynomial as
 `[u32; 256]`: `coeffAt`, `polyAt`, `natPolyAt`, `hintAt`) changes when a
 program writes a coefficient, and how to conclude `PolyIs`, `NatPolyIs` or
 `HintIs` from what each word holds.

@@ -249,12 +249,12 @@ theorem vseeds2 {p : Params} {σ : State} {e : Nat} {s : State} (h : VS p σ e 2
   rw [show 68=34+34 from rfl,Proof.MlKem.bytesAt_add]
   have h0 := vseed2_eq h (k := 0) (by decide)
   have h1 := vseed2_eq h (k := 1) (by decide)
-  simp only [Spec.MlDsa.seed4,Nat.mul_zero,Nat.add_zero,Nat.mul_one,
+  simp only [Proof.MlDsa.seed4,Nat.mul_zero,Nat.add_zero,Nat.mul_one,
     VG.Proof.MlKem.AArch64.ptr_zero] at h0 h1
   rw [h0,h1]
 
 theorem vcall2_piece {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
-    (C : CalleeOk S cd (VG.Spec.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : VFacts p)
+    (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : VFacts p)
     {e : Nat} (he : e+2 ≤ p.k*p.ℓ) : VPiece p S (VS p · (e) 2) (VA p · (e+2))
       (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p)))) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (e)) 512))) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
@@ -295,7 +295,7 @@ open VG.Spec.MlDsa (Params)
 
 private theorem twoCallee {S : Nat} (hS : S<2^64) :
     CalleeOk S VG.Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code
-      (VG.Spec.MlDsa.rejNTT2Contract abi S) :=
+      (VG.Proof.MlDsa.rejNTT2Contract abi S) :=
   CalleeOk.of_verified hS VG.Proof.MlDsa.AArch64.Optimized.ResidentRej.two_verified
     (Nat.zero_le _) (by
       have hd : VG.Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel

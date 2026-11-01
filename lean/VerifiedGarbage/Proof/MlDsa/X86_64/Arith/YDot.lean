@@ -30,7 +30,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_dot_inverse{c}_avx2`
@@ -53,7 +53,8 @@ open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_o
   gprPreserved_of ifp ifn GOnly wp_rcxLoopY add_ofNat_zero lane_setReg lane_setFlags sx32 State.setMem_ymm
   withMxcsr_ok mxR)
 open VG.Impl.MlKem.X86_64 (xb xmov toY yconst rcxLoop)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs montgomeryRInv)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs montgomeryRInv)
 
 theorem lane_dotZero : laneSseBlock (toY dotZero) = some dotZero := by decide +kernel
 theorem lane_dotMac : laneSseBlock (toY dotMac) = some dotMac := by decide +kernel
@@ -258,7 +259,7 @@ end
 theorem dotOut_eq {m m' : VG.Mem} {a b : Addr} {c : Nat}
     (ha : ∀ j < c, ∀ k < 256, coeffAt m' (a + BitVec.ofNat 64 (1024 * j)) k = coeffAt m (a + BitVec.ofNat 64 (1024 * j)) k)
     (hb : ∀ j < c, ∀ k < 256, coeffAt m' (b + BitVec.ofNat 64 (1024 * j)) k = coeffAt m (b + BitVec.ofNat 64 (1024 * j)) k) :
-    (Vector.ofFn fun k => dotOut m' a b c k.val) = Representation.encode true (Spec.MlDsa.dotNTT
+    (Vector.ofFn fun k => dotOut m' a b c k.val) = Representation.encode true (Proof.MlDsa.dotNTT
       (fun j => polyAt m (a + BitVec.ofNat 64 (1024 * j))) (fun j => polyAt m (b + BitVec.ofNat 64 (1024 * j))) c) := by
   apply Vector.ext; intro k hk
   rw [Vector.getElem_ofFn, ← getElem!_pos (Representation.encode true _) k hk]
@@ -276,7 +277,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, r1, r2, pa, pb⟩ := hs
   have hwo : pR (s.gpr .rdi) ∈ s.wr := by rw [hwr]; simp
   have hws : pR (s.gpr .rcx) ∈ s.wr := by rw [hwr]; simp
-  have hW : WP isa (dotInvAvx2 c) s fun s' => PolyIs s'.mem (s.gpr .rdi) (Spec.MlDsa.nttInv (Spec.MlDsa.dotNTT
+  have hW : WP isa (dotInvAvx2 c) s fun s' => PolyIs s'.mem (s.gpr .rdi) (Spec.MlDsa.nttInv (Proof.MlDsa.dotNTT
       (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
       (fun j => polyAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j))) c)) ∧
       Frame [pR (s.gpr .rdi), pR (s.gpr .rcx)] s.mem s'.mem := by
@@ -284,7 +285,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
         GOnly [.r10, .rsi] s w ∧ w.ymmHi = s.ymmHi)
       (by vrund; exact ⟨by gonlyd, rfl⟩) fun w ⟨h10, hsi, og, hy⟩ => ?_)
     refine WP.mono (withMxcsr_ok (r := .rsi) (Q := fun u => PolyIs u.mem (s.gpr .rdi) (Spec.MlDsa.nttInv
-        (Spec.MlDsa.dotNTT (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
+        (Proof.MlDsa.dotNTT (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
           (fun j => polyAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j))) c)) ∧
         Frame [pR (s.gpr .rdi), pR (s.gpr .rcx)] s.mem u.mem) ⟨by decide, by decide⟩ [.rax, .rcx, .rdx, .r8, .r9, .r10]
       ⟨by decide, by decide⟩ hsi (by rw [og.keep.2.2]; exact hws) (writesOnly_of hk') (fun s1 k1 f1 => ?_))
@@ -328,7 +329,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
     refine WP.mono (MontgomeryInv.body_ok (by rw [ku.gpr (by decide), k13.gpr (by decide), hdi1])
       (by rw [ku.gpr (by decide), k13.gpr (by decide), hsi1]) hP
       (by rw [ku.2.2, k13.2.2, wr1]; exact hwo) (by rw [ku.2.2, k13.2.2, wr1]; exact hws) d3) fun v ⟨hv, fv⟩ => ⟨?_, ?_⟩
-    · have e : Spec.MlDsa.montgomeryNttInv (Representation.encode true (Spec.MlDsa.dotNTT
+    · have e : Proof.MlDsa.montgomeryNttInv (Representation.encode true (Proof.MlDsa.dotNTT
           (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
           (fun j => polyAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j))) c)) = _ :=
         Representation.inverse_encode true _
@@ -354,15 +355,15 @@ theorem ct5 : ConstantTime isa (dotK 5).pre (dotK 5).pub (dotInvAvx2 5) :=
 theorem ct7 : ConstantTime isa (dotK 7).pre (dotK 7).pub (dotInvAvx2 7) :=
   VG.Taint.constantTime (A := taint) dotτ (dot_agree 7) (by taint_decide)
 
-theorem verified4 : Verified X86_64.target (dotInvAvx2 4) (Spec.MlDsa.dotInverseContract 4 X86_64.abi) :=
+theorem verified4 : Verified X86_64.target (dotInvAvx2 4) (Proof.MlDsa.dotInverseContract 4 X86_64.abi) :=
   Verified.of_correct (correct (by decide) (by decide +kernel) (by decide +kernel) (by decide +kernel)) ct4
     (by dot_implies dotSat 4)
 
-theorem verified5 : Verified X86_64.target (dotInvAvx2 5) (Spec.MlDsa.dotInverseContract 5 X86_64.abi) :=
+theorem verified5 : Verified X86_64.target (dotInvAvx2 5) (Proof.MlDsa.dotInverseContract 5 X86_64.abi) :=
   Verified.of_correct (correct (by decide) (by decide +kernel) (by decide +kernel) (by decide +kernel)) ct5
     (by dot_implies dotSat 5)
 
-theorem verified7 : Verified X86_64.target (dotInvAvx2 7) (Spec.MlDsa.dotInverseContract 7 X86_64.abi) :=
+theorem verified7 : Verified X86_64.target (dotInvAvx2 7) (Proof.MlDsa.dotInverseContract 7 X86_64.abi) :=
   Verified.of_correct (correct (by decide) (by decide +kernel) (by decide +kernel) (by decide +kernel)) ct7
     (by dot_implies dotSat 7)
 

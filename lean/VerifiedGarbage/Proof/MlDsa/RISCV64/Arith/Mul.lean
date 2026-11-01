@@ -275,14 +275,14 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.mulContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.mulContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
-theorem pre_of_add {s : State} (h : (Spec.MlDsa.mulAddContract RISCV64.abi).pre s) :
+theorem pre_of_add {s : State} (h : (Proof.MlDsa.mulAddContract RISCV64.abi).pre s) :
     Pre s ∧ Reduced s.mem (H s) := by
-  sig_pre [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
+  sig_pre [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h9, h10, h11, h12, h13⟩, h8⟩
 
@@ -295,54 +295,54 @@ def satState : State where
   rd := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
   wr := [⟨0x1000, 1024⟩]
 
-theorem mul_verified : Verified RISCV64.target mul (Spec.MlDsa.mulContract RISCV64.abi) := by
+theorem mul_verified : Verified RISCV64.target mul (Proof.MlDsa.mulContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.RISCV64.Add.ctRegs [.a0, .a1, .a2] (fun s₁ s₂ h => ?_)
     (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (mul_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.ra⟩, ?_⟩
-    sig_post [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h.2.1
     · exact h.2.2.1
     · exact h.2.2.2
-  · sig_pub [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial
         | exact AddSub.reduced_zero _
         | decide +kernel
 
-theorem mulAdd_verified : Verified RISCV64.target mulAdd (Spec.MlDsa.mulAddContract RISCV64.abi) := by
+theorem mulAdd_verified : Verified RISCV64.target mulAdd (Proof.MlDsa.mulAddContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.RISCV64.Add.ctRegs [.a0, .a1, .a2] (fun s₁ s₂ h => ?_)
     (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · obtain ⟨hp, hrH⟩ := pre_of_add hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (mulAdd_hb hp hrH)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.ra⟩, ?_⟩
-    sig_post [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h.2.1
     · exact h.2.2.1
     · exact h.2.2.2
-  · sig_pub [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial

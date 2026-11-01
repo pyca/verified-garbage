@@ -15,7 +15,8 @@ open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.AArch64.Arith (inPlaceK Tab storeTab_ok movW_ok)
 open VG.Proof.MlKem.AArch64 (Keep wp_vop wp_scalar)
-open VG.Spec.MlDsa (Poly PolyIs polyAt)
+open VG.Spec.MlDsa (Poly)
+open VG.Proof.MlDsa (PolyIs polyAt)
 
 theorem consts_ok (s : State) :
     WP isa (.block consts) s fun s' => VConsts s' ∧ s'.mem = s.mem ∧ Keep [.x9,.x10] s s' := by

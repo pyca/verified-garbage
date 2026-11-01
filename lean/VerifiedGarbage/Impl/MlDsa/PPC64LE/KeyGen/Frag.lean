@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Arith
 
 As on 32-bit ARM (`Impl/MlDsa/Arm/KeyGen/Frag.lean`): the top-level
 functions are sequences of calls of ML-DSA's polynomial primitives
-(`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge functions, on buffers in
+(`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge functions, on buffers in
 their working space `scratch` and their arguments. Like ML-KEM's top-level
 functions (`Impl/MlKem/PPC64LE/Top.lean`, whose sponge routine `hash`, byte
 copy `copy` and saving of our caller's registers they use), they keep

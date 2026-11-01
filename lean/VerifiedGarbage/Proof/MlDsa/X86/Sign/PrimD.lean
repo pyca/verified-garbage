@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 

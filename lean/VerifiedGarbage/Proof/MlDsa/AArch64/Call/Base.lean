@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
@@ -393,23 +393,23 @@ theorem Lay.keepBytes (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p l = true)
   exact Proof.MlKem.bytesAt_frame hP.frame (L.fdisj hc) (by have := L.small _ hn; simp only at this; omega)
 
 theorem Lay.keepPoly {f : Spec.MlDsa.Poly} (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p 1024 = true)
-    (h : Spec.MlDsa.PolyIs s.mem (pa s p) f) : Spec.MlDsa.PolyIs s'.mem (pa s' p) f := by
+    (h : Proof.MlDsa.PolyIs s.mem (pa s p) f) : Proof.MlDsa.PolyIs s'.mem (pa s' p) f := by
   rw [hP.pa (L.keepBs hc)]
   exact Proof.MlDsa.Verify.polyIs_frame hP.frame (L.fdisj hc) h
 
 theorem Lay.keepPolyAt (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p 1024 = true) :
-    Spec.MlDsa.polyAt s'.mem (pa s' p) = Spec.MlDsa.polyAt s.mem (pa s p) := by
+    Proof.MlDsa.polyAt s'.mem (pa s' p) = Proof.MlDsa.polyAt s.mem (pa s p) := by
   rw [hP.pa (L.keepBs hc)]
   exact Proof.MlDsa.Verify.polyAt_frame hP.frame (L.fdisj hc)
 
 theorem Lay.keepRed (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p 1024 = true)
-    (h : Spec.MlDsa.Reduced s.mem (pa s p)) : Spec.MlDsa.Reduced s'.mem (pa s' p) := by
+    (h : Proof.MlDsa.Reduced s.mem (pa s p)) : Proof.MlDsa.Reduced s'.mem (pa s' p) := by
   rw [hP.pa (L.keepBs hc)]
   exact Proof.MlDsa.Verify.reduced_frame hP.frame (L.fdisj hc) h
 
 theorem Lay.keepHint {k : Nat} {h : List (Vector Bool Spec.MlDsa.n)} (hP : PPostB S s s' ws)
     (hc : keepB rbs wbs ws p (1024 * k) = true)
-    (hh : Spec.MlDsa.HintIs s.mem (pa s p) k h) : Spec.MlDsa.HintIs s'.mem (pa s' p) k h := by
+    (hh : Proof.MlDsa.HintIs s.mem (pa s p) k h) : Proof.MlDsa.HintIs s'.mem (pa s' p) k h := by
   rw [hP.pa (L.keepBs hc)]
   obtain ⟨n, hn, hl⟩ := inB_spec (keepB_in hc)
   exact Proof.MlDsa.Verify.hintIs_frame hP.frame (by have := L.small _ hn; simp only at this; omega)

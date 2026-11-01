@@ -23,7 +23,8 @@ open VG VG.Arm VG.Arm.RegUpd VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv Callee ip_ok ip_tr
   polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD)
 open VG.Impl.MlDsa.Arm.Verify
-open VG.Spec.MlDsa (Params HintIs PolyIs toRq polyAt Reduced ntt simpleBitPack)
+open VG.Spec.MlDsa (Params toRq ntt simpleBitPack)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ zHat w1Row)
 open VG.Proof.MlDsa.KeyGen (ifp ifn)
 open VG.Spec.Sha3 (bytesAt)

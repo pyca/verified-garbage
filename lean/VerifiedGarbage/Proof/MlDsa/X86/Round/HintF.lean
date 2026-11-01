@@ -25,8 +25,8 @@ namespace VG.Proof.MlDsa.X86.Round
 
 open VG VG.X86 VG.X86.Wp VG.Impl.MlDsa.X86.Round
 open VG.Impl.MlKem.X86 (at_ leaf)
-open VG.Spec.MlDsa (q gamma2s coeffAt Reduced polyAt HintIs NatPolyIs hintOnes hintAt makeHintContract
-  makeHintSig useHintContract useHintSig)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s coeffAt Reduced polyAt HintIs NatPolyIs hintOnes hintAt makeHintContract makeHintSig useHintContract useHintSig)
 open VG.Proof.MlDsa.Round (coeffAddr pR n_eq q_eq polyAt_val hintIs_of_toNat natPolyIs_of_toNat zipWith_get
   hintAt_get onesFrom onesFrom_step onesFrom_n hintOnes_single makeHint_eq useHint_eq)
 open VG.Proof.MlKem.X86 (Only E0 P0 P0_esp P0_wr frameR retR LeafPost LeafEnd Piece satState toNat_ofNat32

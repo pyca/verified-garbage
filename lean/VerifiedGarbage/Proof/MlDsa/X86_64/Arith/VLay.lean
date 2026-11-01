@@ -28,7 +28,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (XOnly xmm_setXmm ifp ifn sel sel_lt sel_zero add_ofNat_zero Keep wp_countdown
   GOnly wp_rcxLoop sx1 sx16)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-- Runs a block of general-purpose and SSE instructions. -/
 tactic_template "vrund" : tactic => `(tactic| vrunm [ea_atD])

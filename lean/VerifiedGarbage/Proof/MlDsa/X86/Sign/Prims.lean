@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # ML-DSA signing on x86 (32-bit): the primitives it calls
 
 What the proofs need of the implementations of the primitives (`PrimsOk`):
-each is verified against its shared contract (`Spec/MlDsa/Poly.lean`), with 16
+each is verified against its shared contract (`Proof/MlDsa/Contract.lean`), with 16
 bytes of stack (56 for the samplers, which call the sponge functions), and
 never writes `esp` (`COk`); and, of the two samplers whose result signing
 branches on, that the result is a function of their public data (`rejF`,

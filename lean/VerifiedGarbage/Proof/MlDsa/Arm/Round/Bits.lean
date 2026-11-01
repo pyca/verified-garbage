@@ -35,7 +35,8 @@ values are those of `HighBits` and `LowBits` (`bhb_highBits`, `blb_lowBits`).
 namespace VG.Proof.MlDsa.Arm.Round.Bits
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Round VG.Proof.MlDsa.Round VG.Proof.MlDsa.Arm.Round
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs NatPolyIs natPolyAt ofInt gamma2s highBits lowBits)
+open VG.Spec.MlDsa (q n Poly Zq ofInt highBits lowBits)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs NatPolyIs natPolyAt gamma2s)
 open VG.Proof.MlDsa.Arm.Arith.AddSub (fixS)
 open VG.Impl.MlDsa.Arm.Arith (fixupS)
 open VG.Proof.MlKem.Arm (cmp_z)
@@ -185,14 +186,14 @@ theorem bits_ok {s : State} (hp : Pre s) {B : Nat → List Instr} {F : Nat → B
 
 /-! ## Verified -/
 
-theorem pre_high {s : State} (h : (Spec.MlDsa.highBitsContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_high {s : State} (h : (Proof.MlDsa.highBitsContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem pre_low {s : State} (h : (Spec.MlDsa.lowBitsContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_low {s : State} (h : (Proof.MlDsa.lowBitsContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
@@ -227,26 +228,26 @@ theorem ct {k : Contract isa} {c : Prog isa} (hpub : ∀ s₁ s₂, k.pub s₁ s
     · exact h2) h
 
 theorem high_verified :
-    Verified Arm.target Impl.MlDsa.Arm.Round.highBits (Spec.MlDsa.highBitsContract Arm.abi) := by
+    Verified Arm.target Impl.MlDsa.Arm.Round.highBits (Proof.MlDsa.highBitsContract Arm.abi) := by
   refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_high hs
     obtain ⟨t, s', he, hf, hsp, hk⟩ := bits_ok hp (B := hbBody) (F := bhb) fun g hg _ _ _ _ h0 h1 h2 iR oO => hbBody_ok h0 h1 h2 iR oO hg
     refine ⟨t, s', he, ⟨preserved_of hf, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     refine natPolyIs_of_toNat fun k hk' => ?_
     have hr := hp.red k hk'
     show (coeffAt s'.mem (P s .r2) k).toNat = ((polyAt s.mem (P s .r0)).map _)[k]!
     rw [hk k hk', map_get _ _ hk', polyAt_get _ _ hk', ← bhb_highBits (mem_gamma2s hp.g |>.elim .inr .inl),
       word_of_reduced hr]
-  · sig_pub [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨-, h0, h1, h2⟩ := h
     exact ⟨h0, by rw [h1], h2⟩
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first
@@ -254,27 +255,27 @@ theorem high_verified :
         | exact reduced_zero _
 
 theorem low_verified :
-    Verified Arm.target Impl.MlDsa.Arm.Round.lowBits (Spec.MlDsa.lowBitsContract Arm.abi) := by
+    Verified Arm.target Impl.MlDsa.Arm.Round.lowBits (Proof.MlDsa.lowBitsContract Arm.abi) := by
   refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_low hs
     obtain ⟨t, s', he, hf, hsp, hk⟩ := bits_ok hp (B := lbBody) (F := blb)
       fun g hg _ _ _ _ h0 h1 h2 iR oO => lbBody_ok h0 h1 h2 iR oO hg
     refine ⟨t, s', he, ⟨preserved_of hf, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     refine polyIs_of_toNat fun k hk' => ?_
     have hr := hp.red k hk'
     show (coeffAt s'.mem (P s .r2) k).toNat = (((polyAt s.mem (P s .r0)).map _)[k]! : Zq).val
     rw [hk k hk', map_get _ _ hk', polyAt_get _ _ hk', ← blb_lowBits (mem_gamma2s hp.g |>.elim .inr .inl),
       word_of_reduced hr]
-  · sig_pub [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨-, h0, h1, h2⟩ := h
     exact ⟨h0, by rw [h1], h2⟩
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

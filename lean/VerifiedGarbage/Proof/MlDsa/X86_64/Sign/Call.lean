@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # ML-DSA signing on x86-64: calls of verified code
 
 A primitive the function calls is any code verified against its shared contract
-(`Spec/MlDsa/Poly.lean`) for some stack of `S` bytes that leaves 8 bytes for
+(`Proof/MlDsa/Contract.lean`) for some stack of `S` bytes that leaves 8 bytes for
 the return address in the `D` bytes the function gives its calls, and that
 never writes `rsp` (`Callee`). A call, with the moves of its arguments before
 it (`glueCall_ok`), leaves the permissions and the callee-saved registers as

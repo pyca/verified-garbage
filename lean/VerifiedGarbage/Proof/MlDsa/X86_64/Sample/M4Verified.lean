@@ -94,26 +94,26 @@ def em4Sat : State where
 theorem em4_verified (c : Prog isa)
     (hc : ∀ σ, em4K.pre σ → ∃ t s', Exec isa c σ t s' ∧ abiPreserved σ s' ∧ em4K.post σ s')
     (ht : ConstantTime isa em4K.pre em4K.pub c) :
-    Verified X86_64.target c (Spec.MlDsa.expandMask4Contract X86_64.abi 24) :=
+    Verified X86_64.target c (Proof.MlDsa.expandMask4Contract X86_64.abi 24) :=
   Verified.of_correct hc ht
-    { pre := by sig_implies_pre [Spec.MlDsa.expandMask4Contract, Spec.MlDsa.expandMask4Sig, em4K, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlDsa.expandMask4Contract, Proof.MlDsa.expandMask4Sig, em4K, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.expandMask4Contract, Spec.MlDsa.expandMask4Sig, em4K, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlDsa.expandMask4Contract, Proof.MlDsa.expandMask4Sig, em4K, X86_64.abi, X86_64.argRegs]
         exact h
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.expandMask4Contract, Spec.MlDsa.expandMask4Sig, em4K, X86_64.abi, X86_64.argRegs] at h
+        sig_pub [Proof.MlDsa.expandMask4Contract, Proof.MlDsa.expandMask4Sig, em4K, X86_64.abi, X86_64.argRegs] at h
         obtain ⟨hsp, hdi, hsi, hdx, hcx⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, hsp⟩
-      sat := by sig_implies_sat [Spec.MlDsa.expandMask4Contract, Spec.MlDsa.expandMask4Sig, em4K, X86_64.abi,
+      sat := by sig_implies_sat [Proof.MlDsa.expandMask4Contract, Proof.MlDsa.expandMask4Sig, em4K, X86_64.abi,
         X86_64.argRegs] [em4Sat] using em4Sat }
 
 theorem expandMask4Avx2_verified : Verified X86_64.target expandMask4Avx2
-    (Spec.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ correct ct
+    (Proof.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ correct ct
 
 theorem expandMask4_verified : Verified X86_64.target expandMask4
-    (Spec.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ correct_scalar ct_scalar
+    (Proof.MlDsa.expandMask4Contract X86_64.abi 24) := em4_verified _ correct_scalar ct_scalar
 
 end VG.Proof.MlDsa.X86_64.Mask4

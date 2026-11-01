@@ -31,7 +31,6 @@ open VG.Proof.MlKem.X86_64 (Keep ea_at wp_countdown add_ofNat_zero pR WP.keep of
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold rnStep rnFold_snoc rnFold_length_le Stored stored_nil stored_frame G_eq G_length)
 open VG.Proof.MlDsa.X86_64.Sample (rnBody_ok CoeffsWr)
-open VG.Proof.MlKem (poly4 seed4)
 open VG.Spec.MlDsa (Zq)
 open VG.Proof.MlKem (xofByte xof_squeezeFrom_getElem)
 
@@ -71,11 +70,11 @@ include hp
 
 omit hp in
 /-- Polynomial `K` lies in `a`. -/
-theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (pR (poly4 (aP σ) K)) (aR σ) := Offset.sub_base _ (by omega)
+theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (pR (Proof.MlKem.poly4 (aP σ) K)) (aR σ) := Offset.sub_base _ (by omega)
 
 /-- A part of the scratch space is apart from polynomial `K`. -/
 theorem scr_poly {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ 8192) :
-    ∀ r ∈ [pR (poly4 (aP σ) K)], Region.Disjoint ⟨at' σ a, n⟩ r := by
+    ∀ r ∈ [pR (Proof.MlKem.poly4 (aP σ) K)], Region.Disjoint ⟨at' σ a, n⟩ r := by
   intro r hr
   rw [List.mem_singleton.mp hr]
   exact Region.Disjoint.sub_right (Region.Disjoint.sub_left hp.a_scr.symm (sub_scr h)) (sub_poly hK)
@@ -83,7 +82,7 @@ theorem scr_poly {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ 8192) :
 omit hp in
 /-- Two polynomials are apart. -/
 theorem poly_poly {K k : Nat} (hK : K < 4) (hk : k < 4) (hne : k ≠ K) :
-    ∀ r ∈ [pR (poly4 (aP σ) K)], (VG.Proof.MlDsa.Sample.polyR (poly4 (aP σ) k)).Disjoint r := by
+    ∀ r ∈ [pR (Proof.MlKem.poly4 (aP σ) K)], (VG.Proof.MlDsa.Sample.polyR (Proof.MlKem.poly4 (aP σ) k)).Disjoint r := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega) (by omega)
@@ -91,7 +90,7 @@ theorem poly_poly {K k : Nat} (hK : K < 4) (hk : k < 4) (hne : k ≠ K) :
 
 /-- Writes to polynomial `K` keep `Env`. -/
 theorem env_poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvK σ s)
-    (hf : Frame [pR (poly4 (aP σ) K)] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hf : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : EnvK σ s' := by
   have hsub := sub_poly (σ := σ) hK
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, by rw [hg .rbx (by simp), he.rbx], by rw [hg .r12 (by simp), he.r12],
@@ -102,11 +101,11 @@ theorem env_poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvK σ s)
   · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aR σ, by simp, hsub⟩
 
 /-- Each coefficient of polynomial `K` is writable. -/
-theorem coeffsWr {K : Nat} (hK : K < 4) {s : State} (he : EnvK σ s) : CoeffsWr s.wr (poly4 (aP σ) K) := by
+theorem coeffsWr {K : Nat} (hK : K < 4) {s : State} (he : EnvK σ s) : CoeffsWr s.wr (Proof.MlKem.poly4 (aP σ) K) := by
   intro j hj
   rw [he.wr, hp.wr]
   refine ⟨aR σ, by simp, ?_⟩
-  rw [VG.Proof.MlDsa.Sample.coeffAddr, poly4, Offset.add_add]
+  rw [VG.Proof.MlDsa.Sample.coeffAddr, Proof.MlKem.poly4, Offset.add_add]
   exact Offset.contains_base _ (by omega) (by omega)
 
 end
@@ -119,10 +118,10 @@ structure HAt (σ s₀ : State) (K h t : Nat) (s : State) : Prop where
   rsi : s.gpr .rsi = at' σ (oBuf + 504 * K) + BitVec.ofNat 64 (3 * t)
   rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K (168 * h + t)).length
   rcx : s.gpr .rcx = BitVec.ofNat 64 (168 - t)
-  rbp : s.gpr .rbp = poly4 (aP σ) K
+  rbp : s.gpr .rbp = Proof.MlKem.poly4 (aP σ) K
   out : ∀ p < 504, s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (504 * h + p)
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K (168 * h + t))
-  fr : Frame [pR (poly4 (aP σ) K)] s₀.mem s.mem
+  stored : Stored s.mem (Proof.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h + t))
+  fr : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] s₀.mem s.mem
   kp : Keep [.rax, .rdx, .r8, .rdi, .rsi, .rcx, .rbp] s₀ s
 
 section
@@ -148,7 +147,7 @@ theorem hat_regions {s₀ : State} {K h t : Nat} (hK : K < 4) {s : State} (hI : 
 theorem hat_step {s₀ : State} {K h t : Nat} (hK : K < 4) (hh : h < 2) (ht : t < 168) {s : State}
     (hI : HAt σ s₀ K h t s) :
     WP isa rnBody s fun s' => HAt σ s₀ K h (t + 1) s' ∧ s'.zf = some (BitVec.ofNat 64 (168 - t) - 1 == 0) := by
-  refine WP.mono (rnBody_ok s (aP := poly4 (aP σ) K) hI.rbp hI.rdi (Lt_length_le σ K _) (coeffsWr hp hK hI.env)
+  refine WP.mono (rnBody_ok s (aP := Proof.MlKem.poly4 (aP σ) K) hI.rbp hI.rdi (Lt_length_le σ K _) (coeffsWr hp hK hI.env)
     hI.stored (by simpa using hat_regions hp hK hI (j := 0) (by omega)) (hat_regions hp hK hI (by omega))
     (hat_regions hp hK hI (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
   have e0 := hat_byte hh hI (j := 0) (by omega)
@@ -177,7 +176,7 @@ structure HPre (σ : State) (K h : Nat) (s : State) : Prop where
   env : EnvK σ s
   out : ∀ p < 504, s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (504 * h + p)
   j : s.mem.readW (at' σ (oJ + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K (168 * h)).length
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K (168 * h))
+  stored : Stored s.mem (Proof.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h))
 
 omit hp in
 theorem sxB {K : Nat} (hK : K < 4) : BitVec.signExtend 64 (BitVec.ofNat 32 (oBuf + 504 * K)) =
@@ -195,7 +194,7 @@ theorem hsetup_ok {K h : Nat} (hK : K < 4) {s : State} (hI : HPre σ K h s) :
   have hin : InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 :=
     in_scr' hp hI.env.rd hI.env.wr (by simp only [oJ]; omega)
   refine WP.mono (WP.keep [.rsi, .rbp, .rdi, .rcx] (Q := fun s' => s'.mem = s.mem ∧
-      s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rbp = poly4 (aP σ) K ∧
+      s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rbp = Proof.MlKem.poly4 (aP σ) K ∧
       s'.gpr .rdi = BitVec.ofNat 64 (Lt σ K (168 * h)).length ∧ s'.gpr .rcx = BitVec.ofNat 64 168)
     (by
       xrun [hI.env.rbx, hI.env.r13, sxB hK, sxP hK, hin, hI.j]

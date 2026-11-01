@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 (`r0`–`r3`, `r12`, `lr`): afterwards each holds the argument's value in the
 state before the moves, and nothing else changed but those registers
 (`setArgs_ok`). A primitive the function calls is any code verified against
-its shared contract (`Spec/MlDsa/Poly.lean`) for some stack of `S` bytes that,
+its shared contract (`Proof/MlDsa/Contract.lean`) for some stack of `S` bytes that,
 with the `F` bytes of the frame the call pushes, fits in the `D` bytes the
 function gives its calls, and whose own frames use at most `S` bytes
 (`Callee`). A call with at most four arguments (`callR_ok`), or with its fifth

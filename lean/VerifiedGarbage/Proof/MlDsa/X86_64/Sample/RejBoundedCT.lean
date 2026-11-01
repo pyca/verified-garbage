@@ -511,13 +511,13 @@ def rbSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem rejBounded_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Sample.rejBounded (Spec.MlDsa.rejBoundedContract X86_64.abi 16) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Sample.rejBounded (Proof.MlDsa.rejBoundedContract X86_64.abi 16) :=
   Verified.of_correct rejBounded_correct rejBounded_ct
-    { pre := by sig_implies_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi, X86_64.argRegs]
         dsimp only [rbK] at h
         obtain ⟨hr, hp⟩ := h
         by_cases hf : (rbFold (etaOf s) [] (H (bytesAt s.mem (s.gpr .rdi) 66) 544)).length = 256
@@ -533,10 +533,10 @@ theorem rejBounded_verified :
               rw [rejBounded_none _ (B := 544) (by decide) hf]; rfl⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK, X86_64.abi, X86_64.argRegs] at h
+        sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi, X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, hsp, hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK, X86_64.abi,
+      sat := by sig_implies_sat [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi,
         X86_64.argRegs] [rbSat] using rbSat }
 
 end VG.Proof.MlDsa.X86_64.Sample

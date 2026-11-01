@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 
 import VerifiedGarbage.Proof.MlDsa.Round.Mem
 import VerifiedGarbage.Proof.Framework.GetElem

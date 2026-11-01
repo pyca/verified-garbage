@@ -25,8 +25,8 @@ open VG.Proof.MlDsa.Arith.Representation
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc seqR)
 open VG.Impl.MlDsa.X86_64.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT polyAt natPolyAt coeffAt Reduced PolyIs
-  NatPolyIs bitPack simpleBitPack power2Round ofInt)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT bitPack simpleBitPack power2Round ofInt)
+open VG.Proof.MlDsa (polyAt natPolyAt coeffAt Reduced PolyIs NatPolyIs)
 open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -217,7 +217,7 @@ theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
     ⟨by omega_arith, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd) (by layd) hP.simpleBitPack S₀
     fun j hj => ?_) fun s' ⟨hP', hx, hb⟩ => ?_
   · rw [show (coeffAt s.mem (pa s (t1P p)) j).toNat = (t1K p A S i)[j]'hj from by
-      rw [← h1]; simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn]]
+      rw [← h1]; simp only [Proof.MlDsa.natPolyAt, Vector.getElem_ofFn]]
     simp only [Proof.MlDsa.KeyGen.t1K, Vector.getElem_map]
     have := Proof.MlDsa.KeyGen.power2Round_fst ((tK p A S i)[j]'hj)
     omega_arith
@@ -256,7 +256,7 @@ end
 theorem t1_bound {m : Mem} {q : Addr} {p : Params} {A : Nat → Poly} {S : Nat → IPoly} {i : Nat}
     (h1 : NatPolyIs m q (t1K p A S i)) : ∀ j < 256, (coeffAt m q j).toNat ≤ 1023 := fun j hj => by
   rw [show (coeffAt m q j).toNat = (t1K p A S i)[j]'hj from by
-    rw [← h1]; simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn]]
+    rw [← h1]; simp only [Proof.MlDsa.natPolyAt, Vector.getElem_ofFn]]
   simp only [Proof.MlDsa.KeyGen.t1K, Vector.getElem_map]
   have := Proof.MlDsa.KeyGen.power2Round_fst ((Proof.MlDsa.KeyGen.tK p A S i)[j]'hj)
   omega_arith

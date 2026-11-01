@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
-public import VerifiedGarbage.Spec.MlDsa.Poly
-meta import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
+meta import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig

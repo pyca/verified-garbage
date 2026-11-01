@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 # ML-DSA on AArch64, signing: the pieces of the top-level function
 
 `vg_mldsa{44,65,87}_sign` is a sequence of calls of the polynomial
-primitives (`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge functions, on
+primitives (`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge functions, on
 buffers in its working space `scratch` (whose address it keeps in `x28`)
 and its arguments (whose addresses it keeps in `x25`, `x26`, `x27` and
 `x23`): all callee-saved registers, which the functions it calls preserve.

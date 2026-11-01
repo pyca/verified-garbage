@@ -24,8 +24,8 @@ namespace VG.Proof.MlDsa.X86.KeyGen
 open VG VG.X86 VG.Impl.MlKem.X86
 open VG.Proof.MlKem.X86 VG.Proof.MlKem.X86.Top
 open VG.Impl.MlDsa.X86.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv polyAt coeffAt Reduced PolyIs NatPolyIs bitPack
-  simpleBitPack power2Round ofInt)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv bitPack simpleBitPack power2Round ofInt)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs NatPolyIs)
 open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -38,7 +38,7 @@ theorem KR.nttS {p : Params} {A : Nat → Poly} {S : Nat → IPoly} {nr : Nat} {
     PolyIs s.mem (Buf.addr s₀ (sB p j)) (ntt (toRq (S j))) := by
   have := h.s1 j hj; rwa [ifp hj] at this
 
-theorem t0_params : ((4095 : Nat), (4096 : Nat)) ∈ Spec.MlDsa.bitPackParams := by decide
+theorem t0_params : ((4095 : Nat), (4096 : Nat)) ∈ Proof.MlDsa.bitPackParams := by decide
 
 theorem power2Round_fst' (c : Spec.MlDsa.Zq) : (power2Round c).1.toNat ≤ 1023 := by
   have := Proof.MlDsa.KeyGen.power2Round_fst c; omega_arith
@@ -157,7 +157,7 @@ theorem sbp_row : KP p (RowP p i) (RowQ p i)
     fun s₀ s s' hp ⟨A, S, h, h1, h0⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_sbp hF hi)
       (fun _ _ => by layd) fr h', keepPolyD hp (stkN (by omega_arith)) (by layd) fr h0, ?_⟩
   · have e := congrArg (fun v : Vector Nat 256 => v[j]'hj) h1
-    simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn, t1K, Vector.getElem_map] at e
+    simp only [Proof.MlDsa.natPolyAt, Vector.getElem_ofFn, t1K, Vector.getElem_map] at e
     rw [e]; exact power2Round_fst' _
   · rw [out, h1]
 

@@ -41,7 +41,8 @@ open VG.Proof.MlDsa.Arith.Representation
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc seqR topEpi oSV)
 open VG.Impl.MlDsa.X86_64.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt polyAt Reduced PolyIs bitPack simpleBitPack keyGenInternal)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack simpleBitPack keyGenInternal)
+open VG.Proof.MlDsa (polyAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K pkK skK)
 open VG.Spec.Sha3 (bytesAt)
 

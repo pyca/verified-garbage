@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
-public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Contract

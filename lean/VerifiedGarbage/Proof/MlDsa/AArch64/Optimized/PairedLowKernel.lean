@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
@@ -253,7 +253,7 @@ theorem pairedLow_machine {s : State} (h : LowSpecPre s) :
     (htw.sub_right (Offset.sub_base _ (by decide))) htd
     (h.dataWork.symm.sub_left (Offset.sub_base _ (by decide))) hta
     (h.auxWork.symm.sub_left (Offset.sub_base _ (by decide))) ?_
-  · simpa [or_comm,VG.Spec.MlDsa.gamma2s,Round.IsG,VG.Impl.MlDsa.AArch64.Round.g32,VG.Impl.MlDsa.AArch64.Round.g88,Round.arg32] using h.gamma
+  · simpa [or_comm,VG.Proof.MlDsa.gamma2s,Round.IsG,VG.Impl.MlDsa.AArch64.Round.g32,VG.Impl.MlDsa.AArch64.Round.g88,Round.arg32] using h.gamma
   · intro off ho
     exact accessRegion (by rw [h.wr]; simp) ho (by decide)
 

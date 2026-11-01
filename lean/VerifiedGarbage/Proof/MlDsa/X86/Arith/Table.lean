@@ -25,7 +25,8 @@ namespace VG.Proof.MlDsa.X86.Arith
 open VG VG.X86 VG.Impl.MlDsa.X86.Arith
 open VG.Impl.MlKem.X86 (at_)
 open VG.Proof.MlDsa.Arith
-open VG.Spec.MlDsa (q n coeffAt)
+open VG.Spec.MlDsa (q n)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlKem.X86 (wp_cons wp_store)
 
 /-- `s'` is `s` but for the registers `ds`, the flags and memory. -/

@@ -26,7 +26,8 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlDsa.X86_64.Sample.Mask4
 open VG.Proof.MlKem.X86_64
 open VG.Proof.MlDsa.X86_64.Sample (emK gOf expandMask_correct expandMask_ct)
 open VG.Proof.MlDsa.Arith (polyIs_frame)
-open VG.Spec.MlDsa (PolyIs H toRq bitUnpack bitlen seed66)
+open VG.Spec.MlDsa (H toRq bitUnpack bitlen)
+open VG.Proof.MlDsa (PolyIs seed66)
 open VG.Spec.Sha3 (bytesAt)
 
 theorem em_nosp : NoSp Impl.MlDsa.X86_64.Sample.expandMask := nosp_of (by decide +kernel)

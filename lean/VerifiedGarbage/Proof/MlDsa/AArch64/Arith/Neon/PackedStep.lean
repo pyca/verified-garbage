@@ -17,7 +17,8 @@ open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (Tab)
 open VG.Proof.MlKem.AArch64 (Keep wp_ldrq wp_strq VChg)
-open VG.Spec.MlDsa (Poly Zq PolyIs zetas)
+open VG.Spec.MlDsa (Poly Zq zetas)
+open VG.Proof.MlDsa (PolyIs)
 
 /-- Advance to the next eight coefficients after a packed butterfly batch. -/
 theorem packedEnd_ok (s : State) :

@@ -22,7 +22,8 @@ namespace VG.Proof.MlDsa.X86.Round
 
 open VG VG.X86 VG.Impl.MlDsa.X86.Round
 open VG.Impl.MlKem.X86 (at_)
-open VG.Spec.MlDsa (q gamma2s coeffAt Reduced)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s coeffAt Reduced)
 open VG.Proof.MlDsa.Round (coeffAddr pR coeff_contains coeffAt_frame n_eq mem_gamma2s)
 open VG.Proof.MlKem.X86 (E0 P0 P0_esp P0_wr frameR retR saveRegs_len ea_add toNat_ofNat32)
 

@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 # ML-DSA on x86-64: the primitives key generation calls
 
 `vg_mldsa*_keygen` is a sequence of calls of ML-DSA's polynomial
-primitives (`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge functions. Its
+primitives (`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge functions. Its
 code is written for any implementations of the primitives, given as a
 `Prims`: the code of each primitive it calls, which it calls by the name of
 the artifact that has that code.

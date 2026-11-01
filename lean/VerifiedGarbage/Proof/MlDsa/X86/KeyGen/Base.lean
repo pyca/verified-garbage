@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Lay
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
@@ -33,16 +34,16 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-- Verified implementations of the primitives key generation calls. -/
 structure PrimsOk (P : Prims) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract X86.abi stk)
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract X86.abi stk)
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract X86.abi stk)
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract X86.abi stk)
-  add : Callee P.add (fun stk => Spec.MlDsa.addContract X86.abi stk)
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract X86.abi stk)
-  rejBounded : Callee P.rejBounded (fun stk => Spec.MlDsa.rejBoundedContract X86.abi stk)
-  power2Round : Callee P.power2Round (fun stk => Spec.MlDsa.power2RoundContract X86.abi stk)
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract X86.abi stk)
-  bitPack : Callee P.bitPack (fun stk => Spec.MlDsa.bitPackContract X86.abi stk)
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract X86.abi stk)
+  invNtt : Callee P.invNtt (fun stk => Proof.MlDsa.nttInvContract X86.abi stk)
+  mul : Callee P.mul (fun stk => Proof.MlDsa.mulContract X86.abi stk)
+  mulAdd : Callee P.mulAdd (fun stk => Proof.MlDsa.mulAddContract X86.abi stk)
+  add : Callee P.add (fun stk => Proof.MlDsa.addContract X86.abi stk)
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract X86.abi stk)
+  rejBounded : Callee P.rejBounded (fun stk => Proof.MlDsa.rejBoundedContract X86.abi stk)
+  power2Round : Callee P.power2Round (fun stk => Proof.MlDsa.power2RoundContract X86.abi stk)
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract X86.abi stk)
+  bitPack : Callee P.bitPack (fun stk => Proof.MlDsa.bitPackContract X86.abi stk)
 
 section
 variable (p : Params) (s₀ : State)

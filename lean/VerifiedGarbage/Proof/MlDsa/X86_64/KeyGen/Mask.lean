@@ -24,7 +24,8 @@ namespace VG.Proof.MlDsa.X86_64.KeyGen
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc lea at_)
 open VG.Impl.MlDsa.X86_64.KeyGen
-open VG.Spec.MlDsa (Params coeffAt)
+open VG.Spec.MlDsa (Params)
+open VG.Proof.MlDsa (coeffAt)
 
 /-! ## Coefficients in memory -/
 

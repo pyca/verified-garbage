@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Site
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem

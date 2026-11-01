@@ -100,11 +100,11 @@ open VG.Proof.MlDsa.X86_64.Sample VG.Proof.MlDsa.Sample
 
 theorem rn_pre (s : State) (h : (rejNTTContract X86_64.abi 16).pre s) : rnK.pre s := by
   revert s h
-  sig_implies_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs]
+  sig_implies_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs]
 
 theorem rn_pub (s₁ s₂ : State) (h : (rejNTTContract X86_64.abi 16).pub s₁ s₂) :
     bytesAt s₁.mem (s₁.gpr .rdi) 34 = bytesAt s₂.mem (s₂.gpr .rdi) 34 := by
-  sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs] at h
+  sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs] at h
   obtain ⟨_, hb, hdi, _, _⟩ := h
   exact VG.Proof.MlDsa.Sign.leakBytes_inj hb
 
@@ -118,12 +118,12 @@ theorem rn_ret {s s' : State} {tr : List Leak} (h : (rejNTTContract X86_64.abi 1
 
 theorem sb_pre (s : State) (h : (sampleInBallContract X86_64.abi 16).pre s) : sbK.pre s := by
   revert s h
-  sig_implies_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi, X86_64.argRegs]
+  sig_implies_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, X86_64.abi, X86_64.argRegs]
 
 theorem sb_pub (s₁ s₂ : State) (h : (sampleInBallContract X86_64.abi 16).pub s₁ s₂) :
     tauOf s₁ = tauOf s₂ ∧
       bytesAt s₁.mem (s₁.gpr .rdi) (s₁.gpr .rsi).toNat = bytesAt s₂.mem (s₂.gpr .rdi) (s₂.gpr .rsi).toNat := by
-  sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi, X86_64.argRegs] at h
+  sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, X86_64.abi, X86_64.argRegs] at h
   obtain ⟨_, hb, _, _, hdx, _, _⟩ := h
   exact ⟨by rw [tauOf, tauOf, hdx], VG.Proof.MlDsa.Sign.leakBytes_inj hb⟩
 

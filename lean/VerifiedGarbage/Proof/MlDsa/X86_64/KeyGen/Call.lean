@@ -157,17 +157,17 @@ theorem ceM_bytes {q : Addr} (h : (below (s1.gpr .rsp) 32).Disjoint ⟨q, 1024�
   fun _ hk => callEntry_bytes s1 (R := ⟨q, 1024⟩) (k16 s1 h) (show 1024 ≤ 2 ^ 64 by decide) hk
 
 theorem ce_polyAt {q : Addr} (h : (below (s1.gpr .rsp) 32).Disjoint ⟨q, 1024⟩) :
-    Spec.MlDsa.polyAt (ceM s1) q = Spec.MlDsa.polyAt s1.mem q := Proof.MlDsa.KeyGen.polyAt_congr (ceM_bytes h)
+    Proof.MlDsa.polyAt (ceM s1) q = Proof.MlDsa.polyAt s1.mem q := Proof.MlDsa.KeyGen.polyAt_congr (ceM_bytes h)
 
 theorem ce_natPolyAt {q : Addr} (h : (below (s1.gpr .rsp) 32).Disjoint ⟨q, 1024⟩) :
-    Spec.MlDsa.natPolyAt (ceM s1) q = Spec.MlDsa.natPolyAt s1.mem q := Proof.MlDsa.KeyGen.natPolyAt_congr (ceM_bytes h)
+    Proof.MlDsa.natPolyAt (ceM s1) q = Proof.MlDsa.natPolyAt s1.mem q := Proof.MlDsa.KeyGen.natPolyAt_congr (ceM_bytes h)
 
 theorem ce_coeffAt {q : Addr} (h : (below (s1.gpr .rsp) 32).Disjoint ⟨q, 1024⟩) {i : Nat} (hi : i < 256) :
-    Spec.MlDsa.coeffAt (ceM s1) q i = Spec.MlDsa.coeffAt s1.mem q i :=
+    Proof.MlDsa.coeffAt (ceM s1) q i = Proof.MlDsa.coeffAt s1.mem q i :=
   Proof.MlDsa.KeyGen.coeffAt_congr (ceM_bytes h) hi
 
 theorem ce_reduced {q : Addr} (h : (below (s1.gpr .rsp) 32).Disjoint ⟨q, 1024⟩) :
-    Spec.MlDsa.Reduced (ceM s1) q ↔ Spec.MlDsa.Reduced s1.mem q :=
+    Proof.MlDsa.Reduced (ceM s1) q ↔ Proof.MlDsa.Reduced s1.mem q :=
   ⟨Proof.MlDsa.KeyGen.reduced_congr fun k hk => (ceM_bytes h k hk).symm,
     Proof.MlDsa.KeyGen.reduced_congr (ceM_bytes h)⟩
 
@@ -324,14 +324,14 @@ variable {p : Params} {f : Ptr} (hf : PtrOk f) (h1 : sepB (kgB p) f 1024 (sc oSS
 
 include h1 in
 theorem ip_pre {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
-    (red : Spec.MlDsa.Reduced s.mem (pa s f)) (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = pa s (sc oSS))
+    (red : Proof.MlDsa.Reduced s.mem (pa s f)) (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = pa s (sc oSS))
     (hm : s1.mem = s.mem) (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.inPlaceContract X86_64.abi t stk).pre
+    (Proof.MlDsa.inPlaceContract X86_64.abi t stk).pre
       (s1.callEntry.withRegions [] [⟨pa s f, 1024⟩, ⟨pa s (sc oSS), 1024⟩]) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2]
   cpre L hsp S.h24
@@ -347,25 +347,25 @@ theorem ip_pre {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {stk : Nat} (hstk : stk
 
 include hf h1 w1 w2 in
 theorem ipAt_ok {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {c : Prog isa} {n : String}
-    (hc : Callee c fun stk => Spec.MlDsa.inPlaceContract X86_64.abi t stk) {s : State} (S : Site p s)
-    (red : Spec.MlDsa.Reduced s.mem (pa s f)) :
+    (hc : Callee c fun stk => Proof.MlDsa.inPlaceContract X86_64.abi t stk) {s : State} (S : Site p s)
+    (red : Proof.MlDsa.Reduced s.mem (pa s f)) :
     WP isa (.seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call n c)) s fun s' =>
       Post s s' [⟨pa s f, 1024⟩, ⟨pa s (sc oSS), 1024⟩] ∧ MX s' = MX s ∧
-      Spec.MlDsa.PolyIs s'.mem (pa s f) (t (Spec.MlDsa.polyAt s.mem (pa s f))) := by
+      Proof.MlDsa.PolyIs s'.mem (pa s f) (t (Proof.MlDsa.polyAt s.mem (pa s f))) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (primOk hc (noLd_append (lea_noLd _ _) (lea_noLd _ _)) (glue2_ok hf (sc_ok oSS (by decide)) s)
     (fun stk hs s1 hv hm k => ip_pre h1 hs S red hv hm k) (covers_nil_wr (covers2 L w1 w2)) (covers2 L w1 w2))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hm₂] at hpost
   rwa [ce_polyAt (by rw [hsp]; exact L.stkD i1), hm] at hpost
 
 include hf h1 w1 w2 in
 theorem ipAt_tr {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {c : Prog isa} {n : String}
-    (hc : Callee c fun stk => Spec.MlDsa.inPlaceContract X86_64.abi t stk) (hb : f.1 ∈ kgRegs) :
-    RelCT isa (fun x y => Two p x y ∧ Spec.MlDsa.Reduced x.mem (pa x f) ∧ Spec.MlDsa.Reduced y.mem (pa y f))
+    (hc : Callee c fun stk => Proof.MlDsa.inPlaceContract X86_64.abi t stk) (hb : f.1 ∈ kgRegs) :
+    RelCT isa (fun x y => Two p x y ∧ Proof.MlDsa.Reduced x.mem (pa x f) ∧ Proof.MlDsa.Reduced y.mem (pa y f))
       (.seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call n c)) fun _ _ => True := by
   have g := fun s => glue2_ok hf (sc_ok oSS (by decide)) s
   refine primTr hc (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (fun x y _ => ⟨g x, g y⟩)
@@ -375,7 +375,7 @@ theorem ipAt_tr {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {c : Prog isa} {n : St
         by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_nil_wr (covers2 T.sy.lay w1 w2),
         by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2, hv2.1, hv2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hb, T.pa (q := sc oSS) (by decide),
     and_self]
 
@@ -389,13 +389,13 @@ variable {p : Params} {f g : Ptr} (hf : PtrOk f) (hg : PtrOk g) (h1 : sepB (kgB 
 
 include h1 in
 theorem add_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
-    (rf : Spec.MlDsa.Reduced s.mem (pa s f)) (rg : Spec.MlDsa.Reduced s.mem (pa s g))
+    (rf : Proof.MlDsa.Reduced s.mem (pa s f)) (rg : Proof.MlDsa.Reduced s.mem (pa s g))
     (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = pa s g) (hm : s1.mem = s.mem) (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.addContract X86_64.abi stk).pre (s1.callEntry.withRegions [⟨pa s g, 1024⟩] [⟨pa s f, 1024⟩]) := by
+    (Proof.MlDsa.addContract X86_64.abi stk).pre (s1.callEntry.withRegions [⟨pa s g, 1024⟩] [⟨pa s f, 1024⟩]) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.addContract, Spec.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2]
   cpre L hsp S.h24
@@ -416,11 +416,11 @@ theorem covers_rw {s : State} {p : Params} (L : Lay kgR (kgW p) s) {a b : Ptr} {
   Covers.append_left (Covers.cons (L.cR ha) Covers.nil) (Covers.cons (L.cR (inB_mono hb)) Covers.nil)
 
 include hf hg h1 w1 in
-theorem addAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.addContract X86_64.abi stk) {s : State}
-    (S : Site p s) (rf : Spec.MlDsa.Reduced s.mem (pa s f)) (rg : Spec.MlDsa.Reduced s.mem (pa s g)) :
+theorem addAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.addContract X86_64.abi stk) {s : State}
+    (S : Site p s) (rf : Proof.MlDsa.Reduced s.mem (pa s f)) (rg : Proof.MlDsa.Reduced s.mem (pa s g)) :
     WP isa (addAt sfx c f g) s fun s' => Post s s' [⟨pa s f, 1024⟩] ∧ MX s' = MX s ∧
-      Spec.MlDsa.PolyIs s'.mem (pa s f) (Spec.MlDsa.add (Spec.MlDsa.polyAt s.mem (pa s f))
-        (Spec.MlDsa.polyAt s.mem (pa s g))) := by
+      Proof.MlDsa.PolyIs s'.mem (pa s f) (Spec.MlDsa.add (Proof.MlDsa.polyAt s.mem (pa s f))
+        (Proof.MlDsa.polyAt s.mem (pa s g))) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (primOk hc (noLd_append (lea_noLd _ _) (lea_noLd _ _)) (glue2_ok hf hg s)
@@ -428,15 +428,15 @@ theorem addAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Spec.Ml
     (Covers.cons (L.cW w1) Covers.nil))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.addContract, Spec.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2, hm₂] at hpost
   rwa [ce_polyAt (by rw [hsp]; exact L.stkD i1), ce_polyAt (by rw [hsp]; exact L.stkD i2), hm] at hpost
 
 include hf hg h1 w1 in
-theorem addAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.addContract X86_64.abi stk)
+theorem addAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.addContract X86_64.abi stk)
     (hbf : f.1 ∈ kgRegs) (hbg : g.1 ∈ kgRegs) :
-    RelCT isa (fun x y => Two p x y ∧ (Spec.MlDsa.Reduced x.mem (pa x f) ∧ Spec.MlDsa.Reduced x.mem (pa x g)) ∧
-      (Spec.MlDsa.Reduced y.mem (pa y f) ∧ Spec.MlDsa.Reduced y.mem (pa y g))) (addAt sfx c f g) fun _ _ => True := by
+    RelCT isa (fun x y => Two p x y ∧ (Proof.MlDsa.Reduced x.mem (pa x f) ∧ Proof.MlDsa.Reduced x.mem (pa x g)) ∧
+      (Proof.MlDsa.Reduced y.mem (pa y f) ∧ Proof.MlDsa.Reduced y.mem (pa y g))) (addAt sfx c f g) fun _ _ => True := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   refine primTr hc (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (fun x y _ => ⟨glue2_ok hf hg x, glue2_ok hf hg y⟩)
     fun stk hs x y x1 y1 ⟨T, rx, ry⟩ ⟨⟨hv1, hm1⟩, k1⟩ ⟨⟨hv2, hm2⟩, k2⟩ =>
@@ -445,7 +445,7 @@ theorem addAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Spec.Ml
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i2 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.addContract, Spec.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2, hv2.1, hv2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbf, T.pa hbg, and_self]
 
 end
@@ -464,7 +464,7 @@ theorem covers_rrw {s : State} {p : Params} (L : Lay kgR (kgW p) s) {a b c : Ptr
 
 include h1 h2 in
 theorem mul_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
-    (rf : Spec.MlDsa.Reduced s.mem (pa s f)) (rg : Spec.MlDsa.Reduced s.mem (pa s g))
+    (rf : Proof.MlDsa.Reduced s.mem (pa s f)) (rg : Proof.MlDsa.Reduced s.mem (pa s g))
     (hv : s1.gpr .rdi = pa s h ∧ s1.gpr .rsi = pa s f ∧ s1.gpr .rdx = pa s g) (hm : s1.mem = s.mem)
     (k : Keep MlKem.X86_64.argRegs s s1) :
     (productContract mont X86_64.abi stk).pre
@@ -473,7 +473,7 @@ theorem mul_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [productContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [productContract, Proof.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2]
   cpre L hsp S.h24
@@ -490,9 +490,9 @@ theorem mul_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
 
 include hh hf hg h1 h2 w1 in
 theorem mulAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => productContract mont X86_64.abi stk) {s : State}
-    (S : Site p s) (rf : Spec.MlDsa.Reduced s.mem (pa s f)) (rg : Spec.MlDsa.Reduced s.mem (pa s g)) :
+    (S : Site p s) (rf : Proof.MlDsa.Reduced s.mem (pa s f)) (rg : Proof.MlDsa.Reduced s.mem (pa s g)) :
     WP isa (mulAt (mont := mont) sfx c h f g) s fun s' => Post s s' [⟨pa s h, 1024⟩] ∧ MX s' = MX s ∧
-      Spec.MlDsa.PolyIs s'.mem (pa s h) (product mont (Spec.MlDsa.polyAt s.mem (pa s f)) (Spec.MlDsa.polyAt s.mem (pa s g))) := by
+      Proof.MlDsa.PolyIs s'.mem (pa s h) (product mont (Proof.MlDsa.polyAt s.mem (pa s f)) (Proof.MlDsa.polyAt s.mem (pa s g))) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
@@ -501,14 +501,14 @@ theorem mulAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => product
     (Covers.cons (L.cW w1) Covers.nil))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [productContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [productContract, Proof.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hv.2.2, hm₂] at hpost
   rwa [ce_polyAt (by rw [hsp]; exact L.stkD i2), ce_polyAt (by rw [hsp]; exact L.stkD i3), hm] at hpost
 
 include hh hf hg h1 h2 w1 in
 theorem mulAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => productContract mont X86_64.abi stk)
     (hbh : h.1 ∈ kgRegs) (hbf : f.1 ∈ kgRegs) (hbg : g.1 ∈ kgRegs) :
-    RelCT isa (fun x y => Two p x y ∧ (Spec.MlDsa.Reduced x.mem (pa x f) ∧ Spec.MlDsa.Reduced x.mem (pa x g)) ∧ (Spec.MlDsa.Reduced y.mem (pa y f) ∧ Spec.MlDsa.Reduced y.mem (pa y g))) (mulAt (mont := mont) sfx c h f g) fun _ _ => True := by
+    RelCT isa (fun x y => Two p x y ∧ (Proof.MlDsa.Reduced x.mem (pa x f) ∧ Proof.MlDsa.Reduced x.mem (pa x g)) ∧ (Proof.MlDsa.Reduced y.mem (pa y f) ∧ Proof.MlDsa.Reduced y.mem (pa y g))) (mulAt (mont := mont) sfx c h f g) fun _ _ => True := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   refine primTr hc (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _))
@@ -519,7 +519,7 @@ theorem mulAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => product
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rrw T.sy.lay i2 i3 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [productContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [productContract, Proof.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbh, T.pa hbf,
     T.pa hbg, and_self]
 
@@ -534,7 +534,7 @@ variable {p : Params} {h f g : Ptr} (hh : PtrOk h) (hf : PtrOk f) (hg : PtrOk g)
 
 include h1 h2 in
 theorem mulAdd_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
-    (rh : Spec.MlDsa.Reduced s.mem (pa s h)) (rf : Spec.MlDsa.Reduced s.mem (pa s f)) (rg : Spec.MlDsa.Reduced s.mem (pa s g))
+    (rh : Proof.MlDsa.Reduced s.mem (pa s h)) (rf : Proof.MlDsa.Reduced s.mem (pa s f)) (rg : Proof.MlDsa.Reduced s.mem (pa s g))
     (hv : s1.gpr .rdi = pa s h ∧ s1.gpr .rsi = pa s f ∧ s1.gpr .rdx = pa s g) (hm : s1.mem = s.mem)
     (k : Keep MlKem.X86_64.argRegs s s1) :
     (accumulateContract mont X86_64.abi stk).pre
@@ -543,7 +543,7 @@ theorem mulAdd_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [accumulateContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [accumulateContract, Proof.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2]
   cpre L hsp S.h24
@@ -561,9 +561,9 @@ theorem mulAdd_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
 
 include hh hf hg h1 h2 w1 in
 theorem mulAddAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => accumulateContract mont X86_64.abi stk) {s : State}
-    (S : Site p s) (rh : Spec.MlDsa.Reduced s.mem (pa s h)) (rf : Spec.MlDsa.Reduced s.mem (pa s f)) (rg : Spec.MlDsa.Reduced s.mem (pa s g)) :
+    (S : Site p s) (rh : Proof.MlDsa.Reduced s.mem (pa s h)) (rf : Proof.MlDsa.Reduced s.mem (pa s f)) (rg : Proof.MlDsa.Reduced s.mem (pa s g)) :
     WP isa (mulAddAt (mont := mont) sfx c h f g) s fun s' => Post s s' [⟨pa s h, 1024⟩] ∧ MX s' = MX s ∧
-      Spec.MlDsa.PolyIs s'.mem (pa s h) (Spec.MlDsa.add (Spec.MlDsa.polyAt s.mem (pa s h)) (product mont (Spec.MlDsa.polyAt s.mem (pa s f)) (Spec.MlDsa.polyAt s.mem (pa s g)))) := by
+      Proof.MlDsa.PolyIs s'.mem (pa s h) (Spec.MlDsa.add (Proof.MlDsa.polyAt s.mem (pa s h)) (product mont (Proof.MlDsa.polyAt s.mem (pa s f)) (Proof.MlDsa.polyAt s.mem (pa s g)))) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
@@ -572,14 +572,14 @@ theorem mulAddAt_ok {sfx : String} {c : Prog isa} (hc : Callee c fun stk => accu
     (Covers.cons (L.cW w1) Covers.nil))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [accumulateContract, accumulate, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [accumulateContract, accumulate, Proof.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hv.2.2, hm₂] at hpost
   rwa [ce_polyAt (by rw [hsp]; exact L.stkD i1), ce_polyAt (by rw [hsp]; exact L.stkD i2), ce_polyAt (by rw [hsp]; exact L.stkD i3), hm] at hpost
 
 include hh hf hg h1 h2 w1 in
 theorem mulAddAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => accumulateContract mont X86_64.abi stk)
     (hbh : h.1 ∈ kgRegs) (hbf : f.1 ∈ kgRegs) (hbg : g.1 ∈ kgRegs) :
-    RelCT isa (fun x y => Two p x y ∧ (Spec.MlDsa.Reduced x.mem (pa x h) ∧ Spec.MlDsa.Reduced x.mem (pa x f) ∧ Spec.MlDsa.Reduced x.mem (pa x g)) ∧ (Spec.MlDsa.Reduced y.mem (pa y h) ∧ Spec.MlDsa.Reduced y.mem (pa y f) ∧ Spec.MlDsa.Reduced y.mem (pa y g))) (mulAddAt (mont := mont) sfx c h f g) fun _ _ => True := by
+    RelCT isa (fun x y => Two p x y ∧ (Proof.MlDsa.Reduced x.mem (pa x h) ∧ Proof.MlDsa.Reduced x.mem (pa x f) ∧ Proof.MlDsa.Reduced x.mem (pa x g)) ∧ (Proof.MlDsa.Reduced y.mem (pa y h) ∧ Proof.MlDsa.Reduced y.mem (pa y f) ∧ Proof.MlDsa.Reduced y.mem (pa y g))) (mulAddAt (mont := mont) sfx c h f g) fun _ _ => True := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   refine primTr hc (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _))
@@ -590,7 +590,7 @@ theorem mulAddAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => accu
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rrw T.sy.lay i2 i3 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [accumulateContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [accumulateContract, Proof.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbh, T.pa hbf,
     T.pa hbg, and_self]
 
@@ -612,16 +612,16 @@ theorem covers_rww {s : State} {p : Params} (L : Lay kgR (kgW p) s) {a b c : Ptr
 
 include h1 h2 h3 in
 theorem p2r_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
-    (rt : Spec.MlDsa.Reduced s.mem (pa s t))
+    (rt : Proof.MlDsa.Reduced s.mem (pa s t))
     (hv : s1.gpr .rdi = pa s t ∧ s1.gpr .rsi = pa s t1 ∧ s1.gpr .rdx = pa s t0) (hm : s1.mem = s.mem)
     (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.power2RoundContract X86_64.abi stk).pre
+    (Proof.MlDsa.power2RoundContract X86_64.abi stk).pre
       (s1.callEntry.withRegions [⟨pa s t, 1024⟩] [⟨pa s t1, 1024⟩, ⟨pa s t0, 1024⟩]) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2]
   cpre L hsp S.h24
@@ -636,13 +636,13 @@ theorem p2r_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   exact (ce_reduced (by rw [hsp]; exact L.stkD i1)).mpr (hm ▸ rt)
 
 include ht ht1 ht0 h1 h2 h3 w1 w2 in
-theorem p2rAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2RoundContract X86_64.abi stk)
-    {s : State} (S : Site p s) (rt : Spec.MlDsa.Reduced s.mem (pa s t)) :
+theorem p2rAt_ok {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.power2RoundContract X86_64.abi stk)
+    {s : State} (S : Site p s) (rt : Proof.MlDsa.Reduced s.mem (pa s t)) :
     WP isa (power2RoundAt c t t1 t0) s fun s' => Post s s' [⟨pa s t1, 1024⟩, ⟨pa s t0, 1024⟩] ∧ MX s' = MX s ∧
-      Spec.MlDsa.NatPolyIs s'.mem (pa s t1)
-        ((Spec.MlDsa.polyAt s.mem (pa s t)).map fun c => (Spec.MlDsa.power2Round c).1.toNat) ∧
-      Spec.MlDsa.PolyIs s'.mem (pa s t0)
-        ((Spec.MlDsa.polyAt s.mem (pa s t)).map fun c => Spec.MlDsa.ofInt (Spec.MlDsa.power2Round c).2) := by
+      Proof.MlDsa.NatPolyIs s'.mem (pa s t1)
+        ((Proof.MlDsa.polyAt s.mem (pa s t)).map fun c => (Spec.MlDsa.power2Round c).1.toNat) ∧
+      Proof.MlDsa.PolyIs s'.mem (pa s t0)
+        ((Proof.MlDsa.polyAt s.mem (pa s t)).map fun c => Spec.MlDsa.ofInt (Spec.MlDsa.power2Round c).2) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (primOk hc (noLd_append (noLd_append (lea_noLd _ _) (lea_noLd _ _)) (lea_noLd _ _))
@@ -650,14 +650,14 @@ theorem p2rAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2Round
     (covers2 L w1 w2))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hv.2.2, hm₂] at hpost
   rwa [ce_polyAt (by rw [hsp]; exact L.stkD i1), hm] at hpost
 
 include ht ht1 ht0 h1 h2 h3 w1 w2 in
-theorem p2rAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2RoundContract X86_64.abi stk)
+theorem p2rAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.power2RoundContract X86_64.abi stk)
     (hbt : t.1 ∈ kgRegs) (hb1 : t1.1 ∈ kgRegs) (hb0 : t0.1 ∈ kgRegs) :
-    RelCT isa (fun x y => Two p x y ∧ Spec.MlDsa.Reduced x.mem (pa x t) ∧ Spec.MlDsa.Reduced y.mem (pa y t))
+    RelCT isa (fun x y => Two p x y ∧ Proof.MlDsa.Reduced x.mem (pa x t) ∧ Proof.MlDsa.Reduced y.mem (pa y t))
       (power2RoundAt c t t1 t0) fun _ _ => True := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   refine primTr hc (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _))
@@ -667,7 +667,7 @@ theorem p2rAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.power2Round
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbt, T.pa hb1,
     T.pa hb0, and_self]
 
@@ -684,13 +684,13 @@ variable {p : Params} {sd a : Ptr} (hsd : PtrOk sd) (ha : PtrOk a)
 include h1 h2 h3 in
 theorem rejNtt_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
     (hv : s1.gpr .rdi = pa s sd ∧ s1.gpr .rsi = pa s a ∧ s1.gpr .rdx = pa s (sc oSS)) (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.rejNTTContract X86_64.abi stk).pre
+    (Proof.MlDsa.rejNTTContract X86_64.abi stk).pre
       (s1.callEntry.withRegions [⟨pa s sd, 34⟩] [⟨pa s a, 1024⟩, ⟨pa s (sc oSS), 2048⟩]) := by
   obtain ⟨_, _, _⟩ := sepB_spec h1
   obtain ⟨_, _, _⟩ := sepB_spec h3
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2]
   cpre L hsp S.h24
@@ -704,12 +704,12 @@ theorem rejNtt_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
       cpre L hsp S.h24
 
 include hsd ha h1 h2 h3 w1 w2 in
-theorem rejNttAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTContract X86_64.abi stk)
+theorem rejNttAt_ok {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejNTTContract X86_64.abi stk)
     {s : State} (S : Site p s) :
     WP isa (rejNttAt c sd a) s fun s' => Post s s' [⟨pa s a, 1024⟩, ⟨pa s (sc oSS), 2048⟩] ∧ MX s' = MX s ∧
-      ((s'.gpr .rax).setWidth 32 = 1 → Spec.MlDsa.Reduced s'.mem (pa s a)) ∧
+      ((s'.gpr .rax).setWidth 32 = 1 → Proof.MlDsa.Reduced s'.mem (pa s a)) ∧
       Spec.MlDsa.Outcome (fun b => Spec.MlDsa.rejNTTPoly b.rejNTT (bytesAt s.mem (pa s sd) 34))
-        ((s'.gpr .rax).setWidth 32) (Spec.MlDsa.polyAt s'.mem (pa s a)) := by
+        ((s'.gpr .rax).setWidth 32) (Proof.MlDsa.polyAt s'.mem (pa s a)) := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (primOk hc (noLd_append (noLd_append (lea_noLd _ _) (lea_noLd _ _)) (lea_noLd _ _))
@@ -717,12 +717,12 @@ theorem rejNttAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTCo
     (covers_rww L i1 w1 w2) (covers2 L w1 w2))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, hg₂, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hm₂, hg₂ .rax (by decide)] at hpost
   rwa [ce_bytesAt' (by decide) (by rw [hsp]; exact L.stkD i1), hm] at hpost
 
 include hsd ha h1 h2 h3 w1 w2 in
-theorem rejNttAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTContract X86_64.abi stk)
+theorem rejNttAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejNTTContract X86_64.abi stk)
     (hbs : sd.1 ∈ kgRegs) (hba : a.1 ∈ kgRegs) :
     RelCT isa (fun x y => Two p x y ∧ bytesAt x.mem (pa x sd) 34 = bytesAt y.mem (pa y sd) 34)
       (rejNttAt c sd a) fun _ _ => True := by
@@ -735,7 +735,7 @@ theorem rejNttAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejNTTCo
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, T.pa hbs, T.pa hba, T.pa (q := sc oSS) (by decide),
     and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -757,13 +757,13 @@ include h1 h2 h3 in
 theorem rej4_pre {s s1 : State} (S : Site p s)
     (hv : s1.gpr .rdi = pa s (sc oSA4) ∧ s1.gpr .rsi = pa s a ∧ s1.gpr .rdx = pa s w)
     (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.rejNTT4Contract X86_64.abi 24).pre
+    (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre
       (s1.callEntry.withRegions [⟨pa s (sc oSA4), 136⟩] [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]) := by
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   obtain ⟨_, i3, _⟩ := sepB_spec h3
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv.1, hv.2.1, hv.2.2]
   exact ⟨ceWf24 hsp S.h32, trivial, trivial, L.disj h1, L.disj h2, L.disj h3, ceD1 L hsp i1, ceD1 L hsp i2,
     ceD1 L hsp i3, ceD24 L hsp i1, ceD24 L hsp i2, ceD24 L hsp i3, L.nwp i1, L.nwp i2, L.nwp i3⟩
@@ -771,12 +771,12 @@ theorem rej4_pre {s s1 : State} (S : Site p s)
 include ha hw h1 h2 h3 w1 w2 in
 theorem rej4At_ok {c : Prog isa} {sfx : String} (hc : Callee4 c) {s : State} (S : Site p s) :
     WP isa (rej4At c sfx a w) s fun s' => Post s s' [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩] ∧ MX s' = MX s ∧
-      ((s'.gpr .rax).setWidth 32 = 1 → ∀ k < 4, Spec.MlDsa.Reduced s'.mem (Spec.MlDsa.poly4 (pa s a) k)) ∧
+      ((s'.gpr .rax).setWidth 32 = 1 → ∀ k < 4, Proof.MlDsa.Reduced s'.mem (Proof.MlDsa.poly4 (pa s a) k)) ∧
       (((s'.gpr .rax).setWidth 32 = 1 ∧ ∀ k < 4, ∃ b : Spec.MlDsa.Bounds,
-          Spec.MlDsa.rejNTTPoly b.rejNTT (Spec.MlDsa.seed4 s.mem (pa s (sc oSA4)) k) =
-            some (Spec.MlDsa.polyAt s'.mem (Spec.MlDsa.poly4 (pa s a) k))) ∨
+          Spec.MlDsa.rejNTTPoly b.rejNTT (Proof.MlDsa.seed4 s.mem (pa s (sc oSA4)) k) =
+            some (Proof.MlDsa.polyAt s'.mem (Proof.MlDsa.poly4 (pa s a) k))) ∨
         ((s'.gpr .rax).setWidth 32 = 0 ∧ ∃ k < 4,
-          Spec.MlDsa.rejNTTPoly Spec.MlDsa.minBounds.rejNTT (Spec.MlDsa.seed4 s.mem (pa s (sc oSA4)) k) = none)) := by
+          Spec.MlDsa.rejNTTPoly Spec.MlDsa.minBounds.rejNTT (Proof.MlDsa.seed4 s.mem (pa s (sc oSA4)) k) = none)) := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (glueCallMx_ok hc.verified.1 hc.nosp hc.depth
@@ -785,11 +785,11 @@ theorem rej4At_ok {c : Prog isa} {sfx : String} (hc : Callee4 c) {s : State} (S 
     (covers_rww L i1 w1 w2) (covers2 L w1 w2))
     fun s' ⟨hP, hx, s1, hv, hm, k, s₂, hm₂, hg₂, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hm₂, hg₂ .rax (by decide)] at hpost
-  have hseed : ∀ k < 4, Spec.MlDsa.seed4 (ceM s1) (pa s (sc oSA4)) k = Spec.MlDsa.seed4 s.mem (pa s (sc oSA4)) k :=
+  have hseed : ∀ k < 4, Proof.MlDsa.seed4 (ceM s1) (pa s (sc oSA4)) k = Proof.MlDsa.seed4 s.mem (pa s (sc oSA4)) k :=
     fun k hk => by
-      unfold Spec.MlDsa.seed4
+      unfold Proof.MlDsa.seed4
       rw [← hm]
       refine Proof.MlKem.bytesAt_congr fun i hi => ?_
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -815,7 +815,7 @@ theorem rej4At_tr {c : Prog isa} {sfx : String} (hc : Callee4 c) (hba : a.1 ∈ 
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, T.pa hba, T.pa hbw,
     T.pa (q := sc oSA4) (by decide), and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -876,13 +876,13 @@ include heta h1 h2 h3 in
 theorem rejB_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
     (hv : s1.gpr .rdi = pa s sd ∧ s1.gpr .rsi = BitVec.ofNat 64 eta ∧ s1.gpr .rdx = pa s a ∧
       s1.gpr .rcx = pa s (sc oSS)) (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.rejBoundedContract X86_64.abi stk).pre
+    (Proof.MlDsa.rejBoundedContract X86_64.abi stk).pre
       (s1.callEntry.withRegions [⟨pa s sd, 66⟩] [⟨pa s a, 1024⟩, ⟨pa s (sc oSS), 2048⟩]) := by
   obtain ⟨_, _, _⟩ := sepB_spec h1
   obtain ⟨_, _, _⟩ := sepB_spec h3
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, w32_toNat (eta_lt heta)]
   cpre L hsp S.h24
@@ -897,12 +897,12 @@ theorem rejB_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   exact heta
 
 include heta hsd ha h1 h2 h3 w1 w2 in
-theorem rejBAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejBoundedContract X86_64.abi stk)
+theorem rejBAt_ok {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejBoundedContract X86_64.abi stk)
     {s : State} (S : Site p s) :
     WP isa (rejBoundedAt c sd eta a) s fun s' => Post s s' [⟨pa s a, 1024⟩, ⟨pa s (sc oSS), 2048⟩] ∧ MX s' = MX s ∧
-      ((s'.gpr .rax).setWidth 32 = 1 → Spec.MlDsa.Reduced s'.mem (pa s a)) ∧
+      ((s'.gpr .rax).setWidth 32 = 1 → Proof.MlDsa.Reduced s'.mem (pa s a)) ∧
       Spec.MlDsa.Outcome (fun b => (Spec.MlDsa.rejBoundedPoly eta b.rejBounded (bytesAt s.mem (pa s sd) 66)).map
-        Spec.MlDsa.toRq) ((s'.gpr .rax).setWidth 32) (Spec.MlDsa.polyAt s'.mem (pa s a)) := by
+        Spec.MlDsa.toRq) ((s'.gpr .rax).setWidth 32) (Proof.MlDsa.polyAt s'.mem (pa s a)) := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (primOk hc (noLd_append (noLd_append (noLd_append (lea_noLd _ _) (imm_noLd _ _)) (lea_noLd _ _))
@@ -911,12 +911,12 @@ theorem rejBAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejBounded
     (covers_rww L i1 w1 w2) (covers2 L w1 w2))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, hg₂, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hv.2.2.1, hm₂, hg₂ .rax (by decide), w32_toNat (eta_lt heta)] at hpost
   rwa [ce_bytesAt' (by decide) (by rw [hsp]; exact L.stkD i1), hm] at hpost
 
 include heta hsd ha h1 h2 h3 w1 w2 in
-theorem rejBAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejBoundedContract X86_64.abi stk)
+theorem rejBAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejBoundedContract X86_64.abi stk)
     (hbs : sd.1 ∈ kgRegs) (hba : a.1 ∈ kgRegs) :
     RelCT isa (fun x y => Two p x y ∧ Spec.MlDsa.rejBoundedLeak eta (bytesAt x.mem (pa x sd) 66) =
       Spec.MlDsa.rejBoundedLeak eta (bytesAt y.mem (pa y sd) 66)) (rejBoundedAt c sd eta a) fun _ _ => True := by
@@ -930,7 +930,7 @@ theorem rejBAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.rejBounded
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, T.pa hbs, T.pa hba,
     T.pa (q := sc oSS) (by decide), w32_toNat (eta_lt heta), and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -943,29 +943,29 @@ end
 /-! ## `SimpleBitPack` -/
 
 section
-variable {p : Params} {f out : Ptr} {b len : Nat} (hb : b ∈ Spec.MlDsa.simpleBitPackBounds)
+variable {p : Params} {f out : Ptr} {b len : Nat} (hb : b ∈ Proof.MlDsa.simpleBitPackBounds)
   (hl : len = 32 * Spec.MlDsa.bitlen b) (hf : PtrOk f) (ho : PtrOk out)
   (h1 : sepB (kgB p) f 1024 out len = true) (w1 : inB (kgW p) out len = true)
 
-theorem sbp_lt (hb : b ∈ Spec.MlDsa.simpleBitPackBounds) : b < 2 ^ 32 := by
-  simp only [Spec.MlDsa.simpleBitPackBounds, List.mem_cons, List.not_mem_nil, or_false] at hb
+theorem sbp_lt (hb : b ∈ Proof.MlDsa.simpleBitPackBounds) : b < 2 ^ 32 := by
+  simp only [Proof.MlDsa.simpleBitPackBounds, List.mem_cons, List.not_mem_nil, or_false] at hb
   rcases hb with rfl | rfl | rfl <;> decide
 
-theorem sbpLen_lt (hb : b ∈ Spec.MlDsa.simpleBitPackBounds) (hl : len = 32 * Spec.MlDsa.bitlen b) : len < 2 ^ 32 := by
-  simp only [Spec.MlDsa.simpleBitPackBounds, List.mem_cons, List.not_mem_nil, or_false] at hb
+theorem sbpLen_lt (hb : b ∈ Proof.MlDsa.simpleBitPackBounds) (hl : len = 32 * Spec.MlDsa.bitlen b) : len < 2 ^ 32 := by
+  simp only [Proof.MlDsa.simpleBitPackBounds, List.mem_cons, List.not_mem_nil, or_false] at hb
   rcases hb with rfl | rfl | rfl <;> subst hl <;> decide
 
 include hb hl h1 in
 theorem sbp_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
-    (hbd : ∀ i < 256, (Spec.MlDsa.coeffAt s.mem (pa s f) i).toNat ≤ b)
+    (hbd : ∀ i < 256, (Proof.MlDsa.coeffAt s.mem (pa s f) i).toNat ≤ b)
     (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = BitVec.ofNat 64 b ∧ s1.gpr .rdx = pa s out ∧
       s1.gpr .rcx = BitVec.ofNat 64 len) (hm : s1.mem = s.mem) (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.simpleBitPackContract X86_64.abi stk).pre
+    (Proof.MlDsa.simpleBitPackContract X86_64.abi stk).pre
       (s1.callEntry.withRegions [⟨pa s f, 1024⟩] [⟨pa s out, len⟩]) := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
-  sig_pre [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, w32_toNat (sbp_lt hb), w64_toNat (sbpLen_lt hb hl)]
   cpre L hsp S.h24
@@ -984,10 +984,10 @@ theorem sbp_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
     exact hbd i hi
 
 include hb hl hf ho h1 w1 in
-theorem sbpAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitPackContract X86_64.abi stk)
-    {s : State} (S : Site p s) (hbd : ∀ i < 256, (Spec.MlDsa.coeffAt s.mem (pa s f) i).toNat ≤ b) :
+theorem sbpAt_ok {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.simpleBitPackContract X86_64.abi stk)
+    {s : State} (S : Site p s) (hbd : ∀ i < 256, (Proof.MlDsa.coeffAt s.mem (pa s f) i).toNat ≤ b) :
     WP isa (simpleBitPackAt c f b out len) s fun s' => Post s s' [⟨pa s out, len⟩] ∧ MX s' = MX s ∧
-      bytesAt s'.mem (pa s out) len = Spec.MlDsa.simpleBitPack (Spec.MlDsa.natPolyAt s.mem (pa s f)) b := by
+      bytesAt s'.mem (pa s out) len = Spec.MlDsa.simpleBitPack (Proof.MlDsa.natPolyAt s.mem (pa s f)) b := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   refine WP.mono (primOk hc (noLd_append (noLd_append (noLd_append (lea_noLd _ _) (imm_noLd _ _)) (lea_noLd _ _))
@@ -996,15 +996,15 @@ theorem sbpAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitPa
     (covers_rw L i1 w1) (Covers.cons (L.cW w1) Covers.nil))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, hm₂, w32_toNat (sbp_lt hb), w64_toNat (sbpLen_lt hb hl)] at hpost
   rwa [ce_natPolyAt (by rw [hsp]; exact L.stkD i1), hm] at hpost
 
 include hb hl hf ho h1 w1 in
-theorem sbpAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitPackContract X86_64.abi stk)
+theorem sbpAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.simpleBitPackContract X86_64.abi stk)
     (hbf : f.1 ∈ kgRegs) (hbo : out.1 ∈ kgRegs) :
-    RelCT isa (fun x y => Two p x y ∧ (∀ i < 256, (Spec.MlDsa.coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
-      (∀ i < 256, (Spec.MlDsa.coeffAt y.mem (pa y f) i).toNat ≤ b)) (simpleBitPackAt c f b out len) fun _ _ => True := by
+    RelCT isa (fun x y => Two p x y ∧ (∀ i < 256, (Proof.MlDsa.coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
+      (∀ i < 256, (Proof.MlDsa.coeffAt y.mem (pa y f) i).toNat ≤ b)) (simpleBitPackAt c f b out len) fun _ _ => True := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have g := fun x => glueSB_ok b len (sbp_lt hb) (sbpLen_lt hb hl) hf ho x
   refine primTr hc (nomem_append (nomem_append (nomem_append (lea_nomem _ _) (imm_nomem _ _)) (lea_nomem _ _))
@@ -1016,7 +1016,7 @@ theorem sbpAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.simpleBitPa
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i1 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, keep_rsp k1, keep_rsp k2,
     T.rsp, T.pa hbf, T.pa hbo, and_self]
 
@@ -1025,22 +1025,22 @@ end
 /-! ## `BitPack` -/
 
 section
-variable {p : Params} {f out : Ptr} {a b len : Nat} (hab : (a, b) ∈ Spec.MlDsa.bitPackParams)
+variable {p : Params} {f out : Ptr} {a b len : Nat} (hab : (a, b) ∈ Proof.MlDsa.bitPackParams)
   (hl : len = 32 * Spec.MlDsa.bitlen (a + b)) (hf : PtrOk f) (ho : PtrOk out)
   (h1 : sepB (kgB p) f 1024 out len = true) (w1 : inB (kgW p) out len = true)
 
 /-- The coefficients a `BitPack` to `(a, b)` packs. -/
 def PackIn (m : Mem) (q : Addr) (a b : Nat) : Prop :=
-  Spec.MlDsa.Reduced m q ∧ ∀ i < 256, -(a : Int) ≤ Spec.MlDsa.modPm (Spec.MlDsa.coeffAt m q i).toNat Spec.MlDsa.q ∧
-    Spec.MlDsa.modPm (Spec.MlDsa.coeffAt m q i).toNat Spec.MlDsa.q ≤ b
+  Proof.MlDsa.Reduced m q ∧ ∀ i < 256, -(a : Int) ≤ Spec.MlDsa.modPm (Proof.MlDsa.coeffAt m q i).toNat Spec.MlDsa.q ∧
+    Spec.MlDsa.modPm (Proof.MlDsa.coeffAt m q i).toNat Spec.MlDsa.q ≤ b
 
-theorem bp_lt (hab : (a, b) ∈ Spec.MlDsa.bitPackParams) : a < 2 ^ 32 ∧ b < 2 ^ 32 := by
-  simp only [Spec.MlDsa.bitPackParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hab
+theorem bp_lt (hab : (a, b) ∈ Proof.MlDsa.bitPackParams) : a < 2 ^ 32 ∧ b < 2 ^ 32 := by
+  simp only [Proof.MlDsa.bitPackParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hab
   rcases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
-theorem bpLen_lt (hab : (a, b) ∈ Spec.MlDsa.bitPackParams) (hl : len = 32 * Spec.MlDsa.bitlen (a + b)) :
+theorem bpLen_lt (hab : (a, b) ∈ Proof.MlDsa.bitPackParams) (hl : len = 32 * Spec.MlDsa.bitlen (a + b)) :
     len < 2 ^ 32 := by
-  simp only [Spec.MlDsa.bitPackParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hab
+  simp only [Proof.MlDsa.bitPackParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hab
   rcases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> subst hl <;> decide
 
 include hab hl h1 in
@@ -1048,13 +1048,13 @@ theorem bp_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s) (hi
     (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = BitVec.ofNat 64 a ∧ s1.gpr .rdx = BitVec.ofNat 64 b ∧
       s1.gpr .rcx = pa s out ∧ s1.gpr .r8 = BitVec.ofNat 64 len) (hm : s1.mem = s.mem)
     (k : Keep MlKem.X86_64.argRegs s s1) :
-    (Spec.MlDsa.bitPackContract X86_64.abi stk).pre
+    (Proof.MlDsa.bitPackContract X86_64.abi stk).pre
       (s1.callEntry.withRegions [⟨pa s f, 1024⟩] [⟨pa s out, len⟩]) := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
   have hk : (below (s1.gpr .rsp) 32).Disjoint ⟨pa s f, 1024⟩ := by rw [hsp]; exact L.stkD i1
-  sig_pre [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [Sig.conj_cons, and_assoc]
   simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2, w32_toNat (bp_lt hab).1, w32_toNat (bp_lt hab).2,
     w64_toNat (bpLen_lt hab hl)]
@@ -1075,10 +1075,10 @@ theorem bp_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s) (hi
     exact hin.2 i hi
 
 include hab hl hf ho h1 w1 in
-theorem bpAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackContract X86_64.abi stk)
+theorem bpAt_ok {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitPackContract X86_64.abi stk)
     {s : State} (S : Site p s) (hin : PackIn s.mem (pa s f) a b) :
     WP isa (bitPackAt c f a b out len) s fun s' => Post s s' [⟨pa s out, len⟩] ∧ MX s' = MX s ∧
-      bytesAt s'.mem (pa s out) len = Spec.MlDsa.bitPack ((Spec.MlDsa.polyAt s.mem (pa s f)).map
+      bytesAt s'.mem (pa s out) len = Spec.MlDsa.bitPack ((Proof.MlDsa.polyAt s.mem (pa s f)).map
         fun c => Spec.MlDsa.modPm c.val Spec.MlDsa.q) a b := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
@@ -1089,13 +1089,13 @@ theorem bpAt_ok {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackContr
     (covers_rw L i1 w1) (Covers.cons (L.cW w1) Covers.nil))
     fun s' ⟨hP, hx, stk, _, s1, hv, hm, k, s₂, hm₂, _, hpost⟩ => ⟨hP, hx, ?_⟩
   have hsp := keep_rsp k
-  sig_post [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs] at hpost
+  sig_post [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs] at hpost
   simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2, hm₂, w32_toNat (bp_lt hab).1, w32_toNat (bp_lt hab).2,
     w64_toNat (bpLen_lt hab hl)] at hpost
   rwa [ce_polyAt (by rw [hsp]; exact L.stkD i1), hm] at hpost
 
 include hab hl hf ho h1 w1 in
-theorem bpAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackContract X86_64.abi stk)
+theorem bpAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitPackContract X86_64.abi stk)
     (hbf : f.1 ∈ kgRegs) (hbo : out.1 ∈ kgRegs) :
     RelCT isa (fun x y => Two p x y ∧ PackIn x.mem (pa x f) a b ∧ PackIn y.mem (pa y f) a b)
       (bitPackAt c f a b out len) fun _ _ => True := by
@@ -1110,7 +1110,7 @@ theorem bpAt_tr {c : Prog isa} (hc : Callee c fun stk => Spec.MlDsa.bitPackContr
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i1 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2.1, hv1.2.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2.1, hv2.2.2.2.2,
     keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbf, T.pa hbo, and_self]
 

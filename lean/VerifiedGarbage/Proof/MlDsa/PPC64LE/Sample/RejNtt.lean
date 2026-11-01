@@ -33,7 +33,8 @@ open VG.Impl.Sha3.PPC64LE.Stream (mov)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlKem.PPC64LE (ptr_add count_sub count_nz wp_loop_nz)
 open VG.Proof.MlKem.PPC64LE.Sample (read_one toNat_setWidth8)
-open VG.Spec.MlDsa (Zq q G PolyIs)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- The call, from the entry state: `seed = r3`, `a = r4`, `scratch = r5`. -/

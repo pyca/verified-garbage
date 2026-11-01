@@ -26,7 +26,6 @@ open VG.Proof.MlKem.X86_64 (sample4K relInv taintRel relStart Rel2 ofNat64_pred 
 open VG.Proof.MlKem.X86_64.S4 (R4 Pre aP at' pre_of pub_scr pub_aP pub_B env_rbx start_ct)
 open VG.Proof.MlDsa.X86_64.Sample (nil_regs WP.all')
 open VG.Proof.MlDsa.X86_64.Sample.RejNttCT (BPre BRel body_ct)
-open VG.Proof.MlKem (poly4)
 
 open VG.Impl.MlDsa.X86_64.Sample.Rej5 (batch flags fallback finish)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.RejNTT2
+public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry

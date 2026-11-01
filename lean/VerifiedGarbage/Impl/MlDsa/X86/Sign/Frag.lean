@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.X86.Top
 # ML-DSA on x86 (32-bit), signing: the pieces of the top-level function
 
 `vg_mldsa{44,65,87}_sign` is a sequence of calls of the polynomial
-primitives (`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge functions, on
+primitives (`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge functions, on
 buffers in its working space `scratch` (argument 4, whose address it keeps
 in `esi`, which the functions it calls preserve) and in its other arguments
 (read from the stack when needed), named as ML-KEM's top-level functions

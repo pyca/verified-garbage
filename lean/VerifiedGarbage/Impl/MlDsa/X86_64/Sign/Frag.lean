@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 # ML-DSA on x86-64, signing: the pieces of the top-level function
 
 `vg_mldsa{44,65,87}_sign` is a sequence of calls of the polynomial
-primitives (`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge functions, on
+primitives (`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge functions, on
 buffers in its working space `scratch` (whose address it keeps in `rbx`)
 and its arguments (whose addresses it keeps in `rbp`, `r12`, `r13` and
 `r14`): all callee-saved registers, which the functions it calls preserve.

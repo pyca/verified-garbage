@@ -13,7 +13,8 @@ namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
 open VG.Proof.MlDsa.AArch64.KeyGen
-open VG.Spec.MlDsa (Params coeffAt)
+open VG.Spec.MlDsa (Params)
+open VG.Proof.MlDsa (coeffAt)
 
 theorem vectorTail_taint : ∀j<80,
     (taint.check (Taint.ofRegs [.x28]) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (sc (oP j)) 256))

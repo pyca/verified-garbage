@@ -30,7 +30,8 @@ every coefficient is multiplied by `8347681 = 256⁻¹ mod q` (`scale_ok`), whic
 namespace VG.Proof.MlDsa.Arm.Arith.NttInv
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Arith
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.Arm.Arith.Ntt
 open VG.Proof.MlKem.Arm (wp_loop_ne count_z count_sub addr_ptr inRegions_of)
@@ -174,8 +175,8 @@ theorem scale_ok {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {G : Poly} {s 
     rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; exact hj), toNat_val,
       map_mul_get _ _ hj]
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.nttInvContract Arm.abi 28).pre s) : PreE s := by
-  sig_pre [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi, Arm.argRegs,
+theorem pre_of {s : State} (h : (Proof.MlDsa.nttInvContract Arm.abi 28).pre s) : PreE s := by
+  sig_pre [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
@@ -198,14 +199,14 @@ theorem correct {s : State} (hp : PreE s) :
   · rw [k₄.gpr .lr (by decide), hI'.keep.gpr .lr (by decide)]; exact congrFun hE.gpr _
   · rw [← eP, ← eF, VG.Proof.MlDsa.Arith.nttInv_eq_layers]; exact hP
 
-theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.nttInv (Spec.MlDsa.nttInvContract Arm.abi 28) := by
+theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.nttInv (Proof.MlDsa.nttInvContract Arm.abi 28) := by
   refine ⟨fun s hs => ?_, ct_of_saving nttSaved _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,
+    sig_post [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,
+  · sig_pub [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨hsp, h0, h1⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
@@ -214,7 +215,7 @@ theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.nttInv (Spec.MlDsa.n
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,
+    · sig_reduce [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
         Arm.argRegs, Arm.Loc.val]
       sig_and_intros
       all_goals first

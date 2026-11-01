@@ -45,8 +45,8 @@ open VG.Proof.MlKem.X86_64.S4 (R4 Pre aP at' sd scr aR scrR stkR sdR pre_of pub_
 open VG.Proof.MlDsa.X86_64.Sample (rnK nil_regs rejNTT_correct rejNTT_ct)
 open VG.Proof.MlDsa.Sample (rnFold toPoly)
 open VG.Proof.MlDsa.Arith (polyIs_frame)
-open VG.Proof.MlKem (poly4)
-open VG.Spec.MlDsa (G PolyIs)
+open VG.Spec.MlDsa (G)
+open VG.Proof.MlDsa (PolyIs)
 
 theorem rn_nosp : NoSp Impl.MlDsa.X86_64.Sample.rejNTT := nosp_of (by decide +kernel)
 
@@ -56,7 +56,7 @@ theorem rn_depth : Impl.MlDsa.X86_64.Sample.rejNTT.depth = 2 := by decide +kerne
 structure PC (σ : State) (K : Nat) (s : State) : Prop where
   env : EnvK σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ K)
-  polys : ∀ k < K, (Lt σ k 336).length = 256 → PolyIs s.mem (poly4 (aP σ) k) (toPoly (Lt σ k 336))
+  polys : ∀ k < K, (Lt σ k 336).length = 256 → PolyIs s.mem (Proof.MlKem.poly4 (aP σ) k) (toPoly (Lt σ k 336))
 
 section
 variable {σ : State} (hp : Pre σ)
@@ -85,7 +85,7 @@ theorem PC.call {K : Nat} (hK : K < 4) {s s' : State} (h : PC σ K s) (hrd : s'.
     rcases hr with (rfl | rfl) | rfl
     · have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega) (by omega)
         (by omega)
-      simpa [poly4] using hd
+      simpa [Proof.MlKem.poly4] using hd
     · exact (hp.a_scr.sub_left (sub_poly (by omega))).sub_right (sub_scr (by simp only [oScalar]; omega))
     · exact (hp.stk_a.sub_right (sub_poly (by omega))).symm
 
@@ -93,7 +93,7 @@ theorem PC.call {K : Nat} (hK : K < 4) {s s' : State} (h : PC σ K s) (hrd : s'.
 structure ArgI (σ : State) (K : Nat) (s : State) : Prop where
   pinv : PC σ K s
   rdi : s.gpr .rdi = sd σ + BitVec.ofNat 64 (34 * K)
-  rsi : s.gpr .rsi = poly4 (aP σ) K
+  rsi : s.gpr .rsi = Proof.MlKem.poly4 (aP σ) K
   rdx : s.gpr .rdx = at' σ oScalar
 
 omit hp in
@@ -102,7 +102,7 @@ theorem argsK_ok {K : Nat} (hK : K < 4) {s : State} (h : PC σ K s) :
       .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * K))), .mov .rdx (.reg .rbx),
       .alu .add .rdx (.imm (BitVec.ofNat 32 oScalar))]) s (ArgI σ K) :=
   WP.mono (WP.keep [.rdi, .rsi, .rdx] (Q := fun s' => s'.mem = s.mem ∧
-      s'.gpr .rdi = sd σ + BitVec.ofNat 64 (34 * K) ∧ s'.gpr .rsi = poly4 (aP σ) K ∧ s'.gpr .rdx = at' σ oScalar)
+      s'.gpr .rdi = sd σ + BitVec.ofNat 64 (34 * K) ∧ s'.gpr .rsi = Proof.MlKem.poly4 (aP σ) K ∧ s'.gpr .rdx = at' σ oScalar)
     (by xrun [h.env.r12, h.env.r13, h.env.rbx, sx34 hK, sx1024 hK, sx6144]; exact ⟨rfl, rfl⟩) rfl)
     fun _ ⟨⟨hm₂, hdi, hsi, hdx⟩, k₂⟩ => ⟨h.keep hm₂ k₂ (by decide), hdi, hsi, hdx⟩
 
@@ -114,7 +114,7 @@ theorem argK_pre {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
     rnK.pre (s.callEntry.withRegions (cRd σ K) (cWr σ K)) := by
   have hsp : s.gpr .rsp = σ.gpr .rsp := h.pinv.env.rsp
   have kS := argK_kS hp hK h
-  have kA : (below (s.gpr .rsp) 24).Disjoint (pR (poly4 (aP σ) K)) := by
+  have kA : (below (s.gpr .rsp) 24).Disjoint (pR (Proof.MlKem.poly4 (aP σ) K)) := by
     rw [hsp]; exact hp.stk_a.sub_right (sub_poly (σ := σ) hK)
   have kZ : (below (s.gpr .rsp) 24).Disjoint ⟨at' σ oScalar, 2048⟩ := by
     rw [hsp]; exact hp.stk_scr.sub_right (sub_scr (σ := σ) (a := oScalar) (n := 2048) (by simp only [oScalar]; omega))
@@ -132,7 +132,7 @@ theorem argK_pre {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
 structure CallI (σ : State) (K : Nat) (s : State) : Prop where
   pinv : PC σ K s
   rax : (s.gpr .rax).setWidth 32 = if (Lt σ K 336).length = 256 then 1 else 0
-  poly : (Lt σ K 336).length = 256 → PolyIs s.mem (poly4 (aP σ) K) (toPoly (Lt σ K 336))
+  poly : (Lt σ K 336).length = 256 → PolyIs s.mem (Proof.MlKem.poly4 (aP σ) K) (toPoly (Lt σ K 336))
 
 theorem callK_ok {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
     WP isa (.call "vg_mldsa_rej_ntt_poly" Impl.MlDsa.X86_64.Sample.rejNTT) s (CallI σ K) := by

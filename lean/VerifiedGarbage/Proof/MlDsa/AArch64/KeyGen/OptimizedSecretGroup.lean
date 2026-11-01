@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretSeeds
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCall
 import VerifiedGarbage.Proof.MlDsa.DecideAt

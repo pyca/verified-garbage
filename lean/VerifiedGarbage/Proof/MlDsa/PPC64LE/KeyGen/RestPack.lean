@@ -18,7 +18,8 @@ namespace VG.Proof.MlDsa.PPC64LE.KeyGen
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt polyAt coeffAt Reduced PolyIs bitPack modPm q n)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack modPm q n)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (Small ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -52,7 +53,7 @@ theorem small_big {η : Nat} (hη : η ≤ 4) {x : IPoly} (hs : Small η x) :
 
 theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
 
-theorem eta_params {p : Params} (hF : PFacts p) : (p.η, p.η) ∈ Spec.MlDsa.bitPackParams := by
+theorem eta_params {p : Params} (hF : PFacts p) : (p.η, p.η) ∈ Proof.MlDsa.bitPackParams := by
   rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> decide
 
 theorem lenS_eq (p : Params) : lenS p = 32 * Spec.MlDsa.bitlen (p.η + p.η) := by

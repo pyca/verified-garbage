@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
-import VerifiedGarbage.Spec.MlDsa.CommitTail
+import VerifiedGarbage.Proof.MlDsa.CommitTailContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Sign/CachedHashNonce.lean`, which only this module imported.

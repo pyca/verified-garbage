@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.GetElem
 

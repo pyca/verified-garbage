@@ -23,7 +23,7 @@ coefficients of the initial memory (`Inv.read`).
 namespace VG.Proof.MlDsa.Arm.Round
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlKem.Arm (wp_loop_ne count_z count_sub addr_ptr)
 
 /-- The address of the polynomial whose pointer is `r` in `s`. -/

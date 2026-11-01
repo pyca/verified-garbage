@@ -99,11 +99,11 @@ open VG.Proof.MlDsa.AArch64.Sample VG.Proof.MlDsa.Sample
 
 theorem rn_pre (s : State) (h : (rejNTTContract AArch64.abi 16).pre s) : rnK.pre s := by
   revert s h
-  sig_implies_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs]
+  sig_implies_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs]
 
 theorem rn_pub (s₁ s₂ : State) (h : (rejNTTContract AArch64.abi 16).pub s₁ s₂) :
     bytesAt s₁.mem (s₁.gpr .x0) 34 = bytesAt s₂.mem (s₂.gpr .x0) 34 := by
-  sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs] at h
+  sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs] at h
   obtain ⟨_, hb, _⟩ := h
   exact VG.Proof.MlKem.map_toNat_inj hb
 
@@ -118,13 +118,13 @@ theorem rn_ret {s s' : State} {tr : List Leak} (h : (rejNTTContract AArch64.abi 
 theorem rn4_pre (s : State) (h : (rejNTT4Contract AArch64.abi 16).pre s) : Rej4.r4K.pre s := by
   have hh : Rej4.preProps s := by
     revert s h
-    sig_implies_pre [Spec.MlDsa.rejNTT4Contract,Spec.MlDsa.rejNTT4Sig,Rej4.preProps,
+    sig_implies_pre [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,Rej4.preProps,
       Rej4.seedsR,Rej4.aR,Rej4.scrR,Rej4.seedP,Rej4.aP,Rej4.scr,AArch64.abi,AArch64.argRegs]
   exact ⟨hh.1,hh.2.1,hh.2.2.1,hh.2.2.2.1,hh.2.2.2.2⟩
 
 theorem rn4_pub (s₁ s₂ : State) (h : (rejNTT4Contract AArch64.abi 16).pub s₁ s₂) :
     bytesAt s₁.mem (s₁.gpr .x0) 136 = bytesAt s₂.mem (s₂.gpr .x0) 136 := by
-  sig_pub [Spec.MlDsa.rejNTT4Contract,Spec.MlDsa.rejNTT4Sig,AArch64.abi,AArch64.argRegs] at h
+  sig_pub [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,AArch64.abi,AArch64.argRegs] at h
   obtain ⟨_,hb,_⟩ := h
   exact Proof.MlKem.map_toNat_inj hb
 
@@ -137,12 +137,12 @@ theorem rn4_ret {s s' : State} {tr : List Leak} (h : (rejNTT4Contract AArch64.ab
 
 theorem sb_pre (s : State) (h : (sampleInBallContract AArch64.abi 16).pre s) : sbK.pre s := by
   revert s h
-  sig_implies_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, AArch64.abi, AArch64.argRegs]
+  sig_implies_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, AArch64.abi, AArch64.argRegs]
 
 theorem sb_pub (s₁ s₂ : State) (h : (sampleInBallContract AArch64.abi 16).pub s₁ s₂) :
     tauOf s₁ = tauOf s₂ ∧
       bytesAt s₁.mem (s₁.gpr .x0) (s₁.gpr .x1).toNat = bytesAt s₂.mem (s₂.gpr .x0) (s₂.gpr .x1).toNat := by
-  sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, AArch64.abi, AArch64.argRegs] at h
+  sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, AArch64.abi, AArch64.argRegs] at h
   obtain ⟨_, hb, _, _, hx2, _, _⟩ := h
   exact ⟨by rw [tauOf, tauOf, hx2], VG.Proof.MlKem.map_toNat_inj hb⟩
 
@@ -164,11 +164,11 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
   sl := by decide
   ntt := by
     have h := Proof.MlDsa.AArch64.Arith.Neon.ntt_verified
-    unfold Spec.MlDsa.nttContract at h ⊢
+    unfold Proof.MlDsa.nttContract at h ⊢
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel)
   invNtt := by
     have h := Proof.MlDsa.AArch64.Arith.Neon.nttInv_verified
-    unfold Spec.MlDsa.nttInvContract at h ⊢
+    unfold Proof.MlDsa.nttInvContract at h ⊢
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel)
   mul := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Arith.mul_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
   mulAdd := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Arith.mulAdd_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
@@ -180,7 +180,7 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
   rej4Ret := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁,h₂,hp⟩ e₁ e₂ =>
     ⟨(Optimized.ResidentRej.selected_ct keccak.callee.pairedSha3) s₁ s₂ t₁ t₂ s₁' s₂'
       (rn4_pre s₁ h₁) (rn4_pre s₂ h₂) (by
-        sig_pub [Spec.MlDsa.rejNTT4Contract,Spec.MlDsa.rejNTT4Sig,AArch64.abi,AArch64.argRegs] at hp
+        sig_pub [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,AArch64.abi,AArch64.argRegs] at hp
         obtain ⟨hsp,hb,h0,h1,h2⟩ := hp
         exact ⟨h0,h1,h2,hsp,Proof.MlKem.map_toNat_inj hb⟩) e₁ e₂,
       show _ = _ by rw [rn4_ret h₁ e₁,rn4_ret h₂ e₂]; exact Proof.MlDsa.Sample.rej4Res_congr (rn4_pub s₁ s₂ hp)⟩

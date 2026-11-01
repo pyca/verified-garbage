@@ -37,7 +37,8 @@ open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlDsa.AArch64.Sample.RejNtt (lt_bit movQ_ok q_eq)
-open VG.Spec.MlDsa (coeffAt Zq q ofInt)
+open VG.Spec.MlDsa (Zq q ofInt)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- Field `i` of the output `X`. -/
 abbrev F (X : List Byte) (c i : Nat) : Nat := leNat X / 2 ^ (i * c) % 2 ^ c

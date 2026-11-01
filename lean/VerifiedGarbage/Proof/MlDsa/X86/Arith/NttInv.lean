@@ -37,7 +37,8 @@ open VG.Impl.MlKem.X86 (at_ ldScratch layerCode layers blockInit blockEnd zDown)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86.Arith
 open VG.Proof.MlDsa.X86.Arith.NttLoop
-open VG.Spec.MlDsa (q n Poly Zq PolyIs Reduced coeffAt polyAt nttInvContract inPlaceContract inPlaceSig zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (PolyIs Reduced coeffAt polyAt nttInvContract inPlaceContract inPlaceSig)
 open VG.Proof.MlKem.X86 (Only E0 P0 P0_argAddr frameR retR Piece LeafPost satState wp_movm wp_mul ea_add
   ptr_next cnt_next cnt_ne toNat_ofNat32 eq_ofNat_of_toNat execMul_other)
 

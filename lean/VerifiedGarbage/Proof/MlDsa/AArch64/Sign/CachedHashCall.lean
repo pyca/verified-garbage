@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import VerifiedGarbage.Spec.MlDsa.CommitTail
+public import VerifiedGarbage.Proof.MlDsa.CommitTailContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Top
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry

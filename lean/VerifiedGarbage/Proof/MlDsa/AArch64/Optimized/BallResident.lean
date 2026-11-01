@@ -284,13 +284,13 @@ open VG.Spec.MlDsa (H)
 open VG.Spec.Sha3 (bytesAt)
 
 theorem sampleInBall_verifiedWith (v : Proof.Sha3.AArch64.Permutation) (hc : SpongeCursor v.callee) (ht : PrefixTiming v.callee) : Verified AArch64.target (Impl.MlDsa.AArch64.Optimized.Ball.codeWith v.callee)
-    (Spec.MlDsa.sampleInBallContract AArch64.abi 16) :=
+    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   Verified.of_correct (correctWith v) (ctWith v hc ht)
-    { pre := by sig_implies_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK,
+    { pre := by sig_implies_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK,
         AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, AArch64.abi,
+        sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, AArch64.abi,
           AArch64.argRegs]
         dsimp only [sbK] at h
         obtain ⟨hr, hp⟩ := h
@@ -307,17 +307,17 @@ theorem sampleInBall_verifiedWith (v : Proof.Sha3.AArch64.Permutation) (hc : Spo
               rw [sampleInBall_none (B := 272) _ (by decide) (by decide) hf]; rfl⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, AArch64.abi,
+        sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, AArch64.abi,
           AArch64.argRegs] at h
         obtain ⟨hsp, hb, hx0, hx1, hx2, hx3, hx4⟩ := h
         exact ⟨hx0, hx1, hx2, hx3, hx4, hsp, VG.Proof.MlKem.map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK,
+      sat := by sig_implies_sat [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK,
         AArch64.abi, AArch64.argRegs] [sbSat] using sbSat }
 
 /-- The optimized sampler has the unchanged public SampleInBall contract. -/
 theorem sampleInBall_verified : Verified AArch64.target
     (Impl.MlDsa.AArch64.Optimized.Ball.codeWith Proof.Sha3.AArch64.Sha3.callee)
-    (Spec.MlDsa.sampleInBallContract AArch64.abi 16) :=
+    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   sampleInBall_verifiedWith Proof.Sha3.AArch64.Sha3.backend sha3_spongeCursor sha3_prefixTiming
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 
@@ -351,7 +351,7 @@ theorem resident_prefixTiming : PrefixTiming callee := by
 
 theorem resident_verified : Verified AArch64.target
     (Impl.MlDsa.AArch64.Optimized.Ball.codeWith Impl.MlDsa.AArch64.Optimized.Ball.residentCallee)
-    (Spec.MlDsa.sampleInBallContract AArch64.abi 16) :=
+    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   sampleInBall_verifiedWith backend resident_spongeCursor resident_prefixTiming
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 

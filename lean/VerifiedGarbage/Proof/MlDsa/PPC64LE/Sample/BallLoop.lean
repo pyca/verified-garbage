@@ -40,7 +40,8 @@ open VG.Impl.Sha3.PPC64LE.Stream (mov)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlKem.PPC64LE (ptr_add count_sub count_nz wp_loop_nz)
 open VG.Proof.MlKem.PPC64LE.Sample (read_one toNat_setWidth8)
-open VG.Spec.MlDsa (Zq q H IPoly n ofInt coeffAt PolyIs toRq)
+open VG.Spec.MlDsa (Zq q H IPoly n ofInt toRq)
+open VG.Proof.MlDsa (coeffAt PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- The call, from the entry state: `ctilde = r3`, `len = r4`, `c = r6`,

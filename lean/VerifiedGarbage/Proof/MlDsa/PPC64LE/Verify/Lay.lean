@@ -48,12 +48,12 @@ structure VFacts (p : Params) : Prop where
   w1 : p.k * w1Len p ≤ 1024 ∧ 0 < p.k * w1Len p
   w1l : w1Len p = 128 ∨ (w1Len p = 192 ∧ p.k ≤ 5)
   scr : 8192 + 1024 * (20 + 8 * p.k) ≤ scrLen p ∧ scrLen p < 2 ^ 31
-  hp : (p.ω, p.k) ∈ Spec.MlDsa.hintParams
-  bu : (p.γ₁ - 1, p.γ₁) ∈ Spec.MlDsa.bitPackParams ∧ lenZ p = 32 * Spec.MlDsa.bitlen (p.γ₁ - 1 + p.γ₁) ∧
+  hp : (p.ω, p.k) ∈ Proof.MlDsa.hintParams
+  bu : (p.γ₁ - 1, p.γ₁) ∈ Proof.MlDsa.bitPackParams ∧ lenZ p = 32 * Spec.MlDsa.bitlen (p.γ₁ - 1 + p.γ₁) ∧
     p.γ₁ < 2 ^ 31
-  ball : (p.ctildeLen, p.τ) ∈ Spec.MlDsa.ballParams ∧ p.τ < 2 ^ 31
-  g2 : p.γ₂ ∈ Spec.MlDsa.gamma2s ∧ p.γ₂ < 2 ^ 31
-  sbp : w1Max p ∈ Spec.MlDsa.simpleBitPackBounds ∧ w1Len p = 32 * Spec.MlDsa.bitlen (w1Max p) ∧ w1Max p < 2 ^ 31
+  ball : (p.ctildeLen, p.τ) ∈ Proof.MlDsa.ballParams ∧ p.τ < 2 ^ 31
+  g2 : p.γ₂ ∈ Proof.MlDsa.gamma2s ∧ p.γ₂ < 2 ^ 31
+  sbp : w1Max p ∈ Proof.MlDsa.simpleBitPackBounds ∧ w1Len p = 32 * Spec.MlDsa.bitlen (w1Max p) ∧ w1Max p < 2 ^ 31
   nb : p.γ₁ - p.β < 2 ^ 31 ∧ 0 < p.γ₁ - p.β
   g1 : p.γ₁ ∈ Proof.MlDsa.Verify.gamma1s
 

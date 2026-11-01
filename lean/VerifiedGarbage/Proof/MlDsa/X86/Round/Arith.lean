@@ -24,7 +24,8 @@ namespace VG.Proof.MlDsa.X86.Round
 
 open VG VG.X86 VG.X86.Wp VG.Impl.MlDsa.X86.Round
 open VG.Impl.MlKem.X86 (at_)
-open VG.Spec.MlDsa (q gamma2s)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
 open VG.Proof.MlDsa.Round (hbF hbM q_eq mem_gamma2s hbF_le hbF_eq)
 open VG.Proof.MlKem.X86 (Only wp_cons wp_mul execMul_eax execMul_other toNat_ofNat32 eq_ofNat_of_toNat)
 

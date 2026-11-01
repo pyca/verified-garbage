@@ -24,7 +24,8 @@ values of `γ₂`.
 namespace VG.Proof.MlDsa.Arm.Round
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa (q n Zq gamma2s)
+open VG.Spec.MlDsa (q n Zq)
+open VG.Proof.MlDsa (gamma2s)
 
 /-- `γ₂` is one of the two values. -/
 def G2 (g : Nat) : Prop := g = g32 ∨ g = g88

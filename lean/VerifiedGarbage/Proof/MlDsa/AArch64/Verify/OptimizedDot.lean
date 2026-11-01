@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
-public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+public import VerifiedGarbage.Proof.MlDsa.PositiveNttContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 import VerifiedGarbage.Proof.Framework.Contract

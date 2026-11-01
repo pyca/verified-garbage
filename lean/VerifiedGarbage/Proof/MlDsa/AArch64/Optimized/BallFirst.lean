@@ -22,7 +22,8 @@ open VG.Proof.MlDsa.AArch64.Sample.Ball (CStored W)
 open VG.Proof.MlDsa.AArch64.Sample.RejNtt (movQ_ok q_eq)
 open VG.Impl.MlDsa.AArch64.Sample (bSetup movQ)
 open VG.Impl.MlKem.AArch64 (mov)
-open VG.Spec.MlDsa (n coeffAt)
+open VG.Spec.MlDsa (n)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- Initialize the first128-byte chunk after loading the eight sign bytes. -/
 theorem setup_ok {X : List Byte} {a b : Addr} {τ : Nat} {s : State}
@@ -77,7 +78,8 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64
 open VG.Proof.MlKem.AArch64
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (n coeffAt)
+open VG.Spec.MlDsa (n)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.AArch64.Sample.Ball (W St lRegs sign_bit)
 
 structure FirstPost (X : List Byte) (a : Addr) (τ : Nat) (s u : State) : Prop where

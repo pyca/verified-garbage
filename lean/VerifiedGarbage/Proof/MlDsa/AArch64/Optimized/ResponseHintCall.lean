@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Spec.MlDsa.ResponseHint
+public import VerifiedGarbage.Proof.MlDsa.ResponseHintContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

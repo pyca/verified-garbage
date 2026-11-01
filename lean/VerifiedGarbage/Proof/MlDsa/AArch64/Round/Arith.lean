@@ -19,7 +19,8 @@ target-independent lemmas of `Proof/MlDsa/Round/Decompose.lean`.
 namespace VG.Proof.MlDsa.AArch64.Round
 
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa (q gamma2s)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
 
 /-- `γ₂` is one of its two values. -/
 abbrev IsG (g : Nat) : Prop := g = g32 ∨ g = g88

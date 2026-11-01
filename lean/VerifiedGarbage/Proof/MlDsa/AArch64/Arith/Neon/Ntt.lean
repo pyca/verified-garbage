@@ -26,7 +26,8 @@ open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (inPlaceK Tab)
-open VG.Spec.MlDsa (Poly PolyIs polyAt)
+open VG.Spec.MlDsa (Poly)
+open VG.Proof.MlDsa (PolyIs polyAt)
 
 theorem layers_ok (bf : List Instr) (up : Bool) (tab : Nat → Nat) (step : Poly → Nat → Poly)
     (hstep : ∀ {fP zP : Addr} {len : Nat}, len ∈ nttLens → ∀ {F : Poly} {s : State},
@@ -73,9 +74,9 @@ theorem ntt_ct : ConstantTime isa (inPlaceK Spec.MlDsa.ntt).pre (inPlaceK Spec.M
     VG.Proof.MlDsa.AArch64.Arith.inPlace_agree (by taint_decide)
 
 theorem ntt_verified : Verified AArch64.target VG.Impl.MlDsa.AArch64.Arith.Neon.ntt
-    (Spec.MlDsa.nttContract AArch64.abi) :=
+    (Proof.MlDsa.nttContract AArch64.abi) :=
   Verified.of_correct ntt_correct ntt_ct (by
-    mldsa_implies [Spec.MlDsa.nttContract,Spec.MlDsa.inPlaceContract,Spec.MlDsa.inPlaceSig,inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttContract,Proof.MlDsa.inPlaceContract,Proof.MlDsa.inPlaceSig,inPlaceK,
       AArch64.abi,AArch64.argRegs] [VG.Proof.MlDsa.AArch64.Arith.inPlaceSat]
       using VG.Proof.MlDsa.AArch64.Arith.inPlaceSat)
 end VG.Proof.MlDsa.AArch64.Arith.Neon

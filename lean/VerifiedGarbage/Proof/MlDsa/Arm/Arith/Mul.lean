@@ -334,15 +334,15 @@ structure PreE (s : State) : Prop where
   redF : Reduced s.mem (F s)
   redG : Reduced s.mem (G s)
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.mulContract Arm.abi 24).pre s) : PreE s := by
-  sig_pre [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlDsa.mulContract Arm.abi 24).pre s) : PreE s := by
+  sig_pre [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
-theorem preAdd_of {s : State} (h : (Spec.MlDsa.mulAddContract Arm.abi 24).pre s) :
+theorem preAdd_of {s : State} (h : (Proof.MlDsa.mulAddContract Arm.abi 24).pre s) :
     PreE s ∧ Reduced s.mem (H s) := by
-  sig_pre [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pre [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h0, h12, h13⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩, h0⟩
@@ -435,14 +435,14 @@ def satState : State where
   rd := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
   wr := [⟨0x1000, 1024⟩]
 
-theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Spec.MlDsa.mulContract Arm.abi 24) := by
+theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Proof.MlDsa.mulContract Arm.abi 24) := by
   refine ⟨fun s hs => ?_, ct_of_saving mulSaved _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨hsp, h0, h1, h2⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
@@ -451,7 +451,7 @@ theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Spec.MlDsa.
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first
@@ -459,15 +459,15 @@ theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Spec.MlDsa.
         | exact reduced_zero _
 
 theorem mulAdd_verified :
-    Verified Arm.target Impl.MlDsa.Arm.Arith.mulAdd (Spec.MlDsa.mulAddContract Arm.abi 24) := by
+    Verified Arm.target Impl.MlDsa.Arm.Arith.mulAdd (Proof.MlDsa.mulAddContract Arm.abi 24) := by
   refine ⟨fun s hs => ?_, ct_of_saving mulSaved _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨hp, hH⟩ := preAdd_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correctAdd hp hH
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨hsp, h0, h1, h2⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
@@ -476,7 +476,7 @@ theorem mulAdd_verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

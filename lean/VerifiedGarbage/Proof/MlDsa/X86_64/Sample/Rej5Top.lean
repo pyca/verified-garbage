@@ -16,8 +16,8 @@ open VG.Impl.MlDsa.X86_64.Sample.Rej4 (oJ half first second zeroJ rejNTT4Avx2)
 open VG.Proof.MlKem.X86_64 (Keep ea_at add_ofNat_zero pR WP.keep ofNat64_pred sample4K)
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold Stored stored_nil stored_frame stored_polyIs toPoly G_length)
-open VG.Proof.MlKem (poly4 seed4)
-open VG.Spec.MlDsa (Zq G PolyIs)
+open VG.Spec.MlDsa (Zq G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Proof.MlKem (xofByte)
 
 open VG.Impl.MlDsa.X86_64.Sample.Rej5 (flags fallback finish)
@@ -25,7 +25,7 @@ open VG.Impl.MlDsa.X86_64.Sample.Rej5 (flags fallback finish)
 structure Done (σ s : State) : Prop where
   env : EnvK σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ 4)
-  st : ∀ k < 4, Stored s.mem (poly4 (aP σ) k) (Lt σ k 336)
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k) (Lt σ k 336)
 
 theorem Batch.restore {σ s s' : State} {n off count K : Nat} (h : Batch σ n off count K s)
     (hm : s'.mem = s.mem) (hk : Keep [.rax, .r14] s s') (hr : s'.gpr .r14 = 1) : Batch σ n off count K s' :=

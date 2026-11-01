@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem

@@ -248,14 +248,14 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.addContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.addContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlDsa.addContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.addContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem pre_of_sub {s : State} (h : (Spec.MlDsa.subContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.subContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of_sub {s : State} (h : (Proof.MlDsa.subContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.subContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
@@ -288,15 +288,15 @@ theorem ctRegs {k : Contract isa} (rs : List Reg)
   VG.Taint.constantTime (A := VG.Arm.taint) (Taint.ofRegs rs)
     (fun s₁ s₂ _ _ hp => Taint.agree_ofRegs (hpub s₁ s₂ hp)) h
 
-theorem add_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.add (Spec.MlDsa.addContract Arm.abi) := by
+theorem add_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.add (Proof.MlDsa.addContract Arm.abi) := by
   refine ⟨fun s hs => ?_, ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Spec.MlDsa.addContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.addContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlDsa.addContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.addContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -306,22 +306,22 @@ theorem add_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.add (Spec.MlDsa.
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.addContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.addContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first
         | trivial
         | exact reduced_zero _
 
-theorem sub_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.sub (Spec.MlDsa.subContract Arm.abi) := by
+theorem sub_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.sub (Proof.MlDsa.subContract Arm.abi) := by
   refine ⟨fun s hs => ?_, ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_of_sub hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Spec.MlDsa.subContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.subContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlDsa.subContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.subContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -331,7 +331,7 @@ theorem sub_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.sub (Spec.MlDsa.
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.subContract, Spec.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.subContract, Proof.MlDsa.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

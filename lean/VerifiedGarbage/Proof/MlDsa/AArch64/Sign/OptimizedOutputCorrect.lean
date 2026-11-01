@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
-public import VerifiedGarbage.Spec.MlDsa.Canonicalize
+public import VerifiedGarbage.Proof.MlDsa.CanonicalizeContract
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack

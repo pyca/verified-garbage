@@ -179,13 +179,13 @@ theorem ea_ptr {x : BitVec 32} (hx : x.toNat + 1024 ≤ 2 ^ 32) {k : Nat} (hk : 
 
 /-- All-zero memory holds a reduced polynomial. -/
 theorem reduced_of_zero {m : Mem} {p : Addr} (h : ∀ k < 1024, m (p + BitVec.ofNat 64 k) = 0) :
-    Spec.MlDsa.Reduced m p := fun i hi => by
+    Proof.MlDsa.Reduced m p := fun i hi => by
   rw [coeffAt_congr (m' := m) (m := fun _ => 0) (fun k hk => h k hk) hi]
-  simp [Spec.MlDsa.coeffAt, Mem.readW, Mem.read]
+  simp [Proof.MlDsa.coeffAt, Mem.readW, Mem.read]
 
 /-- Memory that is zero below `0x5000` holds reduced polynomials there. -/
 theorem reduced_below {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0) (p : Nat)
-    (hp : p + 1024 ≤ 0x5000) : Spec.MlDsa.Reduced m (BitVec.ofNat 64 p) :=
+    (hp : p + 1024 ≤ 0x5000) : Proof.MlDsa.Reduced m (BitVec.ofNat 64 p) :=
   reduced_of_zero fun k hk => hm _ (by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega)
 

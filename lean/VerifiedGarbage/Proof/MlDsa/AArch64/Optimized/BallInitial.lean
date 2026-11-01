@@ -135,7 +135,7 @@ theorem zeroWide_coeffs {s : State} {p : Addr} (hp : s.gpr .x26 = p)
     (hw : ∀ i<64, InRegions s.wr (wordAddr p i) 16) :
     WP isa zeroWide s fun t => VG.Proof.MlKem.AArch64.Keep [] s t ∧
       Frame [VG.Proof.MlDsa.Sample.polyR p] s.mem t.mem ∧
-      ∀ i<256, VG.Spec.MlDsa.coeffAt t.mem p i = 0 := by
+      ∀ i<256, VG.Proof.MlDsa.coeffAt t.mem p i = 0 := by
   refine WP.mono (WP.preservedV (zeroWide_ok hp hw) (hc := by lit_decide))
     fun t ⟨⟨hk,hf,hz⟩,hv⟩ => ?_
   refine ⟨⟨hk.gpr,hk.rd,hk.wr,hk.sp,hv⟩,hf,fun i hi => ?_⟩
@@ -154,7 +154,7 @@ theorem zeroWide_coeffs {s : State} {p : Addr} (hp : s.gpr .x26 = p)
       omega
     rw [ha] at hbyte
     simpa [BitVec.extractLsb'] using hbyte.symm
-  simp only [VG.Spec.MlDsa.coeffAt,Mem.readW,hread]
+  simp only [VG.Proof.MlDsa.coeffAt,Mem.readW,hread]
   rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.Ball

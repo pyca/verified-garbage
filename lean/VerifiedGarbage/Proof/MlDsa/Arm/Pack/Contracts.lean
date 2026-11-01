@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # ML-DSA on 32-bit ARM: the contracts of the encodings, for the proofs
 
 For each function of this group, what its shared contract
-(`Spec/MlDsa/Poly.lean`) requires, spelled out for 32-bit ARM (`SbpPre`,
+(`Proof/MlDsa/Contract.lean`) requires, spelled out for 32-bit ARM (`SbpPre`,
 `BpPre`, `BuPre`, `T1Pre`, from `pre_of`); the branch of `sel` on a width
 (`sel_ok`); and the frame of `bitPack` and `bitUnpack`, which saves `r4` in
 the 4 bytes below the stack pointer that their contracts reserve

@@ -26,7 +26,7 @@ namespace VG.Proof.MlDsa.X86.Pack.Unpack
 
 open VG VG.X86 VG.Impl.MlDsa.X86.Pack
 open VG.Proof.MlKem.X86 (Piece Piece.seq Piece.leaf Piece.verified P0 E0 LeafEnd LeafPost satState rotr_small)
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.Pack
 open VG.Proof.MlDsa.X86.Pack

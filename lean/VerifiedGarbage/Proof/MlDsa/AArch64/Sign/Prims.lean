@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.HighPack
-public import VerifiedGarbage.Spec.MlDsa.ResidentMask
+public import VerifiedGarbage.Proof.MlDsa.HighPackContract
+public import VerifiedGarbage.Proof.MlDsa.ResidentMaskContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 What the proofs need of the implementations of the primitives (`PrimsOk`):
 each is correct and constant time under its shared contract
-(`Spec/MlDsa/Poly.lean`) with the `S` bytes of stack the function gives its
+(`Proof/MlDsa/Contract.lean`) with the `S` bytes of stack the function gives its
 calls, and its frames use at most those (`CalleeOk`); and, of the two samplers
 whose result the function branches on, that the result is public in their own
 runs (`RetPub`) and that they succeed only when the algorithm finishes within

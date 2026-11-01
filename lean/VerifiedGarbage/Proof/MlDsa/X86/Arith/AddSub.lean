@@ -35,7 +35,7 @@ namespace VG.Proof.MlDsa.X86.Arith
 open VG VG.X86 VG.Impl.MlDsa.X86.Arith
 open VG.Impl.MlKem.X86 (at_ leaf mapLoop mapBody mapInit)
 open VG.Proof.MlDsa.Arith
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86 (Only wp_cons wp_movm toNat_ofNat32 eq_ofNat_of_toNat E0 P0 P0_esp P0_wr frameR
   retR LeafPost LeafEnd Piece ea_add ptr_next cnt_next cnt_ne)
 

@@ -31,7 +31,8 @@ namespace VG.Proof.MlDsa.AArch64.Arith
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## The constants -/
 
@@ -260,17 +261,17 @@ def mulSat : State where
   wr := [⟨0x1000, 1024⟩]
 
 theorem mul_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Arith.mul (Spec.MlDsa.mulContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlDsa.AArch64.Arith.mul (Proof.MlDsa.mulContract AArch64.abi) :=
   Verified.of_correct mul_correct
     (VG.Taint.constantTime (A := taint) (VG.AArch64.Taint.ofRegs [.x0, .x1, .x2]) mul_agree (by taint_decide))
-    (by mldsa_implies [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, mulK, AArch64.abi, AArch64.argRegs]
+    (by mldsa_implies [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, mulK, AArch64.abi, AArch64.argRegs]
       [mulSat] using mulSat)
 
 theorem mulAdd_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Arith.mulAdd (Spec.MlDsa.mulAddContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlDsa.AArch64.Arith.mulAdd (Proof.MlDsa.mulAddContract AArch64.abi) :=
   Verified.of_correct mulAdd_correct
     (VG.Taint.constantTime (A := taint) (VG.AArch64.Taint.ofRegs [.x0, .x1, .x2]) mul_agree (by taint_decide))
-    (by mldsa_implies [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, mulK, AArch64.abi, AArch64.argRegs]
+    (by mldsa_implies [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, mulK, AArch64.abi, AArch64.argRegs]
       [mulSat] using mulSat)
 
 end VG.Proof.MlDsa.AArch64.Arith

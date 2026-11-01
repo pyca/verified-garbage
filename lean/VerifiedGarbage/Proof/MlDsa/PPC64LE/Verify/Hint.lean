@@ -29,7 +29,8 @@ open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two R
   hbu_tr zx and24_ok)
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Impl.MlDsa.PPC64LE.KeyGen (and24)
-open VG.Spec.MlDsa (Params HintIs hintBitUnpack)
+open VG.Spec.MlDsa (Params hintBitUnpack)
+open VG.Proof.MlDsa (HintIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The primitives -/
@@ -37,19 +38,19 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The primitives, each verified against its contract with at most `S`
 bytes of stack. -/
 structure VPrimsOk (P : Prims) (S : Nat) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract PPC64LE.abi stk) S
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract PPC64LE.abi stk) S
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract PPC64LE.abi stk) S
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract PPC64LE.abi stk) S
-  sub : Callee P.sub (fun stk => Spec.MlDsa.subContract PPC64LE.abi stk) S
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract PPC64LE.abi stk) S
-  ball : Callee P.ball (fun stk => Spec.MlDsa.sampleInBallContract PPC64LE.abi stk) S
-  useHint : Callee P.useHint (fun stk => Spec.MlDsa.useHintContract PPC64LE.abi stk) S
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract PPC64LE.abi stk) S
-  bitUnpack : Callee P.bitUnpack (fun stk => Spec.MlDsa.bitUnpackContract PPC64LE.abi stk) S
-  unpackT1 : Callee P.unpackT1 (fun stk => Spec.MlDsa.unpackT1Contract PPC64LE.abi stk) S
-  hintUnpack : Callee P.hintUnpack (fun stk => Spec.MlDsa.hintBitUnpackContract PPC64LE.abi stk) S
-  normLt : Callee P.normLt (fun stk => Spec.MlDsa.normLtContract PPC64LE.abi stk) S
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract PPC64LE.abi stk) S
+  invNtt : Callee P.invNtt (fun stk => Proof.MlDsa.nttInvContract PPC64LE.abi stk) S
+  mul : Callee P.mul (fun stk => Proof.MlDsa.mulContract PPC64LE.abi stk) S
+  mulAdd : Callee P.mulAdd (fun stk => Proof.MlDsa.mulAddContract PPC64LE.abi stk) S
+  sub : Callee P.sub (fun stk => Proof.MlDsa.subContract PPC64LE.abi stk) S
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract PPC64LE.abi stk) S
+  ball : Callee P.ball (fun stk => Proof.MlDsa.sampleInBallContract PPC64LE.abi stk) S
+  useHint : Callee P.useHint (fun stk => Proof.MlDsa.useHintContract PPC64LE.abi stk) S
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract PPC64LE.abi stk) S
+  bitUnpack : Callee P.bitUnpack (fun stk => Proof.MlDsa.bitUnpackContract PPC64LE.abi stk) S
+  unpackT1 : Callee P.unpackT1 (fun stk => Proof.MlDsa.unpackT1Contract PPC64LE.abi stk) S
+  hintUnpack : Callee P.hintUnpack (fun stk => Proof.MlDsa.hintBitUnpackContract PPC64LE.abi stk) S
+  normLt : Callee P.normLt (fun stk => Proof.MlDsa.normLtContract PPC64LE.abi stk) S
 
 /-! ## The signature -/
 

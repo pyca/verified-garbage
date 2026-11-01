@@ -31,7 +31,8 @@ open VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.Sample
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q H IPoly n ofInt coeffAt)
+open VG.Spec.MlDsa (Zq q H IPoly n ofInt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- The call, from the entry state: `ctilde = r0`, `len = r1`, `tau = r2`,

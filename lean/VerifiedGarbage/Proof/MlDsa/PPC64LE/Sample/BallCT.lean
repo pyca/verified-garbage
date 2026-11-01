@@ -50,7 +50,8 @@ open VG.Impl.MlDsa.PPC64LE.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlKem.PPC64LE (relct_noMem)
 open VG.Proof.MlKem.PPC64LE.Sample (taint_block relct_wp)
-open VG.Spec.MlDsa (Zq q H IPoly n ofInt coeffAt PolyIs toRq)
+open VG.Spec.MlDsa (Zq q H IPoly n ofInt toRq)
+open VG.Proof.MlDsa (coeffAt PolyIs)
 open VG.Spec.Sha3 (bytesAt rates)
 
 /-- Any code, by the taint analysis from the registers `rs`. -/
@@ -200,25 +201,25 @@ end
 
 /-! ## `Verified` -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.sampleInBallContract PPC64LE.abi 48).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.sampleInBallContract PPC64LE.abi 48).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, d1, d2, d3, b1, b2, b3, f1, f2, f3, hb⟩ := h
-  simp only [Spec.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb
+  simp only [Proof.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb
   exact ⟨⟨by rw [h1]; exact List.mem_singleton_self _, h2, d1, d2, d3, b1, b2, b3, (s.gpr .r4).isLt, f2, f3, h0⟩,
     by simp only [tau]; omega_arith⟩
 
 theorem post_of {s₀ s : State}
     (h3 : s.gpr .r3 = (if (ballFold (tau s₀) (X s₀)).2 = 256 then 1 else 0))
     (hc : (ballFold (tau s₀) (X s₀)).2 = 256 → PolyIs s.mem (s₀.gpr .r6) (toRq (ballFold (tau s₀) (X s₀)).1)) :
-    (Spec.MlDsa.sampleInBallContract PPC64LE.abi 48).post s₀ s := by
-  sig_post [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs]
+    (Proof.MlDsa.sampleInBallContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs]
   rw [h3]
   by_cases hf : (ballFold (tau s₀) (X s₀)).2 = 256
   · rw [ifT hf]
     obtain ⟨hred, hpoly⟩ := hc hf
     exact ⟨fun _ => hred, .inl ⟨rfl, { Spec.MlDsa.minBounds with ball := 272 }, by
       show Option.map toRq (Spec.MlDsa.sampleInBall (tau s₀) 272 (B s₀)) =
-        some (Spec.MlDsa.polyAt s.mem (s₀.gpr .r6))
+        some (Proof.MlDsa.polyAt s.mem (s₀.gpr .r6))
       rw [sampleInBall_some _ (by decide) hf]
       exact congrArg some hpoly.symm⟩⟩
   · rw [ifF hf]
@@ -252,18 +253,18 @@ open VG VG.PPC64LE
 open Ball
 
 theorem sampleInBall_verified :
-    Verified PPC64LE.target Impl.MlDsa.PPC64LE.Sample.sampleInBall (Spec.MlDsa.sampleInBallContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlDsa.PPC64LE.Sample.sampleInBall (Proof.MlDsa.sampleInBallContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, h3, hc, hpres⟩ := correct (pre_of hs)
     exact ⟨t, s', he, hpres, post_of h3 hc⟩
-  · sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+  · sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
     obtain ⟨hsp, hb, h3, h4, h5, h6, h7⟩ := hpub
     exact (all_ct ⟨pre_of h₁, pre_of h₂, hsp, h3, h4, h5, h6, h7, leakBytes_inj hb⟩ s₁ s₂ t₁ t₂ s₁' s₂'
       ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

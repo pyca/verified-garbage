@@ -247,16 +247,16 @@ call {vg_keccak_squeeze_scratch}
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_avx2,
-        vg_mldsa_rej_bounded_poly = sym super::mldsa::vg_mldsa_rej_bounded_poly,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_ntt_avx2 = sym super::mldsa::vg_mldsa_ntt_avx2,
-        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_multiply_ntt_avx2,
-        vg_mldsa_montgomery_multiply_add_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_multiply_add_ntt_avx2,
-        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_inv_ntt_avx2,
-        vg_mldsa_add_avx2 = sym super::mldsa::vg_mldsa_add_avx2,
-        vg_mldsa_power2round = sym super::mldsa::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_avx2::vg_mldsa_rej_ntt_poly4_avx2,
+        vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx2::vg_mldsa_montgomery_multiply_ntt_avx2,
+        vg_mldsa_montgomery_multiply_add_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_add_ntt_avx2::vg_mldsa_montgomery_multiply_add_ntt_avx2,
+        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt_avx2::vg_mldsa_montgomery_inv_ntt_avx2,
+        vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
+        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
     )
 }
 
@@ -677,26 +677,26 @@ call {vg_mldsa_hint_bit_pack}
 26:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_avx2,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_avx2 = sym super::mldsa::vg_mldsa_ntt_avx2,
+        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_avx2::vg_mldsa_rej_ntt_poly4_avx2,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_expand_mask_poly4_avx2 = sym super::mldsa::vg_mldsa_expand_mask_poly4_avx2,
-        vg_mldsa_dot_inverse4_avx2 = sym super::mldsa::vg_mldsa_dot_inverse4_avx2,
-        vg_mldsa_high_bits_avx2 = sym super::mldsa::vg_mldsa_high_bits_avx2,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
-        vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
-        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_multiply_ntt_avx2,
-        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_inv_ntt_avx2,
-        vg_mldsa_add_avx2 = sym super::mldsa::vg_mldsa_add_avx2,
-        vg_mldsa_norm_lt_avx2 = sym super::mldsa::vg_mldsa_norm_lt_avx2,
-        vg_mldsa_sub_avx2 = sym super::mldsa::vg_mldsa_sub_avx2,
-        vg_mldsa_low_bits_avx2 = sym super::mldsa::vg_mldsa_low_bits_avx2,
-        vg_mldsa_make_hint_avx2 = sym super::mldsa::vg_mldsa_make_hint_avx2,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa::vg_mldsa_hint_bit_pack,
+        vg_mldsa_expand_mask_poly4_avx2 = sym super::mldsa44::vg_mldsa_expand_mask_poly4_avx2::vg_mldsa_expand_mask_poly4_avx2,
+        vg_mldsa_dot_inverse4_avx2 = sym super::mldsa44::vg_mldsa_dot_inverse4_avx2::vg_mldsa_dot_inverse4_avx2,
+        vg_mldsa_high_bits_avx2 = sym super::mldsa44::vg_mldsa_high_bits_avx2::vg_mldsa_high_bits_avx2,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
+        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx2::vg_mldsa_montgomery_multiply_ntt_avx2,
+        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt_avx2::vg_mldsa_montgomery_inv_ntt_avx2,
+        vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
+        vg_mldsa_norm_lt_avx2 = sym super::mldsa44::vg_mldsa_norm_lt_avx2::vg_mldsa_norm_lt_avx2,
+        vg_mldsa_sub_avx2 = sym super::mldsa44::vg_mldsa_sub_avx2::vg_mldsa_sub_avx2,
+        vg_mldsa_low_bits_avx2 = sym super::mldsa44::vg_mldsa_low_bits_avx2::vg_mldsa_low_bits_avx2,
+        vg_mldsa_make_hint_avx2 = sym super::mldsa44::vg_mldsa_make_hint_avx2::vg_mldsa_make_hint_avx2,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
     )
 }
 
@@ -965,19 +965,19 @@ jne 214b
 21:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt_avx2 = sym super::mldsa::vg_mldsa_norm_lt_avx2,
-        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_avx2,
-        vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
-        vg_mldsa_ntt_avx2 = sym super::mldsa::vg_mldsa_ntt_avx2,
-        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_multiply_ntt_avx2,
-        vg_mldsa_montgomery_multiply_add_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_multiply_add_ntt_avx2,
-        vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
-        vg_mldsa_sub_avx2 = sym super::mldsa::vg_mldsa_sub_avx2,
-        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_inv_ntt_avx2,
-        vg_mldsa_use_hint_avx2 = sym super::mldsa::vg_mldsa_use_hint_avx2,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_norm_lt_avx2 = sym super::mldsa44::vg_mldsa_norm_lt_avx2::vg_mldsa_norm_lt_avx2,
+        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_avx2::vg_mldsa_rej_ntt_poly4_avx2,
+        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
+        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx2::vg_mldsa_montgomery_multiply_ntt_avx2,
+        vg_mldsa_montgomery_multiply_add_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_add_ntt_avx2::vg_mldsa_montgomery_multiply_add_ntt_avx2,
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_sub_avx2 = sym super::mldsa44::vg_mldsa_sub_avx2::vg_mldsa_sub_avx2,
+        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt_avx2::vg_mldsa_montgomery_inv_ntt_avx2,
+        vg_mldsa_use_hint_avx2 = sym super::mldsa44::vg_mldsa_use_hint_avx2::vg_mldsa_use_hint_avx2,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -1277,16 +1277,16 @@ call {vg_keccak_squeeze_scratch}
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_rej_bounded_poly = sym super::mldsa::vg_mldsa_rej_bounded_poly,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_inv_ntt = sym super::mldsa::vg_mldsa_inv_ntt,
-        vg_mldsa_add = sym super::mldsa::vg_mldsa_add,
-        vg_mldsa_power2round = sym super::mldsa::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
+        vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
+        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
+        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
+        vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
+        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
     )
 }
 
@@ -1703,26 +1703,26 @@ call {vg_mldsa_hint_bit_pack}
 26:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
+        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_expand_mask_poly4 = sym super::mldsa::vg_mldsa_expand_mask_poly4,
-        vg_mldsa_dot_inverse4 = sym super::mldsa::vg_mldsa_dot_inverse4,
-        vg_mldsa_high_bits = sym super::mldsa::vg_mldsa_high_bits,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
-        vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
-        vg_mldsa_multiply_ntt = sym super::mldsa::vg_mldsa_multiply_ntt,
-        vg_mldsa_inv_ntt = sym super::mldsa::vg_mldsa_inv_ntt,
-        vg_mldsa_add = sym super::mldsa::vg_mldsa_add,
-        vg_mldsa_norm_lt = sym super::mldsa::vg_mldsa_norm_lt,
-        vg_mldsa_sub = sym super::mldsa::vg_mldsa_sub,
-        vg_mldsa_low_bits = sym super::mldsa::vg_mldsa_low_bits,
-        vg_mldsa_make_hint = sym super::mldsa::vg_mldsa_make_hint,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa::vg_mldsa_hint_bit_pack,
+        vg_mldsa_expand_mask_poly4 = sym super::mldsa44::vg_mldsa_expand_mask_poly4::vg_mldsa_expand_mask_poly4,
+        vg_mldsa_dot_inverse4 = sym super::mldsa44::vg_mldsa_dot_inverse4::vg_mldsa_dot_inverse4,
+        vg_mldsa_high_bits = sym super::mldsa44::vg_mldsa_high_bits::vg_mldsa_high_bits,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
+        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
+        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
+        vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
+        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
+        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
+        vg_mldsa_low_bits = sym super::mldsa44::vg_mldsa_low_bits::vg_mldsa_low_bits,
+        vg_mldsa_make_hint = sym super::mldsa44::vg_mldsa_make_hint::vg_mldsa_make_hint,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
     )
 }
 
@@ -1983,19 +1983,19 @@ jne 214b
 21:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt = sym super::mldsa::vg_mldsa_norm_lt,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
-        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
-        vg_mldsa_sub = sym super::mldsa::vg_mldsa_sub,
-        vg_mldsa_inv_ntt = sym super::mldsa::vg_mldsa_inv_ntt,
-        vg_mldsa_use_hint = sym super::mldsa::vg_mldsa_use_hint,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
+        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
+        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
+        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
+        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
+        vg_mldsa_use_hint = sym super::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -2050,3 +2050,159 @@ call {vg_mldsa44_verify}
         vg_mldsa44_verify = sym super::mldsa44::vg_mldsa44_verify,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_add.rs"]
+pub(crate) mod vg_mldsa_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_add_avx2.rs"]
+pub(crate) mod vg_mldsa_add_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_bit_pack.rs"]
+pub(crate) mod vg_mldsa_bit_pack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_bit_unpack.rs"]
+pub(crate) mod vg_mldsa_bit_unpack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_dot_inverse4.rs"]
+pub(crate) mod vg_mldsa_dot_inverse4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_dot_inverse4_avx2.rs"]
+pub(crate) mod vg_mldsa_dot_inverse4_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_expand_mask_poly.rs"]
+pub(crate) mod vg_mldsa_expand_mask_poly;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_expand_mask_poly4.rs"]
+pub(crate) mod vg_mldsa_expand_mask_poly4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_expand_mask_poly4_avx2.rs"]
+pub(crate) mod vg_mldsa_expand_mask_poly4_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_high_bits.rs"]
+pub(crate) mod vg_mldsa_high_bits;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_high_bits_avx2.rs"]
+pub(crate) mod vg_mldsa_high_bits_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_hint_bit_pack.rs"]
+pub(crate) mod vg_mldsa_hint_bit_pack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_hint_bit_unpack.rs"]
+pub(crate) mod vg_mldsa_hint_bit_unpack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_inv_ntt.rs"]
+pub(crate) mod vg_mldsa_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_low_bits.rs"]
+pub(crate) mod vg_mldsa_low_bits;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_low_bits_avx2.rs"]
+pub(crate) mod vg_mldsa_low_bits_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_make_hint.rs"]
+pub(crate) mod vg_mldsa_make_hint;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_make_hint_avx2.rs"]
+pub(crate) mod vg_mldsa_make_hint_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_montgomery_inv_ntt_avx2.rs"]
+pub(crate) mod vg_mldsa_montgomery_inv_ntt_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_montgomery_multiply_add_ntt_avx2.rs"]
+pub(crate) mod vg_mldsa_montgomery_multiply_add_ntt_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_montgomery_multiply_ntt_avx2.rs"]
+pub(crate) mod vg_mldsa_montgomery_multiply_ntt_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_multiply_add_ntt.rs"]
+pub(crate) mod vg_mldsa_multiply_add_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_multiply_ntt.rs"]
+pub(crate) mod vg_mldsa_multiply_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_norm_lt.rs"]
+pub(crate) mod vg_mldsa_norm_lt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_norm_lt_avx2.rs"]
+pub(crate) mod vg_mldsa_norm_lt_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_ntt.rs"]
+pub(crate) mod vg_mldsa_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_ntt_avx2.rs"]
+pub(crate) mod vg_mldsa_ntt_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_power2round.rs"]
+pub(crate) mod vg_mldsa_power2round;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_bounded_poly.rs"]
+pub(crate) mod vg_mldsa_rej_bounded_poly;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_ntt_poly.rs"]
+pub(crate) mod vg_mldsa_rej_ntt_poly;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_ntt_poly4.rs"]
+pub(crate) mod vg_mldsa_rej_ntt_poly4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_ntt_poly4_avx2.rs"]
+pub(crate) mod vg_mldsa_rej_ntt_poly4_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_sample_in_ball.rs"]
+pub(crate) mod vg_mldsa_sample_in_ball;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_simple_bit_pack.rs"]
+pub(crate) mod vg_mldsa_simple_bit_pack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_sub.rs"]
+pub(crate) mod vg_mldsa_sub;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_sub_avx2.rs"]
+pub(crate) mod vg_mldsa_sub_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_unpack_t1.rs"]
+pub(crate) mod vg_mldsa_unpack_t1;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_use_hint.rs"]
+pub(crate) mod vg_mldsa_use_hint;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_use_hint_avx2.rs"]
+pub(crate) mod vg_mldsa_use_hint_avx2;

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory

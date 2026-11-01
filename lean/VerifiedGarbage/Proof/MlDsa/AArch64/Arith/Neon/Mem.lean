@@ -12,7 +12,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 namespace VG.Proof.MlDsa.AArch64.Arith.Neon
 open VG VG.AArch64
 open VG.Proof.MlDsa.Arith
-open VG.Spec.MlDsa (n Poly Zq PolyIs coeffAt)
+open VG.Spec.MlDsa (n Poly Zq)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 
 theorem vword_read16 (m : Mem) (a : Addr) {e : Nat} (he : e < 4) :
     vword (m.read a 16) e = m.readW (a + BitVec.ofNat 64 (4*e)) 32 := by

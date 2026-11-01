@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 # ML-DSA on AArch64: the pieces of the top-level functions
 
 `vg_mldsa*_keygen` and `vg_mldsa*_verify` are sequences of calls of ML-DSA's
-polynomial primitives (`vg_mldsa_*`, `Spec/MlDsa/Poly.lean`) and of the SHA-3
+polynomial primitives (`vg_mldsa_*`, `Proof/MlDsa/Contract.lean`) and of the SHA-3
 sponge functions, on buffers in their working space `scratch` (whose address
 they keep in `x28`) and their arguments (whose addresses they keep in `x25`,
 `x26` and `x27`): callee-saved registers, which the functions they call keep.

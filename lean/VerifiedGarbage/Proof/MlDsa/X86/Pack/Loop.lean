@@ -28,7 +28,8 @@ namespace VG.Proof.MlDsa.X86.Pack
 open VG VG.X86 VG.Impl.MlDsa.X86.Pack
 open VG.Proof.MlKem.X86 (Piece Piece.taint Piece.countLoop Piece.seq P0 E0 P0_esp LeafEnd ea_off addr_add
   cnt_next cnt_ne)
-open VG.Spec.MlDsa (coeffAt bitsToBytes)
+open VG.Spec.MlDsa (bitsToBytes)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem (digits take_drop_eq bytesAt_getD bytesAt_eq! bytesAt_length)
 open VG.Proof.MlDsa.Pack

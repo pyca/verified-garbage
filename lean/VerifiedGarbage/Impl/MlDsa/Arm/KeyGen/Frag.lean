@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.Arm.Top
 # ML-DSA on 32-bit ARM: the pieces of the top-level functions
 
 `vg_mldsa*_keygen` and `vg_mldsa*_verify` are sequences of calls of ML-DSA's
-polynomial primitives (`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge
+polynomial primitives (`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge
 functions, on buffers in their working space `scratch` and their arguments.
 Like ML-KEM's top-level functions (`Impl/MlKem/Arm/Top.lean`, whose sponge
 routine `hash` and byte copy `copy` they use), they keep `scratch` in `r7`

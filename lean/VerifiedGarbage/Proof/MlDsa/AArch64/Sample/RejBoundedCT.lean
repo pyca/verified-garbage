@@ -274,13 +274,13 @@ def rbSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem rejBounded_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target (Impl.MlDsa.AArch64.Sample.rejBoundedWith v.callee)
-    (Spec.MlDsa.rejBoundedContract AArch64.abi 16) :=
+    (Proof.MlDsa.rejBoundedContract AArch64.abi 16) :=
   Verified.of_correct (RejBounded.correctWith v) (RejBounded.ctWith v)
-    { pre := by sig_implies_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK,
+    { pre := by sig_implies_pre [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK,
         AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK, AArch64.abi,
+        sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, AArch64.abi,
           AArch64.argRegs]
         dsimp only [rbK] at h
         obtain ⟨hr, hp⟩ := h
@@ -297,15 +297,15 @@ theorem rejBounded_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verified 
               rw [rejBounded_none (B := 544) _ (by decide) hf]; rfl⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK, AArch64.abi,
+        sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, AArch64.abi,
           AArch64.argRegs] at h
         obtain ⟨hsp, hb, hx0, hx1, hx2, hx3⟩ := h
         exact ⟨hx0, hx1, hx2, hx3, hsp, hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, rbK,
+      sat := by sig_implies_sat [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK,
         AArch64.abi, AArch64.argRegs] [rbSat] using rbSat }
 
 theorem rejBounded_verified : Verified AArch64.target Impl.MlDsa.AArch64.Sample.rejBounded
-    (Spec.MlDsa.rejBoundedContract AArch64.abi 16) :=
+    (Proof.MlDsa.rejBoundedContract AArch64.abi 16) :=
   rejBounded_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

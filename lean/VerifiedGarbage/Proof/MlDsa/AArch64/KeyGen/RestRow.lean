@@ -21,8 +21,8 @@ namespace VG.Proof.MlDsa.AArch64.KeyGen
 
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
 open VG.Impl.MlDsa.AArch64.Call (Ptr sc Arg glue callAt setB and24 seqR movV lea)
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT polyAt natPolyAt coeffAt Reduced PolyIs
-  NatPolyIs bitPack simpleBitPack power2Round ofInt)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT bitPack simpleBitPack power2Round ofInt)
+open VG.Proof.MlDsa (polyAt natPolyAt coeffAt Reduced PolyIs NatPolyIs)
 open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
 

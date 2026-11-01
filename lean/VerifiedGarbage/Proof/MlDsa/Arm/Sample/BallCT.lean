@@ -42,7 +42,8 @@ open VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.Sample
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q H IPoly n ofInt coeffAt PolyIs toRq)
+open VG.Spec.MlDsa (Zq q H IPoly n ofInt toRq)
+open VG.Proof.MlDsa (coeffAt PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Arm.RegUpd (gpr_setReg_self gpr_setReg_of_ne)
 
@@ -271,11 +272,11 @@ end
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.sampleInBallContract Arm.abi 8).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlDsa.sampleInBallContract Arm.abi 8).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h8, -, hrd, hwr, d1, d2, d3, -, -, b1, b2, b3, -, f1, f2, f3, hb⟩ := h
-  simp only [Spec.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb
+  simp only [Proof.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb
   exact ⟨⟨by rw [hrd]; exact List.mem_cons.mpr (.inl rfl), hwr, d1, d2, d3, b1, b2, b3, f1, (s.gpr .r1).isLt, f2, f3, h8⟩,
     ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_cons.mpr (.inr (List.mem_cons.mpr (.inl rfl)))),
       Region.contains_self _ _⟩, by simp only [tau]; omega_arith, by simp only [tau]; omega_arith⟩
@@ -284,8 +285,8 @@ theorem post_of {s₀ s : State}
     (h0 : s.gpr .r0 = (if (ballFold (tau s₀) (X s₀)).2 = 256 then 1 else 0))
     (hc : (ballFold (tau s₀) (X s₀)).2 = 256 →
       PolyIs s.mem (State.addr (s₀.gpr .r3)) (toRq (ballFold (tau s₀) (X s₀)).1)) :
-    (Spec.MlDsa.sampleInBallContract Arm.abi 8).post s₀ s := by
-  sig_post [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (Proof.MlDsa.sampleInBallContract Arm.abi 8).post s₀ s := by
+  sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   rw [setWidth_append32, h0]
   by_cases hf : (ballFold (tau s₀) (X s₀)).2 = 256
@@ -293,7 +294,7 @@ theorem post_of {s₀ s : State}
     obtain ⟨hred, hpoly⟩ := hc hf
     exact ⟨fun _ => hred, .inl ⟨rfl, { Spec.MlDsa.minBounds with ball := 272 }, by
       show Option.map toRq (Spec.MlDsa.sampleInBall (tau s₀) 272 (B s₀)) =
-        some (Spec.MlDsa.polyAt s.mem (State.addr (s₀.gpr .r3)))
+        some (Proof.MlDsa.polyAt s.mem (State.addr (s₀.gpr .r3)))
       rw [sampleInBall_some _ (by decide) hf]
       exact congrArg some hpoly.symm⟩⟩
   · rw [ifF hf]
@@ -322,18 +323,18 @@ open VG VG.Arm
 open Ball
 
 theorem sampleInBall_verified :
-    Verified Arm.target Impl.MlDsa.Arm.Sample.sampleInBall (Spec.MlDsa.sampleInBallContract Arm.abi 8) := by
+    Verified Arm.target Impl.MlDsa.Arm.Sample.sampleInBall (Proof.MlDsa.sampleInBallContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, h0, hc, hpres⟩ := correct (pre_of hs)
     exact ⟨t, s', he, hpres, post_of h0 hc⟩
-  · sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs,
+  · sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at hpub
     obtain ⟨hsp, hb, h0, h1, h2, h3, hs⟩ := hpub
     have two : Two s₁ s₂ := ⟨pre_of h₁, pre_of h₂, hsp, h0, h1, h2, h3, hs,
       (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hb⟩
     exact (all_ct two s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs,
+    sig_sat_check [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
 
 end VG.Proof.MlDsa.Arm.Sample

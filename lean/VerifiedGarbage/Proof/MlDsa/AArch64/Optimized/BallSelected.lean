@@ -17,7 +17,7 @@ open VG.Proof.MlDsa.AArch64.Sample
 open VG.Impl.MlDsa.AArch64.Optimized.Ball
 
 theorem selected_verified (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
-    (selected v.callee) (Spec.MlDsa.sampleInBallContract AArch64.abi 16) := by
+    (selected v.callee) (Proof.MlDsa.sampleInBallContract AArch64.abi 16) := by
   unfold selected
   split
   · exact resident_verified

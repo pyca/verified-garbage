@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
-open VG.Spec.MlDsa (Params Poly rejNTTPoly coeffAt polyAt Reduced PolyIs poly4 seed4 minBounds)
+open VG.Spec.MlDsa (Params Poly rejNTTPoly minBounds)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs poly4 seed4)
 open VG.Proof.MlDsa.KeyGen (seedA ifp ifn masked_one masked_zero)
 open VG.Spec.Sha3 (bytesAt)
 

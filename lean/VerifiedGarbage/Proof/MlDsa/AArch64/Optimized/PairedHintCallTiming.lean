@@ -2,7 +2,7 @@ module
 public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified

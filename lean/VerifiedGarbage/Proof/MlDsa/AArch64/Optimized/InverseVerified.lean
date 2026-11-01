@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 

@@ -25,16 +25,16 @@ open VG.Proof.MlDsa.X86_64.Sample (leakBytes_inj)
 open VG.Spec.MlDsa (G)
 open VG.Spec.Sha3 (bytesAt)
 
-theorem seed4_eq : Spec.MlDsa.seed4 = Proof.MlKem.seed4 := rfl
-theorem poly4_eq : Spec.MlDsa.poly4 = Proof.MlKem.poly4 := rfl
+theorem seed4_eq : Proof.MlDsa.seed4 = Proof.MlKem.seed4 := rfl
+theorem poly4_eq : Proof.MlDsa.poly4 = Proof.MlKem.poly4 := rfl
 
 theorem r4_post {s s' : State} (h : r4K.post s s') :
     let r := (s'.gpr .rax).setWidth 32
-    (r = 1 → ∀ k < 4, Spec.MlDsa.Reduced s'.mem (Spec.MlDsa.poly4 (s.gpr .rsi) k)) ∧
+    (r = 1 → ∀ k < 4, Proof.MlDsa.Reduced s'.mem (Proof.MlDsa.poly4 (s.gpr .rsi) k)) ∧
       ((r = 1 ∧ ∀ k < 4, ∃ b : Spec.MlDsa.Bounds, Spec.MlDsa.rejNTTPoly b.rejNTT
-          (Spec.MlDsa.seed4 s.mem (s.gpr .rdi) k) = some (Spec.MlDsa.polyAt s'.mem (Spec.MlDsa.poly4 (s.gpr .rsi) k))) ∨
+          (Proof.MlDsa.seed4 s.mem (s.gpr .rdi) k) = some (Proof.MlDsa.polyAt s'.mem (Proof.MlDsa.poly4 (s.gpr .rsi) k))) ∨
         (r = 0 ∧ ∃ k < 4, Spec.MlDsa.rejNTTPoly Spec.MlDsa.minBounds.rejNTT
-          (Spec.MlDsa.seed4 s.mem (s.gpr .rdi) k) = none)) := by
+          (Proof.MlDsa.seed4 s.mem (s.gpr .rdi) k) = none)) := by
   obtain ⟨hr, hp⟩ := h
   intro r
   simp only [seed4_eq, poly4_eq]
@@ -52,64 +52,64 @@ theorem r4_post {s s' : State} (h : r4K.post s s') :
     obtain ⟨k, hk, hk'⟩ := hall
     exact ⟨k, hk, rejNTT_none (B := 1008) (by decide) (by decide) hk'⟩
 
-theorem r4_pre (s : State) (h : (Spec.MlDsa.rejNTT4Contract X86_64.abi 24).pre s) : r4K.pre s := by
+theorem r4_pre (s : State) (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s) : r4K.pre s := by
   revert s h
-  sig_implies_pre [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
+  sig_implies_pre [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
     X86_64.argRegs]
 
 export VG.Proof.MlDsa.Sample (rej4Res seed4_of136 rej4Res_congr rej4Res_max)
 
 /-- The public data of two calls include their seeds. -/
-theorem r4_pub {S : Nat} (s₁ s₂ : State) (h : (Spec.MlDsa.rejNTT4Contract X86_64.abi S).pub s₁ s₂) :
+theorem r4_pub {S : Nat} (s₁ s₂ : State) (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi S).pub s₁ s₂) :
     bytesAt s₁.mem (s₁.gpr .rdi) 136 = bytesAt s₂.mem (s₂.gpr .rdi) 136 := by
-  sig_pub [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, X86_64.abi, X86_64.argRegs] at h
+  sig_pub [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, X86_64.argRegs] at h
   obtain ⟨_, hb, _⟩ := h
   exact leakBytes_inj hb
 
 /-- The result of code that meets `r4K`. -/
 theorem rej4_ret {c : Prog isa}
     (hc : ∀ σ, r4K.pre σ → ∃ t s', Exec isa c σ t s' ∧ abiPreserved σ s' ∧ r4K.post σ s') {s s' : State}
-    {t : List Leak} (h : (Spec.MlDsa.rejNTT4Contract X86_64.abi 24).pre s) (e : Exec isa c s t s') :
+    {t : List Leak} (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s) (e : Exec isa c s t s') :
     (s'.gpr .rax).setWidth 32 = rej4Res s.mem (s.gpr .rdi) := by
   obtain ⟨_, _, e', _, hq⟩ := hc s (r4_pre s h)
   obtain ⟨-, rfl⟩ := Exec.det e e'
   exact hq.1
 
 theorem rej4_verified (c : Prog isa) (hc : ∀ σ, r4K.pre σ → ∃ t s', Exec isa c σ t s' ∧ abiPreserved σ s' ∧ r4K.post σ s')
-    (ht : ConstantTime isa r4K.pre r4K.pub c) : Verified X86_64.target c (Spec.MlDsa.rejNTT4Contract X86_64.abi 24) :=
+    (ht : ConstantTime isa r4K.pre r4K.pub c) : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24) :=
   Verified.of_correct hc ht
     { pre := r4_pre
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, r4K, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, X86_64.abi, X86_64.argRegs]
         exact r4_post h
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
+        sig_pub [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
           X86_64.argRegs] at h
         sig_split h
-        sig_reduce [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
+        sig_reduce [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
           X86_64.argRegs]
-        sig_simp [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
+        sig_simp [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
           X86_64.argRegs] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
         sig_and_intros
         sig_close
         all_goals first | with_reducible assumption | exact leakBytes_inj ‹_›
       sat := by
-        sig_implies_sat [Spec.MlDsa.rejNTT4Contract, Spec.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
+        sig_implies_sat [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
           X86_64.argRegs] [MlKem.X86_64.sample4Sat] using MlKem.X86_64.sample4Sat }
 
 theorem rejNTT4Avx2_verified : Verified X86_64.target Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4Avx2
-    (Spec.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ correct ct
+    (Proof.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ correct ct
 
 theorem rejNTT4_verified : Verified X86_64.target Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4
-    (Spec.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ correct_scalar ct_scalar
+    (Proof.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ correct_scalar ct_scalar
 
-theorem rejNTT4Avx2_ret {s s' : State} {t : List Leak} (h : (Spec.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
+theorem rejNTT4Avx2_ret {s s' : State} {t : List Leak} (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
     (e : Exec isa Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4Avx2 s t s') :
     (s'.gpr .rax).setWidth 32 = rej4Res s.mem (s.gpr .rdi) := rej4_ret correct h e
 
-theorem rejNTT4_ret {s s' : State} {t : List Leak} (h : (Spec.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
+theorem rejNTT4_ret {s s' : State} {t : List Leak} (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
     (e : Exec isa Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4 s t s') :
     (s'.gpr .rax).setWidth 32 = rej4Res s.mem (s.gpr .rdi) := rej4_ret correct_scalar h e
 

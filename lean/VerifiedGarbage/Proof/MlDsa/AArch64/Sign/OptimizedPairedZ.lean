@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.Arith

@@ -19,12 +19,12 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.AddSub
 open VG VG.AArch64
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (accK acc_agree accSat)
-open VG.Spec.MlDsa (polyAt)
+open VG.Proof.MlDsa (polyAt)
 
 private theorem correct (sub : Bool) (op : Spec.MlDsa.Poly → Spec.MlDsa.Poly → Spec.MlDsa.Poly)
     (hval : ∀ s, (accK op).pre s → ∀ i < 256,
-      result sub (Spec.MlDsa.coeffAt s.mem (s.gpr .x0) i).toNat
-        (Spec.MlDsa.coeffAt s.mem (s.gpr .x1) i).toNat =
+      result sub (Proof.MlDsa.coeffAt s.mem (s.gpr .x0) i).toNat
+        (Proof.MlDsa.coeffAt s.mem (s.gpr .x1) i).toNat =
         ((op (polyAt s.mem (s.gpr .x0)) (polyAt s.mem (s.gpr .x1)))[i]!).val)
     (s : State) (hp : (accK op).pre s) :
     ∃ tr t, Exec isa (VG.Impl.MlDsa.AArch64.Optimized.AddSub.code sub) s tr t ∧
@@ -59,14 +59,14 @@ theorem sub_correct (s : State) (hp : (accK Spec.MlDsa.sub).pre s) :
     omega
 
 theorem add_verified : Verified target (VG.Impl.MlDsa.AArch64.Optimized.AddSub.code false)
-    (Spec.MlDsa.addContract abi) :=
+    (Proof.MlDsa.addContract abi) :=
   Verified.of_correct add_correct
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1]) acc_agree (by taint_decide))
-    (by mldsa_implies [Spec.MlDsa.addContract,Spec.MlDsa.accSig,accK,abi,argRegs] [accSat] using accSat)
+    (by mldsa_implies [Proof.MlDsa.addContract,Proof.MlDsa.accSig,accK,abi,argRegs] [accSat] using accSat)
 
 theorem sub_verified : Verified target (VG.Impl.MlDsa.AArch64.Optimized.AddSub.code true)
-    (Spec.MlDsa.subContract abi) :=
+    (Proof.MlDsa.subContract abi) :=
   Verified.of_correct sub_correct
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1]) acc_agree (by taint_decide))
-    (by mldsa_implies [Spec.MlDsa.subContract,Spec.MlDsa.accSig,accK,abi,argRegs] [accSat] using accSat)
+    (by mldsa_implies [Proof.MlDsa.subContract,Proof.MlDsa.accSig,accK,abi,argRegs] [accSat] using accSat)
 end VG.Proof.MlDsa.AArch64.Optimized.AddSub

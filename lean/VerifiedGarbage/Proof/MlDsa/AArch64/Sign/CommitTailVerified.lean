@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.CommitTail
+public import VerifiedGarbage.Proof.MlDsa.CommitTailContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailBody
 

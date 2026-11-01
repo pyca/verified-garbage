@@ -35,7 +35,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep writesOnly gprPreserved_of ifp ifn
   ptr_step GOnly wp_rcxLoopY add_ofNat_zero lane_setReg lane_setFlags sx32 State.setMem_ymm xmm_setXmm)
 open VG.Impl.MlKem.X86_64 (xb xmov toY yconst rcxLoop)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced)
 
 theorem lane_mulCore : laneSseBlock (toY mulCore) = some mulCore := by decide +kernel
 theorem lane_mulAddCore : laneSseBlock (toY mulAddCore) = some mulAddCore := by decide +kernel
@@ -392,14 +393,14 @@ theorem mulY_ct : ConstantTime isa mulK'.pre mulK'.pub mulAvx2 :=
 theorem mulAddY_ct : ConstantTime isa mulAddK.pre mulAddK.pub mulAddAvx2 :=
   VG.Taint.constantTime (A := taint) mulτ mul_agree (by taint_decide)
 
-theorem mulY_verified : Verified X86_64.target mulAvx2 (Spec.MlDsa.mulContract X86_64.abi) :=
+theorem mulY_verified : Verified X86_64.target mulAvx2 (Proof.MlDsa.mulContract X86_64.abi) :=
   Verified.of_correct mulY_correct mulY_ct (by
-    mldsa_implies [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
       [mulSat] using mulSat)
 
-theorem mulAddY_verified : Verified X86_64.target mulAddAvx2 (Spec.MlDsa.mulAddContract X86_64.abi) :=
+theorem mulAddY_verified : Verified X86_64.target mulAddAvx2 (Proof.MlDsa.mulAddContract X86_64.abi) :=
   Verified.of_correct mulAddY_correct mulAddY_ct (by
-    mldsa_implies [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
       [mulSat] using mulSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

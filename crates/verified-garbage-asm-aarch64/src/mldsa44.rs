@@ -228,16 +228,16 @@ bl {vg_keccak_squeeze_scratch}
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_rej_bounded_poly4_eta2 = sym super::mldsa::vg_mldsa_rej_bounded_poly4_eta2,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_inv_ntt = sym super::mldsa::vg_mldsa_inv_ntt,
-        vg_mldsa_add = sym super::mldsa::vg_mldsa_add,
-        vg_mldsa_power2round = sym super::mldsa::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
+        vg_mldsa_rej_bounded_poly4_eta2 = sym super::mldsa44::vg_mldsa_rej_bounded_poly4_eta2::vg_mldsa_rej_bounded_poly4_eta2,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
+        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
+        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
+        vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
+        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
     )
 }
 
@@ -633,22 +633,22 @@ bl {vg_mldsa_hint_bit_pack}
 .inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
 .inst 0xd65f03c0
 .p2align 6",
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_positive = sym super::mldsa::vg_mldsa_ntt_positive,
+        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_ntt_positive_from = sym super::mldsa::vg_mldsa_ntt_positive_from,
-        vg_mldsa_dot_inverse4 = sym super::mldsa::vg_mldsa_dot_inverse4,
-        vg_mldsa_high_pack6 = sym super::mldsa::vg_mldsa_high_pack6,
-        vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
-        vg_mldsa_fused_pair_z = sym super::mldsa::vg_mldsa_fused_pair_z,
-        vg_mldsa_fused_pair_r0 = sym super::mldsa::vg_mldsa_fused_pair_r0,
-        vg_mldsa_fused_pair_h = sym super::mldsa::vg_mldsa_fused_pair_h,
-        vg_mldsa_canonicalize_signed = sym super::mldsa::vg_mldsa_canonicalize_signed,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa::vg_mldsa_hint_bit_pack,
+        vg_mldsa_ntt_positive_from = sym super::mldsa44::vg_mldsa_ntt_positive_from::vg_mldsa_ntt_positive_from,
+        vg_mldsa_dot_inverse4 = sym super::mldsa44::vg_mldsa_dot_inverse4::vg_mldsa_dot_inverse4,
+        vg_mldsa_high_pack6 = sym super::mldsa44::vg_mldsa_high_pack6::vg_mldsa_high_pack6,
+        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
+        vg_mldsa_fused_pair_z = sym super::mldsa44::vg_mldsa_fused_pair_z::vg_mldsa_fused_pair_z,
+        vg_mldsa_fused_pair_r0 = sym super::mldsa44::vg_mldsa_fused_pair_r0::vg_mldsa_fused_pair_r0,
+        vg_mldsa_fused_pair_h = sym super::mldsa44::vg_mldsa_fused_pair_h::vg_mldsa_fused_pair_h,
+        vg_mldsa_canonicalize_signed = sym super::mldsa44::vg_mldsa_canonicalize_signed::vg_mldsa_canonicalize_signed,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
     )
 }
 
@@ -938,19 +938,19 @@ cbnz x2, 29b
 21:
 .inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
 .p2align 6",
-        vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt = sym super::mldsa::vg_mldsa_norm_lt,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
-        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
-        vg_mldsa_sub = sym super::mldsa::vg_mldsa_sub,
-        vg_mldsa_inv_ntt = sym super::mldsa::vg_mldsa_inv_ntt,
-        vg_mldsa_use_hint = sym super::mldsa::vg_mldsa_use_hint,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
+        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
+        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
+        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
+        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
+        vg_mldsa_use_hint = sym super::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -1200,14 +1200,14 @@ bl {vg_keccak_squeeze_scratch_sha3}
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
-        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
-        vg_mldsa_rej_bounded_poly4_eta2_sha3 = sym super::mldsa::vg_mldsa_rej_bounded_poly4_eta2_sha3,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_ntt_positive = sym super::mldsa::vg_mldsa_ntt_positive,
-        vg_mldsa_dot_inverse4 = sym super::mldsa::vg_mldsa_dot_inverse4,
-        vg_mldsa_add = sym super::mldsa::vg_mldsa_add,
-        vg_mldsa_power2round = sym super::mldsa::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
+        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
+        vg_mldsa_rej_bounded_poly4_eta2_sha3 = sym super::mldsa44::vg_mldsa_rej_bounded_poly4_eta2_sha3::vg_mldsa_rej_bounded_poly4_eta2_sha3,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
+        vg_mldsa_dot_inverse4 = sym super::mldsa44::vg_mldsa_dot_inverse4::vg_mldsa_dot_inverse4,
+        vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
+        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
+        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
     )
 }
 
@@ -1503,23 +1503,23 @@ bl {vg_mldsa_hint_bit_pack}
 .inst 0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_positive = sym super::mldsa::vg_mldsa_ntt_positive,
+        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
-        vg_mldsa_expand_mask_pair_sha3 = sym super::mldsa::vg_mldsa_expand_mask_pair_sha3,
-        vg_mldsa_ntt_positive_from = sym super::mldsa::vg_mldsa_ntt_positive_from,
-        vg_mldsa_dot_inverse4 = sym super::mldsa::vg_mldsa_dot_inverse4,
-        vg_mldsa_high_pack6 = sym super::mldsa::vg_mldsa_high_pack6,
-        vg_mldsa_sample_in_ball_sha3 = sym super::mldsa::vg_mldsa_sample_in_ball_sha3,
-        vg_mldsa_fused_pair_z = sym super::mldsa::vg_mldsa_fused_pair_z,
-        vg_mldsa_fused_pair_r0 = sym super::mldsa::vg_mldsa_fused_pair_r0,
-        vg_mldsa_fused_pair_h = sym super::mldsa::vg_mldsa_fused_pair_h,
-        vg_mldsa_canonicalize_signed = sym super::mldsa::vg_mldsa_canonicalize_signed,
-        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa::vg_mldsa_hint_bit_pack,
+        vg_mldsa_expand_mask_pair_sha3 = sym super::mldsa44::vg_mldsa_expand_mask_pair_sha3::vg_mldsa_expand_mask_pair_sha3,
+        vg_mldsa_ntt_positive_from = sym super::mldsa44::vg_mldsa_ntt_positive_from::vg_mldsa_ntt_positive_from,
+        vg_mldsa_dot_inverse4 = sym super::mldsa44::vg_mldsa_dot_inverse4::vg_mldsa_dot_inverse4,
+        vg_mldsa_high_pack6 = sym super::mldsa44::vg_mldsa_high_pack6::vg_mldsa_high_pack6,
+        vg_mldsa_sample_in_ball_sha3 = sym super::mldsa44::vg_mldsa_sample_in_ball_sha3::vg_mldsa_sample_in_ball_sha3,
+        vg_mldsa_fused_pair_z = sym super::mldsa44::vg_mldsa_fused_pair_z::vg_mldsa_fused_pair_z,
+        vg_mldsa_fused_pair_r0 = sym super::mldsa44::vg_mldsa_fused_pair_r0::vg_mldsa_fused_pair_r0,
+        vg_mldsa_fused_pair_h = sym super::mldsa44::vg_mldsa_fused_pair_h::vg_mldsa_fused_pair_h,
+        vg_mldsa_canonicalize_signed = sym super::mldsa44::vg_mldsa_canonicalize_signed::vg_mldsa_canonicalize_signed,
+        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
+        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
     )
 }
 
@@ -1794,18 +1794,18 @@ cbnz x2, 29b
 .inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt = sym super::mldsa::vg_mldsa_norm_lt,
-        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
-        vg_mldsa_sample_in_ball_sha3 = sym super::mldsa::vg_mldsa_sample_in_ball_sha3,
-        vg_mldsa_ntt_positive = sym super::mldsa::vg_mldsa_ntt_positive,
-        vg_mldsa_montgomery_dot4 = sym super::mldsa::vg_mldsa_montgomery_dot4,
-        vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
-        vg_mldsa_montgomery_product = sym super::mldsa::vg_mldsa_montgomery_product,
-        vg_mldsa_sub = sym super::mldsa::vg_mldsa_sub,
-        vg_mldsa_montgomery_inv_ntt = sym super::mldsa::vg_mldsa_montgomery_inv_ntt,
-        vg_mldsa_usehint_pack6 = sym super::mldsa::vg_mldsa_usehint_pack6,
+        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
+        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
+        vg_mldsa_sample_in_ball_sha3 = sym super::mldsa44::vg_mldsa_sample_in_ball_sha3::vg_mldsa_sample_in_ball_sha3,
+        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
+        vg_mldsa_montgomery_dot4 = sym super::mldsa44::vg_mldsa_montgomery_dot4::vg_mldsa_montgomery_dot4,
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_montgomery_product = sym super::mldsa44::vg_mldsa_montgomery_product::vg_mldsa_montgomery_product,
+        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
+        vg_mldsa_montgomery_inv_ntt = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt::vg_mldsa_montgomery_inv_ntt,
+        vg_mldsa_usehint_pack6 = sym super::mldsa44::vg_mldsa_usehint_pack6::vg_mldsa_usehint_pack6,
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
@@ -1872,3 +1872,147 @@ b 21f
         vg_mldsa44_verify_sha3 = sym super::mldsa44::vg_mldsa44_verify_sha3,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_x2.rs"]
+pub(crate) mod vg_keccak_f1600_x2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_x2_sha3.rs"]
+pub(crate) mod vg_keccak_f1600_x2_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_add.rs"]
+pub(crate) mod vg_mldsa_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_bit_pack.rs"]
+pub(crate) mod vg_mldsa_bit_pack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_bit_unpack.rs"]
+pub(crate) mod vg_mldsa_bit_unpack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_canonicalize_signed.rs"]
+pub(crate) mod vg_mldsa_canonicalize_signed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_dot_inverse4.rs"]
+pub(crate) mod vg_mldsa_dot_inverse4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_expand_mask_pair_sha3.rs"]
+pub(crate) mod vg_mldsa_expand_mask_pair_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_fused_pair_h.rs"]
+pub(crate) mod vg_mldsa_fused_pair_h;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_fused_pair_r0.rs"]
+pub(crate) mod vg_mldsa_fused_pair_r0;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_fused_pair_z.rs"]
+pub(crate) mod vg_mldsa_fused_pair_z;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_high_pack6.rs"]
+pub(crate) mod vg_mldsa_high_pack6;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_hint_bit_pack.rs"]
+pub(crate) mod vg_mldsa_hint_bit_pack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_hint_bit_unpack.rs"]
+pub(crate) mod vg_mldsa_hint_bit_unpack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_inv_ntt.rs"]
+pub(crate) mod vg_mldsa_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_montgomery_dot4.rs"]
+pub(crate) mod vg_mldsa_montgomery_dot4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_montgomery_inv_ntt.rs"]
+pub(crate) mod vg_mldsa_montgomery_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_montgomery_product.rs"]
+pub(crate) mod vg_mldsa_montgomery_product;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_multiply_add_ntt.rs"]
+pub(crate) mod vg_mldsa_multiply_add_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_multiply_ntt.rs"]
+pub(crate) mod vg_mldsa_multiply_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_norm_lt.rs"]
+pub(crate) mod vg_mldsa_norm_lt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_ntt.rs"]
+pub(crate) mod vg_mldsa_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_ntt_positive.rs"]
+pub(crate) mod vg_mldsa_ntt_positive;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_ntt_positive_from.rs"]
+pub(crate) mod vg_mldsa_ntt_positive_from;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_power2round.rs"]
+pub(crate) mod vg_mldsa_power2round;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_bounded_poly4_eta2.rs"]
+pub(crate) mod vg_mldsa_rej_bounded_poly4_eta2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_bounded_poly4_eta2_sha3.rs"]
+pub(crate) mod vg_mldsa_rej_bounded_poly4_eta2_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_ntt_poly4.rs"]
+pub(crate) mod vg_mldsa_rej_ntt_poly4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_rej_ntt_poly4_sha3.rs"]
+pub(crate) mod vg_mldsa_rej_ntt_poly4_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_sample_in_ball.rs"]
+pub(crate) mod vg_mldsa_sample_in_ball;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_sample_in_ball_sha3.rs"]
+pub(crate) mod vg_mldsa_sample_in_ball_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_simple_bit_pack.rs"]
+pub(crate) mod vg_mldsa_simple_bit_pack;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_sub.rs"]
+pub(crate) mod vg_mldsa_sub;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_unpack_t1.rs"]
+pub(crate) mod vg_mldsa_unpack_t1;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_use_hint.rs"]
+pub(crate) mod vg_mldsa_use_hint;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa_usehint_pack6.rs"]
+pub(crate) mod vg_mldsa_usehint_pack6;

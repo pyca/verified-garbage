@@ -33,7 +33,8 @@ namespace VG.Proof.MlDsa.AArch64.Arith
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## One coefficient -/
 
@@ -216,15 +217,15 @@ def accSat : State where
   wr := [⟨0x1000, 1024⟩]
 
 theorem add_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Arith.add (Spec.MlDsa.addContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlDsa.AArch64.Arith.add (Proof.MlDsa.addContract AArch64.abi) :=
   Verified.of_correct add_correct add_ct (by
-    mldsa_implies [Spec.MlDsa.addContract, Spec.MlDsa.accSig, accK, AArch64.abi, AArch64.argRegs]
+    mldsa_implies [Proof.MlDsa.addContract, Proof.MlDsa.accSig, accK, AArch64.abi, AArch64.argRegs]
       [accSat] using accSat)
 
 theorem sub_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Arith.sub (Spec.MlDsa.subContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlDsa.AArch64.Arith.sub (Proof.MlDsa.subContract AArch64.abi) :=
   Verified.of_correct sub_correct sub_ct (by
-    mldsa_implies [Spec.MlDsa.subContract, Spec.MlDsa.accSig, accK, AArch64.abi, AArch64.argRegs]
+    mldsa_implies [Proof.MlDsa.subContract, Proof.MlDsa.accSig, accK, AArch64.abi, AArch64.argRegs]
       [accSat] using accSat)
 
 end VG.Proof.MlDsa.AArch64.Arith

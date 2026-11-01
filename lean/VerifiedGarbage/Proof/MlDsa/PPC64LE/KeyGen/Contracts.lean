@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

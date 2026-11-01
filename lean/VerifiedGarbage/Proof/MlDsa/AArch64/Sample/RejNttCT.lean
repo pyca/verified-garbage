@@ -28,7 +28,8 @@ namespace VG.Proof.MlDsa.AArch64.Sample
 open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q G PolyIs coeffAt)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- Registers whose values are equal. -/
@@ -137,13 +138,13 @@ def rnSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem rejNTT_verifiedWith (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Impl.MlDsa.AArch64.Sample.rejNTTWith v.callee) (Spec.MlDsa.rejNTTContract AArch64.abi 16) :=
+    Verified AArch64.target (Impl.MlDsa.AArch64.Sample.rejNTTWith v.callee) (Proof.MlDsa.rejNTTContract AArch64.abi 16) :=
   Verified.of_correct (RejNtt.correctWith v) (RejNtt.ctWith v)
-    { pre := by sig_implies_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, AArch64.abi,
+    { pre := by sig_implies_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi,
         AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs]
+        sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs]
         dsimp only [rnK] at h
         obtain ⟨hr, hp⟩ := h
         by_cases hf : (rnFold [] (G (bytesAt s.mem (s.gpr .x0) 34) 1008)).length = 256
@@ -157,14 +158,14 @@ theorem rejNTT_verifiedWith (v : Proof.Sha3.AArch64.Permutation) :
             .inr ⟨hr, rejNTT_none (B := 1008) (by decide) (by decide) hf⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs] at h
+        sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi, AArch64.argRegs] at h
         obtain ⟨hsp, hb, hx0, hx1, hx2⟩ := h
         exact ⟨hx0, hx1, hx2, hsp, VG.Proof.MlKem.map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, rnK, AArch64.abi,
+      sat := by sig_implies_sat [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, AArch64.abi,
         AArch64.argRegs] [rnSat] using rnSat }
 
 theorem rejNTT_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Sample.rejNTT (Spec.MlDsa.rejNTTContract AArch64.abi 16) :=
+    Verified AArch64.target Impl.MlDsa.AArch64.Sample.rejNTT (Proof.MlDsa.rejNTTContract AArch64.abi 16) :=
   rejNTT_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

@@ -24,7 +24,8 @@ and any `ld` or `fin`, from the group lemmas of `Stream.lean`.
 namespace VG.Proof.MlDsa.X86_64.Pack
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Pack
-open VG.Spec.MlDsa (coeffAt bitsToBytes)
+open VG.Spec.MlDsa (bitsToBytes)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.X86_64 (Keep Keep.refl Keep.trans Keep.mono Keep.gpr Written Written.step ptr_step
   wp_counted WP.keep)

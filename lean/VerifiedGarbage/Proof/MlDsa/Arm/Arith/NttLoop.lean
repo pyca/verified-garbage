@@ -19,7 +19,8 @@ holds.
 namespace VG.Proof.MlDsa.Arm.Arith
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Arith
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.Arm (wp_loop_ne count_z count_sub addr_ptr inRegions_of)
 

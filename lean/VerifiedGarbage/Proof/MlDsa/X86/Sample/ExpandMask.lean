@@ -46,7 +46,8 @@ open VG.Proof.MlKem.X86
 open VG.Proof.MlDsa.X86.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.X86.Sample (argOp emCoef emBody emLoop qImm sponge)
-open VG.Spec.MlDsa (Zq q H n ofInt coeffAt)
+open VG.Spec.MlDsa (Zq q H n ofInt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.X86.Sample (cR E1)
 open VG.Proof.MlDsa.X86.Sample.RejNtt (nil_piece)
@@ -247,7 +248,7 @@ theorem init_piece (c : Nat) (b : Bool) (hb : ∀ s₀, decide (γ s₀ = 2 ^ 17
 
 /-- The end: the polynomial of `ExpandMask` at `a`. -/
 def Fin (s₀ s : State) : Prop :=
-  Base L s₀ s ∧ Spec.MlDsa.PolyIs s.mem (L.aA s₀)
+  Base L s₀ s ∧ Proof.MlDsa.PolyIs s.mem (L.aA s₀)
     (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack (H (L.Msg s₀) (32 * (1 + Spec.MlDsa.bitlen (γ s₀ - 1))))
       (γ s₀ - 1) (γ s₀)))
 
@@ -293,8 +294,8 @@ theorem piece : Piece EPre (PubP L) (fun s₀ s => s = s₀) (fun s₀ s' => Lea
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h⟩)
 
-theorem EPre.of {s₀ : State} (h : (Spec.MlDsa.expandMaskContract X86.abi 56).pre s₀) : EPre s₀ := by
-  sig_pre [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
+theorem EPre.of {s₀ : State} (h : (Proof.MlDsa.expandMaskContract X86.abi 56).pre s₀) : EPre s₀ := by
+  sig_pre [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
@@ -304,10 +305,10 @@ theorem EPre.of {s₀ : State} (h : (Spec.MlDsa.expandMaskContract X86.abi 56).p
 def satMem : Mem := fun a => if a = 0x500a then 2 else if a = 0x500d then 1 else if a = 0x5011 then 0x10 else 0
 
 theorem verified :
-    Verified X86.target Impl.MlDsa.X86.Sample.expandMask (Spec.MlDsa.expandMaskContract X86.abi 56) := by
+    Verified X86.target Impl.MlDsa.X86.Sample.expandMask (Proof.MlDsa.expandMaskContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => EPre.of h) fun s s' _ _ h => ?_).mono
     (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
-  · sig_pub [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
+  · sig_pub [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := h
     refine ⟨e₁, fun i hi => ?_⟩
@@ -318,13 +319,13 @@ theorem verified :
     | 3, _ => exact e₅
   · obtain ⟨habi, -, -, s, ⟨-, hf⟩, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     rw [hm]
     exact hf
   · let st := satState satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_sat_check [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
 
 end VG.Proof.MlDsa.X86.Sample.ExpandMask

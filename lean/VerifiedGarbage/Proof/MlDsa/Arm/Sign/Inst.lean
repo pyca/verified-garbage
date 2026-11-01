@@ -26,11 +26,6 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
 import VerifiedGarbage.Proof.Sha256.Stream
@@ -105,7 +100,7 @@ theorem rn_ret {s s' : State} {tr : List Leak} (h : (rejNTTContract Arm.abi 8).p
 
 theorem rn_pub (s₁ s₂ : State) (h : (rejNTTContract Arm.abi 8).pub s₁ s₂) :
     bytesAt s₁.mem (State.addr (s₁.gpr .r0)) 34 = bytesAt s₂.mem (State.addr (s₂.gpr .r0)) 34 := by
-  sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨_, hb, _⟩ := h
   exact VG.Proof.MlDsa.Sign.leakBytes_inj hb
@@ -121,7 +116,7 @@ theorem sb_ret {s s' : State} {tr : List Leak} (h : (sampleInBallContract Arm.ab
 theorem sb_pub (s₁ s₂ : State) (h : (sampleInBallContract Arm.abi 8).pub s₁ s₂) :
     s₁.gpr .r2 = s₂.gpr .r2 ∧ bytesAt s₁.mem (State.addr (s₁.gpr .r0)) (s₁.gpr .r1).toNat =
       bytesAt s₂.mem (State.addr (s₂.gpr .r0)) (s₂.gpr .r1).toNat := by
-  sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs,
+  sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨_, hb, _, _, h2, _⟩ := h
   exact ⟨h2, (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hb⟩

@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 # ML-DSA on PPC64LE: the contracts of the encodings, for the proofs
 
 For each function of this group, what its shared contract
-(`Spec/MlDsa/Poly.lean`) requires, spelled out for PPC64LE (`SbpPre`, `BpPre`,
+(`Proof/MlDsa/Contract.lean`) requires, spelled out for PPC64LE (`SbpPre`, `BpPre`,
 `BuPre`, `T1Pre`, from `pre_of`). A `u32` argument is the low 32 bits of its
 register (`lo`): the ABI leaves the others unspecified, and the contracts
 make only those public. So the branch of `sel` on a width compares the low

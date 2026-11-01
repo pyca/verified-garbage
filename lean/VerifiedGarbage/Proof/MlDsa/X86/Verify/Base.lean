@@ -47,19 +47,19 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-- Verified implementations of the primitives verification calls. -/
 structure PrimsOk (P : Prims) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract X86.abi stk)
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract X86.abi stk)
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract X86.abi stk)
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract X86.abi stk)
-  sub : Callee P.sub (fun stk => Spec.MlDsa.subContract X86.abi stk)
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract X86.abi stk)
-  ball : Callee P.ball (fun stk => Spec.MlDsa.sampleInBallContract X86.abi stk)
-  useHint : Callee P.useHint (fun stk => Spec.MlDsa.useHintContract X86.abi stk)
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract X86.abi stk)
-  bitUnpack : Callee P.bitUnpack (fun stk => Spec.MlDsa.bitUnpackContract X86.abi stk)
-  unpackT1 : Callee P.unpackT1 (fun stk => Spec.MlDsa.unpackT1Contract X86.abi stk)
-  hintUnpack : Callee P.hintUnpack (fun stk => Spec.MlDsa.hintBitUnpackContract X86.abi stk)
-  normLt : Callee P.normLt (fun stk => Spec.MlDsa.normLtContract X86.abi stk)
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract X86.abi stk)
+  invNtt : Callee P.invNtt (fun stk => Proof.MlDsa.nttInvContract X86.abi stk)
+  mul : Callee P.mul (fun stk => Proof.MlDsa.mulContract X86.abi stk)
+  mulAdd : Callee P.mulAdd (fun stk => Proof.MlDsa.mulAddContract X86.abi stk)
+  sub : Callee P.sub (fun stk => Proof.MlDsa.subContract X86.abi stk)
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract X86.abi stk)
+  ball : Callee P.ball (fun stk => Proof.MlDsa.sampleInBallContract X86.abi stk)
+  useHint : Callee P.useHint (fun stk => Proof.MlDsa.useHintContract X86.abi stk)
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract X86.abi stk)
+  bitUnpack : Callee P.bitUnpack (fun stk => Proof.MlDsa.bitUnpackContract X86.abi stk)
+  unpackT1 : Callee P.unpackT1 (fun stk => Proof.MlDsa.unpackT1Contract X86.abi stk)
+  hintUnpack : Callee P.hintUnpack (fun stk => Proof.MlDsa.hintBitUnpackContract X86.abi stk)
+  normLt : Callee P.normLt (fun stk => Proof.MlDsa.normLtContract X86.abi stk)
 
 /-! ## The parameter sets -/
 
@@ -76,13 +76,13 @@ structure VFacts (p : Params) : Prop where
   sig : p.sigLen = p.ctildeLen + lenZ p * p.ℓ + p.ω + p.k
   sw : scratchWords p = 128 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32)
   om : p.ω ≤ 80
-  hint : (p.ω, p.k) ∈ Spec.MlDsa.hintParams
-  ball : (p.ctildeLen, p.τ) ∈ Spec.MlDsa.ballParams
+  hint : (p.ω, p.k) ∈ Proof.MlDsa.hintParams
+  ball : (p.ctildeLen, p.τ) ∈ Proof.MlDsa.ballParams
   g1 : p.γ₁ ∈ Proof.MlDsa.Verify.gamma1s
-  bp : (p.γ₁ - 1, p.γ₁) ∈ Spec.MlDsa.bitPackParams ∧ lenZ p = 32 * Spec.MlDsa.bitlen (p.γ₁ - 1 + p.γ₁)
+  bp : (p.γ₁ - 1, p.γ₁) ∈ Proof.MlDsa.bitPackParams ∧ lenZ p = 32 * Spec.MlDsa.bitlen (p.γ₁ - 1 + p.γ₁)
   beta : 0 < p.γ₁ - p.β ∧ p.γ₁ - p.β < 2 ^ 32
-  g2 : p.γ₂ ∈ Spec.MlDsa.gamma2s
-  sbp : w1Max p ∈ Spec.MlDsa.simpleBitPackBounds ∧ w1Len p = 32 * Spec.MlDsa.bitlen (w1Max p)
+  g2 : p.γ₂ ∈ Proof.MlDsa.gamma2s
+  sbp : w1Max p ∈ Proof.MlDsa.simpleBitPackBounds ∧ w1Len p = 32 * Spec.MlDsa.bitlen (w1Max p)
   /-- Which parameter set: a check about one can be decided for each (`lvd`). -/
   mem : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 

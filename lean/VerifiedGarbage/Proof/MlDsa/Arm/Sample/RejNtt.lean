@@ -27,7 +27,8 @@ open VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.Sample
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q G PolyIs)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- The call, from the entry state: `seed = r0`, `a = r1`, `scratch = r2`. -/

@@ -15,8 +15,8 @@ open VG.Impl.MlDsa.X86_64.Sample.Rej4 (oJ half first second zeroJ rejNTT4Avx2)
 open VG.Proof.MlKem.X86_64 (Keep ea_at add_ofNat_zero pR WP.keep ofNat64_pred sample4K)
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold Stored stored_nil stored_frame stored_polyIs toPoly G_length)
-open VG.Proof.MlKem (poly4 seed4)
-open VG.Spec.MlDsa (Zq G PolyIs)
+open VG.Spec.MlDsa (Zq G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Proof.MlKem (xofByte)
 
 open VG.Impl.MlDsa.X86_64.Sample.Rej5 (segment batch)
@@ -26,7 +26,7 @@ structure Batch (σ : State) (n off count K : Nat) (s : State) : Prop where
   sq : SqT σ 3 n s
   j : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 =
     BitVec.ofNat 64 (Lt σ k (if k < K then 168 + off + count else 168 + off)).length
-  st : ∀ k < 4, Stored s.mem (poly4 (aP σ) k)
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k)
     (Lt σ k (if k < K then 168 + off + count else 168 + off))
 
 section

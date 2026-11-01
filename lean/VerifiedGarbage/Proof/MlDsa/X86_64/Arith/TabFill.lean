@@ -25,7 +25,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.Round (coeffAt_eq coeffAddr)
 open VG.Proof.Sha3.X86_64 (WP.cons)
 

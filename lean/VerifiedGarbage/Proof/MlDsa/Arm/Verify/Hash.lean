@@ -20,7 +20,8 @@ open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 
   hashS hashS_tr pieceS ix_ne1 shake31)
 open VG.Impl.MlDsa.Arm.Verify
 open VG.Impl.MlKem.Arm (hash)
-open VG.Spec.MlDsa (Params HintIs PolyIs toRq polyAt Reduced ntt simpleBitPack)
+open VG.Spec.MlDsa (Params toRq ntt simpleBitPack)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ zHat w1Row)
 open VG.Spec.Sha3 (bytesAt)
 

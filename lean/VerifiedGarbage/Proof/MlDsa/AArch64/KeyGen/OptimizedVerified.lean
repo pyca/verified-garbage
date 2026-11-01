@@ -38,7 +38,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
-import VerifiedGarbage.Spec.MlDsa.RejNTT2
+import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/KeyGen/OptimizedRoundTiming.lean`, which only this module imported.
 section
@@ -364,7 +364,7 @@ open VG.Spec.MlDsa (Params)
 variable {keccak : Proof.Sha3.AArch64.Permutation}
 
 theorem codeWith_ct {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0∨p.k*p.ℓ%4=2)
     (hs : (p.ℓ+p.k)%4=0∨(p.ℓ+p.k)%4=3)
     (hdprefix : 16*(prefixWith keccak.callee P cd p).aarch64Depth≤S)

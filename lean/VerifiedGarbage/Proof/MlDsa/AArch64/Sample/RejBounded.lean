@@ -31,7 +31,8 @@ open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlDsa.AArch64.Sample.RejBounded (Consts try_ok)
-open VG.Spec.MlDsa (Zq q H PolyIs coeffAt rejBoundedLeak n)
+open VG.Spec.MlDsa (Zq q H rejBoundedLeak n)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `η`, the `u32` argument in `w1`. -/

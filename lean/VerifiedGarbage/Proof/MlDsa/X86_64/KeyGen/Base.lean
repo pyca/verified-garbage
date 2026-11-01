@@ -40,22 +40,22 @@ structure Callee (c : Prog isa) (k : Nat → Contract isa) : Prop where
 /-- `vg_mldsa_rej_ntt_poly4`: verified with 24 bytes of stack, never writing `rsp` but by calls nested at
 most three deep. -/
 structure Callee4 (c : Prog isa) : Prop where
-  verified : Verified X86_64.target c (Spec.MlDsa.rejNTT4Contract X86_64.abi 24)
+  verified : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24)
   nosp : NoSp c
   depth : c.depth ≤ 3
 
 /-- Verified implementations of the primitives key generation calls. -/
 structure PrimsOk (P : Prims) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract X86_64.abi stk)
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract X86_64.abi stk)
   invNtt : Callee P.invNtt (fun stk => Arith.Representation.inverseContract P.montgomery X86_64.abi stk)
   mul : Callee P.mul (fun stk => Arith.Representation.productContract P.montgomery X86_64.abi stk)
   mulAdd : Callee P.mulAdd (fun stk => Arith.Representation.accumulateContract P.montgomery X86_64.abi stk)
-  add : Callee P.add (fun stk => Spec.MlDsa.addContract X86_64.abi stk)
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract X86_64.abi stk)
-  rejBounded : Callee P.rejBounded (fun stk => Spec.MlDsa.rejBoundedContract X86_64.abi stk)
-  power2Round : Callee P.power2Round (fun stk => Spec.MlDsa.power2RoundContract X86_64.abi stk)
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract X86_64.abi stk)
-  bitPack : Callee P.bitPack (fun stk => Spec.MlDsa.bitPackContract X86_64.abi stk)
+  add : Callee P.add (fun stk => Proof.MlDsa.addContract X86_64.abi stk)
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract X86_64.abi stk)
+  rejBounded : Callee P.rejBounded (fun stk => Proof.MlDsa.rejBoundedContract X86_64.abi stk)
+  power2Round : Callee P.power2Round (fun stk => Proof.MlDsa.power2RoundContract X86_64.abi stk)
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract X86_64.abi stk)
+  bitPack : Callee P.bitPack (fun stk => Proof.MlDsa.bitPackContract X86_64.abi stk)
   rej4 : Callee4 P.rej4
 
 /-! ## MXCSR -/

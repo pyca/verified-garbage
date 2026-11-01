@@ -31,7 +31,8 @@ open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov csub)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlDsa.AArch64.Sample.RejNtt (lt_bit movQ_ok q_eq stored_past)
-open VG.Spec.MlDsa (coeffAt Zq q ofInt)
+open VG.Spec.MlDsa (Zq q ofInt)
+open VG.Proof.MlDsa (coeffAt)
 
 /-! ## The coefficient of a half-byte -/
 

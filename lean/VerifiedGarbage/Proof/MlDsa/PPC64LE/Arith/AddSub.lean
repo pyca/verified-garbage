@@ -228,13 +228,13 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.addContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.addContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.addContract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.addContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem pre_of_sub {s : State} (h : (Spec.MlDsa.subContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.subContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of_sub {s : State} (h : (Proof.MlDsa.subContract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.subContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
@@ -254,52 +254,52 @@ theorem reduced_zero (p : Addr) : Reduced (fun _ => 0) p := fun i _ => by
     simp [Mem.readW, Mem.read]
   rw [this]; decide
 
-theorem add_verified : Verified PPC64LE.target add (Spec.MlDsa.addContract PPC64LE.abi) := by
+theorem add_verified : Verified PPC64LE.target add (Proof.MlDsa.addContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.PPC64LE.Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_)
     (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Spec.MlDsa.addContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlDsa.addContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlDsa.addContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.addContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlDsa.addContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.addContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.addContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.addContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial
         | exact reduced_zero _
         | decide +kernel
 
-theorem sub_verified : Verified PPC64LE.target sub (Spec.MlDsa.subContract PPC64LE.abi) := by
+theorem sub_verified : Verified PPC64LE.target sub (Proof.MlDsa.subContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.PPC64LE.Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_)
     (by taint_decide), ?_⟩
   · have hp := pre_of_sub hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Spec.MlDsa.subContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlDsa.subContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlDsa.subContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.subContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlDsa.subContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.subContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.subContract, Spec.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.subContract, Proof.MlDsa.accSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

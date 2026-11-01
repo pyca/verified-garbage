@@ -35,7 +35,8 @@ open VG VG.X86 VG.Impl.MlDsa.X86.Arith
 open VG.Impl.MlKem.X86 (at_ ldScratch)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86.Arith
-open VG.Spec.MlDsa (q n Poly Zq PolyIs Reduced coeffAt polyAt inPlaceContract inPlaceSig)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (PolyIs Reduced coeffAt polyAt inPlaceContract inPlaceSig)
 open VG.Proof.MlKem.X86 (E0 P0 P0_esp P0_wr P0_argAddr P0_argIn P0_arg frameR retR Piece ea_off)
 
 theorem Pre.of {s₀ : State} {stk : Nat} {t : Poly → Poly}

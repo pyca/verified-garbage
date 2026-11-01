@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Spec.MlDsa.HighPack
+public import VerifiedGarbage.Proof.MlDsa.HighPackContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Spec.MlDsa.HighPack
+meta import VerifiedGarbage.Proof.MlDsa.HighPackContract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
 meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp

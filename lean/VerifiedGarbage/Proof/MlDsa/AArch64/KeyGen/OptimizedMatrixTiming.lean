@@ -60,13 +60,13 @@ theorem matrixTwo_seeds {p : Params} {σ : State} {e : Nat} {s : State} (h : GS 
   rw [show 68=34+34 from rfl,Proof.MlKem.bytesAt_add]
   have h0 := seed2_eq h (k := 0) (by decide)
   have h1 := seed2_eq h (k := 1) (by decide)
-  simp only [Spec.MlDsa.seed4,Nat.mul_zero,Nat.add_zero,Nat.mul_one,
+  simp only [Proof.MlDsa.seed4,Nat.mul_zero,Nat.add_zero,Nat.mul_one,
     VG.Proof.MlKem.AArch64.ptr_zero] at h0 h1
   rw [h0,h1]
 
 
 theorem matrixTwo_piece {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
-    (C : CalleeOk S cd (VG.Spec.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
+    (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
     {e : Nat} (he : e+2≤p.k*p.ℓ) : Piece p S (fun σ s => GS p σ e 2 s ∧ MatrixPrefixes p σ 4 s)
       (fun σ s => KSamp p σ (e+2) 0 s ∧ MatrixPrefixes p σ 4 s)
       (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p))))
@@ -120,7 +120,7 @@ theorem matrixGroup_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} 
   Piece.seq (matrixNonces_piece hF hg (by decide)) (matrixFour_piece hP hF hg)
 
 theorem matrixTwoPhase_piece {S : Nat} (hS : S<2^64) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) {e : Nat} (he : e+2≤p.k*p.ℓ) :
     Piece p S (fun σ s => KSamp p σ e 0 s ∧ MatrixPrefixes p σ 4 s)
       (fun σ s => KSamp p σ (e+2) 0 s ∧ MatrixPrefixes p σ 4 s)
@@ -128,7 +128,7 @@ theorem matrixTwoPhase_piece {S : Nat} (hS : S<2^64) {cd : Prog isa}
   Piece.seq (matrixNonces_piece hF he (by decide)) (matrixTwo_piece hS C hF he)
 
 theorem matrixWith_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2) :
     Piece p S (fun σ s => K1 p σ s ∧ s.gpr .x24=1) (KSamp p · (p.k*p.ℓ) 0)
       (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixWith cd P p) := by

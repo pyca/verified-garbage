@@ -34,7 +34,8 @@ open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 
 open VG.Impl.MlKem.Arm (topEnd)
 open VG.Impl.MlDsa.Arm.Verify
 open VG.Impl.MlDsa.Arm.KeyGen (seqR)
-open VG.Spec.MlDsa (Params Bounds verifyMu minBounds toRq polyAt rejNTTPoly sampleInBall)
+open VG.Spec.MlDsa (Params Bounds verifyMu minBounds toRq rejNTTPoly sampleInBall)
+open VG.Proof.MlDsa (polyAt)
 open VG.Proof.MlDsa.Verify (vZ vCt vHint aSeed common_bound verifyMu_rows verifyMu_norm verifyMu_hint_none
   verifyMu_rej_none verifyMu_ball_none verifyMu_mono bmax_left bmax_right normR_vZ_iff)
 open VG.Proof.MlDsa.KeyGen (ifn)

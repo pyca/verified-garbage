@@ -28,8 +28,8 @@ open VG.Impl.MlDsa.X86_64.Sample.Rej4 (oJ half first second zeroJ rejNTT4Avx2)
 open VG.Proof.MlKem.X86_64 (Keep ea_at add_ofNat_zero pR WP.keep ofNat64_pred sample4K)
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold Stored stored_nil stored_frame stored_polyIs toPoly G_length)
-open VG.Proof.MlKem (poly4 seed4)
-open VG.Spec.MlDsa (Zq G PolyIs)
+open VG.Spec.MlDsa (Zq G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Proof.MlKem (xofByte)
 
 /-- `vg_mldsa_rej_ntt_poly4(seeds = rdi, a = rsi, scratch = rdx) -> eax`
@@ -39,10 +39,10 @@ def r4K : Contract isa where
   pre := sample4K.pre
   post s s' :=
     (s'.gpr .rax).setWidth 32 =
-        (if (List.range 4).all (fun k => (rnFold [] (G (seed4 s.mem (s.gpr .rdi) k) 1008)).length == 256)
+        (if (List.range 4).all (fun k => (rnFold [] (G (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)).length == 256)
           then 1 else 0) ∧
-      ∀ k < 4, (rnFold [] (G (seed4 s.mem (s.gpr .rdi) k) 1008)).length = 256 →
-        PolyIs s'.mem (poly4 (s.gpr .rsi) k) (toPoly (rnFold [] (G (seed4 s.mem (s.gpr .rdi) k) 1008)))
+      ∀ k < 4, (rnFold [] (G (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)).length = 256 →
+        PolyIs s'.mem (Proof.MlKem.poly4 (s.gpr .rsi) k) (toPoly (rnFold [] (G (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)))
   pub := sample4K.pub
 
 /-- The coefficients of seed `k`'s whole output. -/
@@ -77,17 +77,17 @@ theorem sv_jR : (svR σ).Disjoint (jR σ) :=
   Offset.disjoint (scr σ) (d := oSave) (n := 40) (e := oJ) (k := 32) (.inl (by simp only [oSave, oJ]; omega_arith))
     (by simp only [oSave]; omega_arith) (by simp only [oJ]; omega_arith)
 
-theorem low_poly {K : Nat} (hK : K < 4) : (lowR σ).Disjoint (pR (poly4 (aP σ) K)) :=
+theorem low_poly {K : Nat} (hK : K < 4) : (lowR σ).Disjoint (pR (Proof.MlKem.poly4 (aP σ) K)) :=
   Region.Disjoint.sub_right (Region.Disjoint.sub_left hp.a_scr.symm (Region.sub_prefix (by simp only [oSave]; omega_arith)))
     (sub_poly hK)
 
-theorem sv_poly {K : Nat} (hK : K < 4) : (svR σ).Disjoint (pR (poly4 (aP σ) K)) :=
+theorem sv_poly {K : Nat} (hK : K < 4) : (svR σ).Disjoint (pR (Proof.MlKem.poly4 (aP σ) K)) :=
   scr_poly hp hK (a := oSave) (n := 40) (by simp only [oSave]; omega_arith) _ (List.mem_singleton_self _)
 
-theorem jR_poly {K : Nat} (hK : K < 4) : (jR σ).Disjoint (pR (poly4 (aP σ) K)) :=
+theorem jR_poly {K : Nat} (hK : K < 4) : (jR σ).Disjoint (pR (Proof.MlKem.poly4 (aP σ) K)) :=
   scr_poly hp hK (a := oJ) (n := 32) (by simp only [oJ]; omega_arith) _ (List.mem_singleton_self _)
 
-theorem poly_jR (k : Nat) (hk : k < 4) : (VG.Proof.MlDsa.Sample.polyR (poly4 (aP σ) k)).Disjoint (jR σ) :=
+theorem poly_jR (k : Nat) (hk : k < 4) : (VG.Proof.MlDsa.Sample.polyR (Proof.MlKem.poly4 (aP σ) k)).Disjoint (jR σ) :=
   (jR_poly hp hk).symm
 
 /-! ## Frames -/
@@ -126,7 +126,7 @@ theorem sqT_frame {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : SqT σ t n s) {
     exact h.buf k hk p (by omega_arith)
 
 /-- A count, apart from writes to a polynomial. -/
-theorem j_poly {K : Nat} (hK : K < 4) {m m' : Mem} (hf : Frame [pR (poly4 (aP σ) K)] m m') {k : Nat} (hk : k < 4) :
+theorem j_poly {K : Nat} (hK : K < 4) {m m' : Mem} (hf : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] m m') {k : Nat} (hk : k < 4) :
     m'.readW (at' σ (oJ + 8 * k)) 64 = m.readW (at' σ (oJ + 8 * k)) 64 :=
   hf.readW (Region.contains_self _ _) (scr_poly hp hK (a := oJ + 8 * k) (n := 8) (by simp only [oJ]; omega_arith))
     (by decide)
@@ -134,12 +134,12 @@ theorem j_poly {K : Nat} (hK : K < 4) {m m' : Mem} (hf : Frame [pR (poly4 (aP σ
 omit hp in
 /-- A stored polynomial, apart from writes to another one. -/
 theorem st_poly {K k : Nat} (hK : K < 4) (hk : k < 4) (hne : k ≠ K) {m m' : Mem}
-    (hf : Frame [pR (poly4 (aP σ) K)] m m') {L : List Zq} (h : Stored m (poly4 (aP σ) k) L) (hL : L.length ≤ 256) :
-    Stored m' (poly4 (aP σ) k) L :=
+    (hf : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] m m') {L : List Zq} (h : Stored m (Proof.MlKem.poly4 (aP σ) k) L) (hL : L.length ≤ 256) :
+    Stored m' (Proof.MlKem.poly4 (aP σ) k) L :=
   stored_frame hf (poly_poly hK hk hne) h hL
 
 omit hp in
-theorem sub_polyR {K : Nat} (hK : K < 4) : ∀ r ∈ [pR (poly4 (aP σ) K)], ∃ R ∈ [aR σ, scrR σ, stkR σ], Region.Sub r R :=
+theorem sub_polyR {K : Nat} (hK : K < 4) : ∀ r ∈ [pR (Proof.MlKem.poly4 (aP σ) K)], ∃ R ∈ [aR σ, scrR σ, stkR σ], Region.Sub r R :=
   fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨aR σ, by simp, sub_poly hK⟩
 
 omit hp in
@@ -163,7 +163,7 @@ end
 structure P1 (σ : State) (K : Nat) (s : State) : Prop where
   sq : SqT σ 0 3 s
   j : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k (if k < K then 168 else 0)).length
-  st : ∀ k < 4, Stored s.mem (poly4 (aP σ) k) (Lt σ k (if k < K then 168 else 0))
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k) (Lt σ k (if k < K then 168 else 0))
 
 section
 variable {σ : State} (hp : Pre σ)
@@ -257,7 +257,7 @@ structure P2 (σ : State) (K : Nat) (s : State) : Prop where
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ K)
   buf : ∀ k < 4, ∀ p < 504, s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (504 + p)
   j : ∀ k < 4, K ≤ k → s.mem.readW (at' σ (oJ + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
-  st : ∀ k < 4, Stored s.mem (poly4 (aP σ) k) (Lt σ k (if k < K then 336 else 168))
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k) (Lt σ k (if k < K then 336 else 168))
 
 theorem tail_ok (s : State) :
     WP isa (.block [.mov .rax (.reg .rdi), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax)]) s fun s' =>
@@ -293,7 +293,7 @@ include hp
 structure M2 (σ : State) (n : Nat) (s : State) : Prop where
   sq : SqT σ 3 n s
   j : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
-  st : ∀ k < 4, Stored s.mem (poly4 (aP σ) k) (Lt σ k 168)
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k) (Lt σ k 168)
 
 omit hp in
 theorem m2_of {s : State} (h : P1 σ 4 s) : M2 σ 0 s :=
@@ -329,7 +329,7 @@ theorem hpre2 {K : Nat} (hK : K < 4) {s : State} (h : P2 σ K s) : HPre σ K 1 s
 theorem secondEnd_ok {K : Nat} (hK : K < 4) {s s₁ : State} (h : P2 σ K s) (hA : HAt σ s K 1 168 s₁) :
     WP isa (.block [.mov .rax (.reg .rdi), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax)]) s₁ (P2 σ (K + 1)) := by
   refine WP.mono (tail_ok s₁) fun s₂ ⟨⟨h14, hm⟩, k⟩ => ?_
-  have hf : Frame [pR (poly4 (aP σ) K)] s.mem s₂.mem := by rw [hm]; exact hA.fr
+  have hf : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] s.mem s₂.mem := by rw [hm]; exact hA.fr
   have hrdi : s₁.gpr .rdi = BitVec.ofNat 64 (Lt σ K 336).length := hA.rdi
   refine ⟨hA.env.keep hm k (by simp), ?_, fun k hk p hp' => ?_, fun k hk hKk => ?_, fun k hk => ?_⟩
   · rw [h14, hA.kp.gpr (by decide), h.r14, hrdi, okN_succ]

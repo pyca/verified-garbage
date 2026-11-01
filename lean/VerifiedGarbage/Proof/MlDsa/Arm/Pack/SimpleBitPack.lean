@@ -110,7 +110,7 @@ def sbpSat : State where
   wr := [⟨0x2000, 128⟩]
 
 example : ∃ pre post leak, simpleBitPackContract Arm.abi =
-    simpleBitPackApi.sig.contract Arm.target.abi pre post simpleBitPackApi.writeArgs 0 leak := ⟨_, _, _, rfl⟩
+    simpleBitPackSig.contract Arm.target.abi pre post true 0 leak := ⟨_, _, _, rfl⟩
 
 theorem simpleBitPack_verified :
     Verified Arm.target Impl.MlDsa.Arm.Pack.simpleBitPack (simpleBitPackContract Arm.abi) := by
