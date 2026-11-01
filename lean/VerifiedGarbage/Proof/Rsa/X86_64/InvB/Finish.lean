@@ -127,4 +127,138 @@ theorem fin1Blk_ok {s : State} {B : Addr} {Z w n : Nat} (h : FS B Z w n s) {a : 
       (k₃.trans kt |>.gpr (by decide)).trans h8, (kt.gpr (by decide)).trans r15₃, (kt.gpr (by decide)).trans bp₃,
       bx, b10, by rw [mt, m₃], (((k₁.trans k₂).trans k₃).trans kt).mono (by decide)⟩
 
+/-- The end's first part. -/
+def fin1L : List (Prog isa) := [.block unwin, zeroA aT,
+  .block (countN ++ base aA .r8 ++ ([.mov .rax (.mem (ix .r8 .r13)), .shift .shr .rax 63, .mov32 .r15 (.imm 0),
+    .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base aT .rbx ++ base aP .r10),
+  wordLoop 0 addMBody] ++ csubT
+
+/-- `t := a mod m`, from the batches' state. -/
+theorem fin1_ok {s₀ s : State} {B : Addr} {Z w n p mi : Nat} {I : Divstep.IState} (h0 : Ws s₀ B Z w)
+    (hZ : slot w 26 ≤ Z) (hF : Frm B [(slot w 16, 80 * (w + 2))] s₀.mem s.mem) (hb : BS B Z w n p mi I s)
+    (hn1 : 1 ≤ n) (hnw : n ≤ w) (hP : wv s.mem B (slot w aP) (n + 1) = p) (hpn : p < 2 ^ (64 * n))
+    (ha : -(p : Int) < I.a ∧ I.a < 2 * p) :
+    WP isa (seqs fin1L) s fun t => FS B Z w n t ∧ t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧
+      ∃ t₁ : Nat, wv t.mem B (slot w aT) (n + 1) = t₁ ∧ t₁ < p ∧ (t₁ : Int) ≡ I.a [ZMOD p] ∧
+      HZ t.mem B w n aT ∧ wv t.mem B (slot w aP) (n + 1) = p ∧
+      wv t.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) ∧
+      Frm B [(slot w 16, 80 * (w + 2))] s₀.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
+  have hn := hb.scr.nowrap
+  have eF : slot w aF = 256 + 19 * (8 * (w + 2)) := slot_eq w 19
+  have eA : slot w aA = 256 + 21 * (8 * (w + 2)) := slot_eq w 21
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  have eP : slot w aP = 256 + 25 * (8 * (w + 2)) := slot_eq w 25
+  have e26 : slot w 26 = 256 + 26 * (8 * (w + 2)) := slot_eq w 26
+  have hw := h0.w2
+  have hM : 2 * p < 2 ^ (64 * (n + 1)) := by
+    rw [show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add]
+    have : 2 ≤ 2 ^ 64 := by decide
+    have := Nat.mul_le_mul_left (2 ^ (64 * n)) this
+    omega
+  have hH : (2 : Int) * p ≤ 2 ^ (64 * n) * 2 ^ 63 := by
+    have : 2 * 2 ^ (64 * n) ≤ 2 ^ (64 * n) * 2 ^ 63 := by
+      rw [Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by decide)
+    have : 2 * p ≤ 2 ^ (64 * n) * 2 ^ 63 := by omega
+    exact_mod_cast this
+  have hHpos : (0 : Int) < 2 ^ (64 * n) * 2 ^ 63 := by
+    have := Nat.mul_pos (Nat.two_pow_pos (64 * n)) (Nat.two_pow_pos 63); exact_mod_cast this
+  rw [fin1L, seqs_append_iff _ _ (by simp) (by simp [csubT])]
+  simp only [seqs]
+  -- `rdi` back.
+  refine WP.seq (WP.mono (unwin_ok hb.rdi hb.r9 hb.r15) fun s₁ ⟨di₁, r13₁, m₁, k₁⟩ => ?_)
+  have h₁ : FS B Z w n s₁ := ⟨Ws.of_frm h0 (by rw [m₁]; exact hF) (hb.scr.congr k₁.2.2) di₁, hZ,
+    (k₁.gpr (by decide)).trans hb.r9, r13₁, hn1, hnw⟩
+  -- `t := 0`.
+  refine WP.seq (WP.mono (zeroAI_ok h₁.ws hZ (j := aT) (by decide)) fun s₂ ⟨zT₂, o₂, r9₂, k₂⟩ => ?_)
+  have h₂ : FS B Z w n s₂ := ⟨wsOut h₁.ws o₂ k₂ (by decide), hZ, r9₂, (k₂.gpr (by decide)).trans r13₁, hn1, hnw⟩
+  have zT := h₁.sl (show aT < 26 by decide)
+  have tA : wv s₂.mem B (slot w aA) (n + 1) = wv s.mem B (slot w aA) (n + 1) := by
+    rw [o₂.wv (Or.inl (by omega)) (by omega), m₁]
+  refine WP.seq (WP.mono (fin1Blk_ok h₂ (a := I.a) (by rw [tA]; exact hb.a) (by omega) (by omega))
+    fun s₃ ⟨r12₃, r8₃, r15₃, bp₃, bx₃, r10₃, m₃, k₃⟩ => ?_)
+  have h₃ := h₂.of_mem m₃ k₃ (by decide) (by decide) (by decide)
+  refine WP.mono (addM_ok h₃.ws.scr bx₃ r10₃ r8₃ r15₃ r12₃ bp₃ (N := n + 1) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega)) fun s₄ ⟨c₄, _, hv₄, o₄, k₄⟩ => ?_
+  have h₄ := h₃.of_out o₄ k₄ (by decide) (by decide) (by decide)
+  have P₃ : wv s₃.mem B (slot w aP) (n + 1) = p := by
+    rw [m₃, o₂.wv (Or.inr (by omega)) (by omega), m₁, hP]
+  have A₃ : wv s₃.mem B (slot w aA) (n + 1) = wv s.mem B (slot w aA) (n + 1) := by rw [m₃, tA]
+  rw [P₃, A₃] at hv₄
+  -- The value: `a + (p if a < 0)`.
+  have hA := Divstep.tc_eq (H := 2 ^ (64 * n) * 2 ^ 63) (x := I.a) (W := (wv s.mem B (slot w aA) (n + 1) : Int))
+    hHpos (by omega) (by omega) (Int.natCast_nonneg _)
+    (by have := wv_lt s.mem B (slot w aA) (n + 1)
+        have e2 : (2 : Int) * (2 ^ (64 * n) * 2 ^ 63) = 2 ^ (64 * (n + 1)) := by
+          rw [show 64 * (n + 1) = 64 * n + 63 + 1 by omega, pow_succ, pow_add]; ring
+        rw [e2]; exact_mod_cast this)
+    (by have e2 : (2 : Int) * (2 ^ (64 * n) * 2 ^ 63) = 2 ^ (64 * (n + 1)) := by
+          rw [show 64 * (n + 1) = 64 * n + 63 + 1 by omega, pow_succ, pow_add]; ring
+        rw [e2]; exact hb.a)
+  have e2 : (2 : Int) * (2 ^ (64 * n) * 2 ^ 63) = 2 ^ (64 * (n + 1)) := by
+    rw [show 64 * (n + 1) = 64 * n + 63 + 1 by omega, pow_succ, pow_add]; ring
+  rw [e2] at hA
+  have hT4lt := wv_lt s₄.mem B (slot w aT) (n + 1)
+  have hv₄' : (wv s₄.mem B (slot w aT) (n + 1) : Int) + 2 ^ (64 * (n + 1)) * c₄.toNat =
+      (if decide (I.a < 0) = true then (p : Int) else 0) + wv s.mem B (slot w aA) (n + 1) := by
+    have := congrArg (fun x : Nat => (x : Int)) hv₄
+    push_cast at this
+    rw [this]
+  have hM' : (2 : Int) * p < 2 ^ (64 * (n + 1)) := by exact_mod_cast hM
+  have hT4lt' : (wv s₄.mem B (slot w aT) (n + 1) : Int) < 2 ^ (64 * (n + 1)) := by exact_mod_cast hT4lt
+  have hT4 : (wv s₄.mem B (slot w aT) (n + 1) : Int) = I.a + if I.a < 0 then (p : Int) else 0 := by
+    by_cases hneg : I.a < 0
+    · simp only [hneg, decide_true, ↓reduceIte] at hv₄' hA ⊢
+      cases c₄ <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.cast_zero, Nat.cast_one] at hv₄' <;> omega
+    · simp only [hneg, decide_false, ↓reduceIte, Bool.false_eq_true] at hv₄' hA ⊢
+      cases c₄ <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.cast_zero, Nat.cast_one] at hv₄' <;> omega
+  -- `t := t - m` if not below `m`.
+  have P₄ : wv s₄.mem B (slot w aP) (n + 1) = p := by rw [o₄.wv (Or.inr (by omega)) (by omega), P₃]
+  have k14 := ((k₁.trans k₂).trans k₃).trans k₄
+  refine WP.mono (csubT_ok h₄ ((k₄.gpr (by decide)).trans r12₃) (N := n + 1) (by omega) (by omega) rfl P₄)
+    fun t ⟨vt, f₅, F₅, k₅⟩ => ⟨h₄.ws.congr (rs := [(slot w aT, 8 * (n + 1)), (slot w aS, 8 * (n + 1))]) f₅
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact Mut.ofSlot _ _ _) k₅ (by decide) |> fun ws => ⟨ws, hZ,
+      (k₅.gpr (by decide)).trans h₄.r9, (k₅.gpr (by decide)).trans h₄.r13, hn1, hnw⟩,
+      (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans r12₃), _, vt, ?_, ?_, ?_, ?_, ?_, ?_,
+      (k14.trans k₅).mono (by decide)⟩
+  · split <;> omega
+  · have hp0 : (0 : Int) ≤ p := Int.natCast_nonneg _
+    split
+    · rename_i hlt
+      rw [hT4]
+      split
+      · exact Int.modEq_iff_dvd.mpr ⟨-1, by ring⟩
+      · rw [Int.add_zero]
+    · rename_i hge
+      rw [Nat.cast_sub (by omega), hT4]
+      split
+      · exact Int.modEq_iff_dvd.mpr ⟨0, by ring⟩
+      · rw [Int.add_zero]; exact Int.modEq_iff_dvd.mpr ⟨1, by ring⟩
+  · -- The words above `n` of `t` stay zero.
+    have z₂ := HZ.of_zero (n := n) zT₂
+    have o₄' := o₄
+    rw [m₃] at o₄'
+    have z₄ := z₂.out (o := slot w aT) (L := 8 * (n + 1)) o₄'
+      (fun i h1 _ => Or.inr (by omega)) (by omega)
+    intro i h1 h2
+    rw [f₅.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega)]
+    exact z₄ i h1 h2
+  · rw [f₅.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega), P₄]
+  · rw [f₅.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega), o₄.wv (Or.inl (by omega)) (by omega), m₃,
+      o₂.wv (Or.inl (by omega)) (by omega), m₁]
+  · rw [← m₁] at hF
+    have o₄' := o₄
+    rw [m₃] at o₄'
+    exact ((hF.trans (frW o₂ (by decide) (by decide) (by omega))).trans
+      (frW o₄' (by decide) (by decide) (by omega))).trans F₅
+
 end VG.Proof.Rsa.X86_64.InvB

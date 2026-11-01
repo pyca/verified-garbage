@@ -30,7 +30,7 @@ theorem zeroAI_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hZ : slot
     (hj : j < 26) :
     WP isa (zeroA j) s fun t =>
       wv t.mem B (slot w j) (w + 2) = 0 ∧ Outside B (slot w j) (8 * (w + 2)) s.mem t.mem ∧
-        Keep [.r12, .r9, .r8, .rax, .r14] s t := by
+        t.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)) ∧ Keep [.r12, .r9, .r8, .rax, .r14] s t := by
   have hn := h.scr.nowrap
   have sj : slot w j + 8 * (w + 2) ≤ Z := Nat.le_trans (slot_lt hj) hZ
   unfold zeroA
@@ -39,7 +39,7 @@ theorem zeroAI_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hZ : slot
   refine WP.mono (zeroAccLoop_ok (h.scr.congr (k₁.trans k₂).2.2) h8 ((k₂.gpr (by decide)).trans h12)
     (by have := h.w1; omega_arith) (by have := h.w2; omega_arith) (by omega_arith)) fun t ⟨hz, o, k₃⟩ => ?_
   rw [m₂, m₁] at o
-  exact ⟨hz, o, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+  exact ⟨hz, o, ((k₂.trans k₃).gpr (by decide)).trans h9, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 theorem copyAI_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hZ : slot w 26 ≤ Z) {o a : Nat}
     (ho : o < 26) (ha : a < 26) (hoa : o ≠ a) :
@@ -303,19 +303,19 @@ theorem start_ok {s : State} {B : Addr} {Z w n iU iM : Nat} (h : Ws s B Z w) (hZ
     .block setOdd, copyA aF aP, copyA aT iU] ++ gInit) ++ [.block (setOneA aB), .block setup] from rfl,
     seqs_append_iff _ _ (by simp) (by simp), seqs_append_iff _ _ (by simp) (by simp [gInit])]
   simp only [seqs]
-  refine WP.seq (WP.mono (zeroAI_ok h hZ (j := aF) (by decide)) fun s₁ ⟨zF₁, o₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h hZ (j := aF) (by decide)) fun s₁ ⟨zF₁, o₁, _, k₁⟩ => ?_)
   have h₁ := wsOut h o₁ k₁ (by decide)
-  refine WP.seq (WP.mono (zeroAI_ok h₁ hZ (j := aG) (by decide)) fun s₂ ⟨zG₂, o₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₁ hZ (j := aG) (by decide)) fun s₂ ⟨zG₂, o₂, _, k₂⟩ => ?_)
   have h₂ := wsOut h₁ o₂ k₂ (by decide)
-  refine WP.seq (WP.mono (zeroAI_ok h₂ hZ (j := aA) (by decide)) fun s₃ ⟨zA₃, o₃, k₃⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₂ hZ (j := aA) (by decide)) fun s₃ ⟨zA₃, o₃, _, k₃⟩ => ?_)
   have h₃ := wsOut h₂ o₃ k₃ (by decide)
-  refine WP.seq (WP.mono (zeroAI_ok h₃ hZ (j := aB) (by decide)) fun s₄ ⟨zB₄, o₄, k₄⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₃ hZ (j := aB) (by decide)) fun s₄ ⟨zB₄, o₄, _, k₄⟩ => ?_)
   have h₄ := wsOut h₃ o₄ k₄ (by decide)
-  refine WP.seq (WP.mono (zeroAI_ok h₄ hZ (j := aT) (by decide)) fun s₅ ⟨zT₅, o₅, k₅⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₄ hZ (j := aT) (by decide)) fun s₅ ⟨zT₅, o₅, _, k₅⟩ => ?_)
   have h₅ := wsOut h₄ o₅ k₅ (by decide)
-  refine WP.seq (WP.mono (zeroAI_ok h₅ hZ (j := aS) (by decide)) fun s₆ ⟨_, o₆, k₆⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₅ hZ (j := aS) (by decide)) fun s₆ ⟨_, o₆, _, k₆⟩ => ?_)
   have h₆ := wsOut h₅ o₆ k₆ (by decide)
-  refine WP.seq (WP.mono (zeroAI_ok h₆ hZ (j := aP) (by decide)) fun s₇ ⟨zP₇, o₇, k₇⟩ => ?_)
+  refine WP.seq (WP.mono (zeroAI_ok h₆ hZ (j := aP) (by decide)) fun s₇ ⟨zP₇, o₇, _, k₇⟩ => ?_)
   have h₇ := wsOut h₆ o₇ k₇ (by decide)
   have hU' : slot w iU + 8 * (w + 2) ≤ 2 ^ 64 := by have := sl iU (by omega); omega
   have hM' : slot w iM + 8 * (w + 2) ≤ 2 ^ 64 := by have := sl iM (by omega); omega
