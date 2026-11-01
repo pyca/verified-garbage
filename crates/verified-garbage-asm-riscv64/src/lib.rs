@@ -153,6 +153,14 @@ pub mod ct;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
+pub mod ec_p256;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
+pub mod ecdh_p256;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
 pub mod ed25519;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
@@ -222,6 +230,18 @@ pub mod idea_ofb;
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod md5;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
+pub mod p256_check_point;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
+pub mod p256_mont;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
+pub mod p256_mul;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
