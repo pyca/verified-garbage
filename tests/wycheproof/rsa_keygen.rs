@@ -35,6 +35,7 @@ use crate::json_struct;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile};
+use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
 
 json_struct! {
@@ -82,12 +83,6 @@ struct Prime {
     name: String,
     q: Vec<u8>,
     e: Vec<u8>,
-}
-
-/// `x` without its leading zero bytes (the vectors write numbers in DER's
-/// form, with a zero byte before a top bit that is set).
-fn trim(x: &[u8]) -> &[u8] {
-    &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
 /// Whether `x` is a candidate as `generate_prime_from` makes it from its

@@ -133,7 +133,7 @@ fn errors_and_empty_input() {
         let mut data = vec![0xa5; len];
         assert_eq!(cipher.encrypt(&mut data), Err(Error::IncompleteBlock));
         assert_eq!(cipher.decrypt(&mut data), Err(Error::IncompleteBlock));
-        assert!(data.iter().all(|&b| b == 0xa5));
+        assert!(crate::bytes::all_equal(&data, 0xa5));
     }
     cipher.encrypt(&mut []).unwrap();
     cipher.decrypt(&mut []).unwrap();

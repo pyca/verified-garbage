@@ -116,10 +116,10 @@ fn feedback_buffers_unaligned() {
                     }
                     assert_eq!(&buffer[offset..offset + len], output);
                     assert_eq!(&chain[offset..offset + 16], after);
-                    assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
-                    assert!(buffer[offset + len..].iter().all(|&b| b == 0xa5));
-                    assert!(chain[..offset].iter().all(|&b| b == 0xa5));
-                    assert!(chain[offset + 16..].iter().all(|&b| b == 0xa5));
+                    assert!(crate::bytes::all_equal(&buffer[..offset], 0xa5));
+                    assert!(crate::bytes::all_equal(&buffer[offset + len..], 0xa5));
+                    assert!(crate::bytes::all_equal(&chain[..offset], 0xa5));
+                    assert!(crate::bytes::all_equal(&chain[offset + 16..], 0xa5));
                 }
             }
         }

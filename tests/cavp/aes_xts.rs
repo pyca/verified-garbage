@@ -14,8 +14,6 @@
     target_arch = "riscv64"
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::aes_xts::{AesXts, Error, MAX_BLOCKS};
 
 use super::unhex;
@@ -24,14 +22,7 @@ use super::unhex;
 /// directions, and returns how many there were and how many were skipped.
 fn check_file(text: &str) -> (usize, usize) {
     let (mut count, mut skipped) = (0, 0);
-    for record in text.replace('\r', "").split("\n\n") {
-        let fields: BTreeMap<_, _> = record
-            .lines()
-            .filter_map(|line| line.trim().split_once(" = "))
-            .collect();
-        if !fields.contains_key("COUNT") {
-            continue;
-        }
+    for fields in super::records(text) {
         let bits: usize = fields["DataUnitLen"].parse().unwrap();
         if !bits.is_multiple_of(8) {
             skipped += 1;
@@ -114,5 +105,5 @@ fn limits_and_lengths() {
         ctx.decrypt(&[0; 16], &mut buffer),
         Err(Error::DataUnitTooLong)
     );
-    assert!(buffer.iter().all(|&b| b == 0));
+    assert!(crate::bytes::all_equal(&buffer, 0));
 }

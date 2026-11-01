@@ -44,3 +44,25 @@ pub fn unhex_spaced(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
     unhex(&hex)
 }
+
+/// Whether every byte of `bytes` is `value` (guard bytes a call must not
+/// have written).
+pub fn all_equal(bytes: &[u8], value: u8) -> bool {
+    bytes.iter().all(|&b| b == value)
+}
+
+/// `x` without its leading zero bytes: a number in DER's form, which has a
+/// zero byte before a top bit that is set. For the RSA and DSA tests.
+#[cfg(all(
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "powerpc64"
+    ),
+    feature = "alloc"
+))]
+pub fn trim_zeros(x: &[u8]) -> &[u8] {
+    &x[x.iter().take_while(|&&b| b == 0).count()..]
+}

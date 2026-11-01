@@ -155,6 +155,6 @@ fn empty_and_incomplete() {
         let mut buffer = vec![0xa5; len];
         assert_eq!(ecb.encrypt(&mut buffer), Err(Error::IncompleteBlock));
         assert_eq!(ecb.decrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert!(buffer.iter().all(|&b| b == 0xa5));
+        assert!(crate::bytes::all_equal(&buffer, 0xa5));
     }
 }

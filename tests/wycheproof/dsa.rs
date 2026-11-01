@@ -43,7 +43,7 @@ json_struct! {
 }
 
 fn pad(value: &[u8], width: usize) -> Vec<u8> {
-    let value = &value[value.iter().take_while(|&&b| b == 0).count()..];
+    let value = crate::bytes::trim_zeros(value);
     assert!(value.len() <= width);
     let mut result = vec![0; width - value.len()];
     result.extend_from_slice(value);

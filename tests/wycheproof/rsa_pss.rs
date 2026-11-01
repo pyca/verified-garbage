@@ -28,6 +28,7 @@ use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 
 use super::harness::{self, Count, Expectation, Hex};
+use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
 
 json_struct! {
@@ -83,11 +84,6 @@ json_struct! {
     struct MsgCase {
         msg: Hex,
     }
-}
-
-/// `x` without its leading zero bytes.
-fn trim(x: &[u8]) -> &[u8] {
-    &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
 /// The CRT key `k` of the vector file `name`, and its public key.
