@@ -402,20 +402,21 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     refine WP.mono (probe_ok 4 (by decide) u) fun v hv => ?_
     subst v
     have hinv := hu.write10 (u.gpr .r6 >>> 4)
-    refine WP.seq ?_
     have hev' : eval (.zero .d .r10) (u.write .r10 (u.gpr .r6 >>> 4)) =
         some ((u.gpr .r6 >>> 4) == 0) := by
       simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write_self]
     refine WP.ite ((u.gpr .r6 >>> 4) == 0) hev' (fun _ => ?_) (fun hn => ?_)
-    · apply WP.of_runBlock
-      simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
-      exact finish_ok hp (Nat.zero_le _) hinv
+    · have hpos : 0 < nb s₀ := by
+        have hn : s₀.gpr .r6 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using he
+        exact Nat.pos_of_ne_zero fun hz => hn (BitVec.eq_of_toNat_eq (by simpa using hz))
+      unfold Impl.Gcm.PPC64LE.Vpmsum.serial
+      exact WP.seq (WP.mono (loop_ok hp hpos hinv) fun t ht => epilogue_ok hp ht)
     · have hne : u.gpr .r6 >>> 4 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using hn
       rw [hu.r6] at hne
       have h16 : ¬ nb s₀ < 16 := by
         intro hlt
         exact hne ((quotient_zero (by have := hp.nb_lt; omega) 4).mpr hlt)
-      refine WP.mono (bulk_ok hp (by omega) hinv) fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht
+      exact WP.seq (WP.mono (bulk_ok hp (by omega) hinv) fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht)
 
 
 def written : List Reg := [.r0, .r5, .r6, .r8, .r9, .r10]

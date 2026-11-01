@@ -2984,9 +2984,6 @@ cmpldi %cr0, %r10, 0
 bne %cr0, 24b
 vsldoi %v6, %v8, %v8, 8
 vsldoi %v16, %v15, %v6, 8
-b 23f
-22:
-23:
 cmpldi %cr0, %r6, 0
 beq %cr0, 25f
 27:
@@ -3018,6 +3015,35 @@ b 26f
 26:
 vperm %v7, %v0, %v0, %v18
 stxvd2x 39, %r4, %r0
+b 23f
+22:
+28:
+lxvd2x 38, %r5, %r0
+vperm %v6, %v6, %v6, %v18
+vxor %v6, %v6, %v0
+vsldoi %v2, %v6, %v19, 8
+vpmsumd %v5, %v2, %v16
+vsldoi %v2, %v19, %v6, 8
+vpmsumd %v3, %v2, %v16
+vpmsumd %v4, %v6, %v16
+vsldoi %v7, %v3, %v19, 8
+vpmsumd %v7, %v7, %v1
+vsldoi %v3, %v3, %v3, 8
+vxor %v4, %v4, %v3
+vxor %v4, %v4, %v7
+vsldoi %v7, %v4, %v19, 8
+vpmsumd %v7, %v7, %v1
+vsldoi %v5, %v5, %v5, 8
+vxor %v5, %v5, %v4
+vsldoi %v7, %v7, %v7, 8
+vxor %v0, %v5, %v7
+addi %r5, %r5, 16
+addi %r6, %r6, -1
+cmpldi %cr0, %r6, 0
+bne %cr0, 28b
+vperm %v7, %v0, %v0, %v18
+stxvd2x 39, %r4, %r0
+23:
 b 21f
 20:
 21:
