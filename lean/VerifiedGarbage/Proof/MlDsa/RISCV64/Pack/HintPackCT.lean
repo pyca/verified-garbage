@@ -40,8 +40,8 @@ open VG.Proof.MlDsa.Pack
 
 theorem pre_of {s : State} (h : (hintBitPackContract RISCV64.abi).pre s) : PPre s := by
   sig_pre [hintBitPackContract, hintBitPackSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
 
 /-- The public registers of the loops: the pointers, `k`, `ω`. -/
 abbrev hbpTaint : VG.RISCV64.Taint.T := VG.RISCV64.Taint.ofRegs [.a0, .a1, .a2, .a3]
@@ -104,7 +104,6 @@ theorem ct : ConstantTime isa (hintBitPackContract RISCV64.abi).pre (hintBitPack
 def satState : State where
   gpr r := match r with
     | .a0 => 0x1000 | .a1 => 1024 | .a2 => 80 | .a3 => 0x3000 | .a4 => 84 | _ => 0
-  lr := 0
   sp := 0x10000
   mem _ := 0
   rd := [⟨0x1000, 4096⟩]
@@ -122,8 +121,7 @@ theorem hintBitPack_verified :
     Verified RISCV64.target Impl.MlDsa.RISCV64.Pack.hintBitPack (hintBitPackContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, ct, ⟨satState, ?_⟩⟩
   · obtain ⟨t, s', he, hy, hk⟩ := correct (pre_of hs)
-    refine ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide +kernel)
-      (by rw [← Code.allInstrs_eq]; decide +kernel), ?_⟩
+    refine ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), ?_⟩
     sig_post [hintBitPackContract, hintBitPackSig, RISCV64.abi, RISCV64.argRegs]
     exact hy
   · sig_apply_check
