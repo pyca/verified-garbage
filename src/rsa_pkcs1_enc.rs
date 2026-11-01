@@ -8,17 +8,15 @@
 //! protocols and data that require it.
 //!
 //! [`encrypt`] is the verified `vg_rsa_pkcs1_encrypt_precomputed` (contract
-//! `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`), with a padding string
-//! of nonzero bytes from the operating system's generator; it encrypts the
-//! encoded message with `vg_rsa_public_precomputed_checked`, reusing the
-//! public key's precomputed modulus values. On an x86-64 CPU with BMI2 and
-//! ADX it is its variant `vg_rsa_pkcs1_encrypt_precomputed_adx`, with the
-//! faster Montgomery multiplication.
+//! `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`), given the public key's
+//! precomputed modulus values and a padding string of nonzero bytes from the
+//! operating system's generator. Its variants, with the same contract, are
+//! the ones with the suffix of the implementation `crate::rsa::Backend`
+//! chooses (`_adx`, `_ifma`, `_umaal`).
 //!
 //! [`decrypt`] is the verified `vg_rsa_pkcs1_decrypt` (contract
 //! `VG.Spec.RsaPkcs1Enc.decryptContract`), which computes the encoded
-//! message with `vg_rsa_private_checked`, as
-//! [`PrivateKey::private_op`] does, and **never reports an invalid
+//! message as [`PrivateKey::private_op`] does, and **never reports an invalid
 //! padding**: for a ciphertext whose padding is not valid it returns a
 //! message derived from the private exponent `d` and the ciphertext (with
 //! SHA-256 and HMAC-SHA-256), which is the same every time the same key
@@ -28,12 +26,10 @@
 //! the ciphertext is genuine, and must check the message (its length, and
 //! its contents if it can) in constant time. Whether the padding is valid,
 //! the length of the message and which of the two messages is returned do
-//! not affect the timing of the verified function. On an x86-64 CPU with the
-//! SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and AVX512_IFMA), on an
-//! i686 CPU with the SHA extensions, and on an AArch64 CPU with the SHA-2
-//! instructions, it uses the faster SHA-256
-//! compression functions and private-key operations, as
-//! [`hashes::sha256`](crate::hashes::sha256) and [`rsa`](crate::rsa) do.
+//! not affect the timing of the verified function. Its variants, with the
+//! same contract, are one for each pair of the implementations of SHA-256
+//! and of the private-key operation that
+//! [`hashes::sha256`](crate::hashes::sha256) and [`rsa`](crate::rsa) choose.
 //!
 //! This module only checks the lengths, draws the padding string and
 //! allocates the memory the functions work in.

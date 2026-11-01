@@ -21,11 +21,11 @@
 //! fits in memory, [`Sm4Gcm::decrypt_in_place`] checks the tag before it
 //! decrypts.
 //!
-//! The functions but `init` have variants, with the same contracts, one for
-//! each of GHASH's (`vg_ghash`'s), chosen on CPUs with the features of `seal`'s
-//! `_FEATURES` constants (which are every other function's): on x86-64, the
-//! `_vpclmul` ones, then the `_pclmul` ones; on x86, the `_pclmul` ones; on
-//! AArch64, the `_aes` ones. Which one a key calls depends only on the CPU.
+//! The functions but `init` have variants, with the same contracts, chosen
+//! on CPUs with the features of `seal`'s `_FEATURES` constants (which are
+//! every other function's): on x86-64, the `_vpclmul` ones, then the
+//! `_pclmul` ones; on x86, the `_pclmul` ones; on AArch64, the `_aes` ones.
+//! Which one a key calls depends only on the CPU.
 //!
 //! # Tags
 //!
@@ -85,21 +85,19 @@ const MAX_TEXT: u64 = (1 << 36) - 32;
 /// to whole bytes (§5.2.1.1).
 const MAX_AAD: u64 = (1 << 61) - 1;
 
-/// The implementations of SM4-GCM, one for each of GHASH's (`vg_ghash`'s):
-/// each is the instance with its suffix of every `vg_sm4_gcm_*` function but
-/// `init`.
+/// The implementations of SM4-GCM: each is the variant with its suffix of
+/// every `vg_sm4_gcm_*` function but `init`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Ghash {
-    /// The baseline ISA.
+    /// The baseline implementation.
     Scalar,
-    /// PCLMULQDQ: the `_pclmul` instances (x86 and x86-64).
+    /// `_pclmul` (x86 and x86-64).
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     Pclmul,
-    /// VPCLMULQDQ: the `_vpclmul` instances (x86-64 only).
+    /// `_vpclmul` (x86-64 only).
     #[cfg(target_arch = "x86_64")]
     Vpclmul,
-    /// PMULL (FEAT_PMULL, which Rust and `src/cpu.rs` call `aes`): the
-    /// `_aes` instances (AArch64 only).
+    /// `_aes` (AArch64 only).
     #[cfg(target_arch = "aarch64")]
     Aes,
 }
@@ -229,7 +227,7 @@ macro_rules! assert_tag_length {
 pub struct Sm4Gcm {
     /// The key context `vg_sm4_gcm_init` writes (`VG.Spec.Sm4.Gcm.KeyRepr`).
     ctx: [u64; 32],
-    /// The implementation of GHASH the functions called call.
+    /// The implementation of the functions called.
     ghash: Ghash,
 }
 
@@ -629,7 +627,7 @@ mod tests {
     use crate::cpu::detected;
     use verified_garbage_cpu::Features;
 
-    /// The implementation of GHASH chosen for each set of features.
+    /// The implementation chosen for each set of features.
     #[test]
     fn ghash_backend() {
         let f = |bits: u32| Ghash::select(Features(bits));
@@ -637,7 +635,7 @@ mod tests {
         assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
     }
 
-    /// The instances x86's and x86-64's CPUs choose among.
+    /// The variants x86's and x86-64's CPUs choose among.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn ghash_backend_x86() {
@@ -660,7 +658,7 @@ mod tests {
         assert_eq!(f(all & !verified_garbage_cpu::feature::AVX), Ghash::Pclmul);
     }
 
-    /// The instance AArch64's CPUs with PMULL choose.
+    /// The variant AArch64's CPUs with `VG_SM4_GCM_SEAL_AES_FEATURES` choose.
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn ghash_backend_aarch64() {

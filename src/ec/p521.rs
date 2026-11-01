@@ -1,8 +1,7 @@
 //! P-521's multiplications, which [`ecdsa`](crate::ecdsa) and
 //! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. On x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants
-//! multiply field elements with `mulx`, `adcx` and `adox`, and the
-//! signatures' and public keys' comb selects its entries with AVX2.
+//! compute. `Mul::select` chooses the `_adx` variants on x86-64 CPUs with
+//! the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -26,10 +25,9 @@ use verified_garbage_cpu::Features;
 /// The multiplications of P-521's field elements.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Mul {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox`, with the comb's selection
-    /// by AVX2 (the `_adx` variants).
+    /// `_adx`.
     #[cfg(target_arch = "x86_64")]
     Adx,
 }

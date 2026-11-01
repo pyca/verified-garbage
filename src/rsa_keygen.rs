@@ -26,9 +26,10 @@
 //! `e = 3`) rejected candidates, the generation fails. Its timing may depend
 //! on the lengths, `e`, the rejected candidates (which are discarded), and
 //! the number of random octets the accepted candidate's Miller–Rabin test
-//! read, but not on the prime or on the other prime. On a CPU with BMI2 and
-//! ADX, `vg_rsa_keygen_candidate_adx` does the same with a faster Montgomery
-//! multiplication.
+//! read, but not on the prime or on the other prime. Its variants, with the
+//! same contract, are chosen with `crate::rsa::Backend`:
+//! `vg_rsa_keygen_candidate_adx` for its `Adx` and `Ifma`, and
+//! `vg_rsa_keygen_candidate_umaal` for its `Umaal`.
 //!
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.

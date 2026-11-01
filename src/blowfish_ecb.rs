@@ -8,13 +8,7 @@
 //! length before key expansion and keeps the bytes of a partial block until
 //! the next update completes it; updates write the whole blocks they
 //! complete to the caller's buffer, so nothing is allocated; finalization
-//! rejects a trailing partial block. On AArch64, ECB runs sixteen blocks at
-//! a time in AdvSIMD registers; on x86-64, one at a time with SSE2; on x86,
-//! one at a time in general-purpose registers; on ARMv7, one at a time in
-//! core registers; on PPC64LE, one at a time in general-purpose registers;
-//! on RISC-V, one at a time in general-purpose registers, with the
-//! schedule copied into a 16-byte aligned frame on the stack (key expansion
-//! builds it there), which is zeroed before returning.
+//! rejects a trailing partial block.
 
 #![cfg(any(
     target_arch = "x86",

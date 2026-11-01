@@ -333,8 +333,9 @@ mod tests {
         assert_eq!(c.finalize(), AesCmac::mac(&key, &msg).unwrap());
     }
 
-    /// The bulk AES loop agrees with the baseline for every key width,
-    /// around block boundaries, and when short updates surround a bulk one.
+    /// The implementation this CPU runs agrees with the baseline one for
+    /// every key width, around block boundaries, and when short updates
+    /// surround a long one.
     #[test]
     fn bulk() {
         let key: [u8; 32] = core::array::from_fn(|i| (11 * i + 3) as u8);
@@ -365,7 +366,7 @@ mod tests {
         }
     }
 
-    /// Updates longer than 32 bytes chain in registers.
+    /// Updates longer than 32 bytes run the `_cbc` absorb.
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     #[test]
     fn chains_long() {

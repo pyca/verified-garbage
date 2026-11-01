@@ -259,8 +259,8 @@ fn rsa_pkcs1_bad_keys() {
     );
 }
 
-/// Truncations of the Appendix B key exercise compact CRT workspaces when
-/// either factor dominates the width, and when the modulus dominates both.
+/// Keys from the Appendix B key with either factor, or both, truncated, and
+/// with a factor longer than half the modulus, are refused.
 #[test]
 fn rsa_crt_truncated_factors() {
     let rfc = text();
@@ -284,8 +284,8 @@ fn rsa_crt_truncated_factors() {
             );
         }
     }
-    // A malformed factor larger than half the modulus must enlarge the
-    // workspace, regardless of which factor it is.
+    // A malformed factor larger than half the modulus, whichever factor it
+    // is.
     let oversized = &v[1][..v[1].len() - 1];
     for (p, q) in [(oversized, v[5]), (v[4], oversized)] {
         let key = PrivateKey::from_crt(v[1], v[2], v[3], p, q, v[6], v[7], v[8]);

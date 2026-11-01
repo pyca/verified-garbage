@@ -9,13 +9,7 @@
 //! decryption from the chaining value at `iv`, and the chaining value with
 //! the one to continue from, the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
-//! Both are the modes' generic CBC over `vg_seed_ecb_encrypt` and
-//! `vg_seed_ecb_decrypt`: on x86-64 and AArch64 over their batch of sixteen
-//! blocks, decryption deciphering sixteen blocks at a time and encryption
-//! one; on PPC64LE over the same batch, one block at a time in both
-//! directions; on ARMv7 and x86 calling them once per block (a batch of
-//! eight, so about eight times ECB's cost). This module checks the lengths and holds
-//! the key schedule.
+//! This module checks the lengths and holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86",

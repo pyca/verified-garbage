@@ -1,7 +1,7 @@
 //! P-224's multiplications, which [`ecdsa`](crate::ecdsa) and
 //! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. On ARMv7 cores with `umaal`, the `_umaal` variants multiply
-//! field elements and scalars with it.
+//! compute. `Mul::select` chooses the `_umaal` variants on ARMv7 CPUs with
+//! the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -27,10 +27,9 @@ use verified_garbage_cpu::Features;
 /// The multiplications of P-224's field elements.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Mul {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// ARMv7's `umaal` for the Montgomery multiplications (the `_umaal`
-    /// variants).
+    /// `_umaal`.
     #[cfg(target_arch = "arm")]
     Umaal,
 }

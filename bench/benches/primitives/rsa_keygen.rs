@@ -33,7 +33,7 @@ pub fn bench(c: &mut Criterion) {
             break p;
         }
     };
-    // ARM measures the fixed prime-candidate work that shares FFDH's kernel.
+    // ARM measures only the fixed prime-candidate work (`bench_candidate`).
     // Keep the larger key-generation groups off its job.
     if cfg!(target_arch = "arm") {
         bench_candidate(c, &[512, 1024], admitted_prime);

@@ -118,7 +118,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_pkcs1_sign_once");
     // The same signatures, each made with a key loaded from its components
     // in the measurement, as a key used once is: the key's check and setup
-    // (its precomputed values, at its first operation) are counted.
+    // are counted.
     for (pkey, _, _, sig, _, _) in &keys {
         let k = sig.len();
         let rsa = pkey.rsa().unwrap();
@@ -217,8 +217,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_pkcs1_verify_once");
     // The same signatures, each verified with a key loaded from `(n, e)` in
     // the measurement, as a TLS client verifies a certificate's signature
-    // with the key it has just parsed: the key's setup (its Montgomery
-    // values, at its first operation) is counted.
+    // with the key it has just parsed: the key's setup is counted.
     for (pkey, _, _, sig, _, _) in &keys {
         let k = sig.len();
         let rsa = pkey.rsa().unwrap();

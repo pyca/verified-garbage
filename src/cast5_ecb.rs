@@ -1,13 +1,11 @@
 //! CAST5 (CAST-128, RFC 2144) ECB, in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives.
-//! Keys contain 5 to 16 bytes (40 to 128 bits, RFC 2144 §2.5); a key of up
-//! to 10 bytes is used with 12 rounds, a longer one with 16. Each operation
-//! accepts complete eight-byte blocks, including empty input. The S-box
-//! lookups scan whole tables (in vector registers: SSE2 on x86-64 and x86,
-//! AdvSIMD on AArch64; on ARMv7, PPC64LE and RISC-V, in general-purpose registers,
-//! each lookup comparing its index with every entry of a static table), so
-//! their timing depends on neither the key nor the data; one block at a time.
+//! Key expansion and ECB encryption/decryption use verified primitives
+//! (`VG.Spec.Cast5.expandKeyContract`, `ecbEncryptContract` and
+//! `ecbDecryptContract`), whose timing depends on neither the key nor the
+//! data. Keys contain 5 to 16 bytes (40 to 128 bits, RFC 2144 §2.5); a key of
+//! up to 10 bytes is used with 12 rounds, a longer one with 16. Each
+//! operation accepts complete eight-byte blocks, including empty input.
 
 #![cfg(any(
     target_arch = "x86_64",

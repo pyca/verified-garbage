@@ -74,7 +74,8 @@ fn from_ecb() {
     }
 }
 
-/// Unaligned buffers, partial segments and guards across batch boundaries.
+/// Unaligned buffers, partial segments and guards, at lengths around
+/// multiples of eight and sixteen blocks.
 #[test]
 fn unaligned_buffers() {
     let key = crate::bytes::pattern_array(17, 3);

@@ -1,30 +1,27 @@
 //! RSAES-OAEP encryption and decryption (RFC 8017 §7.1).
 //!
 //! [`encrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`
-//! (contract `VG.Spec.RsaOaep.encryptPrecomputedContract`), with a seed from
-//! the operating system's generator; it encrypts the encoded message with
-//! `vg_rsa_public_precomputed_checked`, reusing the public key's precomputed
-//! modulus values (on x86-64, with ADX multiplication when available).
+//! (contract `VG.Spec.RsaOaep.encryptPrecomputedContract`), given the public
+//! key's precomputed modulus values and a seed from the operating system's
+//! generator.
 //!
 //! [`decrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` (contract
 //! `VG.Spec.RsaOaep.decryptContract`), which computes the encoded message
-//! with `vg_rsa_private_checked`, as [`PrivateKey::private_op`] does, then
-//! decodes it in constant time: whether the decoding succeeds, where the
-//! message starts and its length do not affect the timing of the verified
-//! function, and every failure (of the ciphertext, not below the modulus,
-//! or of its decoding) is the one error [`Error::Decryption`]. The message
-//! is returned, and with it its length.
+//! as [`PrivateKey::private_op`] does, then decodes it in constant time:
+//! whether the decoding succeeds, where the message starts and its length do
+//! not affect the timing of the verified function, and every failure (of the
+//! ciphertext, not below the modulus, or of its decoding) is the one error
+//! [`Error::Decryption`]. The message is returned, and with it its length.
 //!
 //! The hash functions are any of SHA-1, SHA-224, SHA-256, SHA-384,
 //! SHA-512, SHA-512/224 and SHA-512/256, with MGF1 over the same hash
 //! function or over SHA-1 (the pairs in use, and those Wycheproof tests);
-//! other pairs are refused ([`Error::UnsupportedHash`]). On an x86-64 CPU
-//! with the SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and
-//! AVX512_IFMA), and on an AArch64 CPU with the SHA-2 or SHA-3
-//! instructions, it uses the faster compression functions and private-key
-//! operations, as [`hashes`](crate::hashes) and [`rsa`](crate::rsa) do.
-//! Each pair has a file, `<H>_mgf1_<G>.rs`, naming its verified functions
-//! for each choice of those implementations (`oaep_pair!`).
+//! other pairs are refused ([`Error::UnsupportedHash`]). The variants of
+//! each pair's functions, with the same contracts, are one for each choice
+//! of the implementations of the hash functions and of the RSA operations
+//! that [`hashes`](crate::hashes) and [`rsa`](crate::rsa) make. Each pair
+//! has a file, `<H>_mgf1_<G>.rs`, naming its verified functions for each
+//! choice (`oaep_pair!`).
 //!
 //! This module only checks the lengths, draws the seed and allocates the
 //! memory the functions work in.
@@ -395,13 +392,12 @@ fn decrypt_with(
 /// choose it.
 ///
 /// Each arm names, for one choice of the hash functions' implementations,
-/// encryption and decryption calling RSA's baseline code, each with the
-/// generated constants of the CPU features it needs (none for the baseline
-/// ISA's), and, for the arms that have them, used on x86-64 only, those
-/// calling its other RSA backends: `encrypt_adx`, `encrypt_ifma`,
-/// `decrypt_adx` and `decrypt_ifma`; and, used on ARMv7 only, decryption
-/// calling the private-key operation with `umaal`, `decrypt_umaal`
-/// and encryption through its UMAAL public operation, `encrypt_umaal`.
+/// encryption and decryption for RSA's `Baseline`, each with the generated
+/// constants of the CPU features it needs (none for the baseline ISA's),
+/// and, for the arms that have them, those for its other backends: used on
+/// x86-64 only, `encrypt_adx`, `encrypt_ifma`, `decrypt_adx` and
+/// `decrypt_ifma`; and, used on ARMv7 only, `decrypt_umaal` and
+/// `encrypt_umaal`.
 /// With MGF1 over another hash function, the arms after `never` are the
 /// pairs of implementations no CPU chooses: they are there for the match to
 /// be exhaustive, and the test checks that no set of features chooses them.

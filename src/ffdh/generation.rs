@@ -299,8 +299,8 @@ mod tests {
 
     #[test]
     fn full_width_attempt_counter_and_request_words() {
-        // The maximum-size policy starts at 2^32 attempts. Its low half
-        // is zero, so both the budget test and decrement must read u64.
+        // The maximum-size policy starts at 2^32 attempts, a budget whose
+        // low 32 bits are zero.
         let bits = 8192;
         let len = bits / 8;
         let mut state = Controller::new(bits, 2).unwrap();
@@ -308,8 +308,8 @@ mod tests {
         let mut p = vec![0xaa; len];
         let mut ws = Scratch::new(16 * len + 32);
         state.0[3] = u64::MAX;
-        // 2^8192 - 1 fails the generator congruence. Its rejection must
-        // borrow from the high half and continue to an entropy request.
+        // 2^8192 - 1 fails the generator congruence: the search goes on to
+        // an entropy request.
         assert_eq!(
             state.search(bits, 2, &vec![0xff; len], &mut p, &mut ws),
             (0, len, 512 * len)
@@ -412,8 +412,8 @@ mod tests {
     #[test]
     fn composite_q_at_modulus_width_boundaries() {
         // p with q = (p − 1) / 2 divisible by seven, while p passes the
-        // generator's congruence and the small-prime sieve. A 513-bit p has
-        // one more limb than q: loading q must clear that limb.
+        // generator's congruence and has no small prime factor, at widths
+        // on both sides of a 64-bit word boundary.
         for bits in [512_usize, 513, 2049, 8192] {
             let len = bits.div_ceil(8);
             let mut candidate = vec![0; len];

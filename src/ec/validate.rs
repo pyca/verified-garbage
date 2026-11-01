@@ -1,5 +1,4 @@
-//! Standalone public-key validation. Encoding checks, coordinate decoding,
-//! workspace setup, and point validation are one call of verified code.
+//! Standalone public-key validation, in one call of a verified function.
 
 #![cfg(target_arch = "x86_64")]
 

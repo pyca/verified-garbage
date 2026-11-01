@@ -199,8 +199,8 @@ fn limits_and_lengths() {
         assert_eq!(iv, [0x3c; 16]);
         // Every length is a prefix of the longest message's ciphertext, and
         // round-trips.
-        // Cross several eight-block batches, the four-block tail, and every
-        // partial segment. Offsets exercise unaligned in-place loads/stores.
+        // Every length below 35 blocks, partial segments included, each
+        // decrypted in place at an offset of its length modulo 16, with guards.
         let message: Vec<_> = crate::bytes::pattern(16 * 34 + 16, 7, 1);
         let mut ciphertext = message.clone();
         ctx.encrypt(&mut iv, &mut ciphertext);

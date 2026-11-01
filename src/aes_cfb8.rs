@@ -7,13 +7,13 @@
 //! (`VG.Spec.Cfb8.aesEncryptContract`, `aesDecryptContract`) replace each
 //! byte with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))` or `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`
 //! from the input block at `iv`, which they replace with the one to
-//! continue from, in constant time. They call `vg_aes_encrypt_blocks` on
-//! one block for each byte.
+//! continue from, in constant time.
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
-//! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
-//! constant-time bitsliced implementation runs.
+//! The variants of these functions, with the same contracts, are chosen
+//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
+//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
+//! `_aesni` ones; on AArch64, the `_aes` ones.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -50,8 +50,8 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
+/// The variant of a function for `backend`: the baseline one, or its
+/// `_aesni`, `_vaes` or `_aes` one.
 macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {

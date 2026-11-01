@@ -27,8 +27,7 @@ pub fn bench(c: &mut Criterion) {
     // The shared sizes, and TLS 1.3's records of 1 KiB and 4 KiB of payload,
     // whose plaintext is one byte longer (the content type): a partial last
     // block, which ChaCha20-Poly1305 authenticates at these sizes too; and
-    // 480 bytes (30 blocks), near where the x86-64 IFMA code hands short
-    // inputs to other code.
+    // 480 bytes (30 blocks).
     const SIZES: [usize; 6] = [64, 480, 1024, 1025, 4097, 16384];
     let key = [0x0b; 32];
     let mut g = c.benchmark_group("poly1305");

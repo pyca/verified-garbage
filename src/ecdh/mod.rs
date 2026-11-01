@@ -12,7 +12,7 @@
 //! one call too (`vg_ec_<curve>_public_key`).
 //!
 //! On x86-64, `P256::validate_public_key` (and the same method on each
-//! curve) validates an uncompressed public key without scalar multiplication.
+//! curve) validates an uncompressed public key as an exchange does.
 
 #![cfg(any(
     target_arch = "x86_64",

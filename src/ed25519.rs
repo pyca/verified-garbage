@@ -1,19 +1,17 @@
 //! Ed25519 (RFC 8032), deterministic signatures from 32-byte seeds.
 //!
-//! Key derivation, signing, and verification each call one complete verified
-//! assembly operation, including SHA-512 (but for key derivation on x86-64
-//! and AArch64, below), on every supported architecture. x86-64 and AArch64
-//! variants follow the selected SHA-512 backend. On
-//! x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants multiply field
-//! elements with `mulx`, `adcx` and `adox` (and select the fixed-base comb's
-//! entries with AVX2), and on those that also have
-//! AVX512F, AVX512_IFMA and AVX512VL, the `_ifma` variants use four-lane
-//! field multiplications for verification's doublings and eight-lane ones
-//! for the fixed-base comb of key derivation and signing. On x86-64 and
-//! AArch64, [`SigningKey`] keeps the seed's SHA-512 digest, computed once in
-//! [`SigningKey::from_seed`] with the verified SHA-512, and key derivation
-//! (`vg_ed25519_public_key_expanded`) and signing
-//! (`vg_ed25519_sign_expanded`) read it rather than hashing the seed again.
+//! Key derivation, signing, and verification each call one verified
+//! function, including SHA-512 (but for key derivation on x86-64 and
+//! AArch64, below), on every supported architecture. On x86-64 and AArch64,
+//! their variants, with the same contracts, are one for each pair of the
+//! implementations of SHA-512 (`Sha512Backend`) and of the field (`Field`)
+//! this CPU runs; on x86-64, `Field::select` chooses the `_ifma` variants,
+//! then the `_adx` ones, on CPUs with the features their `_FEATURES`
+//! constants name. On x86-64 and AArch64, [`SigningKey`] keeps the seed's
+//! SHA-512 digest, computed once in [`SigningKey::from_seed`] with the
+//! verified SHA-512, and key derivation (`vg_ed25519_public_key_expanded`)
+//! and signing (`vg_ed25519_sign_expanded`) read it rather than hashing the
+//! seed again.
 //! Secret scratch values are cleared after use.
 
 #![cfg(any(
@@ -56,16 +54,12 @@ use verified_garbage_cpu::Features;
 /// The field multiplications of the complete operations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Field {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox`, and AVX2 for the
-    /// fixed-base comb's selection (the `_adx` variants).
+    /// `_adx`.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// `Adx`, and AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for
-    /// verification's doublings (on `ymm` registers, with AVX512VL) and for
-    /// the fixed-base comb of key derivation and signing (on `zmm` registers,
-    /// with AVX512F) (the `_ifma` variants).
+    /// `_ifma`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -480,9 +474,9 @@ mod x86_64_tests {
 
     /// The implementations chosen with exactly the features of each one,
     /// with only one of BMI2 and ADX, which `_adx` needs both of, with both
-    /// but without the AVX2 of `_adx`'s comb, with all of `_ifma`'s but
+    /// but without the AVX2 `_adx` needs too, with all of `_ifma`'s but
     /// AVX512VL, and with verification's `_ifma` features alone, without the
-    /// AVX512F of the comb of key derivation and signing.
+    /// AVX512F of key derivation's and signing's.
     #[test]
     fn select() {
         let cases: [(Features, Sha512Backend, Field); 14] = [

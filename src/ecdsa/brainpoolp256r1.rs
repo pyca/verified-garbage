@@ -1,7 +1,8 @@
 //! ECDSA over brainpoolP256r1: deterministic signatures with HMAC-SHA-256
-//! (`vg_ecdsa_brainpoolp256r1_sha256_sign`, which calls `vg_ecdsa_brainpoolp256r1_sign`), public
+//! (`vg_ecdsa_brainpoolp256r1_sha256_sign`), public
 //! keys (`vg_ec_brainpoolp256r1_public_key`), and verification (`vg_ecdsa_brainpoolp256r1_verify`),
-//! each on ARMv7 with `umaal` where the CPU has it (`_umaal`).
+//! and their `_umaal` variants on ARMv7 CPUs with the features their
+//! `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -640,7 +640,7 @@ mod tests {
         assert_eq!(new(&n, &[3], &[0, 0], &p, &q), bad);
         assert_eq!(new(&n, &[3], &[1; 65], &p, &q), bad);
         assert_eq!(new(&n, &[3], &[1], &[0; 3], &q), bad);
-        // `p = 1`, whose inverse modulus the general inverse makes 3.
+        // `p = 1`.
         assert_eq!(new(&n, &[3], &[1], &[0, 1], &q), bad);
         assert_eq!(new(&n, &[3], &[1], &n, &q), bad);
         assert_eq!(new(&n, &[3], &[1], &p, &[]), bad);
@@ -698,8 +698,7 @@ mod tests {
                             1 => &mut key.dq,
                             _ => &mut key.qinv,
                         };
-                        // An invalid range must keep rejecting the key even
-                        // when the shortened reduction's bound does not hold.
+                        // A value out of its range is refused.
                         value.fill(byte);
                         assert!(!key.check_key());
                     }
@@ -708,9 +707,9 @@ mod tests {
         }
     }
 
-    // The bounded full-exponent reductions rely on checks that precede
-    // them. Exercise both failed prerequisites and padded factor lengths
-    // through the primitive, preserving the FFI's length constraints.
+    // A `d` not below `n`, a `p` or `q` of 0, 1 or 255, and values padded
+    // with leading zeros, through the primitive, preserving the FFI's length
+    // constraints.
     #[test]
     fn check_key_full_exponent_bounds() {
         for a in SIZES {

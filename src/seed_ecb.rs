@@ -1,10 +1,12 @@
 //! SEED ECB (RFC 4269, SP 800-38A §6.1), in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives.
-//! Each operation accepts complete 16-byte blocks, including empty input.
-//! ECB runs sixteen blocks at a time (eight on ARMv7 and x86), computing each
-//! round's `G` functions bitsliced in general-purpose registers, with no
-//! table lookups.
+//! ECB is the block cipher applied to each block on its own, so the whole
+//! mode is verified assembly: `vg_seed_expand_key` (contract
+//! `VG.Spec.Seed.expandKeyContract`) writes the key schedule, and
+//! `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` (`ecbEncryptContract`,
+//! `ecbDecryptContract`) replace each block with its encryption or
+//! decryption, in constant time. Each operation accepts complete 16-byte
+//! blocks, including empty input.
 
 #![cfg(any(
     target_arch = "x86_64",

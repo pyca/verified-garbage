@@ -185,9 +185,8 @@ fn public_subgroup_windows() {
         let key = PublicKey::from_components(&p, &q, generator, public).unwrap();
         assert!(!key.verify(&digest, &signature));
     }
-    // Malformed odd orders still execute the public exponentiation path.
-    // Exercise zero windows, dense windows and every table digit. With
-    // g = -1 and odd q, subgroup validation must always fail.
+    // Malformed odd orders, of sparse and dense bit patterns. With g = -1
+    // and odd q, subgroup validation must always fail.
     for pattern in [0x00, 0xff, 0xf0, 0x01] {
         let mut order = vec![pattern; q.len()];
         order[0] |= 0x80;

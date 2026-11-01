@@ -6,16 +6,16 @@
 //! `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` (`VG.Spec.Cbc.aesEncryptContract`,
 //! `aesDecryptContract`) replace each block with its CBC encryption or
 //! decryption and the chaining value with the last ciphertext block, in
-//! constant time. Decryption can decipher independent blocks in parallel;
-//! encryption processes one block at a time. This module checks the
-//! lengths, which the assembly does not, and holds the key schedule.
+//! constant time. This module checks the lengths, which the assembly does
+//! not, and holds the key schedule.
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
-//! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, AES encryption keeps its keys and chaining state in registers;
-//! CPUs with AES and SHA3 use seven interleaved states for decryption;
-//! AES alone runs the `_aes` functions. Elsewhere, and on other CPUs, the
-//! constant-time bitsliced implementation runs.
+//! The variants of these functions, with the same contracts, are chosen
+//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
+//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
+//! `_aesni` ones; on AArch64, the `_aes` ones, and for decryption
+//! `vg_aes_cbc_decrypt_aes_sha3` instead of `vg_aes_cbc_decrypt_aes` on CPUs
+//! with the features `VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES` names.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -54,8 +54,8 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
+/// The variant of a function for `backend`: the baseline one, or its
+/// `_aesni`, `_vaes` or `_aes` one.
 macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {
@@ -252,8 +252,8 @@ impl AesCbc {
             );
         }
         // The scratch space may hold the key schedule, the data and our
-        // caller's registers. The emitted, proved write bound permits the
-        // register-only AES paths to leave this initialized buffer alone.
+        // caller's registers: wipe the bytes the function's proved write
+        // bound (`scratch_written`) allows it to write, if any.
         if scratch_written != 0 {
             zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
         }

@@ -4,9 +4,8 @@
 //! `vg_chacha20_poly1305_seal` and `vg_chacha20_poly1305_open` (contracts
 //! `VG.Spec.ChaCha20Poly1305.sealContract` and `openContract`); this module
 //! only chooses the implementation and checks the length limit. They take the
-//! key, the nonce and the tag by pointer, and keep their working space (which
-//! holds the one-time Poly1305 key and keystream) on their own stack, zeroing
-//! it before they return.
+//! key, the nonce and the tag by pointer, and keep their working space on
+//! their own stack, zeroing it before they return.
 //!
 //! Their variants, with the same contracts, are those of ChaCha20's
 //! `crate::chacha20::Backend`, each with its suffix. On x86-64, `select`
@@ -415,9 +414,8 @@ mod tests {
     }
 
     /// Out of place, from pieces: the ciphertext and the tag of the
-    /// concatenation of the pieces encrypted in place, for any split (with
-    /// AVX-512, on both sides of 960 bytes, where `seal_gather` turns to
-    /// `seal_split`); and the errors.
+    /// concatenation of the pieces encrypted in place, for any split, at
+    /// lengths from 0 to 4097 bytes; and the errors.
     #[test]
     fn encrypt_pieces() {
         let key = core::array::from_fn(|i| (i * 5) as u8);
@@ -468,7 +466,7 @@ mod tests {
     }
 
     /// `encrypt` agrees with `encrypt_in_place` at every length up to 300
-    /// bytes, written at outputs of every alignment the copy distinguishes.
+    /// bytes, written at outputs of several alignments.
     #[test]
     fn encrypt_lengths() {
         let aead = ChaCha20Poly1305::new(&core::array::from_fn(|i| (i * 3) as u8));

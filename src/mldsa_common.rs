@@ -10,25 +10,24 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-/// The implementations of ML-DSA's verified functions: their instances for
-/// the polynomial arithmetic and Keccak they call (`Generic/MlDsaArith/` and
-/// their accelerated Keccak implementation).
+/// The implementations of ML-DSA's verified functions: each variant but
+/// `Scalar` is the one with its suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// The target's baseline ISA (on x86-64, SSE2 polynomial arithmetic),
-    /// with scalar Keccak.
+    /// The baseline implementation.
     Scalar,
-    /// AArch64 with the SHA-3 extension, for Keccak.
+    /// `_sha3`.
     #[cfg(target_arch = "aarch64")]
     Sha3,
-    /// x86-64 with AVX2, for the polynomial arithmetic.
+    /// `_avx2`.
     #[cfg(target_arch = "x86_64")]
     Avx2,
 }
 
 impl Backend {
-    /// Select independently of standalone hashing: paired ML-DSA sampling has
-    /// different performance characteristics from a single Keccak stream.
+    /// Chosen by the features `required` of ML-DSA's own variants, not with
+    /// `crate::hashes::sha3::Backend`: their speed is not the standalone
+    /// hash functions'.
     #[cfg_attr(
         not(any(target_arch = "x86_64", target_arch = "aarch64")),
         allow(unused_variables)

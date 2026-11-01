@@ -264,7 +264,7 @@ fn against_reference() {
             );
         }
     }
-    // Several chunks of counter mode and GHASH, unaligned.
+    // Long messages: 70,001 bytes, and 70,000 of them from an odd address.
     let long = bytes(8, 70_001);
     check(&key, &k, &bytes(9, 12), &bytes(10, 3), &long);
     check(&key, &k, &bytes(9, 7), &bytes(10, 3), &long[1..]);

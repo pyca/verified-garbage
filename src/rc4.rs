@@ -3,14 +3,8 @@
 //! RC4 is obsolete and insecure; this module exists for legacy compatibility.
 //! It provides no nonce or authentication. Initialization and in-place XOR
 //! are the verified primitives (`VG.Spec.Rc4.initContract` and
-//! `VG.Spec.Rc4.applyContract`). Secret indices never address memory: on
-//! AArch64 the permutation stays in sixteen AdvSIMD registers for a whole
-//! call, read with `tbl`/`tbx` and written with `cmeq`/`bit`; on x86-64,
-//! PPC64LE, RISC-V, x86 and 32-bit Arm the primitives scan it at fixed
-//! addresses with masked 64-bit words (x86-64, PPC64LE and RISC-V, which
-//! keeps it in an aligned frame on the stack) and 32-bit words. Only
-//! pointers, lengths and the stream position modulo 256 may affect the
-//! leakage trace.
+//! `VG.Spec.Rc4.applyContract`). Only pointers, lengths and the stream
+//! position modulo 256 may affect the leakage trace.
 
 #![cfg(any(
     target_arch = "x86_64",

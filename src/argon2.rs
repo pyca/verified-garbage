@@ -49,7 +49,7 @@ use verified_garbage_cpu::Features;
 /// backend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CompressBackend {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Scalar,
     /// `_g_avx2`.
     #[cfg(target_arch = "x86_64")]
@@ -359,13 +359,14 @@ impl<'a> Derivation<'a> {
             (Blake2bBackend::Avx2, CompressBackend::Avx512) => vg_argon2_blake2b_avx2_g_avx512,
             #[cfg(target_arch = "x86_64")]
             (Blake2bBackend::Avx512, CompressBackend::Avx512) => vg_argon2_blake2b_avx512_g_avx512,
-            // BLAKE2b's AVX2 backend and G's AVX2 implementation need the same
-            // features, AVX and AVX2, and G's is chosen whenever they are
-            // present and AVX-512F is not; BLAKE2b's AVX-512 backend needs
-            // AVX, AVX2, AVX-512F and AVX512VL, a superset of what G's AVX-512
-            // code needs (`select_pairs` checks it): a CPU never gets one of
-            // them without the other, and never BLAKE2b's AVX-512 backend
-            // without G's, so these are never chosen.
+            // BLAKE2b's `_avx2` backend needs the features that
+            // `VG_ARGON2_G_AVX2_FEATURES` names, and G's `_avx2` is chosen
+            // whenever they are present and `VG_ARGON2_G_AVX512_FEATURES` are
+            // not; BLAKE2b's `_avx512` backend needs a superset of
+            // `VG_ARGON2_G_AVX512_FEATURES` (`select_pairs` checks it): a CPU
+            // never gets one of the `_avx2` ones without the other, and never
+            // BLAKE2b's `_avx512` backend without G's, so these are never
+            // chosen.
             // NO-COVERAGE-START
             #[cfg(target_arch = "x86_64")]
             (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_g_avx2,

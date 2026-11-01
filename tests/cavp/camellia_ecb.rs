@@ -94,7 +94,7 @@ fn ntt(text: &str) -> Vec<Record> {
 }
 
 /// Each block alone, all the blocks of each key at once, and its first
-/// 1 to 17 blocks (fewer than, as many as and more than a group of eight).
+/// 1 to 17 blocks.
 fn check_ntt(text: &str, key_len: usize) {
     let records = ntt(text);
     assert_eq!(records.len(), 10);

@@ -10,16 +10,6 @@
 //! or decryption from the chaining value at `iv`, and the chaining value with
 //! the one to continue from (the last ciphertext block), in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
-//! On AArch64, encryption uses a single-block core with the S-box held in
-//! vector registers. Decryption uses bitsliced SM4 on sixteen independent
-//! blocks. On x86-64, both directions use bitsliced SM4: decryption handles
-//! sixteen blocks at a time, while encryption follows the serial feedback
-//! chain in batches containing one block. On x86, both take one block at a time, in a batch of
-//! eight (about eight times ECB's cost). ARMv7 prepares round keys once per
-//! call. Encryption follows the serial feedback chain; decryption transforms
-//! eight independent ciphertext blocks before combining them with preceding
-//! ciphertext. PPC64LE prepares the round keys once per call too, and takes
-//! one block at a time in both directions, in a bitsliced batch of sixteen.
 //! This module checks the lengths and holds the key schedule.
 
 #![cfg(any(

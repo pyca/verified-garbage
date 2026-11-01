@@ -141,9 +141,8 @@ fn cbc_record() {
     decryptor.finalize().unwrap();
 }
 
-/// Many blocks at once (sixteen at a time, then the rest) match one block
-/// at a time, for every count up to past three batches, with the longest
-/// key.
+/// Many blocks at once match one block at a time, for every count up to
+/// 50, with the longest key.
 #[test]
 fn many_blocks() {
     let key: Vec<u8> = crate::bytes::pattern(56, 37, 11);

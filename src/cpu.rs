@@ -257,7 +257,8 @@ fn runtime() -> u32 {
         | (u32::from(aarch64_sha3()) * feature::SHA3)
         | (u32::from(aarch64_sve2()) * feature::SVE2)
         // AdvSIMD is the AArch64 baseline used by the verified ISA.
-        // Keep a mask bit so tests and benchmarks can select scalar code.
+        // Keep a mask bit so tests and benchmarks can turn off the variants
+        // that name it.
         | feature::NEON
 }
 

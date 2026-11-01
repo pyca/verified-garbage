@@ -126,15 +126,12 @@ fn ecb() {
     ] {
         let e = example(&section(from, to));
         check_ecb(&e.key, &e.plaintext, &e.ciphertext);
-        // The same blocks many times over: more than one group of sixteen,
-        // and a partial group.
+        // The same blocks many times over.
         check_ecb(&e.key, &e.plaintext.repeat(21), &e.ciphertext.repeat(21));
     }
 }
 
-/// ECB of buffers at every offset modulo 8: on RISC-V, the copies to and
-/// from the working space move doublewords for the aligned buffer and bytes
-/// for the others.
+/// ECB of buffers at every offset modulo 8.
 #[test]
 fn unaligned_data() {
     let e = example(&section("A.2.1.2.  Example 2", "A.2.2.  SM4-CBC Examples"));

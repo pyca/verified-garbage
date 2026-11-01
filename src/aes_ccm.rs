@@ -25,7 +25,7 @@
 //! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones
 //! (both with `vg_aes_expand_key_aesni`); on x86, the `_aesni` ones; on
 //! AArch64, the `_aes` ones. On x86-64 and AArch64, when the associated data
-//! and the payload are longer than 32 bytes together (`chains_long`), the
+//! and the payload are longer than 32 bytes together (`cbc`), the
 //! `_aesni_cbc` ones (with either x86-64 backend) or the `_aes_cbc` ones run
 //! instead, whose features `select` checks too.
 
@@ -138,7 +138,7 @@ fn select(f: Features) -> Backend {
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
-/// the AES-CCM functions for it: both instances for the AES extension.
+/// the AES-CCM functions for it: its `_aes` and `_aes_cbc` ones.
 #[cfg(target_arch = "aarch64")]
 fn select(f: Features) -> Backend {
     const AES: Features = Features::all(&[

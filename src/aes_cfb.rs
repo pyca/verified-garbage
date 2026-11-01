@@ -7,16 +7,16 @@
 //! (`VG.Spec.Cfb.aesEncryptContract`, `aesDecryptContract`) replace whole
 //! blocks with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the
 //! block at `iv`, which they replace with the last ciphertext block, in
-//! constant time. They call `vg_aes_encrypt_blocks` on one block at a time.
-//! This module holds the key schedule and handles a partial last segment:
-//! CFB encryption of a zero block is `CIPH_K` of the block to continue from,
-//! whose first bytes it XORs into the rest of the input, in either
-//! direction.
+//! constant time. This module holds the key schedule and handles a partial
+//! last segment: CFB encryption of a zero block is `CIPH_K` of the block to
+//! continue from, whose first bytes it XORs into the rest of the input, in
+//! either direction.
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
-//! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
-//! constant-time bitsliced implementation runs.
+//! The variants of these functions, with the same contracts, are chosen
+//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
+//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
+//! `_aesni` ones; on AArch64, the `_aes` ones.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -53,8 +53,8 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
+/// The variant of a function for `backend`: the baseline one, or its
+/// `_aesni`, `_vaes` or `_aes` one.
 macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {

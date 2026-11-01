@@ -9,10 +9,11 @@
 //! with its `CIPHER` or `INVCIPHER`, in constant time. This module checks
 //! the lengths, which the assembly does not, and holds the key schedule.
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
-//! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
-//! constant-time bitsliced implementation runs.
+//! The variants of these functions, with the same contracts, are chosen
+//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
+//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
+//! `_aesni` ones; on AArch64, the `_aes` ones.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -48,8 +49,8 @@ use crate::cpu::detected;
 use crate::zeroize::{zeroize, zeroize_raw};
 use verified_garbage_cpu::Features;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
+/// The variant of a function for `backend`: the baseline one, or its
+/// `_aesni`, `_vaes` or `_aes` one.
 macro_rules! instance {
     ($backend:expr, $scalar:expr, $aesni:expr, $vaes:expr, $aes:expr) => {
         match $backend {
@@ -249,7 +250,8 @@ impl AesEcb {
 const SCRATCH: usize = size_of::<[u64; 256]>();
 
 /// The bytes of the working space `vg_aes_encrypt_blocks_aesni` writes: none
-/// on x86-64; on x86, where it saves registers there, all of them.
+/// on x86-64 (`VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN`); on x86, which
+/// states no smaller bound, all of them.
 #[cfg(target_arch = "x86_64")]
 const ENCRYPT_AESNI_WRITTEN: usize = VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN;
 #[cfg(target_arch = "x86")]

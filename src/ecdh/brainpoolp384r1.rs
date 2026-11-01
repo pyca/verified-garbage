@@ -1,6 +1,6 @@
 //! ECDH over brainpoolP384r1 (`vg_ecdh_brainpoolp384r1`), and public keys
-//! (`vg_ec_brainpoolp384r1_public_key`), each on ARMv7 with `umaal` where
-//! the CPU has it (`_umaal`).
+//! (`vg_ec_brainpoolp384r1_public_key`), and their `_umaal` variants on ARMv7
+//! CPUs with the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",

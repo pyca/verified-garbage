@@ -10,10 +10,7 @@
 //! the output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`,
 //! which it replaces with the counter block to continue from, in constant
 //! time: its timing depends on none of the key, the counter block and the
-//! data. It processes eight counter blocks at a time on x86-64 and
-//! AArch64, and one at a time on x86, ARMv7, PPC64LE and RISC-V. Encryption is bitsliced in
-//! general-purpose registers, with the S-boxes as Boolean circuits and no
-//! table lookups. This module holds the subkeys and handles a partial last block
+//! data. This module holds the subkeys and handles a partial last block
 //! (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block
 //! XORs them with the first bytes of the next output block.
 //!

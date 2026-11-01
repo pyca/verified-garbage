@@ -259,8 +259,9 @@ fn select(features: Features, _p_len: usize) -> Generate {
     }
 }
 
-/// The ARMv7 implementations: the Miller–Rabin round's `umaal` variant where
-/// the operating system runs on A-profile cores alone, else the baseline.
+/// The ARMv7 implementations: `vg_dsa_generate_parameters_umaal` where the
+/// operating system runs on A-profile cores alone, on CPUs with the features
+/// its `_FEATURES` constant names, else the baseline.
 #[cfg(all(
     target_arch = "arm",
     any(

@@ -122,8 +122,9 @@ impl AesGcmSiv {
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
         };
-        // The instances with AES-NI or VAES call `vg_aes_expand_key_aesni`,
-        // those with the AArch64 AES instructions `vg_aes_expand_key_aes`.
+        // The variants whose suffix names `aesni` or `vaes` take
+        // `vg_aes_expand_key_aesni`'s schedule, AArch64's
+        // `vg_aes_expand_key_aes`'s.
         let expand = instance!(k.backend, vg_aes_expand_key,
             x86_64: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni],
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,

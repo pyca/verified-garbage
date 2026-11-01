@@ -31,12 +31,9 @@ pub fn bench(c: &mut Criterion) {
     // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
     // records of interactive traffic fall; and TLS 1.3's records of 512 and
     // 768 bytes, 1 KiB, 4 KiB and 16 KiB (the most a record carries) of
-    // payload, whose plaintext is one byte longer: the content type. 480
-    // bytes (30 blocks of Poly1305) is near where the x86-64 IFMA Poly1305
-    // hands short inputs to other code. 320, 384 and 896 bytes leave 64 to
-    // 255 bytes after the whole 256-byte chunks (of 512 bytes, for 896) of
-    // the AArch64 NEON and SVE2 code. 1350 bytes, a record that fills an
-    // Ethernet frame, leaves 326 after the whole 512-byte chunks.
+    // payload, whose plaintext is one byte longer: the content type; 320,
+    // 384, 480 and 896 bytes, between them; and 1350 bytes, a record that
+    // fills an Ethernet frame.
     const SIZES: [usize; 18] = [
         16, 64, 256, 320, 384, 480, 512, 513, 768, 769, 896, 1024, 1025, 1350, 4096, 4097, 16384,
         16385,
@@ -233,8 +230,7 @@ pub fn bench(c: &mut Criterion) {
 /// record buffer), and OpenSSL streams the pieces through one context. The
 /// sizes are the records' plaintexts, the content type included: short
 /// records (alerts, handshake messages, small requests) up to 192 bytes, and
-/// the lengths around 193, 448 to 449 and 639 to 640 bytes, where the x86-64
-/// code changes how it computes the keystream.
+/// the lengths around 193, 448 to 449 and 639 to 640 bytes.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
