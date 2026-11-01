@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Aes.X86.Callee
 `vg_cmac_aes_subkeys(schedule, rounds, subkeys, scratch)`,
 `vg_cmac_aes_update(schedule, rounds, state, data, n, scratch)` and
 `vg_cmac_aes_finalize(key, rounds, state, last, last_len, scratch)` (see
-`VG.Spec.Cmac.aesSubkeysContract` and the others), every argument on the
+`VG.Proof.Cmac.aesSubkeysContract` and the others), every argument on the
 stack (cdecl), composed of calls of the verified `vg_aes_ctr32`, one block
 at a time: with a counter block `X` and a zero data block, it leaves
 `CIPH_K(X)` in the data block.

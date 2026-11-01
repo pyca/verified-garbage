@@ -49,7 +49,7 @@ ldr r11, [r11, #2188]
 add sp, sp, #2560
 bx lr",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
+        vg_cmac_aes_subkeys = sym super::internal::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -455,8 +455,8 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #2608
 bx lr",
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -902,8 +902,8 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #2608
 bx lr",
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }

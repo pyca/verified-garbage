@@ -13,15 +13,6 @@ namespace VG.Artifacts.CmacAes.PPC64LE
 open VG.Proof.CmacAes.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cmac.aesSubkeysApi.artifact PPC64LE.target {
-    code := Impl.CmacAes.PPC64LE.subkeys
-    verified := subkeys_verified },
-  Spec.Cmac.aesUpdateApi.artifact PPC64LE.target {
-    code := Impl.CmacAes.PPC64LE.update
-    verified := update_verified },
-  Spec.Cmac.aesFinalizeApi.artifact PPC64LE.target {
-    code := Impl.CmacAes.PPC64LE.finalize
-    verified := finalize_verified },
   Spec.Cmac.aesInitApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2336 .r6 Impl.CmacAes.Stream.PPC64LE.init
     stack := 2336

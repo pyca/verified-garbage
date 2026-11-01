@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -16,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -569,9 +571,9 @@ def cbcSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
 
-theorem verified : Verified X86_64.target update (Spec.Cmac.aesUpdateContract X86_64.abi) :=
+theorem verified : Verified X86_64.target update (Proof.Cmac.aesUpdateContract X86_64.abi) :=
   Verified.of_correct correct ct (by
-    sig_implies [Spec.Cmac.aesUpdateContract, Spec.Cmac.aesUpdateSig, cbcX86_64, X86_64.abi,
+    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, cbcX86_64, X86_64.abi,
       X86_64.argRegs] [cbcSat] using cbcSat)
 
 /-! ## As an implementation of `vg_cmac_aes_update` for its callers -/

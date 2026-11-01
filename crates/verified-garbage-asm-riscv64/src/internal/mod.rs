@@ -3,6 +3,15 @@
 #![allow(dead_code)]
 
 #[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_finalize;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_subkeys;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_update;
+
+#[rustfmt::skip]
 pub(crate) mod vg_pbkdf2_hmac_md5_iterate;
 
 #[rustfmt::skip]

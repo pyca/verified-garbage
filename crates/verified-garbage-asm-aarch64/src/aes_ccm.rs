@@ -148,7 +148,7 @@ cbnz x13, 228b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
+        vg_cmac_aes_update_aes = sym super::internal::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -320,7 +320,7 @@ b 234f
 .arch_extension noaes
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
+        vg_cmac_aes_update_aes = sym super::internal::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
     )
 }
 
@@ -469,7 +469,7 @@ cbnz x13, 228b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
+        vg_cmac_aes_update_aes_cbc = sym super::internal::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -641,7 +641,7 @@ b 234f
 .arch_extension noaes
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
+        vg_cmac_aes_update_aes_cbc = sym super::internal::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
     )
 }
 
@@ -784,7 +784,7 @@ cbnz x13, 228b
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -950,6 +950,6 @@ b 234f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }

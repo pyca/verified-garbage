@@ -3,6 +3,36 @@
 #![allow(dead_code)]
 
 #[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_finalize;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_finalize_aesni;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_finalize_vaes;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_subkeys;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_subkeys_aesni;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_subkeys_vaes;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_update;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_update_aesni;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_update_aesni_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod vg_cmac_aes_update_vaes;
+
+#[rustfmt::skip]
 pub(crate) mod vg_hmac_md5_finalize_scratch;
 
 #[rustfmt::skip]

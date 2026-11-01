@@ -31,7 +31,7 @@ structure UpdateImpl where
 
 /-- The existing generic CMAC chaining loop, for any CTR implementation. -/
 def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
-  callee := ⟨Spec.Cmac.aesUpdateApi.name ++ v.suffix, Impl.CmacAes.AArch64.update v.callee⟩
+  callee := ⟨"vg_cmac_aes_update" ++ v.suffix, Impl.CmacAes.AArch64.update v.callee⟩
   noFrames := by
     simp [Impl.CmacAes.AArch64.update, Impl.CmacAes.AArch64.body, Code.noFrames, v.noFrames]
   ok := update_correct v

@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.CmacAes.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Cmac.aesUpdateApi.artifact X86_64.target {
-    suffix := "_aesni_cbc"
-    code := Impl.CmacAes.X86_64.AesNi.update
-    verified := Proof.CmacAes.X86_64.AesNi.verified
-    features := ["aes"] }]
+  ]
 
 end VG.Artifacts.CmacAes.X86_64

@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
 public import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
@@ -16,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
 meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
 meta import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
@@ -444,9 +446,9 @@ def updSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩, ⟨0x8000, 8⟩]
   wr := [⟨0x2000, 16⟩, ⟨0, 2176⟩]
 
-theorem update_verified : Verified Arm.target update (Spec.Cmac.aesUpdateContract Arm.abi 8) :=
+theorem update_verified : Verified Arm.target update (Proof.Cmac.aesUpdateContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => update_wp hs) update_ct (by
-    sig_implies [Spec.Cmac.aesUpdateContract, Spec.Cmac.aesUpdateSig, updateArm, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, updateArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updSat)
 
@@ -463,9 +465,9 @@ def subSat : State where
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x2000, 32⟩, ⟨0x3000, 2176⟩]
 
-theorem subkeys_verified : Verified Arm.target subkeys (Spec.Cmac.aesSubkeysContract Arm.abi 8) :=
+theorem subkeys_verified : Verified Arm.target subkeys (Proof.Cmac.aesSubkeysContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => subkeys_wp hs) subkeys_ct (by
-    sig_implies [Spec.Cmac.aesSubkeysContract, Spec.Cmac.aesSubkeysSig, subkeysArm, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.Cmac.aesSubkeysContract, Proof.Cmac.aesSubkeysSig, subkeysArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [subSat] using subSat)
 
 /-- A state satisfying `vg_cmac_aes_finalize`'s precondition (with no last
@@ -482,9 +484,9 @@ def finSat : State where
   rd := [⟨0x1000, 272⟩, ⟨0x3000, 0⟩, ⟨0x8000, 8⟩]
   wr := [⟨0x2000, 16⟩, ⟨0, 2176⟩]
 
-theorem finalize_verified : Verified Arm.target finalize (Spec.Cmac.aesFinalizeContract Arm.abi 8) :=
+theorem finalize_verified : Verified Arm.target finalize (Proof.Cmac.aesFinalizeContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => finalize_wp hs) finalize_ct (by
-    sig_implies [Spec.Cmac.aesFinalizeContract, Spec.Cmac.aesFinalizeSig, finalizeArm, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.Cmac.aesFinalizeContract, Proof.Cmac.aesFinalizeSig, finalizeArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finSat)
 

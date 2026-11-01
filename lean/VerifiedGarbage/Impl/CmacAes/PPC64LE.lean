@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.AesCbc.PPC64LE
 `vg_cmac_aes_subkeys(schedule = r3, rounds = r4, subkeys = r5, scratch = r6)`,
 `vg_cmac_aes_update(schedule = r3, rounds = r4, state = r5, data = r6, n = r7, scratch = r8)`
 and `vg_cmac_aes_finalize(key = r3, rounds = r4, state = r5, last = r6, last_len = r7, scratch = r8)`
-(see `VG.Spec.Cmac.aesSubkeysContract` and the others), composed of calls of
+(see `VG.Proof.Cmac.aesSubkeysContract` and the others), composed of calls of
 the verified `vg_aes_encrypt_blocks` on one block in place.
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of

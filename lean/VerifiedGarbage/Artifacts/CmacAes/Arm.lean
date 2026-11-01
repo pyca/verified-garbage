@@ -13,18 +13,6 @@ namespace VG.Artifacts.CmacAes.Arm
 open VG.Proof.CmacAes.Arm
 
 def artifacts : List Artifact := [
-  Spec.Cmac.aesSubkeysApi.artifact Arm.target {
-    code := Impl.CmacAes.Arm.subkeys
-    stack := 8
-    verified := subkeys_verified },
-  Spec.Cmac.aesUpdateApi.artifact Arm.target {
-    code := Impl.CmacAes.Arm.update
-    stack := 8
-    verified := update_verified },
-  Spec.Cmac.aesFinalizeApi.artifact Arm.target {
-    code := Impl.CmacAes.Arm.finalize
-    stack := 8
-    verified := finalize_verified },
   Spec.Cmac.aesInitApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
     stack := 2312
