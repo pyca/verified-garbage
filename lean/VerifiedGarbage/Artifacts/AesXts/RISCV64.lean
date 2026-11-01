@@ -14,12 +14,6 @@ namespace VG.Artifacts.AesXts.RISCV64
 open VG.Proof.AesXts.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Xts.aesEncryptApi.artifact RISCV64.target {
-    code := Impl.AesXts.RISCV64.encrypt
-    verified := encrypt_verified },
-  Spec.Xts.aesDecryptApi.artifact RISCV64.target {
-    code := Impl.AesXts.RISCV64.decrypt
-    verified := decrypt_verified },
   Spec.Xts.aesEncryptUnitApi.artifact RISCV64.target {
     code := Impl.AesXts.RISCV64Unit.encrypt
     verified := Unit.encrypt_verified },

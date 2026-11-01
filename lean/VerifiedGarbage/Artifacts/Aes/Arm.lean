@@ -36,12 +36,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey
     stack := 512
     verified := Proof.Aes.Arm.expandKey_framed },
-  Spec.Aes.expandKeyScratchApi.artifact Arm.target {
-    code := Impl.Aes.Arm.expandKey
-    verified := Proof.Aes.Arm.expandKey_verified },
-  Spec.Gcm.ctr32Api.artifact Arm.target {
-    code := Impl.Aes.Arm.ctr32
-    verified := Proof.Aes.Arm.ctr32_verified },
   Spec.Aes.encryptBlocksApi.artifact Arm.target {
     code := Impl.Aes.Arm.encryptBlocks
     verified := Proof.Aes.Arm.Ecb.encryptBlocks_verified },

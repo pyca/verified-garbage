@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
@@ -54,7 +55,7 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Aes.expandKeyContract X86.abi 532).
 /-- The code `c` of `vg_aes_expand_key_scratch` or of one of its variants,
 proved with its working space as an argument and no stack, in its frame. -/
 theorem expandKey_framed {c : Prog isa}
-    (h : Verified X86.target c (Spec.Aes.expandKeyScratchContract X86.abi))
+    (h : Verified X86.target c (Proof.Aes.expandKeyScratchContract X86.abi))
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 0) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 532 3 128 c)
       (Spec.Aes.expandKeyContract X86.abi 532) :=

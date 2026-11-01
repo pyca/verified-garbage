@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
-public import VerifiedGarbage.Spec.Sm4.Prepared
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4 round keys prepared once, and eight-block batches, on ARMv7
@@ -43,15 +43,5 @@ def keyEntry (k : Spec.Sm4.Schedule) : Dir → Nat → Spec.Sm4.Word
 /-- The word of slot `w` of the table: plane `w % 8` of its entry. -/
 def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 32 :=
   Impl.Sm4.planeOf32 (keyEntry k d ((w - tableSlot) / 8)) ((w - tableSlot) % 8)
-
-/-- The table's slots, as bytes. -/
-def layout : Spec.Sm4.Prepared.Layout where
-  table := [(4 * tableSlot, 4 * (tableEnd - tableSlot))]
-  encode k d i := (preparedWord k (ofSpecDir d) (i / 4)).extractLsb' (8 * (i % 4)) 8
-  buf := 4 * tailSlot
-  blocks := 8
-  prepScratch := [(0, 4 * slots)]
-  cryptScratch := [(0, 4 * tableSlot), (4 * savedSlot, 4 * (slots - savedSlot))]
-  size := 4 * slots
 
 end VG.Impl.Sm4.Arm

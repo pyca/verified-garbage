@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Tbl.AArch64
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Spec.Sm4
-public import VerifiedGarbage.Spec.Sm4.Prepared
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-! # A single-block SM4 core with a register-resident S-box
 

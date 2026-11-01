@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Spec.Sm4.Cfb
 meta import VerifiedGarbage.Spec.Sm4.Ofb
 meta import VerifiedGarbage.Spec.Sm4.Ctr
 meta import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
 
 /-!
 # SM4's modes on RISC-V meet their contracts

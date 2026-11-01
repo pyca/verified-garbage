@@ -7,8 +7,8 @@ public import VerifiedGarbage.TCB.Artifact
 # Poly1305: the contracts, on every target
 
 **Trusted** (as every file in `Spec/`). The contracts of streaming Poly1305
-(`init`/`update`/`finalize` and `blocks`, on the representations `Buffered`
-and `Repr`), in terms of `Spec/Poly1305.lean`, for any target: `A` is the
+(`init`/`update`/`finalize`, on the representations `Buffered` and
+`Repr`), in terms of `Spec/Poly1305.lean`, for any target: `A` is the
 target's calling convention. The signatures fix where the arguments are, the
 memory each function may access, disjointness, and that the pointers and
 lengths are public (see `TCB/Sig.lean`); the contracts add the rest. The key,
@@ -21,9 +21,7 @@ bytes of any length, buffering in the state the ones that do not fill a
 block, and `vg_poly1305_finalize` absorbs the buffered bytes and computes the
 tag, as the hashes' `update` and `finalize` do; like theirs, they keep 128
 bytes of working space on the stack, since the state's own working space
-(bytes 72–127) is too small for some targets. `vg_poly1305_blocks` absorbs
-whole blocks into the state of a message of whole blocks, for callers that
-pad their message themselves (e.g. ChaCha20-Poly1305).
+(bytes 72–127) is too small for some targets.
 
 Each contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see
@@ -55,31 +53,6 @@ def initApi : Api where
     Contract: `VG.Spec.Poly1305.initContract`. The streaming state is the accumulator followed by \
     the key (`VG.Spec.Poly1305.Repr`). Constant time: only the pointers may affect timing, not the \
     key."
-  safety := []
-
-/-- `vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize)`. -/
-def blocksSig : Sig where
-  params := [("state", .array true .u64 16), ("blocks", .slice false (.array .u8 16) "n")]
-
-/-- If the state at `state` represents a message `msg` under a key, then
-afterwards it represents `msg` followed by the `n` 16-byte blocks at
-`blocks`, under the same key. -/
-def blocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  blocksSig.contract A (post := fun state blocks n m m' _ =>
-    ∀ key msg, Repr m state key msg → Repr m' state key (msg ++ bytesAt m blocks (16 * n.toNat)))
-    (stack := stack)
-
-/-- `vg_poly1305_blocks` on every target. -/
-def blocksApi : Api where
-  module := "poly1305"
-  name := "vg_poly1305_blocks"
-  sig := blocksSig
-  contracts := some fun A stack => blocksContract A stack
-  summary := "Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` \
-    represents a message under a key, it then represents that message followed by the `n` 16-byte \
-    blocks at `blocks`, under the same key.\n\n\
-    Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may \
-    affect timing, not the state or the data."
   safety := []
 
 /-- `vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize)`.

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.AesXts.PPC64LE
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Proof.Xts.Contract
 import VerifiedGarbage.Proof.AesXts.PPC64LE.Body
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -57,14 +58,14 @@ def sat : State where
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 2176⟩]
 
-theorem encrypt_verified : Verified PPC64LE.target encrypt (Spec.Xts.aesEncryptContract PPC64LE.abi) :=
+theorem encrypt_verified : Verified PPC64LE.target encrypt (Proof.Xts.aesEncryptContract PPC64LE.abi) :=
   Verified.of_correct encrypt_correct encrypt_ct (by
-    sig_implies [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modePPC64LE, AesXts.xtsMode,
+    sig_implies [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modePPC64LE, AesXts.xtsMode,
       ciphOf, PPC64LE.abi, PPC64LE.argRegs, VG.Proof.AesCbc.length_blocksAt] [sat] using sat)
 
-theorem decrypt_verified : Verified PPC64LE.target decrypt (Spec.Xts.aesDecryptContract PPC64LE.abi) :=
+theorem decrypt_verified : Verified PPC64LE.target decrypt (Proof.Xts.aesDecryptContract PPC64LE.abi) :=
   Verified.of_correct decrypt_correct decrypt_ct (by
-    sig_implies [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modePPC64LE, AesXts.xtsMode,
+    sig_implies [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modePPC64LE, AesXts.xtsMode,
       ciphOf, PPC64LE.abi, PPC64LE.argRegs, VG.Proof.AesCbc.length_blocksAt] [sat] using sat)
 
 end VG.Proof.AesXts.PPC64LE

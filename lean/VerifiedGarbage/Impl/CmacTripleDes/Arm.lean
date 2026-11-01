@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.CmacTripleDes.Arm.Round
 `vg_cmac_triple_des_init(key = r0, key_len = r1, out = r2, scratch = r3)`,
 `vg_cmac_triple_des_update(schedule = r0, state = r1, data = r2, n = r3, scratch = [sp])`
 and `vg_cmac_triple_des_finalize(key = r0, state = r1, last = r2, last_len = r3, scratch = [sp])`
-(see `VG.Spec.Cmac.tdesInitContract` and the others). Each encrypts blocks
+(see `VG.Proof.Cmac.tdesInitContract` and the others). Each encrypts blocks
 with `block` (`Arm/Round.lean`), inline: the block as a big-endian 64-bit
 integer in `r0:r1` (its high and low words), the key schedule at `r9` and
 the scratch buffer at `r10`. The block uses every register, so the

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Crypt
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Prepared
+public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
 
 /-! # The single-block SM4 core meets the existing mode interface -/
 

@@ -54,12 +54,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey
     stack := 520
     verified := Proof.Aes.X86_64.scalar_expandKey_framed },
-  Spec.Aes.expandKeyScratchApi.artifact X86_64.target {
-    code := Impl.Aes.X86_64.expandKey
-    verified := Proof.Aes.X86_64.expandKey_verified },
-  Spec.Gcm.ctr32Api.artifact X86_64.target {
-    code := Impl.Aes.X86_64.ctr32
-    verified := Proof.Aes.X86_64.ctr32_verified },
   Spec.Aes.expandKeyApi.artifact X86_64.target {
     suffix := "_aesni"
     code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64
@@ -67,21 +61,6 @@ def artifacts : List Artifact := [
     stack := 520
     verified := Proof.Aes.X86_64.aesni_expandKey_framed
     features := ["aes"] },
-  Spec.Aes.expandKeyScratchApi.artifact X86_64.target {
-    suffix := "_aesni"
-    code := Impl.Aes.X86_64.AesNi.expandKey
-    verified := Proof.Aes.X86_64.AesNi.Key.expandKey_verified
-    features := ["aes"] },
-  Spec.Gcm.ctr32Api.artifact X86_64.target {
-    suffix := "_aesni"
-    code := Impl.Aes.X86_64.AesNi.ctr32
-    verified := Proof.Aes.X86_64.AesNi.ctr32_verified
-    features := ["aes", "ssse3"] },
-  Spec.Gcm.ctr32Api.artifact X86_64.target {
-    suffix := "_vaes"
-    code := Impl.Aes.X86_64.Vaes.ctr32
-    verified := Proof.Aes.X86_64.Vaes.ctr32_verified
-    features := ["aes", "avx", "avx2", "ssse3", "vaes"] },
   Spec.Aes.encryptBlocksApi.artifact X86_64.target {
     code := Impl.Aes.X86_64.encryptBlocks
     verified := Proof.Aes.X86_64.encryptBlocks_verified },

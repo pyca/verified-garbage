@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.AesCbc.AArch64
 
 `vg_aes_xts_encrypt(schedule = x0, rounds = x1, tweak = x2, data = x3, n = x4, scratch = x5)`
 and `vg_aes_xts_decrypt` with the same arguments (see
-`VG.Spec.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
+`VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
 one call of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks`
 on all the blocks, in place. They are generic over the implementation they
 call (`Blocks`): each is emitted once for each implementation (e.g.

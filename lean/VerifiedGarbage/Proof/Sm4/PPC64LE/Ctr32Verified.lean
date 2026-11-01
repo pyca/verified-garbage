@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Sm4.Ctr32Scratch
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr32
 public import VerifiedGarbage.Spec.Sm4.Gcm
+public import VerifiedGarbage.Proof.Sm4.Contract
 import VerifiedGarbage.Proof.Modes.PPC64LE.Ctr32
 import VerifiedGarbage.Proof.Modes.Ctr32
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
@@ -76,19 +77,19 @@ theorem ctr32_correct (s : State) (hs : (modeContract 16 ctr32Post).pre s) :
 
 theorem ctr32_verified : Verified target ctr32 (Proof.Sm4.ctr32ScratchContract abi (slots + 6)) := by
   refine Verified.of_correct ctr32_correct ctr32_constantTime ?_
-  sig_implies [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig,
+  sig_implies [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig,
     Proof.Sm4.ctr32Post, abi, argRegs, modeContract, ctr32Post, modePub_iff, slots_eq] [modeSat] using modeSat
 
-theorem ctr32FrameSat_pre (post : Spec.Sm4.ctr32Sig.Post PPC64LE.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.ctr32Sig.contract PPC64LE.abi (post := post) (writeArgs := true)
+theorem ctr32FrameSat_pre (post : Proof.Sm4.ctr32Sig.Post PPC64LE.abi.ptrBits) :
+    ∃ s, (Proof.Sm4.ctr32Sig.contract PPC64LE.abi (post := post) (writeArgs := true)
       (stack := 0 + 3296)).pre s := by
-  implies_sat [Spec.Sm4.ctr32Sig, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+  implies_sat [Proof.Sm4.ctr32Sig, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
 /-- `vg_sm4_ctr32` with its working space on the stack, wiped before returning. -/
 theorem ctr32_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 ctr32)
-      (Spec.Sm4.ctr32Contract PPC64LE.abi 3296) :=
-  PPC64LE.Verified.stackScratchWiped (sig := Spec.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
+      (Proof.Sm4.ctr32Contract PPC64LE.abi 3296) :=
+  PPC64LE.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
     (n := 408) (post := Proof.Sm4.ctr32Post PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3296) (words := 408) ctr32_verified (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)

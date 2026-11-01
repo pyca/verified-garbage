@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
 import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
@@ -50,7 +51,7 @@ theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32X86.pre s) :
   (correct (CPre.of hs)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
 
 theorem ctr32_verified :
-    Verified X86.target Impl.Aes.X86.AesNi.ctr32 (Spec.Gcm.ctr32Contract X86.abi) :=
+    Verified X86.target Impl.Aes.X86.AesNi.ctr32 (Proof.Gcm.ctr32Contract X86.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
     have a0 : arg ctrSat 0 = 0x1000 := by decide
     have a1 : arg ctrSat 1 = 10 := by decide
@@ -60,7 +61,7 @@ theorem ctr32_verified :
     have a5 : arg ctrSat 5 = 0x4000 := by decide
     have e : argAddr ctrSat 0 = 0x8004 := by decide
     have esp : ctrSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, X86.abi, X86.argSlots,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, Proof.Aes.ctr32X86] [a0, a1, a2, a3, a4, a5, e, esp] using ctrSat)
 
 end VG.Proof.Aes.X86.AesNi

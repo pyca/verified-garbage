@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Poly1305.Contract
 
 @[expose] public section
 
@@ -190,10 +191,10 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksAArch64.pre
   rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocks_verified :
-    Verified AArch64.target Impl.Poly1305.AArch64.Radix64.blocks (Spec.Poly1305.blocksContract AArch64.abi)
+    Verified AArch64.target Impl.Poly1305.AArch64.Radix64.blocks (Proof.Poly1305.blocksContract AArch64.abi)
       :=
   Verified.of_correct blocks_ok blocks_ct (by
-    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig,
+    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig,
       Proof.Poly1305.blocksAArch64, AArch64.abi, AArch64.argRegs] [Proof.Poly1305.AArch64.blocksSat]
       using Proof.Poly1305.AArch64.blocksSat)
 

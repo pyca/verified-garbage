@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKey
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
+meta import VerifiedGarbage.Proof.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -53,9 +55,9 @@ def ekSat : State where
   wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
 
 theorem expandKey_verified :
-    Verified RISCV64.target expandKey (Spec.Aes.expandKeyScratchContract RISCV64.abi) :=
+    Verified RISCV64.target expandKey (Proof.Aes.expandKeyScratchContract RISCV64.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig,
+    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig,
       Proof.Aes.expandKeyRISCV64, RISCV64.abi, RISCV64.argRegs] [ekSat] using ekSat)
 
 end VG.Proof.Aes.RISCV64

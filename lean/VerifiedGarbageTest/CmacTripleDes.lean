@@ -82,7 +82,6 @@ run_cmd do
   unless pass == 14 && fail == 42 do
     throwError "expected 14 valid and 42 invalid verification vectors, checked {pass} and {fail}"
 
-#assert_standard_axioms VG.Spec.Cmac.tdesInitContract
 #assert_standard_axioms VG.Spec.Cmac.tdesStreamInitContract
 #assert_standard_axioms VG.Spec.Cmac.tdesAbsorbContract
 #assert_standard_axioms VG.Spec.Cmac.tdesFinishContract

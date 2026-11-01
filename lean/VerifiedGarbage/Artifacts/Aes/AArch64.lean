@@ -39,28 +39,12 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 Impl.Aes.AArch64.expandKey
     stack := 512
     verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.expandKey_verified },
-  Spec.Aes.expandKeyScratchApi.artifact AArch64.target {
-    code := Impl.Aes.AArch64.expandKey
-    verified := Proof.Aes.AArch64.expandKey_verified },
-  Spec.Gcm.ctr32Api.artifact AArch64.target {
-    code := Impl.Aes.AArch64.ctr32
-    verified := Proof.Aes.AArch64.ctr32_verified },
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     suffix := "_aes"
     code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64
       Impl.Aes.AArch64.Aese.expandKey
     stack := 512
     verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.Aese.Key.expandKey_verified
-    features := ["aes"] },
-  Spec.Aes.expandKeyScratchApi.artifact AArch64.target {
-    suffix := "_aes"
-    code := Impl.Aes.AArch64.Aese.expandKey
-    verified := Proof.Aes.AArch64.Aese.Key.expandKey_verified
-    features := ["aes"] },
-  Spec.Gcm.ctr32Api.artifact AArch64.target {
-    suffix := "_aes"
-    code := Impl.Aes.AArch64.Aese.ctr32
-    verified := Proof.Aes.AArch64.Aese.ctr32_verified
     features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.encryptBlocks

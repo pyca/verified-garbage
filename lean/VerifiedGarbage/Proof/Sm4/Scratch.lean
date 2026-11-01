@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Proof.Framework.Mem

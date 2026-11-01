@@ -112,7 +112,6 @@ run_cmd do
   | .ok () => pure ()
   | .error e => throwError "SM4-GCM: {e}"
 
-#assert_standard_axioms VG.Spec.Sm4.ctr32Contract
 #assert_standard_axioms VG.Spec.Sm4.gcmEncrypt
 #assert_standard_axioms VG.Spec.Sm4.gcmDecrypt
 #assert_standard_axioms VG.Spec.Sm4.Gcm.initContract

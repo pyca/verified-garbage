@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.CmacTripleDes.X86_64.Round
 `vg_cmac_triple_des_init(key = rdi, key_len = rsi, out = rdx, scratch = rcx)`,
 `vg_cmac_triple_des_update(schedule = rdi, state = rsi, data = rdx, n = rcx, scratch = r8)`
 and `vg_cmac_triple_des_finalize(key = rdi, state = rsi, last = rdx, last_len = rcx, scratch = r8)`
-(see `VG.Spec.Cmac.tdesInitContract` and the others). Each encrypts blocks
+(see `VG.Proof.Cmac.tdesInitContract` and the others). Each encrypts blocks
 with `block` (`X86_64/Round.lean`), inline: the block as a big-endian 64-bit
 integer in `rax`, the key schedule at `r14` and the scratch buffer at `r15`.
 

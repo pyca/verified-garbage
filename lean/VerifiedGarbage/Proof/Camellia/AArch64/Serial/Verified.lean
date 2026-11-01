@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Camellia.PreparedEncrypt
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Camellia.PreparedEncrypt
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -42,7 +44,7 @@ public import VerifiedGarbage.Spec.Camellia.Prepared
 
 `prepare_verified` and `crypt_verified`: `vg_camellia_prepare_encrypt_keys`
 and `vg_camellia_encrypt_prepared` against
-`Spec.Camellia.Prepared.prepareEncryptContract` and
+`Proof.Camellia.Prepared.prepareEncryptContract` and
 `encryptPreparedContract`, with `layout`. Each runs the serial core's half
 (`prepare_wp`, `crypt_wp`) from the state narrowed to the core's 418 slots
 of the working space, and then from the whole working space
@@ -189,9 +191,9 @@ def prepSat : State where
   wr := [⟨0x2000, 418 * 8⟩]
 
 theorem prepare_verified :
-    Verified AArch64.target prepareEncrypt (Spec.Camellia.Prepared.prepareEncryptContract layout AArch64.abi) :=
+    Verified AArch64.target prepareEncrypt (Proof.Camellia.Prepared.prepareEncryptContract layout AArch64.abi) :=
   Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Spec.Camellia.Prepared.prepareEncryptContract, Spec.Camellia.Prepared.prepareEncryptSig,
+    sig_implies [Proof.Camellia.Prepared.prepareEncryptContract, Proof.Camellia.Prepared.prepareEncryptSig,
       prepAArch64, AArch64.abi, AArch64.argRegs, size_eq] [prepSat] using prepSat)
 
 /-! ## A block -/
@@ -320,19 +322,19 @@ def cryptSat : State where
   wr := [⟨0x2000, 418 * 8⟩]
 
 theorem crypt_implies :
-    cryptAArch64.Implies (Spec.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) where
+    cryptAArch64.Implies (Proof.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) where
   pre := by
-    sig_implies_pre [Spec.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
+    sig_implies_pre [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
       cryptAArch64, AArch64.abi, AArch64.argRegs]
   post := by
-    sig_implies_post [Spec.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
+    sig_implies_post [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
       cryptAArch64, AArch64.abi, AArch64.argRegs]
   pub := by
-    sig_implies_pub [Spec.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
+    sig_implies_pub [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
       cryptAArch64, AArch64.abi, AArch64.argRegs]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig, AArch64.abi,
+    sig_pre [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig, AArch64.abi,
       AArch64.argRegs]
     sig_and_intros
     all_goals first
@@ -341,7 +343,7 @@ theorem crypt_implies :
       | (rw [size_eq]; decide)
 
 theorem crypt_verified :
-    Verified AArch64.target encryptPrepared (Spec.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) :=
+    Verified AArch64.target encryptPrepared (Proof.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.AArch64.Serial

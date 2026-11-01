@@ -87,14 +87,14 @@ theorem crypt_depth {b : Impl.Aes.X86_64.Blocks} (hb : b.code.depth = 0) :
 /-- The functions calling the block functions of `v`, `vg_aes_xts_encrypt`
 and `vg_aes_xts_decrypt` with `v`'s suffix. -/
 def blocks (v : BlocksImpl) : XtsImpl where
-  enc := ⟨Spec.Xts.aesEncryptApi.name ++ v.suffix, Impl.AesXts.X86_64.encrypt v.enc⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.X86_64.encrypt v.enc⟩
   encDepth := crypt_depth v.encDepth
   encOk := encrypt_correct v
   encCt := crypt_ct true v.encOk v.encCt v.encNosp v.encDepth fun R w m p => (AesCbc.aesWith_state R w m p).symm
   encNosp := crypt_nosp v.encNosp
   encMxcsr := encrypt_mx v
   encSpSafe := encrypt_spSafe v
-  dec := ⟨Spec.Xts.aesDecryptApi.name ++ v.suffix, Impl.AesXts.X86_64.decrypt v.dec⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.X86_64.decrypt v.dec⟩
   decDepth := crypt_depth v.decDepth
   decOk := decrypt_correct v
   decCt := crypt_ct false v.decOk v.decCt v.decNosp v.decDepth fun R w m p => (AesCbc.aesInvWith_state R w m p).symm
@@ -119,14 +119,14 @@ theorem aesni_dec_nosp : NoSp Impl.AesXts.X86_64AesNi.decrypt :=
 /-- The one-pass functions with VAES and VPCLMULQDQ,
 `vg_aes_xts_encrypt_vaes_vpclmul` and `vg_aes_xts_decrypt_vaes_vpclmul`. -/
 def vaesVpclmul : XtsImpl where
-  enc := ⟨Spec.Xts.aesEncryptApi.name ++ "_vaes_vpclmul", Impl.AesXts.X86_64Vaes.encrypt⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ "_vaes_vpclmul", Impl.AesXts.X86_64Vaes.encrypt⟩
   encDepth := by decide +kernel
   encOk := Vaes.encrypt_correct
   encCt := Vaes.encrypt_ct
   encNosp := vaes_enc_nosp
   encMxcsr := Vaes.encrypt_mx
   encSpSafe := Vaes.encrypt_spSafe
-  dec := ⟨Spec.Xts.aesDecryptApi.name ++ "_vaes_vpclmul", Impl.AesXts.X86_64Vaes.decrypt⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ "_vaes_vpclmul", Impl.AesXts.X86_64Vaes.decrypt⟩
   decDepth := by decide +kernel
   decOk := Vaes.decrypt_correct
   decCt := Vaes.decrypt_ct
@@ -139,14 +139,14 @@ def vaesVpclmul : XtsImpl where
 /-- The one-pass functions with AES-NI and PCLMULQDQ,
 `vg_aes_xts_encrypt_aesni_pclmul` and `vg_aes_xts_decrypt_aesni_pclmul`. -/
 def aesniPclmul : XtsImpl where
-  enc := ⟨Spec.Xts.aesEncryptApi.name ++ "_aesni_pclmul", Impl.AesXts.X86_64AesNi.encrypt⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ "_aesni_pclmul", Impl.AesXts.X86_64AesNi.encrypt⟩
   encDepth := by decide +kernel
   encOk := OnePassNi.encrypt_correct
   encCt := OnePassNi.encrypt_ct
   encNosp := aesni_enc_nosp
   encMxcsr := OnePassNi.encrypt_mx
   encSpSafe := OnePassNi.encrypt_spSafe
-  dec := ⟨Spec.Xts.aesDecryptApi.name ++ "_aesni_pclmul", Impl.AesXts.X86_64AesNi.decrypt⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ "_aesni_pclmul", Impl.AesXts.X86_64AesNi.decrypt⟩
   decDepth := by decide +kernel
   decOk := OnePassNi.decrypt_correct
   decCt := OnePassNi.decrypt_ct

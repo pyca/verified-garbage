@@ -28,6 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4 ECB on AArch64: the functions of one direction
@@ -75,7 +76,7 @@ theorem ecbCall_eq (dir : Dir) :
   cases dir <;> rfl
 
 theorem specDirA_dirFlag (dir : Dir) :
-    specDirA dir = Spec.Sm4.directionOf (BitVec.ofNat 64 (dirFlag dir)).toNat := by
+    specDirA dir = Proof.Sm4.directionOf (BitVec.ofNat 64 (dirFlag dir)).toNat := by
   cases dir <;> rfl
 
 theorem movz_sp_ok (s : State) (d : Reg) {v : Nat} (hv : v < 65536) :
@@ -118,19 +119,19 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
   refine WP.seq (WP.of_runBlock ⟨σ, e₂, ?_⟩)
   have g₂ : ∀ r, r ≠ .x3 → σ.gpr r = s₀.gpr r := fun r h => o₂ r h
   have hsp₂ : σ.sp = s₀.sp - BitVec.ofNat 64 16 := sp₂
-  refine WP.callFV (k := Spec.Sm4.ecbDirContract AArch64.abi 3168) ecbAny_framed.1 (rd := s₀.rd) (wr := s₀.wr)
+  refine WP.callFV (k := Proof.Sm4.ecbDirContract AArch64.abi 3168) ecbAny_framed.1 (rd := s₀.rd) (wr := s₀.wr)
     ?_ (fun _ _ h => by rw [rd₂, wr₂]; exact h) (fun _ _ h => by rw [wr₂]; exact h) ?_ (by lit_decide)
   · have e0 : σ.gpr .x0 = s₀.gpr .x0 := g₂ _ (by decide)
     have e1 : σ.gpr .x1 = s₀.gpr .x1 := g₂ _ (by decide)
     have e2 : σ.gpr .x2 = s₀.gpr .x2 := g₂ _ (by decide)
-    sig_pre [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs]
+    sig_pre [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs]
     simp only [e0, e1, e2, x3₂, hsp₂, spSub]
     refine ⟨?_, hrd, hwr, dKD, dSK.sub_left (Region.sub_prefix (by decide)),
       dSD.sub_left (Region.sub_prefix (by decide)), fitK, fitD, ?_⟩
     · rw [Offset.toNat_sub_ofNat]; omega
     · rw [BitVec.toNat_ofNat]; omega
   · intro s' rd' wr' sp' hf hg hv hpost
-    sig_reduce [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs] at hpost
+    sig_reduce [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs] at hpost
     have e0 : σ.gpr .x0 = s₀.gpr .x0 := g₂ _ (by decide)
     have e1 : σ.gpr .x1 = s₀.gpr .x1 := g₂ _ (by decide)
     have e2 : σ.gpr .x2 = s₀.gpr .x2 := g₂ _ (by decide)

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.AesOcb.X86
 
 `vg_aes_xts_encrypt(schedule, rounds, tweak, data, n, scratch)` and
 `vg_aes_xts_decrypt` with the same arguments (see
-`VG.Spec.Xts.aesEncryptContract` and `aesDecryptContract`), every argument
+`VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`), every argument
 on the stack (cdecl), composed of one call of the verified `vg_aes_encrypt_blocks` or
 `vg_aes_decrypt_blocks` on all the blocks, in place. They are generic over
 the implementation they call (`Blocks`): each is emitted once for each

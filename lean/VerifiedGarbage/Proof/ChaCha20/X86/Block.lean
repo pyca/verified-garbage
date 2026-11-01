@@ -6,6 +6,8 @@ public import VerifiedGarbage.Impl.ChaCha20.X86
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -613,13 +615,13 @@ theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86.pre Proof.ChaCha20.b
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
 
 theorem block_verified :
-    Verified X86.target Impl.ChaCha20.X86.block (Spec.ChaCha20.blockContract X86.abi) :=
+    Verified X86.target Impl.ChaCha20.X86.block (Proof.ChaCha20.blockContract X86.abi) :=
   Verified.of_correct block_correct block_ct (by
     have a0 : arg satState 0 = 0x1000 := by decide
     have a1 : arg satState 1 = 0x2000 := by decide
     have e : argAddr satState 0 = 0x4004 := by decide
     have esp : satState.gpr .esp = 0x4000 := rfl
-    sig_implies [Spec.ChaCha20.blockContract, Spec.ChaCha20.blockSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, Proof.ChaCha20.blockX86] [a0, a1, e, esp] using satState)
 
 end VG.Proof.ChaCha20.X86

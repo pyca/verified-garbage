@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.Common
@@ -27,12 +27,15 @@ meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Prepared
+meta import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit) meet their contracts
 
 `prepare_verified` and `crypt_verified`: `vg_sm4_prepare_keys` and
-`vg_sm4_crypt_prepared` against `Spec.Sm4.Prepared`, with `layout`, from
+`vg_sm4_crypt_prepared` against `Proof.Sm4.Prepared`, with `layout`, from
 the bodies' runs (`prepareBody_wp`, `cryptBody_wp`). A batch's blocks are
 ECB in the direction and under the round keys of any table encoding that its
 working space holds: the run from it is the run from the table the
@@ -48,7 +51,7 @@ namespace VG.Proof.Sm4.X86
 open VG VG.X86 VG.X86.Straight VG.Impl.Sm4.X86
 open VG.Impl.Aes.X86 (sb argOp)
 open VG.Proof.Sm4 (specDirX86)
-open VG.Spec.Sm4.Prepared (Holds Keeps)
+open VG.Proof.Sm4.Prepared (Holds Keeps)
 
 theorem size_eq : layout.size = 4 * slots := rfl
 
@@ -94,7 +97,7 @@ def prepX86 : Contract X86.isa where
       (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ (arg s 1).toNat ≤ 1 ∧ layout.size ≤ 8 * (arg s 3).toNat
   post s s' :=
     Holds layout s'.mem ((arg s 2).setWidth 64) (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64))
-        (Spec.Sm4.directionOf (arg s 1).toNat) ∧
+        (Proof.Sm4.directionOf (arg s 1).toNat) ∧
       Keeps ((arg s 2).setWidth 64) (arg s 3).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 4, arg s₁ i = arg s₂ i
 
@@ -198,9 +201,9 @@ def prepSat : State where
   wr := [⟨0x4000, 179 * 8⟩]
 
 theorem prepare_verified :
-    Verified X86.target prepareKeys (Spec.Sm4.Prepared.prepareContract layout X86.abi) :=
+    Verified X86.target prepareKeys (Proof.Sm4.Prepared.prepareContract layout X86.abi) :=
   Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Spec.Sm4.Prepared.prepareContract, Spec.Sm4.Prepared.prepareSig, prepX86, X86.abi,
+    sig_implies [Proof.Sm4.Prepared.prepareContract, Proof.Sm4.Prepared.prepareSig, prepX86, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, size_eq, slots]
       [prepSat, arg, argAddr, Mem.readW, Mem.read] using prepSat)
 
@@ -355,19 +358,19 @@ theorem cryptSat_holds : Holds layout cryptSat.mem ((0x4000 : BitVec 32).setWidt
     have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega
   simp only [cryptSat, h1, h2, ite_false]
 
-theorem crypt_implies : cryptX86.Implies (Spec.Sm4.Prepared.cryptContract layout X86.abi) where
+theorem crypt_implies : cryptX86.Implies (Proof.Sm4.Prepared.cryptContract layout X86.abi) where
   pre := by
-    sig_implies_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
+    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
   post := by
-    sig_implies_post [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
+    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
   pub := by
-    sig_implies_pub [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
+    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptX86, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     sig_and_intros
     all_goals first
@@ -378,7 +381,7 @@ theorem crypt_implies : cryptX86.Implies (Spec.Sm4.Prepared.cryptContract layout
       | simp [cryptSat, arg, argAddr, Mem.readW, Mem.read]
 
 theorem crypt_verified :
-    Verified X86.target cryptPrepared (Spec.Sm4.Prepared.cryptContract layout X86.abi) :=
+    Verified X86.target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout X86.abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Sm4.X86

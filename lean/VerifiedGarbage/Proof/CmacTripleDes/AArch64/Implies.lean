@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+public import VerifiedGarbage.Proof.Cmac.TripleDesContract
 
 /-!
 # TDEA-CMAC on AArch64: the shared contracts imply ours
@@ -29,7 +30,7 @@ def initSat : State where
   wr := [⟨0x2000, 400⟩, ⟨0x4000, 640⟩]
 
 theorem init_implies : initAArch64.Implies (initScratchContract AArch64.abi 0) := by
-  sig_implies [initScratchContract, initScratchSig, Spec.Cmac.tdesInitPre, Spec.Cmac.tdesInitPost,
+  sig_implies [initScratchContract, initScratchSig, Proof.Cmac.tdesInitPre, Proof.Cmac.tdesInitPost,
     initAArch64, AArch64.abi,
     AArch64.argRegs] [initSat] using initSat
 
@@ -43,7 +44,7 @@ def updSat : State where
   wr := [⟨0x2000, 8⟩, ⟨0x4000, 640⟩]
 
 theorem update_implies : updateAArch64.Implies (updateScratchContract AArch64.abi 0) := by
-  sig_implies [updateScratchContract, updateScratchSig, Spec.Cmac.tdesUpdatePost, updateAArch64,
+  sig_implies [updateScratchContract, updateScratchSig, Proof.Cmac.tdesUpdatePost, updateAArch64,
     AArch64.abi,
     AArch64.argRegs] [updSat] using updSat
 
@@ -57,8 +58,8 @@ def finSat : State where
   wr := [⟨0x2000, 8⟩, ⟨0x4000, 640⟩]
 
 theorem finalize_implies : finalizeAArch64.Implies (finalizeScratchContract AArch64.abi 0) := by
-  sig_implies [finalizeScratchContract, finalizeScratchSig, Spec.Cmac.tdesFinalizePre,
-    Spec.Cmac.tdesFinalizePost, finalizeAArch64, AArch64.abi,
+  sig_implies [finalizeScratchContract, finalizeScratchSig, Proof.Cmac.tdesFinalizePre,
+    Proof.Cmac.tdesFinalizePost, finalizeAArch64, AArch64.abi,
     AArch64.argRegs] [finSat] using finSat
 
 end VG.Proof.CmacTripleDes.AArch64

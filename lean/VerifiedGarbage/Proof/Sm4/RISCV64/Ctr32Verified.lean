@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
 public import VerifiedGarbage.Spec.Sm4.Gcm
+public import VerifiedGarbage.Proof.Sm4.Contract
+meta import VerifiedGarbage.Proof.Sm4.Contract
 import VerifiedGarbage.Proof.Modes.RISCV64.Ctr32
 import VerifiedGarbage.Proof.Modes.Ctr32
 import VerifiedGarbage.Proof.Framework.Contract
@@ -50,9 +52,9 @@ theorem ctr32_correct (s : State) (hs : (modeContract ctr32Post).pre s) :
       rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]
       exact h2
 
-theorem ctr32_verified : Verified RISCV64.target ctr32 (Spec.Sm4.ctr32Contract RISCV64.abi frameBytes) := by
+theorem ctr32_verified : Verified RISCV64.target ctr32 (Proof.Sm4.ctr32Contract RISCV64.abi frameBytes) := by
   refine Verified.of_correct ctr32_correct (Proof.Sm4.RISCV64.ctr32_constantTime _) ?_
-  contract_implies [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, RISCV64.abi, RISCV64.argRegs,
+  contract_implies [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, RISCV64.abi, RISCV64.argRegs,
     modeContract, ctr32Post, modePub_iff] [modeSat] using modeSat
 
 end VG.Proof.Sm4.RISCV64.Modes

@@ -310,18 +310,9 @@ mod tests {
         assert_eq!(Poly1305::new(&[0; 32]).backend, Backend::select(detected()));
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::arch::poly1305::{
-                VG_POLY1305_BLOCKS_AVX2_FEATURES, VG_POLY1305_BLOCKS_AVX512_FEATURES,
-                VG_POLY1305_BLOCKS_IFMA_FEATURES,
-            };
             let avx2 = VG_POLY1305_UPDATE_AVX2_FEATURES;
             let avx512 = VG_POLY1305_UPDATE_AVX512_FEATURES;
             let ifma = VG_POLY1305_UPDATE_IFMA_FEATURES;
-            // The instances need the features of the implementations of
-            // `vg_poly1305_blocks` they call.
-            assert_eq!(avx2, VG_POLY1305_BLOCKS_AVX2_FEATURES);
-            assert_eq!(avx512, VG_POLY1305_BLOCKS_AVX512_FEATURES);
-            assert_eq!(ifma, VG_POLY1305_BLOCKS_IFMA_FEATURES);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
             assert_eq!(Backend::select(avx2), Backend::Avx2);

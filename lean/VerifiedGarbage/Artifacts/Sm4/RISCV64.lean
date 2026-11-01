@@ -24,12 +24,6 @@ def artifacts : List Artifact := [
   Spec.Sm4.ecbDecryptApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)
     stack := 3168
-    verified := Proof.Sm4.RISCV64.ecb_framed .decrypt },
-  (Spec.Sm4.Prepared.prepareApi Impl.Sm4.RISCV64.layout).artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.prepareKeys
-    verified := Proof.Sm4.RISCV64.prepare_verified },
-  (Spec.Sm4.Prepared.cryptApi Impl.Sm4.RISCV64.layout).artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.cryptPrepared
-    verified := Proof.Sm4.RISCV64.crypt_verified }]
+    verified := Proof.Sm4.RISCV64.ecb_framed .decrypt }]
 
 end VG.Artifacts.Sm4.RISCV64

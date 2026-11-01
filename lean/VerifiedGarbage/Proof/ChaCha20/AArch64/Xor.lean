@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 
 @[expose] public section
 
@@ -743,9 +744,9 @@ theorem xor_ct (v : BlockImpl) : ConstantTime isa Proof.ChaCha20.xorAArch64.pre 
     (fun _ _ _ _ hp => agree₀ hp) hh
 
 theorem xor_verified (v : BlockImpl) :
-    Verified AArch64.target (Impl.ChaCha20.AArch64.Xor.xorWith v.callee) (Spec.ChaCha20.xorContract AArch64.abi) :=
+    Verified AArch64.target (Impl.ChaCha20.AArch64.Xor.xorWith v.callee) (Proof.ChaCha20.xorContract AArch64.abi) :=
   Verified.of_correct (xor_correct v) (xor_ct v)
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, AArch64.abi, AArch64.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, AArch64.abi, AArch64.argRegs,
       Proof.ChaCha20.xorAArch64]
       [sat] using sat)
 

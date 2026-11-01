@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 
 @[expose] public section
 
@@ -130,9 +131,9 @@ theorem xor_ct : ConstantTime isa xorAArch64.pre xorAArch64.pub xor := by
     (fun _ _ _ _ hp => Xor.agree₀ hp) (by taint_decide)
 
 theorem xor_verified : Verified AArch64.target xor
-    (Spec.ChaCha20.xorContract AArch64.abi) :=
+    (Proof.ChaCha20.xorContract AArch64.abi) :=
   Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Spec.ChaCha20.xorContract,Spec.ChaCha20.xorSig,AArch64.abi,AArch64.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract,Proof.ChaCha20.xorSig,AArch64.abi,AArch64.argRegs,
       xorAArch64] [Xor.sat] using Xor.sat)
 
 end VG.Proof.ChaCha20.AArch64.Rows6

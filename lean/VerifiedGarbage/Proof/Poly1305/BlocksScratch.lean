@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

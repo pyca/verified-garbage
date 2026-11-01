@@ -10,9 +10,9 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 Two functions, for CPUs with FEAT_AES:
 
 * `vg_aes_expand_key_scratch_aes(key = x0, key_len = x1, schedule = x2, scratch = x3)`, with the
-  contract of `vg_aes_expand_key_scratch` (`Spec.Aes.expandKeyScratchContract`).
+  contract of `vg_aes_expand_key_scratch` (`Proof.Aes.expandKeyScratchContract`).
 * `vg_aes_ctr32_aes(schedule = x0, rounds = x1, counter = x2, data = x3, n = x4, scratch = x5)`,
-  with the contract of `vg_aes_ctr32` (`Spec.Gcm.ctr32Contract`).
+  with the contract of `vg_aes_ctr32` (`Proof.Gcm.ctr32Contract`).
 
 Neither uses `scratch` or writes a callee-saved register. Every branch and
 every address depends only on the pointers and the public lengths

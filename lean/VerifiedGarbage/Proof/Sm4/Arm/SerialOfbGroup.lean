@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One prepared-key OFB block -/
 
@@ -24,7 +26,7 @@ open VG.Proof.Sm4.Arm.BatchChain
 open VG.Proof.Modes.Arm
 open VG.Impl.Modes.Arm (copyWord)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 structure GroupPost (s : State) (B D : BitVec 32) (K : Spec.Sm4.Schedule) (n : Nat) (s' : State) : Prop where
   regs : ∀ r ∈ [.r4, .r5, .r8], s'.gpr r = s.gpr r

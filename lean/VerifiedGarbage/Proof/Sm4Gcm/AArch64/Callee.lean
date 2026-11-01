@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Sm4Gcm.AArch64
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Spec.Sm4.Gcm
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Verified
@@ -28,7 +29,7 @@ leaves (`CtrPost`, `KeyPost`); and that it is constant time (`ctr_rel`,
 within the 3264 bytes there (`stk`), which they change. The calls of
 `vg_ghash` are AES-GCM's (`Proof/AesGcm/AArch64/Callee.lean`).
 
-The callees' contracts are the shared ones (`Spec.Sm4.ctr32Contract`,
+The callees' contracts are the shared ones (`Proof.Sm4.ctr32Contract`,
 `Spec.Sm4.expandKeyContract`) with their stack, which imply the simpler ones
 here (`ctrF`, `keyF`).
 -/
@@ -73,16 +74,16 @@ def ctrSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctrF_implies : (Spec.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrF where
+theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrF where
   pre s hs := by
-    sig_pre [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
+    sig_pre [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
     exact hs
   post s s' _ h := by
-    sig_reduce [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs] at h
+    sig_reduce [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs] at h
     rw [BitVec.setWidth_eq] at h
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_reduce [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
+    sig_reduce [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
     obtain ⟨hsp, h0, h1, h2, h3⟩ := h
     exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ⟨ctrSat, by

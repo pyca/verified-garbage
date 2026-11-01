@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Sm4.Arm.Core
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # Preparing decryption keys for the batched CBC mode -/
 
@@ -21,7 +23,7 @@ namespace VG.Proof.Sm4.Arm.CbcPrepare
 open VG VG.Arm VG.Impl.Sm4.Arm VG.Proof.Sm4.Arm
 open VG.Impl.Aes.Arm (sb movR)
 open VG.Proof.Sm4.Arm.BatchCalls (CallInv)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Sm4.Arm.BatchChain (ChainPre counterIn_wp)
 open VG.Proof.Sm4.Arm.BatchFill (counterAddr)
@@ -34,7 +36,7 @@ theorem prepare_call_wp {s : State} {K B : BitVec 32}
     (sep : Region.Disjoint ⟨State.addr K, 128⟩ ⟨State.addr B, 4 * slots⟩)
     (rK : Covers [⟨State.addr K, 128⟩] (s.rd ++ s.wr))
     (wB : Covers [⟨State.addr B, 4 * slots⟩] s.wr) :
-    WP isa (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys) s fun s' =>
+    WP isa (.call "vg_sm4_prepare_keys" prepareKeys) s fun s' =>
       CallInv s B s' ∧ Holds layout s'.mem (State.addr B) (Spec.Sm4.scheduleAt s.mem (State.addr K)) .decrypt := by
   have hp : prepArm.pre (s.callEntry.withRegions [⟨State.addr K, 128⟩] [⟨State.addr B, 4 * slots⟩]) := by
     simp only [prepArm, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,

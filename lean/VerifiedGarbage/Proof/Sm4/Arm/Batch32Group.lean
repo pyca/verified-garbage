@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Sm4.Arm.Group
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sm4
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One complete batch of SM4's counter mode with `inc₃₂` on ARMv7
 
@@ -29,7 +31,7 @@ open VG.Proof.Sm4.Arm.BatchXor (dataAddr xor_wp)
 open VG.Proof.Sm4.Arm.BatchGroup (table_frame count_wp encrypted_lane batchRegions difference_zero)
 open VG.Proof.Sm4.Arm.Batch32Fill (next32 fill_wp)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 structure BatchPost (s : State) (B D : BitVec 32) (K : Spec.Sm4.Schedule) (g : Nat) (s' : State) : Prop where
   regs : ∀ r ∈ [.r4, .r5, .r7, .r8, .r11], s'.gpr r = s.gpr r

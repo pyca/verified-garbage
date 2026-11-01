@@ -1,13 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-public import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-meta import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+meta import VerifiedGarbage.Proof.ChaCha20.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 meta import VerifiedGarbage.Proof.Aes.KeyExp
@@ -73,9 +73,9 @@ def sat : State where
   wr := [⟨0x1000, 64⟩, ⟨0x3000, 0⟩, ⟨0x4000, 320⟩]
 
 theorem xorSplit_verified :
-    Verified X86_64.target xorSplit (Spec.ChaCha20.xorSplitContract X86_64.abi 24) :=
+    Verified X86_64.target xorSplit (Proof.ChaCha20.xorSplitContract X86_64.abi 24) :=
   Verified.of_correct xorSplit_correct xorSplit_ct
-    (by sig_implies [Spec.ChaCha20.xorSplitContract, Spec.ChaCha20.xorSplitSig, Spec.ChaCha20.xorSplitPre,
+    (by sig_implies [Proof.ChaCha20.xorSplitContract, Proof.ChaCha20.xorSplitSig, Proof.ChaCha20.xorSplitPre,
       X86_64.abi, X86_64.argRegs, Proof.ChaCha20.xorSplitX86_64]
       [sat] using sat)
 

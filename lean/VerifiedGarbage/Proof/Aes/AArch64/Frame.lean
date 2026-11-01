@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
 
 import VerifiedGarbage.Proof.Aes.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
@@ -44,7 +45,7 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Aes.expandKeyContract AArch64.abi 5
 /-- The code `c` of `vg_aes_expand_key_scratch` or of one of its variants,
 proved with its working space as an argument and no stack, in its frame. -/
 theorem expandKey_framed {c : Prog isa}
-    (h : Verified AArch64.target c (Spec.Aes.expandKeyScratchContract AArch64.abi)) :
+    (h : Verified AArch64.target c (Proof.Aes.expandKeyScratchContract AArch64.abi)) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 c)
       (Spec.Aes.expandKeyContract AArch64.abi 512) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Aes.expandKeySig) (nm := "scratch")

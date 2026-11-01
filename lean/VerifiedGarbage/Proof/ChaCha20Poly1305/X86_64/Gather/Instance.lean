@@ -34,7 +34,7 @@ open VG.Proof.ChaCha20.X86_64 VG.Impl.StackScratch.X86_64 in
 implementation `v` of `vg_chacha20_xor`, with its working space in a frame
 of its own. -/
 def sealSplitFn (v : XorImpl) : SealSplitFn where
-  name := Spec.ChaCha20Poly1305.sealSplitApi.name ++ v.suffix
+  name := "vg_chacha20_poly1305_seal_split" ++ v.suffix
   code := withStackArgScratchWipedX 1736 3 42
     (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
   verified := Split.sealSplit_framed v

@@ -117,8 +117,9 @@ end
 variable (pb : Nat)
 
 /-- The modes' precondition reads no memory. -/
-theorem modePre_local : ∀ vs m₁ m₂, vs.length = (cbcSig.words pb).length →
-    Curry.apply (cbcSig.words pb) (cbcPre pb) vs m₁ → Curry.apply (cbcSig.words pb) (cbcPre pb) vs m₂ := by
+theorem modePre_local : ∀ vs m₁ m₂, vs.length = (cbcChainedSig.words pb).length →
+    Curry.apply (cbcChainedSig.words pb) (cbcChainedPre pb) vs m₁ →
+      Curry.apply (cbcChainedSig.words pb) (cbcChainedPre pb) vs m₂ := by
   intro vs _ _ hlen h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
   replace hlen := Nat.succ.inj hlen

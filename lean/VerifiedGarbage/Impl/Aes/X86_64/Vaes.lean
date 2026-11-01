@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 # AES with VAES on x86-64: GCM's counter mode
 
 `vg_aes_ctr32_vaes(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8,
-scratch = r9)`, with the contract of `vg_aes_ctr32` (`Spec.Gcm.ctr32Contract`),
+scratch = r9)`, with the contract of `vg_aes_ctr32` (`Proof.Gcm.ctr32Contract`),
 for CPUs with VAES and AVX2 (and AES-NI and SSSE3, for the blocks left).
 
 A 256-bit register holds two AES states, one in each 128-bit lane, and the

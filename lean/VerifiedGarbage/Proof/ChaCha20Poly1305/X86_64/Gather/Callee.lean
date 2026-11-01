@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -14,7 +15,7 @@ Untrusted: everything here is checked by Lean. `vg_chacha20_poly1305_seal_gather
 calls an instance of `vg_chacha20_poly1305_seal_split` as an artifact
 (`SealSplitFn`), with its working space in a frame of its own, so what the
 proof needs of it is its shared contract
-(`Spec.ChaCha20Poly1305.sealSplitContract`, with 1800 bytes of stack): its
+(`Proof.ChaCha20Poly1305.sealSplitContract`, with 1800 bytes of stack): its
 precondition from the layout the call gives it (`callPre`,
 `sealSplitSpec_pre`), its postcondition (`sealSplitSpec_post`) and its
 public data (`sealSplitSpec_pub`).
@@ -36,7 +37,7 @@ at most the 1800 bytes below the stack pointer that the contract reserves. -/
 structure SealSplitFn where
   name : String
   code : Prog isa
-  verified : Verified X86_64.target code (Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800)
+  verified : Verified X86_64.target code (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800)
   sp : SpSafe code
   depth : code.x86_64Depth ≤ 1800
 
@@ -68,13 +69,13 @@ def callPre (s : State) : Prop :=
     (s.gpr .r9).toNat ≤ (stackArg s 1).toNat
 
 theorem sealSplitSpec_pre {s : State} (h : callPre s) :
-    (Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s := by
+    (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
     a₂₂, a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄, a₃₅, a₃₆⟩ := h
-  sig_pre [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs,
+  sig_pre [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals simp only [X86_64.stackArg, X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one] at *
@@ -85,16 +86,16 @@ theorem sealSplitSpec_pre {s : State} (h : callPre s) :
     | exact Region.Disjoint.symm ‹_›
 
 theorem sealSplitSpec_post {s s' : State}
-    (h : (Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).post s s')
+    (h : (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).post s s')
     (hl : (s.gpr .r9).toNat ≤ (stackArg s 1).toNat) :
     encrypt (bytesAt s.mem (s.gpr .rdi) 32) (bytesAt s.mem (s.gpr .rsi) 12)
         (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
         (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat ++
           (bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat).drop (s.gpr .r9).toNat) =
       (bytesAt s'.mem (stackArg s 0) (stackArg s 1).toNat, bytesAt s'.mem (stackArg s 2) 16) := by
-  sig_post [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPost, X86_64.abi, X86_64.argRegs] at h
-  sig_reduce [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig, X86_64.abi,
+  sig_post [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPost, X86_64.abi, X86_64.argRegs] at h
+  sig_reduce [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hl
 
@@ -102,11 +103,11 @@ theorem sealSplitSpec_pub {s₁ s₂ : State} (h : s₁.gpr .rdi = s₂.gpr .rdi
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
     stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2) :
-    (Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pub s₁ s₂ := by
+    (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig, X86_64.abi,
+  sig_pub [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig, X86_64.abi,
+  sig_reduce [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop]
   simp only [X86_64.stackArg, X86_64.stackArgAddr] at a₈ a₉ a₁₀
   sig_and_intros

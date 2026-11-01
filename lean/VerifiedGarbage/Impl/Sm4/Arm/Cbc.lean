@@ -33,7 +33,7 @@ which preserves `r4`. -/
 def ecbCall (dir : Dir) : Prog isa :=
   .frame (.push [.r4, .lr])
     (.seq (.block [.mov .r4 (.reg .lr), .mov .r3 (.imm (match dir with | .encrypt => 0 | .decrypt => 1))])
-      (.seq (.call Spec.Sm4.ecbDirApi.name ecbAnyCode) (.block [.mov .lr (.reg .r4)])))
+      (.seq (.call "vg_sm4_ecb" ecbAnyCode) (.block [.mov .lr (.reg .r4)])))
     (.pop .r4 8)
 
 /-- The code of `vg_sm4_ecb_encrypt` or `vg_sm4_ecb_decrypt`, as its

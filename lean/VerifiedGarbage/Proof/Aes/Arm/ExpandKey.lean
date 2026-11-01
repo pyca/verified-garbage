@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
+meta import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -1070,9 +1072,9 @@ def ekSat : State where
   wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
 
 theorem expandKey_verified :
-    Verified Arm.target Impl.Aes.Arm.expandKey (Spec.Aes.expandKeyScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Aes.Arm.expandKey (Proof.Aes.expandKeyScratchContract Arm.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, Proof.Aes.expandKeyArm, Arm.abi,
+    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig, Proof.Aes.expandKeyArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.Aes.Arm.ekSat]
       using Proof.Aes.Arm.ekSat)
 

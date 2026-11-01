@@ -14,9 +14,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact Arm.target {
     code := Impl.Poly1305.Arm.init
     verified := Proof.Poly1305.Arm.init_verified },
-  Spec.Poly1305.blocksApi.artifact Arm.target {
-    code := Impl.Poly1305.Arm.blocks
-    verified := Proof.Poly1305.Arm.blocks_verified },
   Spec.Poly1305.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 144 2 Impl.Poly1305.Arm.update
     stack := 144

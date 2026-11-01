@@ -13,20 +13,6 @@ namespace VG.Generic.AesBlocks.X86.AesXts
 open VG.Proof.AesXts.X86
 
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  Spec.Xts.aesEncryptApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.AesXts.X86.encrypt v.enc
-    stack := 24
-    verified := encrypt_verified v
-    spSafe := encrypt_spSafe v
-    features := v.features },
-  Spec.Xts.aesDecryptApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.AesXts.X86.decrypt v.dec
-    stack := 24
-    verified := decrypt_verified v
-    spSafe := decrypt_spSafe v
-    features := v.features },
   Spec.Xts.aesEncryptUnitApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)

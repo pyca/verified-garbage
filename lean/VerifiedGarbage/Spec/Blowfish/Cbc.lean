@@ -13,18 +13,12 @@ public import VerifiedGarbage.TCB.Artifact
 `CIPH⁻¹_K`, on 8-byte blocks, under the 4168-byte schedule that
 `vg_blowfish_expand_key` writes.
 
-`vg_blowfish_cbc_encrypt` and `vg_blowfish_cbc_decrypt` transform `n` whole
-blocks in place, from the chaining value at `iv`, which they only read. A
-caller may process a message in pieces of whole blocks: the chaining value of
-the next piece is the last ciphertext block of this one (`Cbc.next`), which
-the caller has (after encryption, the last block at `data`; before decryption,
-the last block it decrypts). Padding is the caller's.
-
-`vg_blowfish_cbc_encrypt_chained` and `vg_blowfish_cbc_decrypt_chained`
-are the same but for `iv`, which they replace with the chaining value to
-continue from (`Cbc.next`), as AES-CBC's functions do
-(`Spec/Cbc/Contract.lean`), so that the caller keeps no block of its own
-between pieces.
+`vg_blowfish_cbc_encrypt_chained` and `vg_blowfish_cbc_decrypt_chained` transform
+`n` whole blocks in place, from the chaining value at `iv`, which they
+replace with the chaining value to continue from (`Cbc.next`, the last
+ciphertext block), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`):
+a caller may process a message in pieces of whole blocks, and keeps no
+block of its own between them. Padding is the caller's.
 
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
@@ -48,37 +42,8 @@ def invCipher (k : Schedule) : Cbc.Cipher := fun b =>
 def cbcBlocksAt (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
   (blocksAt m p n).map Vector.toList
 
-/-- `vg_blowfish_cbc_encrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize)`,
-and `vg_blowfish_cbc_decrypt` with the same signature. -/
-def cbcSig : Sig where
-  params := [("schedule", .array false .u8 4168), ("iv", .array false .u8 8),
-    ("data", .slice true (.array .u8 8) "n")]
-
-/-- With the schedule at `schedule`: replaces the `n` blocks at `data` with
-their CBC encryption (§6.2) by Blowfish, from the chaining value at
-`iv`. -/
-def cbcEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A
-    (post := fun schedule iv data n m m' _ =>
-      cbcBlocksAt m' data n.toNat =
-        Cbc.encrypt (cipher (scheduleAt m schedule)) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-- With the schedule at `schedule`: replaces the `n` blocks at `data` with
-their CBC decryption (§6.2) by Blowfish, from the chaining value at
-`iv`. -/
-def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A
-    (post := fun schedule iv data n m m' _ =>
-      cbcBlocksAt m' data n.toNat =
-        Cbc.decrypt (invCipher (scheduleAt m schedule)) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-! ## Updating the chaining value -/
-
 /-- `vg_blowfish_cbc_encrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize)`,
-and `vg_blowfish_cbc_decrypt_chained` with the same signature: `cbcSig`, but
-for `iv`, which they write. -/
+and `vg_blowfish_cbc_decrypt_chained` with the same signature. -/
 def cbcChainedSig : Sig where
   params := [("schedule", .array false .u8 4168), ("iv", .array true .u8 8),
     ("data", .slice true (.array .u8 8) "n")]

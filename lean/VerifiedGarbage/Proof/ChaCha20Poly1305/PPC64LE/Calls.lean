@@ -16,6 +16,7 @@ public import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+public import VerifiedGarbage.Proof.Poly1305.Contract
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: the calls
@@ -142,10 +143,10 @@ theorem blocks_call {s : State} {P p : Addr} {n : Nat} (h3 : s.gpr .r3 = P) (h4 
     WP isa (.call "vg_poly1305_blocks" Impl.ChaCha20Poly1305.PPC64LE.blocksCode) s Q := by
   have hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
-  refine WP.callAny (k := Spec.Poly1305.blocksContract PPC64LE.abi 160)
+  refine WP.callAny (k := Proof.Poly1305.blocksContract PPC64LE.abi 160)
     Proof.Poly1305.PPC64LE.Shared.blocks.1
     (rd := [⟨p, 16 * n⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_
-  · sig_pre [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, PPC64LE.abi, PPC64LE.argRegs]
+  · sig_pre [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, PPC64LE.abi, PPC64LE.argRegs]
     simp only [h3, h4, h5, hn', Nat.mul_comm n 16]
     exact ⟨hsp, trivial, trivial, hdj, hbP, hbp, hP, hp⟩
   · intro s' hrd hwr hsp' hf hcs hpost
@@ -155,7 +156,7 @@ theorem blocks_call {s : State} {P p : Addr} {n : Nat} (h3 : s.gpr .r3 = P) (h4 
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-    · sig_post [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, Proof.Poly1305.blocksPost,
+    · sig_post [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksPost,
         PPC64LE.abi, PPC64LE.argRegs] at hpost
       simp only [h3, h4, h5, hn'] at hpost
       exact hpost key msg hr

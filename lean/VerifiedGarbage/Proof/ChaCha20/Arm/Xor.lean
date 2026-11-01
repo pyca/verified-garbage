@@ -25,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 
 /-!
 # ChaCha20 keystream XOR on ARMv7
@@ -784,9 +785,9 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorArm.pre Proof.ChaCha20.xorAr
     (by native_taint_decide)
 
 theorem xor_verified :
-    Verified Arm.target Impl.ChaCha20.Arm.Xor.xor (Spec.ChaCha20.xorContract Arm.abi) :=
+    Verified Arm.target Impl.ChaCha20.Arm.Xor.xor (Proof.ChaCha20.xorContract Arm.abi) :=
   Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, Arm.abi, Arm.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.ChaCha20.xorArm, State.addr]
       [sat] using sat)
 
