@@ -224,10 +224,10 @@ fn imported_private_components() {
             (&p, &even_q, &g, "even q"),
             (&p, &zero_q, &g, "zero q"),
         ] {
+            let error = PrivateKey::from_private_components(p, q, g, &x).unwrap_err();
             assert_eq!(
-                PrivateKey::from_private_components(p, q, g, &x).unwrap_err(),
-                Error::InvalidKeyOrNonce,
-                "{p_len}/{q_len}: {case}"
+                (p_len, q_len, case, error),
+                (p_len, q_len, case, Error::InvalidKeyOrNonce)
             );
         }
         for (p, q, g, x) in [
