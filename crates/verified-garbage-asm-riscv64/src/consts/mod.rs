@@ -13,3 +13,7 @@ pub use vg_cast5_s1234::VG_CAST5_S1234;
 #[rustfmt::skip]
 mod vg_cast5_s5678;
 pub use vg_cast5_s5678::VG_CAST5_S5678;
+
+#[rustfmt::skip]
+mod vg_p256_comb;
+pub use vg_p256_comb::VG_P256_COMB;

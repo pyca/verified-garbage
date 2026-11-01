@@ -528,7 +528,7 @@ pub unsafe extern "C" fn vg_ec_p256_public_key(out: *mut [u8; 65], d: *const [u8
 .insn 4, 0x0112f2b3
 .insn 4, 0x5c543023
 .insn 2, 0x8522
-call {vg_p256_mul}
+call {vg_p256_mul_g}
 .insn 2, 0x844e
 .insn 4, 0x0e043283
 .insn 4, 0x3e543023
@@ -779,7 +779,7 @@ call {vg_p256_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p256_mul = sym super::p256_mul::vg_p256_mul,
+        vg_p256_mul_g = sym super::p256_mul::vg_p256_mul_g::vg_p256_mul_g,
         vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
     )
 }

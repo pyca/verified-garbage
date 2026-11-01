@@ -515,7 +515,7 @@ vg_ec_p256_public_key:
 	and t0, t0, a7
 	sd t0, 1472(s0)
 	addi a0, s0, 0
-	call {vg_p256_mul}
+	call {vg_p256_mul_g}
 	addi s0, s3, 0
 	ld t0, 224(s0)
 	sd t0, 992(s0)
