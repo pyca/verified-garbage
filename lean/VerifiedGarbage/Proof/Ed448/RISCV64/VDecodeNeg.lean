@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Ed448.RISCV64.VChecks
 public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
+public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 
 /-!
 # Ed448's verification on RISCV64: the negated point
@@ -48,7 +50,7 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
     (hx : FS s.mem b DXX = x) (hy : FS s.mem b DY = y)
     (hout : VG.Spec.X448.bytesAt s.mem (b + BitVec.ofNat 64 OUT) 56 = Proof.X25519.leBytes 56 x.val)
     {sg : Nat} (hsg : sg ≤ 1) (hs : s.mem (b + BitVec.ofNat 64 SIGN) = BitVec.ofNat 8 sg) :
-    WP isa (.block (decodeNeg xo yo)) s fun t => VCtx b t ∧ Rest [.a1, .a2, .a4, .a5, .a6, .a7, .t0] s t ∧
+    WP isa (.block (decodeNeg xo yo)) s fun t => VCtx b t ∧ Rest R64.clob64 s t ∧
       Frame [FA b, ⟨b + BitVec.ofNat 64 xo, 56⟩, ⟨b + BitVec.ofNat 64 yo, 56⟩] s.mem t.mem ∧
       FS t.mem b xo = pick (x.val % 2 ^^^ sg) ((x - x) - x) x ∧ FS t.mem b yo = y ∧
       FS t.mem b DK = FS s.mem b DK := by
@@ -60,10 +62,10 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
   unfold decodeNeg
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   have hS0 : SlotsOk s.mem b [DXX, DY, DK] (FS s.mem b) := fun _ _ => rfl
-  refine WP.append (subS (o := DTMP) (x := DXX) (y := DXX) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (R64.subS (o := DTMP) (x := DXX) (y := DXX) (by decide) (by decide) (by decide) (by decide)
     hc.ctx hS0) fun s1 ⟨hr1, hf1, hS1⟩ => ?_
   have hc1 : VCtx b s1 := hc.of_rest hr1 (by decide) (by decide)
-  refine WP.append (subS (o := DNEG) (x := DTMP) (y := DXX) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (R64.subS (o := DNEG) (x := DTMP) (y := DXX) (by decide) (by decide) (by decide) (by decide)
     hc1.ctx hS1) fun s2 ⟨hr2, hf2, hS2⟩ => ?_
   have hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
   have hf12 : Frame [FA b] s.mem s2.mem := hf1.trans hf2
@@ -115,7 +117,7 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
   refine WP.mono (sel_ok (b := b) (o := yo) (q := DY) (r := DY) (by omega_arith) (by decide) (by decide)
     (by unfold DY; omega_arith) (by unfold DY; omega_arith) hy4 (by decide) (by decide) hc10.ctx hm (by rw [h10.rest.gpr _ (by decide), e11]))
     fun t ht => ?_
-  have hrt : Rest [.a1, .a2, .a4, .a5, .a6, .a7, .t0] s t :=
+  have hrt : Rest R64.clob64 s t :=
     (hr1.mono (by decide)).trans ((hr2.mono (by decide)).trans ((hr9.mono (by decide)).trans
       ((h10.rest.mono (by decide)).trans (ht.rest.mono (by decide)))))
   -- The values.

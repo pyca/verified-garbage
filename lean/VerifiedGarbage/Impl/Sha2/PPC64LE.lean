@@ -33,4 +33,18 @@ def schedulePair (wide : Bool) (n : Nat) : List Instr :=
     .vop (.add wide p .v12 .v14)]
 
 
+/-- SHA-2 round for the shared vector register layout. The final state word
+already includes the round constant; the next one is loaded through r18/r19. -/
+def round (wide : Bool) (vars : Nat → VReg) (name : String)
+    (words : List (BitVec 64)) : List Instr :=
+  let a := vars 0; let b := vars 1; let c := vars 2; let d := vars 3
+  let e := vars 4; let f := vars 5; let g := vars 6; let h := vars 7
+  [.lxvd2xTbl .v14 .r18 .r19 name words, .addi .r19 .r19 8,
+   .vop (if wide then .sha512 .v12 e true 8 else .sha256 .v12 e true 5), .vop (.sel .v13 g f e),
+   .vop (.add wide g g .v14), .vop (if wide then .sha512 .v14 a true 0 else .sha256 .v14 a true 0),
+   .vop (.add wide .v15 h .v15), .vop (.add wide .v15 .v15 .v13),
+   .vop (.add wide .v15 .v15 .v12), .vop (.add wide d d .v15),
+   .vop (.logic .xor .v12 a b), .vop (.sel .v12 b c .v12),
+   .vop (.add wide .v14 .v14 .v12), .vop (.add wide h .v15 .v14)]
+
 end VG.Impl.Sha2.PPC64LE
