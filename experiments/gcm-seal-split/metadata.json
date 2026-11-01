@@ -1,0 +1,25 @@
+{
+  "production_base": "5a27a9031ef30b9ccb327adf0b91cf7324f2e50d",
+  "verified_artifact": false,
+  "hypothesis": "Eliminate the full payload copy by loading full source-prefix blocks directly, using destination blocks after the prefix, and handling at most one mixed batch.",
+  "oracle": "54 GCM seals derived by GcmSealFusedOracle.lean from Spec.Gcm; baseline plus eight public prefix choices each.",
+  "variants": {
+    "0": "current combined/in-place",
+    "1": "direct-source kernel/in-place",
+    "2": "current combined plus full memcpy",
+    "3": "direct-source kernel with TLS-style prefix and at most 16 copied suffix bytes",
+    "4": "OpenSSL/in-place",
+    "5": "OpenSSL/out-of-place"
+  },
+  "sampling": "25 interleaved samples per case from eight fresh copies; median of copy medians is primary; fastest-copy estimates also reported.",
+  "local_correctness": "486 full-seal outputs match Spec under qemu-ppc64le -cpu power8.",
+  "files": {
+    "gcm-seal-split-input.bin": "4a6a941135412a7512f6b6b7b2db0ede8177af31bf78cf559543725d3f39962b",
+    "gcm-seal-bench-ctx.bin": "b93e80e2a00a268618140920298c61554c512851e16bbe9eb3cc361a6ec067ee",
+    "GcmSealFusedOracle.lean": "4bb07d6a51ca09513b097780ff124dd1c563c0c9c5833f407299f0403f87868f",
+    "gcm-seal-split.s": "0b9eca5a8dd6895f5a54f1672e1b2577f567a2209cb84ebbfd1535bd6f7b916f",
+    "gcm-seal-split-expected.bin": "6376802b8054d42455f7b646b34948dba3618bf681a21f9e3652da4da2d3a88a",
+    "gcm-seal-split.c": "817bdc0a19e5508012cc3381de59c78b006de5bcbe993ebc9f943f468c805733",
+    "GcmSealSplitProbe.lean": "25ec705f3494e04d804e10e4b8791d61a766133430bf197b06bad91b9682eb25"
+  }
+}
