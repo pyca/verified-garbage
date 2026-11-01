@@ -52,9 +52,8 @@ impl CamelliaCtr {
             _ => return Err(InvalidKeyLength),
         };
         let mut schedule = [0; 272];
-        // SAFETY: the key has a validated length; key and schedule are
-        // separate valid buffers of the required sizes. The function zeroes
-        // its working space on its own stack before returning.
+        // SAFETY: the key has a validated length; key and schedule are separate
+        // valid buffers of the required sizes.
         unsafe {
             vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
         }
@@ -87,10 +86,9 @@ impl CamelliaCtr {
     fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. `blocks` holds `len / 16` whole
-        // blocks (its length is a multiple of 16), and it, the block at
-        // `ctr` and the schedule are separate valid objects of the sizes of
-        // the signature, none of them on the callee's stack. The function
-        // zeroes its working space on its own stack before returning.
+        // blocks (its length is a multiple of 16), and it, the block at `ctr`
+        // and the schedule are separate valid objects of the sizes of the
+        // signature, none of them on the callee's stack.
         unsafe {
             vg_camellia_ctr(
                 &self.schedule,

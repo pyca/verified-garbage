@@ -6,7 +6,7 @@
 //! assembly for a key of any length, which computes
 //! `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`): a key
 //! longer than a block is hashed by the verified `init` itself (FIPS 198-1
-//! §4, steps 1–3), in working space it wipes before returning.
+//! §4, steps 1–3).
 
 #![cfg(any(
     target_arch = "x86_64",

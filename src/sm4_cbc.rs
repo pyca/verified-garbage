@@ -52,9 +52,8 @@ impl Sm4Cbc {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
         let mut schedule = [0; 128];
-        // SAFETY: key and schedule are separate valid buffers of the
-        // required sizes. The function zeroes its working space on its own
-        // stack before returning.
+        // SAFETY: key and schedule are separate valid buffers of the required
+        // sizes.
         unsafe {
             vg_sm4_expand_key(key, &mut schedule);
         }
@@ -73,8 +72,7 @@ impl Sm4Cbc {
         // SAFETY: the buffer holds `len / 16` whole blocks, and it, the
         // chaining value (which the function reads and replaces) and the
         // schedule are separate valid objects of the sizes of the signature,
-        // none of them on the callee's stack. The function zeroes its
-        // working space on its own stack before returning.
+        // none of them on the callee's stack.
         unsafe {
             vg_sm4_cbc_encrypt_chained(
                 &self.schedule,

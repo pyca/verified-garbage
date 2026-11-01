@@ -64,10 +64,9 @@ impl Cast5Ofb {
     fn crypt(&self, iv: &mut [u8; 8], blocks: &mut [u8]) {
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; `blocks` holds `len / 8` whole
-        // blocks, and it, the block at `iv` and the schedule are separate
-        // valid objects of the sizes of the signature, none of them on the
-        // callee's stack. The function zeroes its working space on its own
-        // stack before returning.
+        // blocks, and it, the block at `iv` and the schedule are separate valid
+        // objects of the sizes of the signature, none of them on the callee's
+        // stack.
         unsafe {
             vg_cast5_ofb(
                 self.key.schedule(),

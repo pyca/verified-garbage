@@ -45,9 +45,8 @@ impl CamelliaOfb {
             _ => return Err(InvalidKeyLength),
         };
         let mut schedule = [0; 272];
-        // SAFETY: the key has a validated length; key and schedule are
-        // separate valid buffers of the required sizes. The function zeroes
-        // its working space on its own stack before returning.
+        // SAFETY: the key has a validated length; key and schedule are separate
+        // valid buffers of the required sizes.
         unsafe { vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule, rounds })
     }
@@ -74,12 +73,11 @@ impl CamelliaOfb {
 
     /// OFB of whole blocks.
     fn crypt(&self, iv: &mut [u8; 16], blocks: &mut [u8]) {
-        // SAFETY: `rounds` is 18 or 24 and the schedule holds that many
-        // rounds' subkeys; `blocks` holds `len / 16` whole blocks (its length
-        // is a multiple of 16), and it, the block at `iv` and the schedule are
-        // separate valid objects of the sizes of the signature, none of them
-        // on the callee's stack. The function zeroes its working space on its
-        // own stack before returning.
+        // SAFETY: `rounds` is 18 or 24 and the schedule holds that many rounds'
+        // subkeys; `blocks` holds `len / 16` whole blocks (its length is a
+        // multiple of 16), and it, the block at `iv` and the schedule are
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack.
         unsafe {
             vg_camellia_ofb(
                 &self.schedule,

@@ -47,9 +47,8 @@ impl Sm4Ecb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
         let mut schedule = [0; 128];
-        // SAFETY: key and schedule are separate valid buffers of the
-        // required sizes. The function zeroes its working space on its own
-        // stack before returning.
+        // SAFETY: key and schedule are separate valid buffers of the required
+        // sizes.
         unsafe {
             vg_sm4_expand_key(key, &mut schedule);
         }
@@ -78,9 +77,8 @@ impl Sm4Ecb {
             vg_sm4_ecb_decrypt
         };
         // SAFETY: buffer contains complete 16-byte blocks, including zero
-        // blocks. The buffer and schedule are separate valid objects and do
-        // not overlap the callee's stack. The function zeroes its working
-        // space on its own stack before returning.
+        // blocks. The buffer and schedule are separate valid objects and do not
+        // overlap the callee's stack.
         unsafe {
             f(
                 &self.schedule,

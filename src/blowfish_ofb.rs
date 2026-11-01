@@ -72,9 +72,8 @@ impl BlowfishOfb {
     fn crypt(&self, iv: &mut [u8; 8], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
-        // separate valid objects of the sizes of the signature, none of them
-        // on the callee's stack. The function zeroes its working space on its
-        // own stack before returning.
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack.
         unsafe {
             vg_blowfish_ofb(
                 &self.schedule,

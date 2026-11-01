@@ -13,12 +13,13 @@
 //!   they have compared it with the expected one.
 //!
 //! What is not: the working space (`scratch`) of the symmetric algorithms'
-//! calls, and the copies of states the Rust code makes on the stack when
-//! it moves or copies them (e.g. the context of each ChaCha20-Poly1305
-//! call, which holds the key, or the blocks of PBKDF2 and scrypt), which
-//! the next calls overwrite; and anything once it has been returned to the
-//! caller (e.g. a MAC, a derived key or a shared secret), whose wiping is
-//! the caller's.
+//! calls; the stack the verified functions use, which their contracts do not
+//! promise to wipe (but RC4's, `VG.Spec.Rc4`); and the copies of states the
+//! Rust code makes on the stack when it moves or copies them (e.g. the context
+//! of each ChaCha20-Poly1305 call, which holds the key, or the blocks of PBKDF2
+//! and scrypt), which the next calls overwrite; and anything once it has been
+//! returned to the caller (e.g. a MAC, a derived key or a shared secret), whose
+//! wiping is the caller's.
 
 #![cfg(any(
     target_arch = "x86_64",

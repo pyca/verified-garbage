@@ -62,9 +62,8 @@ impl TripleDesCbc {
             return Err(Error::InvalidKeyLength);
         }
         let mut schedule = [0; 384];
-        // SAFETY: the key has a validated length; key and schedule are
-        // separate valid buffers of the required sizes. The function zeroes
-        // its working space on its own stack before returning.
+        // SAFETY: the key has a validated length; key and schedule are separate
+        // valid buffers of the required sizes.
         unsafe {
             vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
         }
@@ -83,8 +82,7 @@ impl TripleDesCbc {
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
-        // the callee's stack. The function zeroes its working space on its own
-        // stack before returning.
+        // the callee's stack.
         unsafe {
             vg_triple_des_cbc_encrypt_chained(
                 &self.schedule,
