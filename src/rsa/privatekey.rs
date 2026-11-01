@@ -16,6 +16,8 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+#[cfg(target_arch = "x86")]
+use crate::arch::rsa::vg_rsa_recover_primes_det;
 use crate::arch::rsa::{
     vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
     vg_rsa_recover_primes,
@@ -45,6 +47,62 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
         v[len - x.len()..].copy_from_slice(x);
         v
     })
+}
+
+/// Whether SP 800-56B Rev. 2 Appendix C.2's method
+/// (`vg_rsa_recover_primes_det`) finds the primes of `(n, e, d)`, which it
+/// writes to `p` and `q`, through `scratch`.
+///
+/// # Safety
+///
+/// `64 ≤ n.len() ≤ 1024`, `1 ≤ e.len() ≤ 8`, `1 ≤ d.len() ≤ n.len()`,
+/// `p.len() = q.len() = n.len()` and `scratch.len() ≥ scratch_words(n.len())`.
+#[cfg(target_arch = "x86")]
+unsafe fn recover_det(
+    p: &mut [u8],
+    q: &mut [u8],
+    n: &[u8],
+    e: &[u8],
+    d: &[u8],
+    scratch: &mut [u64],
+) -> bool {
+    // SAFETY: each pointer is valid for its length (`p`, `q` and `scratch`
+    // for writes), and none overlaps another or wraps around, as they are
+    // distinct Rust slices; the caller gives the lengths.
+    let r = unsafe {
+        vg_rsa_recover_primes_det(
+            p.as_mut_ptr(),
+            p.len(),
+            q.as_mut_ptr(),
+            q.len(),
+            n.as_ptr(),
+            n.len(),
+            e.as_ptr(),
+            e.len(),
+            d.as_ptr(),
+            d.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+        )
+    };
+    r == 1
+}
+
+/// The same on the targets without Appendix C.2: never.
+///
+/// # Safety
+///
+/// None needed.
+#[cfg(not(target_arch = "x86"))]
+unsafe fn recover_det(
+    _: &mut [u8],
+    _: &mut [u8],
+    _: &[u8],
+    _: &[u8],
+    _: &[u8],
+    _: &mut [u64],
+) -> bool {
+    false
 }
 
 /// An RSA private key in the Chinese remainder form `(p, q, dP, dQ, qInv)`
@@ -253,13 +311,16 @@ impl PrivateKey {
     /// The key with the modulus `n`, the public exponent `e` and the private
     /// exponent `d`, all big-endian (with any number of leading zero bytes
     /// but `n`), RFC 8017 §3.2's first form: recovers the primes `p > q` of
-    /// `n` by SP 800-56B Rev. 2 Appendix C.1, trying the candidates
-    /// `g = 2, 3, …` up to 100 of them, and loads the key as
-    /// [`from_primes`](Self::from_primes) does. `n` must be odd, from 512 to
-    /// 8192 bits long, with no leading zero byte, `e` odd, from 3 to
-    /// `2^33 - 1`, and `d` 1 to `n.len()` bytes long without its leading
-    /// zeros. For a valid RSA key
-    /// the primes are found, but for a negligible fraction of keys.
+    /// `n` and loads the key as [`from_primes`](Self::from_primes) does.
+    /// On i686 it first tries SP 800-56B Rev. 2 Appendix C.2's
+    /// deterministic method, which finds the primes of every key with the
+    /// least private exponent (`d < λ(n)`, as FIPS 186 keys have) and
+    /// `e² ≤ n / (p + q - 1)`; for any other key (or target) it recovers
+    /// them by Appendix C.1, trying the candidates `g = 2, 3, …` up to 100
+    /// of them. `n` must be odd, from 512 to 8192 bits long, with no leading
+    /// zero byte, `e` odd, from 3 to `2^33 - 1`, and `d` 1 to `n.len()`
+    /// bytes long without its leading zeros. For a valid RSA key the primes
+    /// are found, but for a negligible fraction of keys.
     pub fn from_components(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
@@ -288,31 +349,36 @@ impl PrivateKey {
             ))]
             Backend::Umaal => vg_rsa_recover_primes_umaal,
         };
-        // SAFETY: each pointer is valid for its length (`p`, `q` and
-        // `scratch` for writes), and none overlaps another or wraps around,
-        // as they are distinct Rust allocations; the checks above give
-        // `64 ≤ n_len ≤ 1024` and `1 ≤ e_len, d_len ≤ n_len`, and
-        // `p_len = q_len = n_len` and `scratch_len = 16 n_len + 32`; and the CPU
-        // has the features of the function `select` chose.
-        let r = unsafe {
-            f(
-                p.as_mut_ptr(),
-                k,
-                q.as_mut_ptr(),
-                k,
-                n.as_ptr(),
-                k,
-                e.as_ptr(),
-                e.len(),
-                d.as_ptr(),
-                d.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
+        // Appendix C.2 where the target has it, and if it does not find the
+        // primes, Appendix C.1.
+        // SAFETY: the checks above give `64 ≤ n_len ≤ 1024`,
+        // `1 ≤ e_len ≤ 5` and `1 ≤ d_len ≤ n_len`, and `p_len = q_len = n_len`
+        // and `scratch_len = scratch_words(n_len)`.
+        let found = unsafe { recover_det(&mut p, &mut q, n, e, d, &mut scratch) }
+            // SAFETY: each pointer is valid for its length (`p`, `q` and
+            // `scratch` for writes), and none overlaps another or wraps
+            // around, as they are distinct Rust allocations; the lengths are
+            // as above; and the CPU has the features of the function `select`
+            // chose.
+            || unsafe {
+                f(
+                    p.as_mut_ptr(),
+                    k,
+                    q.as_mut_ptr(),
+                    k,
+                    n.as_ptr(),
+                    k,
+                    e.as_ptr(),
+                    e.len(),
+                    d.as_ptr(),
+                    d.len(),
+                    scratch.as_mut_ptr(),
+                    scratch.len(),
+                )
+            } == 1;
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
-        let key = if r == 1 {
+        let key = if found {
             PrivateKey::from_primes(n, e, d, &p, &q)
         } else {
             Err(Error::InvalidPrivateKey)

@@ -266,7 +266,7 @@ theorem KS.div_w {q r d t : Nat} (h : KS g s0 A live AW liveW V ls s)
       (h.arrsW_w k (fun j hj i hi => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
         obtain ⟨a1, a2, a3⟩ := hlW j hj
-        rcases hi with rfl | rfl | rfl <;> assumption) divSlots_ok) h.liveW_lt
+        rcases hi with rfl | rfl | rfl <;> with_reducible assumption) divSlots_ok) h.liveW_lt
       (h.sl_keep k hls) h.ls_ok
     intro j hj
     by_cases jr : j = r
@@ -311,7 +311,7 @@ theorem KS.div_W {q r d t : Nat} (h : KS g s0 A live AW liveW V ls s)
       (h.arrs_W k (fun j hj i hi => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
         obtain ⟨a1, a2, a3⟩ := hl j hj
-        rcases hi with rfl | rfl | rfl <;> assumption) divSlots_ok) h.live_lt ?_
+        rcases hi with rfl | rfl | rfl <;> with_reducible assumption) divSlots_ok) h.live_lt ?_
       (fun j hj => (List.mem_cons.mp hj).elim (fun e => e ▸ hr) (h.liveW_lt j))
       (h.sl_keep k hls) h.ls_ok
     intro j hj

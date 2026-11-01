@@ -206,6 +206,27 @@ theorem sqrtIter_lt {nb wb X : Nat} (hX : X < 2 ^ wb) :
     dsimp only
     split <;> exact Nat.mod_lt _ (Nat.two_pow_pos _)
 
+/-- The square root's set-up: the remainder and the root zeroed, and the count set. -/
+theorem sqrtHead_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {X : Nat}
+    (h : KS g s0 A [aD, aZero] AW [wR] V sqSlots u) (z : A aZero = 0) (hX : AW wR = X) :
+    WP isa (seqs [VG.Impl.Rsa.X86.KeyRt.copy nar aRm aZero, VG.Impl.Rsa.X86.KeyRt.copy nar aY aZero,
+      .block countW]) u (SqS g s0 A AW V (16 * g.W) 0 (X, 0, 0)) := by
+  have z' : A 10 = 0 := z
+  simp only [seqs]
+  refine WP.seq (WP.mono (h.copy_w (o := aRm) (a := aZero) (by decide) (by simp) (by decide) (by decide))
+    fun u1 ⟨h1, _, _⟩ => ?_)
+  refine WP.seq (WP.mono (h1.copy_w (o := aY) (a := aZero) (by decide) (by simp) (by decide) (by decide))
+    fun u2 ⟨h2, _, _⟩ => ?_)
+  refine WP.mono h2.countW_ok fun u3 h3 => ?_
+  unfold SqS
+  refine h3.mono (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨hj, ?_⟩) (fun d hd => ⟨?_, ?_⟩)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl <;> simp [upd, z', aRm, aY, aD, aZero]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; subst hj; simp [upd, hX]
+  · simp at hd ⊢; omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp [upd]
+
 /-- The square root of the wide `[wR]`, `X`: the root in `aY`, and whether the remainder is
 zero in `sOk5`. -/
 theorem sqrt_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {X : Nat}
@@ -218,22 +239,10 @@ theorem sqrt_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {X : Nat}
   have up := h.upper
   have Xlt : X < 2 ^ (32 * g.W) := by rw [← hX, ← h.arrsW wR (by simp)]; exact val32_lt _ _ _ _
   have z' : A 10 = 0 := z
-  unfold sqrt
-  simp only [seqs]
-  refine WP.seq (WP.mono (h.copy_w (o := aRm) (a := aZero) (by decide) (by simp) (by decide) (by decide))
-    fun u1 ⟨h1, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h1.copy_w (o := aY) (a := aZero) (by decide) (by simp) (by decide) (by decide))
-    fun u2 ⟨h2, _, _⟩ => ?_)
-  refine WP.seq (WP.mono h2.countW_ok fun u3 h3 => ?_)
-  have h3' : SqS g s0 A AW V (16 * g.W) 0 (X, 0, 0) u3 := by
-    unfold SqS
-    refine h3.mono (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨hj, ?_⟩) (fun d hd => ⟨?_, ?_⟩)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl | rfl <;> simp [upd, z', aRm, aY, aD, aZero]
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; subst hj; simp [upd, hX]
-    · simp at hd ⊢; omega
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp [upd]
+  have shape : sqrt = seqs ([VG.Impl.Rsa.X86.KeyRt.copy nar aRm aZero, VG.Impl.Rsa.X86.KeyRt.copy nar aY aZero,
+      .block countW] ++ [.seq (.loop sqrtBody .ne) (VG.Impl.Rsa.X86.KeyRt.eqSFast nar sOk5 aRm aZero)]) := rfl
+  rw [shape]
+  refine wp_seqs_snoc (WP.mono (sqrtHead_ok h z hX) fun u3 h3' => ?_)
   refine WP.seq (WP.mono (countLoop (P := fun i v => SqS g s0 A AW V (16 * g.W) i
       ((sqrtStep (32 * g.w) (32 * g.W))^[i] (X, 0, 0)) v) (by change 0 < 16 * (2 * (2 * g.n + 2) + 2); omega) h3'
     fun i v hi hv => WP.mono (sqrtBody_ok hi (by change 16 * (2 * (2 * g.n + 2) + 2) < _; omega)
