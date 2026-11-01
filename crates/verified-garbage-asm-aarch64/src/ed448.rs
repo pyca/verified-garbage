@@ -1877,8 +1877,8 @@ bl {vg_ed448_scalar_base}
 .inst 0x910503ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
     )
 }
@@ -1979,8 +1979,8 @@ bl {vg_ed448_scalar_mul_add}
 .inst 0xd280000e,0xf9005dee,0x910003ef,0xd280000e,0xf90061ee,0x910503ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add,
@@ -2041,8 +2041,8 @@ bl {vg_ed448_verify_equation}
 .inst 0xd65f03c0
 .p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation,
     )
@@ -2101,8 +2101,8 @@ bl {vg_ed448_scalar_base}
 .arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
     )
 }
@@ -2209,8 +2209,8 @@ bl {vg_ed448_scalar_mul_add}
 .arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add,
@@ -2277,9 +2277,33 @@ bl {vg_ed448_verify_equation}
 .arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600.rs"]
+pub(crate) mod vg_keccak_f1600;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_sha3.rs"]
+pub(crate) mod vg_keccak_f1600_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad_scratch.rs"]
+pub(crate) mod vg_keccak_pad_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad_scratch_sha3.rs"]
+pub(crate) mod vg_keccak_pad_scratch_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze_scratch.rs"]
+pub(crate) mod vg_keccak_squeeze_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze_scratch_sha3.rs"]
+pub(crate) mod vg_keccak_squeeze_scratch_sha3;

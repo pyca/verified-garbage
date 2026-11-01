@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha3.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sha3.permuteApi.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.permute
-    stack := 608
-    verified := Proof.Sha3.RISCV64.permute_verified },
   Spec.Sha3.absorbApi.artifact RISCV64.target {
     code := Impl.Sha3.RISCV64.Stream.absorb
     stack := 1168

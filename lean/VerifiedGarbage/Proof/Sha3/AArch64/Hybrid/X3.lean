@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Round
 public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
+public import VerifiedGarbage.Proof.Sha3.X2Contract
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -22,6 +23,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Round
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
+meta import VerifiedGarbage.Proof.Sha3.X2Contract
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -53,7 +55,7 @@ third into the general registers, runs the 24 rounds (`rounds_ok`), and
 then, from the pointers it reloads from the frame, stores the states
 (`b2_ok`, `b3_ok`) and restores the registers (`b4_ok`); the frame's
 slots keep what they hold through the rounds and the stores (`SlotsAt.frame`). `verified`: its
-contract (`Spec/Sha3/X3.lean`).
+contract (`Proof/Sha3/X2Contract.lean`).
 
 The taint analysis does not track the frame, so the constant-time proof
 (`ct`) checks the code in pieces: the saves, loads and rounds from the three
@@ -74,7 +76,8 @@ open VG.Proof.Sha3.AArch64.Neon.X2 (scr_contains Saved pairAt_stateX2 stateX2_of
 open VG.Proof.Sha3.AArch64.Scalar (exec_strSp)
 open VG.Proof.Sha3.AArch64.Scalar.Boundary (laneReg_ne_x30 laneReg_inj store_words_ok)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint ct_of RelCT.block_split)
-open VG.Spec.Sha3 (stateX2At stateAt keccakF)
+open VG.Spec.Sha3 (stateAt keccakF)
+open VG.Proof.Sha3 (stateX2At)
 
 abbrev X3code := VG.Impl.Sha3.AArch64.Hybrid.X3.code
 
@@ -600,9 +603,9 @@ def satState : State where
   wr := [⟨0x1000, 400⟩, ⟨0x2000, 200⟩, ⟨0x3000, 128⟩]
 
 theorem verified :
-    Verified AArch64.target X3code (Spec.Sha3.permuteX3Contract AArch64.abi 128) :=
+    Verified AArch64.target X3code (Proof.Sha3.permuteX3Contract AArch64.abi 128) :=
   Verified.of_correct correct ct (by
-    sig_implies [Spec.Sha3.permuteX3Contract, Spec.Sha3.permuteX3Sig, K, pairR, stR, scrR,
+    sig_implies [Proof.Sha3.permuteX3Contract, Proof.Sha3.permuteX3Sig, K, pairR, stR, scrR,
       Neon.X2.scrR, frR, AArch64.abi, AArch64.argRegs] [satState] using satState)
 
 end VG.Proof.Sha3.AArch64.Hybrid.X3

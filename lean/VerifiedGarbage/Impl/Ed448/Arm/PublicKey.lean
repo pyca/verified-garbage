@@ -68,8 +68,8 @@ def squeezeArgs : List Instr :=
 def hash : Prog isa :=
   .seq zeroState <|
   .seq (callWith absorbArgs Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) <|
-  .seq (callWith padArgs Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad)
-    (callWith squeezeArgs Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze)
+  .seq (callWith padArgs "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad)
+    (callWith squeezeArgs "vg_keccak_squeeze_scratch" Impl.Sha3.Arm.Stream.squeeze)
 
 /-- Pruning (`Spec.Ed448.prune`), in place on the first 57 bytes of the
 hash, from `r12 = sp + 24`: bits 0–1 of byte 0 cleared, bit 7 of byte 55

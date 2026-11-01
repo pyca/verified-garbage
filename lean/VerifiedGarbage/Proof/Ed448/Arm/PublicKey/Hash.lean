@@ -267,7 +267,7 @@ theorem pad_covers (L : Lay) : Covers ([kArgs L 4] ++ kWr L) (L.inputs ++ Whole.
 
 theorem pad_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {msg : List Byte}
     (hr : Spec.Sha3.Repr t.mem (State.addr L.scr) 136 msg) (hl : msg.length = 57) :
-    WP isa (callWith padArgs Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad) t fun u =>
+    WP isa (callWith padArgs "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad) t fun u =>
       Ctx L g m₀ u ∧ stateAt u.mem (State.addr L.scr) =
         Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := padValues) (stk := padStack)
@@ -342,7 +342,7 @@ theorem sqz_covers (L : Lay) : Covers ([kArgs L 8] ++ sqzWr L) (L.inputs ++ Whol
     · exact ⟨R, by simp only [List.mem_append, List.mem_cons]; exact Or.inr (Or.inr hR), h⟩
 
 theorem sqz_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith squeezeArgs Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze) t fun u =>
+    WP isa (callWith squeezeArgs "vg_keccak_squeeze_scratch" Impl.Sha3.Arm.Stream.squeeze) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed448.bytesAt u.mem (State.addr L.E + BitVec.ofNat 64 HASH) 114 =
         Spec.Sha3.squeezeFrom 136 (stateAt t.mem (State.addr L.scr)) 0 114 := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := sqzValues) (stk := sqzStack)

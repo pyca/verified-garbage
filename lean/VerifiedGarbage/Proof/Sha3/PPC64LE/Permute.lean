@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Round
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Round
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
@@ -476,9 +478,9 @@ theorem permute_verified' :
   ⟨permute_correct, permute_ct, satState, rfl, rfl, Region.disjoint_of_sep (by decide)⟩
 
 theorem permute_verified :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.permute (Spec.Sha3.permuteContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Sha3.PPC64LE.permute (Proof.Sha3.permuteContract PPC64LE.abi) :=
   permute_verified'.of_implies (by
-    contract_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, Proof.Sha3.permutePPC64LE,
+    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permutePPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [satState] using satState)
 
 end VG.Proof.Sha3.PPC64LE

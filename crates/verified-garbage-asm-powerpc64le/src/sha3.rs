@@ -3,28 +3,6 @@
 //! `assembly/sha3.s`.
 #![allow(dead_code)]
 
-/// The permutation Keccak-f[1600] (FIPS 202 §3.4): applies it to the state `*state` (lane `x + 5y` at index `x + 5y`).
-///
-/// Contract: `VG.Spec.Sha3.permuteContract`. Constant time: only the pointers may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "iAHE+ZAB5PmYAQT6oAEk+qgBRPqwAWT6uAGE+gAAoDwAAKVgxgeleAAApWQBAKVgyACk+AAAoDwAAKVgxgeleAAApWSCgKVg0ACk+ACAoDwAAKVgxgeleAAApWSKgKVg2ACk+ACAoDwAAKVgxgeleACApWQAgKVg4ACk+AAAoDwAAKVgxgeleAAApWSLgKVg6ACk+AAAoDwAAKVgxgeleACApWQBAKVg8ACk+ACAoDwAAKVgxgeleACApWSBgKVg+ACk+ACAoDwAAKVgxgeleAAApWQJgKVgAAGk+AAAoDwAAKVgxgeleAAApWSKAKVgCAGk+AAAoDwAAKVgxgeleAAApWSIAKVgEAGk+AAAoDwAAKVgxgeleACApWQJgKVgGAGk+AAAoDwAAKVgxgeleACApWQKAKVgIAGk+AAAoDwAAKVgxgeleACApWSLgKVgKAGk+ACAoDwAAKVgxgeleAAApWSLAKVgMAGk+ACAoDwAAKVgxgeleAAApWSJgKVgOAGk+ACAoDwAAKVgxgeleAAApWQDgKVgQAGk+ACAoDwAAKVgxgeleAAApWQCgKVgSAGk+ACAoDwAAKVgxgeleAAApWSAAKVgUAGk+AAAoDwAAKVgxgeleAAApWQKgKVgWAGk+ACAoDwAAKVgxgeleACApWQKAKVgYAGk+ACAoDwAAKVgxgeleACApWSBgKVgaAGk+ACAoDwAAKVgxgeleAAApWSAgKVgcAGk+AAAoDwAAKVgxgeleACApWQBAKVgeAGk+ACAoDwAAKVgxgeleACApWQIgKVggAGk+P//QD7//1JiyABkOgwAgDoIAKPoeJKlfAgAo/gQAKPoeJKlfBAAo/hAAKPoeJKlfEAAo/hgAKPoeJKlfGAAo/iIAKPoeJKlfIgAo/igAKPoeJKlfKAAo/ioAMPosADj6LgAA+nAACPp"
-20:
-.base64 "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"
-bne %cr0, 20b
-.base64 "CACj6HiSpXwIAKP4EACj6HiSpXwQAKP4QACj6HiSpXxAAKP4YACj6HiSpXxgAKP4iACj6HiSpXyIAKP4oACj6HiSpXygAKP4iAHE6ZAB5OmYAQTqoAEk6qgBROqwAWTquAGE6iAAgE4=""#,
-    )
-}
-
 /// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`.
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
@@ -62,7 +40,7 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO""#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -105,7 +83,7 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -124,29 +102,7 @@ pub unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: 
         r#".base64 "Yf0h+CAA4TimAgh80f8h+CAAAfgUKiN9AABJiXgySn0AAEmZFCIjff//KTkAAEmJgABgOXhaSn0AAEmZAACHOA=="
 bl {vg_keccak_f1600}
 .base64 "IAAB6DAAITimAwh8oAIhOCAAgE4=""#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
-    )
-}
-
-/// `vg_keccak_pad`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha3.padScratchContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4FCojfQAASYl4Mkp9AABJmRQiI33//yk5AABJiYAAYDl4Wkp9AABJmQAAhzg="
-bl {vg_keccak_f1600}
-.base64 "IAAB6DAAITimAwh8IACATg==""#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -187,49 +143,6 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO""#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
-    )
-}
-
-/// `vg_keccak_squeeze`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha3.squeezeScratchContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of `outlen` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4AAJI+wgCaPsQAoj7GAKo+yACyPsoAuj7AABDOwAAaDsAAIQ7AAClOwAAxjsAAOc7AAA/KA=="
-beq %cr0, 20f
-22:
-.base64 "UOg8fQAAKSg="
-beq %cr0, 23f
-b 24f
-23:
-.base64 "AACgOwAAejgAAJs4"
-bl {vg_keccak_f1600}
-24:
-.base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
-beq %cr0, 25f
-.base64 "FOpafQAAKokAAD6ZAQDeOwEAvTv///87"
-b 26f
-25:
-.base64 "FOpafQAAKukAAD75CADeOwgAvTv4//87"
-26:
-.base64 "AAA/KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

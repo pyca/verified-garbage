@@ -55738,3 +55738,7 @@ bnez t1, 29b
 .option pop",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600.rs"]
+pub(crate) mod vg_keccak_f1600;

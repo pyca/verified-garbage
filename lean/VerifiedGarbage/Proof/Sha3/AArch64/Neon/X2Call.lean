@@ -33,7 +33,8 @@ namespace VG.Proof.Sha3.AArch64.Neon.X2
 open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Neon.X2 (code)
 open VG.Proof.Sha3.AArch64 (Upd Mupd wp_ldr wp_str)
-open VG.Spec.Sha3 (stateX2At keccakF)
+open VG.Spec.Sha3 (keccakF)
+open VG.Proof.Sha3 (stateX2At)
 
 /-- The registers a call may change. -/
 def clobbered : List Reg := [.x0, .x1, .x16, .x17]

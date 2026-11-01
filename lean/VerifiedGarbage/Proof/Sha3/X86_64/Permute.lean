@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Framework.Range
@@ -11,6 +12,7 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -718,23 +720,23 @@ theorem permute_ct : ConstantTime isa Proof.Sha3.permuteX86_64.pre Proof.Sha3.pe
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem permute_verified :
-    Verified X86_64.target Impl.Sha3.X86_64.permute (Spec.Sha3.permuteContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha3.X86_64.permute (Proof.Sha3.permuteContract X86_64.abi) :=
   -- `permuteX86_64` also says that `rdi` and `rsi` are returned unchanged,
   -- which the shared contract leaves out.
   Verified.of_correct permute_correct permute_ct
     { pre := by
-        sig_implies_pre [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig,
+        sig_implies_pre [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig,
           Proof.Sha3.permuteX86_64, X86_64.abi, X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, Proof.Sha3.permuteX86_64,
+        sig_eval [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteX86_64,
           X86_64.abi, X86_64.argRegs]
         exact h.1
       pub := by
-        sig_implies_pub [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig,
+        sig_implies_pub [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig,
           Proof.Sha3.permuteX86_64, X86_64.abi, X86_64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig,
+        sig_implies_sat [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig,
           Proof.Sha3.permuteX86_64, X86_64.abi, X86_64.argRegs]
           [Proof.Sha3.X86_64.satState] using Proof.Sha3.X86_64.satState }
 

@@ -668,8 +668,8 @@ b 22f
 bne %cr0, 20b
 .base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -734,8 +734,8 @@ bne %cr0, 27b
 21:
 .base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -776,8 +776,8 @@ bne %cr0, 23b
 21:
 .base64 "+Acf6KYDCHzQB3/r2Aef6+AHv+voB9/r8Af/6yAAgE4=""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -824,7 +824,7 @@ b 23f
 bne %cr0, 21b
 .base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }

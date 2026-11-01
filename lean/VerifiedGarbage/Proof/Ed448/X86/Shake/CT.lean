@@ -169,7 +169,7 @@ theorem abs_ct {P N : BitVec 32} {pos : Nat} (hp : pos < 136)
 
 theorem pad_ct {pos : Nat} (hp : pos < 136) :
     RelCT isa (Two E ins outs g₁ g₂ m₁ m₂ (PadSlots E scr pos))
-      (.call Spec.Sha3.padScratchApi.name Impl.Sha3.X86.Stream.pad) (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) :=
+      (.call "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) :=
   call_ct Proof.Sha3.X86.Stream.Pad.pad_verified.1 Proof.Sha3.X86.Stream.Pad.pad_verified.2.1
     (fun _ _ _ hc hs => hk.pad_ready hc hp hs)
     (fun a b ea eb ha hb ar aw br bw => ⟨entry_esp ea eb ar aw br bw,
@@ -179,7 +179,7 @@ theorem pad_ct {pos : Nat} (hp : pos < 136) :
 
 theorem sqz_ct {d : Nat} (h24 : 24 ≤ d) (hd : d + 114 ≤ 256) :
     RelCT isa (Two E ins outs g₁ g₂ m₁ m₂ (SqzSlots E scr d))
-      (.call Spec.Sha3.squeezeScratchApi.name Impl.Sha3.X86.Stream.squeeze)
+      (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze)
       (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) :=
   call_ct Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.1 Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.2.1
     (fun _ _ _ hc hs => hk.sqz_ready hc h24 hd hs)

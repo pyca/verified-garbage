@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Range
@@ -10,6 +11,7 @@ public import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -985,9 +987,9 @@ theorem permute_ct : ConstantTime isa Proof.Sha3.permuteAArch64.pre Proof.Sha3.p
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem permute_verified :
-    Verified AArch64.target Impl.Sha3.AArch64.permute (Spec.Sha3.permuteContract AArch64.abi) :=
+    Verified AArch64.target Impl.Sha3.AArch64.permute (Proof.Sha3.permuteContract AArch64.abi) :=
   Verified.of_correct permute_correct permute_ct (by
-    sig_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, Proof.Sha3.permuteAArch64,
+    sig_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.satState] using Proof.Sha3.AArch64.satState)
 
 theorem permute_noFrames : permute.noFrames = true := by decide +kernel

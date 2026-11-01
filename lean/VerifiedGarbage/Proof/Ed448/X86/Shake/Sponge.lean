@@ -714,7 +714,7 @@ theorem pad_setup (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) 
   exact ⟨a0, a1, h2, a3, a4⟩
 
 theorem pad_call (hc : Whole.Ctx E g m₀ ins outs t) {pos : Nat} (hp : pos < 136) (hs : PadSlots E scr pos t) :
-    WP isa (.call Spec.Sha3.padScratchApi.name Impl.Sha3.X86.Stream.pad) t fun v =>
+    WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) t fun v =>
       Whole.Ctx E g m₀ ins outs v ∧ Frame (Lo E :: kWr scr) t.mem v.mem ∧
       ∀ msg, Spec.Sha3.Repr t.mem (scr.setWidth 64) 136 msg → pos = msg.length % 136 →
         stateAt v.mem (scr.setWidth 64) = Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) := by
@@ -807,7 +807,7 @@ theorem sqz_setup (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) 
 
 theorem sqz_call (hc : Whole.Ctx E g m₀ ins outs t) {d : Nat} (h24 : 24 ≤ d) (hd : d + 114 ≤ 256)
     (hs : SqzSlots E scr d t) :
-    WP isa (.call Spec.Sha3.squeezeScratchApi.name Impl.Sha3.X86.Stream.squeeze) t fun v =>
+    WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) t fun v =>
       Whole.Ctx E g m₀ ins outs v ∧ Frame (Lo E :: fr E d 114 :: kWr scr) t.mem v.mem ∧
       Spec.Sha3.bytesAt v.mem (E.setWidth 64 + BitVec.ofNat 64 d) 114 =
         Spec.Sha3.squeezeFrom 136 (stateAt t.mem (scr.setWidth 64)) 0 114 := by

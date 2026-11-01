@@ -265,8 +265,8 @@ jne 219b
 .base64 "i4YQNAAAi3QkCIt8JASLLCRbW1tbww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
         vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
         vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
@@ -556,8 +556,8 @@ jne 221b
 .base64 "i4bIMwAAi3QkCIt8JASLLCRbW1tbww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
         vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
         vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
@@ -890,8 +890,8 @@ jne 220b
         vg_mlkem_sub = sym super::mlkem::vg_mlkem_sub,
         vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
         vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
     )

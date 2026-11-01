@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
@@ -110,9 +112,9 @@ theorem permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre VG.Proof.
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem permute_verified :
-    Verified AArch64.target permute (Spec.Sha3.permuteContract AArch64.abi) :=
+    Verified AArch64.target permute (Proof.Sha3.permuteContract AArch64.abi) :=
   Verified.of_correct permute_correct permute_ct (by
-    sig_implies [Spec.Sha3.permuteContract,Spec.Sha3.permuteSig,VG.Proof.Sha3.permuteAArch64,
+    sig_implies [Proof.Sha3.permuteContract,Proof.Sha3.permuteSig,VG.Proof.Sha3.permuteAArch64,
       AArch64.abi,AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState] using VG.Proof.Sha3.AArch64.satState)
 
 /-- Core and boundary instructions, excluding the emitted return. -/

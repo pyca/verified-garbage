@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Round
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Round
 meta import VerifiedGarbage.TCB.RISCV64.Target
@@ -579,9 +581,9 @@ theorem permute_verified' :
   exact Region.disjoint_of_sep (by decide)
 
 theorem permute_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.permute (Spec.Sha3.permuteContract RISCV64.abi 608) :=
+    Verified RISCV64.target Impl.Sha3.RISCV64.permute (Proof.Sha3.permuteContract RISCV64.abi 608) :=
   permute_verified'.of_implies (by
-    contract_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, Proof.Sha3.permuteRISCV64,
+    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteRISCV64,
       RISCV64.abi, RISCV64.argRegs] [satState] using satState)
 
 end VG.Proof.Sha3.RISCV64

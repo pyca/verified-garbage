@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha3.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sha3.permuteApi.artifact PPC64LE.target {
-    code := Impl.Sha3.PPC64LE.permute
-    verified := Proof.Sha3.PPC64LE.permute_verified },
   Spec.Sha3.absorbApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r8 Impl.Sha3.PPC64LE.Stream.absorb
     stack := 48 + 672
@@ -26,17 +23,9 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r7 Impl.Sha3.PPC64LE.Stream.pad
     stack := 48 + 672
     verified := Proof.Sha3.PPC64LE.Frame.pad_framed },
-  Spec.Sha3.padScratchApi.artifact PPC64LE.target {
-    code := Impl.Sha3.PPC64LE.Stream.pad
-    stack := 48
-    verified := Proof.Sha3.PPC64LE.Stream.pad_verified },
   Spec.Sha3.squeezeApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r8 Impl.Sha3.PPC64LE.Stream.squeeze
     stack := 48 + 672
-    verified := Proof.Sha3.PPC64LE.Frame.squeeze_framed },
-  Spec.Sha3.squeezeScratchApi.artifact PPC64LE.target {
-    code := Impl.Sha3.PPC64LE.Stream.squeeze
-    stack := 48
-    verified := Proof.Sha3.PPC64LE.Stream.squeeze_verified }]
+    verified := Proof.Sha3.PPC64LE.Frame.squeeze_framed }]
 
 end VG.Artifacts.Sha3.PPC64LE

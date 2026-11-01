@@ -929,7 +929,7 @@ cbnz x5, 229b
 .inst 0x4e081d0e,0xf94fd668,0x4e081d0f,0xf94f9674,0xf94f9a75,0xf94f9e76,0xf94fa277,0xf94fa678
 .inst 0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .p2align 6",
-        vg_keccak_f1600_x2 = sym super::sha3::vg_keccak_f1600_x2,
+        vg_keccak_f1600_x2 = sym super::mldsa::vg_keccak_f1600_x2::vg_keccak_f1600_x2,
     )
 }
 
@@ -1167,7 +1167,7 @@ cbnz x5, 229b
 .inst 0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_keccak_f1600_x2_sha3 = sym super::sha3::vg_keccak_f1600_x2_sha3,
+        vg_keccak_f1600_x2_sha3 = sym super::mldsa::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
     )
 }
 
@@ -1395,7 +1395,7 @@ cbnz x5, 229b
 .inst 0x4e081d0e,0xf94fd668,0x4e081d0f,0xf94f9674,0xf94f9a75,0xf94f9e76,0xf94fa277,0xf94fa678
 .inst 0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .p2align 6",
-        vg_keccak_f1600_x2 = sym super::sha3::vg_keccak_f1600_x2,
+        vg_keccak_f1600_x2 = sym super::mldsa::vg_keccak_f1600_x2::vg_keccak_f1600_x2,
     )
 }
 
@@ -1629,7 +1629,7 @@ cbnz x5, 229b
 .inst 0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_keccak_f1600_x2_sha3 = sym super::sha3::vg_keccak_f1600_x2_sha3,
+        vg_keccak_f1600_x2_sha3 = sym super::mldsa::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
     )
 }
 
@@ -4331,7 +4331,7 @@ b 248f
 .inst 0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_keccak_f1600_x2_sha3 = sym super::sha3::vg_keccak_f1600_x2_sha3,
+        vg_keccak_f1600_x2_sha3 = sym super::mldsa::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
     )
 }
 
@@ -4870,7 +4870,7 @@ cbnz x5, 214b
 .inst 0xf94fd268,0x4e081d0e,0xf94fd668,0x4e081d0f,0xf94f9674,0xf94f9a75,0xf94f9e76,0xf94fa277
 .inst 0xf94fa678,0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .p2align 6",
-        vg_keccak_f1600_x2 = sym super::sha3::vg_keccak_f1600_x2,
+        vg_keccak_f1600_x2 = sym super::mldsa::vg_keccak_f1600_x2::vg_keccak_f1600_x2,
     )
 }
 
@@ -4923,8 +4923,8 @@ cbnz x5, 21b
 .inst 0xd348fd40,0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd65f03c0
 .p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -5360,7 +5360,7 @@ b 250f
 .inst 0xf94faa79,0xf94fae7a,0xf94fb27b,0xf94fb67c,0xf94f9273,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_keccak_f1600_x2_sha3 = sym super::sha3::vg_keccak_f1600_x2_sha3,
+        vg_keccak_f1600_x2_sha3 = sym super::mldsa::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
     )
 }
 
@@ -5456,8 +5456,8 @@ b 28f
 .arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
     )
 }
 
@@ -5515,7 +5515,15 @@ cbnz x5, 23b
 .arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_x2.rs"]
+pub(crate) mod vg_keccak_f1600_x2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_x2_sha3.rs"]
+pub(crate) mod vg_keccak_f1600_x2_sha3;

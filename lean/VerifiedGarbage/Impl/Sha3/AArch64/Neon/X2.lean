@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
-public import VerifiedGarbage.Spec.Sha3.X2
 
 /-!
 # Keccak-f[1600] on two interleaved states, as a function (AArch64)
 
 `vg_keccak_f1600_x2(states, scratch)` and `vg_keccak_f1600_x2_sha3`
-(`Spec/Sha3/X2.lean`; AAPCS64: `states` in `x0`, `scratch` in `x1`) run the
+(`Proof/Sha3/X2Contract.lean`; AAPCS64: `states` in `x0`, `scratch` in `x1`) run the
 two-lane rounds that the paired SHAKE samplers inlined (`Pair.roundsProg`,
 with the SHA-3 extension's instructions for `_sha3`): `q8`–`q15` saved in
 `scratch`, both states loaded into `v0`–`v24`, the 24 rounds, the states
@@ -33,7 +32,7 @@ def code (sha3 : Bool) : Prog isa :=
 
 /-- `vg_keccak_f1600_x2`, and `vg_keccak_f1600_x2_sha3` for the SHA-3 extension. -/
 def name (sha3 : Bool) : String :=
-  Spec.Sha3.permuteX2Api.name ++ if sha3 then "_sha3" else ""
+  "vg_keccak_f1600_x2" ++ if sha3 then "_sha3" else ""
 
 /-- A call on the states at `p`, with the function's working space at
 `base + off` (`off` below 8190, in two immediates), and the caller's return

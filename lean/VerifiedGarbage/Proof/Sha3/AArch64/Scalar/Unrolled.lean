@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
@@ -155,9 +157,9 @@ theorem unrolled_permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre
     simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hr
 
 theorem unrolled_permute_verified :
-    Verified AArch64.target unrolledPermute (Spec.Sha3.permuteContract AArch64.abi) :=
+    Verified AArch64.target unrolledPermute (Proof.Sha3.permuteContract AArch64.abi) :=
   Verified.of_correct unrolled_permute_correct unrolled_permute_ct (by
-    sig_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, VG.Proof.Sha3.permuteAArch64,
+    sig_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, VG.Proof.Sha3.permuteAArch64,
       AArch64.abi, AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState]
       using VG.Proof.Sha3.AArch64.satState)
 

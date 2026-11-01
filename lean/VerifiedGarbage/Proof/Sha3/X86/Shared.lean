@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
@@ -30,9 +31,9 @@ theorem setWidth_append32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   omega
 
 theorem permute :
-    Verified X86.target Impl.Sha3.X86.permute (Spec.Sha3.permuteContract X86.abi) :=
+    Verified X86.target Impl.Sha3.X86.permute (Proof.Sha3.permuteContract X86.abi) :=
   Proof.Sha3.X86.permute_verified.of_implies (by
-    contract_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, Proof.Sha3.permuteX86,
+    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Sha3.X86.satState, Proof.Sha3.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
       using Proof.Sha3.X86.satState)
@@ -46,17 +47,17 @@ theorem absorb :
       Mem.readW, Mem.read] using Proof.Sha3.X86.Stream.Absorb.sat)
 
 theorem pad :
-    Verified X86.target Impl.Sha3.X86.Stream.pad (Spec.Sha3.padScratchContract X86.abi 12) :=
+    Verified X86.target Impl.Sha3.X86.Stream.pad (Proof.Sha3.padScratchContract X86.abi 12) :=
   Proof.Sha3.X86.Stream.Pad.pad_verified.of_implies (by
-    contract_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padX86,
+    contract_implies [Proof.Sha3.padScratchContract, Proof.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Sha3.X86.Stream.Pad.sat, Proof.Sha3.X86.Stream.Pad.satMem, X86.arg, X86.argAddr,
       Mem.readW, Mem.read] using Proof.Sha3.X86.Stream.Pad.sat)
 
 theorem squeeze :
-    Verified X86.target Impl.Sha3.X86.Stream.squeeze (Spec.Sha3.squeezeScratchContract X86.abi 12) :=
+    Verified X86.target Impl.Sha3.X86.Stream.squeeze (Proof.Sha3.squeezeScratchContract X86.abi 12) :=
   Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.of_implies (by
-    contract_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeX86,
+    contract_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, setWidth_append32]
       [Proof.Sha3.X86.Stream.Squeeze.sat, Proof.Sha3.X86.Stream.Squeeze.satMem, X86.arg, X86.argAddr,
       Mem.readW, Mem.read] using Proof.Sha3.X86.Stream.Squeeze.sat)
