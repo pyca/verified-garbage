@@ -272,7 +272,7 @@ def signWithCacheApi (p : Params) (module label : String) : Api where
   writeArgs := true
   contracts := some fun A stack => signWithCacheContract p A stack
   summary := s!"Private common {label} signing kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of signContract."
-  safety := ["An absent cache has zero length; its pointer is valid for that empty slice. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.",
+  safety := ["An absent cache has zero length. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.",
     "Cached secret coefficients contain private key material and must be destroyed after use."] ++
     (signApi p module label).safety
 
@@ -283,7 +283,7 @@ def verifyWithCacheApi (p : Params) (module label : String) : Api where
   writeArgs := true
   contracts := some fun A stack => verifyWithCacheContract p A stack
   summary := s!"Private common {label} verification kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of verifyContract."
-  safety := ["An absent cache has zero length; its pointer is valid for that empty slice. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.",
+  safety := ["An absent cache has zero length. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.",
     keyScratchSafety]
 
 end VG.Spec.MlDsa
