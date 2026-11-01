@@ -9,18 +9,15 @@ pub fn parameters() -> (Vec<u8>, Vec<u8>, Vec<u8>) {
     let text = include_str!("../vectors/openssl-dsa-legacy/p2048_q160_t1862.pem");
     let mut der = Vec::new();
     let (mut acc, mut bits) = (0u32, 0);
-    for c in text
-        .lines()
-        .filter(|line| !line.starts_with('-'))
-        .flat_map(str::bytes)
-        .filter(|&c| c != b'=')
-    {
-        let v = ALPHABET.iter().position(|&a| a == c).unwrap() as u32;
-        acc = acc << 6 | v;
-        bits += 6;
-        if bits >= 8 {
-            bits -= 8;
-            der.push((acc >> bits) as u8);
+    for line in text.lines().filter(|line| !line.starts_with('-')) {
+        for c in line.bytes().filter(|&c| c != b'=') {
+            let v = ALPHABET.iter().position(|&a| a == c).unwrap() as u32;
+            acc = acc << 6 | v;
+            bits += 6;
+            if bits >= 8 {
+                bits -= 8;
+                der.push((acc >> bits) as u8);
+            }
         }
     }
     fn element(der: &[u8]) -> (u8, &[u8], &[u8]) {

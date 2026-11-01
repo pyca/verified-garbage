@@ -30,8 +30,8 @@ fn add(mut ctr: [u8; 16], mut k: usize) -> [u8; 16] {
 
 /// CTR from ECB: `data` XORed with the encryptions of `ctr`, `ctr + 1`, ….
 fn reference(key: &[u8; 16], ctr: [u8; 16], data: &[u8]) -> Vec<u8> {
-    let blocks = data.len().div_ceil(16);
-    let mut keystream: Vec<u8> = (0..blocks).flat_map(|i| add(ctr, i)).collect();
+    let start = u128::from_be_bytes(ctr);
+    let mut keystream = crate::bytes::counter_blocks(start, data.len().div_ceil(16));
     Sm4Ecb::new(key).encrypt(&mut keystream).unwrap();
     crate::bytes::xor(data, &keystream)
 }

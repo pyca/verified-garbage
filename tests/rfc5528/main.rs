@@ -146,10 +146,7 @@ fn counter_carries_and_wraps() {
         for start in starts {
             let ctr = start.to_be_bytes();
             let message: Vec<_> = crate::bytes::pattern(16 * 17 + 7, 11, 5);
-            let blocks = message.len().div_ceil(16);
-            let mut stream: Vec<u8> = (0..blocks)
-                .flat_map(|j| start.wrapping_add(j as u128).to_be_bytes())
-                .collect();
+            let mut stream = crate::bytes::counter_blocks(start, message.len().div_ceil(16));
             ecb.encrypt(&mut stream).unwrap();
             let expected: Vec<_> = crate::bytes::xor(&message, &stream);
             check(&ctx, &ctr, &message, &expected);
@@ -183,9 +180,7 @@ fn unaligned_batch_boundaries() {
         let ecb = CamelliaEcb::new(&key).unwrap();
         let start = u128::MAX - 7;
         for len in [0usize, 1, 15, 16, 17, 127, 128, 129, 255, 256, 257, 1025] {
-            let mut stream: Vec<_> = (0..len.div_ceil(16))
-                .flat_map(|i| start.wrapping_add(i as u128).to_be_bytes())
-                .collect();
+            let mut stream = crate::bytes::counter_blocks(start, len.div_ceil(16));
             ecb.encrypt(&mut stream).unwrap();
             for offset in 1..16 {
                 let mut buffer = vec![0xa5; offset + len + 16];

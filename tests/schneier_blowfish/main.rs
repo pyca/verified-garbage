@@ -148,10 +148,10 @@ fn cbc_record() {
 fn many_blocks() {
     let key: Vec<u8> = crate::bytes::pattern(56, 37, 11);
     let data: Vec<u8> = crate::bytes::pattern(8 * 50, 101, 7);
-    let single: Vec<u8> = data
-        .chunks(8)
-        .flat_map(|block| encrypt(&key, block))
-        .collect();
+    let mut single = Vec::new();
+    for block in data.chunks(8) {
+        single.extend(encrypt(&key, block));
+    }
     for n in 0..=50 {
         let cipher = encrypt(&key, &data[..8 * n]);
         assert_eq!(cipher, single[..8 * n]);

@@ -18,26 +18,26 @@ use super::unhex;
 /// the GCM files have): each is the `key = value` fields from a `Count` line
 /// to the next blank line, and whether it has a bare `FAIL` line.
 fn records(text: &str) -> Vec<(Vec<(&str, &str)>, bool)> {
-    text.split("\r\n\r\n")
-        .flat_map(|chunk| chunk.split("\n\n"))
-        .map(|chunk| {
-            chunk
-                .lines()
-                .map(str::trim)
-                .filter(|l| !l.is_empty())
-                .collect::<Vec<_>>()
-        })
-        .filter(|lines| lines.first().is_some_and(|l| l.starts_with("Count = ")))
-        .map(|lines| {
-            let fail = lines.contains(&"FAIL");
-            let fields = lines
-                .iter()
-                .filter(|l| **l != "FAIL")
-                .map(|l| l.split_once(" =").map(|(k, v)| (k, v.trim())).unwrap())
-                .collect();
-            (fields, fail)
-        })
-        .collect()
+    let mut records = Vec::new();
+    for chunk in text.split("\r\n\r\n") {
+        for chunk in chunk.split("\n\n") {
+            let chunk = chunk.trim_start();
+            if !chunk.starts_with("Count = ") {
+                continue;
+            }
+            let mut fields = Vec::new();
+            let mut fail = false;
+            for line in chunk.lines().map(str::trim).filter(|l| !l.is_empty()) {
+                if line == "FAIL" {
+                    fail = true;
+                } else {
+                    fields.push(line.split_once(" =").map(|(k, v)| (k, v.trim())).unwrap());
+                }
+            }
+            records.push((fields, fail));
+        }
+    }
+    records
 }
 
 /// The value of the field `key` of a record.

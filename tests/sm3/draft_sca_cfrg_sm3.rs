@@ -20,15 +20,17 @@ fn section(from: &str, to: &str) -> String {
 /// The bytes of the lines of `text` made only of hex numbers of whole
 /// bytes, leaving out prose, headings and page breaks.
 fn hex_rows(text: &str) -> Vec<u8> {
-    let hex: String = text
-        .lines()
-        .filter(|line| {
-            let mut words = line.split_whitespace().peekable();
-            words.peek().is_some()
-                && words.all(|w| w.len() % 2 == 0 && w.bytes().all(|b| b.is_ascii_hexdigit()))
-        })
-        .flat_map(|line| line.split_whitespace())
-        .collect();
+    let mut hex = String::new();
+    for line in text.lines() {
+        let mut words = line.split_whitespace().peekable();
+        if words.peek().is_some()
+            && words.all(|w| w.len() % 2 == 0 && w.bytes().all(|b| b.is_ascii_hexdigit()))
+        {
+            for word in line.split_whitespace() {
+                hex.push_str(word);
+            }
+        }
+    }
     unhex(&hex)
 }
 

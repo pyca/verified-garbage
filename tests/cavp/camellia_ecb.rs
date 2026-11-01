@@ -105,8 +105,11 @@ fn check_ntt(text: &str, key_len: usize) {
             check(key, p, c);
         }
         for n in (1..=17).chain([128]) {
-            let p: Vec<u8> = blocks[..n].iter().flat_map(|(p, _)| p.clone()).collect();
-            let c: Vec<u8> = blocks[..n].iter().flat_map(|(_, c)| c.clone()).collect();
+            let (mut p, mut c) = (Vec::new(), Vec::new());
+            for (block_p, block_c) in &blocks[..n] {
+                p.extend_from_slice(block_p);
+                c.extend_from_slice(block_c);
+            }
             check(key, &p, &c);
         }
     }

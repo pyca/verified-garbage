@@ -43,15 +43,14 @@ json_struct! {
 // The published JWK strings use unpadded base64url.
 fn decode(s: &str) -> Vec<u8> {
     let alphabet = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-    s.as_bytes()
-        .chunks(4)
-        .flat_map(|chunk| {
-            let word = chunk.iter().enumerate().fold(0u32, |word, (i, c)| {
-                word | ((alphabet.iter().position(|a| a == c).unwrap() as u32) << (18 - 6 * i))
-            });
-            word.to_be_bytes()[1..chunk.len()].to_vec()
-        })
-        .collect()
+    let mut out = Vec::new();
+    for chunk in s.as_bytes().chunks(4) {
+        let word = chunk.iter().enumerate().fold(0u32, |word, (i, c)| {
+            word | ((alphabet.iter().position(|a| a == c).unwrap() as u32) << (18 - 6 * i))
+        });
+        out.extend_from_slice(&word.to_be_bytes()[1..chunk.len()]);
+    }
+    out
 }
 
 fn public(key: &Public) -> Vec<u8> {

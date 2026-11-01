@@ -151,10 +151,10 @@ fn batches() {
         let input = &input[..16 * blocks];
         let mut whole = input.to_vec();
         ctx.encrypt(&mut whole).unwrap();
-        let single: Vec<u8> = input
-            .chunks(16)
-            .flat_map(|b| encrypt_block(&ctx, b))
-            .collect();
+        let mut single = Vec::new();
+        for block in input.chunks(16) {
+            single.extend(encrypt_block(&ctx, block));
+        }
         assert_eq!(whole, single);
         ctx.decrypt(&mut whole).unwrap();
         assert_eq!(whole, input);
