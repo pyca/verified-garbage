@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Checks that every implementation of a verified function reaches every
-function built on it, from the generated code in `src/asm/`.
+function built on it, from the generated code, each target's
+`crates/verified-garbage-asm-<target>/src/`.
 
 A primitive can have several implementations with the same contract, e.g.
 `vg_sha256_compress` and `vg_sha256_compress_shani`: a *variant* of a
@@ -33,8 +34,8 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   variant of `vg_argon2` for `vg_argon2_compress_avx512`), and one of its
   variants adding a part ending in `_<s>` must not call `f`.
 * **Every variant is used.** Each variant is called by another generated
-  function or used by the Rust code of the crate (`src/`, outside
-  `src/asm/`), not counting its tests: the generated modules allow dead
+  function or used by the Rust code of the library (`src/`), not counting
+  its tests: the generated modules allow dead
   code, so a variant the Rust dispatch forgot would otherwise go unnoticed,
   and a variant only a test calls is one nothing else runs. Test code is
   every item gated by a `cfg` that requires `test` (`#[cfg(test)]`,
@@ -75,7 +76,6 @@ import sys
 import asm_layout
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ASM = ROOT / "src" / "asm"
 
 # A function's header; its body ends at the first line starting with `}`.
 # Generated items are `pub`, in a target's crate, or `pub(crate)`, as the
@@ -416,10 +416,9 @@ def strip_tests(toks):
 
 
 def production_rust(src):
-    """The Rust code of the crate's files under `src` (outside `src/asm/`),
-    without its tests: the items gated on `test`, and the files only test code
-    declares."""
-    paths = sorted(p for p in src.rglob("*.rs") if src / "asm" not in p.parents and p != src / "asm")
+    """The Rust code of the library's files under `src`, without its tests:
+    the items gated on `test`, and the files only test code declares."""
+    paths = sorted(src.rglob("*.rs"))
     toks = {p: tokens(p.read_text()) for p in paths}
     test_only = {p for p in paths if strip_tests(toks[p]) is None}
     # Files declared by test code, and those they declare in turn.
@@ -531,7 +530,7 @@ def check(targets, rust, feats=None, names=None):
             if name not in called and name not in words:
                 errors.append(
                     f"{target}: the variant {name} is neither called by another generated "
-                    f"function nor used by the Rust code in src/ (outside src/asm/ and tests): "
+                    f"function nor used by the Rust code in src/ (outside tests): "
                     f"dispatch to it where {var[name][0]} is used, or stop emitting it"
                 )
     return errors
