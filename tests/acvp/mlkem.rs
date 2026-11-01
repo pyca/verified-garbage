@@ -11,6 +11,7 @@
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
+    target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
@@ -90,8 +91,8 @@ pub fn encap_decap(name: &str, function: &str) -> Vec<EncapDecap> {
 }
 
 /// Defines the tests of the parameter set named `$name` (`"ML-KEM-768"`), of
-/// the module `verified_garbage::$module` (`verified_garbage::mlkem768`,
-/// `verified_garbage::mlkem1024`) and its key types.
+/// the module `verified_garbage::$module` (`mlkem768`,
+/// `mlkem1024`) and its key types.
 macro_rules! mlkem_tests {
     ($name:literal, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident) => {
         use verified_garbage::hashes::sha3::{Sha3_256, Shake256};
