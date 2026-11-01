@@ -185,37 +185,8 @@ theorem encA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N
       WP.mono (callArgs_pre hp hk h (fun r hr => g₁ r (preserved_ne hr).2.2.1 (preserved_ne hr).2.2.2)
         rfl rd₁ wr₁ sp₁) fun _ a => ⟨_, a⟩
 
-/-- The code before decryption's call. -/
-theorem decA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
-    (h : LInv M s₀ k s) :
-    WP isa (.block (savePtr .s6 ++ copy .t0 .s4 ++ callArgs)) s
-      fun s₁ => ∃ m, Pre s₀ (blk s₀ k) m s s₁ := by
-  have hS6 : s.gpr .s6 + BitVec.ofNat 64 2048 +
-      BitVec.ofNat 64 (Align.pad (s.gpr .s6 + BitVec.ofNat 64 2048)) = sv s₀ := by rw [h.s6]
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (savePtr_ok .s6) fun s₀' e => ?_
-  subst e
-  rw [hS6]
-  have w₀ (r : Reg) (hr : r ≠ .t0) : (s.write .t0 (sv s₀)).gpr r = s.gpr r := RegUpd.gpr_write_of_ne _ _ hr
-  exact copy_wp (P := sv s₀) (Q := blk s₀ k) (by decide) (by decide) (RegUpd.gpr_write_self _ _ _)
-    (by rw [w₀ _ (by decide), h.s4]) (h.rBlk hp hk) (h.wC hp) (hp.blk_cR hk).symm
-    fun s₁ g₁ _ _ rd₁ wr₁ sp₁ => WP.mono (callArgs_pre hp hk h (fun r hr => by
-      rw [g₁ r (preserved_ne hr).2.2.1, w₀ r (preserved_ne hr).2.1]) rfl rd₁ wr₁ sp₁) fun _ a => ⟨_, a⟩
-
 theorem encPre_taint : ∃ h, (taint.check (Taint.ofRegs vars)
     (.block (xorInto .s4 .s3 ++ callArgs)) h).isSome = true := ⟨_, by taint_decide⟩
-
-theorem decPre_taint : ∃ h, (taint.check (Taint.ofRegs vars)
-    (.block (savePtr .s6 ++ copy .t0 .s4 ++ callArgs)) h).isSome = true := ⟨_, by taint_decide⟩
-
-theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs [.s3, .s4, .s5, .s6])
-    (.block (xorInto .s4 .s3 ++ savePtr .s6 ++ copy .s3 .t0 ++ advance)) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-theorem decBody_ct : BodyCt (cbcMode false) decBody :=
-  fun hp hp' hq k => body_ct (fun hq k => pub_blk hq k)
-    Proof.Aes.RISCV64.decryptBlocks_correct Proof.Aes.RISCV64.decryptBlocks_ct decryptBlocks_noFrames
-    decPre_taint decPost_taint (@fun _ hp _ hk _ h => decA_wp hp hk h) hp hp' hq k
 
 /-! ## The loop -/
 

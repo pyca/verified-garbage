@@ -56,9 +56,11 @@ def framePre (wd : Bool) (len : Nat → Nat) (s : State) : Prop :=
   ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14)
 
 /-- What a mode may write from the state its loop starts from: the S-box's
-slots, two slots of its own (58 and 63, CFB8's input block), and the data. -/
+slots, slots of its own (58 and 63, CFB8's input block; 78–87, the state and
+the blocks of `wide`, `Impl/Aes/RISCV64/Wide.lean`), and the data. -/
 abbrev fRegions (b D : Addr) (L : Nat) : List Region :=
-  [⟨b, 320⟩, ⟨b + BitVec.ofNat 64 464, 8⟩, ⟨b + BitVec.ofNat 64 504, 8⟩, ⟨D, L⟩]
+  [⟨b, 320⟩, ⟨b + BitVec.ofNat 64 464, 8⟩, ⟨b + BitVec.ofNat 64 504, 8⟩, ⟨b + BitVec.ofNat 64 624, 80⟩,
+    ⟨D, L⟩]
 
 /-- What holds when a mode's `pre` runs, in `s₉`, for the call from `s₀`:
 the scratch buffer `X` (rounded up to `b`), the masks, the bitsliced round
@@ -372,17 +374,18 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   -- The epilogue: the state stored back, and the registers restored.
   have hb₁₀ : s₁₀.gpr sb = b := c₁₀.base
   have dE : ∀ {x lx}, 320 ≤ x → x + lx + 7 ≤ 2048 → (x + lx ≤ 464 ∨ 472 ≤ x) →
-      (x + lx ≤ 504 ∨ 512 ≤ x) → ∀ r ∈ fRegions b D (len n),
+      (x + lx ≤ 504 ∨ 512 ≤ x) → (x + lx ≤ 624 ∨ 704 ≤ x) → ∀ r ∈ fRegions b D (len n),
       Region.Disjoint ⟨b + BitVec.ofNat 64 x, lx⟩ r := by
-    intro x lx h1 h2 h3 h4 r hr
+    intro x lx h1 h2 h3 h4 h5 r hr
     simp only [fRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact Offset.disjoint_base _ h1 (by omega)
+    · exact Offset.disjoint b (by omega) (by omega) (by omega)
     · exact Offset.disjoint b (by omega) (by omega) (by omega)
     · exact Offset.disjoint b (by omega) (by omega) (by omega)
     · exact (dDS.sub_right (scr_part X h2)).symm
   have slot₁₀ : s₁₀.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
-    rw [c₁₀.frame.readW (Region.contains_self _ _) (dE (by omega) (by omega) (by omega) (by omega)) (by decide), mem₉, slot₆]
+    rw [c₁₀.frame.readW (Region.contains_self _ _) (dE (by omega) (by omega) (by omega) (by omega) (by omega)) (by decide), mem₉, slot₆]
   have ra₁₀ : s₁₀.gpr .ra = St := c₁₀.ra.trans ra₉
   unfold chainStore
   repeat rw [WP.block_append_iff (M := isa)]
@@ -435,7 +438,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
     have fK₉ : Frame (kRegions b) s₄.mem s₉.mem := by rw [mem₉]; exact fK
     exact (((((sv₁.frame_in savedOffs_range fm₂ dS).frame_in savedOffs_range fSl dSl).frame_in
       savedOffs_range fK₉ (kd (by omega) (by omega))).frame_in savedOffs_range c₁₀.frame
-      (dE (by omega) (by omega) (by omega) (by omega))).frame_in savedOffs_range fT dT')
+      (dE (by omega) (by omega) (by omega) (by omega) (by omega))).frame_in savedOffs_range fT dT')
   have hb₁₃ : s₁₃.gpr sb = b := by
     rw [g₁₃ _ (by decide) (by decide), g₁₂ _ (by decide) (by decide), u₁₁.other _ (by decide), hb₁₀]
   have hscr₁₃ : Scr s₁₃ X 2048 :=
