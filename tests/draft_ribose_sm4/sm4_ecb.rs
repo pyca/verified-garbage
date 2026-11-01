@@ -76,7 +76,7 @@ fn single_blocks() {
         ("A.1.1.  Example 1 (", "A.1.2.  Example 2 ("),
         ("A.1.4.  Example 4", "A.1.5.  Example 5"),
     ] {
-        let e = example(section(from, to));
+        let e = example(&section(from, to));
         check_ecb(&e.key, &e.plaintext, &e.ciphertext);
     }
     // Examples 2 and 5 decrypt examples 1 and 4: their "plaintext" is the
@@ -85,7 +85,7 @@ fn single_blocks() {
         ("A.1.2.  Example 2 (", "A.1.3.  Example 3 ("),
         ("A.1.5.  Example 5", "A.1.6.  Example 6"),
     ] {
-        let text = section(from, to);
+        let text = &section(from, to);
         let key: [u8; 16] = field(text, "Encryption key:").try_into().unwrap();
         check_ecb(
             &key,
@@ -98,7 +98,7 @@ fn single_blocks() {
 /// A block encrypted 1,000,000 times, sixteen copies at a time, and the
 /// whole buffer decrypted back. The two examples run independently.
 fn repeated(from: &str, to: &str) {
-    let e = example(section(from, to));
+    let e = example(&section(from, to));
     let ctx = Sm4Ecb::new(&e.key);
     let mut buffer = e.plaintext.repeat(16);
     for _ in 0..1_000_000 {
@@ -127,7 +127,7 @@ fn ecb() {
         ("A.2.1.1.  Example 1", "A.2.1.2.  Example 2"),
         ("A.2.1.2.  Example 2", "A.2.2.  SM4-CBC Examples"),
     ] {
-        let e = example(section(from, to));
+        let e = example(&section(from, to));
         check_ecb(&e.key, &e.plaintext, &e.ciphertext);
         // The same blocks many times over: more than one group of sixteen,
         // and a partial group.
@@ -140,7 +140,7 @@ fn ecb() {
 /// for the others.
 #[test]
 fn unaligned_data() {
-    let e = example(section("A.2.1.2.  Example 2", "A.2.2.  SM4-CBC Examples"));
+    let e = example(&section("A.2.1.2.  Example 2", "A.2.2.  SM4-CBC Examples"));
     let ctx = Sm4Ecb::new(&e.key);
     for offset in 0..8 {
         let mut buffer = vec![0; offset + e.plaintext.len()];
@@ -158,7 +158,7 @@ fn cbc() {
         ("A.2.2.1.  Example 1", "A.2.2.2.  Example 2"),
         ("A.2.2.2.  Example 2", "A.2.3.  SM4-OFB Examples"),
     ] {
-        let text = section(from, to);
+        let text = &section(from, to);
         let e = example(text);
         let ctx = Sm4Ecb::new(&e.key);
         let mut chain = field(text, "IV:");
@@ -186,7 +186,7 @@ fn ofb() {
         ("A.2.3.1.  Example 1", "A.2.3.2.  Example 2"),
         ("A.2.3.2.  Example 2", "A.2.4.  SM4-CFB Examples"),
     ] {
-        let text = section(from, to);
+        let text = &section(from, to);
         let e = example(text);
         let ctx = Sm4Ecb::new(&e.key);
         let mut state = field(text, "IV:");
@@ -205,7 +205,7 @@ fn cfb() {
         ("A.2.4.1.  Example 1", "A.2.4.2.  Example 2"),
         ("A.2.4.2.  Example 2", "A.2.5.  SM4-CTR Examples"),
     ] {
-        let text = section(from, to);
+        let text = &section(from, to);
         let e = example(text);
         let ctx = Sm4Ecb::new(&e.key);
         let mut chain = field(text, "IV:");
@@ -224,7 +224,7 @@ fn ctr() {
         ("A.2.5.1.  Example 1", "A.2.5.2.  Example 2"),
         ("A.2.5.2.  Example 2", "Appendix B.  Sample Implementation"),
     ] {
-        let text = section(from, to);
+        let text = &section(from, to);
         let e = example(text);
         let ctx = Sm4Ecb::new(&e.key);
         let iv = u128::from_be_bytes(field(text, "IV:").try_into().unwrap());

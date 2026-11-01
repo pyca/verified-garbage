@@ -3,14 +3,18 @@
 
 use super::{check, unhex};
 
-const DRAFT: &str = include_str!("../../vectors/draft-sca-cfrg-sm3/draft-sca-cfrg-sm3-02.txt");
+/// The vectors' file (`crate::vectors`).
+fn draft() -> String {
+    crate::vectors::text("vectors/draft-sca-cfrg-sm3/draft-sca-cfrg-sm3-02.txt")
+}
 
 /// The text from the heading starting `from` (at the start of a line, unlike
 /// its entry in the table of contents) to the one starting `to`.
-fn section(from: &str, to: &str) -> &'static str {
-    let start = DRAFT.find(&format!("\n{from}")).unwrap();
-    let end = start + 1 + DRAFT[start + 1..].find(&format!("\n{to}")).unwrap();
-    &DRAFT[start..end]
+fn section(from: &str, to: &str) -> String {
+    let draft = draft();
+    let start = draft.find(&format!("\n{from}")).unwrap();
+    let end = start + 1 + draft[start + 1..].find(&format!("\n{to}")).unwrap();
+    draft[start..end].to_owned()
 }
 
 /// The bytes of the lines of `text` made only of hex numbers of whole
@@ -31,14 +35,14 @@ fn hex_rows(text: &str) -> Vec<u8> {
 #[test]
 fn appendix_a() {
     // A.1: "abc", given in A.1.1 as "616263".
-    let m = section("A.1.1.", "A.1.2.");
+    let m = &section("A.1.1.", "A.1.2.");
     let msg = unhex(m.split("as \"").nth(1).unwrap().split('"').next().unwrap());
     assert_eq!(msg, b"abc");
-    check(&msg, &hex_rows(section("A.1.5.", "A.2.")));
+    check(&msg, &hex_rows(&section("A.1.5.", "A.2.")));
     // A.2: 64 bytes.
-    let msg = hex_rows(section("A.2.1.", "A.2.2."));
+    let msg = hex_rows(&section("A.2.1.", "A.2.2."));
     assert_eq!(msg.len(), 64);
-    check(&msg, &hex_rows(section("A.2.3.", "Appendix B.")));
+    check(&msg, &hex_rows(&section("A.2.3.", "Appendix B.")));
 }
 
 #[test]
@@ -49,7 +53,7 @@ fn appendix_b() {
         } else {
             format!("B.{}.", k + 1)
         };
-        let s = section(&format!("B.{k}."), &to);
+        let s = &section(&format!("B.{k}."), &to);
         let (input, output) = s.split_once("Output:").unwrap();
         let input = hex_rows(input.split_once("Input:").unwrap().1);
         let output = hex_rows(output);

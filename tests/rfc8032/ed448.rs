@@ -11,7 +11,7 @@
 
 use verified_garbage::ed448::{Error, MAX_CONTEXT_LEN, SigningKey, VerifyingKey};
 
-use super::{TEXT, hex_lines};
+use super::{hex_lines, text};
 
 /// A case of section 7.4.
 struct Vector {
@@ -24,7 +24,8 @@ struct Vector {
 
 /// The cases of section 7.4.
 fn vectors() -> Vec<Vector> {
-    let section = TEXT
+    let text = text();
+    let section = text
         .split_once("\n7.4.  Test Vectors for Ed448\n")
         .unwrap()
         .1

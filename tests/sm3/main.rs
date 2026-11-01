@@ -1,6 +1,6 @@
 //! SM3's published vectors (SM3 is GB/T 32905-2016, and is not in NIST's
 //! CAVP or Wycheproof), vendored unmodified under `vectors/` (see
-//! `vectors/sources/`) and compiled into the test binary, so these tests
+//! `vectors/sources/`) and read at run time (`tests/vectors.rs`), so these tests
 //! always run:
 //!
 //! * `draft_sca_cfrg_sm3`: the hash values of the Internet-Draft

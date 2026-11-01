@@ -2,8 +2,8 @@
 //! known-answer tests.
 //!
 //! The response files are vendored under `vectors/nist-cavp/` (see
-//! `vectors/sources/` for where each one comes from) and compiled into
-//! the test binary, so these tests always run. Every vector of every file is
+//! `vectors/sources/` for where each one comes from) and read at run time
+//! (`tests/vectors.rs`), so these tests always run. Every vector of every file is
 //! checked.
 
 #![cfg(any(

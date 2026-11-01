@@ -27,7 +27,7 @@ fn point(x: &str, y: &str) -> [u8; 57] {
 }
 
 fn vectors() -> Vec<Vector> {
-    let text = include_str!("../../vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
+    let text = crate::vectors::text("vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
     let text = text.split_once("[P-224]").unwrap().1;
     let text = text.split_once("\n[").unwrap().0;
     let fields = super::fields(text);
