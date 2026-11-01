@@ -26,7 +26,7 @@ fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> (Vec<u8>, [u8; 8]) {
     let mut out = Vec::new();
     for block in data.chunks(8) {
         ecb.encrypt(&mut o).unwrap();
-        out.extend(block.iter().zip(&o).map(|(x, y)| x ^ y));
+        out.extend(crate::bytes::xor(block, &o));
     }
     (out, o)
 }
@@ -96,10 +96,10 @@ fn cavp_mmt() {
 /// Every length up to 27 blocks.
 #[test]
 fn from_ecb() {
-    let data: Vec<u8> = (0..8 * 27).map(|i| (i * 31 + 7) as u8).collect();
-    let iv: [u8; 8] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let data: Vec<u8> = crate::bytes::pattern(8 * 27, 31, 7);
+    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
     for key_len in [16, 24] {
-        let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
         let ctx = TripleDesOfb::new(&key).unwrap();
         for len in 0..=data.len() {
             let (output, after) = reference(&key, iv, &data[..len]);

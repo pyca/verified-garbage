@@ -325,7 +325,7 @@ fn boundary_key_sizes_roundtrip() {
     // Generated inputs test round trips, not published known answers.
     let input: Vec<u8> = (0..40).collect();
     for len in [1, 8, 128] {
-        let key: Vec<u8> = (0..len).map(|i| i as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(len, 1, 0);
         for bits in [1, 7, 8, 9, 63, 64, 65, 1023, 1024] {
             let mut ciphertext = [0; 40];
             let mut enc = Rc2CbcEncryptor::new_with_effective_bits(&key, &[1; 8], bits).unwrap();

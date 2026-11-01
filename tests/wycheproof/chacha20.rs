@@ -20,6 +20,7 @@ use crate::json_struct;
 use verified_garbage::chacha20::ChaCha20;
 
 use super::harness::{self, Count, Expectation};
+use crate::bytes::unhex;
 use crate::require_vectors;
 
 json_struct! {
@@ -36,13 +37,6 @@ json_struct! {
         msg: String,
         ct: String,
     }
-}
-
-fn unhex(s: &str) -> Vec<u8> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
 }
 
 #[test]

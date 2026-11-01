@@ -26,7 +26,7 @@ fn reference(key: &[u8; 16], iv: [u8; 16], data: &[u8], encrypt: bool) -> (Vec<u
     for block in data.chunks(16) {
         let mut o = chain;
         ecb.encrypt(&mut o).unwrap();
-        let y: Vec<u8> = block.iter().zip(&o).map(|(x, y)| x ^ y).collect();
+        let y: Vec<u8> = crate::bytes::xor(block, &o);
         let c = if encrypt { &y[..] } else { block };
         chain = if block.len() == 16 {
             c.try_into().unwrap()
@@ -70,10 +70,10 @@ fn draft_examples() {
 /// Every length up to 20 blocks, in each direction.
 #[test]
 fn from_ecb() {
-    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
-    let iv: [u8; 16] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let key: [u8; 16] = crate::bytes::pattern_array(17, 3);
+    let iv: [u8; 16] = crate::bytes::pattern_array(11, 5);
     let ctx = Sm4Cfb128::new(&key);
-    let data: Vec<u8> = (0..16 * 20).map(|i| (i * 31 + 7) as u8).collect();
+    let data: Vec<u8> = crate::bytes::pattern(16 * 20, 31, 7);
     for len in 0..=data.len() {
         for encrypt in [true, false] {
             let (output, after) = reference(&key, iv, &data[..len], encrypt);
@@ -93,13 +93,13 @@ fn from_ecb() {
 /// Unaligned buffers, partial segments and guards across batch boundaries.
 #[test]
 fn feedback_buffers_unaligned() {
-    let key = core::array::from_fn(|i| (17 * i + 3) as u8);
-    let iv = core::array::from_fn(|i| (11 * i + 5) as u8);
+    let key = crate::bytes::pattern_array(17, 3);
+    let iv = crate::bytes::pattern_array(11, 5);
     let ctx = Sm4Cfb128::new(&key);
     for blocks in [0, 1, 2, 3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 64, 65, 1024] {
         for tail in [0, 7] {
             let len = 16 * blocks + tail;
-            let input: Vec<u8> = (0..len).map(|i| (31 * i + 7) as u8).collect();
+            let input: Vec<u8> = crate::bytes::pattern(len, 31, 7);
             for encrypt in [true, false] {
                 let (output, after) = reference(&key, iv, &input, encrypt);
                 for offset in 0..16 {

@@ -15,6 +15,7 @@
     feature = "alloc"
 ))]
 
+use crate::bytes::unhex_spaced as unhex;
 use verified_garbage::scrypt::{Error, scrypt, verify};
 
 /// One `scrypt (P="…", S="…", N=…, r=…, p=…, dkLen=…) = <hex>` vector.
@@ -25,14 +26,6 @@ struct Vector {
     r: u32,
     p: u32,
     dk: Vec<u8>,
-}
-
-fn unhex(s: &str) -> Vec<u8> {
-    let s: String = s.split_whitespace().collect();
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
 }
 
 /// The value of `name=` in `params`, up to the next `,` or `)`.

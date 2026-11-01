@@ -17,6 +17,7 @@ use std::collections::BTreeMap;
 use verified_garbage::seed_ecb::{Error, SeedEcb};
 
 use super::unhex;
+use crate::bytes::xor;
 
 fn key16(key: &[u8]) -> [u8; 16] {
     key.try_into().unwrap()
@@ -26,10 +27,6 @@ fn encrypt_block(ctx: &SeedEcb, block: &[u8]) -> Vec<u8> {
     let mut out = block.to_vec();
     ctx.encrypt(&mut out).unwrap();
     out
-}
-
-fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
-    a.iter().zip(b).map(|(x, y)| x ^ y).collect()
 }
 
 /// ECB in both directions, whole and split at every block boundary.
@@ -162,7 +159,7 @@ fn cryptography_cfb() {
 fn batches() {
     // Generated inputs test agreement between batch sizes, not known answers.
     let ctx = SeedEcb::new(&[7; 16]);
-    let input: Vec<u8> = (0..16 * 50).map(|i| i as u8).collect();
+    let input: Vec<u8> = crate::bytes::pattern(16 * 50, 1, 0);
     for blocks in [1, 15, 16, 17, 31, 32, 33, 50] {
         let input = &input[..16 * blocks];
         let mut whole = input.to_vec();

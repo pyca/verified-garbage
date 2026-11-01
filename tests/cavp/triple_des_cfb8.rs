@@ -114,10 +114,10 @@ fn cavp_mmt() {
 /// Every length up to 40 bytes, in each direction.
 #[test]
 fn from_ecb() {
-    let data: Vec<u8> = (0..40).map(|i| (i * 31 + 7) as u8).collect();
-    let iv: [u8; 8] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let data: Vec<u8> = crate::bytes::pattern(40, 31, 7);
+    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
     for key_len in [16, 24] {
-        let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
         let ctx = TripleDesCfb8::new(&key).unwrap();
         for len in 0..=data.len() {
             for encrypt in [true, false] {

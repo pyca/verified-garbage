@@ -7,6 +7,7 @@
 //! own as well, so a directory that is not listed here does not run:
 //! `ci/check_arch_gates.py` checks that every one is.
 
+mod bytes;
 mod json;
 mod vectors;
 

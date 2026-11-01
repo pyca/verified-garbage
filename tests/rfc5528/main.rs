@@ -10,17 +10,9 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::bytes::unhex_spaced as unhex;
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
 use verified_garbage::camellia_ecb::CamelliaEcb;
-
-fn unhex(text: &str) -> Vec<u8> {
-    let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    assert_eq!(hex.len() % 2, 0);
-    (0..hex.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// The counter block `n` blocks after `ctr`, modulo `2¹²⁸`.
 fn add(ctr: &[u8; 16], n: usize) -> [u8; 16] {
@@ -145,18 +137,18 @@ fn counter_carries_and_wraps() {
         0x0123_4567_89ab_cdef_ffff_ffff_ffff_fffe,
     ];
     for key_len in [16, 24, 32] {
-        let key: Vec<_> = (0..key_len).map(|i| (29 * i + 7) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(key_len, 29, 7);
         let ctx = CamelliaCtr::new(&key).unwrap();
         let ecb = CamelliaEcb::new(&key).unwrap();
         for start in starts {
             let ctr = start.to_be_bytes();
-            let message: Vec<_> = (0..16 * 17 + 7).map(|i| (11 * i + 5) as u8).collect();
+            let message: Vec<_> = crate::bytes::pattern(16 * 17 + 7, 11, 5);
             let blocks = message.len().div_ceil(16);
             let mut stream: Vec<u8> = (0..blocks)
                 .flat_map(|j| start.wrapping_add(j as u128).to_be_bytes())
                 .collect();
             ecb.encrypt(&mut stream).unwrap();
-            let expected: Vec<_> = message.iter().zip(&stream).map(|(m, s)| m ^ s).collect();
+            let expected: Vec<_> = crate::bytes::xor(&message, &stream);
             check(&ctx, &ctr, &message, &expected);
         }
     }
@@ -165,7 +157,7 @@ fn counter_carries_and_wraps() {
 #[test]
 fn limits_and_lengths() {
     for len in 0..=40 {
-        let key: Vec<_> = (0..len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
             assert!(matches!(CamelliaCtr::new(&key), Err(InvalidKeyLength)));
             continue;
@@ -183,7 +175,7 @@ fn limits_and_lengths() {
 #[test]
 fn unaligned_batch_boundaries() {
     for key_len in [16, 24, 32] {
-        let key: Vec<_> = (0..key_len).map(|i| (19 * i + 1) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(key_len, 19, 1);
         let ctx = CamelliaCtr::new(&key).unwrap();
         let ecb = CamelliaEcb::new(&key).unwrap();
         let start = u128::MAX - 7;

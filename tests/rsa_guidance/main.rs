@@ -15,6 +15,7 @@
     feature = "alloc"
 ))]
 
+use crate::bytes::unhex;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
@@ -23,14 +24,6 @@ fn text() -> String {
     crate::vectors::text(
         "vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt",
     )
-}
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0, "{s}");
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
 }
 
 /// The bytes of the base64 text `s` (with its padding).
@@ -216,7 +209,7 @@ fn rsa_pkcs1_lengths() {
     let (private, public, vectors) = &keys()[1];
     let k = public.modulus_len();
     for len in [0, 1, k - 11] {
-        let m: Vec<u8> = (0..len).map(|i| i as u8).collect();
+        let m: Vec<u8> = crate::bytes::pattern(len, 1, 0);
         let c = encrypt(public, &m).unwrap();
         assert_eq!(c.len(), k);
         // A fresh padding string each time.
