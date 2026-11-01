@@ -97,8 +97,10 @@ def cacheLoad (v : VReg) (src dst offset : Reg) : List Instr :=
 def copyKey : List Instr := cacheLoad .v8 .r9 .r11 .r0
 def cacheStep : List Instr := copyKey ++ [.addi .r9 .r9 16, .addi .r11 .r11 16, .subi .r12 .r12 1]
 
+def cacheSelect : List Instr := [mov .r3 .r24,.li .r23 64,.li .r24 80]
+
 def cache : Prog isa := .seq (.loop (.block cacheStep) (.nonzero .d .r12))
- (.block ([mov .r3 .r24, .li .r23 64, .li .r24 80] ++ cacheLoad .v0 .r5 .r16 .r15))
+ (.block (cacheSelect ++ cacheLoad .v0 .r5 .r16 .r15))
 
 def counterStart : List Instr :=
  [.lxvd2x .v0 .r16 .r15, .lxvd2x U .r16 .r20, .vop (.add false T U U),
@@ -180,9 +182,12 @@ def aes8 : Prog isa := .seq (.block (aesInitial ++ firstNine ++ aesRemaining))
  (.seq (.ite (.zero .d .r10) (.block []) (.loop (.block (middle 8)) (.nonzero .d .r10)))
  (.block (roundRaw 8 true)))
 
+def ghStart : List Instr := [.li .r21 128,.li .r22 144]
+
+def ghCode : List Instr := (List.range 4).flatMap ghPair ++ ghFinish
+
 def batch : Prog isa := .seq (.block (counters 8))
- (.seq aes8 (.block (stores ++ [.li .r21 128, .li .r22 144] ++
-  (List.range 4).flatMap ghPair ++ ghFinish)))
+ (.seq aes8 (.block (stores ++ ghStart ++ ghCode)))
 
 def exit : List Instr := [.li .r11 12, .storeRev .w .r8 .r5 .r11] ++ store Y .r14 ++
  [.subi .r12 .r16 128] ++
