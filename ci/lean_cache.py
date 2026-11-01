@@ -78,10 +78,11 @@ Lake writes only for people to read. The messages, with the profile
 `.olean.private` (but the trusted base's) as an empty file, half of what
 unpacking writes: nothing that imports a module as a module reads it. It
 needs the release's leantar (`ci/leantar_release.py`), which `unpack` then
-downloads (once) unless given `--leantar`. It is for a build that will not
-change Lean: `lake shake` (`check_lean_public_imports.py`), a file that is not
-a module and an `import all` of a module of this project read the private
-parts (`lean/README.md`, "Without the private parts").
+downloads (once) unless given `--leantar`. `unpack` keeps the archives of the
+project's modules (`KEPT`), from which `fill-private` writes the private parts
+a tool reads (`lake shake`, a file that is not a module, an `import all`) when
+it needs them: `check_lean_public_imports.py` and `lit_imports.py` run it
+themselves (`lean/README.md`, "Without the private parts").
 
 It stages `files.tar` and each batch in `--tmp` (default: `/dev/shm`, a
 tmpfs, when there is one), so they never reach the disk, and removes them.
@@ -92,6 +93,7 @@ import gzip
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -388,6 +390,97 @@ def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
 # are unpacked too: `VerifiedGarbageAuditBase.lean` reads them.
 KEEP_PRIVATE = ("VerifiedGarbage.TCB.",)
 
+# Where `unpack --empty-private` keeps the archives of the project's modules,
+# from which `fill_private` writes their private parts when a tool needs them
+# (`.lake/ltar`, where CI keeps them, is read too). Laid out as `.lake/ltar`.
+KEPT = Path(".lake/ltar-private")
+
+IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)")
+
+
+def imports_of(lean, module):
+    """The modules the source of `module` (of the project, or a path ending in
+    `.lean`) imports, from its header; [] if there is no such source (a module
+    of a package)."""
+    src = (Path(module) if module.endswith(".lean")
+           else lean.joinpath(*module.split(".")).with_suffix(".lean"))
+    if not src.is_file():
+        return []
+    out, comment = [], False
+    with src.open(encoding="utf-8") as f:
+        for line in f:
+            t = line.strip()
+            if comment:
+                comment = "-/" not in t
+                continue
+            if t.startswith("/-!"):
+                break  # the module's docstring, after the header
+            if t.startswith("/-"):
+                comment = "-/" not in t
+                continue
+            if not t or t.startswith("--") or t in ("module", "prelude"):
+                continue
+            m = IMPORT.match(t)
+            if not m:
+                break
+            out.append(m.group(1))
+    return out
+
+
+def closure(lean, modules):
+    """`modules` and every module of the project they import, transitively."""
+    seen, stack = set(), list(modules)
+    while stack:
+        m = stack.pop()
+        if m not in seen:
+            seen.add(m)
+            stack += imports_of(lean, m)
+    return seen
+
+
+def fill_private(lean, modules, tool=None, jobs=None):
+    """Writes the private part (`.olean.private`) of each module of `modules`
+    and of everything they import that `--empty-private` left empty, from its
+    archive (`KEPT`, or CI's `.lake/ltar`), before a tool that reads them runs:
+    `lake shake` reads the private part of each module it checks and of all
+    they import. Only `.olean.private` is written: the module's other outputs,
+    and its trace, are what they were. Run it after building `modules`: an
+    empty part is then one of the restored build, whose archive is current
+    (Lake rebuilds a module whose sources changed, private part and all), and
+    the sources' imports are the build's. Returns how many it wrote."""
+    lib = lean / ".lake/build/lib/lean"
+    found, missing = [], []
+    for m in sorted(closure(lean, modules)):
+        if m.endswith(".lean"):
+            continue
+        rel = Path(*m.split("."))
+        private = lib / (str(rel) + ".olean.private")
+        if not private.is_file() or private.stat().st_size:
+            continue
+        for d in (KEPT, LTAR):
+            archive = lean / d / "build" / (str(rel) + ".ltar")
+            if archive.is_file():
+                found.append((rel, archive, private))
+                break
+        else:
+            missing.append(m)
+    if missing:
+        raise SystemExit(f"{len(missing)} modules have an empty .olean.private and no archive "
+                         f"(e.g. {missing[0]}): restore the build again without --empty-private "
+                         "(lean/README.md, \"Without the private parts\")")
+    if not found:
+        return 0
+    with tempfile.TemporaryDirectory(dir=lean / ".lake") as tmp:
+        out = Path(tmp)
+        records = [{"file": str(archive), "base": [str(out / "lib/lean"), str(out / "ir")]}
+                   for _, archive, _ in found]
+        subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs or os.cpu_count()),
+                        "-x", "-j", "-"], cwd=lean, input=json.dumps(records).encode(), check=True)
+        for rel, _, private in found:
+            os.replace(out / "lib/lean" / (str(rel) + ".olean.private"), private)
+    print(f"Wrote the private parts of {len(found)} modules", file=sys.stderr)
+    return len(found)
+
 
 def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None, empty_private=False):
     """Extracts `files.tar` and unpacks the archives; with `modules` (a
@@ -477,6 +570,8 @@ def unpack(lean, jobs, tmp, batch, tool, stream, logs=False, empty_private=False
     if tool is None:
         tool = str(leantar_release.fetch()) if empty_private else str(leantar(lean))
     stage = Path(tempfile.mkdtemp(prefix="lean-cache-", dir=tmp))
+    # Another restore's archives would not be this build's.
+    shutil.rmtree(lean / KEPT, ignore_errors=True)
     running = []
     count = 0
 
@@ -526,12 +621,16 @@ def unpack(lean, jobs, tmp, batch, tool, stream, logs=False, empty_private=False
                 if not member.isfile() or rel.suffix != ".ltar":
                     continue  # the index, and directories
                 n += 1
+                m = module_of(rel.relative_to(LTAR))
                 file = stage / str(n)
+                if empty_private and m is not None:
+                    # Kept, for `fill_private`.
+                    file = lean / KEPT / rel.relative_to(LTAR)
+                    file.parent.mkdir(parents=True, exist_ok=True)
                 with open(file, "wb") as f:
                     shutil.copyfileobj(tar.extractfile(member), f)
                 build = build_of(rel.relative_to(LTAR))
                 placeholder(lean, rel.relative_to(LTAR))
-                m = module_of(rel.relative_to(LTAR))
                 records.append(({"file": str(file), "base": [str(build / "lib/lean"), str(build / "ir")]},
                                 empty_private and m is not None and not m.startswith(KEEP_PRIVATE)))
                 size += member.size
@@ -586,6 +685,12 @@ def main(argv=None):
                       help="a file of modules: unpack only the other archives, without files.tar")
     r.add_argument("--empty-private", action="store_true",
                    help="write the modules' .olean.private as empty files, the trusted base's aside")
+    fp = sub.add_parser("fill-private", help="write the private parts --empty-private left empty, "
+                        "of modules and all they import")
+    fp.add_argument("lean", type=Path, help="the Lean project (lean/)")
+    fp.add_argument("modules", nargs="+",
+                    help="module names, or files (`.lean`, e.g. a script `lake env lean` runs) whose imports")
+    fp.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
     u = sub.add_parser("unpack", help="extract a tar of `pack` from stdin")
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
@@ -593,8 +698,7 @@ def main(argv=None):
     u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's, or with "
                    "--empty-private the release ci/leantar_release.py downloads)")
     u.add_argument("--empty-private", action="store_true",
-                   help="as restore's, for a build that will not change Lean: lake shake "
-                   "(check_lean_public_imports.py) reads the private parts")
+                   help="as restore's, keeping the project's archives for fill-private")
     u.add_argument("--logs", action="store_true",
                    help=f"also write the build's messages, with its profile, to {LTAR / LOGS} (`lean_profile.py`)")
     u.add_argument("--tmp", default=tmp_dir(),
@@ -615,6 +719,8 @@ def main(argv=None):
         bundle(args.lean.resolve(), args.archive_dirs, sys.stdout.buffer)
     elif args.command == "store":
         store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, args.archive_dir)
+    elif args.command == "fill-private":
+        fill_private(args.lean.resolve(), args.modules, args.leantar)
     elif args.command == "restore":
         restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others,
                 args.empty_private)

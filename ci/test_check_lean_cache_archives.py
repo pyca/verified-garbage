@@ -214,7 +214,8 @@ class LeanArchiveTests(unittest.TestCase):
             # A tiny batch: each holds one archive, the trusted base's too.
             lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), empty_private=True)
         restored = {p.relative_to(target): p.read_bytes()
-                    for p in (target / ".lake").rglob("*") if p.is_file()}
+                    for p in (target / ".lake").rglob("*") if p.is_file()
+                    and lean_cache.KEPT not in p.relative_to(target).parents}
         expected = as_restored(original)
         for path in expected:
             # The project's modules but the trusted base: a package's are its own.
@@ -225,6 +226,56 @@ class LeanArchiveTests(unittest.TestCase):
         lib = Path(".lake/build/lib/lean")
         self.assertNotEqual(restored[lib / "VerifiedGarbage/TCB/Mem.olean.private"], b"")
         self.assertEqual(restored[lib / "A/B.olean.private"], b"")
+
+    def test_unpack_empty_private_keeps_archives_to_fill_from(self):
+        # A/B imports C (in its header, after a comment); the trusted base's is real.
+        write(self.lean / "A/B.lean", "/- A comment. -/\nmodule\n\npublic import C\nimport Mathlib.Order\n\n"
+                                      "/-! # B -/\nimport Nope\n")
+        write(self.lean / "C.lean", "module\n")
+        data, _ = self.pack()
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*.olean.private")}
+        target = self.root / "restored"
+        target.mkdir()
+        shutil.copytree(self.lean, target, dirs_exist_ok=True,
+                        ignore=lambda d, names: [".lake"] if Path(d) == self.lean else [])
+        with tempfile.TemporaryDirectory() as tmp:
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), empty_private=True)
+        kept = target / lean_cache.KEPT
+        self.assertEqual(sorted(str(p.relative_to(kept)) for p in kept.rglob("*.ltar")),
+                         ["build/A/B.ltar", "build/C.ltar"])
+        lib = Path(".lake/build/lib/lean")
+        self.assertEqual(lean_cache.closure(target, ["A.B"]), {"A.B", "C", "Mathlib.Order"})
+        before = {p: (target / p).read_bytes() for p in original}
+        other = (target / lib / "A/B.olean").stat().st_mtime_ns
+        self.assertEqual(lean_cache.fill_private(target, ["A.B"], str(self.stub), 2), 2)
+        for p in (lib / "A/B.olean.private", lib / "C.olean.private"):
+            self.assertEqual(before[p], b"")
+            self.assertEqual((target / p).read_bytes(), original[p])
+        # Only the private parts are written; nothing is left in `.lake`.
+        self.assertEqual((target / lib / "A/B.olean").stat().st_mtime_ns, other)
+        self.assertEqual(sorted(p.name for p in (target / ".lake").iterdir()),
+                         ["build", "ltar-private", "packages"])
+        # Done: nothing more to write.
+        self.assertEqual(lean_cache.fill_private(target, ["A.B"], str(self.stub), 2), 0)
+        # Restoring again with the private parts drops the kept archives.
+        with tempfile.TemporaryDirectory() as tmp:
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data))
+        self.assertFalse(kept.exists())
+
+    def test_closure_of_a_file(self):
+        # A script that is not a module: its imports, and theirs.
+        write(self.lean / "Script.lean", "import A.B\nimport Lean\n\ndef main : IO Unit := pure ()\n")
+        write(self.lean / "A/B.lean", "module\n\nimport C\n")
+        self.assertEqual(lean_cache.closure(self.lean, [str(self.lean / "Script.lean")]),
+                         {str(self.lean / "Script.lean"), "A.B", "C", "Lean"})
+
+    def test_fill_private_without_archives(self):
+        write(self.lean / "C.lean", "module\n")
+        (self.lean / ".lake/build/lib/lean/C.olean.private").write_text("")
+        with self.assertRaisesRegex(SystemExit, "1 modules have an empty .olean.private and no archive "
+                                                "\\(e.g. C\\): restore the build again"):
+            lean_cache.fill_private(self.lean, ["C"], str(self.stub), 2)
 
     def test_unpack_empty_private_downloads_the_release(self):
         fetched = []

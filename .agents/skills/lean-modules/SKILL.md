@@ -104,5 +104,6 @@ private part (`.olean.private`) of this project's modules, and CI restores
 its builds with those parts empty (`ci/lean_cache.py restore
 --empty-private`). `lake shake` (`ci/check_lean_public_imports.py`,
 `ci/trim_lean_imports.py`) and files that are not modules still read them:
-work on Lean in a build restored with them (`lean/README.md`, "Without the
-private parts").
+in a build restored without them, `ci/lean_cache.py fill-private` writes
+those a tool needs from the kept archives, which the import checks run
+themselves (`lean/README.md`, "Without the private parts").

@@ -393,38 +393,41 @@ every project target immediately after extraction.
 
 ### Without the private parts
 
-If you will not change Lean, `unpack --empty-private` writes a third as much
-(6.5 GB rather than 18 GB) and takes about two thirds of the time: each
-module of this project but the trusted base's (`TCB/`) gets an empty
-`.olean.private`, its private part, with the proofs. Lake only checks that
-the file is there, and what imports a module as a module never reads it:
-`lake build` (the tests too) and the emitters, whose audits read the audit
-records instead (the `lean-modules` skill), work as before. CI restores
-this way.
+`unpack --empty-private` writes less than half as much, 7.5 GB rather than
+18 GB (the build is 4.7 GB rather than 16 GB, and it keeps 1 GB of
+archives), in less time: each module of this project but the trusted base's (`TCB/`) gets an
+empty `.olean.private`, its private part, with its proofs. Lake only checks
+that the file is there, and what imports a module as a module never reads
+it: `lake build` (the tests too) and the emitters, whose audits read the
+audit records instead (the `lean-modules` skill), work as before. CI
+restores this way.
 
 ```sh
 python3 ci/fetch_lean_cache.py | zstd -dc | python3 ci/lean_cache.py unpack lean --empty-private
 ```
 
-**If you will change Lean, restore with the private parts** (the command
-above, without the option). These read the private parts of what they
-load, and fail with `failed to read file '….olean.private', invalid header`
-without them:
+It keeps the archives of this project's modules in `lean/.lake/ltar-private/`,
+so that a tool that reads private parts gets them: `ci/lean_cache.py
+fill-private lean <module or file>` writes those of the modules given and
+everything they import (only the empty ones, in seconds: a module imports at
+most about 1,200 of this project's). These run it themselves:
 
-* `lake shake`, and so `ci/check_lean_public_imports.py`, which every change
-  to Lean runs before it is pushed (CLAUDE.md), and `ci/trim_lean_imports.py`:
-  it reads the private part of each module it checks and of everything that
-  module imports, so rebuilding your own modules is not enough;
+* `ci/check_lean_public_imports.py` and `ci/trim_lean_imports.py`, before
+  `lake shake`, which reads the private part of each module it checks and of
+  all they import;
+* `ci/lit_imports.py`, before `CheckLitImports.lean`.
+
+Run it yourself before what else reads them, which otherwise fails with
+`failed to read file '….olean.private', invalid header`:
+
 * a file that is not a module and imports the project's modules, run with
-  `lake env lean` or open in the editor: `CheckLitImports.lean`
-  (`ci/lit_imports.py`), `GenerateP256Ecdh.lean` and the other
-  `Generate*.lean` and `Check*.lean` files;
-* an `import all` of a module of this project.
+  `lake env lean` or opened in the editor (`fill-private lean
+  GenerateP256Ecdh.lean`: a file's imports);
+* a module with an `import all` of a module of this project (`fill-private`
+  on that module).
 
-Running the same command without `--empty-private` writes the private parts
-back over the empty ones.
-
-`--empty-private` needs the project's leantar, a release of reaperhulk/leangz
-that `ci/leantar_release.py` downloads once (on Linux or macOS, x86-64 or
-arm64) into `~/.cache/verified-garbage/leantar/`, checked against the SHA-256
-`ci/leantar/release.toml` pins.
+Restoring again without `--empty-private` writes every private part and
+deletes the kept archives. `--empty-private` needs the project's leantar, a
+release of reaperhulk/leangz that `ci/leantar_release.py` downloads once (on
+Linux or macOS, x86-64 or arm64) into `~/.cache/verified-garbage/leantar/`,
+checked against the SHA-256 `ci/leantar/release.toml` pins.
