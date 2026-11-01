@@ -32,7 +32,8 @@ namespace VG.Proof.MlDsa.AArch64.Arith
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas ntt)
+open VG.Spec.MlDsa (q n Poly Zq zetas ntt)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 namespace Ntt
 
@@ -146,9 +147,9 @@ def inPlaceSat : State where
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
 theorem ntt_verified :
-    Verified AArch64.target Impl.MlDsa.AArch64.Arith.ntt (Spec.MlDsa.nttContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlDsa.AArch64.Arith.ntt (Proof.MlDsa.nttContract AArch64.abi) :=
   Verified.of_correct ntt_correct ntt_ct (by
-    mldsa_implies [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       AArch64.abi, AArch64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlDsa.AArch64.Arith

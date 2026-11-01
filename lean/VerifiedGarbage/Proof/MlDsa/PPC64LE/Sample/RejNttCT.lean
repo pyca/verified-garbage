@@ -47,7 +47,8 @@ open VG.Impl.MlDsa.PPC64LE.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlKem.PPC64LE (relct_noMem)
 open VG.Proof.MlKem.PPC64LE.Sample (taint_block relct_wp)
-open VG.Spec.MlDsa (Zq q G PolyIs)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt rates)
 
 /-- Two runs, from entry states that agree on the public data. -/
@@ -145,8 +146,8 @@ end
 
 /-! ## `Verified` -/
 
-theorem spOk_of {s : State} (h : (Spec.MlDsa.rejNTTContract PPC64LE.abi 48).pre s) : SpOk (spOf s) s := by
-  sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem spOk_of {s : State} (h : (Proof.MlDsa.rejNTTContract PPC64LE.abi 48).pre s) : SpOk (spOf s) s := by
+  sig_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
   exact ⟨by rw [h1]; exact List.mem_singleton_self _, h2, h3, h4, h5, h6, h7, h8, show (34 : Nat) < 2 ^ 64 by decide, h10, h11, h0⟩
 
@@ -177,11 +178,11 @@ open VG.Proof.MlDsa.Sample
 open RejNtt
 
 theorem rejNTT_verified :
-    Verified PPC64LE.target Impl.MlDsa.PPC64LE.Sample.rejNTT (Spec.MlDsa.rejNTTContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlDsa.PPC64LE.Sample.rejNTT (Proof.MlDsa.rejNTTContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, h3, hpoly, ha⟩ := correct (spOk_of hs)
     refine ⟨t, s', he, ha, ?_⟩
-    sig_post [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs]
     rw [h3]
     by_cases hf : (rnFold [] (X s)).length = 256
     · rw [ifT hf]
@@ -191,14 +192,14 @@ theorem rejNTT_verified :
         exact (rejNTT_some hf).trans (congrArg some hpi.2.symm)⟩⟩
     · rw [ifF hf]
       exact ⟨fun e => absurd e (by decide), .inr ⟨rfl, rejNTT_none (B := 1008) (by decide) (by decide) hf⟩⟩
-  · sig_pub [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+  · sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
     obtain ⟨hsp, hb, h3, h4, h5⟩ := hpub
     exact (all_ct ⟨spOk_of h₁, spOk_of h₂, hsp, h3, h4, h5, leakBytes_inj hb⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩
       e₁ e₂).1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

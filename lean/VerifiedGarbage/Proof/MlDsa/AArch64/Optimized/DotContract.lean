@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
-public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemoryValues
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre

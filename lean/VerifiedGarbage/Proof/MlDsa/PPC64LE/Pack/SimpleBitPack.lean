@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Stream
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 
 /-!
@@ -117,7 +117,7 @@ def sbpSat : State where
   wr := [⟨0x2000, 128⟩]
 
 example : ∃ pre post leak, simpleBitPackContract PPC64LE.abi =
-    simpleBitPackApi.sig.contract PPC64LE.target.abi pre post simpleBitPackApi.writeArgs 0 leak := ⟨_, _, _, rfl⟩
+    simpleBitPackSig.contract PPC64LE.target.abi pre post true 0 leak := ⟨_, _, _, rfl⟩
 
 theorem simpleBitPack_verified :
     Verified PPC64LE.target Impl.MlDsa.PPC64LE.Pack.simpleBitPack (simpleBitPackContract PPC64LE.abi) := by

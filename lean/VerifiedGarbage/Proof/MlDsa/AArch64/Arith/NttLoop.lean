@@ -23,7 +23,8 @@ namespace VG.Proof.MlDsa.AArch64.Arith
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-- The table `tab` holds the values of the zetas `Z`. -/
 def TabOf (tab : Nat → Nat) (Z : Nat → Zq) : Prop := ∀ k < 256, tab k = (Z k).val

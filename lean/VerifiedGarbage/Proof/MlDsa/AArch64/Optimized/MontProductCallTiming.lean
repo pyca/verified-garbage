@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontProduct
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Spec.MlDsa.MontProduct
+public import VerifiedGarbage.Proof.MlDsa.MontProductContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `MontProductCall.lean` -/

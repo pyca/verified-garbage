@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Spec.MlDsa.ResponseHint
+public import VerifiedGarbage.Proof.MlDsa.ResponseHintContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 import VerifiedGarbage.Proof.Framework.Offset
 

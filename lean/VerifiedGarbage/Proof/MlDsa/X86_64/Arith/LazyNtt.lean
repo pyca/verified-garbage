@@ -27,7 +27,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.Arith.Lazy
 open VG.Proof.MlKem.X86_64 (Keep yconst_ok)
-open VG.Spec.MlDsa (ntt polyAt)
+open VG.Spec.MlDsa (ntt)
+open VG.Proof.MlDsa (polyAt)
 
 def transform (F : Poly) : Poly :=
   layer (layer (layer (layer (layer (layer (layer (layer F 128) 64) 32) 16) 8) 4) 2) 1
@@ -44,7 +45,7 @@ theorem transform_rel (f : VG.Spec.MlDsa.Poly) : Rel 17 (transform (lift f)) (nt
   have h8 := layer_rel (by decide : 15 ≤ 15) h7 (by decide : 1 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
   simpa only [ntt_eq_layers, nttLens, List.foldl_cons, List.foldl_nil, transform] using h8
 
-theorem lift_mem {m : Mem} {p : Addr} {f : VG.Spec.MlDsa.Poly} (hp : VG.Spec.MlDsa.PolyIs m p f) :
+theorem lift_mem {m : Mem} {p : Addr} {f : VG.Spec.MlDsa.Poly} (hp : VG.Proof.MlDsa.PolyIs m p f) :
     PolyIs m p (lift f) := by
   intro i hi
   rw [VG.Proof.MlDsa.Arith.polyIs_toNat hp hi, getElem!_pos (lift f) i hi, lift, Vector.getElem_map,
@@ -81,9 +82,9 @@ theorem correct (s : State) (hs : (inPlaceK ntt).pre s) :
 theorem ct : ConstantTime isa (inPlaceK ntt).pre (inPlaceK ntt).pub lazyNtt :=
   VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
 
-theorem verified : Verified X86_64.target lazyNtt (Spec.MlDsa.nttContract X86_64.abi) :=
+theorem verified : Verified X86_64.target lazyNtt (Proof.MlDsa.nttContract X86_64.abi) :=
   Verified.of_correct correct ct (by
-    mldsa_implies [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlDsa.X86_64.Arith.Lazy

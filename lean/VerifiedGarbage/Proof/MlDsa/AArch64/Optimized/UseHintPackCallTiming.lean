@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-public import VerifiedGarbage.Spec.MlDsa.UseHintPack
+public import VerifiedGarbage.Proof.MlDsa.UseHintPackContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `UseHintPackCall.lean` -/

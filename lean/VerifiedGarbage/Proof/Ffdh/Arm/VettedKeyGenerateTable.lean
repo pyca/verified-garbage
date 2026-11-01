@@ -15,7 +15,6 @@ public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateFn
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGenerationContract
 

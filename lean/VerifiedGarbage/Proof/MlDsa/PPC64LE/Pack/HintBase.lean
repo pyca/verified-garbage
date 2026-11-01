@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline

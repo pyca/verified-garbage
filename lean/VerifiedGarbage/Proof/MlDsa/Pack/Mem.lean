@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ML-DSA: polynomials in memory, for the encodings, on every target
 
-The coefficients of the stored representations of `Spec/MlDsa/Poly.lean`
+The coefficients of the stored representations of `Proof/MlDsa/Contract.lean`
 (`coeffAt`, `polyAt`, `natPolyAt`, `PolyIs`), as the encodings read and write
 them: the words of a polynomial, their frame, and `PolyIs` from what each word
 holds.

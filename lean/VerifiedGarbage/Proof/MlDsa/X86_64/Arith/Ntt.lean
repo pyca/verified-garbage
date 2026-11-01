@@ -38,7 +38,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep WP.keep writesOnly gprPreserved_of withMxcsr_ok mxR mx_sub xmm_setXmm
   GOnly add_ofNat_zero sel)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas ntt)
+open VG.Spec.MlDsa (q n Poly Zq zetas ntt)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## The prologue -/
 
@@ -245,9 +246,9 @@ def inPlaceSat : State where
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
 theorem ntt_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Arith.ntt (Spec.MlDsa.nttContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Arith.ntt (Proof.MlDsa.nttContract X86_64.abi) :=
   Verified.of_correct ntt_correct ntt_ct (by
-    mldsa_implies [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

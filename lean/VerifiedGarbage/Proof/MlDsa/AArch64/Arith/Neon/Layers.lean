@@ -13,7 +13,8 @@ open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (Tab)
-open VG.Spec.MlDsa (Poly PolyIs)
+open VG.Spec.MlDsa (Poly)
+open VG.Proof.MlDsa (PolyIs)
 
 private theorem lens_cases {len : Nat} (hl : len ∈ nttLens) :
     len = 128 ∨ len = 64 ∨ len = 32 ∨ len = 16 ∨ len = 8 ∨ len = 4 ∨ len = 2 ∨ len = 1 := by

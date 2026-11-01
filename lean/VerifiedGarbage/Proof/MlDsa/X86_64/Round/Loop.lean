@@ -22,7 +22,7 @@ initial memory (`Inv.read`).
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep wp_countdown setReg_gpr setReg_mem ofNat64_pred)
 
 /-! ## Addresses -/

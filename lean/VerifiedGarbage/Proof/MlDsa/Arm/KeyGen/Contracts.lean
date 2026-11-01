@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract

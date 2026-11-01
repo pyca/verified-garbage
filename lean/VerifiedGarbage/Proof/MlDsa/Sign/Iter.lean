@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose

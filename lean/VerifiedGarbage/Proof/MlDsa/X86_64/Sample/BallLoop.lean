@@ -28,7 +28,8 @@ open VG VG.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Impl.MlDsa.X86_64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q ofInt coeffAt IPoly n)
+open VG.Spec.MlDsa (Zq q ofInt IPoly n)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Impl.MlKem.X86_64 (at_)
 
 /-- The polynomial `c` of `R` is stored at `p`, as elements of `ℤ_q`. -/

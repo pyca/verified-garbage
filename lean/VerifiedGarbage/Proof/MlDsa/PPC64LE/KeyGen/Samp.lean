@@ -32,8 +32,8 @@ namespace VG.Proof.MlDsa.PPC64LE.KeyGen
 
 open VG VG.PPC64LE VG.PPC64LE.RegUpd VG.Proof.MlKem.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly toRq polyAt coeffAt Reduced
-  PolyIs Outcome)
+open VG.Spec.MlDsa (Params Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly toRq Outcome)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (seedA seedS Small Good ifp ifn seedA_eq seedS_eq)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -42,16 +42,16 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The primitives, each verified against its contract with at most `S`
 bytes of stack. -/
 structure PrimsOk (P : Prims) (S : Nat) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract PPC64LE.abi stk) S
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract PPC64LE.abi stk) S
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract PPC64LE.abi stk) S
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract PPC64LE.abi stk) S
-  add : Callee P.add (fun stk => Spec.MlDsa.addContract PPC64LE.abi stk) S
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract PPC64LE.abi stk) S
-  rejBounded : Callee P.rejBounded (fun stk => Spec.MlDsa.rejBoundedContract PPC64LE.abi stk) S
-  power2Round : Callee P.power2Round (fun stk => Spec.MlDsa.power2RoundContract PPC64LE.abi stk) S
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract PPC64LE.abi stk) S
-  bitPack : Callee P.bitPack (fun stk => Spec.MlDsa.bitPackContract PPC64LE.abi stk) S
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract PPC64LE.abi stk) S
+  invNtt : Callee P.invNtt (fun stk => Proof.MlDsa.nttInvContract PPC64LE.abi stk) S
+  mul : Callee P.mul (fun stk => Proof.MlDsa.mulContract PPC64LE.abi stk) S
+  mulAdd : Callee P.mulAdd (fun stk => Proof.MlDsa.mulAddContract PPC64LE.abi stk) S
+  add : Callee P.add (fun stk => Proof.MlDsa.addContract PPC64LE.abi stk) S
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract PPC64LE.abi stk) S
+  rejBounded : Callee P.rejBounded (fun stk => Proof.MlDsa.rejBoundedContract PPC64LE.abi stk) S
+  power2Round : Callee P.power2Round (fun stk => Proof.MlDsa.power2RoundContract PPC64LE.abi stk) S
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract PPC64LE.abi stk) S
+  bitPack : Callee P.bitPack (fun stk => Proof.MlDsa.bitPackContract PPC64LE.abi stk) S
 
 theorem oP_lt {j : Nat} (h : j < 128) : oP j < 2 ^ 31 := by unfold oP; omega_arith
 

@@ -24,7 +24,8 @@ permits the accesses: they change only the output and the registers of
 namespace VG.Proof.MlDsa.PPC64LE.Pack
 
 open VG VG.PPC64LE VG.Impl.MlDsa.PPC64LE.Pack
-open VG.Spec.MlDsa (coeffAt bitsToBytes)
+open VG.Spec.MlDsa (bitsToBytes)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.PPC64LE (wp_loop_nz count_sub count_nz)
 open VG.Proof.MlKem (digits take_drop_eq bytesAt_getD bytesAt_eq! bytesAt_length)

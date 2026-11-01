@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
-public import VerifiedGarbage.Spec.MlDsa.CommitTail
+public import VerifiedGarbage.Proof.MlDsa.CommitTailContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

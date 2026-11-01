@@ -26,7 +26,8 @@ open VG VG.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Impl.MlDsa.X86_64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q ofInt coeffAt)
+open VG.Spec.MlDsa (Zq q ofInt)
+open VG.Proof.MlDsa (coeffAt)
 
 /-! ## Values -/
 

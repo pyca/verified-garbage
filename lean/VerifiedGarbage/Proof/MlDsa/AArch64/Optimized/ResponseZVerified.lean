@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZFlags
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-public import VerifiedGarbage.Spec.MlDsa.ResponseZ
+public import VerifiedGarbage.Proof.MlDsa.ResponseZContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem

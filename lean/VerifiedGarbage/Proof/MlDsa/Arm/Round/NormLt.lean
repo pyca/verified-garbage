@@ -35,7 +35,8 @@ is less than `bound` (`normRq_lt`, `normZq_lt`).
 namespace VG.Proof.MlDsa.Arm.Round.NormLt
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Round VG.Proof.MlDsa.Round VG.Proof.MlDsa.Arm.Round
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced normRq normZq)
+open VG.Spec.MlDsa (q n Poly Zq normRq normZq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced)
 open VG.Proof.MlDsa.Arm.Arith (Entry wp_saving ct_of_saving preserved_of_saving Qw loadQ_val)
 
 /-! ## The body -/
@@ -102,8 +103,8 @@ structure PreE (s : State) : Prop where
   f0 : (s.gpr .r0).toNat + 1024 ≤ 2 ^ 32
   red : Reduced s.mem (P s .r0)
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.normLtContract Arm.abi 4).pre s) : PreE s := by
-  sig_pre [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlDsa.normLtContract Arm.abi 4).pre s) : PreE s := by
+  sig_pre [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6⟩
@@ -183,15 +184,15 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩]
   wr := []
 
-theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.normLt (Spec.MlDsa.normLtContract Arm.abi 4) := by
+theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.normLt (Proof.MlDsa.normLtContract Arm.abi 4) := by
   refine ⟨fun s hs => ?_, ct_of_saving [.r4] _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     rw [VG.Proof.MlKem.Arm.setWidth_append32, h]
     rfl
-  · sig_pub [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨hsp, h0, h1⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
@@ -202,7 +203,7 @@ theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.normLt (Spec.MlDsa.n
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

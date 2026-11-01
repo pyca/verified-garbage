@@ -48,20 +48,20 @@ structure FnOk (k : Nat → Contract isa) (c : Prog isa) : Prop where
 /-- What a caller needs of `vg_mldsa_rej_ntt_poly4`, which calls three deep
 and takes 24 bytes of stack. -/
 structure Rej4Ok (c : Prog isa) : Prop where
-  ver : Verified X86_64.target c (Spec.MlDsa.rejNTT4Contract X86_64.abi 24)
+  ver : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24)
   nosp : NoSp c
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
   /-- Its result is whether each seed has 256 coefficients in its first 1008 bytes of output, as
   both implementations', which signing branches on. -/
-  ret : ∀ s t s', (Spec.MlDsa.rejNTT4Contract X86_64.abi 24).pre s → Exec isa c s t s' →
+  ret : ∀ s t s', (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s → Exec isa c s t s' →
     (s'.gpr .rax).setWidth 32 = Rej4.rej4Res s.mem (s.gpr .rdi)
 
 /-- What a caller needs of `vg_mldsa_expand_mask_poly4`, which calls three
 deep and takes 24 bytes of stack. -/
 structure Mask4Ok (c : Prog isa) : Prop where
-  ver : Verified X86_64.target c (Spec.MlDsa.expandMask4Contract X86_64.abi 24)
+  ver : Verified X86_64.target c (Proof.MlDsa.expandMask4Contract X86_64.abi 24)
   nosp : NoSp c
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
@@ -69,20 +69,20 @@ structure Mask4Ok (c : Prog isa) : Prop where
 
 /-- Each function of the backend `B` meets its contract, and is safe to call. -/
 structure BackendOk (B : Backend) : Prop where
-  ntt : FnOk (fun S => Spec.MlDsa.nttContract X86_64.abi S) B.ntt
+  ntt : FnOk (fun S => Proof.MlDsa.nttContract X86_64.abi S) B.ntt
   invNtt : FnOk (fun S => Proof.MlDsa.Arith.Representation.inverseContract B.montgomery X86_64.abi S) B.invNtt
   mul : FnOk (fun S => Proof.MlDsa.Arith.Representation.productContract B.montgomery X86_64.abi S) B.mul
   mulAdd : FnOk (fun S => Proof.MlDsa.Arith.Representation.accumulateContract B.montgomery X86_64.abi S) B.mulAdd
-  add : FnOk (fun S => Spec.MlDsa.addContract X86_64.abi S) B.add
-  sub : FnOk (fun S => Spec.MlDsa.subContract X86_64.abi S) B.sub
-  highBits : FnOk (fun S => Spec.MlDsa.highBitsContract X86_64.abi S) B.highBits
-  lowBits : FnOk (fun S => Spec.MlDsa.lowBitsContract X86_64.abi S) B.lowBits
-  normLt : FnOk (fun S => Spec.MlDsa.normLtContract X86_64.abi S) B.normLt
-  makeHint : FnOk (fun S => Spec.MlDsa.makeHintContract X86_64.abi S) B.makeHint
-  useHint : FnOk (fun S => Spec.MlDsa.useHintContract X86_64.abi S) B.useHint
+  add : FnOk (fun S => Proof.MlDsa.addContract X86_64.abi S) B.add
+  sub : FnOk (fun S => Proof.MlDsa.subContract X86_64.abi S) B.sub
+  highBits : FnOk (fun S => Proof.MlDsa.highBitsContract X86_64.abi S) B.highBits
+  lowBits : FnOk (fun S => Proof.MlDsa.lowBitsContract X86_64.abi S) B.lowBits
+  normLt : FnOk (fun S => Proof.MlDsa.normLtContract X86_64.abi S) B.normLt
+  makeHint : FnOk (fun S => Proof.MlDsa.makeHintContract X86_64.abi S) B.makeHint
+  useHint : FnOk (fun S => Proof.MlDsa.useHintContract X86_64.abi S) B.useHint
   rej4 : Rej4Ok B.rej4
   expandMask4 : Mask4Ok B.expandMask4
-  dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → FnOk (fun S => Spec.MlDsa.dotInverseContract c X86_64.abi S) (B.dotInv c)
+  dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → FnOk (fun S => Proof.MlDsa.dotInverseContract c X86_64.abi S) (B.dotInv c)
 
 /-- An implementation of the polynomial arithmetic on x86-64. -/
 structure ArithImpl where

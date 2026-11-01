@@ -25,7 +25,8 @@ namespace VG.Proof.MlDsa.X86.Arith
 open VG VG.X86 VG.Impl.MlDsa.X86.Arith
 open VG.Impl.MlKem.X86 (at_)
 open VG.Proof.MlDsa.Arith
-open VG.Spec.MlDsa (q n Poly Zq PolyIs coeffAt)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Proof.MlKem.X86 (Only wp_cons wp_movm wp_movr wp_mul toNat_ofNat32 eq_ofNat_of_toNat execMul_other)
 
 /-- A butterfly's inputs. -/

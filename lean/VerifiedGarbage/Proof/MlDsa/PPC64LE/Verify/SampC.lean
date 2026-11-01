@@ -25,7 +25,8 @@ open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two R
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Impl.MlDsa.PPC64LE.KeyGen (and24 mask setB seqR sampled)
 open VG.Impl.MlKem.PPC64LE (copy)
-open VG.Spec.MlDsa (Params HintIs PolyIs toRq polyAt normRq Reduced rejNTTPoly minBounds Outcome sampleInBall)
+open VG.Spec.MlDsa (Params toRq normRq rejNTTPoly minBounds Outcome sampleInBall)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ vRho aSeed vCt)
 open VG.Spec.Sha3 (bytesAt)
 

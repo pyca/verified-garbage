@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Frag
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem

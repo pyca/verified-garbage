@@ -33,7 +33,8 @@ open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlDsa.AArch64.Sample.RejNtt (lt_bit movQ_ok q_eq)
-open VG.Spec.MlDsa (coeffAt Zq q ofInt IPoly n)
+open VG.Spec.MlDsa (Zq q ofInt IPoly n)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- The polynomial `c` of `R` is stored at `p`, as elements of `ℤ_q`. -/
 def CStored (m : Mem) (p : Addr) (c : IPoly) : Prop := ∀ k < 256, coeffAt m p k = zw (ofInt c[k]!)
@@ -181,7 +182,8 @@ open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlDsa.AArch64.Sample.RejNtt (lt_bit movQ_ok q_eq)
-open VG.Spec.MlDsa (coeffAt Zq q ofInt IPoly n)
+open VG.Spec.MlDsa (Zq q ofInt IPoly n)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- The byte `p` of the output, in any state of the loop. -/
 theorem BAt.byte {X : List Byte} {bP aP : Addr} {τ : Nat} {s₀ : State} (hp : LPre X bP aP τ s₀) {t : Nat}

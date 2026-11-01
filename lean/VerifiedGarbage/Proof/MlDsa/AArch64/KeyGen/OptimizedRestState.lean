@@ -15,7 +15,8 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
 open VG.Impl.MlDsa.AArch64.Call (Ptr)
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt PolyIs bitPack simpleBitPack)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack simpleBitPack)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.KeyGen (t1K t0K Small)
 open VG.Proof.MlDsa.AArch64.Optimized (PosPolyIs)

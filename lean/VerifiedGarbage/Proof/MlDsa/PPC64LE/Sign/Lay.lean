@@ -30,7 +30,8 @@ namespace VG.Proof.MlDsa.PPC64LE.Sign
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn inB reg)
 open VG.Impl.MlDsa.PPC64LE.Sign
-open VG.Spec.MlDsa (Params scratchWords mlDsa44 mlDsa65 mlDsa87 gamma2s simpleBitPackBounds ballParams hintParams bitPackParams bitlen)
+open VG.Spec.MlDsa (Params scratchWords mlDsa44 mlDsa65 mlDsa87 bitlen)
+open VG.Proof.MlDsa (gamma2s simpleBitPackBounds ballParams hintParams bitPackParams)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The parameter sets -/

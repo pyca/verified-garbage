@@ -30,7 +30,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (Keep XOnly xmm_setXmm ifp ifn sel GOnly wp_rcxLoop add_ofNat_zero)
 open VG.Impl.MlKem.X86_64 (xb xmov)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas nttInv)
+open VG.Spec.MlDsa (q n Poly Zq zetas nttInv)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## The layers -/
 
@@ -241,9 +242,9 @@ theorem nttInv_ct : ConstantTime isa (inPlaceK nttInv).pre (inPlaceK nttInv).pub
   VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
 
 theorem nttInv_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Arith.nttInv (Spec.MlDsa.nttInvContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Arith.nttInv (Proof.MlDsa.nttInvContract X86_64.abi) :=
   Verified.of_correct nttInv_correct nttInv_ct (by
-    mldsa_implies [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

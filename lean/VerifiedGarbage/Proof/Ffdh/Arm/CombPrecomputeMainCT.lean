@@ -16,8 +16,6 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCTState
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
 meta import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-meta import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy

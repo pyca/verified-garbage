@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.Proof.MlKem.Arm.Common

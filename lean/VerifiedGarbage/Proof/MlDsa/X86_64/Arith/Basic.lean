@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Common
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
@@ -21,7 +21,7 @@ the ISA, not ML-KEM.
 * `reduce` leaves `redD x` in `r10` of any `x` in `rax`, which is `x mod q`
   (`reduce_ok`, `redD_toNat`): `barrett` of `Arith/Zq.lean` then `csubQ`;
 * for each function, a contract with the facts of its shared contract
-  (`Spec/MlDsa/Poly.lean`) spelled out for x86-64: the arguments in their
+  (`Proof/MlDsa/Contract.lean`) spelled out for x86-64: the arguments in their
   registers, the permitted regions, their disjointness, and the
   postcondition. The proofs are written against these, and
   `Verified.of_correct` moves them to the shared contracts, which imply them
@@ -36,7 +36,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly gprPreserved_of wp_countdown wp_counted ifp ifn
   toNat_setWidth64 toNat_setWidth32_64 read_zero)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## Immediates -/
 

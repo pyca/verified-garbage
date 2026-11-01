@@ -44,7 +44,8 @@ open VG.Proof.MlDsa.Arm.Sample
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.Arm.Pack (unpackLoop buFin)
-open VG.Spec.MlDsa (Zq q H PolyIs toRq bitUnpack bitlen)
+open VG.Spec.MlDsa (Zq q H toRq bitUnpack bitlen)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- The call, from the entry state: `seed = r0`, `gamma1 = r1`, `a = r2`,
@@ -202,8 +203,8 @@ theorem all_ct {σ₁ σ₂ : State} (two : Two σ₁ σ₂) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.expandMaskContract Arm.abi 8).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlDsa.expandMaskContract Arm.abi 8).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h8, -, hrd, hwr, d1, d2, d3, b1, b2, b3, f1, f2, f3, hg⟩ := h
   exact ⟨⟨by rw [hrd]; exact List.mem_singleton_self _, hwr, d1, d2, d3, b1, b2, b3, f1, by show (66 : Nat) < 2 ^ 32; decide, f2, f3, h8⟩, hg⟩
@@ -229,19 +230,19 @@ open VG VG.Arm
 open ExpandMask
 
 theorem expandMask_verified :
-    Verified Arm.target Impl.MlDsa.Arm.Sample.expandMask (Spec.MlDsa.expandMaskContract Arm.abi 8) := by
+    Verified Arm.target Impl.MlDsa.Arm.Sample.expandMask (Proof.MlDsa.expandMaskContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpoly, hpres⟩ := correct (pre_of hs)
     refine ⟨t, s', he, hpres, ?_⟩
-    sig_post [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact hpoly
-  · sig_pub [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs,
+  · sig_pub [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at hpub
     obtain ⟨hsp, h0, h1, h2, h3⟩ := hpub
     exact (all_ct ⟨pre_of h₁, pre_of h₂, hsp, h0, h1, h2, h3⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs,
+    sig_sat_check [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
 
 end VG.Proof.MlDsa.Arm.Sample

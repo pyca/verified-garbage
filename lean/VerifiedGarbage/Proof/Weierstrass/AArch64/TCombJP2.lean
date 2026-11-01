@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 
 /-!

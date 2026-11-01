@@ -1,0 +1,49 @@
+// The functions of `src/internal/vg_mldsa_high_bits.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_mldsa_high_bits:
+	cmp r1, #95232
+	beq 20f
+	mov r1, #256
+22:
+	ldr r3, [r0, #0]
+	add r3, r3, #127
+	lsr r3, r3, #7
+	movw r12, #1025
+	mul r3, r3, r12
+	add r3, r3, #2097152
+	lsr r3, r3, #22
+	sub r3, r3, #16
+	lsr r12, r3, #31
+	add r3, r3, r12, lsl #4
+	str r3, [r2, #0]
+	add r0, r0, #4
+	add r2, r2, #4
+	subs r1, r1, #1
+	bne 22b
+	b 21f
+20:
+	mov r1, #256
+23:
+	ldr r3, [r0, #0]
+	add r3, r3, #127
+	lsr r3, r3, #7
+	movw r12, #11275
+	mul r3, r3, r12
+	add r3, r3, #8388608
+	lsr r3, r3, #24
+	sub r3, r3, #44
+	lsr r12, r3, #31
+	add r3, r3, r12, lsl #5
+	add r3, r3, r12, lsl #3
+	add r3, r3, r12, lsl #2
+	str r3, [r2, #0]
+	add r0, r0, #4
+	add r2, r2, #4
+	subs r1, r1, #1
+	bne 23b
+21:
+	bx lr

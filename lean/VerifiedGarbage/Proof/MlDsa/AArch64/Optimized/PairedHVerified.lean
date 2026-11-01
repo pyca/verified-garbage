@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones

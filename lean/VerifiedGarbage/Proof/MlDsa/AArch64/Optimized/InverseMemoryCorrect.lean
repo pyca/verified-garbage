@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryFinalField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank

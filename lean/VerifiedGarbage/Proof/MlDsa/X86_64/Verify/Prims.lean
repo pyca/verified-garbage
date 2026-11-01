@@ -73,11 +73,11 @@ theorem calleeOf {sig : Sig} {pre : Curry (sig.words X86_64.abi.ptrBits) (Mem �
 theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   ntt := by
     have h := v.ok.ntt
-    unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract at h ⊢
+    unfold Proof.MlDsa.nttContract Proof.MlDsa.inPlaceContract at h ⊢
     exact calleeOf h
   invNtt := by
     have h := v.ok.invNtt
-    unfold Proof.MlDsa.Arith.Representation.inverseContract Spec.MlDsa.inPlaceContract at h ⊢
+    unfold Proof.MlDsa.Arith.Representation.inverseContract Proof.MlDsa.inPlaceContract at h ⊢
     exact calleeOf h
   mul := calleeOf v.ok.mul
   mulAdd := calleeOf v.ok.mulAdd

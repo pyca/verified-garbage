@@ -22,7 +22,7 @@ namespace VG.Proof.MlDsa.X86.Pack
 open VG VG.X86 VG.Impl.MlDsa.X86.Pack
 open VG.Proof.MlKem.X86 (Piece Piece.taint Piece.seq Piece.ite P0 E0 P0_esp P0_wr frameR retR LeafEnd
   P0_argAddr P0_argIn P0_arg saveRegs_len sub_beq_zero toNat_ofNat32)
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Impl.MlKem.X86 (saveRegs)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.Pack
@@ -209,7 +209,7 @@ end VG.Proof.MlDsa.X86.Pack
 
 namespace VG.Proof.MlDsa.X86.Pack
 
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 
 /-! ## Satisfiability -/
 

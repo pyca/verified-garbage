@@ -24,7 +24,8 @@ open VG VG.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Impl.MlDsa.X86_64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q G PolyIs)
+open VG.Spec.MlDsa (Zq q G)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `vg_mldsa_rej_ntt_poly(seed = rdi, a = rsi, scratch = rdx) -> eax`, with

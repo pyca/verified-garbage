@@ -18,7 +18,6 @@ public import VerifiedGarbage.Spec.Weierstrass.Mul
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
 import VerifiedGarbage.Spec.Weierstrass.Mul
 public import VerifiedGarbage.Impl.Mont.AArch64

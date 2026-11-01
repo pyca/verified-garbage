@@ -19,7 +19,7 @@ private theorem legacy_pre {s : State} (h : VG.Proof.MlDsa.AArch64.Sample.Rej4.r
   obtain ⟨hr,hw,hsa,hss,has⟩ := h
   exact ⟨Or.inr rfl,hr,hw,hsa,hss,has⟩
 
-theorem selected_verified (sha3 : Bool) : Verified target (selected sha3) (Spec.MlDsa.rejNTT4Contract abi) := by
+theorem selected_verified (sha3 : Bool) : Verified target (selected sha3) (Proof.MlDsa.rejNTT4Contract abi) := by
   cases sha3
   · exact VG.Proof.MlDsa.AArch64.Sample.Rej4.verified false
   · exact four_verified

@@ -13,7 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedSample
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 
 /-! Only canonical public width bits select the sampler's three immediate shifts. -/
 

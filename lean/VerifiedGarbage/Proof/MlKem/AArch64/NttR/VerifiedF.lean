@@ -27,8 +27,6 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Artifact
 meta import VerifiedGarbage.TCB.Artifact
-public import Init.Data.List.BasicAux
-meta import Init.Data.List.BasicAux
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Fast
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Fast
 public import VerifiedGarbage.TCB.AArch64.Target

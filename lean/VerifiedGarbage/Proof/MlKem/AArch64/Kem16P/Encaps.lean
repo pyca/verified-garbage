@@ -11,14 +11,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 
 /-! # The encapsulation computing PRF outputs in the matrix is correct

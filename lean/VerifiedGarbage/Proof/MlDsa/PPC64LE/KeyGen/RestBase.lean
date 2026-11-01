@@ -28,7 +28,8 @@ namespace VG.Proof.MlDsa.PPC64LE.KeyGen
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.KeyGen
 open VG.Impl.MlKem.PPC64LE (copy)
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt polyAt coeffAt Reduced PolyIs bitPack simpleBitPack)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack simpleBitPack)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (t1K t0K Small Good ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
 

@@ -18,7 +18,8 @@ registers, as the symbolic execution of a block writes them (`condAddV`,
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round
-open VG.Spec.MlDsa (q gamma2s)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
 open VG.Proof.MlDsa.Round (hbF q_eq mem_gamma2s hbF_le hbF_eq)
 
 /-- A 32-bit immediate below `2³¹`, sign-extended. -/

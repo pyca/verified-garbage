@@ -33,7 +33,8 @@ open VG.Impl.MlKem.X86 (at_ ldScratch layerCode layers blockInit blockEnd zUp)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86.Arith
 open VG.Proof.MlDsa.X86.Arith.NttLoop
-open VG.Spec.MlDsa (q n Poly Zq PolyIs Reduced coeffAt polyAt nttContract inPlaceContract inPlaceSig zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (PolyIs Reduced coeffAt polyAt nttContract inPlaceContract inPlaceSig)
 open VG.Proof.MlKem.X86 (E0 P0 frameR retR Piece LeafPost satState)
 
 /-- The butterfly of Algorithm 41. -/

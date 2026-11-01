@@ -18,7 +18,8 @@ and any `ld` or `fin`, from the group lemmas of `Stream.lean`.
 namespace VG.Proof.MlDsa.AArch64.Pack
 
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Pack
-open VG.Spec.MlDsa (coeffAt bitsToBytes)
+open VG.Spec.MlDsa (bitsToBytes)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.AArch64 (Only Keep wp_nil wp_movz wp_movImm toNat_imm toNat_sub_n toNat_ofNat_lt BytesUpTo
   BytesUpTo.zero BytesUpTo.eq ptr_add ptr_zero ptr_next count_loop)

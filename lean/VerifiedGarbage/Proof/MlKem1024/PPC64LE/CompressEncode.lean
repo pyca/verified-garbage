@@ -26,7 +26,6 @@ meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Reduce
-import VerifiedGarbage.Proof.MlKem.PPC64LE.Reduce
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 meta import VerifiedGarbage.Proof.MlKem.Encode

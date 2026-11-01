@@ -39,7 +39,8 @@ that save `r4`–`r6`.
 namespace VG.Proof.MlDsa.Arm.Round.MakeHint
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Round VG.Proof.MlDsa.Round VG.Proof.MlDsa.Arm.Round
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced HintIs hintOnes gamma2s makeHint)
+open VG.Spec.MlDsa (q n Poly Zq makeHint)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced HintIs hintOnes gamma2s)
 open VG.Proof.MlDsa.Arm.Arith.AddSub (fixS)
 open VG.Impl.MlDsa.Arm.Arith (fixupS subQ)
 open VG.Proof.MlDsa.Arm.Arith (Entry wp_saving ct_of_saving preserved_of_saving)
@@ -141,8 +142,8 @@ structure PreE (s : State) : Prop where
   redZ : Reduced s.mem (P s .r0)
   redR : Reduced s.mem (P s .r1)
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.makeHintContract Arm.abi 12).pre s) : PreE s := by
-  sig_pre [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlDsa.makeHintContract Arm.abi 12).pre s) : PreE s := by
+  sig_pre [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
@@ -274,16 +275,16 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
   wr := [⟨0x3000, 1024⟩]
 
-theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.makeHint (Spec.MlDsa.makeHintContract Arm.abi 12) := by
+theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.makeHint (Proof.MlDsa.makeHintContract Arm.abi 12) := by
   refine ⟨fun s hs => ?_, ct_of_saving [.r4, .r5, .r6] _ [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_)
     (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hh, h0⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     rw [VG.Proof.MlKem.Arm.setWidth_append32]
     exact ⟨hh, h0⟩
-  · sig_pub [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨hsp, h0, h1, h2, h3⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
@@ -292,7 +293,7 @@ theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.makeHint (Spec.MlDsa
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
 
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
@@ -28,8 +29,8 @@ namespace VG.Proof.MlDsa.X86.KeyGen
 open VG VG.X86 VG.Impl.MlKem.X86
 open VG.Proof.MlKem.X86 VG.Proof.MlKem.X86.Top
 open VG.Impl.MlDsa.X86.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly keyGenInternal toRq polyAt
-  coeffAt Reduced PolyIs integerToBytes)
+open VG.Spec.MlDsa (Params Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly keyGenInternal toRq integerToBytes)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (seedA seedS bmax)
 open VG.Spec.Sha3 (bytesAt)
 

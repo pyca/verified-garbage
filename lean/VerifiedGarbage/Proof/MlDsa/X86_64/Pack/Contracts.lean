@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 # ML-DSA on x86-64: the contracts of the encodings, for the proofs
 
 For each function of this group, a contract with the facts of its shared
-contract (`Spec/MlDsa/Poly.lean`) spelled out for x86-64: the arguments in
+contract (`Proof/MlDsa/Contract.lean`) spelled out for x86-64: the arguments in
 their registers, the permitted regions, their disjointness, and the
 postcondition. The proofs are written against these, and `Verified.of_correct`
 moves them to the shared contracts, which imply them. Also: `sel_ok`, the

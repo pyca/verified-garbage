@@ -252,8 +252,8 @@ theorem o0_toNat (s₀ : State) {j : Nat} :
   rw [o0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
   exact Nat.lt_trans (Fin.isLt _) (by decide)
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.power2RoundContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.power2RoundContract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
@@ -267,29 +267,29 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩]
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
 
-theorem verified : Verified PPC64LE.target power2Round (Spec.MlDsa.power2RoundContract PPC64LE.abi) := by
+theorem verified : Verified PPC64LE.target power2Round (Proof.MlDsa.power2RoundContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.PPC64LE.Add.ctRegs [.r3, .r4, .r5] (fun s₁ s₂ h => ?_)
     (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (vals hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs]
     refine ⟨natPolyIs_of_toNat fun j hj => ?_, polyIs_of_toNat fun j hj => ?_⟩
     · rw [h.c1 j hj hj]; exact o1_toNat s hj
     · rw [h.c0 j hj hj]; exact o0_toNat s
-  · sig_pub [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h.2.1
     · exact h.2.2.1
     · exact h.2.2.2
-  · sig_pub [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

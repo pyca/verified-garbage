@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
@@ -382,23 +382,23 @@ theorem Lay.keepBytes (hP : PPostB s s' ws) (hc : keepB (rbs ++ wbs) ws p l = tr
   exact Proof.MlKem.bytesAt_frame hP.frame (L.fdisj hc) (by have := L.small _ hn; omega)
 
 theorem Lay.keepPoly {f : Spec.MlDsa.Poly} (hP : PPostB s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 = true)
-    (h : Spec.MlDsa.PolyIs s.mem (pa s p) f) : Spec.MlDsa.PolyIs s'.mem (pa s' p) f := by
+    (h : Proof.MlDsa.PolyIs s.mem (pa s p) f) : Proof.MlDsa.PolyIs s'.mem (pa s' p) f := by
   rw [hP.pa (keepB_bs hc)]
   exact Proof.MlDsa.Verify.polyIs_frame hP.frame (L.fdisj hc) h
 
 theorem Lay.keepPolyAt (hP : PPostB s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 = true) :
-    Spec.MlDsa.polyAt s'.mem (pa s' p) = Spec.MlDsa.polyAt s.mem (pa s p) := by
+    Proof.MlDsa.polyAt s'.mem (pa s' p) = Proof.MlDsa.polyAt s.mem (pa s p) := by
   rw [hP.pa (keepB_bs hc)]
   exact Proof.MlDsa.Verify.polyAt_frame hP.frame (L.fdisj hc)
 
 theorem Lay.keepRed (hP : PPostB s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 = true)
-    (h : Spec.MlDsa.Reduced s.mem (pa s p)) : Spec.MlDsa.Reduced s'.mem (pa s' p) := by
+    (h : Proof.MlDsa.Reduced s.mem (pa s p)) : Proof.MlDsa.Reduced s'.mem (pa s' p) := by
   rw [hP.pa (keepB_bs hc)]
   exact Proof.MlDsa.Verify.reduced_frame hP.frame (L.fdisj hc) h
 
 theorem Lay.keepHint {k : Nat} {h : List (Vector Bool Spec.MlDsa.n)} (hP : PPostB s s' ws)
     (hc : keepB (rbs ++ wbs) ws p (1024 * k) = true)
-    (hh : Spec.MlDsa.HintIs s.mem (pa s p) k h) : Spec.MlDsa.HintIs s'.mem (pa s' p) k h := by
+    (hh : Proof.MlDsa.HintIs s.mem (pa s p) k h) : Proof.MlDsa.HintIs s'.mem (pa s' p) k h := by
   rw [hP.pa (keepB_bs hc)]
   have hin : inB (rbs ++ wbs) p (1024 * k) = true := by
     simp only [keepB, Bool.and_eq_true] at hc; exact hc.1.2

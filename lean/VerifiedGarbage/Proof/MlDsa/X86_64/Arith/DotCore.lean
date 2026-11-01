@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Dot
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 public meta import Lean.Elab.Tactic.Basic
 
 /-!
@@ -37,7 +37,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (XOnly)
 open VG.Impl.MlKem.X86_64 (xb xmov)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt PolyIs montgomeryRInv)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt PolyIs montgomeryRInv)
 
 /-- The quadwords of `x` plus `m · q` (`vredc`). -/
 def vredcV (x : BitVec 128) : BitVec 128 :=
@@ -159,9 +160,9 @@ def dotK (c : Nat) : Contract isa where
     (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rcx)) ∧ (pR (s.gpr .rcx)).Disjoint (famR (s.gpr .rsi) c) ∧
     (pR (s.gpr .rcx)).Disjoint (famR (s.gpr .rdx) c) ∧ (retR s).Disjoint (pR (s.gpr .rdi)) ∧
     (retR s).Disjoint (pR (s.gpr .rcx)) ∧
-    (∀ j < c, Spec.MlDsa.PositiveReduced s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j))) ∧
-    (∀ j < c, Spec.MlDsa.PositiveReduced s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j)))
-  post s s' := PolyIs s'.mem (s.gpr .rdi) (Spec.MlDsa.nttInv (Spec.MlDsa.dotNTT
+    (∀ j < c, Proof.MlDsa.PositiveReduced s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j))) ∧
+    (∀ j < c, Proof.MlDsa.PositiveReduced s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j)))
+  post s s' := PolyIs s'.mem (s.gpr .rdi) (Spec.MlDsa.nttInv (Proof.MlDsa.dotNTT
     (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
     (fun j => polyAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j))) c))
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
@@ -195,12 +196,12 @@ def dotSat (c : Nat) : State where
 
 /-- The implication from `dotInverseContract c`, for a literal `c`. -/
 tactic_template "dot_implies " w:term : tactic => `(tactic| exact
-  { pre := by sig_implies_pre [Spec.MlDsa.dotInverseContract, Spec.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
-    post := by sig_implies_post [Spec.MlDsa.dotInverseContract, Spec.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
-    pub := by sig_implies_pub [Spec.MlDsa.dotInverseContract, Spec.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
+  { pre := by sig_implies_pre [Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
+    post := by sig_implies_post [Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
+    pub := by sig_implies_pub [Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
     sat := by
       refine ⟨$w, ?_⟩
-      sig_pre [Spec.MlDsa.dotInverseContract, Spec.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
+      sig_pre [Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, dotK, X86_64.abi, X86_64.argRegs]
       and_intros
       all_goals first
         | rfl

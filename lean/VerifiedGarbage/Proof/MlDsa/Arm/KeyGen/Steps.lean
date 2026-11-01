@@ -162,16 +162,16 @@ section
 variable (hl : l = 1024)
 include hl
 
-theorem polyIs_keepW {f : Spec.MlDsa.Poly} (hp : Spec.MlDsa.PolyIs m (L.A i o) f) : Spec.MlDsa.PolyIs m' (L.A i o) f :=
+theorem polyIs_keepW {f : Spec.MlDsa.Poly} (hp : Proof.MlDsa.PolyIs m (L.A i o) f) : Proof.MlDsa.PolyIs m' (L.A i o) f :=
   Proof.MlDsa.Verify.polyIs_frame hf (fun r hr => by have := keepD hL h hw r hr; subst hl; exact this) hp
 
-theorem reduced_keepW (hp : Spec.MlDsa.Reduced m (L.A i o)) : Spec.MlDsa.Reduced m' (L.A i o) :=
+theorem reduced_keepW (hp : Proof.MlDsa.Reduced m (L.A i o)) : Proof.MlDsa.Reduced m' (L.A i o) :=
   Proof.MlDsa.Verify.reduced_frame hf (fun r hr => by have := keepD hL h hw r hr; subst hl; exact this) hp
 
-theorem polyAt_keepW : Spec.MlDsa.polyAt m' (L.A i o) = Spec.MlDsa.polyAt m (L.A i o) :=
+theorem polyAt_keepW : Proof.MlDsa.polyAt m' (L.A i o) = Proof.MlDsa.polyAt m (L.A i o) :=
   Proof.MlDsa.Verify.polyAt_frame hf (fun r hr => by have := keepD hL h hw r hr; subst hl; exact this)
 
-theorem natPolyAt_keepW : Spec.MlDsa.natPolyAt m' (L.A i o) = Spec.MlDsa.natPolyAt m (L.A i o) :=
+theorem natPolyAt_keepW : Proof.MlDsa.natPolyAt m' (L.A i o) = Proof.MlDsa.natPolyAt m (L.A i o) :=
   Proof.MlDsa.Verify.natPolyAt_frame hf (fun r hr => by have := keepD hL h hw r hr; subst hl; exact this)
 
 end

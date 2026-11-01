@@ -25,7 +25,8 @@ open VG.Impl.MlDsa.X86_64.Sample (emBody)
 open VG.Proof.MlKem.X86_64
 open VG.Proof.MlDsa.X86_64.Sample (GPre emBody_ok emOk emV gOf)
 open VG.Proof.MlDsa.Sample (emC emC_eq expandMask_getElem polyIs_of_coeffAt)
-open VG.Spec.MlDsa (H coeffAt)
+open VG.Spec.MlDsa (H)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.Sample (coeffAddr)
 open VG.Proof.Sha3.X86_64.X4 (la)
 

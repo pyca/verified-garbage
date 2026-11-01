@@ -34,8 +34,8 @@ namespace VG.Proof.MlDsa.X86.Round
 
 open VG VG.X86 VG.X86.Wp VG.Impl.MlDsa.X86.Round
 open VG.Impl.MlKem.X86 (at_ leaf)
-open VG.Spec.MlDsa (q gamma2s coeffAt Reduced polyAt PolyIs NatPolyIs highBits lowBits ofInt
-  highBitsContract lowBitsContract bitsSig)
+open VG.Spec.MlDsa (q highBits lowBits ofInt)
+open VG.Proof.MlDsa (gamma2s coeffAt Reduced polyAt PolyIs NatPolyIs highBitsContract lowBitsContract bitsSig)
 open VG.Proof.MlDsa.Round (coeffAddr pR coeff_contains coeffAt_frame coeffAt_writeW n_eq hbF hbM hbF_le
   hbM_mul mem_gamma2s q_eq highBits_eq lowBits_val polyAt_val natPolyIs_of_toNat polyIs_of_toNat map_get)
 open VG.Proof.MlKem.X86 (Only E0 P0 P0_esp P0_wr frameR retR LeafPost LeafEnd Piece satState wp_movm
@@ -319,7 +319,7 @@ theorem reduced_zero {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0)
     (hp : p + 1024 ≤ 0x5000) : Reduced m (BitVec.ofNat 64 p) := fun i hi => by
   rw [VG.Proof.MlDsa.Arith.coeffAt_congr (m' := m) (m := fun _ => 0) (fun k hk => hm _ (by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega)) hi]
-  simp [VG.Spec.MlDsa.coeffAt, Mem.readW, Mem.read]
+  simp [VG.Proof.MlDsa.coeffAt, Mem.readW, Mem.read]
 
 theorem highBits_verified : Verified X86.target highBits (highBitsContract X86.abi 16) := by
   refine Piece.verified (((leaf_piece (fun g hg => hbCore_spec hg) (NoSp.of_all (by decide +kernel))

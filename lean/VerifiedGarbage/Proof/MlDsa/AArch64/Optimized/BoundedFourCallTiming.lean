@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
-public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 
 @[expose] public section
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import Batteries.Tactic.Init

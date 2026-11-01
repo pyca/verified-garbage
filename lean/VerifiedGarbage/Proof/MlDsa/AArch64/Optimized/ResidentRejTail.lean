@@ -86,7 +86,7 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
 open VG.Proof.MlKem.AArch64 (Keep Only)
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 
 def tailRange (σ : State) (k start : Nat) : Region :=
   ⟨coeffAddr (polyP σ k) start,4*(256-start)⟩

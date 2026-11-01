@@ -38,7 +38,8 @@ open VG VG.Arm
 open VG.Proof.MlKem.Arm
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample (hbOks leak_hbOks rejBounded_some rejBounded_none stored_polyIs H_length)
-open VG.Spec.MlDsa (H rejBoundedContract rejBoundedSig rejBoundedLeak)
+open VG.Spec.MlDsa (H rejBoundedLeak)
+open VG.Proof.MlDsa (rejBoundedContract rejBoundedSig)
 open VG.Spec.Sha3 (bytesAt)
 open RejBounded
 
@@ -137,7 +138,7 @@ namespace VG.Proof.MlDsa.Arm.Sample
 open VG VG.Arm
 open VG.Proof.MlKem.Arm (setWidth_append32)
 open VG.Proof.MlDsa.Sample (rbFold rejBounded_some rejBounded_none stored_polyIs ifT ifF)
-open VG.Spec.MlDsa (rejBoundedContract rejBoundedSig)
+open VG.Proof.MlDsa (rejBoundedContract rejBoundedSig)
 open RejBounded
 
 /-- A state satisfying the precondition. -/

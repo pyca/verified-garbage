@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.RawInverse
+public import VerifiedGarbage.Proof.MlDsa.RawInverseContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank

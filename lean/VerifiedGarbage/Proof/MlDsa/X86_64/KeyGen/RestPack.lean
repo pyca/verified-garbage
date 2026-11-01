@@ -20,7 +20,8 @@ namespace VG.Proof.MlDsa.X86_64.KeyGen
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc)
 open VG.Impl.MlDsa.X86_64.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt polyAt coeffAt Reduced PolyIs bitPack)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The coefficients of a small polynomial -/
@@ -49,7 +50,7 @@ theorem small_big {η : Nat} (hη : η ≤ 4) {x : IPoly} (hs : Small η x) :
 
 theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega
 
-theorem eta_params {p : Params} (hF : PFacts p) : (p.η, p.η) ∈ Spec.MlDsa.bitPackParams := by
+theorem eta_params {p : Params} (hF : PFacts p) : (p.η, p.η) ∈ Proof.MlDsa.bitPackParams := by
   rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> decide
 
 theorem lenS_eq (p : Params) : lenS p = 32 * Spec.MlDsa.bitlen (p.η + p.η) := by

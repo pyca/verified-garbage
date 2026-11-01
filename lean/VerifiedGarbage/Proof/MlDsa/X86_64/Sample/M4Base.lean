@@ -22,7 +22,8 @@ namespace VG.Proof.MlDsa.X86_64.Mask4
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sample.Mask4
 open VG.Proof.MlKem.X86_64 (Keep WP.keep retR)
 open VG.Proof.MlDsa.X86_64.Sample (gOf)
-open VG.Spec.MlDsa (H PolyIs toRq bitUnpack bitlen seed66)
+open VG.Spec.MlDsa (H toRq bitUnpack bitlen)
+open VG.Proof.MlDsa (PolyIs seed66)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- The output polynomial `k` of four at `a`. -/

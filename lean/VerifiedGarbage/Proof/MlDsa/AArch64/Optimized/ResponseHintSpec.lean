@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.ResponseHint
+public import VerifiedGarbage.Proof.MlDsa.ResponseHintContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord

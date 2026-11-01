@@ -23,7 +23,8 @@ open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two R
   hashS hashS_tr pieceS ix_ne1 shake31)
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Impl.MlKem.PPC64LE (hash)
-open VG.Spec.MlDsa (Params HintIs PolyIs toRq polyAt Reduced ntt simpleBitPack)
+open VG.Spec.MlDsa (Params toRq ntt simpleBitPack)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ zHat w1Row)
 open VG.Spec.Sha3 (bytesAt)
 

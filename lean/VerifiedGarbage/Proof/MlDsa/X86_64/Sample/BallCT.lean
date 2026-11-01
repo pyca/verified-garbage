@@ -254,13 +254,13 @@ def sbSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem sampleInBall_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Sample.sampleInBall (Spec.MlDsa.sampleInBallContract X86_64.abi 16) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Sample.sampleInBall (Proof.MlDsa.sampleInBallContract X86_64.abi 16) :=
   Verified.of_correct sampleInBall_correct sampleInBall_ct
-    { pre := by sig_implies_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, X86_64.abi, X86_64.argRegs]
         dsimp only [sbK] at h
         obtain ⟨hr, hp⟩ := h
         by_cases hf : (ballFold (tauOf s) (H (bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) 272)).2 = 256
@@ -276,11 +276,11 @@ theorem sampleInBall_verified :
               rw [sampleInBall_none _ (B := 272) (by decide) (by decide) hf]; rfl⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi,
+        sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, X86_64.abi,
           X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, h8, hsp, leakBytes_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi,
+      sat := by sig_implies_sat [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, X86_64.abi,
         X86_64.argRegs] [sbSat] using sbSat }
 
 end VG.Proof.MlDsa.X86_64.Sample

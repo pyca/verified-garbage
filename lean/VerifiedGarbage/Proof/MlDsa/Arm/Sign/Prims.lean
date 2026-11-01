@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 # ML-DSA signing on ARMv7: the primitives it calls
 
 What the proofs need of the implementations of the primitives (`PrimsOk`):
-each is verified against its shared contract (`Spec/MlDsa/Poly.lean`) for a
+each is verified against its shared contract (`Proof/MlDsa/Contract.lean`) for a
 stack that, with the frame of its stack arguments, fits in the `D` bytes the
 function gives its calls (`Callee`); and, of the two samplers whose result the
 function branches on, that the result is public in their own runs (`RetPub`)

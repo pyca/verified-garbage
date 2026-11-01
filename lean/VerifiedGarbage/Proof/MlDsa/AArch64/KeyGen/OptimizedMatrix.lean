@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
-public import VerifiedGarbage.Spec.MlDsa.RejNTT2
+public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
 import VerifiedGarbage.Proof.Framework.Contract
@@ -24,7 +24,7 @@ theorem matrixGroup_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF
     fun _ ht => matrixFour_ok hP hF hp hg ht.1 ht.2
 
 theorem matrixTwoPhase_ok {S : Nat} (hS : S<2^64) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) {σ : State} (hp : kgPre p S σ)
     {e : Nat} (he : e+2≤p.k*p.ℓ) {s : State} (hs : KSamp p σ e 0 s) (hr : MatrixPrefixes p σ 4 s) :
     WP isa (matrixTwo cd p e) s fun t => KSamp p σ (e+2) 0 t ∧ MatrixPrefixes p σ 4 t := by
@@ -34,7 +34,7 @@ theorem matrixTwoPhase_ok {S : Nat} (hS : S<2^64) {cd : Prog isa}
     fun _ ht => matrixTwo_ok hS C hF hp he ht.1 ht.2
 
 theorem matrixWith_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
     {σ : State} (hp : kgPre p S σ) {s : State} (hs : K1 p σ s) (h24 : s.gpr .x24=1) :
     WP isa (matrixWith cd P p) s (KSamp p σ (p.k*p.ℓ) 0) := by

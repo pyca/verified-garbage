@@ -8,7 +8,6 @@ public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Md
-import VerifiedGarbage.Proof.Sha256.Digest
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Impl.Sha256.PPC64LE
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Md

@@ -1,0 +1,77 @@
+// The functions of `src/internal/vg_mldsa_simple_bit_pack.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_mldsa_simple_bit_pack:
+	cmp r1, #15
+	beq 20f
+	cmp r1, #43
+	beq 22f
+	mov r1, #64
+24:
+	mov r3, #0
+	ldr r12, [r0, #0]
+	add r3, r3, r12
+	strb r3, [r2, #0]
+	lsr r3, r3, #8
+	ldr r12, [r0, #4]
+	add r3, r3, r12, lsl #2
+	strb r3, [r2, #1]
+	lsr r3, r3, #8
+	ldr r12, [r0, #8]
+	add r3, r3, r12, lsl #4
+	strb r3, [r2, #2]
+	lsr r3, r3, #8
+	ldr r12, [r0, #12]
+	add r3, r3, r12, lsl #6
+	strb r3, [r2, #3]
+	lsr r3, r3, #8
+	strb r3, [r2, #4]
+	lsr r3, r3, #8
+	add r0, r0, #16
+	add r2, r2, #5
+	subs r1, r1, #1
+	bne 24b
+	b 23f
+22:
+	mov r1, #64
+25:
+	mov r3, #0
+	ldr r12, [r0, #0]
+	add r3, r3, r12
+	ldr r12, [r0, #4]
+	add r3, r3, r12, lsl #6
+	strb r3, [r2, #0]
+	lsr r3, r3, #8
+	ldr r12, [r0, #8]
+	add r3, r3, r12, lsl #4
+	strb r3, [r2, #1]
+	lsr r3, r3, #8
+	ldr r12, [r0, #12]
+	add r3, r3, r12, lsl #2
+	strb r3, [r2, #2]
+	lsr r3, r3, #8
+	add r0, r0, #16
+	add r2, r2, #3
+	subs r1, r1, #1
+	bne 25b
+23:
+	b 21f
+20:
+	mov r1, #128
+26:
+	mov r3, #0
+	ldr r12, [r0, #0]
+	add r3, r3, r12
+	ldr r12, [r0, #4]
+	add r3, r3, r12, lsl #4
+	strb r3, [r2, #0]
+	lsr r3, r3, #8
+	add r0, r0, #8
+	add r2, r2, #1
+	subs r1, r1, #1
+	bne 26b
+21:
+	bx lr

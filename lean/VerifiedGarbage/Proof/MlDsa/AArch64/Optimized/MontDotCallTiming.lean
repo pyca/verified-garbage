@@ -1,11 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.MontProductContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Spec.MlDsa.MontDot
+public import VerifiedGarbage.Proof.MlDsa.MontDotContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `MontDotCall.lean` -/

@@ -39,7 +39,8 @@ open VG.Proof.MlDsa.X86_64.Round (HbC bc_ofDwords)
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep ifp ifn ptr_step GOnly wp_rcxLoopY
   add_ofNat_zero lane_setReg lane_setFlags sx32 State.setMem_ymm)
 open VG.Impl.MlKem.X86_64 (xb xmov toY yconst)
-open VG.Spec.MlDsa (q n coeffAt)
+open VG.Spec.MlDsa (q n)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- Each doubleword of `v`. -/
 def bc (v : BitVec 32) : BitVec 128 := ofDwords v v v v
@@ -195,7 +196,7 @@ end VG.Proof.MlDsa.X86_64.Arith
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep gprPreserved_of XOnly)
 open VG.Impl.MlKem.X86_64 (toY)
 open VG.Proof.MlDsa.X86_64.Arith (qV)

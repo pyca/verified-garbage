@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit

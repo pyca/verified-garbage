@@ -14,7 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
-open VG.Spec.MlDsa (Params Poly rejNTTPoly coeffAt polyAt Reduced PolyIs poly4 seed4 minBounds)
+open VG.Spec.MlDsa (Params Poly rejNTTPoly minBounds)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs poly4 seed4)
 open VG.Proof.MlDsa.KeyGen (seedA ifp ifn masked_one masked_zero)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -35,7 +36,7 @@ theorem bound2 {ρ : Nat→List Byte} {x : Nat→Poly}
   · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h1
 
 theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
-    (C : CalleeOk S cd (VG.Spec.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
+    (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
     {σ : State} (hp : kgPre p S σ) {e : Nat} (he : e+2 ≤ p.k*p.ℓ) {s : State}
     (h : GS p σ e 2 s) (hr : MatrixPrefixes p σ 4 s) :
     WP isa (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p))))

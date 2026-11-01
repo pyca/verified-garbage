@@ -51,7 +51,8 @@ open VG VG.Arm VG.Arm.RegUpd VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv Callee HbuOk hbu_okS
   hbu_tr)
 open VG.Impl.MlDsa.Arm.Verify
-open VG.Spec.MlDsa (Params HintIs hintBitUnpack)
+open VG.Spec.MlDsa (Params hintBitUnpack)
+open VG.Proof.MlDsa (HintIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The primitives -/
@@ -59,19 +60,19 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The primitives, each verified against its contract with at most `S`
 bytes of stack. -/
 structure VPrimsOk (P : Prims) (S : Nat) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract Arm.abi stk) S
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract Arm.abi stk) S
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract Arm.abi stk) S
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract Arm.abi stk) S
-  sub : Callee P.sub (fun stk => Spec.MlDsa.subContract Arm.abi stk) S
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract Arm.abi stk) S
-  ball : Callee P.ball (fun stk => Spec.MlDsa.sampleInBallContract Arm.abi stk) S
-  useHint : Callee P.useHint (fun stk => Spec.MlDsa.useHintContract Arm.abi stk) S
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract Arm.abi stk) S
-  bitUnpack : Callee P.bitUnpack (fun stk => Spec.MlDsa.bitUnpackContract Arm.abi stk) S
-  unpackT1 : Callee P.unpackT1 (fun stk => Spec.MlDsa.unpackT1Contract Arm.abi stk) S
-  hintUnpack : Callee P.hintUnpack (fun stk => Spec.MlDsa.hintBitUnpackContract Arm.abi stk) S
-  normLt : Callee P.normLt (fun stk => Spec.MlDsa.normLtContract Arm.abi stk) S
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract Arm.abi stk) S
+  invNtt : Callee P.invNtt (fun stk => Proof.MlDsa.nttInvContract Arm.abi stk) S
+  mul : Callee P.mul (fun stk => Proof.MlDsa.mulContract Arm.abi stk) S
+  mulAdd : Callee P.mulAdd (fun stk => Proof.MlDsa.mulAddContract Arm.abi stk) S
+  sub : Callee P.sub (fun stk => Proof.MlDsa.subContract Arm.abi stk) S
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract Arm.abi stk) S
+  ball : Callee P.ball (fun stk => Proof.MlDsa.sampleInBallContract Arm.abi stk) S
+  useHint : Callee P.useHint (fun stk => Proof.MlDsa.useHintContract Arm.abi stk) S
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract Arm.abi stk) S
+  bitUnpack : Callee P.bitUnpack (fun stk => Proof.MlDsa.bitUnpackContract Arm.abi stk) S
+  unpackT1 : Callee P.unpackT1 (fun stk => Proof.MlDsa.unpackT1Contract Arm.abi stk) S
+  hintUnpack : Callee P.hintUnpack (fun stk => Proof.MlDsa.hintBitUnpackContract Arm.abi stk) S
+  normLt : Callee P.normLt (fun stk => Proof.MlDsa.normLtContract Arm.abi stk) S
 
 /-- 1 if `b`, 0 if not. -/
 def flag (b : Bool) : BitVec 32 := if b then 1 else 0

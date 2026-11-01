@@ -29,7 +29,7 @@ namespace VG.Proof.MlDsa.PPC64LE.KeyGen
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.KeyGen
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.KeyGen (ifp ifn)
 
 /-! ## Coefficients in memory -/

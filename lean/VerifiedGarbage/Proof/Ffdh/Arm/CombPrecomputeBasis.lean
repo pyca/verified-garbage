@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControl
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore

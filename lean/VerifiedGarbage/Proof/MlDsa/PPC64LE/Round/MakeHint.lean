@@ -275,8 +275,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa makeHint s₀ (Post s₀
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.makeHintContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.makeHintContract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
 
@@ -294,20 +294,20 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
   wr := [⟨0x3000, 1024⟩]
 
-theorem verified : Verified PPC64LE.target makeHint (Spec.MlDsa.makeHintContract PPC64LE.abi) := by
+theorem verified : Verified PPC64LE.target makeHint (Proof.MlDsa.makeHintContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, sel_ct (rg := .r5) (by decide) [.r3, .r4, .r6] (by decide) (fun s₁ s₂ h => ?_)
     (by taint_decide) (by taint_decide) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := correct hp
     refine ⟨t, s', he, ⟨h.1, h.2.1, h.2.2.1⟩, ?_⟩
-    sig_post [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs]
     refine ⟨hintIs_of_toNat fun j hj => ?_, ?_⟩
     · rw [h.2.2.2.1 j hj]; rfl
     · rw [h.2.2.2.2, hintOnes_onesTo, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
       have := onesTo_le (hint s (G s).toNat) 256
       rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
       rfl
-  · sig_pub [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs] at h
     refine ⟨fun r hr => ?_, h.1, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -318,7 +318,7 @@ theorem verified : Verified PPC64LE.target makeHint (Spec.MlDsa.makeHintContract
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

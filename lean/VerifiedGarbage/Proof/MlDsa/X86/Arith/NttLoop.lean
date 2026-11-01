@@ -32,7 +32,8 @@ open VG VG.X86 VG.Impl.MlDsa.X86.Arith
 open VG.Impl.MlKem.X86 (at_ layerCode blockInit blockEnd zUp zDown)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86.Arith
-open VG.Spec.MlDsa (q n Poly Zq PolyIs Reduced coeffAt polyAt)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (PolyIs Reduced coeffAt polyAt)
 open VG.Proof.MlKem.X86 (E0 P0 P0_esp P0_wr P0_argAddr frameR retR Piece ea_add add_ofNat_add cnt_next cnt_ne
   sub_beq_zero toNat_ofNat32)
 

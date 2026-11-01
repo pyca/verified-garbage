@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Steps
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Site
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 
 /-!
 # ML-DSA verification on PPC64LE: `z`
@@ -28,7 +28,8 @@ open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two R
   bu_tr nl_ok nl_tr polyIs_keepW keepD zx and24_ok)
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Impl.MlDsa.PPC64LE.KeyGen (and24)
-open VG.Spec.MlDsa (Params HintIs PolyIs toRq polyAt normRq Reduced)
+open VG.Spec.MlDsa (Params toRq normRq)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
 open VG.Proof.MlDsa.Verify (vZ)
 open VG.Spec.Sha3 (bytesAt)
 

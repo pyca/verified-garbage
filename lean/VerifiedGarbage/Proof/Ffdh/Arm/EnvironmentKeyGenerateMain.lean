@@ -25,8 +25,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMain
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 

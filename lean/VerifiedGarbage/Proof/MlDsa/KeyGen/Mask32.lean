@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

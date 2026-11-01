@@ -32,7 +32,8 @@ the frames that save `r4`–`r10` (`wp_saving`). `LI`, `pro_ok`, `PreE` and
 namespace VG.Proof.MlDsa.Arm.Arith.Ntt
 
 open VG VG.Arm VG.Impl.MlDsa.Arm.Arith
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.Arm.Arith.AddSub (reduced_zero)
 
@@ -152,8 +153,8 @@ theorem pro_ok {s : State} (hp : PreB s) (tab : Nat → Nat) (ht : ∀ k < 256, 
 
 theorem chain_fwd : Chain 1 nttLens := by simp only [nttLens, Chain]; decide
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.nttContract Arm.abi 28).pre s) : PreE s := by
-  sig_pre [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi, Arm.argRegs,
+theorem pre_of {s : State} (h : (Proof.MlDsa.nttContract Arm.abi 28).pre s) : PreE s := by
+  sig_pre [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
@@ -204,14 +205,14 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
-theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.ntt (Spec.MlDsa.nttContract Arm.abi 28) := by
+theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.ntt (Proof.MlDsa.nttContract Arm.abi 28) := by
   refine ⟨fun s hs => ?_, ct_of_saving nttSaved _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,
+    sig_post [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,
+  · sig_pub [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨hsp, h0, h1⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
@@ -220,7 +221,7 @@ theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.ntt (Spec.MlDsa.nttC
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,
+    · sig_reduce [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
         Arm.argRegs, Arm.Loc.val]
       sig_and_intros
       all_goals first

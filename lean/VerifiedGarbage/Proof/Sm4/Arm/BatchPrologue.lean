@@ -14,8 +14,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
-public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # The batched SM4-CTR prologue and its external precondition -/
 

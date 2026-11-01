@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
-public import VerifiedGarbage.Spec.MlDsa.Canonicalize
+public import VerifiedGarbage.Proof.MlDsa.CanonicalizeContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts

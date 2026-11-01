@@ -29,7 +29,8 @@ open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_mov wp_movz wp_movk1 wp_a
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (coeffAt Zq q)
+open VG.Spec.MlDsa (Zq q)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- What the loop needs of the state it starts from: the 1008 bytes `X` at

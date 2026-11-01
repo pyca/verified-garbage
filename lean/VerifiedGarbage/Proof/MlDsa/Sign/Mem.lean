@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # ML-DSA: polynomials in memory, for every target
 
-The stored polynomials of `Spec/MlDsa/Poly.lean` (`coeffAt`, `polyAt`,
+The stored polynomials of `Proof/MlDsa/Contract.lean` (`coeffAt`, `polyAt`,
 `natPolyAt`, `hintAt`, `Reduced`, `PolyIs`) depend only on the 1024 bytes of
 the polynomial, so they survive writes elsewhere (`…_frame`).
 -/

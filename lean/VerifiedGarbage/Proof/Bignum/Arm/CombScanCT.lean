@@ -12,8 +12,6 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.CombScan
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Bignum.Arm.CombScanState
 meta import VerifiedGarbage.Proof.Bignum.Arm.CombScanState
-public import VerifiedGarbage.Proof.Bignum.Arm.CombScanState
-meta import VerifiedGarbage.Proof.Bignum.Arm.CombScanState
 import VerifiedGarbage.Proof.Bignum.Arm.CombScanBody
 meta import VerifiedGarbage.Proof.Bignum.Arm.CombScanBody
 meta import VerifiedGarbage.Proof.Bignum.Arm.CombTableState

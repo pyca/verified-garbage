@@ -17,7 +17,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.Arith.Lazy
 open VG.Proof.MlKem.X86_64 (Keep XOnly XKeep YOnly ylanes yld_ok yconst_ok ifp ifn)
-open VG.Spec.MlDsa (q n Zq coeffAt zetas)
+open VG.Spec.MlDsa (q n Zq zetas)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- A lazy butterfly also keeps a constant `c` in each doubleword of xmm11:
 twice q for the forward transform's (`VConsts`). -/

@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect

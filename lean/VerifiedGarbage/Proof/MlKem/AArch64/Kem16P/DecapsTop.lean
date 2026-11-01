@@ -15,7 +15,6 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 
 /-! # The decapsulation computing PRF outputs in the matrix is constant time

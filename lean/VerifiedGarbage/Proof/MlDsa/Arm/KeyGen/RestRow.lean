@@ -19,8 +19,8 @@ namespace VG.Proof.MlDsa.Arm.KeyGen
 
 open VG VG.Arm VG.Proof.MlKem.Arm
 open VG.Impl.MlDsa.Arm.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT polyAt natPolyAt coeffAt Reduced PolyIs
-  NatPolyIs bitPack simpleBitPack power2Round ofInt modPm q n)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv add multiplyNTT bitPack simpleBitPack power2Round ofInt modPm q n)
+open VG.Proof.MlDsa (polyAt natPolyAt coeffAt Reduced PolyIs NatPolyIs)
 open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K ifp ifn idx_lt)
 open VG.Spec.Sha3 (bytesAt)
 

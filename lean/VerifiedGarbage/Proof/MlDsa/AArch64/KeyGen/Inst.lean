@@ -43,11 +43,11 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) 16 where
   sl := by decide
   ntt := by
     have h := Arith.Neon.ntt_verified
-    unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract at h ⊢
+    unfold Proof.MlDsa.nttContract Proof.MlDsa.inPlaceContract at h ⊢
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide)
   invNtt := by
     have h := Arith.Neon.nttInv_verified
-    unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract at h ⊢
+    unfold Proof.MlDsa.nttInvContract Proof.MlDsa.inPlaceContract at h ⊢
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide)
   mul := CalleeOk.of_verified (by decide) Arith.mul_verified (by decide) (by dsimp only [primsWith]; decide)
   mulAdd := CalleeOk.of_verified (by decide) Arith.mulAdd_verified (by decide) (by dsimp only [primsWith]; decide)

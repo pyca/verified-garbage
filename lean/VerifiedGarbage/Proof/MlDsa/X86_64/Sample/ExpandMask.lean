@@ -36,7 +36,8 @@ open VG VG.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Impl.MlDsa.X86_64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q H PolyIs coeffAt toRq bitUnpack bitlen)
+open VG.Spec.MlDsa (Zq q H toRq bitUnpack bitlen)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `γ₁`, the `u32` argument in `esi`. -/
@@ -238,20 +239,20 @@ def emSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem expandMask_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Sample.expandMask (Spec.MlDsa.expandMaskContract X86_64.abi 16) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Sample.expandMask (Proof.MlDsa.expandMaskContract X86_64.abi 16) :=
   Verified.of_correct expandMask_correct expandMask_ct
-    { pre := by sig_implies_pre [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK, X86_64.abi, X86_64.argRegs]
         exact h
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK, X86_64.abi, X86_64.argRegs] at h
+        sig_pub [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK, X86_64.abi, X86_64.argRegs] at h
         obtain ⟨hsp, hdi, hsi, hdx, hcx⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, hsp⟩
-      sat := by sig_implies_sat [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK, X86_64.abi,
+      sat := by sig_implies_sat [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK, X86_64.abi,
         X86_64.argRegs] [emSat] using emSat }
 
 end VG.Proof.MlDsa.X86_64.Sample

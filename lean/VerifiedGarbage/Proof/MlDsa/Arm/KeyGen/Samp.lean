@@ -24,8 +24,8 @@ namespace VG.Proof.MlDsa.Arm.KeyGen
 
 open VG VG.Arm VG.Arm.RegUpd VG.Proof.MlKem.Arm
 open VG.Impl.MlDsa.Arm.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly toRq polyAt coeffAt Reduced
-  PolyIs Outcome)
+open VG.Spec.MlDsa (Params Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly toRq Outcome)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (seedA seedS Small Good ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -34,16 +34,16 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The primitives, each verified against its contract with at most `S`
 bytes of stack. -/
 structure PrimsOk (P : Prims) (S : Nat) : Prop where
-  ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract Arm.abi stk) S
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract Arm.abi stk) S
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract Arm.abi stk) S
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract Arm.abi stk) S
-  add : Callee P.add (fun stk => Spec.MlDsa.addContract Arm.abi stk) S
-  rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract Arm.abi stk) S
-  rejBounded : Callee P.rejBounded (fun stk => Spec.MlDsa.rejBoundedContract Arm.abi stk) S
-  power2Round : Callee P.power2Round (fun stk => Spec.MlDsa.power2RoundContract Arm.abi stk) S
-  simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract Arm.abi stk) S
-  bitPack : Callee P.bitPack (fun stk => Spec.MlDsa.bitPackContract Arm.abi stk) S
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract Arm.abi stk) S
+  invNtt : Callee P.invNtt (fun stk => Proof.MlDsa.nttInvContract Arm.abi stk) S
+  mul : Callee P.mul (fun stk => Proof.MlDsa.mulContract Arm.abi stk) S
+  mulAdd : Callee P.mulAdd (fun stk => Proof.MlDsa.mulAddContract Arm.abi stk) S
+  add : Callee P.add (fun stk => Proof.MlDsa.addContract Arm.abi stk) S
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract Arm.abi stk) S
+  rejBounded : Callee P.rejBounded (fun stk => Proof.MlDsa.rejBoundedContract Arm.abi stk) S
+  power2Round : Callee P.power2Round (fun stk => Proof.MlDsa.power2RoundContract Arm.abi stk) S
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract Arm.abi stk) S
+  bitPack : Callee P.bitPack (fun stk => Proof.MlDsa.bitPackContract Arm.abi stk) S
 
 /-! ## `r11` -/
 

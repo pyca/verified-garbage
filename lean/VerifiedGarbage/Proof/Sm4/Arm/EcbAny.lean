@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
-public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe

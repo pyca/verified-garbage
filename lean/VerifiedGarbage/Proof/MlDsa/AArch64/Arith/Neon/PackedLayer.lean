@@ -14,7 +14,8 @@ open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (Tab wp_countdown)
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (Poly Zq PolyIs)
+open VG.Spec.MlDsa (Poly Zq)
+open VG.Proof.MlDsa (PolyIs)
 
 section
 variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} {zt : Zq → Zq}

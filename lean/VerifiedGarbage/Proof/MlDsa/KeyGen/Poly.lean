@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import Std.Data.DTreeMap.Internal.Balancing
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 cast inverts `mod± q` (`ofInt_modPm`); the ranges of the coefficients
 `RejBoundedPoly` samples (`rejBoundedPoly_range`) and of `Power2Round`
 (`power2Round_fst`, `power2Round_snd`); and ML-DSA's polynomials in memory
-(`Spec/MlDsa/Poly.lean`) depend only on their 1024 bytes (`polyAt_congr`,
+(`Proof/MlDsa/Contract.lean`) depend only on their 1024 bytes (`polyAt_congr`,
 `polyIs_frame`, …).
 -/
 

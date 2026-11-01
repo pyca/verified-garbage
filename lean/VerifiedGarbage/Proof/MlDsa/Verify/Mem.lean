@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ML-DSA: polynomials in memory, for every target
 
-The stored polynomials of `Spec/MlDsa/Poly.lean` (`coeffAt`, `polyAt`,
+The stored polynomials of `Proof/MlDsa/Contract.lean` (`coeffAt`, `polyAt`,
 `Reduced`, `PolyIs`, `natPolyAt`, `hintAt`) are unchanged by writes elsewhere
 (`…_congr`, `…_frame`); a hint stored as `k` polynomials gives each of them to
 `vg_mldsa_use_hint` (`hintAt_row`).

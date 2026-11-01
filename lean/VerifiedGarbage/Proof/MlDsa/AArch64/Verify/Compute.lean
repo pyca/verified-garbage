@@ -24,8 +24,8 @@ namespace VG.Proof.MlDsa.AArch64.Verify
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
 open VG.Impl.MlDsa.AArch64.Call (Ptr sc Arg glue callAt setB and24 seqR movV lea)
 open VG.Proof.MlDsa.AArch64.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv multiplyNTT polyAt natPolyAt coeffAt Reduced PolyIs NatPolyIs
-  HintIs Bounds minBounds rejNTTPoly sampleInBall simpleBitPack d ofInt)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv multiplyNTT Bounds minBounds rejNTTPoly sampleInBall simpleBitPack d ofInt)
+open VG.Proof.MlDsa (polyAt natPolyAt coeffAt Reduced PolyIs NatPolyIs HintIs)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.KeyGen (ifp ifn)
 open VG.Proof.MlDsa.Verify (zHat dotAcc t1Hat wRow w1Row vT1 aSeed)

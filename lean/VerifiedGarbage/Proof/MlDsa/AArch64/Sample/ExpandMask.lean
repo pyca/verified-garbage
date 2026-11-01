@@ -35,7 +35,8 @@ open VG VG.AArch64
 open VG.Proof.MlKem.AArch64 (Only Keep only_write wp_nil wp_lsr toNat_lsr eval_zero eq_zero_iff)
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (H PolyIs coeffAt toRq bitUnpack bitlen)
+open VG.Spec.MlDsa (H toRq bitUnpack bitlen)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `γ₁`, the `u32` argument in `w1`. -/
@@ -177,19 +178,19 @@ def emSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem expandMask_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target (Impl.MlDsa.AArch64.Sample.expandMaskWith v.callee)
-    (Spec.MlDsa.expandMaskContract AArch64.abi 16) :=
+    (Proof.MlDsa.expandMaskContract AArch64.abi 16) :=
   Verified.of_correct (ExpandMask.correctWith v) (ExpandMask.ctWith v)
-    { pre := by sig_implies_pre [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK,
+    { pre := by sig_implies_pre [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK,
         AArch64.abi, AArch64.argRegs]
-      post := by sig_implies_post [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK,
+      post := by sig_implies_post [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK,
         AArch64.abi, AArch64.argRegs]
-      pub := by sig_implies_pub [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK,
+      pub := by sig_implies_pub [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK,
         AArch64.abi, AArch64.argRegs]
-      sat := by sig_implies_sat [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, emK,
+      sat := by sig_implies_sat [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK,
         AArch64.abi, AArch64.argRegs] [emSat] using emSat }
 
 theorem expandMask_verified : Verified AArch64.target Impl.MlDsa.AArch64.Sample.expandMask
-    (Spec.MlDsa.expandMaskContract AArch64.abi 16) :=
+    (Proof.MlDsa.expandMaskContract AArch64.abi 16) :=
   expandMask_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

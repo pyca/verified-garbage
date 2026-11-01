@@ -26,7 +26,6 @@ open VG.Proof.MlKem.X86_64 (Keep ea_at wp_countdown add_ofNat_zero pR WP.keep of
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold rnStep rnFold_snoc rnFold_length_le Stored stored_nil stored_frame G_eq G_length)
 open VG.Proof.MlDsa.X86_64.Sample (rnBody_ok CoeffsWr)
-open VG.Spec.MlKem (poly4 seed4)
 open VG.Spec.MlDsa (Zq)
 open VG.Proof.MlKem (xofByte xof_squeezeFrom_getElem)
 
@@ -35,10 +34,10 @@ structure HAt (σ s₀ : State) (K h off count t : Nat) (s : State) : Prop where
   rsi : s.gpr .rsi = at' σ (oBuf + 504 * K) + BitVec.ofNat 64 (3 * (off + t))
   rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K (168 * h + off + t)).length
   rcx : s.gpr .rcx = BitVec.ofNat 64 (count - t)
-  rbp : s.gpr .rbp = poly4 (aP σ) K
+  rbp : s.gpr .rbp = Spec.MlKem.poly4 (aP σ) K
   out : ∀ p < 3 * (off + count), s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (504 * h + p)
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K (168 * h + off + t))
-  fr : Frame [pR (poly4 (aP σ) K)] s₀.mem s.mem
+  stored : Stored s.mem (Spec.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h + off + t))
+  fr : Frame [pR (Spec.MlKem.poly4 (aP σ) K)] s₀.mem s.mem
   kp : Keep [.rax, .rdx, .r8, .rdi, .rsi, .rcx, .rbp] s₀ s
 
 section
@@ -64,7 +63,7 @@ theorem hat_regions {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hspan :
 theorem hat_step {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2) (hspan : off + count ≤ 168) (ht : t < count) {s : State}
     (hI : HAt σ s₀ K h off count t s) :
     WP isa rnBody s fun s' => HAt σ s₀ K h off count (t + 1) s' ∧ s'.zf = some (BitVec.ofNat 64 (count - t) - 1 == 0) := by
-  refine WP.mono (rnBody_ok s (aP := poly4 (aP σ) K) hI.rbp hI.rdi (Lt_length_le σ K _) (coeffsWr hp hK hI.env)
+  refine WP.mono (rnBody_ok s (aP := Spec.MlKem.poly4 (aP σ) K) hI.rbp hI.rdi (Lt_length_le σ K _) (coeffsWr hp hK hI.env)
     hI.stored (by simpa using hat_regions hp hK hspan hI (j := 0) (by omega)) (hat_regions hp hK hspan hI (by omega))
     (hat_regions hp hK hspan hI (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
   have e0 := hat_byte hh hspan hI (j := 0) (by omega)
@@ -102,7 +101,7 @@ structure HPre (σ : State) (K h off count : Nat) (s : State) : Prop where
   env : EnvK σ s
   out : ∀ p < 3 * (off + count), s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (504 * h + p)
   j : s.mem.readW (at' σ (oJ + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K (168 * h + off)).length
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K (168 * h + off))
+  stored : Stored s.mem (Spec.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h + off))
 
 /-! ## Eight candidates at a time -/
 
@@ -111,10 +110,10 @@ structure GB (σ s₀ : State) (K h off count t : Nat) (s : State) : Prop where
   env : EnvK σ s
   rsi : s.gpr .rsi = at' σ (oBuf + 504 * K) + BitVec.ofNat 64 (3 * (off + t))
   rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K (168 * h + off + t)).length
-  rbp : s.gpr .rbp = poly4 (aP σ) K
+  rbp : s.gpr .rbp = Spec.MlKem.poly4 (aP σ) K
   out : ∀ p < 3 * (off + count), s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (504 * h + p)
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K (168 * h + off + t))
-  fr : Frame [pR (poly4 (aP σ) K)] s₀.mem s.mem
+  stored : Stored s.mem (Spec.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h + off + t))
+  fr : Frame [pR (Spec.MlKem.poly4 (aP σ) K)] s₀.mem s.mem
   kp : Keep [.rax, .rdx, .r8, .rdi, .rsi, .rcx, .rbp, .r10, .r11] s₀ s
   /-- While the vector code may run: its constants, and the static's address. -/
   vec : (Lt σ K (168 * h + off + t)).length ≤ 248 → Vec.VC s ∧ s.gpr .r11 = s.syms VG.Impl.MlDsa.X86_64.Sample.Rej5.tblName
@@ -206,9 +205,9 @@ theorem gsca_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2)
 
 /-- The output of eight iterations is in the polynomial. -/
 theorem out_reg {K : Nat} (hK : K < 4) {s : State} (he : EnvK σ s) {n : Nat} (hn : n + 4 ≤ 256) :
-    InRegions s.wr (poly4 (aP σ) K + BitVec.ofNat 64 (4 * n)) 16 := by
+    InRegions s.wr (Spec.MlKem.poly4 (aP σ) K + BitVec.ofNat 64 (4 * n)) 16 := by
   rw [he.wr, hp.wr]
-  exact ⟨aR σ, by simp, by rw [poly4, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨aR σ, by simp, by rw [Spec.MlKem.poly4, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- The bytes of the eight candidates at iteration `t`, as `Vec.stepsG` takes them. -/
 abbrev gOf (σ : State) (K h off t : Nat) : Nat → Byte := fun p => (Xb σ K).getD (3 * (168 * h + off + t) + p) 0
@@ -262,7 +261,7 @@ theorem vec2a_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) {s₁ : Sta
   obtain ⟨hax, h0, c₁, m₁, rd₁, wr₁, sy₁, g₁⟩ := id hf
   have hdi : (s₁.gpr .rdi).toNat = (Lt σ K (168 * h + off + t)).length := by
     rw [g₁ _ (by decide), hI.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have hbp : s₁.gpr .rbp = poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
+  have hbp : s₁.gpr .rbp = Spec.MlKem.poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
   have env₁ : EnvK σ s₁ := hI.env.keep m₁ (show Keep [.rax] s s₁ from ⟨fun r hr => g₁ r (by intro e; subst e; simp at hr), rd₁, wr₁⟩)
     (by decide)
   exact WP.mono (Vec.vputA_ok c₁ h0 hax (by rw [g₁ _ (by decide), sy₁]; exact (hI.vec hl).2) (by rw [hdi]; omega)
@@ -279,7 +278,7 @@ theorem vec2b_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2
   generalize hX : s.mem.readW (s.gpr .rsi) 256 = X at hax h0 hc hpa
   have hdi : (s₁.gpr .rdi).toNat = (Lt σ K (168 * h + off + t)).length := by
     rw [g₁ _ (by decide), hI.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have hbp : s₁.gpr .rbp = poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
+  have hbp : s₁.gpr .rbp = Spec.MlKem.poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
   have e0 := Vec.cntL_eq (hc 0 (by decide))
   have e1 := Vec.cntL_eq (hc 1 (by decide))
   have hA0 : (Vec.accG (gOf σ K h off t) 0).length ≤ 4 := by rw [← e0]; exact Vec.cntL_le X 0
@@ -299,7 +298,7 @@ theorem vec2b_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2
   have st1 := Vec.stored_write4 st0 (by rw [List.length_append]; omega) hA1 (Vec.compD X 1)
     (fun i hi => Vec.comp_dwords (by decide) (hc 1 (by decide)) i hi)
   rw [List.length_append, ← e0] at st1
-  have hf : Frame [pR (poly4 (aP σ) K)] s.mem s₂.mem := by
+  have hf : Frame [pR (Spec.MlKem.poly4 (aP σ) K)] s.mem s₂.mem := by
     rw [hm₂]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega) (by omega))).writeW
@@ -405,7 +404,7 @@ theorem setup_ok {K h off count : Nat} (hK : K < 4) (hspan : off + count ≤ 168
       .vmovdquTbl .xmm10 (at_ .r11 (VG.Impl.MlDsa.X86_64.Sample.Rej5.oCst + 64)) VG.Impl.MlDsa.X86_64.Sample.Rej5.tblName VG.Impl.MlDsa.X86_64.Sample.Rej5.tblWords,
       .vmovdquTbl .xmm11 (at_ .r11 (VG.Impl.MlDsa.X86_64.Sample.Rej5.oCst + 96)) VG.Impl.MlDsa.X86_64.Sample.Rej5.tblName VG.Impl.MlDsa.X86_64.Sample.Rej5.tblWords]) from rfl, WP.block_append_iff]
   refine WP.mono_syms (WP.keep [.rsi, .rbp, .rdi, .r10] (Q := fun s' => s'.mem = s.mem ∧
-      s'.gpr .rsi = at' σ (oBuf + 504 * K + 3 * off) ∧ s'.gpr .rbp = poly4 (aP σ) K ∧
+      s'.gpr .rsi = at' σ (oBuf + 504 * K + 3 * off) ∧ s'.gpr .rbp = Spec.MlKem.poly4 (aP σ) K ∧
       s'.gpr .rdi = BitVec.ofNat 64 (Lt σ K (168 * h + off)).length ∧ s'.gpr .r10 = BitVec.ofNat 64 (count / 8) ∧
       ∀ x l, s'.lane x l = s.lane x l)
     (by

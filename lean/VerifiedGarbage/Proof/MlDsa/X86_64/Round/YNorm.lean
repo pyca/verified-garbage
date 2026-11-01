@@ -30,7 +30,7 @@ top bits of the 32 bytes are all set exactly when every coefficient is good
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes ifp ifn)
 open VG.Impl.MlKem.X86_64 (xb xmov toY)
 open VG.Proof.MlDsa.X86_64.Arith (dword_psubd dword_pand dword_psrad)
@@ -156,7 +156,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86_64.Round (Good nlL nlL_msb nlX_ok lane_nlX bc_ofDwords)
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok ifp ifn ptr_step add_ofNat_zero lane_setReg lane_setFlags)
-open VG.Spec.MlDsa (q n coeffAt Reduced)
+open VG.Spec.MlDsa (q n)
+open VG.Proof.MlDsa (coeffAt Reduced)
 
 namespace YNormL
 
@@ -219,7 +220,7 @@ end VG.Proof.MlDsa.X86_64.Arith
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep gprPreserved_of XOnly YOnly ylanes yconst_ok ifp ifn)
 open VG.Proof.MlDsa.X86_64.Arith (bc dword_psrad sshiftRight31)
 open VG.Impl.MlKem.X86_64 (toY)

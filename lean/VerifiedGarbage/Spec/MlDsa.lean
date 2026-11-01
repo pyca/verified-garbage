@@ -38,8 +38,8 @@ returns `some x` for some bounds, and larger bounds give the same result.
 
 The hash function and XOFs `H` and `G` are SHAKE256 and SHAKE128
 (`Spec/Sha3.lean`, §3.7): squeezing `ℓ` bytes in pieces gives the first
-`ℓ` bytes of their output. The contracts of the functions implemented in
-assembly are in `Spec/MlDsa/`.
+`ℓ` bytes of their output. The contracts of the functions the Rust code
+calls are in `Spec/MlDsa/`.
 -/
 
 @[expose] public section

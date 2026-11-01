@@ -11,10 +11,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
-public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
 
 /-! A public basis number fixes the entire subset-product schedule. -/
 

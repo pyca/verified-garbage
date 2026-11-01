@@ -30,7 +30,8 @@ open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sign
 open VG.Impl.MlDsa.AArch64.Call (Ptr sc Arg glue callAt setB and24 seqR movV lea)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_strb wp_ldrb wp_ldrw wp_strw wp_ldrx wp_strx
   wp_addImm wp_subImm wp_lsr count_loop)
-open VG.Spec.MlDsa (coeffAt integerToBytes)
+open VG.Spec.MlDsa (integerToBytes)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## 32-bit operations -/

@@ -15,7 +15,8 @@ namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
 open VG.Proof.MlDsa.AArch64.KeyGen
-open VG.Spec.MlDsa (Params Reduced polyAt coeffAt poly4 seed4 Bounds rejNTTPoly minBounds)
+open VG.Spec.MlDsa (Params Bounds rejNTTPoly minBounds)
+open VG.Proof.MlDsa (Reduced polyAt coeffAt poly4 seed4)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.KeyGen (masked_one masked_zero)
 

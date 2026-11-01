@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCore
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-public import VerifiedGarbage.Spec.MlDsa.RawInverse
+public import VerifiedGarbage.Proof.MlDsa.RawInverseContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.Common

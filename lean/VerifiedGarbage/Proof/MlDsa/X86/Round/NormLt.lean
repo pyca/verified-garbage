@@ -28,7 +28,8 @@ namespace VG.Proof.MlDsa.X86.Round
 
 open VG VG.X86 VG.X86.Wp VG.Impl.MlDsa.X86.Round
 open VG.Impl.MlKem.X86 (at_ leaf)
-open VG.Spec.MlDsa (q coeffAt Reduced polyAt normRq normZq normLtContract normLtSig)
+open VG.Spec.MlDsa (q normRq normZq)
+open VG.Proof.MlDsa (coeffAt Reduced polyAt normLtContract normLtSig)
 open VG.Proof.MlDsa.Round (coeffAddr pR coeff_contains n_eq q_eq polyAt_val normZq_lt normRq_lt)
 open VG.Proof.MlKem.X86 (Only E0 P0 P0_esp P0_wr frameR retR LeafPost LeafEnd Piece satState
   toNat_ofNat32 eq_ofNat_of_toNat ptr_next cnt_next cnt_ne setWidth_append32)

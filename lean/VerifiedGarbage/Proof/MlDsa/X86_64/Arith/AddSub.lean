@@ -35,7 +35,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep WP.keep writesOnly gprPreserved_of ifp ifn ptr_step GOnly wp_rcxLoop xmm_setXmm
   add_ofNat_zero)
 open VG.Impl.MlKem.X86_64 (xb xmov)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 /-! ## Four coefficients -/
 
@@ -265,15 +266,15 @@ def accSat : State where
   wr := [⟨0x1000, 1024⟩]
 
 theorem add_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Arith.add (Spec.MlDsa.addContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Arith.add (Proof.MlDsa.addContract X86_64.abi) :=
   Verified.of_correct add_correct add_ct (by
-    mldsa_implies [Spec.MlDsa.addContract, Spec.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.addContract, Proof.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
 theorem sub_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Arith.sub (Spec.MlDsa.subContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlDsa.X86_64.Arith.sub (Proof.MlDsa.subContract X86_64.abi) :=
   Verified.of_correct sub_correct sub_ct (by
-    mldsa_implies [Spec.MlDsa.subContract, Spec.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
+    mldsa_implies [Proof.MlDsa.subContract, Proof.MlDsa.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

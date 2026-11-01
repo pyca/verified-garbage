@@ -23,7 +23,8 @@ namespace VG.Proof.MlDsa.X86.Verify
 open VG VG.X86 VG.Impl.MlKem.X86
 open VG.Proof.MlKem.X86 VG.Proof.MlKem.X86.Top VG.Proof.MlDsa.X86.KeyGen
 open VG.Impl.MlDsa.X86.Verify
-open VG.Spec.MlDsa (Params Poly IPoly PolyIs Reduced polyAt toRq ntt HintIs simpleBitPack)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt simpleBitPack)
+open VG.Proof.MlDsa (PolyIs Reduced polyAt HintIs)
 open VG.Proof.MlDsa.Verify (vZ vHint zHat w1Row)
 open VG.Spec.Sha3 (bytesAt)
 

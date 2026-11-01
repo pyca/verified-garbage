@@ -53,7 +53,8 @@ open VG.Proof.MlDsa.X86_64.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly WP.keep writesOnly gprPreserved_of ifp ifn GOnly
   wp_rcxLoop add_ofNat_zero withMxcsr_ok mxR xmm_setXmm)
 open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs montgomeryRInv)
+open VG.Spec.MlDsa (q n Poly Zq)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs montgomeryRInv)
 
 /-- A 128-bit load. -/
 theorem xld_ok {s : State} {p : Reg} {off : Nat} {d : XReg}
@@ -265,10 +266,10 @@ end
 theorem dotP_eq {m m' : VG.Mem} {a b : Addr} {c : Nat}
     (ha : ∀ j < c, ∀ k < 256, coeffAt m' (a + BitVec.ofNat 64 (1024 * j)) k = coeffAt m (a + BitVec.ofNat 64 (1024 * j)) k)
     (hb : ∀ j < c, ∀ k < 256, coeffAt m' (b + BitVec.ofNat 64 (1024 * j)) k = coeffAt m (b + BitVec.ofNat 64 (1024 * j)) k) :
-    (Vector.ofFn fun k => dotP m' a b c k.val) = Spec.MlDsa.dotNTT
+    (Vector.ofFn fun k => dotP m' a b c k.val) = Proof.MlDsa.dotNTT
       (fun j => polyAt m (a + BitVec.ofNat 64 (1024 * j))) (fun j => polyAt m (b + BitVec.ofNat 64 (1024 * j))) c := by
   apply Vector.ext; intro k hk
-  rw [Vector.getElem_ofFn, ← getElem!_pos (Spec.MlDsa.dotNTT _ _ c) k hk,
+  rw [Vector.getElem_ofFn, ← getElem!_pos (Proof.MlDsa.dotNTT _ _ c) k hk,
     dotNTT_get (A := fun j => famV m' a j k) (B := fun j => famV m' b j k) hk
     (fun j hj => by rw [polyAt_get _ _ hk, famV, ha j hj k hk]) (fun j hj => by rw [polyAt_get _ _ hk, famV, hb j hj k hk])]
   rfl
@@ -282,7 +283,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, r1, r2, pa, pb⟩ := hs
   have hwo : pR (s.gpr .rdi) ∈ s.wr := by rw [hwr]; simp
   have hws : pR (s.gpr .rcx) ∈ s.wr := by rw [hwr]; simp
-  have hW : WP isa (dotInvSse2 c) s fun s' => PolyIs s'.mem (s.gpr .rdi) (Spec.MlDsa.nttInv (Spec.MlDsa.dotNTT
+  have hW : WP isa (dotInvSse2 c) s fun s' => PolyIs s'.mem (s.gpr .rdi) (Spec.MlDsa.nttInv (Proof.MlDsa.dotNTT
       (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
       (fun j => polyAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j))) c)) ∧
       Frame [pR (s.gpr .rdi), pR (s.gpr .rcx)] s.mem s'.mem := by
@@ -290,7 +291,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
         GOnly [.r10, .rsi] s w)
       (by vrund; gonlyd) fun w ⟨h10, hsi, og⟩ => ?_)
     refine WP.mono (withMxcsr_ok (r := .rsi) (Q := fun u => PolyIs u.mem (s.gpr .rdi) (Spec.MlDsa.nttInv
-        (Spec.MlDsa.dotNTT (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
+        (Proof.MlDsa.dotNTT (fun j => polyAt s.mem (s.gpr .rsi + BitVec.ofNat 64 (1024 * j)))
           (fun j => polyAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (1024 * j))) c)) ∧
         Frame [pR (s.gpr .rdi), pR (s.gpr .rcx)] s.mem u.mem) ⟨by decide, by decide⟩ [.rax, .rcx, .rdx, .r8, .r9, .r10]
       ⟨by decide, by decide⟩ hsi (by rw [og.keep.2.2]; exact hws) (writesOnly_of hk') (fun s1 k1 f1 => ?_))
@@ -351,21 +352,21 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
 theorem ct4 : ConstantTime isa (dotK 4).pre (dotK 4).pub (dotInvSse2 4) :=
   VG.Taint.constantTime (A := taint) dotτ (dot_agree 4) (by taint_decide)
 
-theorem verified4 : Verified X86_64.target (dotInvSse2 4) (Spec.MlDsa.dotInverseContract 4 X86_64.abi) :=
+theorem verified4 : Verified X86_64.target (dotInvSse2 4) (Proof.MlDsa.dotInverseContract 4 X86_64.abi) :=
   Verified.of_correct (correct (by decide) (by decide +kernel) (by decide +kernel) (by decide +kernel)) ct4
     (by dot_implies dotSat 4)
 
 theorem ct5 : ConstantTime isa (dotK 5).pre (dotK 5).pub (dotInvSse2 5) :=
   VG.Taint.constantTime (A := taint) dotτ (dot_agree 5) (by taint_decide)
 
-theorem verified5 : Verified X86_64.target (dotInvSse2 5) (Spec.MlDsa.dotInverseContract 5 X86_64.abi) :=
+theorem verified5 : Verified X86_64.target (dotInvSse2 5) (Proof.MlDsa.dotInverseContract 5 X86_64.abi) :=
   Verified.of_correct (correct (by decide) (by decide +kernel) (by decide +kernel) (by decide +kernel)) ct5
     (by dot_implies dotSat 5)
 
 theorem ct7 : ConstantTime isa (dotK 7).pre (dotK 7).pub (dotInvSse2 7) :=
   VG.Taint.constantTime (A := taint) dotτ (dot_agree 7) (by taint_decide)
 
-theorem verified7 : Verified X86_64.target (dotInvSse2 7) (Spec.MlDsa.dotInverseContract 7 X86_64.abi) :=
+theorem verified7 : Verified X86_64.target (dotInvSse2 7) (Proof.MlDsa.dotInverseContract 7 X86_64.abi) :=
   Verified.of_correct (correct (by decide) (by decide +kernel) (by decide +kernel) (by decide +kernel)) ct7
     (by dot_implies dotSat 7)
 

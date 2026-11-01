@@ -17,8 +17,8 @@ def Pub (v : Nat) (s t : State) : Prop :=
     bytesAt s.mem (seedP s) (34*v)=bytesAt t.mem (seedP t) (34*v)
 
 theorem Pub.seed {v k : Nat} {σ τ : State} (h : Pub v σ τ) (hk : k<v) : B σ k=B τ k := by
-  change Spec.MlDsa.seed4 σ.mem (seedP σ) k=Spec.MlDsa.seed4 τ.mem (seedP τ) k
-  unfold Spec.MlDsa.seed4
+  change Proof.MlDsa.seed4 σ.mem (seedP σ) k=Proof.MlDsa.seed4 τ.mem (seedP τ) k
+  unfold Proof.MlDsa.seed4
   rw [← VG.Proof.MlKem.bytesAt_slice σ.mem (seedP σ) (show 34*k+34≤34*v by omega),
     ← VG.Proof.MlKem.bytesAt_slice τ.mem (seedP τ) (show 34*k+34≤34*v by omega),h.2.2.2.2]
 

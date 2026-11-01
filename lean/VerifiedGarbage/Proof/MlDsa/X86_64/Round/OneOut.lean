@@ -20,7 +20,7 @@ inputs `p`.
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa (coeffAt gamma2s)
+open VG.Proof.MlDsa (coeffAt gamma2s)
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 
 /-- `x - k` is zero exactly when `x = k`. -/

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
-public import VerifiedGarbage.Spec.MlDsa.RejNTT2
+public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
-meta import VerifiedGarbage.Spec.MlDsa.RejNTT2
+meta import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
@@ -64,7 +64,7 @@ theorem result_legacy {σ t : State} (h : Result 4 σ t) :
   · intro k hk hl
     exact stored_polyIs (by simpa only [prefixRow_legacy,polyP,VG.Proof.MlDsa.AArch64.Sample.Rej4.polyP] using h.stored k hk) hl
 
-theorem pre_four {σ : State} (h : (Spec.MlDsa.rejNTT4Contract AArch64.abi).pre σ) : Pre 4 σ := by
+theorem pre_four {σ : State} (h : (Proof.MlDsa.rejNTT4Contract AArch64.abi).pre σ) : Pre 4 σ := by
   obtain ⟨hr,hw,hsa,hss,has⟩ := VG.Proof.MlDsa.AArch64.Sample.Rej4.r4_pre σ h
   exact ⟨Or.inr rfl,hr,hw,hsa,hss,has⟩
 
@@ -83,16 +83,16 @@ def twoPreProps (s : State) : Prop := s.rd=[seedsR 2 s] ∧ s.wr=[aR 2 s,scrR s]
   (seedsR 2 s).Disjoint (aR 2 s) ∧ (seedsR 2 s).Disjoint (scrR s) ∧
   (aR 2 s).Disjoint (scrR s)
 
-theorem pre_two {σ : State} (h : (Spec.MlDsa.rejNTT2Contract AArch64.abi).pre σ) : Pre 2 σ := by
-  have hp : ∀s,(Spec.MlDsa.rejNTT2Contract AArch64.abi).pre s → twoPreProps s := by
-    sig_implies_pre [Spec.MlDsa.rejNTT2Contract,Spec.MlDsa.rejNTT2Sig,twoPreProps,
+theorem pre_two {σ : State} (h : (Proof.MlDsa.rejNTT2Contract AArch64.abi).pre σ) : Pre 2 σ := by
+  have hp : ∀s,(Proof.MlDsa.rejNTT2Contract AArch64.abi).pre s → twoPreProps s := by
+    sig_implies_pre [Proof.MlDsa.rejNTT2Contract,Proof.MlDsa.rejNTT2Sig,twoPreProps,
       seedsR,aR,scrR,seedP,aP,scr,AArch64.abi,AArch64.argRegs,
       VG.Proof.MlDsa.AArch64.Sample.Rej4.seedP,VG.Proof.MlDsa.AArch64.Sample.Rej4.aP,
       VG.Proof.MlDsa.AArch64.Sample.Rej4.scr,VG.Proof.MlDsa.AArch64.Sample.Rej4.scrR]
   obtain ⟨hr,hw,hsa,hss,has⟩ := hp σ h
   exact ⟨Or.inl rfl,hr,hw,hsa,hss,has⟩
 
-theorem two_correct {σ : State} (h : (Spec.MlDsa.rejNTT2Contract AArch64.abi).pre σ) :
+theorem two_correct {σ : State} (h : (Proof.MlDsa.rejNTT2Contract AArch64.abi).pre σ) :
     WP isa Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code σ fun t =>
       abiPreserved σ t ∧ Outcome 2 σ t :=
   WP.mono (two_ok (pre_two h)) fun _ ht => ⟨ht.abi,ht.outcome⟩
@@ -501,16 +501,16 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 
- theorem four_verified : Verified target Four.code (Spec.MlDsa.rejNTT4Contract abi) := by
+ theorem four_verified : Verified target Four.code (Proof.MlDsa.rejNTT4Contract abi) := by
   refine ⟨?_,?_,(VG.Proof.MlDsa.AArch64.Sample.Rej4.verified true).2.2⟩
   · intro s hs
     obtain ⟨tr,t,he,ht⟩ := four_ok (pre_four hs)
     refine ⟨tr,t,he,ht.abi,?_⟩
-    sig_post [Spec.MlDsa.rejNTT4Contract,Spec.MlDsa.rejNTT4Sig,abi,argRegs]
+    sig_post [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,abi,argRegs]
     exact ht.outcome
   · intro s t tr ur s' t' hs ht hp es et
     have pub : Pub 4 s t := by
-      sig_pub [Spec.MlDsa.rejNTT4Contract,Spec.MlDsa.rejNTT4Sig,abi,argRegs] at hp
+      sig_pub [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,abi,argRegs] at hp
       obtain ⟨hsp,hb,h0,h1,h2⟩ := hp
       exact ⟨h0,h1,h2,hsp,VG.Proof.MlKem.map_toNat_inj hb⟩
     exact four_ct _ _ _ _ _ _ (pre_four hs) (pre_four ht) pub es et
@@ -523,20 +523,20 @@ open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
   rd := [⟨0x1000,68⟩]
   wr := [⟨0x2000,2048⟩,⟨0x4000,8192⟩]
 
- theorem two_verified : Verified target Two.code (Spec.MlDsa.rejNTT2Contract abi) := by
+ theorem two_verified : Verified target Two.code (Proof.MlDsa.rejNTT2Contract abi) := by
   refine ⟨?_,?_,?_⟩
   · intro s hs
     obtain ⟨tr,t,he,ht⟩ := two_ok (pre_two hs)
     refine ⟨tr,t,he,ht.abi,?_⟩
-    sig_post [Spec.MlDsa.rejNTT2Contract,Spec.MlDsa.rejNTT2Sig,abi,argRegs]
+    sig_post [Proof.MlDsa.rejNTT2Contract,Proof.MlDsa.rejNTT2Sig,abi,argRegs]
     exact ht.outcome
   · intro s t tr ur s' t' hs ht hp es et
     have pub : Pub 2 s t := by
-      sig_pub [Spec.MlDsa.rejNTT2Contract,Spec.MlDsa.rejNTT2Sig,abi,argRegs] at hp
+      sig_pub [Proof.MlDsa.rejNTT2Contract,Proof.MlDsa.rejNTT2Sig,abi,argRegs] at hp
       obtain ⟨hsp,hb,h0,h1,h2⟩ := hp
       exact ⟨h0,h1,h2,hsp,VG.Proof.MlKem.map_toNat_inj hb⟩
     exact two_ct _ _ _ _ _ _ (pre_two hs) (pre_two ht) pub es et
-  · sig_implies_sat [Spec.MlDsa.rejNTT2Contract,Spec.MlDsa.rejNTT2Sig,abi,argRegs]
+  · sig_implies_sat [Proof.MlDsa.rejNTT2Contract,Proof.MlDsa.rejNTT2Sig,abi,argRegs]
       [twoSat] using twoSat
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

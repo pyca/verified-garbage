@@ -52,7 +52,7 @@ structure FirstReady (a b : Addr) (τ : Nat) (X : List Byte) (s : State) : Prop 
   x26 : s.gpr .x26=a
   x27 : (s.gpr .x27).toNat=τ
   buf : ∀j<136,s.mem (b+BitVec.ofNat 64 j)=X.getD j 0
-  zero : ∀j<256,Spec.MlDsa.coeffAt s.mem a j=0
+  zero : ∀j<256,Proof.MlDsa.coeffAt s.mem a j=0
   reads : Covers [⟨b,136⟩,polyR a] (s.rd++s.wr)
   writes : Covers [polyR a] s.wr
 

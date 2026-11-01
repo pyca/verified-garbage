@@ -15,7 +15,7 @@ open VG.Impl.MlDsa.AArch64.Call
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_strb wp_ldrw wp_strw wp_addImm wp_subImm
   count_loop)
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 
 theorem coeffAt_writeW32_4 (m : Mem) (q : Addr) {i j : Nat} (hi : i < 1024) (hj : j < 1024) (v : BitVec 32) :

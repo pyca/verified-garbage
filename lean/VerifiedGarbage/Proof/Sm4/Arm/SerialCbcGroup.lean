@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcFill
 
 /-! # One prepared-key CBC encryption block -/

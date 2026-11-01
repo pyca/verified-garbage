@@ -20,7 +20,7 @@ open VG.Impl.MlDsa.AArch64.Sample.Rej4 (oBuf)
 
 /-- The four seeds are slices of the public 136-byte input. -/
 theorem B_pub {σ τ : State} (hq : r4K.pub σ τ) {k : Nat} (hk : k < 4) : B σ k = B τ k := by
-  unfold B Spec.MlDsa.seed4
+  unfold B Proof.MlDsa.seed4
   rw [← VG.Proof.MlKem.bytesAt_slice σ.mem (seedP σ) (show 34*k+34 ≤ 136 by omega),
     ← VG.Proof.MlKem.bytesAt_slice τ.mem (seedP τ) (show 34*k+34 ≤ 136 by omega),hq.2.2.2.2]
 
@@ -34,7 +34,7 @@ structure ArgReady (σ : State) (k : Nat) (s : State) : Prop where
   x26 : s.gpr .x26 = polyP σ k
 
 structure ZeroReady (σ : State) (k : Nat) (s : State) : Prop extends ArgReady σ k s where
-  zero : ∀ i < 256,Spec.MlDsa.coeffAt s.mem (polyP σ k) i = 0
+  zero : ∀ i < 256,Proof.MlDsa.coeffAt s.mem (polyP σ k) i = 0
 
 theorem args_ready {σ s : State} {k : Nat} (hk : k < 4) (hp : Pre σ) (h : Ready σ s) :
     WP isa (.block ([.addImm .x .x25 .x19 (1008*k),.addImm .x .x26 .x21 (1024*k)] : List Instr)) s (ArgReady σ k) :=

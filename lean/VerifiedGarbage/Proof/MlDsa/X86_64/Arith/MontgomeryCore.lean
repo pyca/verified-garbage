@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -18,7 +18,8 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (XOnly)
 open VG.Impl.MlKem.X86_64 (xb xmov toY)
-open VG.Spec.MlDsa (q Zq montgomeryRInv)
+open VG.Spec.MlDsa (q Zq)
+open VG.Proof.MlDsa (montgomeryRInv)
 
 def montMulV (x y : BitVec 128) : BitVec 128 := csubV (montV x y (shufDwords y 0xF5))
 def montMulAddV (x y z : BitVec 128) : BitVec 128 := csubV (XBinOp.eval .paddd (montMulV x y) z)

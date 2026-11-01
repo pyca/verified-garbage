@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic

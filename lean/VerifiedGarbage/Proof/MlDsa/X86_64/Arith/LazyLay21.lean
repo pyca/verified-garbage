@@ -20,7 +20,8 @@ open VG.Proof.MlKem.X86_64 (Keep XOnly XKeep YOnly ylanes yld_ok ifp ifn sel sel
   addR_ok wp_rcxLoopY wp_cons_iff lane_setReg lane_setFlags State.setMem_ymm State.setMem_setMem q256lo q256hi
   lo4 hi4)
 open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop)
-open VG.Spec.MlDsa (q n Zq coeffAt zetas)
+open VG.Spec.MlDsa (q n Zq zetas)
+open VG.Proof.MlDsa (coeffAt)
 
 /-! ## An iteration -/
 

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 import VerifiedGarbage.Proof.MlDsa.DecideAt

@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

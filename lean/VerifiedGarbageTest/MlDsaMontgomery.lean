@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.Spec.MlDsa.Montgomery
-meta import VerifiedGarbage.Spec.MlDsa.Montgomery
+import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
+meta import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 
 /-!
 # Algebraic consistency checks for ML-DSA's Montgomery contracts
@@ -14,7 +14,7 @@ inverse transform together to detect a missing or duplicated scale factor.
 
 namespace VG.Test.MlDsaMontgomery
 
-open Spec.MlDsa
+open Spec.MlDsa VG.Proof.MlDsa
 
 example : montgomeryR * montgomeryRInv = 1 := by decide +kernel
 

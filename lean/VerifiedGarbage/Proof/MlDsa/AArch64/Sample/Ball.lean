@@ -39,7 +39,8 @@ open VG.Proof.MlKem.AArch64 (Only Keep only_write wp_nil wp_lsr ptr_add toNat_ls
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q H PolyIs coeffAt ballParams toRq n)
+open VG.Spec.MlDsa (Zq q H toRq n)
+open VG.Proof.MlDsa (PolyIs coeffAt ballParams)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `τ`, the `u32` argument in `w2`. -/
@@ -181,7 +182,8 @@ namespace VG.Proof.MlDsa.AArch64.Sample
 open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (H ballParams)
+open VG.Spec.MlDsa (H)
+open VG.Proof.MlDsa (ballParams)
 open VG.Spec.Sha3 (bytesAt)
 
 namespace Ball
@@ -280,13 +282,13 @@ def sbSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem sampleInBall_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target (Impl.MlDsa.AArch64.Sample.sampleInBallWith v.callee)
-    (Spec.MlDsa.sampleInBallContract AArch64.abi 16) :=
+    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   Verified.of_correct (Ball.correctWith v) (Ball.ctWith v)
-    { pre := by sig_implies_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK,
+    { pre := by sig_implies_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK,
         AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, AArch64.abi,
+        sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, AArch64.abi,
           AArch64.argRegs]
         dsimp only [sbK] at h
         obtain ⟨hr, hp⟩ := h
@@ -303,15 +305,15 @@ theorem sampleInBall_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verifie
               rw [sampleInBall_none (B := 272) _ (by decide) (by decide) hf]; rfl⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, AArch64.abi,
+        sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK, AArch64.abi,
           AArch64.argRegs] at h
         obtain ⟨hsp, hb, hx0, hx1, hx2, hx3, hx4⟩ := h
         exact ⟨hx0, hx1, hx2, hx3, hx4, hsp, VG.Proof.MlKem.map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK,
+      sat := by sig_implies_sat [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK,
         AArch64.abi, AArch64.argRegs] [sbSat] using sbSat }
 
 theorem sampleInBall_verified : Verified AArch64.target Impl.MlDsa.AArch64.Sample.sampleInBall
-    (Spec.MlDsa.sampleInBallContract AArch64.abi 16) :=
+    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   sampleInBall_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

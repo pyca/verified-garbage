@@ -35,7 +35,7 @@ to `r9`.
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes ifp ifn WP.keep)
 open VG.Impl.MlKem.X86_64 (xb xmov toY)
 open VG.Proof.MlDsa.X86_64.Arith (qV csubL csubL_toNat dword_csubV bc)
@@ -194,7 +194,8 @@ open VG.Proof.MlDsa.X86_64.Round (HbC Bc bc_ofDwords mhL mhL_le mhX_ok nib sp cn
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok wp_rcxLoopY ifp ifn ptr_step add_ofNat_zero
   lane_setReg lane_setFlags sx32 State.setMem_ymm)
 open VG.Impl.MlKem.X86_64 (toY)
-open VG.Spec.MlDsa (q n coeffAt Reduced gamma2s)
+open VG.Spec.MlDsa (q n)
+open VG.Proof.MlDsa (coeffAt Reduced gamma2s)
 
 /-- `Σ k < m, f k`. -/
 def csum (f : Nat → Nat) : Nat → Nat
@@ -439,7 +440,7 @@ end VG.Proof.MlDsa.X86_64.Arith
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep gprPreserved_of)
 open VG.Proof.MlDsa.X86_64.Arith (csum)
 

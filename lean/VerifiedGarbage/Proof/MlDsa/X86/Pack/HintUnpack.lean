@@ -33,7 +33,7 @@ namespace VG.Proof.MlDsa.X86.Pack.Hint
 open VG VG.X86 VG.Impl.MlDsa.X86.Pack
 open VG.Impl.MlKem.X86 (at_ saveRegs)
 open VG.Proof.MlKem.X86
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem (bytesAt_getD)
 open VG.Proof.MlDsa.Pack

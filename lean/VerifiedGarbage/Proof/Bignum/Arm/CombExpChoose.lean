@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.CombScan
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
-public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
 public import VerifiedGarbage.Impl.Bignum.Arm.CombScan
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb

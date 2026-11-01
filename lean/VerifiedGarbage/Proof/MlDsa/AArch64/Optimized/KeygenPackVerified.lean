@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerify
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
 

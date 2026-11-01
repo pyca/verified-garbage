@@ -29,7 +29,7 @@ stores eight of them in each iteration (`YUseL.step`).
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (XOnly ifp ifn)
 open VG.Impl.MlKem.X86_64 (xb xmov toY)
 open VG.Proof.MlDsa.X86_64.Arith (dword_psubd dword_pand dword_psrad sshiftRight31)
@@ -211,7 +211,8 @@ open VG.Proof.MlDsa.X86_64.Round (HbC uhL uhX_ok)
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok wp_rcxLoopY ifp ifn ptr_step add_ofNat_zero
   lane_setReg lane_setFlags sx32 State.setMem_ymm)
 open VG.Impl.MlKem.X86_64 (toY)
-open VG.Spec.MlDsa (q n coeffAt Reduced gamma2s)
+open VG.Spec.MlDsa (q n)
+open VG.Proof.MlDsa (coeffAt Reduced gamma2s)
 
 /-- `YC` holds while the lanes of its registers are kept. -/
 theorem YC.keep' {g : Nat} {s s' : State} (h : YC g s)
@@ -344,7 +345,7 @@ end VG.Proof.MlDsa.X86_64.Arith
 namespace VG.Proof.MlDsa.X86_64.Round
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
-open VG.Spec.MlDsa
+open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep gprPreserved_of)
 
 theorem useHintY_correct (s₀ : State) (hp : useHintK.pre s₀) :

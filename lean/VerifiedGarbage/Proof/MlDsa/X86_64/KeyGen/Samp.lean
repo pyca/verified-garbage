@@ -27,8 +27,8 @@ namespace VG.Proof.MlDsa.X86_64.KeyGen
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc setB seqR)
 open VG.Impl.MlDsa.X86_64.KeyGen
-open VG.Spec.MlDsa (Params keyGenSeeds integerToBytes Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly
-  keyGenInternal toRq polyAt coeffAt Reduced PolyIs)
+open VG.Spec.MlDsa (Params keyGenSeeds integerToBytes Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly keyGenInternal toRq)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (seedA seedS Bounds.Le bmax)
 open VG.Spec.Sha3 (bytesAt)
 

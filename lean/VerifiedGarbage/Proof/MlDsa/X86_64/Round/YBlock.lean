@@ -27,7 +27,7 @@ open VG.Proof.MlDsa.X86_64.Arith (dword_psubd dword_pand dword_psrad caddL caddV
   dword_qV)
 open VG.Proof.MlKem.X86_64 (XOnly)
 open VG.Impl.MlKem.X86_64 (xb xmov)
-open VG.Spec.MlDsa (gamma2s)
+open VG.Proof.MlDsa (gamma2s)
 
 /-- Each doubleword of `x` is `v`. -/
 def Bc (x : BitVec 128) (v : BitVec 32) : Prop := ∀ e < 4, dword x e = v

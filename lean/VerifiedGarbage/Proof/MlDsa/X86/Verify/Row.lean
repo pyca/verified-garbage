@@ -22,7 +22,8 @@ open VG VG.X86 VG.Impl.MlKem.X86
 open VG.Proof.MlKem.X86 VG.Proof.MlKem.X86.Top VG.Proof.MlDsa.X86.KeyGen
 open VG.Impl.MlDsa.X86.Verify
 open VG.Impl.MlDsa.X86.KeyGen (callP)
-open VG.Spec.MlDsa (Params Poly IPoly PolyIs NatPolyIs Reduced polyAt toRq ntt nttInv HintIs simpleBitPack)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt nttInv simpleBitPack)
+open VG.Proof.MlDsa (PolyIs NatPolyIs Reduced polyAt HintIs)
 open VG.Proof.MlDsa.Verify (vZ vHint zHat dotAcc t1Hat wRow w1Row vT1)
 open VG.Spec.Sha3 (bytesAt)
 
@@ -45,10 +46,10 @@ theorem CX.ch {p : Params} {h : List (Vector Bool Spec.MlDsa.n)} {A : Nat → Na
   exact e
 
 theorem natPoly_le {m : Mem} {a : Addr} {f : Vector Nat Spec.MlDsa.n} (h : NatPolyIs m a f) {b : Nat}
-    (hb : ∀ i (hi : i < Spec.MlDsa.n), f[i] ≤ b) : ∀ i < Spec.MlDsa.n, (Spec.MlDsa.coeffAt m a i).toNat ≤ b :=
+    (hb : ∀ i (hi : i < Spec.MlDsa.n), f[i] ≤ b) : ∀ i < Spec.MlDsa.n, (Proof.MlDsa.coeffAt m a i).toNat ≤ b :=
   fun i hi => by
     have e := congrArg (·[i]'hi) h
-    simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn] at e
+    simp only [Proof.MlDsa.natPolyAt, Vector.getElem_ofFn] at e
     rw [e]; exact hb i hi
 
 section

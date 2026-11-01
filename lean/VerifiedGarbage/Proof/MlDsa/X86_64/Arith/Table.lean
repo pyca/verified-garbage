@@ -19,7 +19,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- The first `n` entries of the table `t` are the `u32`s at `p`. -/
 def Tab (t : Nat → Nat) (m : Mem) (p : Addr) (n : Nat) : Prop :=

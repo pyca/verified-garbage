@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Prime
-import VerifiedGarbage.Proof.P384.Order
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA

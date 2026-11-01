@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackTiming
-public import VerifiedGarbage.Spec.MlDsa.UseHintPack
+public import VerifiedGarbage.Proof.MlDsa.UseHintPackContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
 public import VerifiedGarbage.TCB.AArch64.Target

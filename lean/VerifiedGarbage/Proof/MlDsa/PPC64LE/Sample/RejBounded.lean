@@ -50,7 +50,8 @@ open VG.Proof.MlDsa.Sample (hbOks leak_hbOks rejBounded_some rejBounded_none sto
   H_length)
 open VG.Proof.MlKem.PPC64LE (relct_noMem)
 open VG.Proof.MlKem.PPC64LE.Sample (taint_block relct_wp)
-open VG.Spec.MlDsa (H rejBoundedContract rejBoundedSig rejBoundedLeak)
+open VG.Spec.MlDsa (H rejBoundedLeak)
+open VG.Proof.MlDsa (rejBoundedContract rejBoundedSig)
 open VG.Spec.Sha3 (bytesAt)
 
 theorem zx_congr {x y : BitVec 64} (h : x.setWidth 32 = y.setWidth 32) : zx x = zx y :=
@@ -172,7 +173,7 @@ namespace VG.Proof.MlDsa.PPC64LE.Sample
 
 open VG VG.PPC64LE
 open VG.Proof.MlDsa.Sample (rbFold rejBounded_some rejBounded_none stored_polyIs ifT ifF)
-open VG.Spec.MlDsa (rejBoundedContract rejBoundedSig)
+open VG.Proof.MlDsa (rejBoundedContract rejBoundedSig)
 open RejBounded
 
 theorem rejBounded_verified :

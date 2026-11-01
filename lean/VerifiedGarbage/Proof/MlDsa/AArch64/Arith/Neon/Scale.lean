@@ -18,7 +18,8 @@ open VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (movW_ok wp_countdown)
 open VG.Proof.MlKem.AArch64 (Keep Lanes wp_ldrq wp_strq wp_vop wp_scalar)
-open VG.Spec.MlDsa (q Poly Zq PolyIs coeffAt)
+open VG.Spec.MlDsa (q Poly Zq)
+open VG.Proof.MlDsa (PolyIs coeffAt)
 
 def Scaled (G : Poly) (m : Mem) (p : Addr) (u : Nat) : Prop :=
   ∀ j < 256, (coeffAt m p j).toNat = if j < 4*u then (G[j]!*8347681).val else (G[j]!).val

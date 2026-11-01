@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 # ML-DSA on AArch64: what the rounding proofs share
 
 * For each function, a contract with the facts of its shared contract
-  (`Spec/MlDsa/Poly.lean`) spelled out for AArch64: the arguments in their
+  (`Proof/MlDsa/Contract.lean`) spelled out for AArch64: the arguments in their
   registers, the permitted regions, their disjointness, and the
   postcondition. `Verified.of_correct` moves a proof to the shared
   contract, which implies it (`mldsa_implies`).
@@ -36,8 +36,8 @@ namespace VG.Proof.MlDsa.AArch64.Round
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Round VG.Proof.MlDsa.Round
 open VG.Proof.MlDsa.AArch64.Arith (writesOnly movW_ok wp_countdown Qv)
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (coeffAt polyAt Reduced PolyIs NatPolyIs HintIs hintAt gamma2s power2Round highBits
-  lowBits normRq makeHint useHint hintOnes ofInt n)
+open VG.Spec.MlDsa (power2Round highBits lowBits normRq makeHint useHint ofInt n)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs NatPolyIs HintIs hintAt gamma2s hintOnes)
 
 /-! ## The contracts -/
 

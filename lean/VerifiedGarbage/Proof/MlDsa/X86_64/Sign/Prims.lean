@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
-public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlDsa.Arith.DotSum
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # ML-DSA signing on x86-64: the primitives it calls
 
 What the proofs need of the implementations of the primitives (`PrimsOk`):
-each is verified against its shared contract (`Spec/MlDsa/Poly.lean`) for a
+each is verified against its shared contract (`Proof/MlDsa/Contract.lean`) for a
 stack that fits in the `D` bytes the function gives its calls (`Callee`); and,
 of the samplers whose result the function branches on, that the result is
 public in their own runs (`RetPub`) and that they succeed only when the

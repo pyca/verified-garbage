@@ -30,7 +30,8 @@ open VG.Proof.MlDsa.PPC64LE.Sample
 open VG.Impl.MlDsa.PPC64LE.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Proof.MlKem.PPC64LE (wp_loop_nz)
-open VG.Spec.MlDsa (Zq q H IPoly n ofInt coeffAt PolyIs toRq)
+open VG.Spec.MlDsa (Zq q H IPoly n ofInt toRq)
+open VG.Proof.MlDsa (coeffAt PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The setup of the loop -/

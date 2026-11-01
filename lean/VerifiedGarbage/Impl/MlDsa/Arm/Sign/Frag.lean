@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.Arm.Top
 # ML-DSA on 32-bit ARM, signing: the pieces of the top-level function
 
 `vg_mldsa{44,65,87}_sign` is a sequence of calls of the polynomial
-primitives (`Spec/MlDsa/Poly.lean`) and of the SHA-3 sponge functions, on
+primitives (`Proof/MlDsa/Contract.lean`) and of the SHA-3 sponge functions, on
 buffers in its working space `scratch` (whose address it keeps in `r7`)
 and its arguments (whose addresses it keeps in `r4`, `r5`, `r6` and `r8`):
 all callee-saved registers, which the functions it calls preserve. A

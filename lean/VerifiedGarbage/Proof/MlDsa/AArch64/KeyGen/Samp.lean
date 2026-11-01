@@ -29,8 +29,8 @@ namespace VG.Proof.MlDsa.AArch64.KeyGen
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
 open VG.Impl.MlDsa.AArch64.Call (Ptr sc Arg glue callAt setB and24 seqR movV lea)
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.MlDsa (Params keyGenSeeds Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly keyGenInternal toRq
-  polyAt coeffAt Reduced PolyIs)
+open VG.Spec.MlDsa (Params keyGenSeeds Poly IPoly Bounds minBounds rejNTTPoly rejBoundedPoly keyGenInternal toRq)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (seedA seedS Bounds.Le bmax Small ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
 

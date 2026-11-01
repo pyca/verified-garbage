@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Taint
 # ML-DSA on AArch64: the contracts of the encodings, for the proofs
 
 For each packing function, a contract with the facts of its shared contract
-(`Spec/MlDsa/Poly.lean`) spelled out for AArch64: the arguments in their
+(`Proof/MlDsa/Contract.lean`) spelled out for AArch64: the arguments in their
 registers, the permitted regions, their disjointness, and the postcondition.
 The proofs are written against these, and `Verified.of_correct` moves them to
 the shared contracts, which imply them. Also: `sel_ok`, the branch of `sel` on

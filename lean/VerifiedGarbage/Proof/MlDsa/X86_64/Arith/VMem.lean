@@ -25,7 +25,8 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (XOnly xmm_setXmm ifp ifn sel sel_lt add_ofNat_zero)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 theorem dlanes_load {m : Mem} {p : Addr} {F : Poly} (h : PolyIs m p F) {j : Nat} (hj : j + 4 ≤ 256) :
     DLanes (m.readW (coeffAddr p j) 128) (fun e => F[j + e]!) := fun e he => by

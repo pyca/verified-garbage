@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.MontProduct
+public import VerifiedGarbage.Proof.MlDsa.MontProductContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductMem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
@@ -54,7 +54,8 @@ open VG.Proof.MlKem.AArch64 (Keep Lanes)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.AArch64.Arith (accK pR)
 open VG.Proof.MlDsa.AArch64.Arith.Neon
-open VG.Spec.MlDsa (q Poly coeffAt polyAt)
+open VG.Spec.MlDsa (q Poly)
+open VG.Proof.MlDsa (coeffAt polyAt)
 
 structure Inv (s₀ : State) (v : Nat → Nat) (i : Nat) (s : State) : Prop where
   x0 : s.gpr .x0 = coeffAddr (s₀.gpr .x0) (4*i)

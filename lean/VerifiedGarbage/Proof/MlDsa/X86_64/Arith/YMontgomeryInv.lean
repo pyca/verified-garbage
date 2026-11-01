@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
-public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
-meta import VerifiedGarbage.Spec.MlDsa.Montgomery
+meta import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
@@ -207,7 +207,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok ifp ifn sel GOnly WP.keep writesOnly
   gprPreserved_of withMxcsr_ok mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
 open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop yconst)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt PolyIs zetas ntt nttInv)
+open VG.Spec.MlDsa (q n Poly Zq zetas ntt nttInv)
+open VG.Proof.MlDsa (coeffAt polyAt PolyIs)
 open VG.Proof.MlDsa.Arith.Lazy (residue Word opInv product product_lt)
 
 /-- A product of any doubleword by a zeta in Montgomery form, reduced: `ζ · (b mod q)`. -/
@@ -638,14 +639,14 @@ theorem ylast_ok {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k < 
 
 /-! ## The transform -/
 
-theorem inv_eq (f : Poly) : Spec.MlDsa.montgomeryNttInv f =
+theorem inv_eq (f : Poly) : Proof.MlDsa.montgomeryNttInv f =
     (nttInvLens.foldl nttInvLayer f).map (· * 16382) := by
-  rw [Spec.MlDsa.montgomeryNttInv, nttInv_eq_layers, Vector.map_map]
+  rw [Proof.MlDsa.montgomeryNttInv, nttInv_eq_layers, Vector.map_map]
   apply congrArg (fun g : Spec.MlDsa.Zq → Spec.MlDsa.Zq => (nttInvLens.foldl nttInvLayer f).map g)
   funext x
-  change (x * 8347681) * Spec.MlDsa.montgomeryR = x * 16382
+  change (x * 8347681) * Proof.MlDsa.montgomeryR = x * 16382
   rw [Fin.mul_assoc]
-  have hc : (8347681 : Spec.MlDsa.Zq) * Spec.MlDsa.montgomeryR = 16382 := by decide +kernel
+  have hc : (8347681 : Spec.MlDsa.Zq) * Proof.MlDsa.montgomeryR = 16382 := by decide +kernel
   rw [hc]
 
 theorem map_residue {b : Nat} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} {g : Poly} (h : Lazy.Rel b F g) :
@@ -656,7 +657,7 @@ theorem map_residue {b : Nat} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} {g : Poly} (h
 /-- Everything but `withMxcsr`, on any reduced `F` at `fP`, with the scratch at `sP`. -/
 theorem body_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
     (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
-    WP isa montInvBody s fun s' => PolyIs s'.mem fP (Spec.MlDsa.montgomeryNttInv F) ∧
+    WP isa montInvBody s fun s' => PolyIs s'.mem fP (Proof.MlDsa.montgomeryNttInv F) ∧
       Frame [pR fP, pR sP] s.mem s'.mem := by
   have hd' : (pR sP).Disjoint (pR fP) := hd.symm
   refine WP.seq (WP.mono (ypro_ok hsi hw) fun s2 ⟨hT, hc0, hf2, k2, _⟩ => ?_)
@@ -688,8 +689,8 @@ theorem body_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (h
     intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
   exacts [.inr fun _ h => h, .inl fun _ h => h]
 
-theorem correct (s : State) (hs : (inPlaceK Spec.MlDsa.montgomeryNttInv).pre s) :
-    ∃ t s', Exec isa montNttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK Spec.MlDsa.montgomeryNttInv).post s s' := by
+theorem correct (s : State) (hs : (inPlaceK Proof.MlDsa.montgomeryNttInv).pre s) :
+    ∃ t s', Exec isa montNttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK Proof.MlDsa.montgomeryNttInv).post s s' := by
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
@@ -702,13 +703,13 @@ theorem correct (s : State) (hs : (inPlaceK Spec.MlDsa.montgomeryNttInv).pre s) 
   exact (frame_fs f1 fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact .inr (mx_sub' _)).trans hf
 
-theorem ct : ConstantTime isa (inPlaceK Spec.MlDsa.montgomeryNttInv).pre
-    (inPlaceK Spec.MlDsa.montgomeryNttInv).pub montNttInvAvx2 :=
+theorem ct : ConstantTime isa (inPlaceK Proof.MlDsa.montgomeryNttInv).pre
+    (inPlaceK Proof.MlDsa.montgomeryNttInv).pub montNttInvAvx2 :=
   VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
 
-theorem verified : Verified X86_64.target montNttInvAvx2 (Spec.MlDsa.montgomeryNttInvContract X86_64.abi) :=
+theorem verified : Verified X86_64.target montNttInvAvx2 (Proof.MlDsa.montgomeryNttInvContract X86_64.abi) :=
   Verified.of_correct correct ct (by
-    mldsa_implies [Spec.MlDsa.montgomeryNttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
+    mldsa_implies [Proof.MlDsa.montgomeryNttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlDsa.X86_64.Arith.MontgomeryInv

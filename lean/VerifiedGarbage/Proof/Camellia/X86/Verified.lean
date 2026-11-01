@@ -21,7 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Camellia.X86.Lit
 meta import VerifiedGarbage.Proof.Camellia.X86.CallSum
-import VerifiedGarbage.Proof.Camellia.X86.CallSum
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

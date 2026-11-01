@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-public import VerifiedGarbage.Spec.MlDsa.RejNTT2
+public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
@@ -18,7 +18,7 @@ open VG.Spec.MlDsa (Params)
 variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
 
 theorem prefix_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
     (hs : (p.ℓ+p.k)%4=0 ∨ (p.ℓ+p.k)%4=3) :
     Piece p S (fun σ s => s=σ) (KSamp p · (p.k*p.ℓ) (p.ℓ+p.k))
@@ -29,7 +29,7 @@ theorem prefix_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
 /-- The selected key-generation computation retains the original outcome and
 ABI. Immutable tables are the only additional entry resources. -/
 theorem codeWith_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
-    (C : CalleeOk S cd (Spec.MlDsa.rejNTT2Contract AArch64.abi S))
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
     {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
     (hs : (p.ℓ+p.k)%4=0 ∨ (p.ℓ+p.k)%4=3)
     {s : State} (hp : kgPre p S s) (roots : Sign.StaticRoots S s)

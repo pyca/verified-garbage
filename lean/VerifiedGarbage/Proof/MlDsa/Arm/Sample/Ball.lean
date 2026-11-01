@@ -25,7 +25,8 @@ open VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.Sample
 open VG.Impl.MlDsa.Arm.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q H IPoly n ofInt coeffAt PolyIs toRq)
+open VG.Spec.MlDsa (Zq q H IPoly n ofInt toRq)
+open VG.Proof.MlDsa (coeffAt PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The sign bits -/

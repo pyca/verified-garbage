@@ -22,7 +22,7 @@ open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_mov wp_movz wp_addImm wp_
   toNat_sub_n count_loop)
 open VG.Impl.MlDsa.AArch64.Sample
 open VG.Proof.MlDsa.Sample (coeffAddr polyR coeff_contains coeffAt_writeW)
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- After `k` coefficients set to zero. -/
 structure ZInv (aP : Addr) (s₁ : State) (k : Nat) (u : State) : Prop where

@@ -24,7 +24,8 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (XOnly xmm_setXmm mxcsr_setXmm ifp ifn sel sel_lt add_ofNat_zero Keep GOnly
   wp_rcxLoop sx32)
 open VG.Impl.MlKem.X86_64 (xb xmov)
-open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas)
+open VG.Spec.MlDsa (q n Poly Zq zetas)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
 theorem dword_punpcklqdq (a b : BitVec 128) {j : Nat} (hj : j < 4) :
     dword (XBinOp.eval .punpcklqdq a b) j = if j < 2 then dword a j else dword b (j - 2) := by

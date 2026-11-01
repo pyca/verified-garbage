@@ -21,7 +21,7 @@ namespace VG.Proof.MlDsa.Arm.KeyGen
 
 open VG VG.Arm VG.Proof.MlKem.Arm
 open VG.Impl.MlDsa.Arm.KeyGen
-open VG.Spec.MlDsa (coeffAt)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Proof.MlDsa.KeyGen (ifp ifn)
 open VG.Proof.MlKem.Arm.Add (ptr_succ)
 

@@ -17,7 +17,7 @@ theorem finish_ok {σ s : State} {wlen olen : Nat} (hp : Pre wlen olen σ)
     WP isa (.block epi) s fun t => abiPreserved σ t ∧ Frame (writes σ olen) σ.mem t.mem ∧
       Spec.Sha3.bytesAt t.mem (σ.gpr .x2) olen=Spec.MlDsa.H
         (Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) 64++Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) wlen) olen ∧
-      Spec.MlDsa.PolyIs t.mem (σ.gpr .x6) (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack
+      Proof.MlDsa.PolyIs t.mem (σ.gpr .x6) (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack
         (Spec.MlDsa.H (seedBytes σ.mem (σ.gpr .x4) (σ.gpr .x5)) 640) 524287 524288)) := by
   obtain ⟨hk,hsv,hf,h19,hh,hm⟩ := hs
   refine WP.mono (epi_ok hsv h19 (fun i hi => by
@@ -54,7 +54,7 @@ theorem raw_ok (σ : State) {wlen olen : Nat} (hp : Pre wlen olen σ) :
     WP isa (code wlen olen) σ fun t => abiPreserved σ t ∧ Frame (writes σ olen) σ.mem t.mem ∧
       Spec.Sha3.bytesAt t.mem (σ.gpr .x2) olen=Spec.MlDsa.H
         (Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) 64++Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) wlen) olen ∧
-      Spec.MlDsa.PolyIs t.mem (σ.gpr .x6) (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack
+      Proof.MlDsa.PolyIs t.mem (σ.gpr .x6) (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack
         (Spec.MlDsa.H (seedBytes σ.mem (σ.gpr .x4) (σ.gpr .x5)) 640) 524287 524288)) := by
   obtain ⟨tf,s,hf,hs⟩ := front_ok hp.toFrontPre
   obtain ⟨tb,t,hb,ht⟩ := body_ok hp hs

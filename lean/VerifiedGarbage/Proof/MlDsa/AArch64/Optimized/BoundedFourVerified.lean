@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-meta import VerifiedGarbage.Spec.MlDsa.BoundedFour
+meta import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint

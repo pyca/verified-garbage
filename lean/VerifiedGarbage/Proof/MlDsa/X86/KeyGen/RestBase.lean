@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
@@ -39,7 +40,8 @@ namespace VG.Proof.MlDsa.X86.KeyGen
 open VG VG.X86 VG.Impl.MlKem.X86
 open VG.Proof.MlKem.X86 VG.Proof.MlKem.X86.Top
 open VG.Impl.MlDsa.X86.KeyGen
-open VG.Spec.MlDsa (Params Poly IPoly toRq ntt polyAt coeffAt Reduced PolyIs bitPack simpleBitPack keyGenSeeds)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack simpleBitPack keyGenSeeds)
+open VG.Proof.MlDsa (polyAt coeffAt Reduced PolyIs)
 open VG.Proof.MlDsa.KeyGen (t1K t0K)
 open VG.Spec.Sha3 (bytesAt)
 

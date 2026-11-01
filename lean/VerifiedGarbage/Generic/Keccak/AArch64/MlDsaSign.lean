@@ -266,7 +266,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.Arith
-public import VerifiedGarbage.Spec.MlDsa.ResponseLow
+public import VerifiedGarbage.Proof.MlDsa.ResponseLowContract
 public import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHints
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -526,7 +526,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Spec.MlDsa.ResponseLow
+import VerifiedGarbage.Proof.MlDsa.ResponseLowContract
 import VerifiedGarbage.TCB.Axioms
 
 /-! # ML-DSA (FIPS 204) signing on AArch64 -/

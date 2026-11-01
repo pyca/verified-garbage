@@ -39,7 +39,8 @@ open VG.Proof.MlKem.X86
 open VG.Proof.MlDsa.X86.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.X86.Sample (bZero bSetup bBody retJ sponge argOp)
-open VG.Spec.MlDsa (Zq q H n ofInt coeffAt IPoly)
+open VG.Spec.MlDsa (Zq q H n ofInt IPoly)
+open VG.Proof.MlDsa (coeffAt)
 
 /-- The end: `i >> 8` in `eax`. -/
 structure Fin (s₀ s : State) : Prop extends BI s₀ 264 (S' s₀ 264) s where
@@ -73,12 +74,12 @@ theorem piece : Piece QPre QPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPos
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
-theorem QPre.of {s₀ : State} (h : (Spec.MlDsa.sampleInBallContract X86.abi 56).pre s₀) : QPre s₀ := by
-  sig_pre [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
+theorem QPre.of {s₀ : State} (h : (Proof.MlDsa.sampleInBallContract X86.abi 56).pre s₀) : QPre s₀ := by
+  sig_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩ := h
   have hl : (arg s₀ 1).toNat < 136 := by
-    simp only [Spec.MlDsa.ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h22
+    simp only [Proof.MlDsa.ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h22
     omega
   exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, hl⟩, h22⟩
 
@@ -95,10 +96,10 @@ def satMem : Mem := fun a =>
   if a = 0x5008 then 32 else if a = 0x500c then 39 else if a = 0x5011 then 1 else if a = 0x5015 then 0x10 else 0
 
 theorem verified :
-    Verified X86.target Impl.MlDsa.X86.Sample.sampleInBall (Spec.MlDsa.sampleInBallContract X86.abi 56) := by
+    Verified X86.target Impl.MlDsa.X86.Sample.sampleInBall (Proof.MlDsa.sampleInBallContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => QPre.of h) fun s s' _ _ h => ?_).mono
     (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
-  · sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
+  · sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := h
     refine ⟨⟨e₁, fun i hi => ?_⟩, ?_⟩
@@ -111,11 +112,11 @@ theorem verified :
     · exact RejNtt.map_toNat_inj e₂
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     rw [setWidth_append32, hax, hfin.eax, hm]
     have hl : (S' s₀ 264).2 ≤ 256 := st_le _ _ _
-    have hp : Spec.MlDsa.PolyIs s.mem (L.aA s₀) (Spec.MlDsa.toRq (S' s₀ 264).1) :=
+    have hp : Proof.MlDsa.PolyIs s.mem (L.aA s₀) (Spec.MlDsa.toRq (S' s₀ 264).1) :=
       polyIs_of_coeffAt fun i hi => by rw [hfin.poly i (by simp only [n] at hi; omega), toRq_getElem! _ hi]
     rw [S'_all] at hl hp
     rw [S'_all]
@@ -123,7 +124,7 @@ theorem verified :
     · rw [e]
       refine ⟨fun _ => hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with ball := 272 }, ?_⟩⟩
       show (Spec.MlDsa.sampleInBall (τ s₀) 272 (L.Msg s₀)).map Spec.MlDsa.toRq =
-        some (Spec.MlDsa.polyAt s.mem (L.aA s₀))
+        some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
       rw [sampleInBall_some _ (by decide) e, hp.2]
       rfl
     · rw [Nat.div_eq_of_lt (by omega)]
@@ -133,7 +134,7 @@ theorem verified :
       rfl
   · let st := satState satMem [⟨0, 32⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 20⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_sat_check [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
 
 end VG.Proof.MlDsa.X86.Sample.Ball

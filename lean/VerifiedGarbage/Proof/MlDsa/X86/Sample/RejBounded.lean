@@ -49,7 +49,8 @@ open VG.Proof.MlKem.X86
 open VG.Proof.MlDsa.X86.Sample
 open VG.Proof.MlDsa.Sample
 open VG.Impl.MlDsa.X86.Sample (argOp rbVal rbTry rbLoad rbHi rbBody rbLoop rbBound retJ qImm sponge csub etaSub)
-open VG.Spec.MlDsa (Zq q H n ofInt coeffAt halfByteOk rejBoundedLeak)
+open VG.Spec.MlDsa (Zq q H n ofInt halfByteOk rejBoundedLeak)
+open VG.Proof.MlDsa (coeffAt)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.X86.Sample (cR E1)
 open VG.Proof.MlDsa.X86.Sample.RejNtt (nil_piece zw_ofNat)
@@ -491,8 +492,8 @@ theorem piece : Piece BPre BPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPos
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
-theorem BPre.of {s₀ : State} (h : (Spec.MlDsa.rejBoundedContract X86.abi 56).pre s₀) : BPre s₀ := by
-  sig_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+theorem BPre.of {s₀ : State} (h : (Proof.MlDsa.rejBoundedContract X86.abi 56).pre s₀) : BPre s₀ := by
+  sig_pre [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
@@ -505,10 +506,10 @@ theorem LA_all (s₀ : State) : LA s₀ 544 = rbFold (η s₀) [] (H (L.Msg s₀
 def satMem : Mem := fun a => if a = 0x5008 then 2 else if a = 0x500d then 1 else if a = 0x5011 then 0x10 else 0
 
 theorem verified :
-    Verified X86.target Impl.MlDsa.X86.Sample.rejBounded (Spec.MlDsa.rejBoundedContract X86.abi 56) := by
+    Verified X86.target Impl.MlDsa.X86.Sample.rejBounded (Proof.MlDsa.rejBoundedContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => BPre.of h) fun s s' _ _ h => ?_).mono
     (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
-  · sig_pub [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+  · sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
     refine ⟨⟨e₁, fun i hi => ?_⟩, e₂⟩
@@ -519,17 +520,17 @@ theorem verified :
     | 3, _ => exact e₆
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     rw [setWidth_append32, hax, hfin.eax, hm]
     have hl := hfin.len
     by_cases e : (LA s₀ 544).length = 256
-    · have hp : Spec.MlDsa.PolyIs s.mem (L.aA s₀) (toPoly (LA s₀ 544)) := stored_polyIs hfin.stored e
+    · have hp : Proof.MlDsa.PolyIs s.mem (L.aA s₀) (toPoly (LA s₀ 544)) := stored_polyIs hfin.stored e
       rw [LA_all] at e hp
       rw [LA_all, e]
       refine ⟨fun _ => hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with rejBounded := 544 }, ?_⟩⟩
       show (Spec.MlDsa.rejBoundedPoly (η s₀) 544 (L.Msg s₀)).map Spec.MlDsa.toRq =
-        some (Spec.MlDsa.polyAt s.mem (L.aA s₀))
+        some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
       rw [rejBounded_some _ e, hp.2]
     · rw [Nat.div_eq_of_lt (by omega)]
       rw [LA_all] at e
@@ -539,7 +540,7 @@ theorem verified :
       rw [rejBounded_none _ (B := 544) (by decide) e]; rfl
   · let st := satState satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_sat_check [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
 
 end VG.Proof.MlDsa.X86.Sample.RejBounded

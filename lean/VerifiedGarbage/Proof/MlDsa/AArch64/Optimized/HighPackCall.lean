@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
-public import VerifiedGarbage.Spec.MlDsa.HighPack
+public import VerifiedGarbage.Proof.MlDsa.HighPackContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums

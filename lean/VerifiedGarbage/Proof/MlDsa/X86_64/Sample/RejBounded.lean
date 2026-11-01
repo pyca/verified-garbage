@@ -24,7 +24,8 @@ open VG VG.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Impl.MlDsa.X86_64.Sample
 open VG.Proof.MlDsa.Sample
-open VG.Spec.MlDsa (Zq q H PolyIs)
+open VG.Spec.MlDsa (Zq q H)
+open VG.Proof.MlDsa (PolyIs)
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `η`, the `u32` argument in `esi`. -/
