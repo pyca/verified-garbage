@@ -20,7 +20,7 @@ jobs:
       - name: Build and verify
         run: |
           cd experiments/aes-counter-batch
-          cc -O3 -mcpu=power8 aes-ctr-batch.c aes-ctr-batch.s -o probe
+          cc -O3 -mcpu=power8 aes-ctr-wide.c aes-ctr-wide.s -o probe
           ./probe < aes-power-probe-input.bin > actual.bin
           python3 - <<'PY'
           from pathlib import Path
@@ -57,6 +57,6 @@ jobs:
           PY
       - uses: ./.github/actions/upload-artifact
         with:
-          name: aes-counter-batch-samples
+          name: aes-ctr16-samples
           path: experiments/aes-counter-batch/samples-*.csv
           retention-days: 7
