@@ -235,12 +235,14 @@ theorem copy_loop {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64) 
     ⟨by rw [h3]; simp, by rw [h4]; simp, by rw [h5]; simp, fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _,
       fun t ht => absurd ht (Nat.not_lt_zero t)⟩
 
-theorem copy_setup {s : State} {sb db : Reg} {so dO len : Nat} (hdb : db ∈ preserved) (hse : so < 2048) (hde : dO < 2048) (hle : len < 2048) :
-    WP isa (.block [.addi .a0 sb so, .addi .a1 db dO, .li .a2 len]) s fun s' =>
+theorem copy_setup {s : State} {sb db : Reg} {so dO len : Nat} (hdb : db ∈ preserved) (hsb : sb ≠ .a0)
+    (hse : so < 32768) (hde : dO < 32768) (hle : len < 2048) :
+    WP isa (.block (addrOf .a0 sb so ++ addrOf .a1 db dO ++ [.li .a2 len])) s fun s' =>
       Only s s' ∧ s'.gpr .a0 = s.gpr sb + BitVec.ofNat 64 so ∧ s'.gpr .a1 = s.gpr db + BitVec.ofNat 64 dO ∧
       s'.gpr .a2 = BitVec.ofNat 64 len := by
-  obtain ⟨-, n1, -, -, -, -⟩ := pres_ne hdb
-  refine wp_addi hse fun s₁ h₁ => wp_addi hde fun s₂ h₂ => wp_li hle fun s₃ h₃ =>
+  obtain ⟨-, n1, n2, -, -, -⟩ := pres_ne hdb
+  rw [List.append_assoc]
+  refine wp_addrOf hsb hse fun s₁ h₁ => wp_addrOf n2 hde fun s₂ h₂ => wp_li hle fun s₃ h₃ =>
     WP.block_nil ⟨(updOnly h₁ (by decide)).trans ((updOnly h₂ (by decide)).trans (updOnly h₃ (by decide))),
       ?_, ?_, ?_⟩
   · rw [h₃.other _ (by decide), h₂.other _ (by decide), h₁.gpr]
@@ -250,13 +252,13 @@ theorem copy_setup {s : State} {sb db : Reg} {so dO len : Nat} (hdb : db ∈ pre
 /-- `copy`: `len` bytes from offset `so` of buffer `i` (in `sb`) to offset
 `dO` of buffer `j` (in `db`). -/
 theorem copyL {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {so dO len i j : Nat}
-    (hdb : db ∈ preserved)
-    (gs : s.gpr sb = L.ptr i) (gd : s.gpr db = L.ptr j) (hse : so < 2048) (hde : dO < 2048)
+    (hdb : db ∈ preserved) (hsb : sb ≠ .a0)
+    (gs : s.gpr sb = L.ptr i) (gd : s.gpr db = L.ptr j) (hse : so < 32768) (hde : dO < 32768)
     (hle : len < 2048) (hl0 : 0 < len) (hs : sepB L.sizes (i, so, len) (j, dO, len) = true)
     (ri : L.buf i ∈ s.rd ++ s.wr) (wj : L.buf j ∈ s.wr) :
     WP isa (copy sb so db dO len) s fun s' =>
       Kept (L.RL [(j, dO, len)]) s s' ∧ bytesAt s'.mem (L.A j dO) len = bytesAt s.mem (L.A i so) len := by
-  refine WP.seq (WP.mono (copy_setup hdb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
+  refine WP.seq (WP.mono (copy_setup hdb hsb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
   rw [gs] at g3; rw [gd] at g4
   refine WP.mono (copy_loop (by omega) hl0 (Lay.disj hL hs)
     (by rw [o₁.rd, o₁.wr]; exact Lay.covers ri (sepB_bounds hs).2)

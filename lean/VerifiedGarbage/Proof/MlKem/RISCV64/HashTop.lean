@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
 import VerifiedGarbage.Proof.MlKem.RISCV64.Prims
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Covers
@@ -48,9 +49,36 @@ theorem Only.of_writes {s s' : State} (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
 theorem updOnly {s s' : State} {d : Reg} {v : BitVec 64} (h : Wp.Upd s s' d v) (hd : d ∉ preserved) : Only s s' :=
   ⟨fun r hr => h.other r fun e => hd (e ▸ hr), h.mem, h.rd, h.wr, h.sp⟩
 
+/-! ## Addresses at offsets below 32 KiB -/
+
+theorem lui_val : ∀ h < 9, sext32 (BitVec.ofNat 20 h ++ (0 : BitVec 12)) = BitVec.ofNat 64 (4096 * h) := by
+  decide
+
+theorem addrOf_val {off : Nat} :
+    BitVec.ofNat 64 (4096 * ((off + 2048) / 4096)) +
+      BitVec.ofInt 64 ((off : Int) - 4096 * ((off + 2048) / 4096 : Nat)) = BitVec.ofNat 64 off := by
+  generalize (off + 2048) / 4096 = q
+  have e : (off : Int) = ((4096 * q : Nat) : Int) + ((off : Int) - 4096 * (q : Int)) := by
+    rw [Int.natCast_mul]; omega
+  rw [← BitVec.ofInt_natCast, ← BitVec.ofInt_add, ← e, BitVec.ofInt_natCast]
+
+/-- `d ← b + off` (`addrOf`). -/
+theorem wp_addrOf {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {off : Nat} (hb : b ≠ d)
+    (h : off < 32768) (k : ∀ s', Wp.Upd s s' d (s.gpr b + BitVec.ofNat 64 off) → WP isa (.block is) s' Q) :
+    WP isa (.block (addrOf d b off ++ is)) s Q := by
+  unfold addrOf
+  split
+  · exact Wp.wp_addi (by assumption) k
+  · rename_i hlt
+    have hq : (off + 2048) / 4096 < 9 := by omega
+    refine Wp.WP.cons exec_lui (Wp.WP.cons (exec_addi (by unfold imm12; omega)) (Wp.WP.cons exec_add
+      (k _ ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩)))
+    · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ hb, lui_val _ hq, addrOf_val]
+    · simp only [RegUpd.gpr_write_of_ne _ _ hr]
+
 /-- The arguments of an `absorb` or a `squeeze`. -/
 theorem kargs_ok {s : State} {rate : Nat} (first : Bool) {p : Piece} (hb : p.base ∈ preserved)
-    (hre : rate < 2048) (hoe : p.off < 2048) (hle : p.len < 2048) :
+    (hre : rate < 2048) (hoe : p.off < 32768) (hle : p.len < 2048) :
     WP isa (.block (spongeArgs rate first p)) s fun s' => Only s s' ∧
       s'.gpr .a0 = s.gpr .s11 ∧ s'.gpr .a1 = BitVec.ofNat 64 rate ∧
       s'.gpr .a2 = (if first then BitVec.ofNat 64 0 else s.gpr .a0) ∧
@@ -58,12 +86,12 @@ theorem kargs_ok {s : State} {rate : Nat} (first : Bool) {p : Piece} (hb : p.bas
   obtain ⟨b0, b1, b2, b3, b4, b5⟩ := pres_ne hb
   have k : ∀ u : State, Only s u → u.gpr .a2 = (if first then BitVec.ofNat 64 0 else s.gpr .a0) →
       u.gpr .s11 = s.gpr .s11 → u.gpr p.base = s.gpr p.base →
-      WP isa (.block [mov .a0 .s11, .li .a1 rate, .addi .a3 p.base p.off, .li .a4 p.len]) u fun s' =>
+      WP isa (.block (mov .a0 .s11 :: .li .a1 rate :: (addrOf .a3 p.base p.off ++ [.li .a4 p.len]))) u fun s' =>
         Only s s' ∧ s'.gpr .a0 = s.gpr .s11 ∧ s'.gpr .a1 = BitVec.ofNat 64 rate ∧
         s'.gpr .a2 = (if first then BitVec.ofNat 64 0 else s.gpr .a0) ∧
         s'.gpr .a3 = s.gpr p.base + BitVec.ofNat 64 p.off ∧ s'.gpr .a4 = BitVec.ofNat 64 p.len := by
     intro u o g2 g11 gb
-    refine Wp.wp_mv fun u₁ h₁ => Wp.wp_li hre fun u₂ h₂ => Wp.wp_addi hoe fun u₃ h₃ => Wp.wp_li hle fun u₄ h₄ =>
+    refine Wp.wp_mv fun u₁ h₁ => Wp.wp_li hre fun u₂ h₂ => wp_addrOf b4 hoe fun u₃ h₃ => Wp.wp_li hle fun u₄ h₄ =>
       WP.block_nil ⟨o.trans ((updOnly h₁ (by decide)).trans ((updOnly h₂ (by decide)).trans
         ((updOnly h₃ (by decide)).trans (updOnly h₄ (by decide))))), ?_, ?_, ?_, ?_, ?_⟩
     · rw [h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide), h₁.gpr, g11]
@@ -71,6 +99,7 @@ theorem kargs_ok {s : State} {rate : Nat} (first : Bool) {p : Piece} (hb : p.bas
     · rw [h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide), g2]
     · rw [h₄.other _ (by decide), h₃.gpr, h₂.other _ b2, h₁.other _ b1, gb]
     · rw [h₄.gpr]
+  simp only [spongeArgs, List.cons_append, List.nil_append]
   cases first with
   | true =>
     exact Wp.wp_li (by decide) fun u h => k u (updOnly h (by decide)) h.gpr (h.other _ (by decide))
@@ -138,7 +167,7 @@ may read (or write, if `w`), apart from the sponge's regions. -/
 structure PieceOk (L : Lay) (idx : Reg → Nat) (s : State) (w : Bool) (p : Piece) : Prop where
   base : p.base ∈ preserved
   ptr : s.gpr p.base = L.ptr (idx p.base)
-  oenc : p.off < 2048
+  oenc : p.off < 32768
   lenc : p.len < 2048
   pos : 0 < p.len
   sep : sepAll L.sizes (idx p.base, p.off, p.len) kRegs = true

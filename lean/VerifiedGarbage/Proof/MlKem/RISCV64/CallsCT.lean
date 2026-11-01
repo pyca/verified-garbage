@@ -276,9 +276,9 @@ structure _root_.VG.Impl.MlKem.RISCV64.KemLay.CallsOk (K : KemLay) : Prop where
   kgSetupT : RegsCT [.a0, .a1, .a2, .a3] (.block K.kgSetup)
   rhoT : RegsCT [.s9, .s11] (copy .s11 oSeed .s9 (384 * K.k) 32)
   ekT : RegsCT [.s8, .s9] (copy .s9 0 .s8 (384 * K.k) K.ekLen)
-  zT : RegsCT [.s8, .s10] (copy .s10 32 .s8 (384 * K.k + 64) 32)
+  zT : RegsCT [.s8, .s10] (copy .s10 32 .s8 (768 * K.k + 64) 32)
   encSeedT : RegsCT [.s10, .s11] (copy .s10 (384 * K.k) .s11 oSeed 32)
-  ctT : RegsCT [.s8, .s9] (copy .s8 0 .s9 0 K.ctLen)
+  ctT : RegsCT [.s8, .s11] (copy .s8 0 .s11 oCin K.ctLen)
   cmpT : RegsCT [.s7, .s8] K.compare
 
 theorem kl768_calls : kl768.CallsOk :=

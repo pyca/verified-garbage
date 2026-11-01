@@ -99,10 +99,18 @@ structure Piece where
 /-- The position: 0 at `first`, or the position the previous call returned. -/
 def posArg (first : Bool) : Instr := if first then .li .a2 0 else mov .a2 .a0
 
+/-- `d := b + off`, for an offset below 32 KiB: one `addi` if it fits its
+12-bit immediate, and otherwise `lui` and `addi` of the offset, then `add`
+(with `b ≠ d`). -/
+def addrOf (d b : Reg) (off : Nat) : List Instr :=
+  if off < 2048 then [.addi d b off]
+  else [.lui d (BitVec.ofNat 20 ((off + 2048) / 4096)), .addi d d ((off : Int) - 4096 * ((off + 2048) / 4096 : Nat)),
+    .add d b d]
+
 /-- The arguments of `absorb` or `squeeze`: the Keccak state, the rate, the
 position, the piece `p` and its length. -/
 def spongeArgs (rate : Nat) (first : Bool) (p : Piece) : List Instr :=
-  [posArg first, mov .a0 .s11, .li .a1 rate, .addi .a3 p.base p.off, .li .a4 p.len]
+  [posArg first, mov .a0 .s11, .li .a1 rate] ++ addrOf .a3 p.base p.off ++ [.li .a4 p.len]
 
 def callAbsorb : Prog isa := .call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb
 def callPad : Prog isa := .call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad
@@ -131,7 +139,7 @@ def copyBody : List Instr :=
 
 /-- Copy `len` bytes from `sb + so` to `db + dO`. -/
 def copy (sb : Reg) (so : Nat) (db : Reg) (dO len : Nat) : Prog isa :=
-  .seq (.block [.addi .a0 sb so, .addi .a1 db dO, .li .a2 len]) (.loop (.block copyBody) (.nonzero .a2))
+  .seq (.block (addrOf .a0 sb so ++ addrOf .a1 db dO ++ [.li .a2 len])) (.loop (.block copyBody) (.nonzero .a2))
 
 def zeroBody : List Instr := [.store .w .a1 .a0 0, .addi .a0 .a0 4, .addi .a2 .a2 (-1)]
 
@@ -302,9 +310,8 @@ def keygen : Prog isa :=
   .seq (.loop K.kgSBody (.nonzero .t0)) <|
   .seq (copy .s11 oSeed .s9 (384 * K.k) 32) <|
   .seq (copy .s9 0 .s8 (384 * K.k) K.ekLen) <|
-  .seq (.block [.addi .s8 .s8 (384 * K.k)]) <|
-  .seq (hash 136 0x06 [⟨.s9, 0, K.ekLen⟩] [⟨.s8, 384 * K.k + 32, 32⟩]) <|
-  .seq (copy .s10 32 .s8 (384 * K.k + 64) 32) (.block topEnd)
+  .seq (hash 136 0x06 [⟨.s9, 0, K.ekLen⟩] [⟨.s8, 768 * K.k + 32, 32⟩]) <|
+  .seq (copy .s10 32 .s8 (768 * K.k + 64) 32) (.block topEnd)
 
 /-! ## K-PKE.Encrypt, with `ek` in `s10`, `m` in `s9`, `r` at `952` and `c` to `s7` -/
 
@@ -412,14 +419,12 @@ def compare : Prog isa :=
 
 def decaps : Prog isa :=
   .seq (.block decapsSetup) <|
-  .seq (.block (polyAddr .s9 22)) <|
-  .seq (copy .s8 0 .s9 0 K.ctLen) <|
-  .seq (.block [mov .s8 .s9]) <|
+  .seq (copy .s8 0 .s11 oCin K.ctLen) <|
+  .seq (.block (addrOf .s8 .s11 oCin)) <|
   .seq K.decrypt <|
-  .seq (.block [.addi .s10 .s10 (384 * K.k)]) <|
-  .seq (hash 72 0x06 [⟨.s11, oMsg, 32⟩, ⟨.s10, 384 * K.k + 32, 32⟩] [⟨.s11, oG, 64⟩]) <|
-  .seq (hash 136 0x1f [⟨.s10, 384 * K.k + 64, 32⟩, ⟨.s8, 0, K.ctLen⟩] [⟨.s11, oKbar, 32⟩]) <|
-  .seq (.block (.addi .s9 .s11 oMsg :: polyAddr .s7 K.jCt)) <|
+  .seq (hash 72 0x06 [⟨.s11, oMsg, 32⟩, ⟨.s10, 768 * K.k + 32, 32⟩] [⟨.s11, oG, 64⟩]) <|
+  .seq (hash 136 0x1f [⟨.s10, 768 * K.k + 64, 32⟩, ⟨.s11, oCin, K.ctLen⟩] [⟨.s11, oKbar, 32⟩]) <|
+  .seq (.block ([.addi .s10 .s10 (384 * K.k), .addi .s9 .s11 oMsg] ++ polyAddr .s7 K.jCt)) <|
   .seq K.encrypt <|
   .seq K.compare <|
   .seq (.block selSetup) <|

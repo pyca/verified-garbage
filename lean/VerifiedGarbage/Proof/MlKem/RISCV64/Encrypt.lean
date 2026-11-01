@@ -69,13 +69,13 @@ theorem sepAll_bounds {sz : List Nat} {i o l : Nat} {w : Nat × Nat × Nat} {W :
 /-! ## Copying from an offset -/
 
 theorem copyLo {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {bo so dO len i j : Nat}
-    (hdb : db ∈ preserved) (gs : s.gpr sb = L.A i bo) (gd : s.gpr db = L.ptr j)
-    (hse : so < 2048) (hde : dO < 2048) (hle : len < 2048) (hl0 : 0 < len)
+    (hdb : db ∈ preserved) (hsb : sb ≠ .a0) (gs : s.gpr sb = L.A i bo) (gd : s.gpr db = L.ptr j)
+    (hse : so < 32768) (hde : dO < 32768) (hle : len < 2048) (hl0 : 0 < len)
     (hs : sepB L.sizes (i, bo + so, len) (j, dO, len) = true)
     (ri : L.buf i ∈ s.rd ++ s.wr) (wj : L.buf j ∈ s.wr) :
     WP isa (copy sb so db dO len) s fun s' =>
       Kept (L.RL [(j, dO, len)]) s s' ∧ bytesAt s'.mem (L.A j dO) len = bytesAt s.mem (L.A i (bo + so)) len := by
-  refine WP.seq (WP.mono (copy_setup hdb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
+  refine WP.seq (WP.mono (copy_setup hdb hsb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
   rw [gs, ptr_add] at g3; rw [gd] at g4
   refine WP.mono (copy_loop (by omega_arith) hl0 (Lay.disj hL hs)
     (by rw [o₁.rd, o₁.wr]; exact Lay.covers ri (sepB_bounds hs).2)
@@ -282,7 +282,7 @@ theorem enc1_ok : WP isa (copy .s10 (384 * K.k) .s11 oSeed 32) s₀ fun s =>
   have k4 := hK.k4
   have hs : sepB L.sizes (b.iE, b.oE + 384 * K.k, 32) (0, oSeed, 32) = true :=
     sepB_mono (List.all_eq_true.mp hp.sE (0, 1248, 34) (by simp)) (inB_off (by offs)) (by decide)
-  refine WP.mono (copyLo hL (bo := b.oE) (by decide) hp.s10 hp.ctx.s11 (by offs)
+  refine WP.mono (copyLo hL (bo := b.oE) (by decide) (by decide) hp.s10 hp.ctx.s11 (by offs)
     (by decide) (by decide) (by decide) hs hp.wE hp.ctx.cw) fun s ⟨k, e⟩ =>
     ⟨(k.x _).subL hp.ctx (by kdecide), k.frame, e.trans ?_⟩
   show _ = ((bytesAt s₀.mem (L.A b.iE b.oE) K.ekLen).drop (384 * K.k)).take 32
