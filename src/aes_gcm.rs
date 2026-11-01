@@ -1777,6 +1777,68 @@ mod tests {
     use crate::cpu::detected;
     use verified_garbage_cpu::Features;
 
+    #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+    #[test]
+    fn fused_blocks_match_ctr_and_ghash() {
+        use crate::arch::{
+            aes::vg_aes_ctr32,
+            gcm::{vg_aes_gcm_encrypt_blocks, vg_ghash},
+        };
+
+        for key_len in [16, 24, 32] {
+            let key = [0x24; 32];
+            let cipher = AesGcm::new(&key[..key_len]).unwrap();
+            for n in [0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 39, 40, 63, 64, 65] {
+                let input: [[u8; 16]; 65] = core::array::from_fn(|i| {
+                    core::array::from_fn(|j| ((17 * i + 7 * j + key_len) % 256) as u8)
+                });
+                let mut actual = input;
+                let mut expected = input;
+                let mut counter = [0xff; 16];
+                counter[15] = 0xfc;
+                let mut expected_counter = counter;
+                let mut y = core::array::from_fn(|i| (3 * i + 7) as u8);
+                let mut expected_y = y;
+                let mut scratch = [0u64; 264];
+                let mut reference_scratch = [0u64; 256];
+                // SAFETY: `new` initialized the 256-byte key context for these
+                // rounds, including H at byte 240. The two distinct data arrays
+                // each hold at least n blocks; all mutable arguments are separate
+                // objects, including scratch of the required sizes. POWER8 is
+                // the baseline of this target.
+                unsafe {
+                    vg_aes_gcm_encrypt_blocks(
+                        cipher.ctx.as_ptr().cast(),
+                        cipher.rounds,
+                        &mut counter,
+                        &mut y,
+                        actual.as_mut_ptr(),
+                        n,
+                        &mut scratch,
+                    );
+                    vg_aes_ctr32(
+                        cipher.ctx.as_ptr().cast(),
+                        cipher.rounds,
+                        &mut expected_counter,
+                        expected.as_mut_ptr(),
+                        n,
+                        &mut reference_scratch,
+                    );
+                    vg_ghash(
+                        cipher.ctx.as_ptr().cast::<u8>().add(240).cast(),
+                        &mut expected_y,
+                        expected.as_ptr(),
+                        n,
+                        reference_scratch.as_mut_ptr().cast(),
+                    );
+                }
+                assert_eq!(actual, expected, "key_len={key_len}, blocks={n}");
+                assert_eq!(counter, expected_counter);
+                assert_eq!(y, expected_y);
+            }
+        }
+    }
+
     /// The implementation chosen for each set of features: AES's and
     /// GHASH's, independently.
     #[test]
