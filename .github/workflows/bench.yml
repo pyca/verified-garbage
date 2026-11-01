@@ -3,7 +3,7 @@ on: workflow_dispatch
 permissions:
   contents: read
 jobs:
-  io-seal-probe:
+  perm-seal-probe:
     runs-on: ubuntu-24.04-ppc64le
     container: ghcr.io/pyca/verified-garbage-runner:ppc64le
     timeout-minutes: 10
@@ -20,18 +20,18 @@ jobs:
           echo "$GITHUB_SHA"
       - name: Build and verify complete seals
         run: |
-          cd experiments/gcm-seal-io
-          cc -DWITH_OPENSSL -O3 -mcpu=power8 gcm-seal-io.c -x assembler-with-cpp gcm-seal-io.s -x none -lcrypto -o probe
-          ./probe < gcm-seal-io-input.bin > actual.bin
+          cd experiments/gcm-seal-perm
+          cc -DWITH_OPENSSL -O3 -mcpu=power8 gcm-seal-perm.c -x assembler-with-cpp gcm-seal-perm.s -x none -lcrypto -o probe
+          ./probe < gcm-seal-perm-input.bin > actual.bin
           python3 - <<'CHECK'
           from pathlib import Path
-          actual=Path('actual.bin').read_bytes();expected=Path('gcm-seal-io-expected.bin').read_bytes()
+          actual=Path('actual.bin').read_bytes();expected=Path('gcm-seal-perm-expected.bin').read_bytes()
           assert actual==expected
           print('54 full-seal Spec cases x 3 variants pass')
           CHECK
       - name: Interleaved native timings with reused keys
         run: |
-          cd experiments/gcm-seal-io
+          cd experiments/gcm-seal-perm
           for copy in 1 2 3 4 5 6 7 8; do
             cp probe "probe-$copy"
             "./probe-$copy" bench > "samples-$copy.csv"
@@ -47,13 +47,13 @@ jobs:
               nr,n,s,v,ns=row
               rows.setdefault((int(nr),int(n),int(v)),[]).append(float(ns))
             for k,vs in rows.items(): out.setdefault(k,[]).append(statistics.median(vs))
-          print('Variants: 0 baseline/inplace, 1 fused/inplace, 2 IO/inplace, 3 OpenSSL/inplace, 4 baseline/copy, 5 fused/copy, 6 IO/copy, 7 OpenSSL/out-of-place')
+          print('Variants: 0 baseline/inplace, 1 fused/inplace, 2 perm/inplace, 3 OpenSSL/inplace, 4 baseline/copy, 5 fused/copy, 6 perm/copy, 7 OpenSSL/out-of-place')
           for nr,n,v in sorted(out):
             vs=out[nr,n,v]
             print(f'Nr={nr}, bytes={n}, variant={v}, median_ns={statistics.median(vs):.3f}, fastest_copy_ns={min(vs):.3f}, copy_medians={vs}')
           REPORT
       - uses: ./.github/actions/upload-artifact
         with:
-          name: gcm-seal-io-samples
-          path: experiments/gcm-seal-io/samples-*.csv
+          name: gcm-seal-perm-samples
+          path: experiments/gcm-seal-perm/samples-*.csv
           retention-days: 7
