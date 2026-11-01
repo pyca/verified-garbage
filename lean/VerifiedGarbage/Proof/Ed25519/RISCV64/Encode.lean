@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointOps
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Power
 public import VerifiedGarbage.Proof.X25519.Invert
@@ -35,6 +36,7 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISC
 open VG.Proof.X25519
 open VG.Spec.X25519 (P)
 open VG.Proof.X25519 (pw sqn)
+open VG.Proof.X448.RISCV64.R64 (clob64)
 
 /-- A slot's element from the residue of its value. -/
 theorem env_of_val {m m' : Mem} {b : Addr} {i j : Slot} {e : Nat}
@@ -127,7 +129,7 @@ theorem power250_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
 theorem sqnLoop_ok {b : Addr} {s : State} (hc : Ctx b s) (o : Slot) (ho : 14 ≤ o.val) {n : Nat} (hn : 1 ≤ n)
     (hn' : n < 2048) :
     WP isa (sqnLoop o n) s fun t =>
-      Rest (.t1 :: clob) s t ∧ Frame [PR b] s.mem t.mem ∧
+      Rest (.t1 :: clob64) s t ∧ Frame [PR b] s.mem t.mem ∧
       env t.mem b = Function.update (env s.mem b) o (sqn (env s.mem b o) n) := by
   unfold sqnLoop
   refine WP.seq (wp_li (by omega_arith) fun s1 u1 => WP.block_nil ?_)

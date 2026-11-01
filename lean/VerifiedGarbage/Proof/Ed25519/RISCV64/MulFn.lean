@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Spec.X25519.Field32
-import VerifiedGarbage.Proof.X25519.RISCV64.Mul
+import VerifiedGarbage.Proof.X25519.RISCV64.R64.Reduce
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 For a working space `ws` whose address is a multiple of 8 (`hal`, which the
 contract does not state yet), the function copies `a` and `b` to its own
-working space (`unpackField_ok`), multiplies them there (`mul_ok`, X25519's
-product) and copies the product to `o` (`packField_ok`): the result is
+working space (`unpackField_ok`), multiplies them there (`mulAt_ok`, X25519's
+product with 64-bit limbs) and copies the product to `o` (`packField_ok`): the result is
 congruent to `a b`, and it writes only its own working space and `o`
 (`mulFn_ok`).
 -/
@@ -91,14 +91,14 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
     WP.block_nil ?_
   refine WP.seq ?_
   refine wp_add fun s7 u7 => wp_add fun s8 u8 => wp_add fun s9 u9 => wp_mv fun s10 u10 => ?_
-  have hr10 : Rest [.a1, .a2, .a3, .t3, .t4, .t5] s s10 :=
+  have hr10 : Rest [.a1, .a2, .a3, .t2, .t4, .t5] s s10 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans
       ((u7.rest (by decide)).trans ((u8.rest (by decide)).trans ((u9.rest (by decide)).trans
       (u10.rest (by decide))))))))))
   have hm10 : s10.mem = s.mem := by
     rw [u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have g0 : ∀ t : State, Rest [.a1, .a2, .a3, .t3, .t4, .t5] s t → t.gpr .a0 = ws := fun t h => by
+  have g0 : ∀ t : State, Rest [.a1, .a2, .a3, .t2, .t4, .t5] s t → t.gpr .a0 = ws := fun t h => by
     rw [h.gpr _ (by decide), hws]
   have e1 : s6.gpr .a1 = BitVec.ofNat 64 O := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
@@ -112,7 +112,7 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
   have e0 : s6.gpr .a0 = ws := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
       u2.other _ (by decide), u1.other _ (by decide), hws]
-  have p3 : s10.gpr .t3 = ws + BitVec.ofNat 64 O := by
+  have p3 : s10.gpr .t2 = ws + BitVec.ofNat 64 O := by
     rw [u10.other _ (by decide), u9.other _ (by decide), u8.other _ (by decide), u7.gpr, e0, e1]
   have p4 : s10.gpr .t4 = ws + BitVec.ofNat 64 A := by
     rw [u10.other _ (by decide), u9.other _ (by decide), u8.gpr, u7.other .a0 (by decide), u7.other .a2 (by decide),
@@ -120,7 +120,7 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
   have p5 : s10.gpr .t5 = ws + BitVec.ofNat 64 B := by
     rw [u10.other _ (by decide), u9.gpr, u8.other .a0 (by decide), u8.other .a3 (by decide),
       u7.other .a0 (by decide), u7.other .a3 (by decide), e0, e3]
-  have h9 : Rest [.a1, .a2, .a3, .t3, .t4, .t5] s s9 :=
+  have h9 : Rest [.a1, .a2, .a3, .t2, .t4, .t5] s s9 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans
       ((u7.rest (by decide)).trans ((u8.rest (by decide)).trans (u9.rest (by decide)))))))))
@@ -155,10 +155,10 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
     rw [V, val32_congr l12, valAt_eq, ← hB', V]
     exact val32_congr fun k hk => by rw [Nat.zero_add, hb11 k hk, limb, Nat.zero_add]
   -- The product, and the copy to `o`.
-  refine WP.seq (WP.mono (mul_ok (acc := ACC) (o := MO) (x := MA) (y := MB) (by omega) (by omega) (by omega)
-    (by omega) (by decide) (by decide) (by decide) (by decide) hc12) fun s13 ⟨r13, f13, v13⟩ => ?_)
+  refine WP.seq (WP.mono (R64.mulAt_ok (acc := ACC) (o := MO) (x := MA) (y := MB) (by omega) (by decide)
+    (by omega) (by omega) (by omega) (by decide) (by decide) (by decide) hc12) fun s13 ⟨r13, f13, v13⟩ => ?_)
   have hc13 : Ctx ws s13 := hc12.of_rest r13 (by decide)
-  refine WP.mono (packField_ok hc13 (p := .t3) (by decide)
+  refine WP.mono (packField_ok hc13 (p := .t2) (by decide)
     (by rw [r13.gpr _ (by decide), r12.gpr _ (by decide), r11.gpr _ (by decide), p3])
     (a := MO) (dst := 0) (by omega) (by decide) (by decide)
     (fun k hk => by rw [r13.wr, r12.wr, r11.wr, hr10.wr, Offset.add_add]; exact in_base hin (by omega) (by omega))
