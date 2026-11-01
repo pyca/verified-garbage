@@ -31,12 +31,8 @@ use core::fmt;
 #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 use core::sync::atomic::{AtomicU8, Ordering};
 
-#[cfg(test)]
-use crate::arch::dsa::vg_dsa_sign;
-#[cfg(all(target_arch = "x86_64", test))]
-use crate::arch::dsa::vg_dsa_sign_adx;
 use crate::arch::dsa::vg_dsa_sign_random;
-#[cfg(any(not(any(target_arch = "aarch64", target_arch = "powerpc64")), test))]
+#[cfg(not(any(target_arch = "aarch64", target_arch = "powerpc64")))]
 use crate::arch::dsa::vg_dsa_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
@@ -346,48 +342,6 @@ impl PrivateKey {
                 _ => return Err(Error::InvalidKeyOrNonce),
             }
         }
-    }
-
-    #[cfg(test)]
-    fn sign_once(
-        &self,
-        digest: &[u8],
-        nonce: &[u8],
-        output: &mut [u8],
-        scratch: &mut [u64],
-    ) -> bool {
-        assert_eq!(nonce.len(), self.public.q_len);
-        assert_eq!(output.len(), 2 * self.public.q_len);
-        assert!(scratch.len() >= 16 * self.public.p_len);
-        macro_rules! sign {
-            ($function:path) => {
-                // SAFETY: import and the assertions establish the contract's
-                // widths. The owned packed key cannot alias the output or
-                // scratch, and the exclusive output/scratch slices cannot
-                // overlap any live input. CPU features select the backend.
-                unsafe {
-                    $function(
-                        output.as_mut_ptr(),
-                        output.len(),
-                        self.packed.0.as_ptr(),
-                        self.packed.0.len(),
-                        self.public.p_len,
-                        nonce.as_ptr(),
-                        nonce.len(),
-                        digest.as_ptr(),
-                        digest.len(),
-                        scratch.as_mut_ptr(),
-                        scratch.len(),
-                    )
-                }
-            };
-        }
-        let result = match self.public.backend {
-            Backend::Baseline => sign!(vg_dsa_sign),
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => sign!(vg_dsa_sign_adx),
-        };
-        result == 1
     }
 }
 

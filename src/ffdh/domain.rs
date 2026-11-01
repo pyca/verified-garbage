@@ -254,25 +254,14 @@ impl Domain {
 
     /// One attempt at a key pair from `p_len` random bytes `rand`: 1 and the
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
-    /// scalar out of range, 3 for a degenerate public value
-    /// (`vg_ffdh_generate_key`, or its cached entry point on ARMv7/AArch64).
-    #[cfg(test)]
+    /// scalar out of range, 3 for a degenerate public value (the cached
+    /// entry point of `vg_ffdh_generate_key`).
+    #[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64")))]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
         let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => {
-                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
-                {
-                    crate::arch::ffdh::vg_ffdh_generate_key_cached
-                }
-                #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
-                {
-                    crate::arch::ffdh::vg_ffdh_generate_key
-                }
-            }
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_adx,
+            Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_cached,
             #[cfg(target_arch = "arm")]
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
         };
@@ -292,9 +281,7 @@ impl Domain {
                 rand.len(),
                 ws.as_mut_ptr(),
                 ws.len(),
-                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 self.precomputed.words().as_ptr(),
-                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
                 self.precomputed.words().len(),
             )
         }

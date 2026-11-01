@@ -183,12 +183,18 @@ fn imported_private_components() {
         include_str!("../../../vectors/nist-cavp-dsa/SigGen.txt"),
         true,
     );
-    for (p_len, q_len) in [(128, 20), (256, 28), (256, 32), (384, 32)] {
+    // (256, 20) is the 1024/160 domain with its p and g zero-padded.
+    for (p_len, q_len) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] {
         let v = cases
             .iter()
-            .find(|v| hex(&v["P"], 0).len() == p_len && hex(&v["Q"], 0).len() == q_len)
+            .find(|v| {
+                hex(&v["P"], 0).len() == if q_len == 20 { 128 } else { p_len }
+                    && hex(&v["Q"], 0).len() == q_len
+            })
             .unwrap();
-        let (p, q, g) = domain(v);
+        let p = hex(&v["P"], p_len);
+        let q = hex(&v["Q"], q_len);
+        let g = hex(&v["G"], p_len);
         let x = hex(&v["X"], q_len);
         let y = hex(&v["Y"], p_len);
         let key = PrivateKey::from_private_components(&p, &q, &g, &x).unwrap();
@@ -201,10 +207,28 @@ fn imported_private_components() {
                 Error::InvalidKeyOrNonce
             );
         }
-        assert_eq!(
-            PrivateKey::from_private_components(&p, &q, &vec![0; p_len], &x).unwrap_err(),
-            Error::InvalidKeyOrNonce
-        );
+        // Invalid domains: g of 0, 1 or p, an even p or q, and a zero q.
+        let mut one = vec![0; p_len];
+        *one.last_mut().unwrap() = 1;
+        let mut even_p = p.clone();
+        *even_p.last_mut().unwrap() &= !1;
+        let mut even_q = q.clone();
+        *even_q.last_mut().unwrap() &= !1;
+        let zero_g = vec![0; p_len];
+        let zero_q = vec![0; q_len];
+        for (p, q, g) in [
+            (&p, &q, &zero_g),
+            (&p, &q, &one),
+            (&p, &q, &p),
+            (&even_p, &q, &g),
+            (&p, &even_q, &g),
+            (&p, &zero_q, &g),
+        ] {
+            assert_eq!(
+                PrivateKey::from_private_components(p, q, g, &x).unwrap_err(),
+                Error::InvalidKeyOrNonce
+            );
+        }
         for (p, q, g, x) in [
             (&p[..1], &q[..], &g[..], &x[..]),
             (&p, &q[..1], &g, &x),
