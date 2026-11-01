@@ -15,7 +15,7 @@ The loops over the words of `Keys.inverse`'s batches of divsteps
   plus the signed carry in `x13`, whose high word is the next carry
   (`sbc` against `(x13 >> 63) - 1` adds its sign). `[x8]` may be `[x17]`:
   each word is read before it is written.
-* `shrBody`, `shrTop`: `[x17] := [x16] >> 59`, arithmetic, word `i` from words
+* `shr59Body`, `shrTop`: `[x17] := [x16] >> 59`, arithmetic, word `i` from words
   `i` and `i + 1` and the top word from its sign; `[x17]` may be `[x16]`.
 * `copyBody`: `[x17] := [x16]` word by word, ascending, so `[x16]` may be
   `[x17]` plus some words.
@@ -42,7 +42,7 @@ def rowBody : List Instr :=
     next .x8]
 
 /-- A word of `[x17] := [x16] >> 59`, from words `i` and `i + 1`. -/
-def shrBody : List Instr :=
+def shr59Body : List Instr :=
   [ld .x3 .x16, ld .x4 .x16 8, .extr .x .x3 .x4 .x3 59, st .x3 .x17, next .x16, next .x17]
 
 /-- The top word of `[x17] := [x16] >> 59`, from its sign. -/

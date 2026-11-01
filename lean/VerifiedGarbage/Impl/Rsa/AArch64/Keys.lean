@@ -277,7 +277,7 @@ def rowP (cv : VReg) (iX iY iO : Nat) : Prog isa :=
 /-- `[o] := [s] >> 59`, `n + 1` words. -/
 def shrP (iS iO : Nat) : Prog isa :=
   .seq (.block (base iS .x16 ++ base iO .x17 ++ ([mov .x14 .x12] : List Instr)))
-    (.seq (countLoop .x14 shrBody) (.block shrTop))
+    (.seq (countLoop .x14 shr59Body) (.block shrTop))
 
 /-- `[o] := ([a] + k m) / 2^64` for `k = a₀ (-m⁻¹) mod 2^64`, `[a]` of `n + 1`
 words sign-extended to `n + 2`. -/
