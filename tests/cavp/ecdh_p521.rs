@@ -19,46 +19,17 @@ use super::unhex;
 /// `ZIUT`.
 type Vector = ([u8; 133], [u8; 66], [u8; 133], [u8; 66]);
 
-/// A 66-byte integer, which the file writes with up to two more leading
-/// zero bytes.
-fn int(hex: &str) -> [u8; 66] {
-    let bytes = unhex(hex);
-    let (zeros, value) = bytes.split_at(bytes.len() - 66);
-    assert!(crate::bytes::all_equal(zeros, 0));
-    value.try_into().unwrap()
-}
-
-fn point(x: &str, y: &str) -> [u8; 133] {
-    let mut p = [4; 133];
-    p[1..67].copy_from_slice(&int(x));
-    p[67..].copy_from_slice(&int(y));
-    p
-}
-
 fn vectors() -> Vec<Vector> {
-    let text = crate::vectors::text("vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
-    let text = text.split_once("[P-521]").unwrap().1;
-    let text = text.split_once("\n[").unwrap().0;
-    let fields = super::fields(text);
-    assert_eq!(fields.len(), 25 * 7);
-    fields
-        .chunks(7)
-        .map(|v| {
-            let names: Vec<&str> = v.iter().map(|(k, _)| *k).collect();
-            assert_eq!(
-                names,
-                [
-                    "COUNT", "QCAVSx", "QCAVSy", "dIUT", "QIUTx", "QIUTy", "ZIUT"
-                ]
-            );
-            (
-                point(v[1].1, v[2].1),
-                int(v[3].1),
-                point(v[4].1, v[5].1),
-                int(v[6].1),
-            )
-        })
-        .collect()
+    let mut vectors = Vec::new();
+    for [peer, d, public, shared] in super::ecdh_vectors("P-521", 66) {
+        vectors.push((
+            peer.try_into().unwrap(),
+            d.try_into().unwrap(),
+            public.try_into().unwrap(),
+            shared.try_into().unwrap(),
+        ));
+    }
+    vectors
 }
 
 #[test]

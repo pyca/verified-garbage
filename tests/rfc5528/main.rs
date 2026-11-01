@@ -11,49 +11,10 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced;
+use crate::bytes::counter_add;
+use crate::text::{get, labelled};
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
 use verified_garbage::camellia_ecb::CamelliaEcb;
-
-/// The counter block `n` blocks after `ctr`, modulo `2¹²⁸`.
-fn add(ctr: &[u8; 16], n: usize) -> [u8; 16] {
-    u128::from_be_bytes(*ctr)
-        .wrapping_add(n as u128)
-        .to_be_bytes()
-}
-
-/// The fields of one test vector: `label: hex`, with continuation lines `: hex`,
-/// labels in lower case with single spaces (the RFC writes `Key Stream    (1)`).
-/// Lines whose value is not hex (the
-/// title, `Plaintext String`) are not fields.
-fn fields(vector: &str) -> Vec<(String, Vec<u8>)> {
-    let mut out: Vec<(String, String)> = Vec::new();
-    for line in vector.lines() {
-        let Some((label, value)) = line.split_once(':') else {
-            continue;
-        };
-        let label = label
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-            .to_lowercase();
-        if label.is_empty() {
-            out.last_mut().unwrap().1.push_str(value);
-        } else if value
-            .chars()
-            .all(|c| c.is_ascii_hexdigit() || c.is_whitespace())
-        {
-            out.push((label, value.to_string()));
-        }
-    }
-    out.into_iter()
-        .map(|(k, v)| (k, unhex_spaced(&v)))
-        .collect()
-}
-
-fn get<'a>(fields: &'a [(String, Vec<u8>)], label: &str) -> &'a [u8] {
-    &fields.iter().find(|(k, _)| k == label).unwrap().1
-}
 
 /// Checks a message in one call, split at every block boundary, one call per
 /// block, and cut short at each length, with the counter block left after
@@ -64,17 +25,17 @@ fn check(ctx: &CamelliaCtr, ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
     let mut chain = *ctr;
     ctx.apply_keystream(&mut chain, &mut output);
     assert_eq!(output, expected);
-    assert_eq!(chain, add(ctr, blocks));
+    assert_eq!(chain, counter_add(ctr, blocks));
     for offset in (0..=input.len()).step_by(16) {
         let mut output = input.to_vec();
         let mut chain = *ctr;
         ctx.apply_keystream(&mut chain, &mut []);
         assert_eq!(chain, *ctr);
         ctx.apply_keystream(&mut chain, &mut output[..offset]);
-        assert_eq!(chain, add(ctr, offset / 16));
+        assert_eq!(chain, counter_add(ctr, offset / 16));
         ctx.apply_keystream(&mut chain, &mut output[offset..]);
         assert_eq!(output, expected);
-        assert_eq!(chain, add(ctr, blocks));
+        assert_eq!(chain, counter_add(ctr, blocks));
     }
     let mut output = input.to_vec();
     let mut chain = *ctr;
@@ -82,13 +43,13 @@ fn check(ctx: &CamelliaCtr, ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
         ctx.apply_keystream(&mut chain, block);
     }
     assert_eq!(output, expected);
-    assert_eq!(chain, add(ctr, blocks));
+    assert_eq!(chain, counter_add(ctr, blocks));
     for len in 0..input.len() {
         let mut output = input[..len].to_vec();
         let mut chain = *ctr;
         ctx.apply_keystream(&mut chain, &mut output);
         assert_eq!(output, expected[..len]);
-        assert_eq!(chain, add(ctr, len.div_ceil(16)));
+        assert_eq!(chain, counter_add(ctr, len.div_ceil(16)));
     }
 }
 
@@ -100,7 +61,7 @@ fn rfc5528_test_vectors() {
     let section = section.split_once("4.2.  Camellia-CCM").unwrap().0;
     let mut key_lens = Vec::new();
     for vector in section.split("TV #").skip(1) {
-        let fields = fields(vector);
+        let fields = labelled(vector);
         let key = get(&fields, "camellia key");
         let ctr: [u8; 16] = get(&fields, "counter block (1)").try_into().unwrap();
         let plaintext = get(&fields, "plaintext");
@@ -117,7 +78,7 @@ fn rfc5528_test_vectors() {
         for (j, block) in stream.chunks(16).enumerate() {
             assert_eq!(
                 get(&fields, &format!("counter block ({})", j + 1)),
-                add(&ctr, j)
+                counter_add(&ctr, j)
             );
             assert_eq!(get(&fields, &format!("key stream ({})", j + 1)), block);
         }
@@ -190,7 +151,7 @@ fn unaligned_batch_boundaries() {
                 assert!(crate::bytes::all_equal(&buffer[offset + len..], 0xa5));
                 let expected: Vec<_> = stream[..len].iter().map(|b| b ^ 0xa5).collect();
                 assert_eq!(&buffer[offset..offset + len], expected);
-                assert_eq!(ctr, add(&start.to_be_bytes(), len.div_ceil(16)));
+                assert_eq!(ctr, counter_add(&start.to_be_bytes(), len.div_ceil(16)));
             }
         }
     }
