@@ -132,6 +132,7 @@ macro_rules! streaming_hash {
             ///
             /// As for the artifacts; the CPU must have the features of the
             /// implementation (as `select` guarantees).
+            #[inline(always)]
             pub(crate) unsafe fn update(
                 self,
                 state: &mut [u8; $state],
@@ -154,6 +155,7 @@ macro_rules! streaming_hash {
             ///
             /// As for the artifacts; the CPU must have the features of the
             /// implementation (as `select` guarantees).
+            #[inline(always)]
             pub(crate) unsafe fn finalize(
                 self,
                 state: &mut [u8; $state],
@@ -239,10 +241,8 @@ macro_rules! streaming_hash {
             ///
             /// If the message reaches 2⁶⁴ bytes.
             pub fn update(&mut self, data: &[u8]) {
-                let length = self
-                    .length
-                    .checked_add(data.len() as u64)
-                    .expect("message too long");
+                let (length, overflow) = self.length.overflowing_add(data.len() as u64);
+                assert!(!overflow, "message too long");
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size and `data` for reads of `data.len()` bytes; they are
                 // distinct objects, so they do not overlap each other, the return
