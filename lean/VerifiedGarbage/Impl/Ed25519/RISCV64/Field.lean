@@ -39,7 +39,7 @@ def copyLimb (o a : Slot) (k : Nat) : List Instr :=
 def copyField (o a : Slot) : List Instr := (List.range 8).flatMap (copyLimb o a)
 
 /-- `[o] = [a] · [b]`, inlined, with the product's limbs at `ACC`. -/
-abbrev mul (o a b : Nat) : Prog isa := Impl.X25519.RISCV64.mulAt ACC o a b
+abbrev mul (o a b : Nat) : Prog isa := Impl.X25519.RISCV64.R64.mulAt ACC o a b
 
 /-- A call of `vg_gf25519_r32_mul`: `[o] = [a] · [b]`, the working space in
 `a3` before and after (the callee keeps it in `a0`). -/
@@ -68,8 +68,8 @@ def FieldOp.code : FieldOp → Prog isa
   | .const o v => .block (constField o v)
   | .mul o a b => VG.Impl.Ed25519.RISCV64.mul (offset o) (offset a) (offset b)
   | .mulc o a b => mulCall (offset o) (offset a) (offset b)
-  | .add o a b => .block (Impl.X25519.RISCV64.add (offset o) (offset a) (offset b))
-  | .sub o a b => .block (Impl.X25519.RISCV64.sub (offset o) (offset a) (offset b))
+  | .add o a b => .block (Impl.X25519.RISCV64.R64.add (offset o) (offset a) (offset b))
+  | .sub o a b => .block (Impl.X25519.RISCV64.R64.sub (offset o) (offset a) (offset b))
 
 def fieldCode : List FieldOp → Prog isa
   | [] => .block []
