@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvImplies
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -17,7 +18,7 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 open VG VG.PPC64LE
 
 /-- `vg_rsa_crt_values`. -/
-theorem cv_verified :
+theorem cv_verified [InvLaw] :
     Verified target VG.Impl.Rsa.PPC64LE.CrtValues.code (Spec.Rsa.crtValuesContract abi) :=
   Verified.of_correct cv_correct cv_ct cv_implies
 

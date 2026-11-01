@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCorrect
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -207,7 +208,7 @@ theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s)
   · rw [a₁.r24, a₂.r24, ha.arg hb (by decide)]
   · rw [b₁.r31, b₂.r31]; exact ha.arg hb (by decide)
 
-theorem valid_D {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa valid s (D d) := by
+theorem valid_D [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa valid s (D d) := by
   obtain ⟨⟨s0, hs, b, a, hv⟩, h0⟩ := h
   exact WP.mono (valid_ok b a (hv.mp h0)) fun _ ⟨⟨⟨m, f⟩, _⟩, _⟩ => ⟨s0, m, hs, f⟩
 
@@ -222,7 +223,7 @@ theorem valid_iff {d : CvD} {s₁ s₂ : State} (h₁ : C2 d s₁) (h₂ : C2 d 
   rw [i₁, i₂, show nIn a = nIn b by simp only [nIn]; rw [show Spec.Rsa.bytesAt a.mem (a.gpr .r9) (cvK a) = nbOf a
     from rfl, ha.nb, show Spec.Rsa.bytesAt b.mem (b.gpr .r9) (cvK b) = nbOf b from rfl, hb.nb], ha.k hb]
 
-theorem branch_ct : RelCT isa (Two C2) (.ite (.zero .d .r0) valid fail) (Two D) := by
+theorem branch_ct [InvLaw] : RelCT isa (Two C2) (.ite (.zero .d .r0) valid fail) (Two D) := by
   refine RelCT.ite (fun s₁ s₂ ⟨d, h₁, h₂, _⟩ => ?_)
     (RelCT.mono (two_post (Φ := fun d s => C2 d s ∧ s.gpr .r0 = 0)
       (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => valid_D h)
@@ -247,11 +248,11 @@ theorem pins_D : Pins D [.r31] := by
   subst hr
   rw [f₁.r31, f₂.r31]; exact ha.arg hb (by decide)
 
-theorem cv_rel : RelCT isa (Two CVRel) code fun _ _ => True := by
+theorem cv_rel [InvLaw] : RelCT isa (Two CVRel) code fun _ _ => True := by
   unfold code
   exact RelCT.seq entry_ct (RelCT.seq check_ct (RelCT.seq branch_ct (two_taint _ pins_D (by taint_decide))))
 
-theorem cv_ct : ConstantTime isa cvP.pre cvP.pub code :=
+theorem cv_ct [InvLaw] : ConstantTime isa cvP.pre cvP.pub code :=
   RelCT.constantTime (cv_rel.mono (fun s t ⟨hs, ht, hr, hsp, hst, hb⟩ =>
     ⟨pubOf s, ⟨hs, rfl⟩, ⟨ht, by
       simp only [pubOf, CvD.mk.injEq]

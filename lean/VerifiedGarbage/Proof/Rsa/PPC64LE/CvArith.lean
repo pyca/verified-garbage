@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithC
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
@@ -36,7 +37,7 @@ abbrev arithSlots : List Nat := partASlots ++ partBSlots
 /-- The registers `arith` changes. -/
 abbrev arithRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
-theorem arith_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B Z w nArr)
+theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B Z w nArr)
     (hi : ArInit s.mem B w Nv P Q Dd) (hw : 10 ≤ w) (h20 : s.gpr .r20 = BitVec.ofNat 64 pL)
     (h22 : s.gpr .r22 = BitVec.ofNat 64 qL) (hpL : 1 ≤ pL) (hpw : pL ≤ 4 * w) (hqw : qL ≤ 4 * w)
     (hP : P < 2 ^ (8 * pL)) (hQ : Q < 2 ^ (8 * qL)) :

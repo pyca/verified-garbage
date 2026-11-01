@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvFail
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArith
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
@@ -58,7 +59,7 @@ theorem bytes_of {m m' : Mem} {B O : Addr} {w j L : Nat} (hL : L ≤ 4 * w)
     Spec.Rsa.bytesAt m' O L = Spec.Rsa.i2osp (num m B w j % 2 ^ (8 * L)) L := by
   rw [bytes_of_store hL fun c hc => by rw [hb c hc]; rfl, Nat.pow_mul]
 
-theorem valid_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
+theorem valid_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
     (hv : Spec.Rsa.modulusValid (nIn s0) (cvK s0) = true) :
     WP isa valid s fun t => Done s0 t ∧ Keep allRegs s t := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
@@ -160,7 +161,7 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
     e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13]
   exact e0
 
-theorem cv_correct (s : State) (h : cvP.pre s) :
+theorem cv_correct [InvLaw] (s : State) (h : cvP.pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ cvP.post s t := by
   show WP isa code s fun t => abiPreserved s t ∧ cvP.post s t
   obtain ⟨-, hrd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, dn, -, -, -, -, -, -, -, wn,

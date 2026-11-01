@@ -1,4 +1,5 @@
 module
+-- separate module: its lemmas name no ISA, so any target's batched inverse can import them; they build in parallel with PPC64LE's `IbOps` and `IbBatch`
 
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvCorrectDef
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef

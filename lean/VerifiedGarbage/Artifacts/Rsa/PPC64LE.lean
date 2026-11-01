@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Instances
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvVerified
 public import VerifiedGarbage.Proof.Framework.Registration

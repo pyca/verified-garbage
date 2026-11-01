@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
-import VerifiedGarbage.Proof.Rsa.PPC64LE.IbInverse
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: the arithmetic, the inverse and the mask
@@ -72,7 +72,7 @@ theorem modOf_lt {P k : Nat} (hk : 1 ≤ k) (h : P < 2 ^ k) : modOf P < 2 ^ k :=
     rw [Nat.pow_succ, Nat.mul_mod_left]
   unfold modOf; omega
 
-theorem partB_ok {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s B Z w nArr) (hw : 10 ≤ w)
+theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s B Z w nArr) (hw : 10 ≤ w)
     (hq : num s.mem B w aQ = Q) (hp : num s.mem B w aP = P)
     (z : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num s.mem B w j = 0)
     (bo : slot s.mem B sPodd ≤ 1) (b1 : slot s.mem B sE1 ≤ 1) (b2 : slot s.mem B sE2 ≤ 1)
@@ -124,7 +124,7 @@ theorem partB_ok {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s B Z w nA
     modOf_lt (by omega) (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (by decide) (by omega)))
   -- 4: the inverse.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (VG.Proof.Rsa.PPC64LE.InvBatch.inverse_ok h5 (by decide) (by decide) hw r11 hn1 hnw q5 hQn m5' hMn
+  refine WP.mono (InvLaw.inverse_ok h5 (by decide) (by decide) hw r11 hn1 hnw q5 hQn m5' hMn
     (by unfold modOf; omega)) fun t7 ⟨h7, k7, r7, v7⟩ => ?_
   -- 5: whether the gcd is 1.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
