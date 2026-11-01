@@ -1,0 +1,10 @@
+[package]
+name = "gcm-public-split-probe"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[dependencies]
+verified-garbage = { path = "../..", features = ["std"] }
+[profile.release.package.verified-garbage-asm-powerpc64le]
+opt-level = 0
+codegen-units = 16

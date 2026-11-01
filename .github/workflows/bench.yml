@@ -1,213 +1,53 @@
 name: Benchmarks
-
-# Compares the performance of a branch with an earlier commit, on runners of
-# each architecture, and fails if a benchmark slowed down by more than
-# ci/bench_compare.py's threshold; or, with no commit, measures the branch
-# alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary.
-# It runs only by hand (Actions > Benchmarks > Run workflow): runners are
-# shared with CI, and a run of every benchmark takes dozens of jobs. Scope
-# each run to the architectures, `VG_CPU_FEATURES` configurations and library
-# modules a change affects: `git diff --name-only BASE HEAD | python3
-# ci/bench_arches.py --base BASE` prints them, and `python3 ci/bench_arches.py
-# --choices` lists the values each takes. E.g. from the command line:
-#
-#   gh workflow run bench.yml --ref BRANCH -f base_commit=SHA \
-#     -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
-on:
-  workflow_dispatch:
-    inputs:
-      base_commit:
-        description: The commit to compare against, as a full or abbreviated SHA, a branch or a tag (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
-        required: false
-      arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm powerpc64 riscv64, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm powerpc64 riscv64)
-        required: false
-      cpu_features:
-        description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
-        required: false
-      modules:
-        description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
-        required: false
-      rounds:
-        description: Interleaved comparison rounds (empty for the platform default)
-        required: false
-      openssl:
-        description: Also run OpenSSL and aws-lc-rs, for reference, in a comparison with a commit (a run without one always does)
-        type: boolean
-        default: false
-      openssl_with_features:
-        description: With `openssl`, run OpenSSL and aws-lc-rs under VG_CPU_FEATURES configurations too (VG_CPU_FEATURES does not restrict them; see `openssl_ia32cap`)
-        type: boolean
-        default: false
-      openssl_ia32cap:
-        description: OPENSSL_ia32cap for OpenSSL's and aws-lc-rs's runs on x86 (both read it), to mask their CPU features, e.g. `~0x0:~0x10000` without AVX-512 (CPUID 7 EBX bit 16) or `~0x0:~0x60000010000` without AVX-512, VAES nor VPCLMULQDQ; the first value may not be empty (empty to leave it unset)
-        required: false
-
+on: workflow_dispatch
 permissions:
   contents: read
-
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  arches:
-    name: Choose architectures
-    runs-on: ubuntu-26.04
-    timeout-minutes: 5
-    outputs:
-      matrix: ${{ steps.arches.outputs.matrix }}
-      base: ${{ steps.arches.outputs.base }}
+  public-split-seal:
+    runs-on: ubuntu-24.04-ppc64le
+    container: ghcr.io/pyca/verified-garbage-runner:ppc64le
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          # Not the proofs, which bench_arches.py never reads (it reads only
-          # src/, bench/ and the Cargo manifests).
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /*
-            !/lean/
-            !/docs/
-      - id: arches
-        env:
-          BASE_COMMIT: ${{ inputs.base_commit }}
-          ARCHES: ${{ inputs.arches }}
-          CPU_FEATURES: ${{ inputs.cpu_features }}
-          MODULES: ${{ inputs.modules }}
-          GH_TOKEN: ${{ github.token }}
+      - name: Machine and compilers
         run: |
-          matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
-          echo "$matrix"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          # actions/checkout takes a full SHA or a branch or tag name, and
-          # fails on an abbreviated SHA: resolve whichever was given to the
-          # full SHA (the API takes all three), once, for every job.
-          base=
-          if [ -n "$BASE_COMMIT" ]; then
-            if ! base=$(gh api "repos/$GITHUB_REPOSITORY/commits/$BASE_COMMIT" --jq .sha); then
-              echo "::error::base_commit '$BASE_COMMIT' is no commit, branch or tag of $GITHUB_REPOSITORY"
-              exit 1
-            fi
-            echo "Base: $BASE_COMMIT = $base"
-          fi
-          echo "base=$base" >> "$GITHUB_OUTPUT"
-
-  compare:
-    needs: arches
-    if: ${{ needs.arches.outputs.matrix != '[]' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.arches.outputs.matrix) }}
-    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }}${{ matrix.shard && format(', shard {0}', matrix.shard) || '' }})
-    runs-on: ${{ matrix.os }}
-    # Running every benchmark took 25-30 minutes on every runner with 3
-    # rounds; with 2, about 20-25, until the x86-64 configurations outgrew
-    # the timeout. One round with a shorter warm-up and measurement, and no
-    # OpenSSL or aws-lc-rs reference in comparisons (bench_compare.py), take
-    # about half, until running P-521's groups from fresh copies took some
-    # x86-64 configurations past it again, and AES-GCM's from copies did once
-    # more: BENCHMARKS_PER_JOB (ci/bench_arches.py) splits a run of every
-    # benchmark into shards.
-    timeout-minutes: 30
-    # With an empty image the job runs directly on the runner.
-    container:
-      image: ${{ matrix.image || '' }}
-      options: ${{ matrix.options || '' }}
-    env:
-      # Selects the toolchain without `rustup default`, which refuses 32-bit
-      # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: stable
-      # Restricts the CPU features the library uses, to benchmark other
-      # implementations (see ci/bench_arches.py); empty restricts nothing.
-      VG_CPU_FEATURES: ${{ matrix.cpu-features }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: head
-          persist-credentials: false
-          # Not the proofs, nor other architectures' verified functions, which
-          # this target never compiles (bench_compare.py leaves out lean/ too):
-          # only its own, in `asm` (ci/bench_arches.py's `ASM_DIRS`).
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /*
-            !/lean/
-            !/docs/
-            !/crates/verified-garbage-asm-*/
-            /crates/verified-garbage-asm-*/Cargo.toml
-            /crates/verified-garbage-asm-${{ matrix.asm }}/
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ needs.arches.outputs.base }}
-        with:
-          ref: ${{ needs.arches.outputs.base }}
-          path: base
-          persist-credentials: false
-          # Not the proofs, nor other architectures' verified functions, which
-          # this target never compiles (bench_compare.py leaves out lean/ too):
-          # only its own, in `asm` (ci/bench_arches.py's `ASM_DIRS`).
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /*
-            !/lean/
-            !/docs/
-            !/crates/verified-garbage-asm-*/
-            /crates/verified-garbage-asm-*/Cargo.toml
-            /crates/verified-garbage-asm-${{ matrix.asm }}/
-      - name: Record CPU and OpenSSL capabilities
-        run: |
+          uname -a
+          lscpu
           openssl version -a
-          if [ -r /proc/cpuinfo ]; then
-            python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
-          else
-            sysctl -n machdep.cpu.brand_string hw.optional.arm
-          fi
-      - name: Install Rust
-        # ci.yml's `rust` job lints the benchmarks, once per architecture.
-        run: rustup toolchain install stable --profile minimal
-      - name: Select the Thumb target
-        if: ${{ matrix.target }}
-        env:
-          TARGET: ${{ matrix.target }}
+          echo "$GITHUB_SHA"
+      - name: Build public Rust API sampler
         run: |
-          rustup target add "$TARGET"
-          echo "CARGO_BUILD_TARGET=$TARGET" >> "$GITHUB_ENV"
-          echo "PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig" >> "$GITHUB_ENV"
-      # The dependencies (aws-lc-sys, criterion, ...) are the same for every
-      # configuration and shard of an architecture, and about a third of the
-      # job; ci.yml's `rust` job saves them on main whenever the key changes.
-      - id: cache-key
-        run: echo "key=$(sh head/ci/bench_cache_key.sh head/bench)" >> "$GITHUB_OUTPUT"
-      - name: Restore the dependencies' build
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: bench-target
-          key: ${{ steps.cache-key.outputs.key }}
-      - name: Benchmark base and head
-        id: benchmark
-        env:
-          MODULES: ${{ matrix.modules }}
-          SHARD: ${{ matrix.shard }}
-          ARCH: ${{ matrix.arch }}
-          # Interleaved runs of each side (ci/bench_arches.py's platforms say
-          # how many; one but on a shared VM).
-          ROUNDS: ${{ inputs.rounds || matrix.rounds || 1 }}
-          # OpenSSL's and aws-lc-rs's times are only a reference: a comparison
-          # runs them when asked (a run without a base always does).
-          OPENSSL: ${{ inputs.openssl && '--openssl' || '' }}
-          OPENSSL_WITH_FEATURES: ${{ inputs.openssl_with_features && '--openssl-with-features' || '' }}
-          IA32CAP: ${{ inputs.openssl_ia32cap }}
+          rustup toolchain install stable --profile minimal
+          rustc +stable -Vv
+          cargo +stable build --release --manifest-path experiments/gcm-public-split/Cargo.toml
+      - name: Interleaved public API timings with reused keys
         run: |
-          # OpenSSL and aws-lc read it; the library does not.
-          if [ -n "$IA32CAP" ]; then export OPENSSL_ia32cap="$IA32CAP"; fi
-          # The `openssl` crate needs Homebrew's OpenSSL on macOS.
-          if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
-      - name: Save raw benchmark samples
-        if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
-        uses: ./head/.github/actions/upload-artifact
+          cd experiments/gcm-public-split
+          for copy in 1 2 3 4 5 6 7 8; do
+            cp target/release/gcm-public-split-probe "probe-$copy"
+            "./probe-$copy" > "samples-$copy.csv"
+          done
+          python3 - <<'REPORT'
+          import csv,statistics
+          from pathlib import Path
+          out={}
+          for p in Path('.').glob('samples-*.csv'):
+            rows={}
+            for r in csv.reader(p.open()):
+              if r[0].startswith('#'): continue
+              bits,n,s,v,ns=r
+              rows.setdefault((int(bits),int(n),int(v)),[]).append(float(ns))
+            for k,vs in rows.items():out.setdefault(k,[]).append(statistics.median(vs))
+          for (bits,n,v),vs in sorted(out.items()):
+            print(f'AES={bits} payload={n} variant={v} median_ns={statistics.median(vs):.3f} min_copy={min(vs):.3f} max_copy={max(vs):.3f} copy_medians={vs}')
+          REPORT
+      - uses: ./.github/actions/upload-artifact
+        if: always()
         with:
-          name: benchmark-samples-${{ matrix.arch }}-${{ strategy.job-index }}
-          path: bench-compare/**/new/*.json
-          retention-days: 14
-          if-no-files-found: ignore
+          name: public-split-seal-samples
+          path: |
+            experiments/gcm-public-split/samples-*.csv
+            experiments/gcm-public-split/Cargo.lock
+          retention-days: 7
