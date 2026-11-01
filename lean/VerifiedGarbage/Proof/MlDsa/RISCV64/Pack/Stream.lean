@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 import VerifiedGarbage.Proof.MlKem.RISCV64.Bytes
+import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 
 /-!
 # ML-DSA on RISC-V: streaming fields through `a5`
@@ -117,6 +118,7 @@ theorem flush_ok {k nf nb : Nat} {m₀ : Mem} {o : Addr} {V : Nat → Byte} (X :
 state satisfying `R`, and writes only `t0` and `a6`. -/
 def LdOk (ld : Nat → List Instr) (V : BitVec 32 → Nat) (R : State → Prop) : Prop :=
   ∀ j s, R s → 4 * j < 2048 → InRegions (s.rd ++ s.wr) (s.gpr .a7 + BitVec.ofNat 64 (4 * j)) 4 →
+    (s.gpr .a7 + BitVec.ofNat 64 (4 * j)).toNat % 4 = 0 →
     WP isa (.block (ld j)) s fun s' =>
       ((s'.gpr .a6).toNat = V (s.mem.readW (s.gpr .a7 + BitVec.ofNat 64 (4 * j)) 32) ∧ s'.mem = s.mem) ∧
         Keep [.t0, .a6] s s'
@@ -138,6 +140,7 @@ theorem packCoef_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} {R : State
     {o : Addr} (s : State) (hR : R s) (h11 : s.gpr .t1 = o)
     (hout : ∀ t < nb, InRegions s.wr (o + BitVec.ofNat 64 t) 1)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .a7 + BitVec.ofNat 64 (4 * j)) 4)
+    (hal : (s.gpr .a7 + BitVec.ofNat 64 (4 * j)).toNat % 4 = 0)
     (hv : V (s.mem.readW (s.gpr .a7 + BitVec.ofNat 64 (4 * j)) 32) = G / 2 ^ (d * j) % 2 ^ d)
     (hw : GOut m₀ s.mem o nb (d * j / 8) (bytesOf G))
     (hr : (s.gpr .a5).toNat = G % 2 ^ (d * j) / 2 ^ (8 * (d * j / 8))) :
@@ -147,7 +150,7 @@ theorem packCoef_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} {R : State
         Keep [.t0, .a5, .a6] s s' := by
   unfold packCoef
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (hld j s hR (by omega_arith) hin) fun s₁ ⟨⟨ax₁, m₁⟩, k₁⟩ => ?_
+  refine WP.mono (hld j s hR (by omega_arith) hin hal) fun s₁ ⟨⟨ax₁, m₁⟩, k₁⟩ => ?_
   have hx : (s₁.gpr .a6).toNat < 2 ^ d := by rw [ax₁, hv]; exact Nat.mod_lt _ (Nat.two_pow_pos d)
   have hr₁ : (s₁.gpr .a5).toNat = G % 2 ^ (d * j) / 2 ^ (8 * (d * j / 8)) := by
     rw [k₁.gpr (by decide), hr]
@@ -198,6 +201,7 @@ values of its `c` coefficients, stored at `t1`. -/
 theorem packBody_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} {R : State → Prop} (hld : LdOk ld V R)
     (hRs : Stable R) {d c nb : Nat} (hd : d ≤ 20) (hdc : d * c = 8 * nb) (hc : c ≤ 8) (s : State) (hR : R s)
     (hin : ∀ j < c, InRegions (s.rd ++ s.wr) (s.gpr .a7 + BitVec.ofNat 64 (4 * j)) 4)
+    (hal : (s.gpr .a7).toNat % 4 = 0)
     (hout : ∀ t < nb, InRegions s.wr (s.gpr .t1 + BitVec.ofNat 64 t) 1)
     (hsep : Region.Disjoint ⟨s.gpr .a7, 4 * c⟩ ⟨s.gpr .t1, nb⟩)
     (hF : ∀ j < c, V (s.mem.readW (s.gpr .a7 + BitVec.ofNat 64 (4 * j)) 32) < 2 ^ d) :
@@ -230,7 +234,7 @@ theorem packBody_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} {R : State
     have hRj : R s' := hRs s s' hR ((k₁.trans hk).mono (by decide))
     refine WP.mono (packCoef_ok hld (G := G) (m₀ := s.mem) hd (by omega_arith) (by omega_arith) hj8 s' hRj yj
       (by rw [hk.2.2, k₁.2.2]; exact hout) (by rw [xj, hk.2.1, hk.2.2, k₁.2.1, k₁.2.2]; exact hin j hj)
-      ?_ hw hr)
+      (by rw [xj]; exact VG.Proof.MlKem.RISCV64.align4_add hal j) ?_ hw hr)
       fun s'' ⟨hw', hr', hk'⟩ => ⟨(hk.trans hk').mono (by decide), hw', hr'⟩
     -- The word is the one on entry: the bytes written are elsewhere.
     rw [xj, hdig j hj]
@@ -312,7 +316,7 @@ theorem extract_ok {d : Nat} (hd1 : 1 ≤ d) (hd : d ≤ 20) (s : State) :
 `r11 + 4j`, from a state satisfying `R`, and writes only `t0` and `a6`. -/
 def FinOk (fin : Nat → List Instr) (d : Nat) (W : Nat → BitVec 32) (R : State → Prop) : Prop :=
   ∀ j s, R s → 4 * j < 2048 → InRegions s.wr (s.gpr .t1 + BitVec.ofNat 64 (4 * j)) 4 →
-    (s.gpr .a6).toNat < 2 ^ d →
+    (s.gpr .t1 + BitVec.ofNat 64 (4 * j)).toNat % 4 = 0 → (s.gpr .a6).toNat < 2 ^ d →
     WP isa (.block (fin j)) s fun s' =>
       s'.mem = s.mem.writeW (s.gpr .t1 + BitVec.ofNat 64 (4 * j)) (W (s.gpr .a6).toNat) ∧
         Keep [.t0, .a6] s s'
@@ -325,6 +329,7 @@ theorem unpackCoef_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
     (hin : ∀ t < need d (j + 1), InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 t) 1)
     (hb : ∀ t < need d (j + 1), (s.mem (x + BitVec.ofNat 64 t)).toNat = H / 2 ^ (8 * t) % 2 ^ 8)
     (hout : InRegions s.wr (s.gpr .t1 + BitVec.ofNat 64 (4 * j)) 4)
+    (hal : (s.gpr .t1 + BitVec.ofNat 64 (4 * j)).toNat % 4 = 0)
     (hr : (s.gpr .a5).toNat = H % 2 ^ (8 * need d j) / 2 ^ (d * j)) :
     WP isa (.block (unpackCoef fin d j)) s fun s' =>
       s'.mem = s.mem.writeW (s.gpr .t1 + BitVec.ofNat 64 (4 * j)) (W (H / 2 ^ (d * j) % 2 ^ d)) ∧
@@ -345,7 +350,7 @@ theorem unpackCoef_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
     rw [ax₂, r₁, unpack_field H _ d j (by unfold need; omega_arith)]
   have p₂ : s₂.gpr .t1 = s.gpr .t1 := by rw [k₂.gpr (by decide), k₁.gpr (by decide)]
   refine WP.mono (hfin j s₂ (hRs s₂ ((k₁.trans k₂).mono (by decide))) (by omega_arith)
-      (by rw [k₂.2.2, k₁.2.2, p₂]; exact hout) (by rw [hv]; exact Nat.mod_lt _ (Nat.two_pow_pos d)))
+      (by rw [k₂.2.2, k₁.2.2, p₂]; exact hout) (by rw [p₂]; exact hal) (by rw [hv]; exact Nat.mod_lt _ (Nat.two_pow_pos d)))
     fun s₃ ⟨m₃, k₃⟩ => ⟨by rw [m₃, p₂, hv, m₂, m₁], ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   rw [k₃.gpr (by decide), r₂, r₁, unpack_shift]
 
@@ -356,6 +361,7 @@ theorem unpackBody_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
     (hc : c ≤ 8) (s : State) (hR : R s)
     (hin : ∀ t < nb, InRegions (s.rd ++ s.wr) (s.gpr .a7 + BitVec.ofNat 64 t) 1)
     (hout : ∀ j < c, InRegions s.wr (s.gpr .t1 + BitVec.ofNat 64 (4 * j)) 4)
+    (hal : (s.gpr .t1).toNat % 4 = 0)
     (hsep : Region.Disjoint ⟨s.gpr .a7, nb⟩ ⟨s.gpr .t1, 4 * c⟩) :
     WP isa (.block (unpackBody fin d c nb)) s fun s' =>
       (∀ j < c, s'.mem.readW (s.gpr .t1 + BitVec.ofNat 64 (4 * j)) 32 =
@@ -395,7 +401,7 @@ theorem unpackBody_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
         refine congrArg BitVec.toNat (hf _ fun r hr => ?_)
         simp only [List.mem_singleton] at hr; subst hr
         exact hsep _ (Offset.contains_base _ (by omega_arith) (by omega_arith)))
-      (by rw [pj, hk.2.2, k₁.2.2]; exact hout j hj) hr)
+      (by rw [pj, hk.2.2, k₁.2.2]; exact hout j hj) (by rw [pj]; exact VG.Proof.MlKem.RISCV64.align4_add hal j) hr)
       fun s'' ⟨m'', r'', hk'⟩ => ⟨(hk.trans hk').mono (by decide), ?_, fun j' hj' => ?_, r''⟩
     · rw [m'', pj]
       exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))

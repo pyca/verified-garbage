@@ -113,7 +113,7 @@ structure PInv (V : BitVec 32 → Nat) (d c nb : Nat) (pf po : Addr) (m₀ : Mem
   done : ∀ k < nb * i, s.mem (po + BitVec.ofNat 64 k) = (bitsToBytes (fieldBits d (vals V m₀ pf)))[k]!
   keep : Keep loopRegs sE s
 
-theorem packStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : PInv V d c nb pf po m₀ rd wr sE i s) :
+theorem packStep (hal : pf.toNat % 4 = 0) {i : Nat} (hi : i < 256 / c) {s : State} (hI : PInv V d c nb pf po m₀ rd wr sE i s) :
     WP isa (.block (packBody ld d c nb)) s fun s' =>
       PInv V d c nb pf po m₀ rd wr sE (i + 1) s' ∧ (s'.gpr .t2 != 0) = decide (i + 1 ≠ 256 / c) := by
   obtain ⟨hci, hbi⟩ := hs.group hi
@@ -135,6 +135,7 @@ theorem packStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : PInv V d c nb pf
         (by omega_arith)
   refine WP.mono (packBody_ok hld hRs hs.d20 hs.dc hs.c8 s (hRs sE s hRE hI.keep)
     (fun j hj => by rw [ha j, hI.rd, hI.wr]; exact inRegions_of hin (coeff_contains _ (by omega_arith)))
+    (by rw [hI.a7, Nat.mul_assoc]; exact VG.Proof.MlKem.RISCV64.align4_add hal _)
     (fun t ht => by rw [hb, hI.wr]; exact inRegions_of hout (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (by
       rw [hI.a7, hI.t1]
@@ -173,7 +174,7 @@ theorem packStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : PInv V d c nb pf
       rfl
   · rw [c']; exact (count_step hi hN hI.t2).2
 
-theorem packLoop_ok {s : State} (h10 : s.gpr .a7 = pf) (h11 : s.gpr .t1 = po) (hrd : s.rd = rd)
+theorem packLoop_ok (hal : pf.toNat % 4 = 0) {s : State} (h10 : s.gpr .a7 = pf) (h11 : s.gpr .t1 = po) (hrd : s.rd = rd)
     (hwr : s.wr = wr) (hm : s.mem = m₀) (hE : Keep loopRegs sE s) :
     WP isa (packLoop ld d c nb) s fun s' =>
       bytesAt s'.mem po (32 * d) = bitsToBytes (fieldBits d (vals V m₀ pf)) ∧
@@ -185,7 +186,7 @@ theorem packLoop_ok {s : State} (h10 : s.gpr .a7 = pf) (h11 : s.gpr .t1 = po) (h
   unfold packLoop
   refine WP.seq (WP.mono (liN_ok _ (by omega_arith) s) fun s₁ ⟨⟨r₁, m₁⟩, k₁⟩ => ?_)
   refine wp_loop_nz (PInv V d c nb pf po m₀ rd wr sE) hN0
-    (fun i hi s' hI => packStep hld hRs hs hRE hin hout hsep hF hi hI)
+    (fun i hi s' hI => packStep hld hRs hs hRE hin hout hsep hF hal hi hI)
     (fun s' hI => ⟨bytesAt_eq! (pack_length d _ (by simp)) fun k hk => hI.done k (by rw [hs.bN]; exact hk),
       hI.frame, hI.keep⟩)
     ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega_arith), (hE.trans k₁).mono (by decide)⟩
@@ -223,7 +224,7 @@ variable {fin : Nat → List Instr} {W : Nat → BitVec 32} {R : State → Prop}
   (hsep : Region.Disjoint ⟨pv, 32 * d⟩ (polyRegion pp))
 include hfin hRs hs hRE hin hout hsep
 
-theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb pv pp m₀ rd wr sE i s) :
+theorem unpackStep (hal : pp.toNat % 4 = 0) {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb pv pp m₀ rd wr sE i s) :
     WP isa (.block (unpackBody fin d c nb)) s fun s' =>
       UInv W d c nb pv pp m₀ rd wr sE (i + 1) s' ∧ (s'.gpr .t2 != 0) = decide (i + 1 ≠ 256 / c) := by
   obtain ⟨hci, hbi⟩ := hs.group hi
@@ -242,6 +243,7 @@ theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb 
   refine WP.mono (unpackBody_ok hfin hRs hs.d1 hs.d20 hs.dc hs.c8 s (hRs sE s hRE hI.keep)
     (fun t ht => by rw [hb, hI.rd, hI.wr]; exact inRegions_of hin (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (fun j hj => by rw [ha, hI.wr]; exact inRegions_of hout (coeff_contains _ (by omega_arith)))
+    (by rw [hI.t1, Nat.mul_assoc]; exact VG.Proof.MlKem.RISCV64.align4_add hal _)
     (by rw [hI.a7]; exact (hsep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right hsub))
     fun s' ⟨hw, hf, x', p', c', k'⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, hI.frame.trans (hf.sub fun r hr => ?_),
       fun k hk => ?_, (hI.keep.trans k').mono (by decide)⟩, ?_⟩
@@ -278,7 +280,7 @@ theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State} (hI : UInv W d c nb 
       rw [coeffAt_eq, this]
   · rw [c']; exact (count_step hi hN hI.t2).2
 
-theorem unpackLoop_ok {s : State} (h10 : s.gpr .a7 = pv) (h11 : s.gpr .t1 = pp) (hrd : s.rd = rd)
+theorem unpackLoop_ok (hal : pp.toNat % 4 = 0) {s : State} (h10 : s.gpr .a7 = pv) (h11 : s.gpr .t1 = pp) (hrd : s.rd = rd)
     (hwr : s.wr = wr) (hm : s.mem = m₀) (hE : Keep loopRegs sE s) :
     WP isa (unpackLoop fin d c nb) s fun s' =>
       (∀ k < 256, coeffAt s'.mem pp k = W (inNum m₀ pv d / 2 ^ (d * k) % 2 ^ d)) ∧
@@ -290,7 +292,7 @@ theorem unpackLoop_ok {s : State} (h10 : s.gpr .a7 = pv) (h11 : s.gpr .t1 = pp) 
   unfold unpackLoop
   refine WP.seq (WP.mono (liN_ok _ (by omega_arith) s) fun s₁ ⟨⟨r₁, m₁⟩, k₁⟩ => ?_)
   refine wp_loop_nz (UInv W d c nb pv pp m₀ rd wr sE) hN0
-    (fun i hi s' hI => unpackStep hfin hRs hs hRE hin hout hsep hi hI)
+    (fun i hi s' hI => unpackStep hfin hRs hs hRE hin hout hsep hal hi hI)
     (fun s' hI => ⟨fun k hk => hI.done k (by rw [hs.cN]; exact hk), hI.frame, hI.keep⟩)
     ⟨?_, ?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega_arith), (hE.trans k₁).mono (by decide)⟩
   · rw [k₁.gpr (by decide), h10]; simp
