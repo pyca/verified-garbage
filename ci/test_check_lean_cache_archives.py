@@ -11,7 +11,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
-import unittest.mock
+from unittest import mock
 
 import lean_cache
 
@@ -288,7 +288,7 @@ class LeanArchiveTests(unittest.TestCase):
         target = self.root / "restored"
         target.mkdir()
         with tempfile.TemporaryDirectory() as tmp, \
-                unittest.mock.patch.object(lean_cache.leantar_release, "fetch", fetch):
+                mock.patch.object(lean_cache.leantar_release, "fetch", fetch):
             lean_cache.unpack(target, 2, tmp, 1 << 30, None, io.BytesIO(data), empty_private=True)
         self.assertEqual(fetched, [True])
 
