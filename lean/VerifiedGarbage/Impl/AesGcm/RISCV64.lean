@@ -84,19 +84,18 @@ def rO : Nat := 256
 /-- The first bytes of the computed tag, padded with zeros. -/
 def vO : Nat := 272
 
-/-- Our caller's registers, and where we save them. -/
+/-- Our caller's registers and return address, and where we save them. -/
 def saved : List (Reg × Nat) :=
   [(.s0, 128), (.s1, 136), (.s2, 144), (.s3, 152), (.s4, 160), (.s5, 168), (.s6, 176), (.s7, 184),
-   (.s8, 192), (.s9, 200), (.s10, 208), (.s11, 216)]
+   (.s8, 192), (.s9, 200), (.s10, 208), (.s11, 216), (.ra, raO)]
 
-/-- Saves them and the return address at `b`, and keeps `b` in `s0`. -/
+/-- Saves them at `b`, and keeps `b` in `s0`. -/
 def save (b : Reg) : List Instr :=
-  saved.map (fun (r, d) => .store .d r b d) ++ ([.store .d .ra b raO, mov .s0 b] : List Instr)
+  saved.map (fun (r, d) => .store .d r b d) ++ ([mov .s0 b] : List Instr)
 
-/-- Restores the return address and the registers, through `t1` (a copy of
-`W`, as `s0` is restored too). -/
+/-- Restores them, through `t1` (a copy of `W`, as `s0` is restored too). -/
 def restore : List Instr :=
-  ([mov .t1 .s0, .load .d .ra .t1 raO] : List Instr) ++ saved.map fun (r, d) => .load .d r .t1 d
+  ([mov .t1 .s0] : List Instr) ++ saved.map fun (r, d) => .load .d r .t1 d
 
 /-! ## The calls -/
 
