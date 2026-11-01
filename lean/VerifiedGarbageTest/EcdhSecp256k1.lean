@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.SelfCheck
+meta import VerifiedGarbageTest.Ec.SelfCheck
 import VerifiedGarbage.Spec.Ecdh.Secp256k1
+meta import VerifiedGarbage.Spec.Ecdh.Secp256k1
 
 /-!
 # secp256k1 public key and ECDH specification tests

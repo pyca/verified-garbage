@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbageTest.Cmac
+meta import VerifiedGarbageTest.Cmac
 import VerifiedGarbage.Spec.Cmac.TripleDesContract
+meta import VerifiedGarbage.Spec.Cmac.TripleDesContract
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Known-answer tests for TDEA-CMAC (3DES-CMAC)

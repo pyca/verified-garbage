@@ -1,5 +1,9 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Idea.Contract
+meta import VerifiedGarbage.Spec.Idea.Contract
 
 /-!
 # Known-answer tests for the IDEA specification

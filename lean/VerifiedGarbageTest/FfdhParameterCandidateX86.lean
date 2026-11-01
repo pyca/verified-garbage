@@ -1,13 +1,27 @@
+module
+
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ChecksCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ChecksCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Load
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Load
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
+meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
+meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 
 /-! Audit the exact byte encodings, native candidate shaping, and in-place halving. -/
 

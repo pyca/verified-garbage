@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.PPC64LE.Print
+meta import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-!
 # Golden tests for the PPC64LE instruction semantics

@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Cbc
+meta import VerifiedGarbageTest.Cbc
 import VerifiedGarbage.Spec.Cfb
+meta import VerifiedGarbage.Spec.Cfb
 
 /-!
 # Known-answer tests for the CFB128 specification

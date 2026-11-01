@@ -1,8 +1,15 @@
+module
+
 import VerifiedGarbage.TCB.Rust
+meta import VerifiedGarbage.TCB.Rust
 import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Tables of constants carried by instructions (`aluTbl`, `vmovdquTbl`) on x86-64

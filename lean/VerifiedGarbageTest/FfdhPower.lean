@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Proof.Ffdh.Power
+meta import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Audit closure of powers of a checked FFDH generator. -/
 

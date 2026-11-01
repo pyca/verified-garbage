@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbageTest.Cbc
+meta import VerifiedGarbageTest.Cbc
 import VerifiedGarbageTest.Memo
+meta import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Ofb
+meta import VerifiedGarbage.Spec.Ofb
 
 /-!
 # Known-answer tests for the OFB specification

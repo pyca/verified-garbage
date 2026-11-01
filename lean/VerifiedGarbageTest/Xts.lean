@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.Xts
+meta import VerifiedGarbage.Spec.Xts
 
 /-!
 # Known-answer tests for the XTS specification

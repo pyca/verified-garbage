@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.Rfc7027
+meta import VerifiedGarbageTest.Ec.Rfc7027
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512
 
 /-!
 # ECDSA brainpoolP512r1 specification tests

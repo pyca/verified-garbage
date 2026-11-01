@@ -1,13 +1,35 @@
+module
+
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetryCT
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInitCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInitCT
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignConstantTime
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignConstantTime
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCorrect
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCorrect
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 
 /-! Audit the complete functional-correctness chain independently of model execution. -/
 #assert_standard_axioms VG.Proof.Dsa.X86_64.random_sign_correct

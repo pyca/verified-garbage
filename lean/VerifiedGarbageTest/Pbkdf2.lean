@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Pbkdf2
+meta import VerifiedGarbage.Spec.Pbkdf2
 import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # Known-answer tests for the PBKDF2 specification

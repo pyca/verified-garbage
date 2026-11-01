@@ -2,11 +2,13 @@
 """Checks that the library is made of Lean modules (CLAUDE.md, "Lean
 modules"). Exits non-zero on violations, naming each.
 
-  * Every file under lean/VerifiedGarbage/ is a module (it starts with
-    `module`, after any leading comment).
+  * Every file under lean/VerifiedGarbage/ and lean/VerifiedGarbageTest/ is a
+    module (it starts with `module`, after any leading comment).
 
 Lean checks the rest itself: a module may not import a file that is not
-one ("cannot import non-`module`").
+one ("cannot import non-`module`"). Only Lake's scripts (`lean/*.lean`) and
+the check of the audit's base (`lean/VerifiedGarbageAuditBase.lean`, which
+reads the private data of Lean and Mathlib) are not modules.
 """
 
 import pathlib
@@ -15,6 +17,8 @@ from collections.abc import Iterable
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean"
+# The directories whose every file is a module.
+DIRS = ("VerifiedGarbage", "VerifiedGarbageTest")
 
 
 def is_module(lines: Iterable[str]) -> bool:
@@ -40,12 +44,13 @@ def problems(lean: pathlib.Path) -> list[str]:
     """What is wrong under `lean` (the directory with `VerifiedGarbage/`), one
     line each."""
     out = []
-    for f in sorted((lean / "VerifiedGarbage").rglob("*.lean")):
-        rel = f.relative_to(lean).as_posix()
-        with f.open(encoding="utf-8") as lines:
-            if not is_module(lines):
-                out.append(f"lean/{rel}: not a module; every file under lean/VerifiedGarbage/ "
-                           "starts with `module` (CLAUDE.md, \"Lean modules\")")
+    for d in DIRS:
+        for f in sorted((lean / d).rglob("*.lean")):
+            rel = f.relative_to(lean).as_posix()
+            with f.open(encoding="utf-8") as lines:
+                if not is_module(lines):
+                    out.append(f"lean/{rel}: not a module; every file under lean/{d}/ "
+                               "starts with `module` (CLAUDE.md, \"Lean modules\")")
     return out
 
 

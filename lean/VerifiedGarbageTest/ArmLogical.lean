@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.TCB.Arm.Print
+meta import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # ARMv7 MVN and BIC semantics and printing

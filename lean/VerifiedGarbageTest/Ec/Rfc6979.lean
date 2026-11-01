@@ -1,8 +1,15 @@
-import VerifiedGarbageTest.Ec.Common
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Spec.Sha512
+module
+
+public import VerifiedGarbageTest.Ec.Common
+public meta import VerifiedGarbageTest.Ec.Common
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Sha1
+public meta import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
+public meta import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha512
+public meta import VerifiedGarbage.Spec.Sha512
 
 /-!
 # Deterministic ECDSA (RFC 6979), against the RFC's signatures
@@ -14,6 +21,8 @@ gives the listed `(r, s)` after one candidate, and the contracts' instances
 for the curve agree for their hashes. Keys outside `[1, n-1]`, and no
 candidate to try, give no signature.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec.Rfc6979
 

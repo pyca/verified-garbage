@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.X86.Print
+meta import VerifiedGarbage.TCB.X86.Print
 
 /-!
 # Semantics tests for the x86 (32-bit) `mul`

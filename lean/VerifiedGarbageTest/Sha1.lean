@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Sha1
+meta import VerifiedGarbage.Spec.Sha1
 
 /-!
 # Known-answer tests for the SHA-1 specification

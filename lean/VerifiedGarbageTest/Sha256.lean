@@ -1,5 +1,9 @@
-import Lean.Elab.Command
-import VerifiedGarbage.Spec.Sha256
+module
+
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
+public import VerifiedGarbage.Spec.Sha256
+public meta import VerifiedGarbage.Spec.Sha256
 
 /-!
 # Known-answer tests for the SHA-256 specification
@@ -11,6 +15,8 @@ transcription error in the spec fails the build. (Evaluating the spec is slow,
 so only two are checked here; the Rust tests run every CAVP vector against
 the implementation, whose compression function is proven equal to the spec's.)
 -/
+
+@[expose] public section
 
 namespace VG.Test.Sha256
 

@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Print
+meta import VerifiedGarbage.TCB.X86_64.Print
 
 /-!
 # Semantics tests for the x86-64 AVX, AVX2, AVX512_IFMA and AVX512VL (`ymm`) instructions

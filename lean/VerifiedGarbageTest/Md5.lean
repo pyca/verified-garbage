@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Md5
+meta import VerifiedGarbage.Spec.Md5
 
 /-!
 # Known-answer tests for the MD5 specification

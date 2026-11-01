@@ -1,4 +1,7 @@
-import VerifiedGarbageTest.X86_64Avx512
+module
+
+public import VerifiedGarbageTest.X86_64Avx512
+public meta import VerifiedGarbageTest.X86_64Avx512
 
 /-!
 # Vector AES-GCM instruction tests
@@ -11,6 +14,8 @@ on an Intel Xeon E5-2696 v4 using the legacy 128-bit intrinsics
 transcription of the SDM; it does not claim hardware execution of the
 256-bit or 512-bit instructions on that CPU.
 -/
+
+@[expose] public section
 
 namespace VG.Test.VectorGcm
 

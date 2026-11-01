@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Spec.Gcm.Prepared
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 
 /-!
 Check the prepared storage encoding against the existing instruction-model

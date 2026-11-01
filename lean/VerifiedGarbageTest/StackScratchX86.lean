@@ -1,8 +1,17 @@
+module
+
 import VerifiedGarbage.Proof.Md5.X86.Shared
+meta import VerifiedGarbage.Proof.Md5.X86.Shared
 import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Md5.Stream
+meta import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! `Verified.stackScratch` on a real function with its arguments on the
 stack: MD5's `update` on x86 (its streaming code and its proofs as they are)

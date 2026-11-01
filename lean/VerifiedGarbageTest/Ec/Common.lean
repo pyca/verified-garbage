@@ -1,4 +1,7 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
+public meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Helpers for the elliptic-curve specification tests
@@ -6,6 +9,8 @@ import VerifiedGarbage.Spec.Weierstrass
 Parsing the vendored vector files: hexadecimal in either case, and RFC
 6979's values that wrap onto further lines.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec
 

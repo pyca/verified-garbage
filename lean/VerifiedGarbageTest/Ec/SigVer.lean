@@ -1,9 +1,19 @@
-import VerifiedGarbageTest.Ec.Common
-import VerifiedGarbageTest.Memo
-import VerifiedGarbage.Spec.Ecdsa.Verify
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Spec.Sha512
+module
+
+public import VerifiedGarbageTest.Ec.Common
+public meta import VerifiedGarbageTest.Ec.Common
+public import VerifiedGarbageTest.Memo
+public meta import VerifiedGarbageTest.Memo
+public import VerifiedGarbage.Spec.Ecdsa
+public meta import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public meta import VerifiedGarbage.Spec.Ecdsa.Verify
+public import VerifiedGarbage.Spec.Sha1
+public meta import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
+public meta import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha512
+public meta import VerifiedGarbage.Spec.Sha512
 
 /-!
 # ECDSA signature verification, against NIST CAVP's SigVer test
@@ -16,6 +26,8 @@ hashes shorter and longer than `n` and signatures that are valid and not.
 The signatures whose fields are out of range, and the keys that are not
 valid, are derived from the vectors and from the curve's parameters.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec.SigVer
 

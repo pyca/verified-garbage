@@ -1,5 +1,9 @@
-import VerifiedGarbageTest.Aes
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbageTest.Aes
+public meta import VerifiedGarbageTest.Aes
+public import VerifiedGarbage.Spec.Cbc
+public meta import VerifiedGarbage.Spec.Cbc
 
 /-!
 # Known-answer tests for the CBC specification
@@ -16,6 +20,8 @@ Each vector is also checked in two pieces, the first block and the rest,
 with the second piece continuing from `Cbc.next` of the first: the
 chaining the functions implemented in assembly rely on.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Cbc
 

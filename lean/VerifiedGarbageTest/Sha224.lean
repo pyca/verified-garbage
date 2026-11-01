@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 
 /-!
 # Known-answer tests for the SHA-224 specification

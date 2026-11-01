@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Print
+meta import VerifiedGarbage.TCB.X86_64.Print
 
 /-!
 # Semantics tests for the x86-64 `imul r64, r64, imm32`, `shld r64, r64, imm8` and `btr r64, imm8`

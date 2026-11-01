@@ -1,9 +1,17 @@
+module
+
 import VerifiedGarbage.Proof.Md5.X86_64.Shared
+meta import VerifiedGarbage.Proof.Md5.X86_64.Shared
 import VerifiedGarbage.Proof.Md5.AArch64.Shared
+meta import VerifiedGarbage.Proof.Md5.AArch64.Shared
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! `Verified.stackScratch` on a real function: MD5's `update` (its streaming
 code and its proofs as they are) without its scratch argument, on x86-64 and

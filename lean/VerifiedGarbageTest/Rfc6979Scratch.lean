@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512
 
 /-! RFC 6979 scratch sizes are part of the emitted signature and contract:
 8 KiB for every curve, brainpoolP512r1 included, whose wrappers keep its

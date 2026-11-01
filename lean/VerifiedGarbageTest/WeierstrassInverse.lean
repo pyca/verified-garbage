@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Spec.Weierstrass.Inverse
+meta import VerifiedGarbage.Spec.Weierstrass.Inverse
 
 /-!
 # The contracts of `Spec/Weierstrass/Inverse.lean`

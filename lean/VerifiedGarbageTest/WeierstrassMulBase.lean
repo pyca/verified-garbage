@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.Spec.Weierstrass.MulBase
+meta import VerifiedGarbage.Spec.Weierstrass.MulBase
 
 /-!
 # The contract of `Spec/Weierstrass/MulBase.lean`

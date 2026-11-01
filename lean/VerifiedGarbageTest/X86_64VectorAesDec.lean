@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbageTest.X86_64VectorGcm
+meta import VerifiedGarbageTest.X86_64VectorGcm
 
 /-!
 # Vector AES decryption instruction tests

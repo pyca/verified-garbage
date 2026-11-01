@@ -1,7 +1,13 @@
+module
+
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
 import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Audit the comb core before public artifacts are connected to it. -/
 

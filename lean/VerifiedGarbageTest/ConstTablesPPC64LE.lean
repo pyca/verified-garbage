@@ -1,8 +1,15 @@
+module
+
 import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Tables of constants on PPC64LE (`Artifact.consts`)

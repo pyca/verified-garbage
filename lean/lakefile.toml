@@ -214,7 +214,15 @@ name = "NativeTCBX86_64"
 plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBX86_64"
 roots = []
-globs = ["VerifiedGarbage.TCB.X86_64.+"]
+# `Target` first, which imports every other module of the directory: Lake links
+# the library's objects in the order it reaches its modules from its globs, and
+# a `.+` glob lists them in the order of the directory's entries, which differs
+# between checkouts (ext4 hashes it with a seed of each file system). The order
+# goes into the link's trace, so a build restored into another checkout would
+# link the library again, and rebuild the modules that load it. With `Target`
+# first, the order is its imports'; `.+` still makes the others this library's.
+# (The same for each `NativeTCB<Target>` below.)
+globs = ["VerifiedGarbage.TCB.X86_64.Target", "VerifiedGarbage.TCB.X86_64.+"]
 precompileModules = true
 defaultFacets = ["shared"]
 
@@ -224,7 +232,7 @@ name = "NativeTCBX86"
 plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBX86"
 roots = []
-globs = ["VerifiedGarbage.TCB.X86.+"]
+globs = ["VerifiedGarbage.TCB.X86.Target", "VerifiedGarbage.TCB.X86.+"]
 precompileModules = true
 defaultFacets = ["shared"]
 
@@ -234,7 +242,7 @@ name = "NativeTCBAArch64"
 plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBAArch64"
 roots = []
-globs = ["VerifiedGarbage.TCB.AArch64.+"]
+globs = ["VerifiedGarbage.TCB.AArch64.Target", "VerifiedGarbage.TCB.AArch64.+"]
 precompileModules = true
 defaultFacets = ["shared"]
 
@@ -244,7 +252,7 @@ name = "NativeTCBArm"
 plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBArm"
 roots = []
-globs = ["VerifiedGarbage.TCB.Arm.+"]
+globs = ["VerifiedGarbage.TCB.Arm.Target", "VerifiedGarbage.TCB.Arm.+"]
 precompileModules = true
 defaultFacets = ["shared"]
 
@@ -254,7 +262,7 @@ name = "NativeTCBPPC64LE"
 plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBPPC64LE"
 roots = []
-globs = ["VerifiedGarbage.TCB.PPC64LE.+"]
+globs = ["VerifiedGarbage.TCB.PPC64LE.Target", "VerifiedGarbage.TCB.PPC64LE.+"]
 precompileModules = true
 defaultFacets = ["shared"]
 
@@ -264,7 +272,7 @@ name = "NativeTCBRISCV64"
 plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBRISCV64"
 roots = []
-globs = ["VerifiedGarbage.TCB.RISCV64.+"]
+globs = ["VerifiedGarbage.TCB.RISCV64.Target", "VerifiedGarbage.TCB.RISCV64.+"]
 precompileModules = true
 defaultFacets = ["shared"]
 

@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Blowfish.Contract
+meta import VerifiedGarbage.Spec.Blowfish.Contract
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Blowfish specification tests

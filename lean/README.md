@@ -169,7 +169,9 @@ Each emitter's driver is a module, which `Emit.lean` and `EmitOne.lean` run
 with the setup Lake gives it (`lake setup-file`), as `lake build` would build
 it: it loads what it imports without their private parts (`.olean.private`),
 and its audits read the records every module of this project writes when it
-is built (`TCB/AuditRecords.lean`; the `lean-modules` skill).
+is built (`TCB/AuditRecords.lean`; the `lean-modules` skill). A restored
+build cache leaves those parts empty, but `TCB/`'s (`ci/lean_cache.py restore
+--empty-private`).
 
 On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
 distributions (65,530): it maps every module its drivers import. It refuses

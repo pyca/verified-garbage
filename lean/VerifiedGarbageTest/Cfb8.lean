@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbageTest.Cbc
+meta import VerifiedGarbageTest.Cbc
 import VerifiedGarbageTest.Memo
+meta import VerifiedGarbageTest.Memo
 import VerifiedGarbage.Spec.Cfb8
+meta import VerifiedGarbage.Spec.Cfb8
 
 /-!
 # Known-answer tests for the CFB8 specification

@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbage.Spec.Dsa.Derive
+meta import VerifiedGarbage.Spec.Dsa.Derive
 import VerifiedGarbageTest.Dsa
+meta import VerifiedGarbageTest.Dsa
 
 /-! Tests for the domain check and key derivation that key generation calls.
 Known answers come from the NIST signing vectors' published x and y; each

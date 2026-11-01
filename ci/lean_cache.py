@@ -248,6 +248,12 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
                     logs[rel] = reused_logs[rel]
                 kept += 1
                 continue
+            # A placeholder (`restore --empty-private`) of a module this build did not
+            # build: never pack it, as the archive would then lose its private data.
+            for _, ext, path in outputs:
+                if ext == ".olean.private" and (lean / path).stat().st_size == 0:
+                    raise SystemExit(f"{path} is a placeholder (`restore --empty-private`), "
+                                     f"but its module's archive is out of date")
             # Without `-s`, the archive keeps the trace's dependency hash, so
             # unpacking needs nothing but the archive.
             files = []
@@ -365,12 +371,23 @@ def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
                     "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
 
 
-def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
+# The modules whose private data (`.olean.private`) `restore --empty-private`
+# unpacks all the same: the trusted base, which `Emit.lean` and `EmitOne.lean`
+# load as files that are not modules.
+KEEP_PRIVATE = ("VerifiedGarbage.TCB.",)
+
+
+def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None, empty_private=False):
     """Extracts `files.tar` and unpacks the archives; with `modules` (a
     file of module names, one per line), only the archives of those of the
     project's build, and with `others` (such a file), only the archives
     `modules` left out, and not `files.tar` again: a build in between may
-    have changed its `.hash` files."""
+    have changed its `.hash` files.
+
+    With `empty_private`, each module's `.olean.private` but `KEEP_PRIVATE`'s is
+    an empty file (`leantar --empty-private`), half of the data, which nothing
+    that imports a module as a module reads: Lake only checks that it is there,
+    and the emitter's audits read the audit records (`TCB/AuditRecords.lean`)."""
     ltars = lean / archive_dir
     chosen = set((modules or others).read_text().split()) if modules or others else set()
     stored = stored_files(ltars)
@@ -387,13 +404,17 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
                 continue
             build = build_of(rel)
             placeholder(lean, rel)
-            records.append({"file": str(ltar.relative_to(lean)),
-                            "base": [str(build / "lib/lean"), str(build / "ir")]})
-        if records:
-            # `-f`: a trace already there (from a build of other sources) would
-            # otherwise keep that build's outputs.
-            subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs), "-x", "-j", "-"],
-                           cwd=lean, input=json.dumps(records).encode(), check=True)
+            records.append(({"file": str(ltar.relative_to(lean)),
+                             "base": [str(build / "lib/lean"), str(build / "ir")]},
+                            empty_private and not (m or "").startswith(KEEP_PRIVATE)))
+        for empty in (False, True):
+            batch = [r for r, e in records if e == empty]
+            if batch:
+                # `-f`: a trace already there (from a build of other sources) would
+                # otherwise keep that build's outputs.
+                subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs), "-x"] +
+                               (["--empty-private"] if empty else []) + ["-j", "-"],
+                               cwd=lean, input=json.dumps(batch).encode(), check=True)
     finally:
         finish(files)
     print(f"Unpacked {len(records)} modules", file=sys.stderr)
@@ -538,6 +559,8 @@ def main(argv=None):
                       help="a file of modules: unpack only their archives (and every package's)")
     only.add_argument("--except", dest="others", type=Path,
                       help="a file of modules: unpack only the other archives, without files.tar")
+    r.add_argument("--empty-private", action="store_true",
+                   help="write the modules' .olean.private as empty files, the trusted base's aside")
     u = sub.add_parser("unpack", help="extract a tar of `pack` from stdin")
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
@@ -564,7 +587,8 @@ def main(argv=None):
     elif args.command == "store":
         store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, args.archive_dir)
     elif args.command == "restore":
-        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others)
+        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others,
+                args.empty_private)
     else:
         unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer,
                args.logs)

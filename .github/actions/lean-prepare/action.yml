@@ -143,7 +143,9 @@ runs:
       shell: bash
       env:
         MODULES: ${{ inputs.modules }}
-      run: python3 ci/lean_cache.py restore lean ${MODULES:+--modules "$MODULES"}
+      # `--empty-private`: nothing CI runs reads the private data of this
+      # project's modules (`ci/lean_cache.py`), half of what restoring writes.
+      run: python3 ci/lean_cache.py restore lean --empty-private ${MODULES:+--modules "$MODULES"}
     - uses: ./.github/actions/lean-setup
       id: lean-setup
     - uses: ./.github/actions/lean-mathlib

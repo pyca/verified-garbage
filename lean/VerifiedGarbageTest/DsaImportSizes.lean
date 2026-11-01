@@ -1,7 +1,13 @@
+module
+
 import VerifiedGarbage.Spec.Dsa.ImportSizes
+meta import VerifiedGarbage.Spec.Dsa.ImportSizes
 import VerifiedGarbage.Spec.Dsa.Generate
+meta import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
+meta import VerifiedGarbage.TCB.Audit
 
 /-! Regression checks for the trusted legacy DSA import-size policy. -/
 namespace VG.Test.DsaImportSizes

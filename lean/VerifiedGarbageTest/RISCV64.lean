@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbage.TCB.RISCV64.Isa
+meta import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
 # Golden tests for the RISC-V instruction semantics

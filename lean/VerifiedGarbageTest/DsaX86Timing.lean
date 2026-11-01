@@ -1,15 +1,49 @@
+module
+
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreReduceTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CoreReduceTiming
 import VerifiedGarbage.Proof.Dsa.X86.ValidationTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.ValidationTiming
 import VerifiedGarbage.Proof.Dsa.X86.MinusTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.MinusTiming
 import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.ShapeTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.ShapeTiming
 import VerifiedGarbage.Proof.Dsa.X86.DispatchTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.DispatchTiming
 import VerifiedGarbage.Proof.Dsa.X86.SignSizedTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.SignSizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.Verified
+meta import VerifiedGarbage.Proof.Dsa.X86.Verified
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Dsa.X86.CallMinusTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CallMinusTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallProductTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CallProductTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
+import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
+import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
+import VerifiedGarbage.Proof.Dsa.X86.SharedTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.SharedTiming
+import VerifiedGarbage.Proof.Dsa.X86.SignTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.SignTiming
+import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
+import VerifiedGarbage.Proof.Dsa.X86.VerifyTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.VerifyTiming
 
 /-! Audit the constant-time composition independently of executable tests. -/
 #assert_standard_axioms VG.Proof.Dsa.X86.loadComponent_relCT

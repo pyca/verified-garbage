@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbageTest.MlDsa
+meta import VerifiedGarbageTest.MlDsa
 
 /-!
 # Known-answer tests for the ML-DSA specification: ML-DSA-87

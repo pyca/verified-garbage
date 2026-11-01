@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.TripleDes.Contract
+meta import VerifiedGarbage.Spec.TripleDes.Contract
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Triple DES specification tests

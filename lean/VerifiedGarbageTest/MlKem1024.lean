@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.MlKem
+meta import VerifiedGarbageTest.MlKem
 import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # Known-answer tests for the ML-KEM specification: ML-KEM-1024

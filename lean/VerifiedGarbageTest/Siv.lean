@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.Aes
+meta import VerifiedGarbageTest.Aes
 import VerifiedGarbage.Spec.Siv.Contract
+meta import VerifiedGarbage.Spec.Siv.Contract
 
 /-!
 # Known-answer tests for the AES-SIV specification

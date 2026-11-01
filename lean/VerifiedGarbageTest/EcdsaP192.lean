@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.RfcSign
+meta import VerifiedGarbageTest.Ec.RfcSign
 import VerifiedGarbage.Spec.Ecdsa.P192
+meta import VerifiedGarbage.Spec.Ecdsa.P192
 
 /-!
 # ECDSA P-192 specification tests

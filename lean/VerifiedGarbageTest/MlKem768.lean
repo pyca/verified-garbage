@@ -1,4 +1,7 @@
+module
+
 import VerifiedGarbageTest.MlKem
+meta import VerifiedGarbageTest.MlKem
 
 /-!
 # Known-answer tests for the ML-KEM specification: ML-KEM-768

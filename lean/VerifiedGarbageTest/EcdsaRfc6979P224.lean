@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.Rfc6979
+meta import VerifiedGarbageTest.Ec.Rfc6979
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-224: specification tests

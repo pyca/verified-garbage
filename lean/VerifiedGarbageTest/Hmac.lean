@@ -1,10 +1,19 @@
+module
+
 import VerifiedGarbageTest.Sha256
+meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Hmac.Generic
+meta import VerifiedGarbage.Spec.Hmac.Generic
 import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Spec.Sha256.Contract
+meta import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Spec.Sha1.Contract
+meta import VerifiedGarbage.Spec.Sha1.Contract
 import VerifiedGarbage.Spec.Md5.Contract
+meta import VerifiedGarbage.Spec.Md5.Contract
 import VerifiedGarbage.Spec.Sha512.Contract
+meta import VerifiedGarbage.Spec.Sha512.Contract
 
 /-!
 # Known-answer tests for HMAC, and SHA-256's functions

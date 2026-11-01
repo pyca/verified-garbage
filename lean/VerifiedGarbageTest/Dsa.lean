@@ -1,15 +1,25 @@
-import Lean.Elab.Command
-import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.TCB.Audit
-import VerifiedGarbageTest.Memo
+module
+
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public meta import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Sha512
+public meta import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.Axioms
+public meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.TCB.Audit
+public meta import VerifiedGarbage.TCB.Audit
+public import VerifiedGarbageTest.Memo
+public meta import VerifiedGarbageTest.Memo
 
 /-! # DSA specification regression tests
 Known answers are parsed from the byte-for-byte NIST CAVP files, including
 published nonces for signing. No vector values are embedded in this test.
 Primality is not recomputed: CAVP supplies the validated domain parameters.
 -/
+
+@[expose] public section
 namespace VG.Test.Dsa
 open Lean Elab Command Spec.Dsa
 

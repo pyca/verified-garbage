@@ -1,5 +1,9 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Weierstrass.PointOps
+meta import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # The point formulas of `Spec/Weierstrass/PointOps.lean`

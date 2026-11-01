@@ -1,9 +1,17 @@
+module
+
 import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.TCB.RISCV64.Target
+meta import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.TCB.Rust
+meta import VerifiedGarbage.TCB.Rust
 
 /-!
 # Golden tests for the documented obligations of signatures

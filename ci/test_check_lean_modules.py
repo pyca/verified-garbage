@@ -39,5 +39,12 @@ class Modules(unittest.TestCase):
             [p] = check_lean_modules.problems(pathlib.Path(d))
             self.assertTrue(p.startswith("lean/VerifiedGarbage/A.lean: not a module"))
 
+    def test_a_test_that_is_not_a_module(self):
+        with tree({"VerifiedGarbageTest/A.lean": "import VerifiedGarbage.B\n",
+                   "VerifiedGarbage/B.lean": "module\n"}) as d:
+            [p] = check_lean_modules.problems(pathlib.Path(d))
+            self.assertTrue(p.startswith("lean/VerifiedGarbageTest/A.lean: not a module"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,11 @@
+module
+
 import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Baseline A64 bit counting and reversal: CLZ and RBIT on both register
 widths, their printing, requirements and taint. -/

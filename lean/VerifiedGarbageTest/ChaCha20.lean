@@ -1,5 +1,9 @@
-import Lean.Elab.Command
-import VerifiedGarbage.Spec.ChaCha20
+module
+
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
+public import VerifiedGarbage.Spec.ChaCha20
+public meta import VerifiedGarbage.Spec.ChaCha20
 
 /-!
 # Known-answer tests for the ChaCha20 specification
@@ -11,6 +15,8 @@ The test vectors of RFC 8439, Appendix A.1 (the block function) and A.2
 `VG.Spec.ChaCha20.keystream`, so that a transcription error in the spec fails
 the build.
 -/
+
+@[expose] public section
 
 namespace VG.Test.ChaCha20
 

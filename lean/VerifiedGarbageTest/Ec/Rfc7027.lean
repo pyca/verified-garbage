@@ -1,7 +1,13 @@
-import VerifiedGarbageTest.Ec.Cdh
-import VerifiedGarbageTest.Ec.RfcSign
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.Spec.Ecdsa.Verify
+module
+
+public import VerifiedGarbageTest.Ec.Cdh
+public meta import VerifiedGarbageTest.Ec.Cdh
+public import VerifiedGarbageTest.Ec.RfcSign
+public meta import VerifiedGarbageTest.Ec.RfcSign
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public meta import VerifiedGarbage.Spec.Ecdsa.Verify
 
 /-!
 # Brainpool curves, against RFC 7027's ECDH test vectors
@@ -14,6 +20,8 @@ law and keys, as for RFC 6979's (`Ec/RfcSign.lean`); and the signatures of
 the curve's RFC 6979 instance, which verify with its public key, and no
 longer once the hash or the key changes.
 -/
+
+@[expose] public section
 
 namespace VG.Test.Ec.Rfc7027
 

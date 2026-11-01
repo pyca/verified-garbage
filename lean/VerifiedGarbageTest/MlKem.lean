@@ -1,6 +1,11 @@
-import Lean.Data.Json
-import VerifiedGarbageTest.Sha256
-import VerifiedGarbage.Spec.MlKem
+module
+
+public import Lean.Data.Json
+public meta import Lean.Data.Json
+public import VerifiedGarbageTest.Sha256
+public meta import VerifiedGarbageTest.Sha256
+public import VerifiedGarbage.Spec.MlKem
+public meta import VerifiedGarbage.Spec.MlKem
 
 /-!
 # Known-answer tests for the ML-KEM specification: the checks
@@ -24,6 +29,8 @@ rejection). The decapsulation key check has no spec (see
 `Spec/MlKem.lean`), so its vectors are skipped. (Only these are checked
 here; the Rust tests run the implementation on every vector.)
 -/
+
+@[expose] public section
 
 namespace VG.Test.MlKem
 

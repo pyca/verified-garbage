@@ -1,10 +1,19 @@
+module
+
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Frame
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Frame
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Finish
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Finish
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCT
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCT
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! Audit wrapper lemmas before the callable artifacts are registered. -/
 

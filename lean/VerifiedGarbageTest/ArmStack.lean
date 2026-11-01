@@ -1,8 +1,17 @@
+module
+
 import VerifiedGarbage.TCB.Arm.Print
+meta import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! ARMv7/Thumb-2 stack-buffer semantics and instruction encodings. -/
 namespace VG.Test.ArmStack

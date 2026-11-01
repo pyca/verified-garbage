@@ -1,5 +1,9 @@
+module
+
 import VerifiedGarbageTest.ChaCha20
+meta import VerifiedGarbageTest.ChaCha20
 import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Known-answer tests for the X25519 specification

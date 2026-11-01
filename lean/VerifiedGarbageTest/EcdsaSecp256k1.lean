@@ -1,6 +1,11 @@
+module
+
 import Lean.Elab.Command
+meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.SelfCheck
+meta import VerifiedGarbageTest.Ec.SelfCheck
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
 
 /-!
 # ECDSA secp256k1 specification tests

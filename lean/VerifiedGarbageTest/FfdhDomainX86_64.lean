@@ -1,7 +1,17 @@
+module
+
 import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
 import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 
 /-! Audit the shared FFDH pieces before registering the domain operations. -/
 
