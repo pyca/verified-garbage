@@ -259,7 +259,8 @@ def setup : List Instr :=
 /-- `m`'s low bit set in `aP`: an odd modulus for the batches whatever `m` is
 (`m` itself when it is odd). -/
 def setOdd : List Instr :=
-  ws ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .or .rax (.imm 1), .store (at0 .r8) .rax] : List Instr)
+  ws ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .shift .shr .rax 1, .alu .add .rax (.reg .rax),
+    .alu .add .rax (.imm 1), .store (at0 .r8) .rax] : List Instr)
 
 /-- The start: the arrays zeroed, `m` into `aP` (made odd) and `f`, `a` into
 `aT`, `g`, `(a, b) = (0, 1)`, then `setup`. -/
