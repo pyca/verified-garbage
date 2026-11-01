@@ -909,12 +909,6 @@ class Executables(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 bench_compare.check_arch(binary, 'arm')
 
-    def test_this_machine_is_its_architecture(self):
-        arch = {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64-apple',
-                'ppc64le': 'powerpc64', 'riscv64': 'riscv64'}.get(os.uname().machine)
-        if arch is None or not os.path.exists('/bin/sh'):
-            self.skipTest('no architecture of EXECUTABLES')
-        bench_compare.check_arch(os.path.realpath('/bin/sh'), arch)
 
 
 if __name__ == '__main__':

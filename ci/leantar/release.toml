@@ -1,0 +1,11 @@
+# The leantar `ci/leantar_release.py` downloads: a release of reaperhulk/leangz,
+# built by its release workflow, and the SHA-256 of each platform's archive
+# (the release's SHA256SUMS). Upgrading changes `tag` and every hash together.
+tag = "v0.1.21-vg.1"
+url = "https://github.com/reaperhulk/leangz/releases/download/{tag}/{name}.tar.gz"
+
+[sha256]
+x86_64-unknown-linux-musl = "5bd6d55ff493969d216ae0e468d8d89cc6f89acbfec946257c01214502a6c823"
+aarch64-unknown-linux-musl = "b7d7da1e7d33386dd58f63a32ac7c9efa3eb5ccba9c2bc01591f9884e11322e1"
+aarch64-apple-darwin = "69805827636c7bcae1ca79975b2f9c7051b2e5ecaf86095bf291159307574594"
+x86_64-apple-darwin = "e990269d7200a9151c40f9ec7177516403959d38e3170b3b253504841c0180c2"

@@ -11,6 +11,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 
 import lean_cache
 
@@ -200,6 +201,96 @@ class LeanArchiveTests(unittest.TestCase):
             self.assertEqual(json.loads(gzip.decompress(tar.extractfile(".lake/ltar/logs.json.gz").read())),
                              {"build/A/B": {"depHash": "1", "log": log},
                               "packages/mathlib/.lake/build/Mathlib/Order": {"depHash": "1", "log": log}})
+
+    def test_unpack_empty_private(self):
+        module(self.lean / ".lake/build", "VerifiedGarbage/TCB/Mem")
+        data, _ = self.pack()
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake").rglob("*") if p.is_file()
+                    and ".lake/ltar" not in str(p)}
+        target = self.root / "restored"
+        target.mkdir()
+        with tempfile.TemporaryDirectory() as tmp:
+            # A tiny batch: each holds one archive, the trusted base's too.
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), empty_private=True)
+        restored = {p.relative_to(target): p.read_bytes()
+                    for p in (target / ".lake").rglob("*") if p.is_file()
+                    and lean_cache.KEPT not in p.relative_to(target).parents}
+        expected = as_restored(original)
+        for path in expected:
+            # The project's modules but the trusted base: a package's are its own.
+            if (path.name.endswith(".olean.private") and "build" == path.parts[1]
+                    and "TCB" not in path.parts):
+                expected[path] = b""
+        self.assertEqual(restored, expected)
+        lib = Path(".lake/build/lib/lean")
+        self.assertNotEqual(restored[lib / "VerifiedGarbage/TCB/Mem.olean.private"], b"")
+        self.assertEqual(restored[lib / "A/B.olean.private"], b"")
+
+    def test_unpack_empty_private_keeps_archives_to_fill_from(self):
+        # A/B imports C (in its header, after a comment); the trusted base's is real.
+        write(self.lean / "A/B.lean", "/- A comment. -/\nmodule\n\npublic import C\nimport Mathlib.Order\n\n"
+                                      "/-! # B -/\nimport Nope\n")
+        write(self.lean / "C.lean", "module\n")
+        data, _ = self.pack()
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*.olean.private")}
+        target = self.root / "restored"
+        target.mkdir()
+        shutil.copytree(self.lean, target, dirs_exist_ok=True,
+                        ignore=lambda d, names: [".lake"] if Path(d) == self.lean else [])
+        with tempfile.TemporaryDirectory() as tmp:
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), empty_private=True)
+        kept = target / lean_cache.KEPT
+        self.assertEqual(sorted(str(p.relative_to(kept)) for p in kept.rglob("*.ltar")),
+                         ["build/A/B.ltar", "build/C.ltar"])
+        lib = Path(".lake/build/lib/lean")
+        self.assertEqual(lean_cache.closure(target, ["A.B"]), {"A.B", "C", "Mathlib.Order"})
+        before = {p: (target / p).read_bytes() for p in original}
+        other = (target / lib / "A/B.olean").stat().st_mtime_ns
+        self.assertEqual(lean_cache.fill_private(target, ["A.B"], str(self.stub), 2), 2)
+        for p in (lib / "A/B.olean.private", lib / "C.olean.private"):
+            self.assertEqual(before[p], b"")
+            self.assertEqual((target / p).read_bytes(), original[p])
+        # Only the private parts are written; nothing is left in `.lake`.
+        self.assertEqual((target / lib / "A/B.olean").stat().st_mtime_ns, other)
+        self.assertEqual(sorted(p.name for p in (target / ".lake").iterdir()),
+                         ["build", "ltar-private", "packages"])
+        # Done: nothing more to write.
+        self.assertEqual(lean_cache.fill_private(target, ["A.B"], str(self.stub), 2), 0)
+        # Restoring again with the private parts drops the kept archives.
+        with tempfile.TemporaryDirectory() as tmp:
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data))
+        self.assertFalse(kept.exists())
+
+    def test_closure_of_a_file(self):
+        # A script that is not a module: its imports, and theirs.
+        write(self.lean / "Script.lean", "import A.B\nimport Lean\n\ndef main : IO Unit := pure ()\n")
+        write(self.lean / "A/B.lean", "module\n\nimport C\n")
+        self.assertEqual(lean_cache.closure(self.lean, [str(self.lean / "Script.lean")]),
+                         {str(self.lean / "Script.lean"), "A.B", "C", "Lean"})
+
+    def test_fill_private_without_archives(self):
+        write(self.lean / "C.lean", "module\n")
+        (self.lean / ".lake/build/lib/lean/C.olean.private").write_text("")
+        with self.assertRaisesRegex(SystemExit, "1 modules have an empty .olean.private and no archive "
+                                                "\\(e.g. C\\): restore the build again"):
+            lean_cache.fill_private(self.lean, ["C"], str(self.stub), 2)
+
+    def test_unpack_empty_private_downloads_the_release(self):
+        fetched = []
+
+        def fetch():
+            fetched.append(True)
+            return self.stub
+
+        data, _ = self.pack()
+        target = self.root / "restored"
+        target.mkdir()
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(lean_cache.leantar_release, "fetch", fetch):
+            lean_cache.unpack(target, 2, tmp, 1 << 30, None, io.BytesIO(data), empty_private=True)
+        self.assertEqual(fetched, [True])
 
     def test_unpack_fails_when_tar_does(self):
         data, _ = self.pack()
@@ -421,6 +512,47 @@ class LeanArchiveTests(unittest.TestCase):
         (self.lean / directories[0] / "index.json").write_text("{}")
         with self.assertRaisesRegex(ValueError, "Empty"):
             lean_cache.bundle(self.lean, directories, data)
+
+    def test_bundle_copies_compressed_and_plain_tar_members_without_external_tar(self):
+        directories = self.independent_caches()
+        first, second = self.lean / directories[0], self.lean / directories[1]
+        # Include metadata, links, empty files and a PAX long name. Keep
+        # duplicate names in source order, as tar concatenation does.
+        members = []
+        for name, kind, body in [('directory', tarfile.DIRTYPE, b''),
+                                 ('directory/script', tarfile.REGTYPE, b'#!/bin/sh\n'),
+                                 ('symlink', tarfile.SYMTYPE, b''),
+                                 ('hardlink', tarfile.LNKTYPE, b''),
+                                 ('empty', tarfile.REGTYPE, b''),
+                                 ('long/' + 'x' * 150, tarfile.REGTYPE, b'long'),
+                                 ('directory/script', tarfile.REGTYPE, b'last')]:
+            member = tarfile.TarInfo(name)
+            member.type, member.size = kind, len(body)
+            member.mode, member.uid, member.gid, member.mtime = 0o755, 123, 456, 123456
+            member.uname, member.gname = 'owner', 'group'
+            if kind in (tarfile.SYMTYPE, tarfile.LNKTYPE):
+                member.linkname = 'directory/script'
+            members.append((member, body))
+        with tarfile.open(first / lean_cache.STORED, 'w:gz') as tar:
+            for member, body in members[:-1]:
+                tar.addfile(member, io.BytesIO(body))
+        (second / lean_cache.STORED).unlink()
+        with tarfile.open(second / lean_cache.FILES, 'w') as tar:
+            member, body = members[-1]
+            tar.addfile(member, io.BytesIO(body))
+        data = io.BytesIO()
+        with mock.patch.object(lean_cache.subprocess, 'run', side_effect=AssertionError('external tool')):
+            lean_cache.bundle(self.lean, directories, data)
+        with tarfile.open(fileobj=io.BytesIO(data.getvalue())) as outer:
+            with tarfile.open(fileobj=outer.extractfile('.lake/ltar/files.tar')) as combined:
+                actual = combined.getmembers()
+                self.assertEqual(len(actual), len(members))
+                for got, (want, body) in zip(actual, members):
+                    for field in ('name', 'type', 'size', 'mode', 'uid', 'gid', 'mtime',
+                                  'uname', 'gname', 'linkname'):
+                        self.assertEqual(getattr(got, field), getattr(want, field))
+                    if got.isfile():
+                        self.assertEqual(combined.extractfile(got).read(), body)
 
     def test_reuse_repacks_missing_or_changed_archives(self):
         packages = Path(".lake/mathlib-ltar")

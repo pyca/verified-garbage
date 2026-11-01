@@ -1,57 +1,21 @@
-name: Build leantar with batch packing
+name: Download the project's leantar
 description: >
-  Builds `leantar`, the toolchain's compressor for Lake's per-module `.ltar`
-  archives, from leangz at `LEANGZ_REV` with `ci/leantar/unpack.patch` (each
-  payload decompressed in one call into zstd, with each thread's contexts
-  and dictionary kept across archives: a third of the CPU time to unpack)
-  then `ci/leantar/batch.patch` (digama0/leangz#13: `-p -` packs many
-  archives in one process, and `--level` sets the zstd level), and puts it
-  on PATH as `leantar-batch`; and `ci/leantar/empty-private.patch`
-  (`-x --empty-private`: each module's `.olean.private` as an empty file,
-  for `lean_cache.py restore --empty-private`). The toolchain's own `leantar` packs one
-  archive per process, about half a CPU-second each; this one packs a
-  build's 16,000 modules in seconds. `ci/lean_cache.py` packs (`store`) and
-  restores (`restore`) with it; the archives' format is unchanged, so the
-  toolchain's `leantar` unpacks them too (`unpack`, outside CI). The binary
-  is cached, saved from main, until the revision or the patches change.
+  Downloads the release of reaperhulk/leangz that `ci/leantar/release.toml`
+  pins, checked against its SHA-256, into `~/.cache/verified-garbage/`
+  (`ci/leantar_release.py`), where `ci/lean_cache.py` finds it: `leantar`, the
+  toolchain's compressor for Lake's per-module `.ltar` archives, with a faster
+  unpack (a third of the CPU time), batch packing (digama0/leangz#13: `-p -`
+  packs many archives in one process, and `--level` sets the zstd level) and
+  `-x --empty-private` (each module's `.olean.private` as an empty file, for
+  `lean_cache.py restore --empty-private`). The toolchain's own `leantar`
+  packs one archive per process, about half a CPU-second each; this one packs
+  a build's 16,000 modules in seconds. Here, before anything restores, so
+  that a bad download fails in its own step.
 
 runs:
   using: composite
   steps:
-    - name: Restore leantar
-      id: cache
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: ${{ runner.temp }}/leantar-batch
-        key: leantar-batch-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('ci/leantar/**', '.github/actions/leantar/action.yml') }}
-    - name: Build leantar
-      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      shell: bash
-      env:
-        # The base of the patches: digama0/leangz master after #12.
-        LEANGZ_REV: ff38677829d4c2756700194d4e252ad7290c5e98
-      run: |
-        src="$RUNNER_TEMP/leangz"
-        git init -q "$src"
-        git -C "$src" fetch -q --depth 1 https://github.com/digama0/leangz "$LEANGZ_REV"
-        git -C "$src" checkout -q FETCH_HEAD
-        git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/unpack.patch"
-        git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/batch.patch"
-        git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/empty-private.patch"
-        rustup toolchain install stable --profile minimal
-        cargo +stable build --manifest-path "$src/Cargo.toml" --release --locked --bin leantar
-        mkdir -p "$RUNNER_TEMP/leantar-batch"
-        cp "$src/target/release/leantar" "$RUNNER_TEMP/leantar-batch/leantar-batch"
-    # Only main saves: a save from a pull request or the merge queue is
-    # visible to that ref alone, and main's to every branch.
-    - name: Save leantar
-      if: ${{ steps.cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}
-      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: ${{ runner.temp }}/leantar-batch
-        key: ${{ steps.cache.outputs.cache-primary-key }}
-    - name: Put leantar on PATH
+    - name: Download leantar
       shell: bash
       run: |
-        echo "$RUNNER_TEMP/leantar-batch" >> "$GITHUB_PATH"
-        "$RUNNER_TEMP/leantar-batch/leantar-batch" --version
+        "$(python3 ci/leantar_release.py)" --version

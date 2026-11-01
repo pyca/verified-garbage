@@ -8,11 +8,16 @@ before compiling proofs; see [Restoring the CI build cache](lean/README.md#resto
 The README streams it straight from the registry API with
 `ci/fetch_lean_cache.py`, which resumes a dropped connection, into
 `ci/lean_cache.py unpack`, which unpacks its per-module archives with the
-toolchain's `leantar` (install the toolchain first); it needs `zstd` to
-decompress the stream; without the command, `pip install zstandard` and use
-the README's Python one-liner.
-Restoring takes the whole cache (about 1 GB to download, 13 GB unpacked),
-since optimizing a proof means rebuilding it.
+project's `leantar`, which it downloads once (`ci/leantar_release.py`); it needs the `zstd`
+command to decompress the stream: install it (`apt-get install zstd`,
+`brew install zstd`), and only where you cannot, `pip install zstandard` and
+use the README's Python one-liner.
+Restoring takes the whole cache (about 1 GB to download, 18 GB unpacked),
+since optimizing a proof means rebuilding it. `unpack --empty-private`
+writes less than half of that: the modules' private parts are written when a tool
+reads them (`ci/check_lean_public_imports.py` does it itself; the README's
+"Without the private parts" says what else needs `lean_cache.py
+fill-private` first).
 
 After every rebase onto `main` (or pull of it), check how much Lean
 changed upstream before building. Lake rebuilds each changed module and

@@ -49,6 +49,7 @@ import time
 import lean_source_evidence
 import check_lean_imports as import_discipline
 import lean_import_build
+import lean_cache
 from lean_import_graph import VisibilityGraph
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -345,6 +346,10 @@ def shake(mods: list[str], *, built: bool = False, timeout: float | None = None)
     """`lake shake`'s suggestions for `mods`, built first."""
     if not built:
         build_modules(mods, timeout)
+    # Shake reads the private parts of the modules and of all they import,
+    # which a build restored with `--empty-private` leaves empty.
+    if lean_cache.fill_private(LEAN, mods):
+        progress("wrote the private parts shake reads")
     progress(f"lake shake on {len(mods)} modules")
     args = ["lake", "--no-ansi", "shake", "--force"]
     for m in mods:

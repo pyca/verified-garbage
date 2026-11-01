@@ -51,6 +51,7 @@ import subprocess
 import sys
 import tempfile
 
+import lean_cache
 import lean_profile
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
@@ -127,8 +128,12 @@ def main(argv=None):
     kernel = {(r["module"], r["decl"]): r["kernel"] for r in rows}
     lit_times = literal_times(rows)
 
+    chosen = args.target or targets()
+    # `CheckLitImports.lean` is not a module: it reads the private parts of all
+    # it imports, which a build restored with `--empty-private` leaves empty.
+    lean_cache.fill_private(LEAN, [m for t in chosen for m in roots(t)])
     with concurrent.futures.ThreadPoolExecutor(args.j) as pool:
-        lines = [l for ls in pool.map(scan, args.target or targets()) for l in ls]
+        lines = [l for ls in pool.map(scan, chosen) for l in ls]
     if args.raw:
         args.raw.write_text("".join("\t".join(l) + "\n" for l in lines))
 
