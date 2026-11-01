@@ -137,4 +137,88 @@ theorem sgn_mod64 {L F : Nat} (hL : 1 ≤ L) (hF : F < 2 ^ (64 * L)) : sgn L F %
 theorem toInt_ofInt64 {u : Int} (h0 : -2 ^ 63 ≤ u) (h1 : u < 2 ^ 63) : (BitVec.ofInt 64 u).toInt = u := by
   rw [BitVec.toInt_ofInt]; exact Int.bmod_eq_of_le (by omega) (by omega)
 
+
+/-! ## Negating and correcting signed numbers -/
+
+/-- The sign of a number of `n + 1` words is its top word's top bit. -/
+theorem sgn_neg_iff {n W s : Nat} (hW : W < 2 ^ (64 * n)) (hs : s < 2 ^ 64) :
+    sgn (n + 1) (W + 2 ^ (64 * n) * s) < 0 ↔ 2 ^ 63 ≤ s := by
+  have t := top_sign hW hs
+  unfold sgn
+  have hR : W + 2 ^ (64 * n) * s < 2 ^ (64 * (n + 1)) := by
+    have : 2 ^ (64 * (n + 1)) = 2 ^ (64 * n) * 2 ^ 64 := by
+      rw [← Nat.pow_add, show 64 * n + 64 = 64 * (n + 1) by omega]
+    have := Nat.mul_le_mul_left (2 ^ (64 * n)) (show s + 1 ≤ 2 ^ 64 by omega)
+    rw [Nat.mul_add, Nat.mul_one] at this
+    omega
+  split
+  · rename_i h; exact ⟨fun h' => by omega, fun h' => absurd (t.mp h) (by omega)⟩
+  · rename_i h
+    refine ⟨fun _ => Nat.le_of_not_lt fun h' => h (t.mpr h'), fun _ => ?_⟩
+    have : ((W + 2 ^ (64 * n) * s : Nat) : Int) < 2 ^ (64 * (n + 1)) := by exact_mod_cast hR
+    omega
+
+/-- `([x] ^ mask) + neg`, `neg` the mask's bit: `[x]` negated if `neg`. -/
+theorem sgn_cneg {L X Y c : Nat} {neg : Bool} (hL : 1 ≤ L) (hX : X < 2 ^ (64 * L)) (hY : Y < 2 ^ (64 * L))
+    (hr : -2 ^ (64 * L - 1) < sgn L X)
+    (h : Y + 2 ^ (64 * L) * c = (if neg then 2 ^ (64 * L) - 1 - X else X) + neg.toNat) :
+    sgn L Y = if neg then -sgn L X else sgn L X := by
+  obtain ⟨H, h63, e1, e2, e3, e4⟩ := pow_H hL
+  rw [e3] at hr
+  unfold sgn at hr ⊢
+  simp only [e1, e4] at hr ⊢
+  rw [e2] at hX hY h
+  cases neg
+  · simp only [Bool.false_eq_true, ite_false, Bool.toNat_false, Nat.add_zero] at h ⊢
+    have hc : c = 0 := by
+      rcases Nat.eq_zero_or_pos c with hc | hc
+      · exact hc
+      · have := Nat.mul_le_mul_left (2 * H) hc; omega
+    subst hc
+    rw [Nat.mul_zero, Nat.add_zero] at h
+    subst h
+    rfl
+  · simp only [ite_true, Bool.toNat_true] at h ⊢
+    by_cases hx : X < H
+    · rw [ite_eq_left hx]
+      by_cases x0 : X = 0
+      · subst x0
+        have hc : c = 1 := by
+          rcases Nat.lt_or_ge c 2 with hc | hc
+          · rcases Nat.lt_or_ge c 1 with hc' | hc'
+            · have : c = 0 := by omega
+              subst this; omega
+            · omega
+          · have := Nat.mul_le_mul_left (2 * H) hc; omega
+        subst hc
+        have : Y = 0 := by omega
+        subst this
+        rw [ite_eq_left (show (0 : Nat) < H by omega)]; simp
+      · have hc : c = 0 := by
+          rcases Nat.eq_zero_or_pos c with hc | hc
+          · exact hc
+          · have := Nat.mul_le_mul_left (2 * H) hc; omega
+        subst hc
+        rw [ite_eq_right (by omega : ¬ Y < H)]
+        push_cast
+        omega
+    · rw [ite_eq_right hx] at hr ⊢
+      have hc : c = 0 := by
+        rcases Nat.eq_zero_or_pos c with hc | hc
+        · exact hc
+        · have := Nat.mul_le_mul_left (2 * H) hc; omega
+      subst hc
+      rw [ite_eq_left (by omega : Y < H)]
+      push_cast at hr ⊢
+      omega
+
+/-- `[x] += p` modulo `2^(64 L)` if `[x]` is negative. -/
+theorem sgn_addIfNeg {L X Y : Nat} {p : Int} (hL : 1 ≤ L) (hX : X < 2 ^ (64 * L))
+    (hY : (Y : Int) = (X + if sgn L X < 0 then p else 0) % 2 ^ (64 * L))
+    (r₀ : -2 ^ (64 * L - 1) ≤ sgn L X + if sgn L X < 0 then p else 0)
+    (r₁ : sgn L X + (if sgn L X < 0 then p else 0) < 2 ^ (64 * L - 1)) :
+    sgn L Y = sgn L X + if sgn L X < 0 then p else 0 := by
+  refine sgn_of_emod hL r₀ r₁ ?_
+  rw [hY, Int.add_emod, ← sgn_emod hL hX, Int.emod_emod, ← Int.add_emod]
+
 end VG.Proof.Divstep
