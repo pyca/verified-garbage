@@ -33,9 +33,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x3 Impl.Poly1305.AArch64.Radix64.finalize
     stack := 128
-    verified := Proof.Poly1305.AArch64.Radix64.finalize_framed },
-  Spec.Poly1305.finalizeScratchApi.artifact AArch64.target {
-    code := Impl.Poly1305.AArch64.Radix64.finalize
-    verified := Proof.Poly1305.AArch64.Radix64.finalize_verified }]
+    verified := Proof.Poly1305.AArch64.Radix64.finalize_framed }]
 
 end VG.Artifacts.Poly1305.AArch64

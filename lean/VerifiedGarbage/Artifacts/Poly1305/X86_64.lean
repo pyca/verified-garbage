@@ -45,9 +45,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.finalizeApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize
     stack := 136
-    verified := Proof.Poly1305.X86_64.finalize_framed },
-  Spec.Poly1305.finalizeScratchApi.artifact X86_64.target {
-    code := Impl.Poly1305.X86_64.finalize
-    verified := Proof.Poly1305.X86_64.finalize_verified }]
+    verified := Proof.Poly1305.X86_64.finalize_framed }]
 
 end VG.Artifacts.Poly1305.X86_64
