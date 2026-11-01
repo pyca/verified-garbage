@@ -22,5 +22,6 @@ materialize_code Impl.Sm4.RISCV64.ofb
 materialize_code Impl.Sm4.RISCV64.cfbEncrypt
 materialize_code Impl.Sm4.RISCV64.cfbDecrypt
 materialize_code Impl.Sm4.RISCV64.ctr
+materialize_code Impl.Sm4.RISCV64.ctr32
 
 end VG

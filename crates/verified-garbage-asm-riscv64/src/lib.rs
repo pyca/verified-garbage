@@ -349,6 +349,10 @@ pub mod sm4_ctr;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
+pub mod sm4_gcm;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
 pub mod sm4_ofb;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
