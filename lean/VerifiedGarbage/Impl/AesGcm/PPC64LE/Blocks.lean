@@ -203,9 +203,14 @@ The seven nonvolatile argument registers are outside the bulk kernel's set. -/
 def wrapperSaved : List (Reg × Nat) :=
  [(.r25,0),(.r26,8),(.r27,16),(.r28,24),(.r29,32),(.r30,40),(.r31,48)]
 
-def wrapperEntry : List Instr := wrapperSaved.map (fun (r,o) => .store .d r .r9 o) ++
- [.mflr .r0, .store .d .r0 .r9 56, mov .r29 .r3, mov .r28 .r4, mov .r27 .r5,
+def wrapperSaveLR : List Instr := [.mflr .r0,.store .d .r0 .r9 56]
+
+def wrapperConfig : List Instr :=
+ [mov .r29 .r3, mov .r28 .r4, mov .r27 .r5,
   mov .r26 .r6, mov .r30 .r7, mov .r25 .r8, mov .r31 .r9, .lsr .d .r12 .r25 5]
+
+def wrapperEntry : List Instr := wrapperSaved.map (fun (r,o) => .store .d r .r9 o) ++
+ wrapperSaveLR ++ wrapperConfig
 
 def bulkArgs : List Instr :=
  [mov .r3 .r29, mov .r4 .r28, mov .r5 .r27, mov .r6 .r30, .li .r0 7,
