@@ -109,10 +109,10 @@ theorem nonNeg_mask (x : BitVec 64) :
   · rw [show x >>> 63 = 0 from BitVec.eq_of_toNat_eq (by rw [e]; simp only [h, ↓reduceIte]; rfl),
       decide_eq_true (show x.toNat < 2 ^ 63 by omega)]; rfl
 
-/-- The top bit of `n + 1` words holding `x` in two's complement, `|x| ≤ 2^(64 n)`, is `x`'s sign. -/
+/-- The top bit of `n + 1` words holding `x` in two's complement is `x`'s sign. -/
 theorem top_bit {m : Mem} {B : Addr} {e n : Nat} {x : Int}
     (hc : (wv m B e (n + 1) : Int) % 2 ^ (64 * (n + 1)) = x % 2 ^ (64 * (n + 1)))
-    (hx1 : -(2 ^ (64 * n) : Int) ≤ x) (hx2 : x < 2 ^ (64 * n)) :
+    (hx1 : -(2 ^ (64 * n) * 2 ^ 63 : Int) ≤ x) (hx2 : x < 2 ^ (64 * n) * 2 ^ 63) :
     2 ^ 63 ≤ (word m B (e + 8 * n)).toNat ↔ x < 0 := by
   have hs := signW_half m B e n
   have hP : (0 : Int) < 2 ^ (64 * n) * 2 ^ 63 := by positivity
@@ -148,7 +148,7 @@ theorem top_bit {m : Mem} {B : Addr} {e n : Nat} {x : Int}
 /-- `isNeg j`: `rbp` the mask of `x < 0`, `[j]` holding `x` in `n + 1` words. -/
 theorem isNeg_ok {s : State} {B : Addr} {Z w n : Nat} (h : FS B Z w n s) {j : Nat} (hj : j < 26) {x : Int}
     (hc : (wv s.mem B (slot w j) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = x % 2 ^ (64 * (n + 1)))
-    (hx1 : -(2 ^ (64 * n) : Int) ≤ x) (hx2 : x < 2 ^ (64 * n)) :
+    (hx1 : -(2 ^ (64 * n) * 2 ^ 63 : Int) ≤ x) (hx2 : x < 2 ^ (64 * n) * 2 ^ 63) :
     WP isa (.block (isNeg j)) s fun t => t.gpr .rbp = mask (decide (x < 0)) ∧ t.mem = s.mem ∧
       Keep [.rbx, .rax, .rbp] s t := by
   have hn := h.ws.scr.nowrap
@@ -167,7 +167,7 @@ theorem isNeg_ok {s : State} {B : Addr} {Z w n : Nat} (h : FS B Z w n s) {j : Na
 /-- `nonNeg j`: `rbp` the mask of `0 ≤ x`, `[j]` holding `x` in `n + 1` words. -/
 theorem nonNeg_ok {s : State} {B : Addr} {Z w n : Nat} (h : FS B Z w n s) {j : Nat} (hj : j < 26) {x : Int}
     (hc : (wv s.mem B (slot w j) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = x % 2 ^ (64 * (n + 1)))
-    (hx1 : -(2 ^ (64 * n) : Int) ≤ x) (hx2 : x < 2 ^ (64 * n)) :
+    (hx1 : -(2 ^ (64 * n) * 2 ^ 63 : Int) ≤ x) (hx2 : x < 2 ^ (64 * n) * 2 ^ 63) :
     WP isa (.block (nonNeg j)) s fun t => t.gpr .rbp = mask (decide (0 ≤ x)) ∧ t.mem = s.mem ∧
       Keep [.rbx, .rax, .rbp] s t := by
   have hn := h.ws.scr.nowrap
