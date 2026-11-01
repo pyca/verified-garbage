@@ -364,6 +364,11 @@ def nonNeg (j : Nat) : List Instr :=
   base j .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)), .shift .shr .rax 63, .alu .sub .rax (.imm 1),
     .mov .rbp (.reg .rax)] : List Instr)
 
+/-- `rbp` the mask of `[j] < 0` (its word `n`'s top bit set). -/
+def isNeg (j : Nat) : List Instr :=
+  base j .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)), .shift .shr .rax 63, .mov32 .rbp (.imm 0),
+    .alu .sub .rbp (.reg .rax)] : List Instr)
+
 /-- `[t] := [t] - m` if that does not borrow (`n + 1` words). -/
 def csubT : List (Prog isa) :=
   [.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aT .r8 ++ base aP .r10 ++ base aS .rsi), wordLoop 0 subBody,
@@ -376,7 +381,9 @@ def dbl : Prog isa :=
 
 /-- The end: `t := a mod m` (`a + m` if `a < 0`, less `m` if not below
 it), `t := m - t` if `f < 0`, `5 B` doublings and a last subtraction, so
-`t = ±a 2^(5 B) mod m`; `f := |f|`; then `[v] = f` and `[x₂] = t`. -/
+`t = ±a 2^(5 B) mod m`; `|f|` into the cleared `aA` (`f` if `f ≥ 0`, then
+`-f` if `f < 0`), so its words above `n` are zero; then `[v] = |f|` and
+`[x₂] = t`. -/
 def finish (iV iX₂ : Nat) : List (Prog isa) := [
   .block unwin, zeroA aT,
   .block (countN ++ base aA .r8 ++ ([.mov .rax (.mem (ix .r8 .r13)), .shift .shr .rax 63, .mov32 .r15 (.imm 0),
@@ -389,8 +396,9 @@ def finish (iV iX₂ : Nat) : List (Prog isa) := [
   zeroA aA,
   .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
   wordLoop 0 subBody,
-  .block (nonNeg aF ++ base aF .r8 ++ base aS .rsi), wordLoop 0 selBody,
-  copyA iV aF, copyA iX₂ aT]
+  .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
+  .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  copyA iV aA, copyA iX₂ aT]
 
 end Inv
 
