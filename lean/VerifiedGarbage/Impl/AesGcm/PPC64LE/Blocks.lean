@@ -65,21 +65,40 @@ def powerStep (j : Nat) : List Instr := powerNext j ++ powerStore j
 def foldSetup : List Instr := [.vop (.logic .or .v12 .v11 .v11)] ++
  (List.range 7).flatMap powerStep
 
-def entry : List Instr := saved.map (fun (r,o) => .store .d r .r10 o) ++
- [mov .r16 .r10, .addi .r16 .r16 128, mov .r14 .r9, .li .r15 112] ++ setup ++
- [.li .r20 16, .addi .r24 .r16 256, .li .r18 96] ++
- setMask U 1 ++ [.stxvd2x U .r16 .r20] ++
+def hashInit : List Instr :=
  setMask .v13 (Impl.Gcm.Clmul.poly ++ Impl.Gcm.Clmul.poly) ++
  setMask .v11 (Impl.Gcm.Clmul.xInv2Hi ++ 3#64) ++ load .v9 .r8 ++
  [.vop (.sldoi .v9 .v9 .v9 8)] ++ mul .v11 .v9 .v11 .v0 .v13 ++
- [.vop (.sldoi .v11 .v11 .v11 8)] ++ load Y .r14 ++
- [.li .r11 12, .loadRev .w .r8 .r5 .r11, mov .r9 .r3] ++ foldSetup ++ [mov .r11 .r24, .addi .r12 .r4 1]
+ [.vop (.sldoi .v11 .v11 .v11 8)]
 
-def copyKey : List Instr := load .v8 .r9 ++ [.stxvd2x .v8 .r11 .r0]
+def entryPtrs : List Instr :=
+ [mov .r16 .r10, .addi .r16 .r16 128, mov .r14 .r9, .li .r15 112]
+
+def entryConsts : List Instr := [.li .r20 16, .addi .r24 .r16 256, .li .r18 96]
+
+def counterWord : List Instr := [.li .r11 12,.loadRev .w .r8 .r5 .r11]
+
+def initOne : List Instr := setMask U 1 ++ [.stxvd2x U .r16 .r20]
+
+def entryConfig : List Instr := entryPtrs ++ setup ++ entryConsts
+
+def entrySecrets : List Instr := hashInit ++ load Y .r14 ++ counterWord ++ [mov .r9 .r3]
+
+def entryFinish : List Instr := [mov .r11 .r24,.addi .r12 .r4 1]
+
+def entryPrep : List Instr := saved.map (fun (r,o) => .store .d r .r10 o) ++
+ entryConfig ++ initOne ++ entrySecrets
+
+def entry : List Instr := entryPrep ++ foldSetup ++ entryFinish
+
+def cacheLoad (v : VReg) (src dst offset : Reg) : List Instr :=
+ load v src ++ [.stxvd2x v dst offset]
+
+def copyKey : List Instr := cacheLoad .v8 .r9 .r11 .r0
 def cacheStep : List Instr := copyKey ++ [.addi .r9 .r9 16, .addi .r11 .r11 16, .subi .r12 .r12 1]
 
 def cache : Prog isa := .seq (.loop (.block cacheStep) (.nonzero .d .r12))
- (.block ([mov .r3 .r24, .li .r23 64, .li .r24 80] ++ load .v0 .r5 ++ [.stxvd2x .v0 .r16 .r15]))
+ (.block ([mov .r3 .r24, .li .r23 64, .li .r24 80] ++ cacheLoad .v0 .r5 .r16 .r15))
 
 def counterStart : List Instr :=
  [.lxvd2x .v0 .r16 .r15, .lxvd2x U .r16 .r20, .vop (.add false T U U),
