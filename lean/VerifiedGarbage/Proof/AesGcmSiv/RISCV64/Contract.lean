@@ -21,7 +21,10 @@ namespace VG.Proof.AesGcmSiv.RISCV64
 open VG VG.RISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.GcmSiv (ctxCiph keyLen encryptWith decryptWith zeros)
-open VG.Proof.AesGcm.RISCV64 (stkOk stkAll rounds)
+open VG.Proof.AesGcm.RISCV64 (stkOk stkAll)
+
+/-- AES-128's or AES-256's number of rounds. -/
+abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 14
 
 /-- The stack argument, `work`. -/
 abbrev args (s : State) : Region := ⟨stackArgAddr s 0, 8⟩
