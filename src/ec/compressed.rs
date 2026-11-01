@@ -6,7 +6,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
@@ -140,6 +141,7 @@ macro_rules! codec {
     };
 }
 
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P192,
     24,
@@ -148,6 +150,7 @@ codec!(
     vg_ec_p192_decompress_public_key,
     []
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P224,
     28,
@@ -180,6 +183,7 @@ codec!(
         VG_EC_P256_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P384,
     48,
@@ -198,6 +202,7 @@ codec!(
         VG_EC_P384_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P521,
     66,
@@ -210,6 +215,7 @@ codec!(
         VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES
     ]
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     Secp256k1,
     32,
@@ -224,6 +230,7 @@ codec!(
         VG_EC_SECP256K1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     BrainpoolP256r1,
     32,
@@ -238,6 +245,7 @@ codec!(
         VG_EC_BRAINPOOLP256R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     BrainpoolP384r1,
     48,
@@ -252,6 +260,7 @@ codec!(
         VG_EC_BRAINPOOLP384R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
+#[cfg(not(target_arch = "riscv64"))]
 codec!(
     BrainpoolP512r1,
     64,
@@ -344,13 +353,21 @@ mod tests {
             }
         };
     }
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(p192, P192, 24);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(p224, P224, 28);
     cases!(p256, P256, 32);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(p384, P384, 48);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(p521, P521, 66);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(secp256k1, Secp256k1, 32);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp384r1, BrainpoolP384r1, 48);
+    #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp512r1, BrainpoolP512r1, 64);
 }
