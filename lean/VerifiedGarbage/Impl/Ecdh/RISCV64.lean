@@ -128,19 +128,19 @@ end Cfg
 /-! ## Numbers as bytes, and constants -/
 
 /-- `[o] = ` the `n`-word big-endian number at `p + off` (`8 n` bytes), a
-doubleword at a time through `t0` and `t1`, from its least significant. -/
+doubleword at a time through `t0` and `t1`, from its most significant. -/
 def loadNum : Nat → Nat → Reg → Nat → List Instr
   | 0, _, _, _ => []
   | k + 1, o, p, off =>
-    Impl.Words.RISCV64.loadBE64 .t0 .t1 p (off + 8 * k) ++ [.store .d .t0 wb o] ++ loadNum k (o + 8) p off
+    Impl.Words.RISCV64.loadBE64 .t0 .t1 p off ++ [.store .d .t0 wb (o + 8 * k)] ++ loadNum k o p (off + 8)
 
 /-- The `n`-word number at `a` under the mask `a7`, to `q + off` big-endian,
-through `t0` and `t1`, from its least significant word. -/
+through `t0` and `t1`, from its most significant word. -/
 def storeNum : Nat → Nat → Reg → Nat → List Instr
   | 0, _, _, _ => []
   | k + 1, a, q, off =>
-    [.load .d .t0 wb a, .logic .and .t0 .t0 .a7] ++ Impl.Words.RISCV64.storeBE 8 .t0 .t1 q (off + 8 * k) ++
-      storeNum k (a + 8) q off
+    [.load .d .t0 wb (a + 8 * k), .logic .and .t0 .t0 .a7] ++ Impl.Words.RISCV64.storeBE 8 .t0 .t1 q off ++
+      storeNum k a q (off + 8)
 
 /-- `[o] = x mod 2^(64 n)`, `n` words, from immediates through `t0` and `t1`. -/
 def setConst : Nat → Nat → Nat → List Instr
