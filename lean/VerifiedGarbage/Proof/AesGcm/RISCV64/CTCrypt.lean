@@ -70,7 +70,7 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
   · refine WP.mono (splitCtr_ok hs.le hs.data.ok.lt hs.s4 hs.s5) fun s₁ ⟨h6, h7, _, _, hg₁, hk₁⟩ => ?_
     exact ⟨V, h29, h30, h31, hs.s3, hs.env.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-      (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr, hs.data.of_eq hk₁.rd hk₁.wr, hs.le, hs.rounds, h6,
+      (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr, hs.data.of_eq hk₁.rd hk₁.wr hk₁.sp, hs.le, hs.rounds, h6,
       by rw [h7, hnb]⟩
   · refine CT.ite (decide (nb = 0)) (fun s ⟨_, _, _, _, _, _, hd, _, _, _, h7⟩ =>
       eval_zero h7 (by have := hd.ok.lt; omega_arith)) (fun _ => CT.skip) fun hb => ?_
@@ -88,7 +88,7 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
           (a30.trans b30.symm) (a31.trans b31.symm) hr⟩) hc
     · refine WP.mono (ctrArgs_ok he h28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_
       exact ⟨V, h29, h30, h31, he.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
-        (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, hR,
+        (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr hk₂.sp, hj, hR,
         a3, a4, a5, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6],
         by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h7], a8⟩
     · refine CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hd₁, hj₁, hR, a3, a4, a5, a6, a7, a8⟩
@@ -121,7 +121,7 @@ theorem cryptTail_ct {R : Nat} {D : Addr} {n q j : Nat} :
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, a29, a30, a31, _, h₁⟩ ⟨_, _, _, _, b29, b30, b31, _, h₂⟩ =>
       ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => pinK h₁.env h₂.env (h₁.s3.trans h₂.s3.symm)
         (a29.trans b29.symm) (a30.trans b30.symm) (a31.trans b31.symm) hr⟩) hc
-  · refine WP.mono (tailArgs_ok hs.env hs.s3) fun s₂ ⟨_, a3, a4, a5, a6, a7, a8, hg₂, hk₂⟩ => ?_
+  · refine WP.mono (tailArgs_ok (L.v h29 h30 h31) hs.env hs.s3) fun s₂ ⟨_, a3, a4, a5, a6, a7, a8, hg₂, hk₂⟩ => ?_
     exact ⟨V, h29, h30, h31, hs.env.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hs.rounds, a3, a4, a5, a6, a7, a8⟩

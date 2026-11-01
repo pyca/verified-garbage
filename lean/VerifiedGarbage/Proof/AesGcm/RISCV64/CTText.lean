@@ -65,26 +65,26 @@ theorem textAbsorb_ct {D : Addr} {N A T : BitVec 64} : CT (TA c st w sp D N A T)
       have hand := and15 (V .s10)
       have h₃ : WP isa (.block [.logicImm .and .s6 .s10 15]) s fun s₃ =>
           s₃.gpr .s6 = BitVec.ofNat 64 ((V .s10).toNat % 16) ∧
-            (∀ r, r ≠ .t0 → r ≠ .s6 → s₃.gpr r = s.gpr r) ∧ Keeps s s₃ := by
+            (∀ r, r ≠ .s6 → s₃.gpr r = s.gpr r) ∧ Keeps s s₃ := by
         crun [Int.reduceNatCast', h22', hand]
-        exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
+        exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
       refine WP.mono h₃ fun s₃ ⟨h26, hg, hk⟩ => ⟨⟨V, h29, h30, h31, he.keep (fun r hr => hg r
-        (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr⟩, by rw [h26, h22]⟩
+        (by revert r; decide)) hk.sp hk.rd hk.wr⟩, by rw [h26, h22]⟩
   · refine WP.ite (decide (T.toNat = 0)) (eval_zero (by rw [he.ofNat (r := .s11) (by decide), h23]) T.isLt)
       (fun _ => ?_) (fun _ => WP.block_nil ⟨V, h29, h30, h31, h20, h19, h22, h23, he, hd⟩)
     have h22' := he.fr .s10 (by decide)
     have hand := and15 (V .s10)
     have h₃ : WP isa (.block [.logicImm .and .s6 .s10 15]) s fun s₃ =>
         s₃.gpr .s6 = BitVec.ofNat 64 ((V .s10).toNat % 16) ∧
-          (∀ r, r ≠ .t0 → r ≠ .s6 → s₃.gpr r = s.gpr r) ∧ Keeps s s₃ := by
+          (∀ r, r ≠ .s6 → s₃.gpr r = s.gpr r) ∧ Keeps s s₃ := by
       crun [Int.reduceNatCast', h22', hand]
-      exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
+      exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
     refine WP.seq (WP.mono h₃ fun s₃ ⟨h26, hg, hk⟩ => ?_)
-    have he₃ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
+    have he₃ := he.keep (fun r hr => hg r (by revert r; decide)) hk.sp hk.rd hk.wr
     refine WP.mono (WP.with_rdwr (flush_ok (L.v h29 h30 h31) (yo := 16) (.inr rfl)
       (x := List.replicate ((V .s10).toNat % 16) 0) ⟨he₃, rfl⟩ (by simp [h26])))
-      fun s₄ ⟨fl, rd, wr, _⟩ => ⟨V, h29, h30, h31, h20, h19, h22, h23, fl.env,
-        hd.of_eq (rd.trans hk.rd) (wr.trans hk.wr)⟩
+      fun s₄ ⟨fl, rd, wr, sp'⟩ => ⟨V, h29, h30, h31, h20, h19, h22, h23, fl.env,
+        hd.of_eq (rd.trans hk.rd) (wr.trans hk.wr) (sp'.trans hk.sp)⟩
   -- the arguments of `absorb`
   refine CT.seq (J := AbsI c st w sp 16 D N.toNat (T.toNat % 16)) ?_
     (fun s ⟨V, h29, h30, h31, h20, h19, h22, h23, he, hd⟩ => ?_) (absorb_ct L (.inr rfl) (Nat.mod_lt _ (by decide)))
@@ -98,14 +98,14 @@ theorem textAbsorb_ct {D : Addr} {N A T : BitVec 64} : CT (TA c st w sp D N A T)
     · rw [e₁.fr _ (by decide), e₂.fr _ (by decide), a20, b20]
     · rw [e₁.fr _ (by decide), e₂.fr _ (by decide), a23, b23]
   · refine WP.mono textArgs_ok fun s₅ ⟨h24, h25, h26, hg, hk⟩ => ?_
-    have he₅ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
-      (by revert r; decide)) hk.sp hk.rd hk.wr
+    have he₅ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide))
+      hk.sp hk.rd hk.wr
     refine ⟨V, blockAt s₅.mem (V .s2 + BitVec.ofNat 64 240), List.replicate (T.toNat % 16) 0, h29, h30, h31,
       by simp, he₅, ?_, ?_, ?_, ?_, rfl⟩
     · rw [h24, he.fr _ (by decide), h20]
     · rw [h25, he.fr _ (by decide), h19, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [h26, he.fr _ (by decide), h23]; simp
-    · rw [h30, h31]; exact hd.of_eq hk.rd hk.wr
+    · rw [h30, h31]; exact hd.of_eq hk.rd hk.wr hk.sp
 
 end
 
