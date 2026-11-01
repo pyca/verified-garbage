@@ -20,30 +20,367 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224_iterate(key: *const [u8; 384], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
+        // mov eax, DWORD PTR [esp+20]
+        // mov DWORD PTR [eax+272], ebx
+        // mov DWORD PTR [eax+276], esi
+        // mov DWORD PTR [eax+280], edi
+        // mov DWORD PTR [eax+284], ebp
+        // mov ebp, eax
+        // mov esi, DWORD PTR [esp+4]
+        // mov edi, DWORD PTR [esp+12]
+        // mov ebx, ebp
+        // add ebx, 288
+        // mov edx, DWORD PTR [esp+8]
+        // mov ecx, DWORD PTR [edx]
+        // mov DWORD PTR [ebx+64], ecx
+        // mov ecx, DWORD PTR [edx+4]
+        // mov DWORD PTR [ebx+68], ecx
+        // mov ecx, DWORD PTR [edx+8]
+        // mov DWORD PTR [ebx+72], ecx
+        // mov ecx, DWORD PTR [edx+12]
+        // mov DWORD PTR [ebx+76], ecx
+        // mov ecx, DWORD PTR [edx+16]
+        // mov DWORD PTR [ebx+80], ecx
+        // mov ecx, DWORD PTR [edx+20]
+        // mov DWORD PTR [ebx+84], ecx
+        // mov ecx, DWORD PTR [edx+24]
+        // mov DWORD PTR [ebx+88], ecx
+        // mov ecx, 128
+        // mov DWORD PTR [ebx+92], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+96], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+100], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+104], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+108], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+112], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+116], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+120], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+124], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+128], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+132], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+136], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+140], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+144], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+148], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+152], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+156], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+160], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+164], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+168], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+172], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+176], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+180], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+184], ecx
+        // mov ecx, -536608768
+        // mov DWORD PTR [ebx+188], ecx
+        // test edi, edi
         r".octa 0x114b0890000011098891424448b,0x748bc5890000011ca88900000118b889,0x548b00000120c381eb890c247c8b0424,0x84a8b444b89044a8b404b890a8b0824
 .octa 0x8b504b89104a8b4c4b890c4a8b484b89,0x80b9584b89184a8b544b89144a,0xb9604b8900000000b95c4b89,0xb9684b8900000000b9644b89
 .octa 0xb9704b8900000000b96c4b89,0xb9784b8900000000b9744b89,0xb9000000808b8900000000b97c4b89,0x8b8900000000b9000000848b89000000
 .octa 0xb90000008c8b8900000000b900000088,0x8900000000b9000000908b8900000000,0x988b8900000000b9000000948b,0xb90000009c8b8900000000b9
 .octa 0xa48b8900000000b9000000a08b89,0xb9000000a88b8900000000b900,0xb08b8900000000b9000000ac8b8900,0xb9000000b48b8900000000b90000
-.octa 0xbc8b89e0040000b9000000b88b890000,0x8b0b890e8b000002fd840fff85000000,0x4b890c4e8b084b89084e8b044b89044e,0x184e8b144b89144e8b104b89104e8b0c
-.octa 0x8b204b89204e8b1c4b891c4e8b184b89,0x4b892c4e8b284b89284e8b244b89244e,0x384e8b344b89344e8b304b89304e8b2c,0x1b940c083d8893c4b893c4e8b384b89
-.byte 0,0,0,85,81,80,83",
-        r"call {vg_sha512_compress}",
+.octa 0xbc8b89e0040000b9000000b88b890000
+.byte 0x00,0x00,0x00,0x85,0xff
+je 20f
+22:",
+        // mov ecx, DWORD PTR [esi]
+        // mov DWORD PTR [ebx], ecx
+        // mov ecx, DWORD PTR [esi+4]
+        // mov DWORD PTR [ebx+4], ecx
+        // mov ecx, DWORD PTR [esi+8]
+        // mov DWORD PTR [ebx+8], ecx
+        // mov ecx, DWORD PTR [esi+12]
+        // mov DWORD PTR [ebx+12], ecx
+        // mov ecx, DWORD PTR [esi+16]
+        // mov DWORD PTR [ebx+16], ecx
+        // mov ecx, DWORD PTR [esi+20]
+        // mov DWORD PTR [ebx+20], ecx
+        // mov ecx, DWORD PTR [esi+24]
+        // mov DWORD PTR [ebx+24], ecx
+        // mov ecx, DWORD PTR [esi+28]
+        // mov DWORD PTR [ebx+28], ecx
+        // mov ecx, DWORD PTR [esi+32]
+        // mov DWORD PTR [ebx+32], ecx
+        // mov ecx, DWORD PTR [esi+36]
+        // mov DWORD PTR [ebx+36], ecx
+        // mov ecx, DWORD PTR [esi+40]
+        // mov DWORD PTR [ebx+40], ecx
+        // mov ecx, DWORD PTR [esi+44]
+        // mov DWORD PTR [ebx+44], ecx
+        // mov ecx, DWORD PTR [esi+48]
+        // mov DWORD PTR [ebx+48], ecx
+        // mov ecx, DWORD PTR [esi+52]
+        // mov DWORD PTR [ebx+52], ecx
+        // mov ecx, DWORD PTR [esi+56]
+        // mov DWORD PTR [ebx+56], ecx
+        // mov ecx, DWORD PTR [esi+60]
+        // mov DWORD PTR [ebx+60], ecx
+        // mov eax, ebx
+        // add eax, 64
+        // mov ecx, 1
+        // push ebp
+        // push ecx
+        // push eax
+        // push ebx
+        r".octa 0x84b89084e8b044b89044e8b0b890e8b,0x89144e8b104b89104e8b0c4b890c4e8b,0x4e8b1c4b891c4e8b184b89184e8b144b,0x284b89284e8b244b89244e8b204b8920
+.octa 0x89344e8b304b89304e8b2c4b892c4e8b,0xd8893c4b893c4e8b384b89384e8b344b
+.byte 0x83,0xc0,0x40,0xb9,0x01,0x00,0x00,0x00,0x55,0x51,0x50,0x53
+call {vg_sha512_compress}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, ebx
+        // add eax, 64
+        // mov ecx, DWORD PTR [ebx+4]
+        // bswap ecx
+        // mov DWORD PTR [eax], ecx
+        // mov ecx, DWORD PTR [ebx]
+        // bswap ecx
+        // mov DWORD PTR [eax+4], ecx
+        // mov ecx, DWORD PTR [ebx+12]
+        // bswap ecx
+        // mov DWORD PTR [eax+8], ecx
+        // mov ecx, DWORD PTR [ebx+8]
+        // bswap ecx
+        // mov DWORD PTR [eax+12], ecx
+        // mov ecx, DWORD PTR [ebx+20]
+        // bswap ecx
+        // mov DWORD PTR [eax+16], ecx
+        // mov ecx, DWORD PTR [ebx+16]
+        // bswap ecx
+        // mov DWORD PTR [eax+20], ecx
+        // mov ecx, DWORD PTR [ebx+28]
+        // bswap ecx
+        // mov DWORD PTR [eax+24], ecx
+        // mov ecx, DWORD PTR [ebx+24]
+        // bswap ecx
+        // mov DWORD PTR [eax+28], ecx
+        // mov ecx, DWORD PTR [ebx+36]
+        // bswap ecx
+        // mov DWORD PTR [eax+32], ecx
+        // mov ecx, DWORD PTR [ebx+32]
+        // bswap ecx
+        // mov DWORD PTR [eax+36], ecx
+        // mov ecx, DWORD PTR [ebx+44]
+        // bswap ecx
+        // mov DWORD PTR [eax+40], ecx
+        // mov ecx, DWORD PTR [ebx+40]
+        // bswap ecx
+        // mov DWORD PTR [eax+44], ecx
+        // mov ecx, DWORD PTR [ebx+52]
+        // bswap ecx
+        // mov DWORD PTR [eax+48], ecx
+        // mov ecx, DWORD PTR [ebx+48]
+        // bswap ecx
+        // mov DWORD PTR [eax+52], ecx
+        // mov ecx, DWORD PTR [ebx+60]
+        // bswap ecx
+        // mov DWORD PTR [eax+56], ecx
+        // mov ecx, DWORD PTR [ebx+56]
+        // bswap ecx
+        // mov DWORD PTR [eax+60], ecx
+        // mov ecx, 128
+        // mov DWORD PTR [ebx+92], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+96], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+100], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+104], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+108], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+112], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+116], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+120], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+124], ecx
+        // mov ecx, DWORD PTR [esi+192]
+        // mov DWORD PTR [ebx], ecx
+        // mov ecx, DWORD PTR [esi+196]
+        // mov DWORD PTR [ebx+4], ecx
+        // mov ecx, DWORD PTR [esi+200]
+        // mov DWORD PTR [ebx+8], ecx
+        // mov ecx, DWORD PTR [esi+204]
+        // mov DWORD PTR [ebx+12], ecx
+        // mov ecx, DWORD PTR [esi+208]
+        // mov DWORD PTR [ebx+16], ecx
+        // mov ecx, DWORD PTR [esi+212]
+        // mov DWORD PTR [ebx+20], ecx
+        // mov ecx, DWORD PTR [esi+216]
+        // mov DWORD PTR [ebx+24], ecx
+        // mov ecx, DWORD PTR [esi+220]
+        // mov DWORD PTR [ebx+28], ecx
+        // mov ecx, DWORD PTR [esi+224]
+        // mov DWORD PTR [ebx+32], ecx
+        // mov ecx, DWORD PTR [esi+228]
+        // mov DWORD PTR [ebx+36], ecx
+        // mov ecx, DWORD PTR [esi+232]
+        // mov DWORD PTR [ebx+40], ecx
+        // mov ecx, DWORD PTR [esi+236]
+        // mov DWORD PTR [ebx+44], ecx
+        // mov ecx, DWORD PTR [esi+240]
+        // mov DWORD PTR [ebx+48], ecx
+        // mov ecx, DWORD PTR [esi+244]
+        // mov DWORD PTR [ebx+52], ecx
+        // mov ecx, DWORD PTR [esi+248]
+        // mov DWORD PTR [ebx+56], ecx
+        // mov ecx, DWORD PTR [esi+252]
+        // mov DWORD PTR [ebx+60], ecx
+        // mov eax, ebx
+        // add eax, 64
+        // mov ecx, 1
+        // push ebp
+        // push ecx
+        // push eax
+        // push ebx
         r".octa 0x889c90f044b8b40c083d88958585858,0x8b084889c90f0c4b8b044889c90f0b8b,0x8b104889c90f144b8b0c4889c90f084b,0x8b184889c90f1c4b8b144889c90f104b
 .octa 0x8b204889c90f244b8b1c4889c90f184b,0x8b284889c90f2c4b8b244889c90f204b,0x8b304889c90f344b8b2c4889c90f284b,0x8b384889c90f3c4b8b344889c90f304b
 .octa 0xb95c4b8900000080b93c4889c90f384b,0xb9644b8900000000b9604b8900000000,0xb96c4b8900000000b9684b8900000000,0xb9744b8900000000b9704b8900000000
 .octa 0x8b7c4b8900000000b9784b8900000000,0x44b89000000c48e8b0b89000000c08e,0x89000000cc8e8b084b89000000c88e8b,0xd48e8b104b89000000d08e8b0c4b
 .octa 0xdc8e8b184b89000000d88e8b144b8900,0x8b204b89000000e08e8b1c4b89000000,0x4b89000000e88e8b244b89000000e48e,0xf08e8b2c4b89000000ec8e8b28
 .octa 0xf88e8b344b89000000f48e8b304b89,0xd8893c4b89000000fc8e8b384b890000
-.byte 131,192,64,185,1,0,0,0,85,81,80,83",
-        r"call {vg_sha512_compress}",
+.byte 0x83,0xc0,0x40,0xb9,0x01,0x00,0x00,0x00,0x55,0x51,0x50,0x53
+call {vg_sha512_compress}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, ebx
+        // add eax, 64
+        // mov ecx, DWORD PTR [ebx+4]
+        // bswap ecx
+        // mov DWORD PTR [eax], ecx
+        // mov ecx, DWORD PTR [ebx]
+        // bswap ecx
+        // mov DWORD PTR [eax+4], ecx
+        // mov ecx, DWORD PTR [ebx+12]
+        // bswap ecx
+        // mov DWORD PTR [eax+8], ecx
+        // mov ecx, DWORD PTR [ebx+8]
+        // bswap ecx
+        // mov DWORD PTR [eax+12], ecx
+        // mov ecx, DWORD PTR [ebx+20]
+        // bswap ecx
+        // mov DWORD PTR [eax+16], ecx
+        // mov ecx, DWORD PTR [ebx+16]
+        // bswap ecx
+        // mov DWORD PTR [eax+20], ecx
+        // mov ecx, DWORD PTR [ebx+28]
+        // bswap ecx
+        // mov DWORD PTR [eax+24], ecx
+        // mov ecx, DWORD PTR [ebx+24]
+        // bswap ecx
+        // mov DWORD PTR [eax+28], ecx
+        // mov ecx, DWORD PTR [ebx+36]
+        // bswap ecx
+        // mov DWORD PTR [eax+32], ecx
+        // mov ecx, DWORD PTR [ebx+32]
+        // bswap ecx
+        // mov DWORD PTR [eax+36], ecx
+        // mov ecx, DWORD PTR [ebx+44]
+        // bswap ecx
+        // mov DWORD PTR [eax+40], ecx
+        // mov ecx, DWORD PTR [ebx+40]
+        // bswap ecx
+        // mov DWORD PTR [eax+44], ecx
+        // mov ecx, DWORD PTR [ebx+52]
+        // bswap ecx
+        // mov DWORD PTR [eax+48], ecx
+        // mov ecx, DWORD PTR [ebx+48]
+        // bswap ecx
+        // mov DWORD PTR [eax+52], ecx
+        // mov ecx, DWORD PTR [ebx+60]
+        // bswap ecx
+        // mov DWORD PTR [eax+56], ecx
+        // mov ecx, DWORD PTR [ebx+56]
+        // bswap ecx
+        // mov DWORD PTR [eax+60], ecx
+        // mov ecx, 128
+        // mov DWORD PTR [ebx+92], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+96], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+100], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+104], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+108], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+112], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+116], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+120], ecx
+        // mov ecx, 0
+        // mov DWORD PTR [ebx+124], ecx
+        // mov edx, DWORD PTR [esp+16]
+        // mov ecx, DWORD PTR [ebx+64]
+        // xor ecx, DWORD PTR [edx]
+        // mov DWORD PTR [edx], ecx
+        // mov ecx, DWORD PTR [ebx+68]
+        // xor ecx, DWORD PTR [edx+4]
+        // mov DWORD PTR [edx+4], ecx
+        // mov ecx, DWORD PTR [ebx+72]
+        // xor ecx, DWORD PTR [edx+8]
+        // mov DWORD PTR [edx+8], ecx
+        // mov ecx, DWORD PTR [ebx+76]
+        // xor ecx, DWORD PTR [edx+12]
+        // mov DWORD PTR [edx+12], ecx
+        // mov ecx, DWORD PTR [ebx+80]
+        // xor ecx, DWORD PTR [edx+16]
+        // mov DWORD PTR [edx+16], ecx
+        // mov ecx, DWORD PTR [ebx+84]
+        // xor ecx, DWORD PTR [edx+20]
+        // mov DWORD PTR [edx+20], ecx
+        // mov ecx, DWORD PTR [ebx+88]
+        // xor ecx, DWORD PTR [edx+24]
+        // mov DWORD PTR [edx+24], ecx
+        // sub edi, 1
         r".octa 0x889c90f044b8b40c083d88958585858,0x8b084889c90f0c4b8b044889c90f0b8b,0x8b104889c90f144b8b0c4889c90f084b,0x8b184889c90f1c4b8b144889c90f104b
 .octa 0x8b204889c90f244b8b1c4889c90f184b,0x8b284889c90f2c4b8b244889c90f204b,0x8b304889c90f344b8b2c4889c90f284b,0x8b384889c90f3c4b8b344889c90f304b
 .octa 0xb95c4b8900000080b93c4889c90f384b,0xb9644b8900000000b9604b8900000000,0xb96c4b8900000000b9684b8900000000,0xb9744b8900000000b9704b8900000000
 .octa 0x8b7c4b8900000000b9784b8900000000,0x44a33444b8b0a890a33404b8b102454,0x334c4b8b084a89084a33484b8b044a89,0x4b8b104a89104a33504b8b0c4a890c4a
-.octa 0x184a89184a33584b8b144a89144a3354,0x10988be88900ebfffffd05850f01ef83,0x8b00000118b88b00000114b08b000001
-.byte 168,28,1,0,0,195",
-        r".p2align 6",
+.octa 0x184a89184a33584b8b144a89144a3354
+.byte 0x83,0xef,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov eax, ebp
+        // mov ebx, DWORD PTR [eax+272]
+        // mov esi, DWORD PTR [eax+276]
+        // mov edi, DWORD PTR [eax+280]
+        // mov ebp, DWORD PTR [eax+284]
+        // ret
+        r".octa 0xb88b00000114b08b00000110988be889
+.byte 0x18,0x01,0x00,0x00,0x8b,0xa8,0x1c,0x01,0x00,0x00,0xc3
+.p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -65,37 +402,296 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224_iterate(key: *const [u8; 384]
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        // lea esp, [esp-3444]
+        // mov eax, DWORD PTR [esp+3448]
+        // mov DWORD PTR [esp+4], eax
+        // mov eax, DWORD PTR [esp+3452]
+        // mov DWORD PTR [esp+8], eax
+        // mov eax, DWORD PTR [esp+3456]
+        // mov DWORD PTR [esp+12], eax
+        // mov eax, DWORD PTR [esp+3460]
+        // mov DWORD PTR [esp+16], eax
+        // mov eax, DWORD PTR [esp+3464]
+        // mov DWORD PTR [esp+20], eax
+        // mov eax, DWORD PTR [esp+3468]
+        // mov DWORD PTR [esp+24], eax
+        // mov eax, DWORD PTR [esp+3472]
+        // mov DWORD PTR [esp+28], eax
+        // mov eax, esp
+        // add eax, 36
+        // mov DWORD PTR [esp+32], eax
+        // mov eax, DWORD PTR [esp+32]
+        // mov DWORD PTR [eax+1872], ebx
+        // mov DWORD PTR [eax+1876], esi
+        // mov DWORD PTR [eax+1880], edi
+        // mov DWORD PTR [eax+1884], ebp
+        // mov ebp, eax
+        // mov ecx, DWORD PTR [esp+8]
+        // cmp ecx, 129
         r".octa 0x448900000d7824848bfffff28c24a48d,0x24848b0824448900000d7c24848b0424,0x8900000d8424848b0c24448900000d80,0x848b1424448900000d8824848b102444
 .octa 0xd9024848b1824448900000d8c24,0x24448b2024448924c083e0891c244489,0x58b88900000754b08900000750988920,0x8108244c8bc5890000075ca889000007
-.octa 0x81ef895feb0424548b067300000081f9
-.byte 199,160,9,0,0,87",
-        r"call {vg_sha512_224_init}",
+.byte 0xf9,0x81,0x00,0x00,0x00
+jae 20f",
+        // mov edx, DWORD PTR [esp+4]
+        r".byte 0x8b,0x54,0x24,0x04
+jmp 21f
+20:",
+        // mov edi, ebp
+        // add edi, 2464
+        // push edi
+        r".byte 0x89,0xef,0x81,0xc7,0xa0,0x09,0x00,0x00,0x57
+call {vg_sha512_224_init}",
+        // pop eax
+        // mov eax, 0
+        // mov esi, 0
+        // mov ecx, DWORD PTR [esp+8]
+        // mov edx, DWORD PTR [esp+4]
+        // push ebp
+        // push ecx
+        // push edx
+        // push eax
+        // push esi
+        // push edi
         r".octa 0x8b08244c8b00000000be00000000b858
-.byte 84,36,4,85,81,82,80,86,87",
-        r"call {vg_sha512_update_scratch}",
+.byte 0x54,0x24,0x04,0x55,0x51,0x52,0x50,0x56,0x57
+call {vg_sha512_update_scratch}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, DWORD PTR [esp+8]
+        // mov ecx, 0
+        // mov edx, ebp
+        // add edx, 2712
+        // push ebp
+        // push edx
+        // push ecx
+        // push eax
+        // push edi
         r".octa 0x8900000000b90824448b585858585858
-.byte 234,129,194,152,10,0,0,85,82,81,80,87",
-        r"call {vg_sha512_finalize_scratch}",
-        r".octa 0x1cb900000a98c281ea895858585858,0x820c681ee8900000760c781ef890000
-.byte 0,0,85,81,82,86,87",
-        r"call {vg_hmac_sha512_224_init_scratch}",
-        r".octa 0xb60fc801e88900000000b95858585858,0x83000008e09088c801e8890000076090,0x8e0c781ef89e075000000c0f98101c1,0x10244c8b00000080be00000000b80000
-.byte 139,84,36,12,85,81,82,80,86,87",
-        r"call {vg_sha512_update_scratch}",
-        r".octa 0xd88589c80f00000001b8585858585858,0x840fc9851c244c8b00000000bb00000a,0x90b60fc801e88900000000b90000013a,0xc183000009a09088c801e889000008e0
-.octa 0x9a0c781ef89e075000000c0f98101,0xb800000080c6811024748b00,0x52515500000ad8c281ea8900000004b9
-.byte 80,86,87",
-        r"call {vg_sha512_update_scratch}",
+.byte 0xea,0x81,0xc2,0x98,0x0a,0x00,0x00,0x55,0x52,0x51,0x50,0x57
+call {vg_sha512_finalize_scratch}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov edx, ebp
+        // add edx, 2712
+        // mov ecx, 28
+        r".octa 0x1cb900000a98c281ea895858585858
+.byte 0x00,0x00
+21:",
+        // mov edi, ebp
+        // add edi, 1888
+        // mov esi, ebp
+        // add esi, 2080
+        // push ebp
+        // push ecx
+        // push edx
+        // push esi
+        // push edi
+        r".octa 0x820c681ee8900000760c781ef89
+.byte 0x55,0x51,0x52,0x56,0x57
+call {vg_hmac_sha512_224_init_scratch}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ecx, 0
+        r".byte 0x58,0x58,0x58,0x58,0x58,0xb9,0x00,0x00,0x00,0x00
+22:",
+        // mov eax, ebp
+        // add eax, ecx
+        // movzx edx, BYTE PTR [eax+1888]
+        // mov eax, ebp
+        // add eax, ecx
+        // mov BYTE PTR [eax+2272], dl
+        // add ecx, 1
+        // cmp ecx, 192
+        r".octa 0x88c801e8890000076090b60fc801e889
+.byte 0x90,0xe0,0x08,0x00,0x00,0x83,0xc1,0x01,0x81,0xf9,0xc0,0x00,0x00,0x00
+jne 22b",
+        // mov edi, ebp
+        // add edi, 2272
+        // mov eax, 0
+        // mov esi, 128
+        // mov ecx, DWORD PTR [esp+16]
+        // mov edx, DWORD PTR [esp+12]
+        // push ebp
+        // push ecx
+        // push edx
+        // push eax
+        // push esi
+        // push edi
+        r".octa 0x80be00000000b8000008e0c781ef89,0x5756505251550c24548b10244c8b0000
+call {vg_sha512_update_scratch}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 1
+        // bswap eax
+        // mov DWORD PTR [ebp+2776], eax
+        // mov ebx, 0
+        // mov ecx, DWORD PTR [esp+28]
+        // test ecx, ecx
+        r".octa 0xd88589c80f00000001b8585858585858
+.byte 0x0a,0x00,0x00,0xbb,0x00,0x00,0x00,0x00,0x8b,0x4c,0x24,0x1c,0x85,0xc9
+je 23f
+25:",
+        // mov ecx, 0
+        r".byte 0xb9,0x00,0x00,0x00,0x00
+26:",
+        // mov eax, ebp
+        // add eax, ecx
+        // movzx edx, BYTE PTR [eax+2272]
+        // mov eax, ebp
+        // add eax, ecx
+        // mov BYTE PTR [eax+2464], dl
+        // add ecx, 1
+        // cmp ecx, 192
+        r".octa 0x88c801e889000008e090b60fc801e889
+.byte 0x90,0xa0,0x09,0x00,0x00,0x83,0xc1,0x01,0x81,0xf9,0xc0,0x00,0x00,0x00
+jne 26b",
+        // mov edi, ebp
+        // add edi, 2464
+        // mov esi, DWORD PTR [esp+16]
+        // add esi, 128
+        // mov eax, 0
+        // mov ecx, 4
+        // mov edx, ebp
+        // add edx, 2776
+        // push ebp
+        // push ecx
+        // push edx
+        // push eax
+        // push esi
+        // push edi
+        r".octa 0x80c6811024748b000009a0c781ef89,0xc281ea8900000004b900000000b80000
+.byte 0xd8,0x0a,0x00,0x00,0x55,0x51,0x52,0x50,0x56,0x57
+call {vg_sha512_update_scratch}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov edx, ebp
+        // add edx, 2464
+        // mov esi, ebp
+        // add esi, 2080
+        // mov eax, DWORD PTR [esp+16]
+        // add eax, 132
+        // mov ecx, 0
+        // mov edi, ebp
+        // add edi, 2656
+        // push ebp
+        // push edi
+        // push ecx
+        // push eax
+        // push esi
+        // push edx
         r".octa 0xee89000009a0c281ea89585858585858,0xb900000084051024448b00000820c681,0x5051575500000a60c781ef8900000000
-.byte 86,82",
-        r"call {vg_hmac_sha512_224_finalize_scratch}",
-        r".octa 0xfc801e88900000000b9585858585858,0xa7c9088c801e88900000a6090b6,0x760c681ee89e3751cf98301c183,0xea8901e98314244c8b00000a6005e889
-.byte 129,194,124,10,0,0,85,82,81,80,86",
-        r"call {vg_pbkdf2_hmac_sha512_224_iterate}",
-        r".octa 0x7721cf983d9291c244c8b5858585858,0xb9df0118247c8bce8900eb0000001cb9,0x8900000a7c90b60fc801e88900000000,0x858bf301e875f13901c1831088c801f8
-.octa 0xad88589c80f01c083c80f00000ad8,0x8900ebfffffec8850fc3391c24448b00,0x58b88b00000754b08b00000750988be8,0xd7424a48d0000075ca88b000007
-.byte 195",
-        r".p2align 6",
+.byte 0x56,0x52
+call {vg_hmac_sha512_224_finalize_scratch}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ecx, 0
+        r".byte 0x58,0x58,0x58,0x58,0x58,0x58,0xb9,0x00,0x00,0x00,0x00
+27:",
+        // mov eax, ebp
+        // add eax, ecx
+        // movzx edx, BYTE PTR [eax+2656]
+        // mov eax, ebp
+        // add eax, ecx
+        // mov BYTE PTR [eax+2684], dl
+        // add ecx, 1
+        // cmp ecx, 28
+        r".octa 0x88c801e88900000a6090b60fc801e889
+.byte 0x90,0x7c,0x0a,0x00,0x00,0x83,0xc1,0x01,0x83,0xf9,0x1c
+jne 27b",
+        // mov esi, ebp
+        // add esi, 1888
+        // mov eax, ebp
+        // add eax, 2656
+        // mov ecx, DWORD PTR [esp+20]
+        // sub ecx, 1
+        // mov edx, ebp
+        // add edx, 2684
+        // push ebp
+        // push edx
+        // push ecx
+        // push eax
+        // push esi
+        r".octa 0x8b00000a6005e88900000760c681ee89,0x525500000a7cc281ea8901e98314244c
+.byte 0x51,0x50,0x56
+call {vg_pbkdf2_hmac_sha512_224_iterate}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ecx, DWORD PTR [esp+28]
+        // sub ecx, ebx
+        // cmp ecx, 28
+        r".byte 0x58,0x58,0x58,0x58,0x58,0x8b,0x4c,0x24,0x1c,0x29,0xd9,0x83,0xf9,0x1c
+jb 28f",
+        // mov ecx, 28
+        r".byte 0xb9,0x1c,0x00,0x00,0x00
+jmp 29f
+28:
+29:",
+        // mov esi, ecx
+        // mov edi, DWORD PTR [esp+24]
+        // add edi, ebx
+        // mov ecx, 0
+        r".byte 0x89,0xce,0x8b,0x7c,0x24,0x18,0x01,0xdf,0xb9,0x00,0x00,0x00,0x00
+210:",
+        // mov eax, ebp
+        // add eax, ecx
+        // movzx edx, BYTE PTR [eax+2684]
+        // mov eax, edi
+        // add eax, ecx
+        // mov BYTE PTR [eax], dl
+        // add ecx, 1
+        // cmp ecx, esi
+        r".octa 0x88c801f88900000a7c90b60fc801e889
+.byte 0x10,0x83,0xc1,0x01,0x39,0xf1
+jne 210b",
+        // add ebx, esi
+        // mov eax, DWORD PTR [ebp+2776]
+        // bswap eax
+        // add eax, 1
+        // bswap eax
+        // mov DWORD PTR [ebp+2776], eax
+        // mov eax, DWORD PTR [esp+28]
+        // cmp ebx, eax
+        r".octa 0x89c80f01c083c80f00000ad8858bf301
+.byte 0x85,0xd8,0x0a,0x00,0x00,0x8b,0x44,0x24,0x1c,0x39,0xc3
+jne 25b
+jmp 24f
+23:
+24:",
+        // mov eax, ebp
+        // mov ebx, DWORD PTR [eax+1872]
+        // mov esi, DWORD PTR [eax+1876]
+        // mov edi, DWORD PTR [eax+1880]
+        // mov ebp, DWORD PTR [eax+1884]
+        // lea esp, [esp+3444]
+        // ret
+        r".octa 0xb88b00000754b08b00000750988be889,0xd7424a48d0000075ca88b00000758
+.byte 0x00,0xc3
+.p2align 6",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,

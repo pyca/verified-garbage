@@ -20,7 +20,7 @@ as the functions may be split among them differently.
 
 A crate that is not pre-assembled compiles the emitter's output itself: its
 `asm/` (ARM's, see `ci/preassemble.py`) or, where the printer already emits
-the machine code, its `src/` (RISC-V's, AArch64's and PPC64LE's). It must not have both: a `src/`
+the machine code, its `src/` (RISC-V's, AArch64's, PPC64LE's and x86's). It must not have both: a `src/`
 beside an `asm/` would be compiled unchecked.
 
     python3 ci/check_preassembled.py [TARGET ...]
@@ -46,7 +46,6 @@ PREFIX = "verified-garbage-asm-"
 # compared for.
 TRIPLES = {
     "x86_64": "x86_64-unknown-linux-gnu",
-    "x86": "i686-unknown-linux-gnu",
 }
 
 NAKED = re.compile(r"^    core::arch::naked_asm!\(\n.*?^    \)\n", re.M | re.S)

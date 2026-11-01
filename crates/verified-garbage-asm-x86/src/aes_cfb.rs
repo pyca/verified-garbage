@@ -23,14 +23,97 @@ pub const VG_AES_CFB128_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cfb128_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889,0x424448b000000a7840fc0851424448b,0x246c8b00000001bf0c245c8b08244c8b
-.byte 24,85,87,83,81,80",
-        r"call {vg_aes_encrypt_blocks_aesni}",
+        // mov eax, DWORD PTR [esp+24]
+        // mov DWORD PTR [eax+2064], ebx
+        // mov DWORD PTR [eax+2068], esi
+        // mov DWORD PTR [eax+2072], edi
+        // mov DWORD PTR [eax+2076], ebp
+        // mov esi, DWORD PTR [esp+16]
+        // mov eax, DWORD PTR [esp+20]
+        // test eax, eax
+        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
+.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+je 20f
+22:",
+        // mov eax, DWORD PTR [esp+4]
+        // mov ecx, DWORD PTR [esp+8]
+        // mov ebx, DWORD PTR [esp+12]
+        // mov edi, 1
+        // mov ebp, DWORD PTR [esp+24]
+        // push ebp
+        // push edi
+        // push ebx
+        // push ecx
+        // push eax
+        r".octa 0x1bf0c245c8b08244c8b0424448b
+.byte 0x00,0x8b,0x6c,0x24,0x18,0x55,0x57,0x53,0x51,0x50
+call {vg_aes_encrypt_blocks_aesni}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ebx, DWORD PTR [esp+12]
+        // mov eax, DWORD PTR [esi]
+        // mov ecx, DWORD PTR [ebx]
+        // xor eax, ecx
+        // mov DWORD PTR [esi], eax
+        // mov eax, DWORD PTR [esi+4]
+        // mov ecx, DWORD PTR [ebx+4]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+4], eax
+        // mov eax, DWORD PTR [esi+8]
+        // mov ecx, DWORD PTR [ebx+8]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+8], eax
+        // mov eax, DWORD PTR [esi+12]
+        // mov ecx, DWORD PTR [ebx+12]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+12], eax
+        // mov eax, 0
+        // mov DWORD PTR [ebx], eax
+        // mov DWORD PTR [ebx+4], eax
+        // mov DWORD PTR [ebx+8], eax
+        // mov DWORD PTR [ebx+12], eax
+        // mov eax, DWORD PTR [ebx]
+        // mov ecx, DWORD PTR [esi]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx], eax
+        // mov eax, DWORD PTR [ebx+4]
+        // mov ecx, DWORD PTR [esi+4]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+4], eax
+        // mov eax, DWORD PTR [ebx+8]
+        // mov ecx, DWORD PTR [esi+8]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+8], eax
+        // mov eax, DWORD PTR [ebx+12]
+        // mov ecx, DWORD PTR [esi+12]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+12], eax
+        // add esi, 16
+        // mov eax, DWORD PTR [esp+20]
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, DWORD PTR [esp+16]
+        // cmp esi, eax
         r".octa 0x89c8310b8b068b0c245c8b5858585858,0x8b08468b044689c831044b8b04468b06,0x89c8310c4b8b0c468b084689c831084b,0x89084389044389038900000000b80c46
 .octa 0x44e8b04438b0389c8310e8b038b0c43,0x84389c831084e8b08438b044389c831,0x448b10c6830c4389c8310c4e8b0c438b,0xc63910244403c001c001c001c0011424
-.octa 0x810988b1824448b00ebffffff5b850f,0xa88b00000818b88b00000814b08b0000
-.byte 28,8,0,0,195",
-        r".p2align 6",
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov eax, DWORD PTR [esp+24]
+        // mov ebx, DWORD PTR [eax+2064]
+        // mov esi, DWORD PTR [eax+2068]
+        // mov edi, DWORD PTR [eax+2072]
+        // mov ebp, DWORD PTR [eax+2076]
+        // ret
+        r".octa 0x814b08b00000810988b1824448b
+.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -56,14 +139,92 @@ pub const VG_AES_CFB128_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889,0x424448b00000097840fc0851424448b,0x246c8b00000001bf0c245c8b08244c8b
-.byte 24,85,87,83,81,80",
-        r"call {vg_aes_encrypt_blocks_aesni}",
+        // mov eax, DWORD PTR [esp+24]
+        // mov DWORD PTR [eax+2064], ebx
+        // mov DWORD PTR [eax+2068], esi
+        // mov DWORD PTR [eax+2072], edi
+        // mov DWORD PTR [eax+2076], ebp
+        // mov esi, DWORD PTR [esp+16]
+        // mov eax, DWORD PTR [esp+20]
+        // test eax, eax
+        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
+.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+je 20f
+22:",
+        // mov eax, DWORD PTR [esp+4]
+        // mov ecx, DWORD PTR [esp+8]
+        // mov ebx, DWORD PTR [esp+12]
+        // mov edi, 1
+        // mov ebp, DWORD PTR [esp+24]
+        // push ebp
+        // push edi
+        // push ebx
+        // push ecx
+        // push eax
+        r".octa 0x1bf0c245c8b08244c8b0424448b
+.byte 0x00,0x8b,0x6c,0x24,0x18,0x55,0x57,0x53,0x51,0x50
+call {vg_aes_encrypt_blocks_aesni}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ebx, DWORD PTR [esp+12]
+        // mov eax, DWORD PTR [esi]
+        // mov ecx, DWORD PTR [ebx]
+        // xor eax, ecx
+        // mov DWORD PTR [esi], eax
+        // mov eax, DWORD PTR [esi+4]
+        // mov ecx, DWORD PTR [ebx+4]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+4], eax
+        // mov eax, DWORD PTR [esi+8]
+        // mov ecx, DWORD PTR [ebx+8]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+8], eax
+        // mov eax, DWORD PTR [esi+12]
+        // mov ecx, DWORD PTR [ebx+12]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+12], eax
+        // mov eax, DWORD PTR [ebx]
+        // mov ecx, DWORD PTR [esi]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx], eax
+        // mov eax, DWORD PTR [ebx+4]
+        // mov ecx, DWORD PTR [esi+4]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+4], eax
+        // mov eax, DWORD PTR [ebx+8]
+        // mov ecx, DWORD PTR [esi+8]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+8], eax
+        // mov eax, DWORD PTR [ebx+12]
+        // mov ecx, DWORD PTR [esi+12]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+12], eax
+        // add esi, 16
+        // mov eax, DWORD PTR [esp+20]
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, DWORD PTR [esp+16]
+        // cmp esi, eax
         r".octa 0x89c8310b8b068b0c245c8b5858585858,0x8b08468b044689c831044b8b04468b06,0x89c8310c4b8b0c468b084689c831084b,0x44e8b04438b0389c8310e8b038b0c46
-.octa 0x84389c831084e8b08438b044389c831,0x448b10c6830c4389c8310c4e8b0c438b,0xc63910244403c001c001c001c0011424,0x810988b1824448b00ebffffff6b850f
-.octa 0xa88b00000818b88b00000814b08b0000
-.byte 28,8,0,0,195",
-        r".p2align 6",
+.octa 0x84389c831084e8b08438b044389c831,0x448b10c6830c4389c8310c4e8b0c438b,0xc63910244403c001c001c001c0011424
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov eax, DWORD PTR [esp+24]
+        // mov ebx, DWORD PTR [eax+2064]
+        // mov esi, DWORD PTR [eax+2068]
+        // mov edi, DWORD PTR [eax+2072]
+        // mov ebp, DWORD PTR [eax+2076]
+        // ret
+        r".octa 0x814b08b00000810988b1824448b
+.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -85,14 +246,97 @@ pub unsafe extern "C" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8; 240],
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889,0x424448b000000a7840fc0851424448b,0x246c8b00000001bf0c245c8b08244c8b
-.byte 24,85,87,83,81,80",
-        r"call {vg_aes_encrypt_blocks}",
+        // mov eax, DWORD PTR [esp+24]
+        // mov DWORD PTR [eax+2064], ebx
+        // mov DWORD PTR [eax+2068], esi
+        // mov DWORD PTR [eax+2072], edi
+        // mov DWORD PTR [eax+2076], ebp
+        // mov esi, DWORD PTR [esp+16]
+        // mov eax, DWORD PTR [esp+20]
+        // test eax, eax
+        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
+.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+je 20f
+22:",
+        // mov eax, DWORD PTR [esp+4]
+        // mov ecx, DWORD PTR [esp+8]
+        // mov ebx, DWORD PTR [esp+12]
+        // mov edi, 1
+        // mov ebp, DWORD PTR [esp+24]
+        // push ebp
+        // push edi
+        // push ebx
+        // push ecx
+        // push eax
+        r".octa 0x1bf0c245c8b08244c8b0424448b
+.byte 0x00,0x8b,0x6c,0x24,0x18,0x55,0x57,0x53,0x51,0x50
+call {vg_aes_encrypt_blocks}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ebx, DWORD PTR [esp+12]
+        // mov eax, DWORD PTR [esi]
+        // mov ecx, DWORD PTR [ebx]
+        // xor eax, ecx
+        // mov DWORD PTR [esi], eax
+        // mov eax, DWORD PTR [esi+4]
+        // mov ecx, DWORD PTR [ebx+4]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+4], eax
+        // mov eax, DWORD PTR [esi+8]
+        // mov ecx, DWORD PTR [ebx+8]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+8], eax
+        // mov eax, DWORD PTR [esi+12]
+        // mov ecx, DWORD PTR [ebx+12]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+12], eax
+        // mov eax, 0
+        // mov DWORD PTR [ebx], eax
+        // mov DWORD PTR [ebx+4], eax
+        // mov DWORD PTR [ebx+8], eax
+        // mov DWORD PTR [ebx+12], eax
+        // mov eax, DWORD PTR [ebx]
+        // mov ecx, DWORD PTR [esi]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx], eax
+        // mov eax, DWORD PTR [ebx+4]
+        // mov ecx, DWORD PTR [esi+4]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+4], eax
+        // mov eax, DWORD PTR [ebx+8]
+        // mov ecx, DWORD PTR [esi+8]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+8], eax
+        // mov eax, DWORD PTR [ebx+12]
+        // mov ecx, DWORD PTR [esi+12]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+12], eax
+        // add esi, 16
+        // mov eax, DWORD PTR [esp+20]
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, DWORD PTR [esp+16]
+        // cmp esi, eax
         r".octa 0x89c8310b8b068b0c245c8b5858585858,0x8b08468b044689c831044b8b04468b06,0x89c8310c4b8b0c468b084689c831084b,0x89084389044389038900000000b80c46
 .octa 0x44e8b04438b0389c8310e8b038b0c43,0x84389c831084e8b08438b044389c831,0x448b10c6830c4389c8310c4e8b0c438b,0xc63910244403c001c001c001c0011424
-.octa 0x810988b1824448b00ebffffff5b850f,0xa88b00000818b88b00000814b08b0000
-.byte 28,8,0,0,195",
-        r".p2align 6",
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov eax, DWORD PTR [esp+24]
+        // mov ebx, DWORD PTR [eax+2064]
+        // mov esi, DWORD PTR [eax+2068]
+        // mov edi, DWORD PTR [eax+2072]
+        // mov ebp, DWORD PTR [eax+2076]
+        // ret
+        r".octa 0x814b08b00000810988b1824448b
+.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -114,14 +358,92 @@ pub unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], round
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889,0x424448b00000097840fc0851424448b,0x246c8b00000001bf0c245c8b08244c8b
-.byte 24,85,87,83,81,80",
-        r"call {vg_aes_encrypt_blocks}",
+        // mov eax, DWORD PTR [esp+24]
+        // mov DWORD PTR [eax+2064], ebx
+        // mov DWORD PTR [eax+2068], esi
+        // mov DWORD PTR [eax+2072], edi
+        // mov DWORD PTR [eax+2076], ebp
+        // mov esi, DWORD PTR [esp+16]
+        // mov eax, DWORD PTR [esp+20]
+        // test eax, eax
+        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
+.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+je 20f
+22:",
+        // mov eax, DWORD PTR [esp+4]
+        // mov ecx, DWORD PTR [esp+8]
+        // mov ebx, DWORD PTR [esp+12]
+        // mov edi, 1
+        // mov ebp, DWORD PTR [esp+24]
+        // push ebp
+        // push edi
+        // push ebx
+        // push ecx
+        // push eax
+        r".octa 0x1bf0c245c8b08244c8b0424448b
+.byte 0x00,0x8b,0x6c,0x24,0x18,0x55,0x57,0x53,0x51,0x50
+call {vg_aes_encrypt_blocks}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov ebx, DWORD PTR [esp+12]
+        // mov eax, DWORD PTR [esi]
+        // mov ecx, DWORD PTR [ebx]
+        // xor eax, ecx
+        // mov DWORD PTR [esi], eax
+        // mov eax, DWORD PTR [esi+4]
+        // mov ecx, DWORD PTR [ebx+4]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+4], eax
+        // mov eax, DWORD PTR [esi+8]
+        // mov ecx, DWORD PTR [ebx+8]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+8], eax
+        // mov eax, DWORD PTR [esi+12]
+        // mov ecx, DWORD PTR [ebx+12]
+        // xor eax, ecx
+        // mov DWORD PTR [esi+12], eax
+        // mov eax, DWORD PTR [ebx]
+        // mov ecx, DWORD PTR [esi]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx], eax
+        // mov eax, DWORD PTR [ebx+4]
+        // mov ecx, DWORD PTR [esi+4]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+4], eax
+        // mov eax, DWORD PTR [ebx+8]
+        // mov ecx, DWORD PTR [esi+8]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+8], eax
+        // mov eax, DWORD PTR [ebx+12]
+        // mov ecx, DWORD PTR [esi+12]
+        // xor eax, ecx
+        // mov DWORD PTR [ebx+12], eax
+        // add esi, 16
+        // mov eax, DWORD PTR [esp+20]
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, eax
+        // add eax, DWORD PTR [esp+16]
+        // cmp esi, eax
         r".octa 0x89c8310b8b068b0c245c8b5858585858,0x8b08468b044689c831044b8b04468b06,0x89c8310c4b8b0c468b084689c831084b,0x44e8b04438b0389c8310e8b038b0c46
-.octa 0x84389c831084e8b08438b044389c831,0x448b10c6830c4389c8310c4e8b0c438b,0xc63910244403c001c001c001c0011424,0x810988b1824448b00ebffffff6b850f
-.octa 0xa88b00000818b88b00000814b08b0000
-.byte 28,8,0,0,195",
-        r".p2align 6",
+.octa 0x84389c831084e8b08438b044389c831,0x448b10c6830c4389c8310c4e8b0c438b,0xc63910244403c001c001c001c0011424
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov eax, DWORD PTR [esp+24]
+        // mov ebx, DWORD PTR [eax+2064]
+        // mov esi, DWORD PTR [eax+2068]
+        // mov edi, DWORD PTR [eax+2072]
+        // mov ebp, DWORD PTR [eax+2076]
+        // ret
+        r".octa 0x814b08b00000810988b1824448b
+.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

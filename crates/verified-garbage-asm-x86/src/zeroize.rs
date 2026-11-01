@@ -14,9 +14,62 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x5eac10824548b04244c8b00000000b8,0xc41890841890441890189217400fa83,0x8320c1831c4189184189144189104189,0x7e28302eac10824548b00ebe17501ea
-.octa 0xebf67501ea8304c18301890c7400fa83,0x8301880c7400fa8303e2830824548b00
-.byte 193,1,131,234,1,117,246,235,0,195",
-        r".p2align 6",
+        // mov eax, 0
+        // mov ecx, DWORD PTR [esp+4]
+        // mov edx, DWORD PTR [esp+8]
+        // shr edx, 5
+        // cmp edx, 0
+        r".octa 0x5eac10824548b04244c8b00000000b8
+.byte 0x83,0xfa,0x00
+je 20f
+22:",
+        // mov DWORD PTR [ecx], eax
+        // mov DWORD PTR [ecx+4], eax
+        // mov DWORD PTR [ecx+8], eax
+        // mov DWORD PTR [ecx+12], eax
+        // mov DWORD PTR [ecx+16], eax
+        // mov DWORD PTR [ecx+20], eax
+        // mov DWORD PTR [ecx+24], eax
+        // mov DWORD PTR [ecx+28], eax
+        // add ecx, 32
+        // sub edx, 1
+        r".octa 0x41891041890c41890841890441890189
+.byte 0x14,0x89,0x41,0x18,0x89,0x41,0x1c,0x83,0xc1,0x20,0x83,0xea,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov edx, DWORD PTR [esp+8]
+        // shr edx, 2
+        // and edx, 7
+        // cmp edx, 0
+        r".byte 0x8b,0x54,0x24,0x08,0xc1,0xea,0x02,0x83,0xe2,0x07,0x83,0xfa,0x00
+je 23f
+25:",
+        // mov DWORD PTR [ecx], eax
+        // add ecx, 4
+        // sub edx, 1
+        r".byte 0x89,0x01,0x83,0xc1,0x04,0x83,0xea,0x01
+jne 25b
+jmp 24f
+23:
+24:",
+        // mov edx, DWORD PTR [esp+8]
+        // and edx, 3
+        // cmp edx, 0
+        r".byte 0x8b,0x54,0x24,0x08,0x83,0xe2,0x03,0x83,0xfa,0x00
+je 26f
+28:",
+        // mov BYTE PTR [ecx], al
+        // add ecx, 1
+        // sub edx, 1
+        r".byte 0x88,0x01,0x83,0xc1,0x01,0x83,0xea,0x01
+jne 28b
+jmp 27f
+26:
+27:",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }

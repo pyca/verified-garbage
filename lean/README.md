@@ -108,7 +108,7 @@ never import proofs.
    Rust crate contains exactly the verified code. Each crate compiles the
    same code with its machine code as data, `src/`, written by
    `ci/preassemble.py` (but ARM's, which compiles `asm/`, and RISC-V's,
-   AArch64's and PPC64LE's, whose printers emit the machine code themselves,
+   AArch64's, PPC64LE's and x86's, whose printers emit the machine code themselves,
    `TCB/<ISA>/Encode.lean`, and whose emitter writes `src/`), and CI checks
    that it compiles to the same sections, symbols and relocations as `asm/`
    (`ci/check_preassembled.py`).

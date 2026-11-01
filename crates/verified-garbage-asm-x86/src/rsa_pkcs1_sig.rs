@@ -31,57 +31,1053 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0x87424848bfffff7c024a48d57565553,0x8900000b9e850f0000085824843b0000,0x44890000085824848b24048940c083e0,0x24848b082444890000088024848b0424
-.octa 0x890000085c24848b0c24448900000884,0x848b142444890000086024848b102444,0x85824848b182444890000087024,0x8b202444890000087824848b1c244489
-.byte 132,36,124,8,0,0,137,68,36,36",
-        r"call {vg_rsa_public_precomputed_checked}",
-        r".octa 0x58248c8b00000440c781e78928244489,0x86824b48b0000086424948b000008,0xd7840f00fa830000086c24ac8b00,0xad840f02fa83000000c2840f01fa8300
-.octa 0xf04fa8300000098840f03fa83000000,0x83617406fa83727405fa830000008384,0xfa832e7409fa833f7408fa83507407fa,0xb800000800bb0c740bfa831d740a
-.octa 0xaeb00000040b800000053bb0aeb0000,0x33bb0aeb00000030b800000043bb,0x1cb80000002fbb0aeb00000020b800,0xaeb00000020b800000033bb0aeb0000
-.octa 0x53bb0aeb0000001cb80000002fbb,0x30b800000043bb0aeb00000040b800,0xaeb00000020b800000033bb0aeb0000,0x23bb0aeb0000001cb80000002fbb
-.octa 0x10b800000022bb0aeb00000014b800,0x390bc083d889000009bb850fc5390000,0xc783078800000000b8000009a7820fc1,0x83d829c88901c783078800000001b801
-.octa 0xeb8301c7830788000000ffb8c38903e8,0xfa8301c783078800000000b8f67501,0x83000007f9840f01fa830000089d840f,0x661840f03fa830000072d840f02fa
-.octa 0xc9840f05fa8300000595840f04fa8300,0xf07fa83000003fd840f06fa83000004,0xfa8300000265840f08fa830000033184,0xcd840f0afa8300000199840f09
-.octa 0x8800000030b8000000bee905740bfa83,0x30b801c783078800000051b801c78307,0x8307880000000db801c7830788000000,0x9b801c783078800000006b801c7
-.octa 0x1c783078800000060b801c783078800,0x8800000048b801c783078800000086b8,0x65b801c783078800000001b801c78307,0x83078800000003b801c7830788000000
-.octa 0x2b801c783078800000004b801c7,0x1c78307880000000ab801c783078800,0x8800000000b801c783078800000005b8,0x40b801c783078800000004b801c78307
-.octa 0x30b8000000bee901c7830788000000,0xc783078800000041b801c78307880000,0xdb801c783078800000030b801,0xb801c783078800000006b801c7830788
-.octa 0x78800000060b801c783078800000009,0x48b801c783078800000086b801c783,0xc783078800000001b801c78307880000,0x3b801c783078800000065b801
-.octa 0xb801c783078800000004b801c7830788,0x78800000009b801c783078800000002,0xb801c783078800000005b801c783,0xc783078800000004b801c78307880000
-.octa 0xbee901c783078800000030b801,0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000
-.octa 0x60b801c783078800000009b801c7,0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307
-.octa 0x83078800000004b801c7830788000000,0x8b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
-.octa 0xbee901c783078800000020b801c78307,0x2db801c783078800000030b8000000,0xc783078800000030b801c78307880000,0x6b801c78307880000000db801
-.octa 0xb801c783078800000009b801c7830788,0x78800000086b801c783078800000060,0x1b801c783078800000048b801c783,0xc783078800000065b801c78307880000
-.octa 0x4b801c783078800000003b801,0xb801c783078800000002b801c7830788,0x78800000005b801c783078800000007,0x4b801c783078800000000b801c783
-.octa 0xc78307880000001cb801c78307880000,0x1c783078800000030b8000000bee901,0x8800000030b801c783078800000031b8,0x6b801c78307880000000db801c78307
-.octa 0x83078800000009b801c7830788000000,0x86b801c783078800000060b801c7,0x1c783078800000048b801c783078800,0x8800000065b801c783078800000001b8
-.octa 0x4b801c783078800000003b801c78307,0x83078800000002b801c7830788000000,0x5b801c783078800000006b801c7,0x1c783078800000000b801c783078800
-.octa 0x8800000020b801c783078800000004b8,0x78800000030b8000000bee901c78307,0x30b801c78307880000002db801c783,0xc78307880000000db801c78307880000
-.octa 0x9b801c783078800000006b801,0xb801c783078800000060b801c7830788,0x78800000048b801c783078800000086,0x65b801c783078800000001b801c783
-.octa 0xc783078800000003b801c78307880000,0x2b801c783078800000004b801,0xb801c783078800000005b801c7830788,0x78800000000b801c783078800000005
-.octa 0x1cb801c783078800000004b801c783,0x30b8000000bee901c78307880000,0x1c783078800000051b801c783078800,0x880000000db801c783078800000030b8
-.octa 0x9b801c783078800000006b801c78307,0x83078800000060b801c7830788000000,0x48b801c783078800000086b801c7,0x1c783078800000001b801c783078800
-.octa 0x8800000003b801c783078800000065b8,0x2b801c783078800000004b801c78307,0x83078800000003b801c7830788000000,0xb801c783078800000005b801c7
-.octa 0x1c783078800000004b801c783078800,0xb8000000bee901c783078800000040b8,0x78800000041b801c783078800000030,0xdb801c783078800000030b801c783
-.octa 0xc783078800000006b801c78307880000,0x60b801c783078800000009b801,0xb801c783078800000086b801c7830788,0x78800000001b801c783078800000048
-.octa 0x3b801c783078800000065b801c783,0xc783078800000004b801c78307880000,0x2b801c783078800000002b801,0xb801c783078800000005b801c7830788
-.octa 0x78800000004b801c783078800000000,0xbee901c783078800000030b801c783,0x31b801c783078800000030b80000,0x1c783078800000030b801c783078800
-.octa 0x8800000006b801c78307880000000db8,0x60b801c783078800000009b801c78307,0x83078800000086b801c7830788000000,0x1b801c783078800000048b801c7
-.octa 0x1c783078800000065b801c783078800,0x8800000004b801c783078800000003b8,0x1b801c783078800000002b801c78307,0x83078800000005b801c7830788000000
-.octa 0x4b801c783078800000000b801c7,0x1c783078800000020b801c783078800,0xb801c783078800000030b8000000bee9,0x78800000030b801c78307880000002d
-.octa 0x6b801c78307880000000db801c783,0xc783078800000009b801c78307880000,0x86b801c783078800000060b801,0xb801c783078800000048b801c7830788
-.octa 0x78800000065b801c783078800000001,0x4b801c783078800000003b801c783,0xc783078800000002b801c78307880000,0x5b801c783078800000004b801
-.octa 0xb801c783078800000000b801c7830788,0x7880000001cb801c783078800000004,0x83078800000030b800000096e901c783,0x30b801c783078800000021b801c7
-.octa 0x1c783078800000009b801c783078800,0x8800000005b801c783078800000006b8,0xeb801c78307880000002bb801c78307,0x83078800000003b801c7830788000000
-.octa 0x1ab801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8,0xb4e901c783078800000014b801c78307
-.octa 0x20b801c783078800000030b8000000,0xc783078800000030b801c78307880000,0x6b801c78307880000000cb801,0xb801c783078800000008b801c7830788
-.octa 0x78800000086b801c78307880000002a,0x86b801c783078800000048b801c783,0xc7830788000000f7b801c78307880000,0x2b801c78307880000000db801
-.octa 0xb801c783078800000005b801c7830788,0x78800000000b801c783078800000005,0x10b801c783078800000004b801c783,0x8301c683078806b60f01c78307880000
-.octa 0xb805eb00000001b8f07501ed8301c7,0x89487400f88300000000b805eb000000,0x58248c8b00000440c781e78940c683e6,0xd03117b60f06b60f00000000bd000008
-.octa 0xe87500f98301e98301c78301c683c509,0x8b01f0831fe8c1e809e82900000000b8,0xb805eb00000000b805ebc82128244c,0x246c8b243c8b0000084024a48d000000
-.byte 8,139,116,36,4,91,91,91,91,195",
-        r".p2align 6",
+        // push ebx
+        // push ebp
+        // push esi
+        // push edi
+        // lea esp, [esp-2112]
+        // mov eax, DWORD PTR [esp+2164]
+        // cmp eax, DWORD PTR [esp+2136]
+        r".octa 0x87424848bfffff7c024a48d57565553
+.byte 0x00,0x00,0x3b,0x84,0x24,0x58,0x08,0x00,0x00
+jne 20f",
+        // mov eax, esp
+        // add eax, 64
+        // mov DWORD PTR [esp], eax
+        // mov eax, DWORD PTR [esp+2136]
+        // mov DWORD PTR [esp+4], eax
+        // mov eax, DWORD PTR [esp+2176]
+        // mov DWORD PTR [esp+8], eax
+        // mov eax, DWORD PTR [esp+2180]
+        // mov DWORD PTR [esp+12], eax
+        // mov eax, DWORD PTR [esp+2140]
+        // mov DWORD PTR [esp+16], eax
+        // mov eax, DWORD PTR [esp+2144]
+        // mov DWORD PTR [esp+20], eax
+        // mov eax, DWORD PTR [esp+2160]
+        // mov DWORD PTR [esp+24], eax
+        // mov eax, DWORD PTR [esp+2136]
+        // mov DWORD PTR [esp+28], eax
+        // mov eax, DWORD PTR [esp+2168]
+        // mov DWORD PTR [esp+32], eax
+        // mov eax, DWORD PTR [esp+2172]
+        // mov DWORD PTR [esp+36], eax
+        r".octa 0x890000085824848b24048940c083e089,0x848b082444890000088024848b042444,0x85c24848b0c2444890000088424,0x8b142444890000086024848b10244489
+.octa 0x85824848b18244489000008702484,0x202444890000087824848b1c24448900
+.byte 0x8b,0x84,0x24,0x7c,0x08,0x00,0x00,0x89,0x44,0x24,0x24
+call {vg_rsa_public_precomputed_checked}",
+        // mov DWORD PTR [esp+40], eax
+        // mov edi, esp
+        // add edi, 1088
+        // mov ecx, DWORD PTR [esp+2136]
+        // mov edx, DWORD PTR [esp+2148]
+        // mov esi, DWORD PTR [esp+2152]
+        // mov ebp, DWORD PTR [esp+2156]
+        // cmp edx, 0
+        r".octa 0x58248c8b00000440c781e78928244489,0x86824b48b0000086424948b000008
+.byte 0x00,0x8b,0xac,0x24,0x6c,0x08,0x00,0x00,0x83,0xfa,0x00
+je 22f",
+        // cmp edx, 1
+        r".byte 0x83,0xfa,0x01
+je 24f",
+        // cmp edx, 2
+        r".byte 0x83,0xfa,0x02
+je 26f",
+        // cmp edx, 3
+        r".byte 0x83,0xfa,0x03
+je 28f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 210f",
+        // cmp edx, 5
+        r".byte 0x83,0xfa,0x05
+je 212f",
+        // cmp edx, 6
+        r".byte 0x83,0xfa,0x06
+je 214f",
+        // cmp edx, 7
+        r".byte 0x83,0xfa,0x07
+je 216f",
+        // cmp edx, 8
+        r".byte 0x83,0xfa,0x08
+je 218f",
+        // cmp edx, 9
+        r".byte 0x83,0xfa,0x09
+je 220f",
+        // cmp edx, 10
+        r".byte 0x83,0xfa,0x0a
+je 222f",
+        // cmp edx, 11
+        r".byte 0x83,0xfa,0x0b
+je 224f",
+        // mov ebx, 2048
+        // mov eax, 0
+        r".byte 0xbb,0x00,0x08,0x00,0x00,0xb8,0x00,0x00,0x00,0x00
+jmp 225f
+224:",
+        // mov ebx, 83
+        // mov eax, 64
+        r".byte 0xbb,0x53,0x00,0x00,0x00,0xb8,0x40,0x00,0x00,0x00
+225:
+jmp 223f
+222:",
+        // mov ebx, 67
+        // mov eax, 48
+        r".byte 0xbb,0x43,0x00,0x00,0x00,0xb8,0x30,0x00,0x00,0x00
+223:
+jmp 221f
+220:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+221:
+jmp 219f
+218:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+219:
+jmp 217f
+216:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+217:
+jmp 215f
+214:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+215:
+jmp 213f
+212:",
+        // mov ebx, 83
+        // mov eax, 64
+        r".byte 0xbb,0x53,0x00,0x00,0x00,0xb8,0x40,0x00,0x00,0x00
+213:
+jmp 211f
+210:",
+        // mov ebx, 67
+        // mov eax, 48
+        r".byte 0xbb,0x43,0x00,0x00,0x00,0xb8,0x30,0x00,0x00,0x00
+211:
+jmp 29f
+28:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+29:
+jmp 27f
+26:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+27:
+jmp 25f
+24:",
+        // mov ebx, 35
+        // mov eax, 20
+        r".byte 0xbb,0x23,0x00,0x00,0x00,0xb8,0x14,0x00,0x00,0x00
+25:
+jmp 23f
+22:",
+        // mov ebx, 34
+        // mov eax, 16
+        r".byte 0xbb,0x22,0x00,0x00,0x00,0xb8,0x10,0x00,0x00,0x00
+23:",
+        // cmp ebp, eax
+        r".byte 0x39,0xc5
+jne 226f",
+        // mov eax, ebx
+        // add eax, 11
+        // cmp ecx, eax
+        r".byte 0x89,0xd8,0x83,0xc0,0x0b,0x39,0xc1
+jb 228f",
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, ecx
+        // sub eax, ebx
+        // sub eax, 3
+        // mov ebx, eax
+        // mov eax, 255
+        r".octa 0x8800000001b801c783078800000000b8,0xffb8c38903e883d829c88901c78307
+.byte 0x00,0x00
+230:",
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // sub ebx, 1
+        r".byte 0x88,0x07,0x83,0xc7,0x01,0x83,0xeb,0x01
+jne 230b",
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // cmp edx, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01,0x83,0xfa,0x00
+je 231f",
+        // cmp edx, 1
+        r".byte 0x83,0xfa,0x01
+je 233f",
+        // cmp edx, 2
+        r".byte 0x83,0xfa,0x02
+je 235f",
+        // cmp edx, 3
+        r".byte 0x83,0xfa,0x03
+je 237f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 239f",
+        // cmp edx, 5
+        r".byte 0x83,0xfa,0x05
+je 241f",
+        // cmp edx, 6
+        r".byte 0x83,0xfa,0x06
+je 243f",
+        // cmp edx, 7
+        r".byte 0x83,0xfa,0x07
+je 245f",
+        // cmp edx, 8
+        r".byte 0x83,0xfa,0x08
+je 247f",
+        // cmp edx, 9
+        r".byte 0x83,0xfa,0x09
+je 249f",
+        // cmp edx, 10
+        r".byte 0x83,0xfa,0x0a
+je 251f",
+        // cmp edx, 11
+        r".byte 0x83,0xfa,0x0b
+je 253f
+jmp 254f
+253:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 81
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 10
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 64
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0xab801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x40,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+254:
+jmp 252f
+251:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 65
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000041b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x9b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x30,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+252:
+jmp 250f
+249:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 8
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x8b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+250:
+jmp 248f
+247:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 7
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x7b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+248:
+jmp 246f
+245:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x6b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+246:
+jmp 244f
+243:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x5b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+244:
+jmp 242f
+241:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 81
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 64
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x3b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x40,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+242:
+jmp 240f
+239:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 65
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000041b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x2b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x30,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+240:
+jmp 238f
+237:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x1b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+238:
+jmp 236f
+235:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x4b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+236:
+jmp 234f
+233:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 33
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 43
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 14
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 26
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 20
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000021b801c783078800000030b8,0x9b801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x2bb801c783078800000005b801c7
+.octa 0x1c78307880000000eb801c783078800,0x8800000002b801c783078800000003b8,0x5b801c78307880000001ab801c78307,0x83078800000000b801c7830788000000
+.octa 0x14b801c783078800000004b801c7
+.byte 0x00,0x88,0x07,0x83,0xc7,0x01
+234:
+jmp 232f
+231:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 12
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 8
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 42
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 247
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 16
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000020b801c783078800000030b8,0xcb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x2ab801c783078800000008b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000086b801c783078800000048b8,0xdb801c7830788000000f7b801c78307,0x83078800000002b801c7830788000000
+.octa 0x5b801c783078800000005b801c7,0x1c783078800000000b801c783078800,0x8800000010b801c783078800000004b8
+.byte 0x07,0x83,0xc7,0x01
+232:
+255:",
+        // movzx eax, BYTE PTR [esi]
+        // mov BYTE PTR [edi], al
+        // add esi, 1
+        // add edi, 1
+        // sub ebp, 1
+        r".byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xed,0x01
+jne 255b",
+        // mov eax, 1
+        r".byte 0xb8,0x01,0x00,0x00,0x00
+jmp 229f
+228:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+229:
+jmp 227f
+226:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+227:",
+        // cmp eax, 0
+        r".byte 0x83,0xf8,0x00
+je 256f",
+        // mov esi, esp
+        // add esi, 64
+        // mov edi, esp
+        // add edi, 1088
+        // mov ecx, DWORD PTR [esp+2136]
+        // mov ebp, 0
+        r".octa 0x248c8b00000440c781e78940c683e689
+.byte 0x58,0x08,0x00,0x00,0xbd,0x00,0x00,0x00,0x00
+258:",
+        // movzx eax, BYTE PTR [esi]
+        // movzx edx, BYTE PTR [edi]
+        // xor eax, edx
+        // or ebp, eax
+        // add esi, 1
+        // add edi, 1
+        // sub ecx, 1
+        // cmp ecx, 0
+        r".octa 0x1c78301c683c509d03117b60f06b60f
+.byte 0x83,0xe9,0x01,0x83,0xf9,0x00
+jne 258b",
+        // mov eax, 0
+        // sub eax, ebp
+        // or eax, ebp
+        // shr eax, 31
+        // xor eax, 1
+        // mov ecx, DWORD PTR [esp+40]
+        // and eax, ecx
+        r".octa 0x8b01f0831fe8c1e809e82900000000b8
+.byte 0x4c,0x24,0x28,0x21,0xc8
+jmp 257f
+256:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+257:
+jmp 21f
+20:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+21:",
+        // lea esp, [esp+2112]
+        // mov edi, DWORD PTR [esp]
+        // mov ebp, DWORD PTR [esp+8]
+        // mov esi, DWORD PTR [esp+4]
+        // pop ebx
+        // pop ebx
+        // pop ebx
+        // pop ebx
+        // ret
+        r".octa 0x748b08246c8b243c8b0000084024a48d
+.byte 0x24,0x04,0x5b,0x5b,0x5b,0x5b,0xc3
+.p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -116,60 +1112,1098 @@ pub unsafe extern "C" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: us
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_pkcs1_recover_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0x87424848bfffff7c024a48d57565553,0x8900000c0e850f0000086024843b0000,0x44890000086024848b24048940c083e0,0x24848b082444890000088024848b0424
-.octa 0x890000086424848b0c24448900000884,0x848b142444890000086824848b102444,0x86024848b182444890000087024,0x8b202444890000087824848b1c244489
-.byte 132,36,124,8,0,0,137,68,36,36",
-        r"call {vg_rsa_public_precomputed_checked}",
-        r".octa 0x60248c8b00000440c781e78928244489,0x85824ac8b0000086c24948b000008,0x24b42b0000086024b40340c683e68900,0x1fa83000000d7840f00fa8300000858
-.octa 0x83000000ad840f02fa83000000c2840f,0x83840f04fa8300000098840f03fa,0x507407fa83617406fa83727405fa8300,0x831d740afa832e7409fa833f7408fa83
-.octa 0xaeb00000000b800000800bb0c740bfa,0x43bb0aeb00000040b800000053bb,0x20b800000033bb0aeb00000030b800,0xaeb0000001cb80000002fbb0aeb0000
-.octa 0x2fbb0aeb00000020b800000033bb,0x40b800000053bb0aeb0000001cb800,0xaeb00000030b800000043bb0aeb0000,0x2fbb0aeb00000020b800000033bb
-.octa 0x14b800000023bb0aeb0000001cb800,0xc53900000010b800000022bb0aeb0000,0xa7820fc1390bc083d889000009bb850f,0x1b801c783078800000000b8000009
-.octa 0xc38903e883d829c88901c78307880000,0xb8f67501eb8301c7830788000000ffb8,0x89d840f00fa8301c783078800000000,0x840f02fa83000007f9840f01fa830000
-.octa 0x4fa8300000661840f03fa830000072d,0x83000004c9840f05fa8300000595840f,0x331840f07fa83000003fd840f06fa,0x99840f09fa8300000265840f08fa8300
-.octa 0x740bfa83000000cd840f0afa83000001,0x1c783078800000030b8000000bee905,0x8800000030b801c783078800000051b8,0x6b801c78307880000000db801c78307
-.octa 0x83078800000009b801c7830788000000,0x86b801c783078800000060b801c7,0x1c783078800000048b801c783078800,0x8800000065b801c783078800000001b8
-.octa 0x4b801c783078800000003b801c78307,0x83078800000002b801c7830788000000,0x5b801c78307880000000ab801c7,0x1c783078800000000b801c783078800
-.octa 0x8800000040b801c783078800000004b8,0x78800000030b8000000bee901c78307,0x30b801c783078800000041b801c783,0xc78307880000000db801c78307880000
-.octa 0x9b801c783078800000006b801,0xb801c783078800000060b801c7830788,0x78800000048b801c783078800000086,0x65b801c783078800000001b801c783
-.octa 0xc783078800000003b801c78307880000,0x2b801c783078800000004b801,0xb801c783078800000009b801c7830788,0x78800000000b801c783078800000005
-.octa 0x30b801c783078800000004b801c783,0x30b8000000bee901c78307880000,0x1c783078800000031b801c783078800,0x880000000db801c783078800000030b8
-.octa 0x9b801c783078800000006b801c78307,0x83078800000060b801c7830788000000,0x48b801c783078800000086b801c7,0x1c783078800000001b801c783078800
-.octa 0x8800000003b801c783078800000065b8,0x2b801c783078800000004b801c78307,0x83078800000008b801c7830788000000,0xb801c783078800000005b801c7
-.octa 0x1c783078800000004b801c783078800,0xb8000000bee901c783078800000020b8,0x7880000002db801c783078800000030,0xdb801c783078800000030b801c783
-.octa 0xc783078800000006b801c78307880000,0x60b801c783078800000009b801,0xb801c783078800000086b801c7830788,0x78800000001b801c783078800000048
-.octa 0x3b801c783078800000065b801c783,0xc783078800000004b801c78307880000,0x7b801c783078800000002b801,0xb801c783078800000005b801c7830788
-.octa 0x78800000004b801c783078800000000,0xbee901c78307880000001cb801c783,0x31b801c783078800000030b80000,0x1c783078800000030b801c783078800
-.octa 0x8800000006b801c78307880000000db8,0x60b801c783078800000009b801c78307,0x83078800000086b801c7830788000000,0x1b801c783078800000048b801c7
-.octa 0x1c783078800000065b801c783078800,0x8800000004b801c783078800000003b8,0x6b801c783078800000002b801c78307,0x83078800000005b801c7830788000000
-.octa 0x4b801c783078800000000b801c7,0x1c783078800000020b801c783078800,0xb801c783078800000030b8000000bee9,0x78800000030b801c78307880000002d
-.octa 0x6b801c78307880000000db801c783,0xc783078800000009b801c78307880000,0x86b801c783078800000060b801,0xb801c783078800000048b801c7830788
-.octa 0x78800000065b801c783078800000001,0x4b801c783078800000003b801c783,0xc783078800000002b801c78307880000,0x5b801c783078800000005b801
-.octa 0xb801c783078800000000b801c7830788,0x7880000001cb801c783078800000004,0x83078800000030b8000000bee901c783,0x30b801c783078800000051b801c7
-.octa 0x1c78307880000000db801c783078800,0x8800000009b801c783078800000006b8,0x86b801c783078800000060b801c78307,0x83078800000048b801c7830788000000
-.octa 0x65b801c783078800000001b801c7,0x1c783078800000003b801c783078800,0x8800000002b801c783078800000004b8,0x5b801c783078800000003b801c78307
-.octa 0x83078800000000b801c7830788000000,0x40b801c783078800000004b801c7,0x30b8000000bee901c783078800,0xb801c783078800000041b801c7830788
-.octa 0x7880000000db801c783078800000030,0x9b801c783078800000006b801c783,0xc783078800000060b801c78307880000,0x48b801c783078800000086b801
-.octa 0xb801c783078800000001b801c7830788,0x78800000003b801c783078800000065,0x2b801c783078800000004b801c783,0xc783078800000002b801c78307880000
-.octa 0xb801c783078800000005b801,0xb801c783078800000004b801c7830788,0x30b8000000bee901c783078800000030,0x83078800000031b801c7830788000000
-.octa 0xdb801c783078800000030b801c7,0x1c783078800000006b801c783078800,0x8800000060b801c783078800000009b8,0x48b801c783078800000086b801c78307
-.octa 0x83078800000001b801c7830788000000,0x3b801c783078800000065b801c7,0x1c783078800000004b801c783078800,0x8800000001b801c783078800000002b8
-.octa 0xb801c783078800000005b801c78307,0x83078800000004b801c7830788000000,0xbee901c783078800000020b801c7,0x2db801c783078800000030b800
-.octa 0xb801c783078800000030b801c7830788,0x78800000006b801c78307880000000d,0x60b801c783078800000009b801c783,0xc783078800000086b801c78307880000
-.octa 0x1b801c783078800000048b801,0xb801c783078800000065b801c7830788,0x78800000004b801c783078800000003,0x4b801c783078800000002b801c783
-.octa 0xc783078800000005b801c78307880000,0x4b801c783078800000000b801,0xe901c78307880000001cb801c7830788,0x21b801c783078800000030b800000096
-.octa 0x83078800000030b801c7830788000000,0x6b801c783078800000009b801c7,0x1c783078800000005b801c783078800,0x880000000eb801c78307880000002bb8
-.octa 0x2b801c783078800000003b801c78307,0x8307880000001ab801c7830788000000,0xb801c783078800000005b801c7,0x1c783078800000004b801c783078800
-.octa 0xb8000000b4e901c783078800000014b8,0x78800000020b801c783078800000030,0xcb801c783078800000030b801c783,0xc783078800000006b801c78307880000
-.octa 0x2ab801c783078800000008b801,0xb801c783078800000086b801c7830788,0x78800000086b801c783078800000048,0xdb801c7830788000000f7b801c783
-.octa 0xc783078800000002b801c78307880000,0x5b801c783078800000005b801,0xb801c783078800000000b801c7830788,0x78800000010b801c783078800000004
-.octa 0xed8301c78301c683078806b60f01c783,0xeb00000000b805eb00000001b8f07501,0x8900000090840f00f88300000000b805,0x60248c8b00000440c781e78940c683e6
-.octa 0xd03117b60f06b60f00000000bd000008,0xe87500f98301e98301c78301c683c509,0x8b01f0831fe8c1e809e82900000000b8,0xbc8bc22900000000bac389c82128244c
-.octa 0xc683e68900000858248c8b0000085424,0xf0000085824b42b0000086024b40340,0x1c683068800000000b80788d02106b6,0x8b1debd889e47500f98301e98301c783
-.octa 0xb800000858248c8b0000085424b4,0xb48b1debf67501e98301c68306880000,0xb800000858248c8b0000085424,0x84024a48df67501e98301c683068800
-.octa 0x5b5b5b0424748b08246c8b243c8b0000
-.byte 91,195",
-        r".p2align 6",
+        // push ebx
+        // push ebp
+        // push esi
+        // push edi
+        // lea esp, [esp-2112]
+        // mov eax, DWORD PTR [esp+2164]
+        // cmp eax, DWORD PTR [esp+2144]
+        r".octa 0x87424848bfffff7c024a48d57565553
+.byte 0x00,0x00,0x3b,0x84,0x24,0x60,0x08,0x00,0x00
+jne 20f",
+        // mov eax, esp
+        // add eax, 64
+        // mov DWORD PTR [esp], eax
+        // mov eax, DWORD PTR [esp+2144]
+        // mov DWORD PTR [esp+4], eax
+        // mov eax, DWORD PTR [esp+2176]
+        // mov DWORD PTR [esp+8], eax
+        // mov eax, DWORD PTR [esp+2180]
+        // mov DWORD PTR [esp+12], eax
+        // mov eax, DWORD PTR [esp+2148]
+        // mov DWORD PTR [esp+16], eax
+        // mov eax, DWORD PTR [esp+2152]
+        // mov DWORD PTR [esp+20], eax
+        // mov eax, DWORD PTR [esp+2160]
+        // mov DWORD PTR [esp+24], eax
+        // mov eax, DWORD PTR [esp+2144]
+        // mov DWORD PTR [esp+28], eax
+        // mov eax, DWORD PTR [esp+2168]
+        // mov DWORD PTR [esp+32], eax
+        // mov eax, DWORD PTR [esp+2172]
+        // mov DWORD PTR [esp+36], eax
+        r".octa 0x890000086024848b24048940c083e089,0x848b082444890000088024848b042444,0x86424848b0c2444890000088424,0x8b142444890000086824848b10244489
+.octa 0x86024848b18244489000008702484,0x202444890000087824848b1c24448900
+.byte 0x8b,0x84,0x24,0x7c,0x08,0x00,0x00,0x89,0x44,0x24,0x24
+call {vg_rsa_public_precomputed_checked}",
+        // mov DWORD PTR [esp+40], eax
+        // mov edi, esp
+        // add edi, 1088
+        // mov ecx, DWORD PTR [esp+2144]
+        // mov edx, DWORD PTR [esp+2156]
+        // mov ebp, DWORD PTR [esp+2136]
+        // mov esi, esp
+        // add esi, 64
+        // add esi, DWORD PTR [esp+2144]
+        // sub esi, DWORD PTR [esp+2136]
+        // cmp edx, 0
+        r".octa 0x60248c8b00000440c781e78928244489,0x85824ac8b0000086c24948b000008,0x24b42b0000086024b40340c683e68900
+.byte 0x58,0x08,0x00,0x00,0x83,0xfa,0x00
+je 22f",
+        // cmp edx, 1
+        r".byte 0x83,0xfa,0x01
+je 24f",
+        // cmp edx, 2
+        r".byte 0x83,0xfa,0x02
+je 26f",
+        // cmp edx, 3
+        r".byte 0x83,0xfa,0x03
+je 28f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 210f",
+        // cmp edx, 5
+        r".byte 0x83,0xfa,0x05
+je 212f",
+        // cmp edx, 6
+        r".byte 0x83,0xfa,0x06
+je 214f",
+        // cmp edx, 7
+        r".byte 0x83,0xfa,0x07
+je 216f",
+        // cmp edx, 8
+        r".byte 0x83,0xfa,0x08
+je 218f",
+        // cmp edx, 9
+        r".byte 0x83,0xfa,0x09
+je 220f",
+        // cmp edx, 10
+        r".byte 0x83,0xfa,0x0a
+je 222f",
+        // cmp edx, 11
+        r".byte 0x83,0xfa,0x0b
+je 224f",
+        // mov ebx, 2048
+        // mov eax, 0
+        r".byte 0xbb,0x00,0x08,0x00,0x00,0xb8,0x00,0x00,0x00,0x00
+jmp 225f
+224:",
+        // mov ebx, 83
+        // mov eax, 64
+        r".byte 0xbb,0x53,0x00,0x00,0x00,0xb8,0x40,0x00,0x00,0x00
+225:
+jmp 223f
+222:",
+        // mov ebx, 67
+        // mov eax, 48
+        r".byte 0xbb,0x43,0x00,0x00,0x00,0xb8,0x30,0x00,0x00,0x00
+223:
+jmp 221f
+220:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+221:
+jmp 219f
+218:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+219:
+jmp 217f
+216:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+217:
+jmp 215f
+214:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+215:
+jmp 213f
+212:",
+        // mov ebx, 83
+        // mov eax, 64
+        r".byte 0xbb,0x53,0x00,0x00,0x00,0xb8,0x40,0x00,0x00,0x00
+213:
+jmp 211f
+210:",
+        // mov ebx, 67
+        // mov eax, 48
+        r".byte 0xbb,0x43,0x00,0x00,0x00,0xb8,0x30,0x00,0x00,0x00
+211:
+jmp 29f
+28:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+29:
+jmp 27f
+26:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+27:
+jmp 25f
+24:",
+        // mov ebx, 35
+        // mov eax, 20
+        r".byte 0xbb,0x23,0x00,0x00,0x00,0xb8,0x14,0x00,0x00,0x00
+25:
+jmp 23f
+22:",
+        // mov ebx, 34
+        // mov eax, 16
+        r".byte 0xbb,0x22,0x00,0x00,0x00,0xb8,0x10,0x00,0x00,0x00
+23:",
+        // cmp ebp, eax
+        r".byte 0x39,0xc5
+jne 226f",
+        // mov eax, ebx
+        // add eax, 11
+        // cmp ecx, eax
+        r".byte 0x89,0xd8,0x83,0xc0,0x0b,0x39,0xc1
+jb 228f",
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, ecx
+        // sub eax, ebx
+        // sub eax, 3
+        // mov ebx, eax
+        // mov eax, 255
+        r".octa 0x8800000001b801c783078800000000b8,0xffb8c38903e883d829c88901c78307
+.byte 0x00,0x00
+230:",
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // sub ebx, 1
+        r".byte 0x88,0x07,0x83,0xc7,0x01,0x83,0xeb,0x01
+jne 230b",
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // cmp edx, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01,0x83,0xfa,0x00
+je 231f",
+        // cmp edx, 1
+        r".byte 0x83,0xfa,0x01
+je 233f",
+        // cmp edx, 2
+        r".byte 0x83,0xfa,0x02
+je 235f",
+        // cmp edx, 3
+        r".byte 0x83,0xfa,0x03
+je 237f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 239f",
+        // cmp edx, 5
+        r".byte 0x83,0xfa,0x05
+je 241f",
+        // cmp edx, 6
+        r".byte 0x83,0xfa,0x06
+je 243f",
+        // cmp edx, 7
+        r".byte 0x83,0xfa,0x07
+je 245f",
+        // cmp edx, 8
+        r".byte 0x83,0xfa,0x08
+je 247f",
+        // cmp edx, 9
+        r".byte 0x83,0xfa,0x09
+je 249f",
+        // cmp edx, 10
+        r".byte 0x83,0xfa,0x0a
+je 251f",
+        // cmp edx, 11
+        r".byte 0x83,0xfa,0x0b
+je 253f
+jmp 254f
+253:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 81
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 10
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 64
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0xab801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x40,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+254:
+jmp 252f
+251:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 65
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000041b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x9b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x30,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+252:
+jmp 250f
+249:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 8
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x8b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+250:
+jmp 248f
+247:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 7
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x7b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+248:
+jmp 246f
+245:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x6b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+246:
+jmp 244f
+243:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x5b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+244:
+jmp 242f
+241:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 81
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 64
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x3b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x40,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+242:
+jmp 240f
+239:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 65
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000041b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x2b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x30,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+240:
+jmp 238f
+237:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x1b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+238:
+jmp 236f
+235:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x4b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+236:
+jmp 234f
+233:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 33
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 43
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 14
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 26
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 20
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000021b801c783078800000030b8,0x9b801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x2bb801c783078800000005b801c7
+.octa 0x1c78307880000000eb801c783078800,0x8800000002b801c783078800000003b8,0x5b801c78307880000001ab801c78307,0x83078800000000b801c7830788000000
+.octa 0x14b801c783078800000004b801c7
+.byte 0x00,0x88,0x07,0x83,0xc7,0x01
+234:
+jmp 232f
+231:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 12
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 8
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 42
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 247
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 16
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000020b801c783078800000030b8,0xcb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x2ab801c783078800000008b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000086b801c783078800000048b8,0xdb801c7830788000000f7b801c78307,0x83078800000002b801c7830788000000
+.octa 0x5b801c783078800000005b801c7,0x1c783078800000000b801c783078800,0x8800000010b801c783078800000004b8
+.byte 0x07,0x83,0xc7,0x01
+232:
+255:",
+        // movzx eax, BYTE PTR [esi]
+        // mov BYTE PTR [edi], al
+        // add esi, 1
+        // add edi, 1
+        // sub ebp, 1
+        r".byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xed,0x01
+jne 255b",
+        // mov eax, 1
+        r".byte 0xb8,0x01,0x00,0x00,0x00
+jmp 229f
+228:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+229:
+jmp 227f
+226:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+227:",
+        // cmp eax, 0
+        r".byte 0x83,0xf8,0x00
+je 256f",
+        // mov esi, esp
+        // add esi, 64
+        // mov edi, esp
+        // add edi, 1088
+        // mov ecx, DWORD PTR [esp+2144]
+        // mov ebp, 0
+        r".octa 0x248c8b00000440c781e78940c683e689
+.byte 0x60,0x08,0x00,0x00,0xbd,0x00,0x00,0x00,0x00
+258:",
+        // movzx eax, BYTE PTR [esi]
+        // movzx edx, BYTE PTR [edi]
+        // xor eax, edx
+        // or ebp, eax
+        // add esi, 1
+        // add edi, 1
+        // sub ecx, 1
+        // cmp ecx, 0
+        r".octa 0x1c78301c683c509d03117b60f06b60f
+.byte 0x83,0xe9,0x01,0x83,0xf9,0x00
+jne 258b",
+        // mov eax, 0
+        // sub eax, ebp
+        // or eax, ebp
+        // shr eax, 31
+        // xor eax, 1
+        // mov ecx, DWORD PTR [esp+40]
+        // and eax, ecx
+        // mov ebx, eax
+        // mov edx, 0
+        // sub edx, eax
+        // mov edi, DWORD PTR [esp+2132]
+        // mov ecx, DWORD PTR [esp+2136]
+        // mov esi, esp
+        // add esi, 64
+        // add esi, DWORD PTR [esp+2144]
+        // sub esi, DWORD PTR [esp+2136]
+        r".octa 0x8b01f0831fe8c1e809e82900000000b8,0xbc8bc22900000000bac389c82128244c,0xc683e68900000858248c8b0000085424
+.byte 0x40,0x03,0xb4,0x24,0x60,0x08,0x00,0x00,0x2b,0xb4,0x24,0x58,0x08,0x00,0x00
+259:",
+        // movzx eax, BYTE PTR [esi]
+        // and eax, edx
+        // mov BYTE PTR [edi], al
+        // mov eax, 0
+        // mov BYTE PTR [esi], al
+        // add esi, 1
+        // add edi, 1
+        // sub ecx, 1
+        // cmp ecx, 0
+        r".octa 0xc683068800000000b80788d02106b60f
+.byte 0x01,0x83,0xc7,0x01,0x83,0xe9,0x01,0x83,0xf9,0x00
+jne 259b",
+        // mov eax, ebx
+        r".byte 0x89,0xd8
+jmp 257f
+256:",
+        // mov esi, DWORD PTR [esp+2132]
+        // mov ecx, DWORD PTR [esp+2136]
+        // mov eax, 0
+        r".octa 0xb800000858248c8b0000085424b48b
+.byte 0x00,0x00,0x00
+260:",
+        // mov BYTE PTR [esi], al
+        // add esi, 1
+        // sub ecx, 1
+        r".byte 0x88,0x06,0x83,0xc6,0x01,0x83,0xe9,0x01
+jne 260b
+257:
+jmp 21f
+20:",
+        // mov esi, DWORD PTR [esp+2132]
+        // mov ecx, DWORD PTR [esp+2136]
+        // mov eax, 0
+        r".octa 0xb800000858248c8b0000085424b48b
+.byte 0x00,0x00,0x00
+261:",
+        // mov BYTE PTR [esi], al
+        // add esi, 1
+        // sub ecx, 1
+        r".byte 0x88,0x06,0x83,0xc6,0x01,0x83,0xe9,0x01
+jne 261b
+21:",
+        // lea esp, [esp+2112]
+        // mov edi, DWORD PTR [esp]
+        // mov ebp, DWORD PTR [esp+8]
+        // mov esi, DWORD PTR [esp+4]
+        // pop ebx
+        // pop ebx
+        // pop ebx
+        // pop ebx
+        // ret
+        r".octa 0x748b08246c8b243c8b0000084024a48d
+.byte 0x24,0x04,0x5b,0x5b,0x5b,0x5b,0xc3
+.p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -204,58 +2238,1059 @@ pub unsafe extern "C" fn vg_rsa_pkcs1_recover_precomputed(out: *mut u8, out_len:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0x60c783e789fffffba024a48d57565553,0xb48b0000048c24948b00000480248c8b,0xf00fa830000049424ac8b0000049024,0xfa83000000c2840f01fa83000000d784
-.octa 0x98840f03fa83000000ad840f02,0xfa83727405fa8300000083840f04fa83,0x9fa833f7408fa83507407fa83617406,0x800bb0c740bfa831d740afa832e74
-.octa 0x40b800000053bb0aeb00000000b800,0xaeb00000030b800000043bb0aeb0000,0x2fbb0aeb00000020b800000033bb,0x20b800000033bb0aeb0000001cb800
-.octa 0xaeb0000001cb80000002fbb0aeb0000,0x43bb0aeb00000040b800000053bb,0x20b800000033bb0aeb00000030b800,0xaeb0000001cb80000002fbb0aeb0000
-.octa 0x22bb0aeb00000014b800000023bb,0xd889000009bb850fc53900000010b800,0xb8000009a7820fc1390bc083,0x8901c783078800000001b801c7830788
-.octa 0x830788000000ffb8c38903e883d829c8,0xc783078800000000b8f67501eb8301c7,0xf9840f01fa830000089d840f00fa8301,0xf03fa830000072d840f02fa83000007
-.octa 0xfa8300000595840f04fa830000066184,0x3fd840f06fa83000004c9840f05,0x265840f08fa8300000331840f07fa83,0x840f0afa8300000199840f09fa830000
-.octa 0x30b8000000bee905740bfa83000000cd,0x83078800000051b801c7830788000000,0xdb801c783078800000030b801c7,0x1c783078800000006b801c783078800
-.octa 0x8800000060b801c783078800000009b8,0x48b801c783078800000086b801c78307,0x83078800000001b801c7830788000000,0x3b801c783078800000065b801c7
-.octa 0x1c783078800000004b801c783078800,0x880000000ab801c783078800000002b8,0xb801c783078800000005b801c78307,0x83078800000004b801c7830788000000
-.octa 0xbee901c783078800000040b801c7,0x41b801c783078800000030b800,0xb801c783078800000030b801c7830788,0x78800000006b801c78307880000000d
-.octa 0x60b801c783078800000009b801c783,0xc783078800000086b801c78307880000,0x1b801c783078800000048b801,0xb801c783078800000065b801c7830788
-.octa 0x78800000004b801c783078800000003,0x9b801c783078800000002b801c783,0xc783078800000005b801c78307880000,0x4b801c783078800000000b801
-.octa 0xe901c783078800000030b801c7830788,0x31b801c783078800000030b8000000be,0x83078800000030b801c7830788000000,0x6b801c78307880000000db801c7
-.octa 0x1c783078800000009b801c783078800,0x8800000086b801c783078800000060b8,0x1b801c783078800000048b801c78307,0x83078800000065b801c7830788000000
-.octa 0x4b801c783078800000003b801c7,0x1c783078800000002b801c783078800,0x8800000005b801c783078800000008b8,0x4b801c783078800000000b801c78307
-.octa 0x83078800000020b801c7830788000000,0xc783078800000030b8000000bee901c7,0x30b801c78307880000002db801,0xb801c78307880000000db801c7830788
-.octa 0x78800000009b801c783078800000006,0x86b801c783078800000060b801c783,0xc783078800000048b801c78307880000,0x65b801c783078800000001b801
-.octa 0xb801c783078800000003b801c7830788,0x78800000002b801c783078800000004,0x5b801c783078800000007b801c783,0xc783078800000000b801c78307880000
-.octa 0x1cb801c783078800000004b801,0x8800000030b8000000bee901c7830788,0x30b801c783078800000031b801c78307,0x8307880000000db801c7830788000000
-.octa 0x9b801c783078800000006b801c7,0x1c783078800000060b801c783078800,0x8800000048b801c783078800000086b8,0x65b801c783078800000001b801c78307
-.octa 0x83078800000003b801c7830788000000,0x2b801c783078800000004b801c7,0x1c783078800000006b801c783078800,0x8800000000b801c783078800000005b8
-.octa 0x20b801c783078800000004b801c78307,0x30b8000000bee901c7830788000000,0xc78307880000002db801c78307880000,0xdb801c783078800000030b801
-.octa 0xb801c783078800000006b801c7830788,0x78800000060b801c783078800000009,0x48b801c783078800000086b801c783,0xc783078800000001b801c78307880000
-.octa 0x3b801c783078800000065b801,0xb801c783078800000004b801c7830788,0x78800000005b801c783078800000002,0xb801c783078800000005b801c783
-.octa 0xc783078800000004b801c78307880000,0xbee901c78307880000001cb801,0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307
-.octa 0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7,0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8
-.octa 0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000,0x3b801c783078800000002b801c7,0x1c783078800000005b801c783078800
-.octa 0x8800000004b801c783078800000000b8,0xbee901c783078800000040b801c78307,0x41b801c783078800000030b8000000,0xc783078800000030b801c78307880000
-.octa 0x6b801c78307880000000db801,0xb801c783078800000009b801c7830788,0x78800000086b801c783078800000060,0x1b801c783078800000048b801c783
-.octa 0xc783078800000065b801c78307880000,0x4b801c783078800000003b801,0xb801c783078800000002b801c7830788,0x78800000005b801c783078800000002
-.octa 0x4b801c783078800000000b801c783,0xc783078800000030b801c78307880000,0x1c783078800000030b8000000bee901,0x8800000030b801c783078800000031b8
-.octa 0x6b801c78307880000000db801c78307,0x83078800000009b801c7830788000000,0x86b801c783078800000060b801c7,0x1c783078800000048b801c783078800
-.octa 0x8800000065b801c783078800000001b8,0x4b801c783078800000003b801c78307,0x83078800000002b801c7830788000000,0x5b801c783078800000001b801c7
-.octa 0x1c783078800000000b801c783078800,0x8800000020b801c783078800000004b8,0x78800000030b8000000bee901c78307,0x30b801c78307880000002db801c783
-.octa 0xc78307880000000db801c78307880000,0x9b801c783078800000006b801,0xb801c783078800000060b801c7830788,0x78800000048b801c783078800000086
-.octa 0x65b801c783078800000001b801c783,0xc783078800000003b801c78307880000,0x2b801c783078800000004b801,0xb801c783078800000004b801c7830788
-.octa 0x78800000000b801c783078800000005,0x1cb801c783078800000004b801c783,0x30b800000096e901c78307880000,0x1c783078800000021b801c783078800
-.octa 0x8800000009b801c783078800000030b8,0x5b801c783078800000006b801c78307,0x8307880000002bb801c7830788000000,0x3b801c78307880000000eb801c7
-.octa 0x1c783078800000002b801c783078800,0x8800000005b801c78307880000001ab8,0x4b801c783078800000000b801c78307,0x83078800000014b801c7830788000000
-.octa 0xc783078800000030b8000000b4e901c7,0x30b801c783078800000020b801,0xb801c78307880000000cb801c7830788,0x78800000008b801c783078800000006
-.octa 0x86b801c78307880000002ab801c783,0xc783078800000048b801c78307880000,0xf7b801c783078800000086b801,0xb801c78307880000000db801c7830788
-.octa 0x78800000005b801c783078800000002,0xb801c783078800000005b801c783,0xc783078800000004b801c78307880000,0x78806b60f01c783078800000010b801
-.octa 0x1b8f07501ed8301c78301c683,0xf88300000000b805eb00000000b805eb,0x4890000047424848b000000ff840f00,0x7c24848b042444890000047824848b24
-.octa 0x44890000048024848b08244489000004,0x24848b102444890000048424848b0c24,0x24448960c083e0891424448900000488,0x9824848b1c2444890000048024848b18
-.octa 0x44890000049c24848b20244489000004,0x24848b28244489000004a024848b2424,0x89000004a824848b2c244489000004a4,0x848b34244489000004ac24848b302444
-.octa 0x4b424848b38244489000004b024,0x8b40244489000004b824848b3c244489,0x4c024848b44244489000004bc2484,0x4c244489000004c424848b4824448900",
-        r"call {vg_rsa_private_checked}",
-        r".octa 0x80248c8b60c683e68900000000b8c389,0xebd889f67501e98301c6830688000004,0xb800000478248c8b0000047424b48b1d,0xa48df67501e98301c683068800000000
-.octa 0x424748b08246c8b243c8b0000046024
-.byte 91,91,91,91,195",
-        r".p2align 6",
+        // push ebx
+        // push ebp
+        // push esi
+        // push edi
+        // lea esp, [esp-1120]
+        // mov edi, esp
+        // add edi, 96
+        // mov ecx, DWORD PTR [esp+1152]
+        // mov edx, DWORD PTR [esp+1164]
+        // mov esi, DWORD PTR [esp+1168]
+        // mov ebp, DWORD PTR [esp+1172]
+        // cmp edx, 0
+        r".octa 0x60c783e789fffffba024a48d57565553,0xb48b0000048c24948b00000480248c8b
+.byte 0x24,0x90,0x04,0x00,0x00,0x8b,0xac,0x24,0x94,0x04,0x00,0x00,0x83,0xfa,0x00
+je 20f",
+        // cmp edx, 1
+        r".byte 0x83,0xfa,0x01
+je 22f",
+        // cmp edx, 2
+        r".byte 0x83,0xfa,0x02
+je 24f",
+        // cmp edx, 3
+        r".byte 0x83,0xfa,0x03
+je 26f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 28f",
+        // cmp edx, 5
+        r".byte 0x83,0xfa,0x05
+je 210f",
+        // cmp edx, 6
+        r".byte 0x83,0xfa,0x06
+je 212f",
+        // cmp edx, 7
+        r".byte 0x83,0xfa,0x07
+je 214f",
+        // cmp edx, 8
+        r".byte 0x83,0xfa,0x08
+je 216f",
+        // cmp edx, 9
+        r".byte 0x83,0xfa,0x09
+je 218f",
+        // cmp edx, 10
+        r".byte 0x83,0xfa,0x0a
+je 220f",
+        // cmp edx, 11
+        r".byte 0x83,0xfa,0x0b
+je 222f",
+        // mov ebx, 2048
+        // mov eax, 0
+        r".byte 0xbb,0x00,0x08,0x00,0x00,0xb8,0x00,0x00,0x00,0x00
+jmp 223f
+222:",
+        // mov ebx, 83
+        // mov eax, 64
+        r".byte 0xbb,0x53,0x00,0x00,0x00,0xb8,0x40,0x00,0x00,0x00
+223:
+jmp 221f
+220:",
+        // mov ebx, 67
+        // mov eax, 48
+        r".byte 0xbb,0x43,0x00,0x00,0x00,0xb8,0x30,0x00,0x00,0x00
+221:
+jmp 219f
+218:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+219:
+jmp 217f
+216:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+217:
+jmp 215f
+214:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+215:
+jmp 213f
+212:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+213:
+jmp 211f
+210:",
+        // mov ebx, 83
+        // mov eax, 64
+        r".byte 0xbb,0x53,0x00,0x00,0x00,0xb8,0x40,0x00,0x00,0x00
+211:
+jmp 29f
+28:",
+        // mov ebx, 67
+        // mov eax, 48
+        r".byte 0xbb,0x43,0x00,0x00,0x00,0xb8,0x30,0x00,0x00,0x00
+29:
+jmp 27f
+26:",
+        // mov ebx, 51
+        // mov eax, 32
+        r".byte 0xbb,0x33,0x00,0x00,0x00,0xb8,0x20,0x00,0x00,0x00
+27:
+jmp 25f
+24:",
+        // mov ebx, 47
+        // mov eax, 28
+        r".byte 0xbb,0x2f,0x00,0x00,0x00,0xb8,0x1c,0x00,0x00,0x00
+25:
+jmp 23f
+22:",
+        // mov ebx, 35
+        // mov eax, 20
+        r".byte 0xbb,0x23,0x00,0x00,0x00,0xb8,0x14,0x00,0x00,0x00
+23:
+jmp 21f
+20:",
+        // mov ebx, 34
+        // mov eax, 16
+        r".byte 0xbb,0x22,0x00,0x00,0x00,0xb8,0x10,0x00,0x00,0x00
+21:",
+        // cmp ebp, eax
+        r".byte 0x39,0xc5
+jne 224f",
+        // mov eax, ebx
+        // add eax, 11
+        // cmp ecx, eax
+        r".byte 0x89,0xd8,0x83,0xc0,0x0b,0x39,0xc1
+jb 226f",
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, ecx
+        // sub eax, ebx
+        // sub eax, 3
+        // mov ebx, eax
+        // mov eax, 255
+        r".octa 0x8800000001b801c783078800000000b8,0xffb8c38903e883d829c88901c78307
+.byte 0x00,0x00
+228:",
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // sub ebx, 1
+        r".byte 0x88,0x07,0x83,0xc7,0x01,0x83,0xeb,0x01
+jne 228b",
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // cmp edx, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01,0x83,0xfa,0x00
+je 229f",
+        // cmp edx, 1
+        r".byte 0x83,0xfa,0x01
+je 231f",
+        // cmp edx, 2
+        r".byte 0x83,0xfa,0x02
+je 233f",
+        // cmp edx, 3
+        r".byte 0x83,0xfa,0x03
+je 235f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 237f",
+        // cmp edx, 5
+        r".byte 0x83,0xfa,0x05
+je 239f",
+        // cmp edx, 6
+        r".byte 0x83,0xfa,0x06
+je 241f",
+        // cmp edx, 7
+        r".byte 0x83,0xfa,0x07
+je 243f",
+        // cmp edx, 8
+        r".byte 0x83,0xfa,0x08
+je 245f",
+        // cmp edx, 9
+        r".byte 0x83,0xfa,0x09
+je 247f",
+        // cmp edx, 10
+        r".byte 0x83,0xfa,0x0a
+je 249f",
+        // cmp edx, 11
+        r".byte 0x83,0xfa,0x0b
+je 251f
+jmp 252f
+251:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 81
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 10
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 64
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0xab801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x40,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+252:
+jmp 250f
+249:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 65
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000041b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x9b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x30,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+250:
+jmp 248f
+247:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 8
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x8b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+248:
+jmp 246f
+245:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 7
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x7b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+246:
+jmp 244f
+243:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x6b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+244:
+jmp 242f
+241:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x5b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+242:
+jmp 240f
+239:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 81
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 64
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000051b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x3b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x40,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+240:
+jmp 238f
+237:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 65
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000041b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x2b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x30,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+238:
+jmp 236f
+235:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 49
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000031b801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x1b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x20,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+236:
+jmp 234f
+233:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 45
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 96
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 1
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 101
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 28
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x880000002db801c783078800000030b8,0xdb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x60b801c783078800000009b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000001b801c783078800000048b8,0x3b801c783078800000065b801c78307,0x83078800000004b801c7830788000000
+.octa 0x4b801c783078800000002b801c7,0x1c783078800000005b801c783078800,0x8800000004b801c783078800000000b8
+.byte 0x07,0x83,0xc7,0x01,0xb8,0x1c,0x00,0x00,0x00,0x88,0x07,0x83,0xc7,0x01
+234:
+jmp 232f
+231:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 33
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 9
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 43
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 14
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 3
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 26
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 20
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000021b801c783078800000030b8,0x9b801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x2bb801c783078800000005b801c7
+.octa 0x1c78307880000000eb801c783078800,0x8800000002b801c783078800000003b8,0x5b801c78307880000001ab801c78307,0x83078800000000b801c7830788000000
+.octa 0x14b801c783078800000004b801c7
+.byte 0x00,0x88,0x07,0x83,0xc7,0x01
+232:
+jmp 230f
+229:",
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 32
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 48
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 12
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 6
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 8
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 42
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 72
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 134
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 247
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 13
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 2
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 5
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 0
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 4
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        // mov eax, 16
+        // mov BYTE PTR [edi], al
+        // add edi, 1
+        r".octa 0x8800000020b801c783078800000030b8,0xcb801c783078800000030b801c78307,0x83078800000006b801c7830788000000,0x2ab801c783078800000008b801c7
+.octa 0x1c783078800000086b801c783078800,0x8800000086b801c783078800000048b8,0xdb801c7830788000000f7b801c78307,0x83078800000002b801c7830788000000
+.octa 0x5b801c783078800000005b801c7,0x1c783078800000000b801c783078800,0x8800000010b801c783078800000004b8
+.byte 0x07,0x83,0xc7,0x01
+230:
+253:",
+        // movzx eax, BYTE PTR [esi]
+        // mov BYTE PTR [edi], al
+        // add esi, 1
+        // add edi, 1
+        // sub ebp, 1
+        r".byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xed,0x01
+jne 253b",
+        // mov eax, 1
+        r".byte 0xb8,0x01,0x00,0x00,0x00
+jmp 227f
+226:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+227:
+jmp 225f
+224:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+225:",
+        // cmp eax, 0
+        r".byte 0x83,0xf8,0x00
+je 254f",
+        // mov eax, DWORD PTR [esp+1140]
+        // mov DWORD PTR [esp], eax
+        // mov eax, DWORD PTR [esp+1144]
+        // mov DWORD PTR [esp+4], eax
+        // mov eax, DWORD PTR [esp+1148]
+        // mov DWORD PTR [esp+8], eax
+        // mov eax, DWORD PTR [esp+1152]
+        // mov DWORD PTR [esp+12], eax
+        // mov eax, DWORD PTR [esp+1156]
+        // mov DWORD PTR [esp+16], eax
+        // mov eax, DWORD PTR [esp+1160]
+        // mov DWORD PTR [esp+20], eax
+        // mov eax, esp
+        // add eax, 96
+        // mov DWORD PTR [esp+24], eax
+        // mov eax, DWORD PTR [esp+1152]
+        // mov DWORD PTR [esp+28], eax
+        // mov eax, DWORD PTR [esp+1176]
+        // mov DWORD PTR [esp+32], eax
+        // mov eax, DWORD PTR [esp+1180]
+        // mov DWORD PTR [esp+36], eax
+        // mov eax, DWORD PTR [esp+1184]
+        // mov DWORD PTR [esp+40], eax
+        // mov eax, DWORD PTR [esp+1188]
+        // mov DWORD PTR [esp+44], eax
+        // mov eax, DWORD PTR [esp+1192]
+        // mov DWORD PTR [esp+48], eax
+        // mov eax, DWORD PTR [esp+1196]
+        // mov DWORD PTR [esp+52], eax
+        // mov eax, DWORD PTR [esp+1200]
+        // mov DWORD PTR [esp+56], eax
+        // mov eax, DWORD PTR [esp+1204]
+        // mov DWORD PTR [esp+60], eax
+        // mov eax, DWORD PTR [esp+1208]
+        // mov DWORD PTR [esp+64], eax
+        // mov eax, DWORD PTR [esp+1212]
+        // mov DWORD PTR [esp+68], eax
+        // mov eax, DWORD PTR [esp+1216]
+        // mov DWORD PTR [esp+72], eax
+        // mov eax, DWORD PTR [esp+1220]
+        // mov DWORD PTR [esp+76], eax
+        r".octa 0x47824848b2404890000047424848b,0x82444890000047c24848b0424448900,0x48424848b0c2444890000048024848b,0x2444890000048824848b102444890000
+.octa 0x48024848b1824448960c083e08914,0x202444890000049824848b1c24448900,0x4a024848b242444890000049c24848b,0x244489000004a424848b282444890000
+.octa 0xac24848b30244489000004a824848b2c,0x4489000004b024848b34244489000004,0x24848b3c244489000004b424848b3824,0x89000004bc24848b40244489000004b8
+.octa 0x848b48244489000004c024848b442444
+.byte 0x24,0xc4,0x04,0x00,0x00,0x89,0x44,0x24,0x4c
+call {vg_rsa_private_checked}",
+        // mov ebx, eax
+        // mov eax, 0
+        // mov esi, esp
+        // add esi, 96
+        // mov ecx, DWORD PTR [esp+1152]
+        r".octa 0x80248c8b60c683e68900000000b8c389
+.byte 0x04,0x00,0x00
+256:",
+        // mov BYTE PTR [esi], al
+        // add esi, 1
+        // sub ecx, 1
+        r".byte 0x88,0x06,0x83,0xc6,0x01,0x83,0xe9,0x01
+jne 256b",
+        // mov eax, ebx
+        r".byte 0x89,0xd8
+jmp 255f
+254:",
+        // mov esi, DWORD PTR [esp+1140]
+        // mov ecx, DWORD PTR [esp+1144]
+        // mov eax, 0
+        r".octa 0xb800000478248c8b0000047424b48b
+.byte 0x00,0x00,0x00
+257:",
+        // mov BYTE PTR [esi], al
+        // add esi, 1
+        // sub ecx, 1
+        r".byte 0x88,0x06,0x83,0xc6,0x01,0x83,0xe9,0x01
+jne 257b
+255:",
+        // lea esp, [esp+1120]
+        // mov edi, DWORD PTR [esp]
+        // mov ebp, DWORD PTR [esp+8]
+        // mov esi, DWORD PTR [esp+4]
+        // pop ebx
+        // pop ebx
+        // pop ebx
+        // pop ebx
+        // ret
+        r".octa 0x748b08246c8b243c8b0000046024a48d
+.byte 0x24,0x04,0x5b,0x5b,0x5b,0x5b,0xc3
+.p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }

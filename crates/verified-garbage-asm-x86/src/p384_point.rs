@@ -16,128 +16,573 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p384_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
+        // mov eax, DWORD PTR [esp+4]
+        // mov DWORD PTR [eax+3360], edi
+        // mov edi, eax
+        // mov eax, 3120
+        // mov ecx, 2976
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc30b8c78900000d20b8890424448b
-.byte 0,185,160,11,0,0,186,96,13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x00,0xb9,0xa0,0x0b,0x00,0x00,0xba,0x60,0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3168
+        // mov ecx, 3024
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000bd0b900000c60b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3216
+        // mov ecx, 3072
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000c00b900000c90b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3024
+        // mov ecx, 2976
+        // mov edx, 3568
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xf0ba00000ba0b900000bd0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3168
+        // mov ecx, 3120
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000c30b900000c60b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3568
+        // mov edx, 3568
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xf0ba00000df0b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3472
+        // mov ecx, 3424
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000d60b900000d90b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3568
+        // mov edx, 3568
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xf0ba00000df0b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 2976
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000ba0b900000c00b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3216
+        // mov ecx, 3120
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000c30b900000c90b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3664
+        // mov ecx, 3616
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000e20b900000e50b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3424
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000d60b900000dc0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3664
+        // mov ecx, 3616
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000e20b900000e50b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 3024
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000bd0b900000c00b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3216
+        // mov ecx, 3168
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000c60b900000c90b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2832
+        // mov ecx, 3664
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000e50b900000b10b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3472
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000d90b900000dc0b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2832
+        // mov ecx, 3664
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000e50b900000b10b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3264
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000cc0b900000e20b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3312
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000cf0b900000dc0b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 2832
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000b10b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 3472
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000d90b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 3472
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000d90b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 2832
+        // mov edx, 2880
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000b10b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 3424
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000d60b900000d60b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 3472
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000d90b900000d60b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3264
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000cc0b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3312
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000cf0b900000e20b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3472
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000d90b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3424
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000d60b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3264
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000cc0b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3616
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000e20b900000dc0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3472
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000d90b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 2880
+        // mov edx, 2880
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000b40b900000d60b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3664
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e50b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2832
+        // mov ecx, 3568
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000df0b900000b10b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 2832
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000b10b900000d60b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3472
+        // mov ecx, 3568
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000df0b900000d90b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 3664
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000e50b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 2928
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000b70b900000d60b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
-        r".byte 88,88,88,88,139,191,32,13,0,0,195",
-        r".p2align 6",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov edi, DWORD PTR [edi+3360]
+        // ret
+        r".byte 0x58,0x58,0x58,0x58,0x8b,0xbf,0x20,0x0d,0x00,0x00,0xc3
+.p2align 6",
         vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::p384_mont::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
@@ -158,128 +603,573 @@ pub unsafe extern "C" fn vg_p384_point_add(ws: *mut [u64; 1024]) {
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p384_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
+        // mov eax, DWORD PTR [esp+4]
+        // mov DWORD PTR [eax+3360], edi
+        // mov edi, eax
+        // mov eax, 2976
+        // mov ecx, 2976
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xba0b8c78900000d20b8890424448b
-.byte 0,185,160,11,0,0,186,96,13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x00,0xb9,0xa0,0x0b,0x00,0x00,0xba,0x60,0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3024
+        // mov ecx, 3024
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000bd0b900000bd0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 3072
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000c00b900000c00b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3024
+        // mov ecx, 2976
+        // mov edx, 3568
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xf0ba00000ba0b900000bd0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3024
+        // mov ecx, 2976
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000ba0b900000bd0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3568
+        // mov edx, 3568
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xf0ba00000df0b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3472
+        // mov ecx, 3424
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000d60b900000d90b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3568
+        // mov edx, 3568
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xf0ba00000df0b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 2976
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000ba0b900000c00b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 2976
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000ba0b900000c00b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3664
+        // mov ecx, 3616
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000e20b900000e50b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3424
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000d60b900000dc0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3664
+        // mov ecx, 3616
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000e20b900000e50b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 3024
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000bd0b900000c00b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3072
+        // mov ecx, 3024
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000bd0b900000c00b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2832
+        // mov ecx, 3664
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000e50b900000b10b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3472
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000d90b900000dc0b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2832
+        // mov ecx, 3664
+        // mov edx, 3664
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x50ba00000e50b900000b10b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3264
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000cc0b900000e20b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3312
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000cf0b900000dc0b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 2832
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000b10b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 3472
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000d90b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 3472
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000d90b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 2832
+        // mov edx, 2880
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000b10b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 3424
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000d60b900000d60b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 3472
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000d90b900000d60b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3264
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000cc0b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3312
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000cf0b900000e20b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3472
+        // mov edx, 3472
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x90ba00000d90b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3424
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000d60b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3264
+        // mov edx, 3520
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000cc0b900000dc0b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3520
+        // mov ecx, 3616
+        // mov edx, 3616
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x20ba00000e20b900000dc0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3472
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000d90b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 2880
+        // mov edx, 2880
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000b40b900000d60b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3616
+        // mov ecx, 3664
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e50b900000e20b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2832
+        // mov ecx, 3568
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000df0b900000b10b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 2832
+        // mov edx, 2832
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x10ba00000b10b900000d60b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_sub_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3472
+        // mov ecx, 3568
+        // mov edx, 3424
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000df0b900000d90b858585858
-.byte 13,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0d,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 2928
+        // mov ecx, 3664
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000e50b900000b70b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_mul_mod_p}",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3424
+        // mov ecx, 2928
+        // mov edx, 2928
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x70ba00000b70b900000d60b858585858
-.byte 11,0,0,80,81,82,87",
-        r"call {vg_p384_add_mod_p}",
-        r".byte 88,88,88,88,139,191,32,13,0,0,195",
-        r".p2align 6",
+.byte 0x0b,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_p384_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov edi, DWORD PTR [edi+3360]
+        // ret
+        r".byte 0x58,0x58,0x58,0x58,0x8b,0xbf,0x20,0x0d,0x00,0x00,0xc3
+.p2align 6",
         vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::p384_mont::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
