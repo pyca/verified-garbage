@@ -2,14 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLoop
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 import VerifiedGarbage.Proof.Rsa.AArch64.InvEnd
+import VerifiedGarbage.Proof.Rsa.AArch64.InvInit
+import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Linarith
 import VerifiedGarbage.Proof.Rsa.AArch64.InvPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.InvStage
 import VerifiedGarbage.Proof.Rsa.Divstep.InvResult64
 import VerifiedGarbage.Proof.Divstep.MredWords
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
-import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -392,5 +399,168 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
       rw [hb2, hb1]
       split <;> split <;> simp [Int.ModEq, Int.add_emod_right]
     exact e
+
+
+/-- `-q⁻¹ mod 2^64` exists for an odd `q`. -/
+theorem minv_exists {q : Nat} (hq : q % 2 = 1) : ∃ mi : BitVec 64, ((q : Int) * mi.toNat + 1) % 2 ^ 64 = 0 := by
+  have hc : Nat.Coprime q (2 ^ 64) := Nat.Coprime.pow_right _ (by
+    show Nat.gcd q 2 = 1
+    rw [Nat.gcd_comm, Nat.gcd_rec, hq]; rfl)
+  obtain ⟨m, hm, hqm⟩ := Nat.exists_mul_mod_eq_one_of_coprime hc (by decide)
+  have m0 : 0 < m := by
+    rcases Nat.eq_zero_or_pos m with h | h
+    · subst h; simp at hqm
+    · exact h
+  refine ⟨BitVec.ofNat 64 (2 ^ 64 - m), ?_⟩
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hk := Nat.div_add_mod (q * m) (2 ^ 64)
+  rw [hqm] at hk
+  set k := q * m / 2 ^ 64
+  have e : ((q : Int) * ((2 ^ 64 - m : Nat) : Int) + 1) = 2 ^ 64 * ((q : Int) - k) := by
+    have hk' : ((q : Int) * m) = 2 ^ 64 * k + 1 := by exact_mod_cast hk.symm
+    rw [Nat.cast_sub (show m ≤ 2 ^ 64 by omega)]
+    push_cast
+    linarith
+  rw [e]; exact Int.mul_emod_right _ _
+
+/-- The batched inverse at the width `n` in `x12` (`x11` the stride of
+arrays of `w` words), for `[v] = [m] = p` and `[u] = a`: `x1`, `x2` kept,
+only the arrays `u`, `v`, `x₁`, `x₂` and `t` changed, and for an odd
+`p > 1`, `[v] = gcd(p, a)`, `p ∣ [x₂] a - gcd(p, a)` and `[x₂] < p`. -/
+theorem inverseB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
+    (h0 : s.gpr .x0 = B) (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
+    (hn1 : 1 ≤ n) (hnw : n ≤ w) (hw : w < 2 ^ 24) (hn21 : n < 2 ^ 21) (hZ : slot w 16 ≤ Z)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
+    (hVM : wv s.mem B (slot w iV) n = wv s.mem B (slot w iM) n) :
+    WP isa (inverseB iU iV iX₁ iX₂ iM iT) s fun t =>
+      Scr t B Z ∧ t.gpr .x0 = B ∧ t.gpr .x1 = s.gpr .x1 ∧ t.gpr .x2 = s.gpr .x2 ∧
+      t.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .x12 = BitVec.ofNat 64 n ∧
+      Frm B [(slot w iU, 8 * (w + 2)), (slot w iV, 8 * (w + 2)), (slot w iX₁, 8 * (w + 2)),
+        (slot w iX₂, 8 * (w + 2)), (slot w iT, 8 * (w + 2))] s.mem t.mem ∧
+      Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s t ∧
+      (wv s.mem B (slot w iM) n % 2 = 1 → 1 < wv s.mem B (slot w iM) n →
+        wv t.mem B (slot w iV) n = Nat.gcd (wv s.mem B (slot w iM) n) (wv s.mem B (slot w iU) n) ∧
+        (wv s.mem B (slot w iM) n : Int) ∣ (wv t.mem B (slot w iX₂) n : Int) * wv s.mem B (slot w iU) n -
+          Nat.gcd (wv s.mem B (slot w iM) n) (wv s.mem B (slot w iU) n) ∧
+        wv t.mem B (slot w iX₂) n < wv s.mem B (slot w iM) n) := by
+  set p := wv s.mem B (slot w iM) n with hp
+  set a := wv s.mem B (slot w iU) n with ha
+  have pC : p < 2 ^ (64 * n) := wv_lt _ _ _ _
+  have aC : a < 2 ^ (64 * n) := wv_lt _ _ _ _
+  obtain ⟨mi, hmi⟩ := minv_exists (q := p + (1 - p % 2)) (by omega)
+  let C : ICfg := ⟨B, Z, w, n, iU, iV, iX₁, iX₂, iM, iT, p, mi, Rsa.Divstep.oddInput p a⟩
+  have hC : C.Ok := ⟨hn1, hnw, hw, hn21, hZ, hU, hV, hX₁, hX₂, hM, hT, dUV, dUX₁, dUX₂, dUM, dUT, dVX₁, dVX₂, dVM,
+    dVT, dX, dX₁M, dX₁T, dX₂M, dX₂T, dMT, pC,
+    by
+      have := Rsa.Divstep.oddInput_lt (m := p) (x := a) pC aC
+      show Rsa.Divstep.oddInput p a < 2 ^ (64 * n + 1)
+      rw [Nat.pow_succ]; omega,
+    by exact_mod_cast hmi⟩
+  unfold inverseB
+  rw [List.append_assoc]
+  refine wp_seqs_append (by simp [batchInit]) (by simp) (WP.mono (batchInit_ok (C := C) hC hs h0 h11 h12 hVM rfl rfl rfl)
+    fun s₁ ⟨hI₁, h15⟩ => ?_)
+  rw [List.singleton_append]
+  have hf : batchFinish iV iU iX₂ iM iT ≠ [] := by simp [batchFinish]
+  obtain ⟨c, cs, hcs⟩ := List.exists_cons_of_ne_nil hf
+  rw [hcs]
+  simp only [seqs]
+  rw [← hcs]
+  refine WP.seq (WP.mono (batches_ok hC hI₁ h15) fun s₂ hI₂ => WP.mono (finish_ok hC hI₂) fun t ⟨sc, t0, t1, t2, t11,
+    t12, fr, kt, val⟩ => ⟨sc, t0, t1, t2, t11, t12, fr, kt, fun h1 h2 => ?_⟩)
+  obtain ⟨v1, v2, v3⟩ := val ⟨h1, h2⟩ a aC rfl
+  exact ⟨v1, v2, v3⟩
+
+
+/-- `x1`, `x2` back: the registers `Keep` names for `inverse`. -/
+theorem keep_restore {s t : State} (k : Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13,
+    .x14, .x15, .x16, .x17] s t) (h1 : t.gpr .x1 = s.gpr .x1) (h2 : t.gpr .x2 = s.gpr .x2) :
+    Keep (.x11 :: .x12 :: stepRegs) s t :=
+  ⟨fun r hr => by
+    by_cases e1 : r = .x1
+    · subst e1; exact h1
+    by_cases e2 : r = .x2
+    · subst e2; exact h2
+    exact k.gpr r (by revert hr e1 e2; cases r <;> decide), k.rd, k.wr, k.sp, k.vcs⟩
+
+/-- `inverse u v x₁ x₂ m t`, at the header's width `w`: by batches of
+divsteps (`inverseB_ok`) for `w < 2^21`, else bit by bit (`inverseBits_ok`):
+`[v] = gcd(a, m)`, `m ∣ [x₂] a - [v]` and `[x₂] < m` for `[u] = a` and the
+odd `[m] = [v] > 1`; only the arrays `u`, `v`, `x₁`, `x₂` and `t` change. -/
+theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (h : Ws s B Z w)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hU0 : word s.mem B (slot w iU + 8 * w) = 0)
+    (hVM : wv s.mem B (slot w iV) w = wv s.mem B (slot w iM) w) (hX1 : wv s.mem B (slot w iX₁) w = 1)
+    (hX2 : wv s.mem B (slot w iX₂) w = 0) :
+    WP isa (inverse iU iV iX₁ iX₂ iM iT) s fun t =>
+      t.gpr .x0 = B ∧ Frm B [ar w iU, ar w iV, ar w iX₁, ar w iX₂, ar w iT] s.mem t.mem ∧
+      Keep (.x11 :: .x12 :: stepRegs) s t ∧
+      (wv s.mem B (slot w iM) w % 2 = 1 → 1 < wv s.mem B (slot w iM) w →
+        wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w) ∧
+        ((wv s.mem B (slot w iM) w : Nat) : Int) ∣
+          (wv t.mem B (slot w iX₂) w : Int) * wv s.mem B (slot w iU) w - wv t.mem B (slot w iV) w ∧
+        wv t.mem B (slot w iX₂) w < wv s.mem B (slot w iM) w) := by
+  have hs := h.scr
+  have hw1 := h.w1
+  have hw := h.w2
+  unfold inverse inverseN
+  refine WP.seq (WP.mono h.ws_ok fun s₁ ⟨⟨h12₁, h11₁, m₁, _⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = s₁.gpr .x12 >>> 21 ∧ t.mem = s₁.mem)
+    (by brun) (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h3₂, m₂⟩, k₂⟩ => ?_)
+  have k12 := k₁.trans k₂
+  have hm₂ : s₂.mem = s.mem := by rw [m₂, m₁]
+  have hs₂ : Scr s₂ B Z := hs.congr k12.wr
+  have h0₂ : s₂.gpr .x0 = B := (k12.gpr .x0 (by decide)).trans h.x0
+  have e3 : (s₂.gpr .x3).toNat = w / 2 ^ 21 := by
+    rw [h3₂, h12₁, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  refine WP.ite (decide (w < 2 ^ 21)) (by
+      show some (s₂.read .x .x3 == 0) = _
+      congr 1
+      have : s₂.read .x .x3 = s₂.gpr .x3 := rfl
+      rw [this]
+      by_cases hw21 : w < 2 ^ 21
+      · rw [decide_eq_true hw21, beq_iff_eq]
+        apply BitVec.eq_of_toNat_eq; rw [e3]; simp; omega
+      · rw [decide_eq_false hw21]
+        apply Bool.eq_false_iff.mpr
+        intro hb
+        rw [beq_iff_eq] at hb
+        have := congrArg BitVec.toNat hb
+        rw [e3] at this
+        simp at this
+        omega) (fun hb => ?_) (fun hb => ?_)
+  · -- Batches of divsteps.
+    have hw21 : w < 2 ^ 21 := by simpa using hb
+    refine WP.mono (inverseB_ok hs₂ h0₂ ((k₂.gpr .x11 (by decide)).trans h11₁) ((k₂.gpr .x12 (by decide)).trans h12₁)
+      (by omega) (Nat.le_refl _) hw hw21 h.hZ hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T
+      dX₂M dX₂T dMT (by rw [hm₂]; exact hVM)) fun t ⟨_, t0, t1, t2, _, _, fr, kt, val⟩ => ?_
+    rw [hm₂] at fr val
+    refine ⟨t0, fr, ?_, fun h1 h2 => ?_⟩
+    · have k := k12.trans kt
+      exact keep_restore (k.mono (by decide)) (by rw [t1, k12.gpr .x1 (by decide)])
+        (by rw [t2, k12.gpr .x2 (by decide)])
+    · obtain ⟨v1, v2, v3⟩ := val h1 h2
+      rw [Nat.gcd_comm] at v1 v2
+      exact ⟨v1, by rw [v1]; exact v2, v3⟩
+  · -- Bit by bit.
+    have h₂ : Ws s₂ B Z w := h.congr (rs := []) (by rw [hm₂]; exact Frm.refl _ _ _) (by simp) k12 (by decide)
+    refine WP.mono (inverseBits_ok h₂ hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T
+      dX₂M dX₂T dMT (by rw [hm₂]; exact hU0) (by rw [hm₂]; exact hVM) (by rw [hm₂]; exact hX1)
+      (by rw [hm₂]; exact hX2)) fun t ⟨t0, fr, kt, val⟩ => ?_
+    rw [hm₂] at fr val
+    refine ⟨t0, Frm.widen fr fun r hr => ?_, (k12.trans kt).mono (by decide), val⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact ⟨ar w iU, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega) _⟩
+    · exact ⟨ar w iV, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega) _⟩
+    · exact ⟨ar w iX₁, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega) _⟩
+    · exact ⟨ar w iX₂, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega) _⟩
+    · exact ⟨ar w iT, by simp, Nat.le_refl _, Nat.le_refl _⟩
 
 end VG.Proof.Rsa.AArch64
