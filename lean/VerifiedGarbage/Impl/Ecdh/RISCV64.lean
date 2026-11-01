@@ -190,10 +190,13 @@ def saveCode (a : Reg) : List Instr :=
 def restoreCode : List Instr :=
   [.load .d .ra .s0 24, .load .d .s2 .s0 16, .load .d .s1 .s0 8, .load .d .s3 .s0 32, .load .d .s0 .s0 0]
 
-/-- `d` in `[1, n-1]`: the flag `&=` the masks of `d < n` and `d ≠ 0`. -/
-def rangeCode : List Instr :=
-  ltMask c.n (c.sl K) (c.sl MN) ++ andFlag c ++ zeroMask c.n (c.sl K) ++ [.logicImm .xor .a7 .a7 (-1)] ++
+/-- The number at slot `i` in `[1, n-1]`: the flag `&=` the masks of `x < n` and `x ≠ 0`. -/
+def rangeOf (i : Nat) : List Instr :=
+  ltMask c.n (c.sl i) (c.sl MN) ++ andFlag c ++ zeroMask c.n (c.sl i) ++ [.logicImm .xor .a7 .a7 (-1)] ++
     andFlag c
+
+/-- `d` in `[1, n-1]`. -/
+def rangeCode : List Instr := rangeOf c K
 
 /-- The power `Z^(p-2)`, into `ACC`. -/
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, c.sl EXPP, 64 * c.n⟩

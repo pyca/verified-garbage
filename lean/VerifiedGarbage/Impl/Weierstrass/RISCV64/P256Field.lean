@@ -93,16 +93,24 @@ def csubWord (d x : Reg) : List Instr :=
 def selWord (x e : Reg) (j : Nat) : List Instr :=
   [.logic .xor e e x, .logic .and e e .t0, .logic .xor e e x, .store .d e .t2 (8 * j)]
 
-/-- `x mod p` at `[t2]`, for the number `x = x₀ + … + 2¹⁹² x₃ + 2²⁵⁶ c`
-below `2p`: `x + N` (`N = [1, 2⁶⁴ - 2³², 2⁶⁴ - 1, 2³² - 2]`) into `t6`,
-`a4`–`a6`, its carry or `c` (`x ≥ p`) as a mask, which selects it. -/
-def csub : List Instr :=
+/-- `x + N` (`N = 2²⁵⁶ - p = [1, 2⁶⁴ - 2³², 2⁶⁴ - 1, 2³² - 2]`) into `t6`,
+`a4`–`a6`, its carry into `a7`. -/
+def sumP : List Instr :=
   [.addi .t6 X0 1, .sltu .a7 .t6 X0] ++
   [.li .t0 (-1), .shift .sll .d .t0 .t0 32] ++ csubWord .a4 X1 ++
   [.li .t0 (-1)] ++ csubWord .a5 X2 ++
-  [.li .t0 (-1), .shift .srl .d .t0 .t0 32, .addi .t0 .t0 (-1)] ++ csubWord .a6 X3 ++
+  [.li .t0 (-1), .shift .srl .d .t0 .t0 32, .addi .t0 .t0 (-1)] ++ csubWord .a6 X3
+
+/-- After a sum `x + (2²⁵⁶ - m)` into `t6`, `a4`–`a6` and its carry `a7`: the
+carry or `c` (`x ≥ m`) as a mask, which selects the sum or `x`, stored at
+`[t2]`. -/
+def csubTail : List Instr :=
   [.logic .or .a7 .a7 XC, .li .t0 0, .sub .t0 .t0 .a7] ++
   selWord X0 .t6 0 ++ selWord X1 .a4 1 ++ selWord X2 .a5 2 ++ selWord X3 .a6 3
+
+/-- `x mod p` at `[t2]`, for the number `x = x₀ + … + 2¹⁹² x₃ + 2²⁵⁶ c`
+below `2p`. -/
+def csub : List Instr := sumP ++ csubTail
 
 /-! ## Montgomery's reduction -/
 
@@ -144,11 +152,16 @@ def copyIn (p : Reg) (o : Nat) : List Instr :=
     .store .d .t3 .a3 o, .store .d .t6 .a3 (o + 8), .store .d .a1 .a3 (o + 16),
     .store .d .a4 .a3 (o + 24)]
 
-/-- `[t2] = [t4] [t5] R⁻¹ mod p`: a square if the pointers are equal. -/
-def mulCore : Prog isa :=
-  .seq (.ite (.eq .t4 .t5) (.block (copyIn .t4 MA ++ square ACC MA))
-    (.block (copyIn .t4 MA ++ copyIn .t5 MB ++ product ACC MA MB)))
-    (.block (reduce ++ csub))
+/-- The product of `[t4]` and `[t5]` at `ACC`: a square if the pointers are equal. -/
+def prodCode : Prog isa :=
+  .ite (.eq .t4 .t5) (.block (copyIn .t4 MA ++ square ACC MA))
+    (.block (copyIn .t4 MA ++ copyIn .t5 MB ++ product ACC MA MB))
+
+/-- The product, reduced by `red` and `sum ++ csubTail`. -/
+def mulWith (red sum : List Instr) : Prog isa := .seq prodCode (.block (red ++ (sum ++ csubTail)))
+
+/-- `[t2] = [t4] [t5] R⁻¹ mod p`. -/
+def mulCore : Prog isa := mulWith reduce sumP
 
 /-- The words of `[t4]` and `[t5]` into `a1`, `t3`, `t6`, `a4` and `a5`, `a6`,
 `a7`, `t0`. -/
@@ -161,10 +174,13 @@ through `a5`. -/
 def addWord (d x y : Reg) : List Instr :=
   [.add d x y, .sltu .a5 d y, .add d d .a2, .sltu .a2 d .a2, .add .a2 .a2 .a5]
 
-/-- `[t2] = [t4] + [t5] mod p`. -/
-def addCore : List Instr :=
+/-- The sum of `[t4]` and `[t5]` into `X0`–`X3` and `XC`. -/
+def addSum : List Instr :=
   loadAB ++ [.add .a1 .a1 .a5, .sltu .a2 .a1 .a5] ++ addWord .t3 .t3 .a6 ++ addWord .t4 .t6 .a7 ++
-    addWord .t5 .a4 .t0 ++ csub
+    addWord .t5 .a4 .t0
+
+/-- `[t2] = [t4] + [t5] mod p`. -/
+def addCore : List Instr := addSum ++ csub
 
 /-- Word `j > 0` of a difference into `d = x - y - c` (`c` in `a2`, in and
 out), through `a5`. -/
@@ -179,16 +195,22 @@ def addPWord (x : Reg) (j : Nat) : List Instr :=
    else [.add x x .t6, .sltu .a0 x .t6, .add x x .a7, .sltu .a7 x .a7, .add .a7 .a7 .a0]) ++
   [.store .d x .t2 (8 * j)]
 
-/-- `[t2] = [t4] - [t5] mod p`: the difference, and `p` under the mask of the
-borrow (`p`'s words `m`, `m >> 32`, `0`, `(m << 32) | (m >> 63)`) added. -/
-def subCore : List Instr :=
+/-- The difference of `[t4]` and `[t5]` into `a1`, `t3`, `t4`, `t5`, its borrow into `a2`. -/
+def subDiff : List Instr :=
   loadAB ++ [.sltu .a2 .a1 .a5, .sub .a1 .a1 .a5] ++ subWord .t3 .t3 .a6 ++ subWord .t4 .t6 .a7 ++
-    subWord .t5 .a4 .t0 ++
-  [.li .t0 0, .sub .t0 .t0 .a2] ++
-  ([.addi .t6 .t0 0] : List Instr) ++ addPWord .a1 0 ++
-  [.shift .srl .d .t6 .t0 32] ++ addPWord .t3 1 ++
-  [.li .t6 0] ++ addPWord .t4 2 ++
-  [.shift .sll .d .t6 .t0 32, .shift .srl .d .a4 .t0 63, .logic .or .t6 .t6 .a4] ++ addPWord .t5 3
+    subWord .t5 .a4 .t0
+
+/-- `[t2] = [t4] - [t5] mod m`: the difference, then the borrow as a mask in
+`t0`, and `m` under it added a word at a time, word `j` put into `t6` by `kⱼ`. -/
+def subWith (k0 k1 k2 k3 : List Instr) : List Instr :=
+  subDiff ++ [.li .t0 0, .sub .t0 .t0 .a2] ++
+  k0 ++ addPWord .a1 0 ++ k1 ++ addPWord .t3 1 ++ k2 ++ addPWord .t4 2 ++ k3 ++ addPWord .t5 3
+
+/-- `[t2] = [t4] - [t5] mod p`: `p`'s words under the mask `m` are `m`, `m >> 32`,
+`0` and `(m << 32) | (m >> 63)`. -/
+def subCore : List Instr :=
+  subWith [.addi .t6 .t0 0] [.shift .srl .d .t6 .t0 32] [.li .t6 0]
+    [.shift .sll .d .t6 .t0 32, .shift .srl .d .a4 .t0 63, .logic .or .t6 .t6 .a4]
 
 /-! ## The functions -/
 
