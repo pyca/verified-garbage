@@ -630,12 +630,9 @@ def sampleRV : Prog RISCV64.isa :=
     .alloc 4096, .free 4096].all (·.unencodable.isSome)
 #guard RISCV64.Instr.unencodable (.lla .a0 "VG_TABLE") == none
 #guard RISCV64.Instr.unencodable (.alloc 4064) == none
--- Every target's generated files but ARM's, already machine code, are in
--- their crates' `src/`, which they compile; ARM's, the code as printed, in
--- its `asm/`.
-#guard ["riscv64", "aarch64", "powerpc64le", "x86", "x86_64"].all fun t =>
+-- Every target's generated files are in its crate's `src/`, which it compiles.
+#guard ["riscv64", "aarch64", "powerpc64le", "x86", "x86_64", "arm"].all fun t =>
   Rust.codeDir t == s!"verified-garbage-asm-{t}/src"
-#guard Rust.codeDir "arm" == "verified-garbage-asm-arm/asm"
 -- Consecutive `.inst` lines are joined, 8 words a line at most; nothing
 -- else is.
 #guard Rust.template "bl" ((List.range 10).map fun i => .text s!".inst 0x{i}") ==

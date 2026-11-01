@@ -60,8 +60,16 @@ class Trees(unittest.TestCase):
         self.assertEqual(asm_layout.generated_files(root), {
             "src/asm/x86_64/md5.rs": crate / "md5.rs", "src/asm/x86_64/mod.rs": crate / "lib.rs"})
 
+    def test_empty_asm(self):
+        # An `asm/` without a `lib.rs` (left by a checkout) is not the code.
+        root = self.tree(["crates/verified-garbage-asm-x86_64/src/lib.rs",
+                          "crates/verified-garbage-asm-x86_64/asm/consts/.keep"])
+        self.assertEqual(asm_layout.target_dir(root, "x86_64"),
+                         root / "crates/verified-garbage-asm-x86_64/src")
+
     def test_crates(self):
-        # A crate's `asm/`, and not its `src/` beside it.
+        # At a revision whose crates had both: a crate's `asm/`, and not its
+        # `src/` beside it.
         root = self.tree(["crates/verified-garbage-asm-x86_64/Cargo.toml",
                           "crates/verified-garbage-asm-x86_64/asm/lib.rs",
                           "crates/verified-garbage-asm-x86_64/asm/md5.rs",

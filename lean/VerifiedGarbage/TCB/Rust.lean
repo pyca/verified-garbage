@@ -24,7 +24,7 @@ machine code that runs is exactly the code that was verified (plus the
 final `ret` from the printer). The functions of each target are a crate
 of their own, `verified-garbage-asm-<target>` (`crateDir`, under `crates/`;
 its `Cargo.toml` is written by hand), one file `<module>.rs` per `module`,
-in its `asm/` or `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
+in its `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
 items are therefore `pub`. The library depends on the crate of the target
 it is built for and names it `crate::arch` (`Cargo.toml`, `src/lib.rs`).
 
@@ -955,20 +955,9 @@ def targetsOf (as : List Artifact) : List (String × String) :=
 /-- The directory of the target `t`'s crate, under `crates/`: its name. -/
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 
-/-- The directory of the crate of the target named `t` that holds its
-generated files, which its crate compiles: `src/`, for a target whose
-printer emits its straight-line code as machine code (`TCB/<ISA>/Encode.lean`:
-every target's but ARM's), and `asm/` for ARM's, whose one crate serves both
-A32 and Thumb, and is assembled from its text. Keyed on the target here,
-rather than being a field of its `Printer`, so that it does not change what
-every proof imports. -/
-def codeSubdir : String → String
-  | "arm" => "asm"
-  | _ => "src"
-
-/-- The directory of the target `t`'s generated files, under `crates/`:
-`codeSubdir t` of its crate (`crateDir`). -/
-def codeDir (t : String) : String := crateDir t ++ "/" ++ codeSubdir t
+/-- The directory of the target `t`'s generated files, under `crates/`: its
+crate's (`crateDir`) `src/`, which the crate compiles. -/
+def codeDir (t : String) : String := crateDir t ++ "/src"
 
 /-- The root module of the target `t`'s crate, `lib.rs` (in its `codeDir`): the macros its
 modules use (`symMacros`) and a `mod`
