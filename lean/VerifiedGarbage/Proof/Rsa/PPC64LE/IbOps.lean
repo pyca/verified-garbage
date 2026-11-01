@@ -137,6 +137,26 @@ theorem keep_val {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
   · have := arr_disj (w := w) (hj x hx); dsimp only; simp only [S] at *; omega
   · have := hd d hd'; have : KeyWorkspace.hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
 
+/-- A word of `≤ 8` bytes inside an array outside a frame. -/
+theorem keep_word {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
+    (h : KeyWorkspace.Keep B w js ds m m') {j o b : Nat} (hb : o + b / 8 ≤ S w) (hj : ∀ x ∈ js, x ≠ j)
+    (hd : ∀ d ∈ ds, d + 4 ≤ KeyWorkspace.hdr) (fit : arr w j + S w ≤ 2 ^ 64) :
+    m'.readW (off B (arr w j + o)) b = m.readW (off B (arr w j + o)) b := by
+  refine Mem.readW_congr fun i hi => h _ fun r hr => ?_
+  rw [ofs_off B (by omega)]
+  simp only [KeyWorkspace.ranges, List.mem_append, List.mem_map] at hr
+  rcases hr with ⟨x, hx, rfl⟩ | ⟨d, hd', rfl⟩
+  · have := arr_disj (w := w) (hj x hx); dsimp only; omega
+  · have := hd d hd'; have : KeyWorkspace.hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
+
+/-- A signed number of `k + 1 ≤ w + 2` digits in an array outside a frame. -/
+theorem keep_sv {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
+    (h : KeyWorkspace.Keep B w js ds m m') {j k : Nat} (hk : k + 1 ≤ w + 2) (hj : ∀ x ∈ js, x ≠ j)
+    (hd : ∀ d ∈ ds, d + 4 ≤ KeyWorkspace.hdr) (fit : arr w j + S w ≤ 2 ^ 64) :
+    sv m' B (arr w j) k = sv m B (arr w j) k := by
+  unfold sv
+  rw [keep_val h (by omega) hj hd fit, keep_word h (o := 4 * k) (b := 32) (by simp only [S]; omega) hj hd fit]
+
 /-! ## Blocks -/
 
 /-- `ldW r o`: `r` := the window's 64-bit word at `o`. -/
