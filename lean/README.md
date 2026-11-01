@@ -107,9 +107,9 @@ never import proofs.
    CI fails if the checked-in files differ from what Lean generates, so the
    Rust crate contains exactly the verified code. Each crate compiles the
    same code with its machine code as data, `src/`, written by
-   `ci/preassemble.py` (but ARM's, which compiles `asm/`, and RISC-V's, whose
-   printer emits the machine code itself, `TCB/RISCV64/Encode.lean`, and whose
-   emitter writes `src/`), and CI checks
+   `ci/preassemble.py` (but ARM's, which compiles `asm/`, and RISC-V's and
+   AArch64's, whose printers emit the machine code themselves,
+   `TCB/<ISA>/Encode.lean`, and whose emitter writes `src/`), and CI checks
    that it compiles to the same sections, symbols and relocations as `asm/`
    (`ci/check_preassembled.py`).
 

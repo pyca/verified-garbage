@@ -20,15 +20,56 @@ pub const VG_AES_OCB_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2560
+        // add x3, sp, #0
+        // str x20, [x3, #168]
+        // str x21, [x3, #176]
+        // str x22, [x3, #184]
+        // str x23, [x3, #192]
+        // str x24, [x3, #200]
+        // str x25, [x3, #208]
+        // str x26, [x3, #216]
+        // str x27, [x3, #224]
+        // str x28, [x3, #232]
+        // str x30, [x3, #240]
+        // str x19, [x3, #160]
+        // add x19, x3, #0
+        // add x20, x2, #0
+        // lsr x22, x1, #2
+        // add x22, x22, #6
+        // add x3, x19, #512
         r".inst 0xd12803ff,0x910003e3,0xf9005474,0xf9005875,0xf9005c76,0xf9006077,0xf9006478,0xf9006879
 .inst 0xf9006c7a,0xf900707b,0xf900747c,0xf900787e,0xf9005073,0x91000073,0x91000054,0xd342fc36
-.inst 0x91001ad6,0x91080263",
-        r"bl {vg_aes_expand_key_scratch_aes}",
-        r".inst 0xd2800009,0xf9007a89,0xf9007e89,0x9103c282,0xd2800023,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0x91001ad6,0x91080263
+bl {vg_aes_expand_key_scratch_aes}",
+        // movz x9, #0, lsl #0
+        // str x9, [x20, #240]
+        // str x9, [x20, #248]
+        // add x2, x20, #240
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xd2800009,0xf9007a89,0xf9007e89,0x9103c282,0xd2800023,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2560
+        // ret
         r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
@@ -56,6 +97,87 @@ pub const VG_AES_OCB_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2592
+        // add x16, sp, #0
+        // ldr x17, [sp, #2592]
+        // str x17, [x16, #0]
+        // ldr x17, [sp, #2600]
+        // str x17, [x16, #8]
+        // add x17, sp, #32
+        // str x17, [x16, #16]
+        // ldr x9, [sp, #16]
+        // str x20, [x9, #168]
+        // str x21, [x9, #176]
+        // str x22, [x9, #184]
+        // str x23, [x9, #192]
+        // str x24, [x9, #200]
+        // str x25, [x9, #208]
+        // str x26, [x9, #216]
+        // str x27, [x9, #224]
+        // str x28, [x9, #232]
+        // str x30, [x9, #240]
+        // str x19, [x9, #160]
+        // add x19, x9, #0
+        // add x20, x0, #0
+        // add x21, x6, #0
+        // add x22, x1, #0
+        // add x28, x7, #0
+        // str x2, [x19, #272]
+        // str x3, [x19, #280]
+        // str x4, [x19, #256]
+        // str x5, [x19, #264]
+        // ldr x10, [sp, #8]
+        // str x10, [x19, #248]
+        // ldr x9, [x20, #240]
+        // rev x9, x9
+        // ldr x10, [x20, #248]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #64]
+        // rev x10, x10
+        // str x10, [x19, #72]
+        // ldr x9, [x19, #64]
+        // rev x9, x9
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #80]
+        // rev x10, x10
+        // str x10, [x19, #88]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // ldr x12, [x19, #272]
+        // ldr x13, [x19, #280]
+        // add x11, x19, #128
+        // sub x11, x11, x13
+        // sub x14, x11, #1
+        // movz x9, #1, lsl #0
+        // strb w9, [x14, #0]
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
 .inst 0xf900713b,0xf900753c,0xf900793e,0xf9005133,0x91000133,0x91000014,0x910000d5,0x91000036
@@ -66,11 +188,188 @@ pub unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usiz
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9002a69,0xdac00d4a,0xf9002e6a,0xd2800009,0xf9001269,0xf9001669,0xd2800009,0xf9003a69
 .inst 0xf9003e69,0xf9408a6c,0xf9408e6d,0x9102026b,0xcb0d016b,0xd100056e,0xd2800029,0x390001c9
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xf9407e6a,0xd28001eb
-.inst 0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69,0xd28007eb,0x8a0b012a
-.inst 0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+20:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b",
+        // ldr x10, [x19, #248]
+        // movz x11, #15, lsl #0
+        // and x10, x10, x11
+        // lsl x10, x10, #4
+        // ldrb w9, [x19, #112]
+        // orr x9, x9, x10
+        // strb w9, [x19, #112]
+        // ldrb w9, [x19, #127]
+        // movz x11, #63, lsl #0
+        // and x10, x9, x11
+        // str x10, [x19, #288]
+        // movz x11, #192, lsl #0
+        // and x9, x9, x11
+        // strb w9, [x19, #127]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9407e6a,0xd28001eb,0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69
+.inst 0xd28007eb,0x8a0b012a,0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023
+.inst 0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #112]
+        // rev x9, x9
+        // ldr x10, [x19, #120]
+        // rev x10, x10
+        // lsl x11, x9, #8
+        // lsr x13, x10, #56
+        // orr x11, x11, x13
+        // eor x11, x11, x9
+        // ldr x12, [x19, #288]
+        // lsr x13, x12, #0
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #1
+        // lsr x15, x10, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #1
+        // lsr x15, x11, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #1
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #1
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #2
+        // lsr x15, x10, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #2
+        // lsr x15, x11, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #2
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #2
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #4
+        // lsr x15, x10, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #4
+        // lsr x15, x11, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #4
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #3
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #8
+        // lsr x15, x10, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #8
+        // lsr x15, x11, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #8
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #4
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #16
+        // lsr x15, x10, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #16
+        // lsr x15, x11, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #16
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #5
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #32
+        // lsr x15, x10, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #32
+        // lsr x15, x11, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #32
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // str x9, [x19, #304]
+        // str x10, [x19, #312]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #48]
+        // str x9, [x19, #56]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #144]
+        // str x9, [x19, #152]
+        // ldr x23, [x19, #256]
+        // ldr x26, [x19, #264]
+        // lsr x26, x26, #4
+        // movz x25, #1, lsl #0
         r".inst 0xf9403a69,0xdac00d29,0xf9403e6a,0xdac00d4a,0xd378dd2b,0xd378fd4d,0xaa0d016b,0xca09016b
 .inst 0xf940926c,0xd340fd8d,0xd280002e,0x8a0e01ad,0xd280000e,0xcb0d01cd,0xd37ff92e,0xd37ffd4f
 .inst 0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd37ff94e,0xd37ffd6f,0xaa0f01ce,0xca0a01ce
@@ -89,111 +388,934 @@ pub unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usiz
 .inst 0xd360fd4f,0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd3607d4e,0xd360fd6f,0xaa0f01ce
 .inst 0xca0a01ce,0x8a0d01ce,0xca0e014a,0xd3607d6e,0xca0b01ce,0x8a0d01ce,0xca0e016b,0xdac00d29
 .inst 0xdac00d4a,0xf9000a69,0xf9000e6a,0xf9009a69,0xf9009e6a,0xd2800009,0xf9001a69,0xf9001e69
-.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039,0xb4000a7a
-.inst 0xd1002349,0xd37ffd29,0x91000358,0xb4000049,0x14000002,0xd2800118,0x9106027b,0x9100030f
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
-.inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9404a69
-.inst 0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xf94002e9
-.inst 0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a,0x9100437b
-.inst 0x910042f7,0x91000739,0xd10005ef,0xb5fff9af,0x91060262,0x91000303,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
-        r".inst 0x9106027b,0x9100030f,0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a
-.inst 0xf9001a69,0xf9001e6a,0x9100437b,0xd10005ef,0xb5fffecf,0xcb18035a,0xb5fff61a,0x14000001
-.inst 0xf9408678,0xd28001ea,0x8a0a0318,0xb40005d8,0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c
-.inst 0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xd2800009,0xf900c269,0xf900c669,0x9106026b
-.inst 0x910002ec,0x9100030d,0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d
-.inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
-.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039
+cbz x26, 21f
+23:",
+        // sub x9, x26, #8
+        // lsr x9, x9, #63
+        // add x24, x26, #0
+        r".inst 0xd1002349,0xd37ffd29,0x91000358
+cbz x9, 24f
+b 25f
+24:",
+        // movz x24, #8, lsl #0
+        r".inst 0xd2800118
+25:",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+26:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 27f
+b 28f
+27:
+29:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 29b
+28:",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x27, #0]
+        // str x10, [x27, #8]
+        // add x27, x27, #16
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x15, x15, #1
+        r".inst 0xf9404a69,0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xf94002e9,0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a
+.inst 0x9100437b,0x910042f7,0x91000739,0xd10005ef
+cbnz x15, 26b",
+        // add x2, x19, #384
+        // add x3, x24, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x91060262,0x91000303,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+210:",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x27, #0]
+        // ldr x12, [x27, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
+        // add x27, x27, #16
+        // sub x15, x15, #1
+        r".inst 0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
+.inst 0x9100437b,0xd10005ef
+cbnz x15, 210b",
+        // sub x26, x26, x24
+        r".inst 0xcb18035a
+cbnz x26, 23b
+b 22f
+21:
+22:",
+        // ldr x24, [x19, #264]
+        // movz x10, #15, lsl #0
+        // and x24, x24, x10
+        r".inst 0xf9408678,0xd28001ea,0x8a0a0318
+cbz x24, 211f",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #384]
+        // str x9, [x19, #392]
+        // add x11, x19, #384
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xd2800009,0xf900c269,0xf900c669,0x9106026b,0x910002ec,0x9100030d
+213:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #384]
+        // ldr x10, [x19, #392]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #384]
+        // str x10, [x19, #392]
+        // add x2, x19, #384
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
+.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x19, #384]
+        // ldr x12, [x19, #392]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
         r".inst 0xf9401a69,0xf9401e6a,0xf940c26b,0xf940c66c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
-.inst 0x14000001,0xd344ff9a,0xb400405a,0x910002b7,0x91000358,0xd2800039,0xd343ff09,0xb4001909
-.inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+b 212f
+211:
+212:",
+        // lsr x26, x28, #4
+        r".inst 0xd344ff9a
+cbz x26, 214f",
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
+        r".inst 0x910002b7,0x91000358,0xd2800039,0xd343ff09
+cbz x9, 216f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
 .inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
 .inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
-.inst 0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e221c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e,0xf9403269,0xdac00d29
-.inst 0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b
-.inst 0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a
-.inst 0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e241ca5
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff469,0x3d800663
-.inst 0x3d800a65,0xb40007b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c
-.inst 0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b
-.inst 0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a
-.inst 0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
-.inst 0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269
-.inst 0xf900166a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9
-.inst 0xf90006ea,0x910042f7,0x91000739,0xd1000718,0xb5fff8d8,0x14000001,0x1400003c,0xf9402a69
-.inst 0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c,0x14000017
-.inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x3dc00a65
+218:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e221c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+219:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
 .inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
-.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a
-.inst 0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf9401269,0xf940166a
-.inst 0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a,0xf94002e9,0xf94006ea
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0x910042f7,0x91000739
-.inst 0xd1000718,0xb5fff8d8,0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 219b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0xd343ff09
+cbnz x9, 218b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 220f
+222:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 223f
+b 224f
+223:
+225:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 225b
+224:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 222b
+b 221f
+220:
+221:
+b 217f
+216:
+226:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 227f
+b 228f
+227:
+229:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 229b
+228:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 226b
+217:",
+        // add x2, x21, #0
+        // add x3, x26, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #304]
+        // ldr x10, [x19, #312]
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
         r".inst 0xf9409a69,0xf9409e6a,0xf9000a69,0xf9000e6a,0x910002b7,0x91000358,0xd2800039,0xd343ff09
-.inst 0xb4001709,0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c
-.inst 0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a
-.inst 0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a
-.inst 0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929
-.inst 0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62
-.inst 0x3dc00663,0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
-.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63
-.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84
-.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4
-.inst 0x910042f7,0x91000739,0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
-.inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
-.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
-.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63
-.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff569
-.inst 0x3d800663,0x3d800a65,0xb40006b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e
-.inst 0xd280002c,0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
-.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
-.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c
-.inst 0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a
-.inst 0xf9000a69,0xf9000e6a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a
-.inst 0xf90002e9,0xf90006ea,0x910042f7,0x91000739,0xd1000718,0xb5fff9d8,0x14000001,0x14000034
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+cbz x9, 230f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69
-.inst 0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf94002e9
-.inst 0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0x910042f7
-.inst 0x91000739,0xd1000718,0xb5fff9d8,0x14000001,0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
-.inst 0xb40006b8,0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280
-.inst 0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
-        r".inst 0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec,0x9100030d,0x3940018e,0x3900016e
-.inst 0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xd2801009,0x39000169,0xf9401269,0xf940166a
-.inst 0xf940426b,0xf940466c,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a,0x9101c26b,0x910002ec
-.inst 0x9100030d,0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-.inst 0xb5ffff2d,0x14000001,0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf940226b,0xf940266c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023
-.inst 0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
+.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
+.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
+.inst 0x3dc00a65
+232:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63
+.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4
+.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63,0x3dc002e4,0x6e231c84
+.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4
+.inst 0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7
+.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+233:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 233b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0xd343ff09
+cbnz x9, 232b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 234f
+236:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 237f
+b 238f
+237:
+239:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 239b
+238:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 236b
+b 235f
+234:
+235:
+b 231f
+230:
+240:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 241f
+b 242f
+241:
+243:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 243b
+242:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 240b
+231:
+b 215f
+214:
+215:",
+        // movz x10, #15, lsl #0
+        // and x24, x28, x10
+        // sub x9, x28, x24
+        // add x23, x21, x9
+        r".inst 0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
+cbz x24, 244f",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // add x11, x19, #128
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec,0x9100030d
+246:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 246b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x19, #128]
+        // ldr x12, [x19, #136]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // add x11, x19, #112
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xd2801009,0x39000169,0xf9401269,0xf940166a,0xf940426b,0xf940466c,0xca0b0129,0xca0c014a
+.inst 0xf9001269,0xf900166a,0x9101c26b,0x910002ec,0x9100030d
+247:",
+        // ldrb w14, [x12, #0]
+        // ldrb w15, [x11, #0]
+        // eor w14, w14, w15
+        // strb w14, [x12, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 247b
+b 245f
+244:
+245:",
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #64]
+        // ldr x12, [x19, #72]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf9400a6b,0xf9400e6c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf940226b,0xf940266c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // str x9, [x19, #0]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #8]
+        // ldr x11, [x19, #48]
+        // ldr x12, [x19, #56]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #0]
+        // str x10, [x19, #8]
+        // ldr x11, [sp, #0]
+        // add x12, x19, #0
+        // ldr x13, [x19, #248]
         r".inst 0xf9403a69,0xf9403e6a,0xf9000269,0xf900066a,0xf9400269,0xf940066a,0xf9401a6b,0xf9401e6c
-.inst 0xca0b0129,0xca0c014a,0xf9000269,0xf900066a,0xf94003eb,0x9100026c,0xf9407e6d,0x3940018e
-.inst 0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xf9405674,0xf9405a75,0xf9405e76
-.inst 0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e,0xf9405273
-.inst 0x912883ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xca0b0129,0xca0c014a,0xf9000269,0xf900066a,0xf94003eb,0x9100026c,0xf9407e6d
+248:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 248b",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2592
+        // ret
+        r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -220,6 +1342,87 @@ pub const VG_AES_OCB_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2592
+        // add x16, sp, #0
+        // ldr x17, [sp, #2592]
+        // str x17, [x16, #0]
+        // ldr x17, [sp, #2600]
+        // str x17, [x16, #8]
+        // add x17, sp, #32
+        // str x17, [x16, #16]
+        // ldr x9, [sp, #16]
+        // str x20, [x9, #168]
+        // str x21, [x9, #176]
+        // str x22, [x9, #184]
+        // str x23, [x9, #192]
+        // str x24, [x9, #200]
+        // str x25, [x9, #208]
+        // str x26, [x9, #216]
+        // str x27, [x9, #224]
+        // str x28, [x9, #232]
+        // str x30, [x9, #240]
+        // str x19, [x9, #160]
+        // add x19, x9, #0
+        // add x20, x0, #0
+        // add x21, x6, #0
+        // add x22, x1, #0
+        // add x28, x7, #0
+        // str x2, [x19, #272]
+        // str x3, [x19, #280]
+        // str x4, [x19, #256]
+        // str x5, [x19, #264]
+        // ldr x10, [sp, #8]
+        // str x10, [x19, #248]
+        // ldr x9, [x20, #240]
+        // rev x9, x9
+        // ldr x10, [x20, #248]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #64]
+        // rev x10, x10
+        // str x10, [x19, #72]
+        // ldr x9, [x19, #64]
+        // rev x9, x9
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #80]
+        // rev x10, x10
+        // str x10, [x19, #88]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // ldr x12, [x19, #272]
+        // ldr x13, [x19, #280]
+        // add x11, x19, #128
+        // sub x11, x11, x13
+        // sub x14, x11, #1
+        // movz x9, #1, lsl #0
+        // strb w9, [x14, #0]
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
 .inst 0xf900713b,0xf900753c,0xf900793e,0xf9005133,0x91000133,0x91000014,0x910000d5,0x91000036
@@ -230,11 +1433,188 @@ pub unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usiz
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9002a69,0xdac00d4a,0xf9002e6a,0xd2800009,0xf9001269,0xf9001669,0xd2800009,0xf9003a69
 .inst 0xf9003e69,0xf9408a6c,0xf9408e6d,0x9102026b,0xcb0d016b,0xd100056e,0xd2800029,0x390001c9
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xf9407e6a,0xd28001eb
-.inst 0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69,0xd28007eb,0x8a0b012a
-.inst 0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+20:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b",
+        // ldr x10, [x19, #248]
+        // movz x11, #15, lsl #0
+        // and x10, x10, x11
+        // lsl x10, x10, #4
+        // ldrb w9, [x19, #112]
+        // orr x9, x9, x10
+        // strb w9, [x19, #112]
+        // ldrb w9, [x19, #127]
+        // movz x11, #63, lsl #0
+        // and x10, x9, x11
+        // str x10, [x19, #288]
+        // movz x11, #192, lsl #0
+        // and x9, x9, x11
+        // strb w9, [x19, #127]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9407e6a,0xd28001eb,0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69
+.inst 0xd28007eb,0x8a0b012a,0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023
+.inst 0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #112]
+        // rev x9, x9
+        // ldr x10, [x19, #120]
+        // rev x10, x10
+        // lsl x11, x9, #8
+        // lsr x13, x10, #56
+        // orr x11, x11, x13
+        // eor x11, x11, x9
+        // ldr x12, [x19, #288]
+        // lsr x13, x12, #0
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #1
+        // lsr x15, x10, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #1
+        // lsr x15, x11, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #1
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #1
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #2
+        // lsr x15, x10, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #2
+        // lsr x15, x11, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #2
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #2
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #4
+        // lsr x15, x10, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #4
+        // lsr x15, x11, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #4
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #3
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #8
+        // lsr x15, x10, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #8
+        // lsr x15, x11, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #8
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #4
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #16
+        // lsr x15, x10, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #16
+        // lsr x15, x11, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #16
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #5
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #32
+        // lsr x15, x10, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #32
+        // lsr x15, x11, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #32
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // str x9, [x19, #304]
+        // str x10, [x19, #312]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #48]
+        // str x9, [x19, #56]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #144]
+        // str x9, [x19, #152]
+        // ldr x23, [x19, #256]
+        // ldr x26, [x19, #264]
+        // lsr x26, x26, #4
+        // movz x25, #1, lsl #0
         r".inst 0xf9403a69,0xdac00d29,0xf9403e6a,0xdac00d4a,0xd378dd2b,0xd378fd4d,0xaa0d016b,0xca09016b
 .inst 0xf940926c,0xd340fd8d,0xd280002e,0x8a0e01ad,0xd280000e,0xcb0d01cd,0xd37ff92e,0xd37ffd4f
 .inst 0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd37ff94e,0xd37ffd6f,0xaa0f01ce,0xca0a01ce
@@ -253,119 +1633,1018 @@ pub unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usiz
 .inst 0xd360fd4f,0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd3607d4e,0xd360fd6f,0xaa0f01ce
 .inst 0xca0a01ce,0x8a0d01ce,0xca0e014a,0xd3607d6e,0xca0b01ce,0x8a0d01ce,0xca0e016b,0xdac00d29
 .inst 0xdac00d4a,0xf9000a69,0xf9000e6a,0xf9009a69,0xf9009e6a,0xd2800009,0xf9001a69,0xf9001e69
-.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039,0xb4000a7a
-.inst 0xd1002349,0xd37ffd29,0x91000358,0xb4000049,0x14000002,0xd2800118,0x9106027b,0x9100030f
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
-.inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9404a69
-.inst 0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xf94002e9
-.inst 0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a,0x9100437b
-.inst 0x910042f7,0x91000739,0xd10005ef,0xb5fff9af,0x91060262,0x91000303,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
-        r".inst 0x9106027b,0x9100030f,0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a
-.inst 0xf9001a69,0xf9001e6a,0x9100437b,0xd10005ef,0xb5fffecf,0xcb18035a,0xb5fff61a,0x14000001
-.inst 0xf9408678,0xd28001ea,0x8a0a0318,0xb40005d8,0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c
-.inst 0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xd2800009,0xf900c269,0xf900c669,0x9106026b
-.inst 0x910002ec,0x9100030d,0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d
-.inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
-.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039
+cbz x26, 21f
+23:",
+        // sub x9, x26, #8
+        // lsr x9, x9, #63
+        // add x24, x26, #0
+        r".inst 0xd1002349,0xd37ffd29,0x91000358
+cbz x9, 24f
+b 25f
+24:",
+        // movz x24, #8, lsl #0
+        r".inst 0xd2800118
+25:",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+26:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 27f
+b 28f
+27:
+29:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 29b
+28:",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x27, #0]
+        // str x10, [x27, #8]
+        // add x27, x27, #16
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x15, x15, #1
+        r".inst 0xf9404a69,0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xf94002e9,0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a
+.inst 0x9100437b,0x910042f7,0x91000739,0xd10005ef
+cbnz x15, 26b",
+        // add x2, x19, #384
+        // add x3, x24, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x91060262,0x91000303,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+210:",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x27, #0]
+        // ldr x12, [x27, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
+        // add x27, x27, #16
+        // sub x15, x15, #1
+        r".inst 0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
+.inst 0x9100437b,0xd10005ef
+cbnz x15, 210b",
+        // sub x26, x26, x24
+        r".inst 0xcb18035a
+cbnz x26, 23b
+b 22f
+21:
+22:",
+        // ldr x24, [x19, #264]
+        // movz x10, #15, lsl #0
+        // and x24, x24, x10
+        r".inst 0xf9408678,0xd28001ea,0x8a0a0318
+cbz x24, 211f",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #384]
+        // str x9, [x19, #392]
+        // add x11, x19, #384
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xd2800009,0xf900c269,0xf900c669,0x9106026b,0x910002ec,0x9100030d
+213:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #384]
+        // ldr x10, [x19, #392]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #384]
+        // str x10, [x19, #392]
+        // add x2, x19, #384
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
+.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x19, #384]
+        // ldr x12, [x19, #392]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
         r".inst 0xf9401a69,0xf9401e6a,0xf940c26b,0xf940c66c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
-.inst 0x14000001,0xd344ff9a,0xb400405a,0x910002b7,0x91000358,0xd2800039,0xd343ff09,0xb4001709
-.inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+b 212f
+211:
+212:",
+        // lsr x26, x28, #4
+        r".inst 0xd344ff9a
+cbz x26, 214f",
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
+        r".inst 0x910002b7,0x91000358,0xd2800039,0xd343ff09
+cbz x9, 216f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
 .inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
 .inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
-.inst 0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
-.inst 0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63
-.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63,0x3dc002e4
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84
-.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4
-.inst 0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e,0xf9403269
-.inst 0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c
-.inst 0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a
-.inst 0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63,0x3dc002e4
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff569,0x3d800663
-.inst 0x3d800a65,0xb40006b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c
-.inst 0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b
-.inst 0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a
-.inst 0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
-.inst 0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9
-.inst 0xf90006ea,0x910042f7,0x91000739,0xd1000718,0xb5fff9d8,0x14000001,0x14000034,0xf9402a69
-.inst 0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c,0x14000017
-.inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x3dc00a65
+218:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63
+.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4
+.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63,0x3dc002e4,0x6e231c84
+.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4
+.inst 0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7
+.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+219:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
 .inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
-.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a
-.inst 0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf94002e9,0xf94006ea
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0x910042f7,0x91000739
-.inst 0xd1000718,0xb5fff9d8,0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_decrypt_blocks_aes}",
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 219b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0xd343ff09
+cbnz x9, 218b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 220f
+222:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 223f
+b 224f
+223:
+225:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 225b
+224:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 222b
+b 221f
+220:
+221:
+b 217f
+216:
+226:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 227f
+b 228f
+227:
+229:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 229b
+228:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 226b
+217:",
+        // add x2, x21, #0
+        // add x3, x26, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_decrypt_blocks_aes}",
+        // ldr x9, [x19, #304]
+        // ldr x10, [x19, #312]
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
         r".inst 0xf9409a69,0xf9409e6a,0xf9000a69,0xf9000e6a,0x910002b7,0x91000358,0xd2800039,0xd343ff09
-.inst 0xb4001909,0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c
-.inst 0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a
-.inst 0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a
-.inst 0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929
-.inst 0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62
-.inst 0x3dc00663,0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e221c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e,0xf9403269
-.inst 0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c
-.inst 0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a
-.inst 0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63,0x3dc002e4
-.inst 0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff469
-.inst 0x3d800663,0x3d800a65,0xb40007b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e
-.inst 0xd280002c,0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
-.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
-.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c
-.inst 0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a
-.inst 0xf9000a69,0xf9000e6a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a
-.inst 0xf90002e9,0xf90006ea,0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a
-.inst 0xf9001269,0xf900166a,0x910042f7,0x91000739,0xd1000718,0xb5fff8d8,0x14000001,0x1400003c
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+cbz x9, 230f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69
-.inst 0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf94002e9
-.inst 0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0xf9401269
-.inst 0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a,0x910042f7
-.inst 0x91000739,0xd1000718,0xb5fff8d8,0x14000001,0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
-.inst 0xb40006b8,0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280
-.inst 0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
-        r".inst 0x9101c26b,0x910002ec,0x9100030d,0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c
-.inst 0x9100056b,0xd10005ad,0xb5ffff2d,0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec
-.inst 0x9100030d,0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xd2801009
-.inst 0x39000169,0xf9401269,0xf940166a,0xf940426b,0xf940466c,0xca0b0129,0xca0c014a,0xf9001269
-.inst 0xf900166a,0x14000001,0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf940226b,0xf940266c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023
-.inst 0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
+.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
+.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
+.inst 0x3dc00a65
+232:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e221c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+233:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 233b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0xd343ff09
+cbnz x9, 232b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 234f
+236:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 237f
+b 238f
+237:
+239:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 239b
+238:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 236b
+b 235f
+234:
+235:
+b 231f
+230:
+240:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 241f
+b 242f
+241:
+243:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 243b
+242:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 240b
+231:
+b 215f
+214:
+215:",
+        // movz x10, #15, lsl #0
+        // and x24, x28, x10
+        // sub x9, x28, x24
+        // add x23, x21, x9
+        r".inst 0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
+cbz x24, 244f",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // add x11, x19, #112
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0x9101c26b,0x910002ec,0x9100030d
+246:",
+        // ldrb w14, [x12, #0]
+        // ldrb w15, [x11, #0]
+        // eor w14, w14, w15
+        // strb w14, [x12, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 246b",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // add x11, x19, #128
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec,0x9100030d
+247:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 247b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x19, #128]
+        // ldr x12, [x19, #136]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        r".inst 0xd2801009,0x39000169,0xf9401269,0xf940166a,0xf940426b,0xf940466c,0xca0b0129,0xca0c014a
+.inst 0xf9001269,0xf900166a
+b 245f
+244:
+245:",
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #64]
+        // ldr x12, [x19, #72]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf9400a6b,0xf9400e6c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf940226b,0xf940266c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // str x9, [x19, #128]
+        // str x10, [x19, #136]
+        // ldr x9, [x19, #128]
+        // ldr x10, [x19, #136]
+        // ldr x11, [x19, #48]
+        // ldr x12, [x19, #56]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #128]
+        // str x10, [x19, #136]
+        // add x11, x19, #0
+        // ldr x12, [sp, #0]
+        // ldr x13, [x19, #248]
         r".inst 0xf9403a69,0xf9403e6a,0xf9004269,0xf900466a,0xf9404269,0xf940466a,0xf9401a6b,0xf9401e6c
-.inst 0xca0b0129,0xca0c014a,0xf9004269,0xf900466a,0x9100026b,0xf94003ec,0xf9407e6d,0x3940018e
-.inst 0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xd280000d,0x9100026b,0x9102026c
-.inst 0xf9407e78,0x39400169,0x3940018a,0xca0a0129,0xaa0901ad,0x9100056b,0x9100058c,0xd1000718
-.inst 0xb5ffff38,0xd10005ad,0xd37ffdad,0xf900026d,0x910002b7,0x91000398,0xf9400269,0xd280000a
-.inst 0xcb09014a,0xb4000598,0xd346ff09,0xb4000349,0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1
+.inst 0xca0b0129,0xca0c014a,0xf9004269,0xf900466a,0x9100026b,0xf94003ec,0xf9407e6d
+248:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 248b",
+        // movz x13, #0, lsl #0
+        // add x11, x19, #0
+        // add x12, x19, #128
+        // ldr x24, [x19, #248]
+        r".inst 0xd280000d,0x9100026b,0x9102026c,0xf9407e78
+249:",
+        // ldrb w9, [x11, #0]
+        // ldrb w10, [x12, #0]
+        // eor x9, x9, x10
+        // orr x13, x13, x9
+        // add x11, x11, #1
+        // add x12, x12, #1
+        // sub x24, x24, #1
+        r".inst 0x39400169,0x3940018a,0xca0a0129,0xaa0901ad,0x9100056b,0x9100058c,0xd1000718
+cbnz x24, 249b",
+        // sub x13, x13, #1
+        // lsr x13, x13, #63
+        // str x13, [x19, #0]
+        // add x23, x21, #0
+        // add x24, x28, #0
+        // ldr x9, [x19, #0]
+        // movz x10, #0, lsl #0
+        // sub x10, x10, x9
+        r".inst 0xd10005ad,0xd37ffdad,0xf900026d,0x910002b7,0x91000398,0xf9400269,0xd280000a,0xcb09014a
+cbz x24, 250f
+252:",
+        // lsr x9, x24, #6
+        r".inst 0xd346ff09
+cbz x9, 253f",
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        r".inst 0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1
+.inst 0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1
 .inst 0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318
-.inst 0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1
-.inst 0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x1400000f,0xd344ff09,0xb4000109,0x4e080d40
-.inst 0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x14000006,0x394002e9,0xa0a0129
-.inst 0x390002e9,0x910006f7,0xd1000718,0xb5fffaf8,0x14000001,0xf9400260,0xf9405674,0xf9405a75
-.inst 0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e
-.inst 0xf9405273,0x912883ff,0xd65f03c0",
-        r".p2align 6",
+b 254f
+253:",
+        // lsr x9, x24, #4
+        r".inst 0xd344ff09
+cbz x9, 255f",
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        r".inst 0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318
+b 256f
+255:",
+        // ldrb w9, [x23, #0]
+        // and w9, w9, w10
+        // strb w9, [x23, #0]
+        // add x23, x23, #1
+        // sub x24, x24, #1
+        r".inst 0x394002e9,0x0a0a0129,0x390002e9,0x910006f7,0xd1000718
+256:
+254:
+cbnz x24, 252b
+b 251f
+250:
+251:",
+        // ldr x0, [x19, #0]
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2592
+        // ret
+        r".inst 0xf9400260,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a
+.inst 0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
         vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
     )
@@ -385,15 +2664,54 @@ pub unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usiz
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2560
+        // add x3, sp, #0
+        // str x20, [x3, #168]
+        // str x21, [x3, #176]
+        // str x22, [x3, #184]
+        // str x23, [x3, #192]
+        // str x24, [x3, #200]
+        // str x25, [x3, #208]
+        // str x26, [x3, #216]
+        // str x27, [x3, #224]
+        // str x28, [x3, #232]
+        // str x30, [x3, #240]
+        // str x19, [x3, #160]
+        // add x19, x3, #0
+        // add x20, x2, #0
+        // lsr x22, x1, #2
+        // add x22, x22, #6
+        // add x3, x19, #512
         r".inst 0xd12803ff,0x910003e3,0xf9005474,0xf9005875,0xf9005c76,0xf9006077,0xf9006478,0xf9006879
 .inst 0xf9006c7a,0xf900707b,0xf900747c,0xf900787e,0xf9005073,0x91000073,0x91000054,0xd342fc36
-.inst 0x91001ad6,0x91080263",
-        r"bl {vg_aes_expand_key_scratch}",
-        r".inst 0xd2800009,0xf9007a89,0xf9007e89,0x9103c282,0xd2800023,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0x91001ad6,0x91080263
+bl {vg_aes_expand_key_scratch}",
+        // movz x9, #0, lsl #0
+        // str x9, [x20, #240]
+        // str x9, [x20, #248]
+        // add x2, x20, #240
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xd2800009,0xf9007a89,0xf9007e89,0x9103c282,0xd2800023,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2560
+        // ret
         r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0
+.p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -417,6 +2735,86 @@ pub unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *m
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2592
+        // add x16, sp, #0
+        // ldr x17, [sp, #2592]
+        // str x17, [x16, #0]
+        // ldr x17, [sp, #2600]
+        // str x17, [x16, #8]
+        // add x17, sp, #32
+        // str x17, [x16, #16]
+        // ldr x9, [sp, #16]
+        // str x20, [x9, #168]
+        // str x21, [x9, #176]
+        // str x22, [x9, #184]
+        // str x23, [x9, #192]
+        // str x24, [x9, #200]
+        // str x25, [x9, #208]
+        // str x26, [x9, #216]
+        // str x27, [x9, #224]
+        // str x28, [x9, #232]
+        // str x30, [x9, #240]
+        // str x19, [x9, #160]
+        // add x19, x9, #0
+        // add x20, x0, #0
+        // add x21, x6, #0
+        // add x22, x1, #0
+        // add x28, x7, #0
+        // str x2, [x19, #272]
+        // str x3, [x19, #280]
+        // str x4, [x19, #256]
+        // str x5, [x19, #264]
+        // ldr x10, [sp, #8]
+        // str x10, [x19, #248]
+        // ldr x9, [x20, #240]
+        // rev x9, x9
+        // ldr x10, [x20, #248]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #64]
+        // rev x10, x10
+        // str x10, [x19, #72]
+        // ldr x9, [x19, #64]
+        // rev x9, x9
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #80]
+        // rev x10, x10
+        // str x10, [x19, #88]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // ldr x12, [x19, #272]
+        // ldr x13, [x19, #280]
+        // add x11, x19, #128
+        // sub x11, x11, x13
+        // sub x14, x11, #1
+        // movz x9, #1, lsl #0
+        // strb w9, [x14, #0]
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
 .inst 0xf900713b,0xf900753c,0xf900793e,0xf9005133,0x91000133,0x91000014,0x910000d5,0x91000036
@@ -427,11 +2825,188 @@ pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, n
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9002a69,0xdac00d4a,0xf9002e6a,0xd2800009,0xf9001269,0xf9001669,0xd2800009,0xf9003a69
 .inst 0xf9003e69,0xf9408a6c,0xf9408e6d,0x9102026b,0xcb0d016b,0xd100056e,0xd2800029,0x390001c9
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xf9407e6a,0xd28001eb
-.inst 0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69,0xd28007eb,0x8a0b012a
-.inst 0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+20:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b",
+        // ldr x10, [x19, #248]
+        // movz x11, #15, lsl #0
+        // and x10, x10, x11
+        // lsl x10, x10, #4
+        // ldrb w9, [x19, #112]
+        // orr x9, x9, x10
+        // strb w9, [x19, #112]
+        // ldrb w9, [x19, #127]
+        // movz x11, #63, lsl #0
+        // and x10, x9, x11
+        // str x10, [x19, #288]
+        // movz x11, #192, lsl #0
+        // and x9, x9, x11
+        // strb w9, [x19, #127]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9407e6a,0xd28001eb,0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69
+.inst 0xd28007eb,0x8a0b012a,0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023
+.inst 0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #112]
+        // rev x9, x9
+        // ldr x10, [x19, #120]
+        // rev x10, x10
+        // lsl x11, x9, #8
+        // lsr x13, x10, #56
+        // orr x11, x11, x13
+        // eor x11, x11, x9
+        // ldr x12, [x19, #288]
+        // lsr x13, x12, #0
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #1
+        // lsr x15, x10, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #1
+        // lsr x15, x11, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #1
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #1
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #2
+        // lsr x15, x10, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #2
+        // lsr x15, x11, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #2
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #2
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #4
+        // lsr x15, x10, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #4
+        // lsr x15, x11, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #4
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #3
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #8
+        // lsr x15, x10, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #8
+        // lsr x15, x11, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #8
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #4
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #16
+        // lsr x15, x10, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #16
+        // lsr x15, x11, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #16
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #5
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #32
+        // lsr x15, x10, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #32
+        // lsr x15, x11, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #32
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // str x9, [x19, #304]
+        // str x10, [x19, #312]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #48]
+        // str x9, [x19, #56]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #144]
+        // str x9, [x19, #152]
+        // ldr x23, [x19, #256]
+        // ldr x26, [x19, #264]
+        // lsr x26, x26, #4
+        // movz x25, #1, lsl #0
         r".inst 0xf9403a69,0xdac00d29,0xf9403e6a,0xdac00d4a,0xd378dd2b,0xd378fd4d,0xaa0d016b,0xca09016b
 .inst 0xf940926c,0xd340fd8d,0xd280002e,0x8a0e01ad,0xd280000e,0xcb0d01cd,0xd37ff92e,0xd37ffd4f
 .inst 0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd37ff94e,0xd37ffd6f,0xaa0f01ce,0xca0a01ce
@@ -450,111 +3025,933 @@ pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, n
 .inst 0xd360fd4f,0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd3607d4e,0xd360fd6f,0xaa0f01ce
 .inst 0xca0a01ce,0x8a0d01ce,0xca0e014a,0xd3607d6e,0xca0b01ce,0x8a0d01ce,0xca0e016b,0xdac00d29
 .inst 0xdac00d4a,0xf9000a69,0xf9000e6a,0xf9009a69,0xf9009e6a,0xd2800009,0xf9001a69,0xf9001e69
-.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039,0xb4000a7a
-.inst 0xd1002349,0xd37ffd29,0x91000358,0xb4000049,0x14000002,0xd2800118,0x9106027b,0x9100030f
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
-.inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9404a69
-.inst 0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xf94002e9
-.inst 0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a,0x9100437b
-.inst 0x910042f7,0x91000739,0xd10005ef,0xb5fff9af,0x91060262,0x91000303,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".inst 0x9106027b,0x9100030f,0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a
-.inst 0xf9001a69,0xf9001e6a,0x9100437b,0xd10005ef,0xb5fffecf,0xcb18035a,0xb5fff61a,0x14000001
-.inst 0xf9408678,0xd28001ea,0x8a0a0318,0xb40005d8,0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c
-.inst 0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xd2800009,0xf900c269,0xf900c669,0x9106026b
-.inst 0x910002ec,0x9100030d,0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d
-.inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
-.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039
+cbz x26, 21f
+23:",
+        // sub x9, x26, #8
+        // lsr x9, x9, #63
+        // add x24, x26, #0
+        r".inst 0xd1002349,0xd37ffd29,0x91000358
+cbz x9, 24f
+b 25f
+24:",
+        // movz x24, #8, lsl #0
+        r".inst 0xd2800118
+25:",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+26:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 27f
+b 28f
+27:
+29:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 29b
+28:",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x27, #0]
+        // str x10, [x27, #8]
+        // add x27, x27, #16
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x15, x15, #1
+        r".inst 0xf9404a69,0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xf94002e9,0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a
+.inst 0x9100437b,0x910042f7,0x91000739,0xd10005ef
+cbnz x15, 26b",
+        // add x2, x19, #384
+        // add x3, x24, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x91060262,0x91000303,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+210:",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x27, #0]
+        // ldr x12, [x27, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
+        // add x27, x27, #16
+        // sub x15, x15, #1
+        r".inst 0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
+.inst 0x9100437b,0xd10005ef
+cbnz x15, 210b",
+        // sub x26, x26, x24
+        r".inst 0xcb18035a
+cbnz x26, 23b
+b 22f
+21:
+22:",
+        // ldr x24, [x19, #264]
+        // movz x10, #15, lsl #0
+        // and x24, x24, x10
+        r".inst 0xf9408678,0xd28001ea,0x8a0a0318
+cbz x24, 211f",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #384]
+        // str x9, [x19, #392]
+        // add x11, x19, #384
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xd2800009,0xf900c269,0xf900c669,0x9106026b,0x910002ec,0x9100030d
+213:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #384]
+        // ldr x10, [x19, #392]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #384]
+        // str x10, [x19, #392]
+        // add x2, x19, #384
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
+.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x19, #384]
+        // ldr x12, [x19, #392]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
         r".inst 0xf9401a69,0xf9401e6a,0xf940c26b,0xf940c66c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
-.inst 0x14000001,0xd344ff9a,0xb400405a,0x910002b7,0x91000358,0xd2800039,0xd343ff09,0xb4001909
-.inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+b 212f
+211:
+212:",
+        // lsr x26, x28, #4
+        r".inst 0xd344ff9a
+cbz x26, 214f",
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
+        r".inst 0x910002b7,0x91000358,0xd2800039,0xd343ff09
+cbz x9, 216f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
 .inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
 .inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
-.inst 0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e221c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e,0xf9403269,0xdac00d29
-.inst 0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b
-.inst 0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a
-.inst 0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e241ca5
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff469,0x3d800663
-.inst 0x3d800a65,0xb40007b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c
-.inst 0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b
-.inst 0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a
-.inst 0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
-.inst 0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269
-.inst 0xf900166a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9
-.inst 0xf90006ea,0x910042f7,0x91000739,0xd1000718,0xb5fff8d8,0x14000001,0x1400003c,0xf9402a69
-.inst 0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c,0x14000017
-.inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x3dc00a65
+218:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e221c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+219:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
 .inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
-.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a
-.inst 0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf9401269,0xf940166a
-.inst 0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a,0xf94002e9,0xf94006ea
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0x910042f7,0x91000739
-.inst 0xd1000718,0xb5fff8d8,0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 219b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v5.16b, v5.16b, v4.16b
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e241ca5,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0xd343ff09
+cbnz x9, 218b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 220f
+222:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 223f
+b 224f
+223:
+225:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 225b
+224:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 222b
+b 221f
+220:
+221:
+b 217f
+216:
+226:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 227f
+b 228f
+227:
+229:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 229b
+228:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 226b
+217:",
+        // add x2, x21, #0
+        // add x3, x26, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #304]
+        // ldr x10, [x19, #312]
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
         r".inst 0xf9409a69,0xf9409e6a,0xf9000a69,0xf9000e6a,0x910002b7,0x91000358,0xd2800039,0xd343ff09
-.inst 0xb4001709,0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c
-.inst 0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a
-.inst 0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a
-.inst 0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929
-.inst 0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62
-.inst 0x3dc00663,0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
-.inst 0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
-.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63
-.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84
-.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4
-.inst 0x910042f7,0x91000739,0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
-.inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
-.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
-.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63
-.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff569
-.inst 0x3d800663,0x3d800a65,0xb40006b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e
-.inst 0xd280002c,0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
-.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
-.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c
-.inst 0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a
-.inst 0xf9000a69,0xf9000e6a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a
-.inst 0xf90002e9,0xf90006ea,0x910042f7,0x91000739,0xd1000718,0xb5fff9d8,0x14000001,0x14000034
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+cbz x9, 230f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69
-.inst 0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf94002e9
-.inst 0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0x910042f7
-.inst 0x91000739,0xd1000718,0xb5fff9d8,0x14000001,0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
-.inst 0xb40006b8,0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280
-.inst 0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".inst 0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec,0x9100030d,0x3940018e,0x3900016e
-.inst 0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xd2801009,0x39000169,0xf9401269,0xf940166a
-.inst 0xf940426b,0xf940466c,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a,0x9101c26b,0x910002ec
-.inst 0x9100030d,0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-.inst 0xb5ffff2d,0x14000001,0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf940226b,0xf940266c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023
-.inst 0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
+.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
+.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
+.inst 0x3dc00a65
+232:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63
+.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4
+.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63,0x3dc002e4,0x6e231c84
+.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4
+.inst 0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7
+.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+233:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 233b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0xd343ff09
+cbnz x9, 232b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 234f
+236:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 237f
+b 238f
+237:
+239:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 239b
+238:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 236b
+b 235f
+234:
+235:
+b 231f
+230:
+240:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 241f
+b 242f
+241:
+243:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 243b
+242:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 240b
+231:
+b 215f
+214:
+215:",
+        // movz x10, #15, lsl #0
+        // and x24, x28, x10
+        // sub x9, x28, x24
+        // add x23, x21, x9
+        r".inst 0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
+cbz x24, 244f",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // add x11, x19, #128
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec,0x9100030d
+246:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 246b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x19, #128]
+        // ldr x12, [x19, #136]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // add x11, x19, #112
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xd2801009,0x39000169,0xf9401269,0xf940166a,0xf940426b,0xf940466c,0xca0b0129,0xca0c014a
+.inst 0xf9001269,0xf900166a,0x9101c26b,0x910002ec,0x9100030d
+247:",
+        // ldrb w14, [x12, #0]
+        // ldrb w15, [x11, #0]
+        // eor w14, w14, w15
+        // strb w14, [x12, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 247b
+b 245f
+244:
+245:",
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #64]
+        // ldr x12, [x19, #72]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf9400a6b,0xf9400e6c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf940226b,0xf940266c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // str x9, [x19, #0]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #8]
+        // ldr x11, [x19, #48]
+        // ldr x12, [x19, #56]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #0]
+        // str x10, [x19, #8]
+        // ldr x11, [sp, #0]
+        // add x12, x19, #0
+        // ldr x13, [x19, #248]
         r".inst 0xf9403a69,0xf9403e6a,0xf9000269,0xf900066a,0xf9400269,0xf940066a,0xf9401a6b,0xf9401e6c
-.inst 0xca0b0129,0xca0c014a,0xf9000269,0xf900066a,0xf94003eb,0x9100026c,0xf9407e6d,0x3940018e
-.inst 0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xf9405674,0xf9405a75,0xf9405e76
-.inst 0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e,0xf9405273
-.inst 0x912883ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xca0b0129,0xca0c014a,0xf9000269,0xf900066a,0xf94003eb,0x9100026c,0xf9407e6d
+248:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 248b",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2592
+        // ret
+        r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -577,6 +3974,86 @@ pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, n
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
+        // sub sp, sp, #2592
+        // add x16, sp, #0
+        // ldr x17, [sp, #2592]
+        // str x17, [x16, #0]
+        // ldr x17, [sp, #2600]
+        // str x17, [x16, #8]
+        // add x17, sp, #32
+        // str x17, [x16, #16]
+        // ldr x9, [sp, #16]
+        // str x20, [x9, #168]
+        // str x21, [x9, #176]
+        // str x22, [x9, #184]
+        // str x23, [x9, #192]
+        // str x24, [x9, #200]
+        // str x25, [x9, #208]
+        // str x26, [x9, #216]
+        // str x27, [x9, #224]
+        // str x28, [x9, #232]
+        // str x30, [x9, #240]
+        // str x19, [x9, #160]
+        // add x19, x9, #0
+        // add x20, x0, #0
+        // add x21, x6, #0
+        // add x22, x1, #0
+        // add x28, x7, #0
+        // str x2, [x19, #272]
+        // str x3, [x19, #280]
+        // str x4, [x19, #256]
+        // str x5, [x19, #264]
+        // ldr x10, [sp, #8]
+        // str x10, [x19, #248]
+        // ldr x9, [x20, #240]
+        // rev x9, x9
+        // ldr x10, [x20, #248]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #64]
+        // rev x10, x10
+        // str x10, [x19, #72]
+        // ldr x9, [x19, #64]
+        // rev x9, x9
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #80]
+        // rev x10, x10
+        // str x10, [x19, #88]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // ldr x12, [x19, #272]
+        // ldr x13, [x19, #280]
+        // add x11, x19, #128
+        // sub x11, x11, x13
+        // sub x14, x11, #1
+        // movz x9, #1, lsl #0
+        // strb w9, [x14, #0]
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
 .inst 0xf900713b,0xf900753c,0xf900793e,0xf9005133,0x91000133,0x91000014,0x910000d5,0x91000036
@@ -587,11 +4064,188 @@ pub unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, n
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9002a69,0xdac00d4a,0xf9002e6a,0xd2800009,0xf9001269,0xf9001669,0xd2800009,0xf9003a69
 .inst 0xf9003e69,0xf9408a6c,0xf9408e6d,0x9102026b,0xcb0d016b,0xd100056e,0xd2800029,0x390001c9
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xf9407e6a,0xd28001eb
-.inst 0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69,0xd28007eb,0x8a0b012a
-.inst 0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+20:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b",
+        // ldr x10, [x19, #248]
+        // movz x11, #15, lsl #0
+        // and x10, x10, x11
+        // lsl x10, x10, #4
+        // ldrb w9, [x19, #112]
+        // orr x9, x9, x10
+        // strb w9, [x19, #112]
+        // ldrb w9, [x19, #127]
+        // movz x11, #63, lsl #0
+        // and x10, x9, x11
+        // str x10, [x19, #288]
+        // movz x11, #192, lsl #0
+        // and x9, x9, x11
+        // strb w9, [x19, #127]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9407e6a,0xd28001eb,0x8a0b014a,0xd37ced4a,0x3941c269,0xaa0a0129,0x3901c269,0x3941fe69
+.inst 0xd28007eb,0x8a0b012a,0xf900926a,0xd280180b,0x8a0b0129,0x3901fe69,0x9101c262,0xd2800023
+.inst 0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #112]
+        // rev x9, x9
+        // ldr x10, [x19, #120]
+        // rev x10, x10
+        // lsl x11, x9, #8
+        // lsr x13, x10, #56
+        // orr x11, x11, x13
+        // eor x11, x11, x9
+        // ldr x12, [x19, #288]
+        // lsr x13, x12, #0
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #1
+        // lsr x15, x10, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #1
+        // lsr x15, x11, #63
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #1
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #1
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #2
+        // lsr x15, x10, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #2
+        // lsr x15, x11, #62
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #2
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #2
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #4
+        // lsr x15, x10, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #4
+        // lsr x15, x11, #60
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #4
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #3
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #8
+        // lsr x15, x10, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #8
+        // lsr x15, x11, #56
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #8
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #4
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #16
+        // lsr x15, x10, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #16
+        // lsr x15, x11, #48
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #16
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // lsr x13, x12, #5
+        // movz x14, #1, lsl #0
+        // and x13, x13, x14
+        // movz x14, #0, lsl #0
+        // sub x13, x14, x13
+        // lsl x14, x9, #32
+        // lsr x15, x10, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x9
+        // and x14, x14, x13
+        // eor x9, x9, x14
+        // lsl x14, x10, #32
+        // lsr x15, x11, #32
+        // orr x14, x14, x15
+        // eor x14, x14, x10
+        // and x14, x14, x13
+        // eor x10, x10, x14
+        // lsl x14, x11, #32
+        // eor x14, x14, x11
+        // and x14, x14, x13
+        // eor x11, x11, x14
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // str x9, [x19, #304]
+        // str x10, [x19, #312]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #48]
+        // str x9, [x19, #56]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #144]
+        // str x9, [x19, #152]
+        // ldr x23, [x19, #256]
+        // ldr x26, [x19, #264]
+        // lsr x26, x26, #4
+        // movz x25, #1, lsl #0
         r".inst 0xf9403a69,0xdac00d29,0xf9403e6a,0xdac00d4a,0xd378dd2b,0xd378fd4d,0xaa0d016b,0xca09016b
 .inst 0xf940926c,0xd340fd8d,0xd280002e,0x8a0e01ad,0xd280000e,0xcb0d01cd,0xd37ff92e,0xd37ffd4f
 .inst 0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd37ff94e,0xd37ffd6f,0xaa0f01ce,0xca0a01ce
@@ -610,119 +4264,1017 @@ pub unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, n
 .inst 0xd360fd4f,0xaa0f01ce,0xca0901ce,0x8a0d01ce,0xca0e0129,0xd3607d4e,0xd360fd6f,0xaa0f01ce
 .inst 0xca0a01ce,0x8a0d01ce,0xca0e014a,0xd3607d6e,0xca0b01ce,0x8a0d01ce,0xca0e016b,0xdac00d29
 .inst 0xdac00d4a,0xf9000a69,0xf9000e6a,0xf9009a69,0xf9009e6a,0xd2800009,0xf9001a69,0xf9001e69
-.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039,0xb4000a7a
-.inst 0xd1002349,0xd37ffd29,0x91000358,0xb4000049,0x14000002,0xd2800118,0x9106027b,0x9100030f
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
-.inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9404a69
-.inst 0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xf94002e9
-.inst 0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a,0x9100437b
-.inst 0x910042f7,0x91000739,0xd10005ef,0xb5fff9af,0x91060262,0x91000303,0x91000280,0x910002c1
-.inst 0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".inst 0x9106027b,0x9100030f,0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a
-.inst 0xf9001a69,0xf9001e6a,0x9100437b,0xd10005ef,0xb5fffecf,0xcb18035a,0xb5fff61a,0x14000001
-.inst 0xf9408678,0xd28001ea,0x8a0a0318,0xb40005d8,0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c
-.inst 0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a,0xd2800009,0xf900c269,0xf900c669,0x9106026b
-.inst 0x910002ec,0x9100030d,0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d
-.inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
-.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0xd2800009,0xf9004a69,0xf9004e69,0xf9408277,0xf940867a,0xd344ff5a,0xd2800039
+cbz x26, 21f
+23:",
+        // sub x9, x26, #8
+        // lsr x9, x9, #63
+        // add x24, x26, #0
+        r".inst 0xd1002349,0xd37ffd29,0x91000358
+cbz x9, 24f
+b 25f
+24:",
+        // movz x24, #8, lsl #0
+        r".inst 0xd2800118
+25:",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+26:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 27f
+b 28f
+27:
+29:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 29b
+28:",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x27, #0]
+        // str x10, [x27, #8]
+        // add x27, x27, #16
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x15, x15, #1
+        r".inst 0xf9404a69,0xf9404e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xf94002e9,0xf94006ea,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a,0xf9000369,0xf900076a
+.inst 0x9100437b,0x910042f7,0x91000739,0xd10005ef
+cbnz x15, 26b",
+        // add x2, x19, #384
+        // add x3, x24, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x91060262,0x91000303,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // add x27, x19, #384
+        // add x15, x24, #0
+        r".inst 0x9106027b,0x9100030f
+210:",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x27, #0]
+        // ldr x12, [x27, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
+        // add x27, x27, #16
+        // sub x15, x15, #1
+        r".inst 0xf9401a69,0xf9401e6a,0xf940036b,0xf940076c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
+.inst 0x9100437b,0xd10005ef
+cbnz x15, 210b",
+        // sub x26, x26, x24
+        r".inst 0xcb18035a
+cbnz x26, 23b
+b 22f
+21:
+22:",
+        // ldr x24, [x19, #264]
+        // movz x10, #15, lsl #0
+        // and x24, x24, x10
+        r".inst 0xf9408678,0xd28001ea,0x8a0a0318
+cbz x24, 211f",
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #384]
+        // str x9, [x19, #392]
+        // add x11, x19, #384
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xf9404a69,0xf9404e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9004a69,0xf9004e6a
+.inst 0xd2800009,0xf900c269,0xf900c669,0x9106026b,0x910002ec,0x9100030d
+213:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #384]
+        // ldr x10, [x19, #392]
+        // ldr x11, [x19, #144]
+        // ldr x12, [x19, #152]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #384]
+        // str x10, [x19, #392]
+        // add x2, x19, #384
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xd2801009,0x39000169,0xf940c269,0xf940c66a,0xf9404a6b,0xf9404e6c,0xca0b0129,0xca0c014a
+.inst 0xf900c269,0xf900c66a,0x91060262,0xd2800023,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #48]
+        // ldr x10, [x19, #56]
+        // ldr x11, [x19, #384]
+        // ldr x12, [x19, #392]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #48]
+        // str x10, [x19, #56]
         r".inst 0xf9401a69,0xf9401e6a,0xf940c26b,0xf940c66c,0xca0b0129,0xca0c014a,0xf9001a69,0xf9001e6a
-.inst 0x14000001,0xd344ff9a,0xb400405a,0x910002b7,0x91000358,0xd2800039,0xd343ff09,0xb4001709
-.inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+b 212f
+211:
+212:",
+        // lsr x26, x28, #4
+        r".inst 0xd344ff9a
+cbz x26, 214f",
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
+        r".inst 0x910002b7,0x91000358,0xd2800039,0xd343ff09
+cbz x9, 216f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
 .inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
 .inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
 .inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
-.inst 0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
-.inst 0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63
-.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63,0x3dc002e4
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84
-.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4
-.inst 0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e,0xf9403269
-.inst 0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c
-.inst 0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a
-.inst 0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63,0x3dc002e4
-.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff569,0x3d800663
-.inst 0x3d800a65,0xb40006b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c
-.inst 0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b
-.inst 0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a
-.inst 0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
-.inst 0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9
-.inst 0xf90006ea,0x910042f7,0x91000739,0xd1000718,0xb5fff9d8,0x14000001,0x14000034,0xf9402a69
-.inst 0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c,0x14000017
-.inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x3dc00a65
+218:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e211c63
+.inst 0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4
+.inst 0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e221c63,0x3dc002e4,0x6e231c84
+.inst 0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4
+.inst 0x910042f7,0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7
+.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+219:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
 .inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
-.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a
-.inst 0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf94002e9,0xf94006ea
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0x910042f7,0x91000739
-.inst 0xd1000718,0xb5fff9d8,0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_decrypt_blocks}",
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 219b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e231c84,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0xd343ff09
+cbnz x9, 218b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 220f
+222:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 223f
+b 224f
+223:
+225:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 225b
+224:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 222b
+b 221f
+220:
+221:
+b 217f
+216:
+226:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 227f
+b 228f
+227:
+229:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 229b
+228:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 226b
+217:",
+        // add x2, x21, #0
+        // add x3, x26, #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0x910002a2,0x91000343,0x91000280,0x910002c1,0x91080264
+bl {vg_aes_decrypt_blocks}",
+        // ldr x9, [x19, #304]
+        // ldr x10, [x19, #312]
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // add x23, x21, #0
+        // add x24, x26, #0
+        // movz x25, #1, lsl #0
+        // lsr x9, x24, #3
         r".inst 0xf9409a69,0xf9409e6a,0xf9000a69,0xf9000e6a,0x910002b7,0x91000358,0xd2800039,0xd343ff09
-.inst 0xb4001909,0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c
-.inst 0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a
-.inst 0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a
-.inst 0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929
-.inst 0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62
-.inst 0x3dc00663,0x3dc00a65,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e221c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7
-.inst 0x91000739,0xd1000718,0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e,0xf9403269
-.inst 0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c
-.inst 0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a
-.inst 0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0x3dc01a66,0x6e261c63,0x3dc002e4
-.inst 0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718,0xd343ff09,0xb5fff469
-.inst 0x3d800663,0x3d800a65,0xb40007b8,0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e
-.inst 0xd280002c,0x8a0c01cc,0xb400004c,0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
-.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
-.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c
-.inst 0x8a0c01cc,0xb4fffd6c,0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a
-.inst 0xf9000a69,0xf9000e6a,0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a
-.inst 0xf90002e9,0xf90006ea,0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a
-.inst 0xf9001269,0xf900166a,0x910042f7,0x91000739,0xd1000718,0xb5fff8d8,0x14000001,0x1400003c
-.inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc,0xb400004c
-.inst 0x14000017,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
+cbz x9, 230f",
+        // ldr q0, [x19, #80]
+        // ldr x9, [x19, #80]
+        // rev x9, x9
+        // ldr x10, [x19, #88]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q1, [x19, #96]
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // ldr q2, [x19, #96]
+        // ldr q3, [x19, #16]
+        // ldr q5, [x19, #32]
+        r".inst 0x3dc01660,0xf9402a69,0xdac00d29,0xf9402e6a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c
 .inst 0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29
-.inst 0xf9003269,0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc,0xb4fffd6c,0xf9400a69
-.inst 0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a,0xf94002e9
-.inst 0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea,0xf9401269
-.inst 0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a,0x910042f7
-.inst 0x91000739,0xd1000718,0xb5fff8d8,0x14000001,0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
-.inst 0xb40006b8,0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69
-.inst 0xf9000e6a,0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280
-.inst 0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".inst 0x9101c26b,0x910002ec,0x9100030d,0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c
-.inst 0x9100056b,0xd10005ad,0xb5ffff2d,0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec
-.inst 0x9100030d,0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xd2801009
-.inst 0x39000169,0xf9401269,0xf940166a,0xf940426b,0xf940466c,0xca0b0129,0xca0c014a,0xf9001269
-.inst 0xf900166a,0x14000001,0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a
-.inst 0xf940226b,0xf940266c,0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023
-.inst 0x91000280,0x910002c1,0x91080264",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a61,0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a
+.inst 0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed,0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129
+.inst 0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269,0xdac00d4a,0xf900366a,0x3dc01a62,0x3dc00663
+.inst 0x3dc00a65
+232:",
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v2.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v1.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // eor v3.16b, v3.16b, v0.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // umov x9, v2.d[0]
+        // umov x10, v2.d[1]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // lsr x14, x25, #2
+        r".inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e221c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e211c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x6e201c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739,0xd1000718
+.inst 0x4e083c49,0x4e183c4a,0xf9003269,0xf900366a,0xd342ff2e
+233:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 233b",
+        // ldr q6, [x19, #96]
+        // eor v3.16b, v3.16b, v6.16b
+        // ldr q4, [x23, #0]
+        // eor v4.16b, v4.16b, v3.16b
+        // eor v5.16b, v5.16b, v4.16b
+        // str q4, [x23, #0]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        // lsr x9, x24, #3
+        r".inst 0x3dc01a66,0x6e261c63,0x3dc002e4,0x6e231c84,0x6e241ca5,0x3d8002e4,0x910042f7,0x91000739
+.inst 0xd1000718,0xd343ff09
+cbnz x9, 232b",
+        // str q3, [x19, #16]
+        // str q5, [x19, #32]
+        r".inst 0x3d800663,0x3d800a65
+cbz x24, 234f
+236:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 237f
+b 238f
+237:
+239:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 239b
+238:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 236b
+b 235f
+234:
+235:
+b 231f
+230:
+240:",
+        // ldr x9, [x19, #80]
+        // ldr x10, [x19, #88]
+        // str x9, [x19, #96]
+        // str x10, [x19, #104]
+        // add x14, x25, #0
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9402a69,0xf9402e6a,0xf9003269,0xf900366a,0x9100032e,0xd280002c,0x8a0c01cc
+cbz x12, 241f
+b 242f
+241:
+243:",
+        // ldr x9, [x19, #96]
+        // rev x9, x9
+        // ldr x10, [x19, #104]
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x12, x12, x11
+        // movz x13, #135, lsl #0
+        // and x12, x12, x13
+        // lsr x11, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x11
+        // lsl x10, x10, #1
+        // eor x10, x10, x12
+        // rev x9, x9
+        // str x9, [x19, #96]
+        // rev x10, x10
+        // str x10, [x19, #104]
+        // lsr x14, x14, #1
+        // movz x12, #1, lsl #0
+        // and x12, x14, x12
+        r".inst 0xf9403269,0xdac00d29,0xf940366a,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018c,0xd28010ed
+.inst 0x8a0d018c,0xd37ffd4b,0xd37ff929,0xaa0b0129,0xd37ff94a,0xca0c014a,0xdac00d29,0xf9003269
+.inst 0xdac00d4a,0xf900366a,0xd341fdce,0xd280002c,0x8a0c01cc
+cbz x12, 243b
+242:",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x19, #96]
+        // ldr x12, [x19, #104]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x23, #0]
+        // ldr x10, [x23, #8]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x23, #0]
+        // str x10, [x23, #8]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x23, #0]
+        // ldr x12, [x23, #8]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        // add x23, x23, #16
+        // add x25, x25, #1
+        // sub x24, x24, #1
+        r".inst 0xf9400a69,0xf9400e6a,0xf940326b,0xf940366c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf94002e9,0xf94006ea,0xf9400a6b,0xf9400e6c,0xca0b0129,0xca0c014a,0xf90002e9,0xf90006ea
+.inst 0xf9401269,0xf940166a,0xf94002eb,0xf94006ec,0xca0b0129,0xca0c014a,0xf9001269,0xf900166a
+.inst 0x910042f7,0x91000739,0xd1000718
+cbnz x24, 240b
+231:
+b 215f
+214:
+215:",
+        // movz x10, #15, lsl #0
+        // and x24, x28, x10
+        // sub x9, x28, x24
+        // add x23, x21, x9
+        r".inst 0xd28001ea,0x8a0a0398,0xcb180389,0x8b0902b7
+cbz x24, 244f",
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // ldr x11, [x20, #240]
+        // ldr x12, [x20, #248]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x9, [x19, #16]
+        // ldr x10, [x19, #24]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9400a69,0xf9400e6a,0xf9407a8b,0xf9407e8c,0xca0b0129,0xca0c014a,0xf9000a69,0xf9000e6a
+.inst 0xf9400a69,0xf9400e6a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // add x11, x19, #112
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0x9101c26b,0x910002ec,0x9100030d
+246:",
+        // ldrb w14, [x12, #0]
+        // ldrb w15, [x11, #0]
+        // eor w14, w14, w15
+        // strb w14, [x12, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 246b",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // add x11, x19, #128
+        // add x12, x23, #0
+        // add x13, x24, #0
+        r".inst 0xd2800009,0xf9004269,0xf9004669,0x9102026b,0x910002ec,0x9100030d
+247:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 247b",
+        // movz x9, #128, lsl #0
+        // strb w9, [x11, #0]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // ldr x11, [x19, #128]
+        // ldr x12, [x19, #136]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #32]
+        // str x10, [x19, #40]
+        r".inst 0xd2801009,0x39000169,0xf9401269,0xf940166a,0xf940426b,0xf940466c,0xca0b0129,0xca0c014a
+.inst 0xf9001269,0xf900166a
+b 245f
+244:
+245:",
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #40]
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #16]
+        // ldr x12, [x19, #24]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // ldr x11, [x19, #64]
+        // ldr x12, [x19, #72]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #112]
+        // str x10, [x19, #120]
+        // add x2, x19, #112
+        // movz x3, #1, lsl #0
+        // add x0, x20, #0
+        // add x1, x22, #0
+        // add x4, x19, #512
+        r".inst 0xf9401269,0xf940166a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf9400a6b,0xf9400e6c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0xf9403a69,0xf9403e6a,0xf940226b,0xf940266c
+.inst 0xca0b0129,0xca0c014a,0xf9003a69,0xf9003e6a,0x9101c262,0xd2800023,0x91000280,0x910002c1
+.inst 0x91080264
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x19, #112]
+        // ldr x10, [x19, #120]
+        // str x9, [x19, #128]
+        // str x10, [x19, #136]
+        // ldr x9, [x19, #128]
+        // ldr x10, [x19, #136]
+        // ldr x11, [x19, #48]
+        // ldr x12, [x19, #56]
+        // eor x9, x9, x11
+        // eor x10, x10, x12
+        // str x9, [x19, #128]
+        // str x10, [x19, #136]
+        // add x11, x19, #0
+        // ldr x12, [sp, #0]
+        // ldr x13, [x19, #248]
         r".inst 0xf9403a69,0xf9403e6a,0xf9004269,0xf900466a,0xf9404269,0xf940466a,0xf9401a6b,0xf9401e6c
-.inst 0xca0b0129,0xca0c014a,0xf9004269,0xf900466a,0x9100026b,0xf94003ec,0xf9407e6d,0x3940018e
-.inst 0x3900016e,0x9100058c,0x9100056b,0xd10005ad,0xb5ffff6d,0xd280000d,0x9100026b,0x9102026c
-.inst 0xf9407e78,0x39400169,0x3940018a,0xca0a0129,0xaa0901ad,0x9100056b,0x9100058c,0xd1000718
-.inst 0xb5ffff38,0xd10005ad,0xd37ffdad,0xf900026d,0x910002b7,0x91000398,0xf9400269,0xd280000a
-.inst 0xcb09014a,0xb4000598,0xd346ff09,0xb4000349,0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1
+.inst 0xca0b0129,0xca0c014a,0xf9004269,0xf900466a,0x9100026b,0xf94003ec,0xf9407e6d
+248:",
+        // ldrb w14, [x12, #0]
+        // strb w14, [x11, #0]
+        // add x12, x12, #1
+        // add x11, x11, #1
+        // sub x13, x13, #1
+        r".inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 248b",
+        // movz x13, #0, lsl #0
+        // add x11, x19, #0
+        // add x12, x19, #128
+        // ldr x24, [x19, #248]
+        r".inst 0xd280000d,0x9100026b,0x9102026c,0xf9407e78
+249:",
+        // ldrb w9, [x11, #0]
+        // ldrb w10, [x12, #0]
+        // eor x9, x9, x10
+        // orr x13, x13, x9
+        // add x11, x11, #1
+        // add x12, x12, #1
+        // sub x24, x24, #1
+        r".inst 0x39400169,0x3940018a,0xca0a0129,0xaa0901ad,0x9100056b,0x9100058c,0xd1000718
+cbnz x24, 249b",
+        // sub x13, x13, #1
+        // lsr x13, x13, #63
+        // str x13, [x19, #0]
+        // add x23, x21, #0
+        // add x24, x28, #0
+        // ldr x9, [x19, #0]
+        // movz x10, #0, lsl #0
+        // sub x10, x10, x9
+        r".inst 0xd10005ad,0xd37ffdad,0xf900026d,0x910002b7,0x91000398,0xf9400269,0xd280000a,0xcb09014a
+cbz x24, 250f
+252:",
+        // lsr x9, x24, #6
+        r".inst 0xd346ff09
+cbz x9, 253f",
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        r".inst 0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1
+.inst 0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1
 .inst 0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318
-.inst 0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x4e080d40,0x3dc002e1
-.inst 0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x1400000f,0xd344ff09,0xb4000109,0x4e080d40
-.inst 0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318,0x14000006,0x394002e9,0xa0a0129
-.inst 0x390002e9,0x910006f7,0xd1000718,0xb5fffaf8,0x14000001,0xf9400260,0xf9405674,0xf9405a75
-.inst 0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e
-.inst 0xf9405273,0x912883ff,0xd65f03c0",
-        r".p2align 6",
+b 254f
+253:",
+        // lsr x9, x24, #4
+        r".inst 0xd344ff09
+cbz x9, 255f",
+        // dup v0.2d, x10
+        // ldr q1, [x23, #0]
+        // and v1.16b, v1.16b, v0.16b
+        // str q1, [x23, #0]
+        // add x23, x23, #16
+        // sub x24, x24, #16
+        r".inst 0x4e080d40,0x3dc002e1,0x4e201c21,0x3d8002e1,0x910042f7,0xd1004318
+b 256f
+255:",
+        // ldrb w9, [x23, #0]
+        // and w9, w9, w10
+        // strb w9, [x23, #0]
+        // add x23, x23, #1
+        // sub x24, x24, #1
+        r".inst 0x394002e9,0x0a0a0129,0x390002e9,0x910006f7,0xd1000718
+256:
+254:
+cbnz x24, 252b
+b 251f
+250:
+251:",
+        // ldr x0, [x19, #0]
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2592
+        // ret
+        r".inst 0xf9400260,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a
+.inst 0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )

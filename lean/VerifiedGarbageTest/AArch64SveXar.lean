@@ -85,8 +85,8 @@ open VG.Test.AArch64Simd (vrun)
 #guard vrun 0 (.xarS .v0 .v1 0) == none
 #guard vrun 0 (.xarS .v0 .v1 33) == none
 
-#guard printer.instr (.vop (.xarS .v0 .v1 16)) == ["xar z0.s, z0.s, z1.s, #16"]
-#guard printer.instr (.vop (.xarS .v31 .v7 25)) == ["xar z31.s, z31.s, z7.s, #25"]
+#guard Instr.asm (.vop (.xarS .v0 .v1 16)) == ["xar z0.s, z0.s, z1.s, #16"]
+#guard Instr.asm (.vop (.xarS .v31 .v7 25)) == ["xar z31.s, z31.s, z7.s, #25"]
 #guard isa.requires (.vop (.xarS .v0 .v1 16)) == ["sve2"]
 
 end VG.Test.AArch64SveXar

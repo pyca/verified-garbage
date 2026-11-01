@@ -14,21 +14,21 @@ written by this script:
   a page of one, `vg_sym_page!`: calls and the addresses of tables, whose
   bytes the linker writes), each alignment (which also aligns the section),
   and each label one of those names (`2b`);
-* every other run of bytes between them it writes as data: `.octa` on
-  targets without mapping symbols, `.inst` (so that the bytes stay code to
-  the tools that read mapping symbols, such as linkers' erratum fixes) on
-  AArch64.
+* every other run of bytes between them it writes as data, `.octa`: the
+  targets it pre-assembles have no mapping symbols, which data directives
+  would change.
 
 Everything else of each file (documentation, signatures, constants) is
 copied as it is. This script is not trusted: `ci/check_preassembled.py`
 checks that compiling `src/` gives each function the same bytes,
 relocations and symbols as compiling `asm/`.
 
-Two crates compile the emitter's output itself, and are not pre-assembled:
+Three crates compile the emitter's output itself, and are not pre-assembled:
 ARM's (`asm/`), which is built both as ARM and as Thumb code, whose bytes
-differ, and which Rust cannot tell apart at compile time; and RISC-V's
-(`src/`), whose printer already emits each instruction's machine code
-(`lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`).
+differ, and which Rust cannot tell apart at compile time; and RISC-V's and
+AArch64's (`src/`), whose printers already emit each instruction's machine
+code (`lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`,
+`lean/VerifiedGarbage/TCB/AArch64/Encode.lean`).
 
     python3 ci/preassemble.py [TARGET ...]          # rewrite src/
     python3 ci/preassemble.py --check [TARGET ...]  # fail if src/ is stale
@@ -53,7 +53,6 @@ CPU_CRATE = CRATES / "verified-garbage-cpu"
 TRIPLES = {
     "x86_64": "x86_64-unknown-linux-gnu",
     "x86": "i686-unknown-linux-gnu",
-    "aarch64": "aarch64-unknown-linux-gnu",
     "powerpc64le": "powerpc64le-unknown-linux-gnu",
 }
 
@@ -232,19 +231,11 @@ def octa(b):
     return out
 
 
-def words(b, directive, width=4):
-    assert len(b) % width == 0, (directive, len(b))
-    vals = [f"0x{int.from_bytes(b[i:i + width], 'little'):x}" for i in range(0, len(b), width)]
-    return [f"{directive} " + ",".join(vals[i:i + 8]) for i in range(0, len(vals), 8)]
-
-
 def encode(target, b):
     if not b:
         return []
     if target in ("x86_64", "x86", "powerpc64le"):
         return octa(b)
-    if target == "aarch64":
-        return words(b, ".inst")
     raise ValueError(target)
 
 

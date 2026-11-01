@@ -51,8 +51,8 @@ def run (i : Instr) : Option (BitVec 64) := (exec i input).map (·.gpr .x0)
 #guard Instr.requires (.extr .x .x0 .x1 .x2 56) == []
 #guard dstOf (.extr .x .x0 .x1 .x2 56) == some .x0
 
-#guard printer.instr (.extr .x .x0 .x1 .x2 56) == ["extr x0, x1, x2, #56"]
-#guard printer.instr (.extr .w .x0 .x1 .x2 31) == ["extr w0, w1, w2, #31"]
+#guard Instr.asm (.extr .x .x0 .x1 .x2 56) == ["extr x0, x1, x2, #56"]
+#guard Instr.asm (.extr .w .x0 .x1 .x2 31) == ["extr w0, w1, w2, #31"]
 
 -- The result is public exactly when both source operands are public.
 #guard ((AArch64.Taint.step (AArch64.Taint.ofRegs [.x1, .x2])

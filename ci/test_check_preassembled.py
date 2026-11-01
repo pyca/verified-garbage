@@ -187,18 +187,9 @@ class Encode(unittest.TestCase):
         self.assertEqual(out[-1], ".byte 32,33,34,35,36")
         self.assertEqual(preassemble.octa(b""), [])
 
-    def test_words(self):
-        b = bytes(range(40))
-        out = preassemble.words(b, ".inst")
-        self.assertEqual(out[0].split(",")[0], ".inst 0x3020100")
-        self.assertEqual(len(out), 2)
-        with self.assertRaises(AssertionError):
-            preassemble.words(b"\0\0", ".inst")
-
     def test_encode(self):
-        self.assertEqual(preassemble.encode("aarch64", b""), [])
+        self.assertEqual(preassemble.encode("x86_64", b""), [])
         self.assertEqual(preassemble.encode("x86_64", b"\xc3"), [".byte 195"])
-        self.assertEqual(preassemble.encode("aarch64", bytes.fromhex("c0035fd6")), [".inst 0xd65f03c0"])
         with self.assertRaises(ValueError):
             preassemble.encode("arm", b"\0\0\0\0")
 

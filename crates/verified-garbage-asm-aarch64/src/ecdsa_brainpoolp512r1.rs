@@ -20,6 +20,655 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *const [u8; 64], digest: *const [u8; 64], k: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
+        // str x19, [x4, #0]
+        // str x20, [x4, #8]
+        // str x21, [x4, #16]
+        // str x22, [x4, #24]
+        // str x23, [x4, #32]
+        // str x24, [x4, #40]
+        // str x25, [x4, #48]
+        // str x30, [x4, #56]
+        // add x20, x0, #0
+        // add x0, x4, #0
+        // ldr x5, [x3, #56]
+        // rev x5, x5
+        // str x5, [x0, #2048]
+        // ldr x5, [x3, #48]
+        // rev x5, x5
+        // str x5, [x0, #2056]
+        // ldr x5, [x3, #40]
+        // rev x5, x5
+        // str x5, [x0, #2064]
+        // ldr x5, [x3, #32]
+        // rev x5, x5
+        // str x5, [x0, #2072]
+        // ldr x5, [x3, #24]
+        // rev x5, x5
+        // str x5, [x0, #2080]
+        // ldr x5, [x3, #16]
+        // rev x5, x5
+        // str x5, [x0, #2088]
+        // ldr x5, [x3, #8]
+        // rev x5, x5
+        // str x5, [x0, #2096]
+        // ldr x5, [x3, #0]
+        // rev x5, x5
+        // str x5, [x0, #2104]
+        // ldr x5, [x1, #56]
+        // rev x5, x5
+        // str x5, [x0, #2112]
+        // ldr x5, [x1, #48]
+        // rev x5, x5
+        // str x5, [x0, #2120]
+        // ldr x5, [x1, #40]
+        // rev x5, x5
+        // str x5, [x0, #2128]
+        // ldr x5, [x1, #32]
+        // rev x5, x5
+        // str x5, [x0, #2136]
+        // ldr x5, [x1, #24]
+        // rev x5, x5
+        // str x5, [x0, #2144]
+        // ldr x5, [x1, #16]
+        // rev x5, x5
+        // str x5, [x0, #2152]
+        // ldr x5, [x1, #8]
+        // rev x5, x5
+        // str x5, [x0, #2160]
+        // ldr x5, [x1, #0]
+        // rev x5, x5
+        // str x5, [x0, #2168]
+        // ldr x5, [x2, #56]
+        // rev x5, x5
+        // str x5, [x0, #2176]
+        // ldr x5, [x2, #48]
+        // rev x5, x5
+        // str x5, [x0, #2184]
+        // ldr x5, [x2, #40]
+        // rev x5, x5
+        // str x5, [x0, #2192]
+        // ldr x5, [x2, #32]
+        // rev x5, x5
+        // str x5, [x0, #2200]
+        // ldr x5, [x2, #24]
+        // rev x5, x5
+        // str x5, [x0, #2208]
+        // ldr x5, [x2, #16]
+        // rev x5, x5
+        // str x5, [x0, #2216]
+        // ldr x5, [x2, #8]
+        // rev x5, x5
+        // str x5, [x0, #2224]
+        // ldr x5, [x2, #0]
+        // rev x5, x5
+        // str x5, [x0, #2232]
+        // movz x1, #18675, lsl #0
+        // movk x1, #22586, lsl #16
+        // movk x1, #24662, lsl #32
+        // movk x1, #10410, lsl #48
+        // str x1, [x0, #64]
+        // movz x1, #50821, lsl #0
+        // movk x1, #11650, lsl #16
+        // movk x1, #65327, lsl #32
+        // movk x1, #10369, lsl #48
+        // str x1, [x0, #72]
+        // movz x1, #32998, lsl #0
+        // movk x1, #59043, lsl #16
+        // movk x1, #41258, lsl #32
+        // movk x1, #44749, lsl #48
+        // str x1, [x0, #80]
+        // movz x1, #26690, lsl #0
+        // movk x1, #39878, lsl #16
+        // movk x1, #39680, lsl #32
+        // movk x1, #32077, lsl #48
+        // str x1, [x0, #88]
+        // movz x1, #2161, lsl #0
+        // movk x1, #28723, lsl #16
+        // movk x1, #40138, lsl #32
+        // movk x1, #54883, lsl #48
+        // str x1, [x0, #96]
+        // movz x1, #53774, lsl #0
+        // movk x1, #46025, lsl #16
+        // movk x1, #36275, lsl #32
+        // movk x1, #52016, lsl #48
+        // str x1, [x0, #104]
+        // movz x1, #64519, lsl #0
+        // movk x1, #13257, lsl #16
+        // movk x1, #59054, lsl #32
+        // movk x1, #16340, lsl #48
+        // str x1, [x0, #112]
+        // movz x1, #50315, lsl #0
+        // movk x1, #56297, lsl #16
+        // movk x1, #40376, lsl #32
+        // movk x1, #43741, lsl #48
+        // str x1, [x0, #120]
+        // movz x1, #105, lsl #0
+        // movk x1, #40105, lsl #16
+        // movk x1, #38530, lsl #32
+        // movk x1, #46471, lsl #48
+        // str x1, [x0, #128]
+        // movz x1, #56029, lsl #0
+        // movk x1, #2141, lsl #16
+        // movk x1, #54145, lsl #32
+        // movk x1, #7601, lsl #48
+        // str x1, [x0, #136]
+        // movz x1, #4167, lsl #0
+        // movk x1, #32684, lsl #16
+        // movk x1, #24857, lsl #32
+        // movk x1, #16774, lsl #48
+        // str x1, [x0, #144]
+        // movz x1, #9753, lsl #0
+        // movk x1, #19625, lsl #16
+        // movk x1, #23617, lsl #32
+        // movk x1, #21822, lsl #48
+        // str x1, [x0, #152]
+        // movz x1, #2160, lsl #0
+        // movk x1, #28723, lsl #16
+        // movk x1, #40138, lsl #32
+        // movk x1, #54883, lsl #48
+        // str x1, [x0, #160]
+        // movz x1, #53774, lsl #0
+        // movk x1, #46025, lsl #16
+        // movk x1, #36275, lsl #32
+        // movk x1, #52016, lsl #48
+        // str x1, [x0, #168]
+        // movz x1, #64519, lsl #0
+        // movk x1, #13257, lsl #16
+        // movk x1, #59054, lsl #32
+        // movk x1, #16340, lsl #48
+        // str x1, [x0, #176]
+        // movz x1, #50315, lsl #0
+        // movk x1, #56297, lsl #16
+        // movk x1, #40376, lsl #32
+        // movk x1, #43741, lsl #48
+        // str x1, [x0, #184]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #256]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #264]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #272]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #280]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #288]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #296]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #304]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #312]
+        // movz x1, #1, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #320]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #328]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #336]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #344]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #352]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #360]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #368]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #376]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #384]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #392]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #400]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #408]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #416]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #424]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #432]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #440]
+        // movz x1, #50246, lsl #0
+        // movk x1, #59920, lsl #16
+        // movk x1, #35380, lsl #32
+        // movk x1, #55839, lsl #48
+        // str x1, [x0, #448]
+        // movz x1, #53891, lsl #0
+        // movk x1, #44967, lsl #16
+        // movk x1, #38269, lsl #32
+        // movk x1, #5348, lsl #48
+        // str x1, [x0, #456]
+        // movz x1, #48043, lsl #0
+        // movk x1, #18037, lsl #16
+        // movk x1, #19314, lsl #32
+        // movk x1, #16560, lsl #48
+        // str x1, [x0, #464]
+        // movz x1, #34815, lsl #0
+        // movk x1, #40558, lsl #16
+        // movk x1, #273, lsl #32
+        // movk x1, #53135, lsl #48
+        // str x1, [x0, #472]
+        // movz x1, #53703, lsl #0
+        // movk x1, #16256, lsl #16
+        // movk x1, #12488, lsl #32
+        // movk x1, #42476, lsl #48
+        // str x1, [x0, #480]
+        // movz x1, #34680, lsl #0
+        // movk x1, #62494, lsl #16
+        // movk x1, #3929, lsl #32
+        // movk x1, #6189, lsl #48
+        // str x1, [x0, #488]
+        // movz x1, #34060, lsl #0
+        // movk x1, #58064, lsl #16
+        // movk x1, #34042, lsl #32
+        // movk x1, #47163, lsl #48
+        // str x1, [x0, #496]
+        // movz x1, #10883, lsl #0
+        // movk x1, #8829, lsl #16
+        // movk x1, #61831, lsl #32
+        // movk x1, #24260, lsl #48
+        // str x1, [x0, #504]
+        // movz x1, #10804, lsl #0
+        // movk x1, #8425, lsl #16
+        // movk x1, #33686, lsl #32
+        // movk x1, #20606, lsl #48
+        // str x1, [x0, #512]
+        // movz x1, #23092, lsl #0
+        // movk x1, #58766, lsl #16
+        // movk x1, #25543, lsl #32
+        // movk x1, #155, lsl #48
+        // str x1, [x0, #520]
+        // movz x1, #9386, lsl #0
+        // movk x1, #11655, lsl #16
+        // movk x1, #42070, lsl #32
+        // movk x1, #57707, lsl #48
+        // str x1, [x0, #528]
+        // movz x1, #48642, lsl #0
+        // movk x1, #39031, lsl #16
+        // movk x1, #12520, lsl #32
+        // movk x1, #51006, lsl #48
+        // str x1, [x0, #536]
+        // movz x1, #9267, lsl #0
+        // movk x1, #65058, lsl #16
+        // movk x1, #3171, lsl #32
+        // movk x1, #38880, lsl #48
+        // str x1, [x0, #544]
+        // movz x1, #55325, lsl #0
+        // movk x1, #27927, lsl #16
+        // movk x1, #22444, lsl #32
+        // movk x1, #52186, lsl #48
+        // str x1, [x0, #552]
+        // movz x1, #43682, lsl #0
+        // movk x1, #2997, lsl #16
+        // movk x1, #4773, lsl #32
+        // movk x1, #25635, lsl #48
+        // str x1, [x0, #560]
+        // movz x1, #36519, lsl #0
+        // movk x1, #18206, lsl #16
+        // movk x1, #43956, lsl #32
+        // movk x1, #27210, lsl #48
+        // str x1, [x0, #568]
+        // movz x1, #55763, lsl #0
+        // movk x1, #20833, lsl #16
+        // movk x1, #38409, lsl #32
+        // movk x1, #50382, lsl #48
+        // str x1, [x0, #576]
+        // movz x1, #676, lsl #0
+        // movk x1, #10028, lsl #16
+        // movk x1, #19812, lsl #32
+        // movk x1, #26686, lsl #48
+        // str x1, [x0, #584]
+        // movz x1, #24207, lsl #0
+        // movk x1, #28149, lsl #16
+        // movk x1, #1044, lsl #32
+        // movk x1, #13483, lsl #48
+        // str x1, [x0, #592]
+        // movz x1, #8136, lsl #0
+        // movk x1, #5312, lsl #16
+        // movk x1, #21397, lsl #32
+        // movk x1, #34128, lsl #48
+        // str x1, [x0, #600]
+        // movz x1, #34615, lsl #0
+        // movk x1, #36956, lsl #16
+        // movk x1, #55151, lsl #32
+        // movk x1, #9267, lsl #48
+        // str x1, [x0, #608]
+        // movz x1, #15607, lsl #0
+        // movk x1, #62317, lsl #16
+        // movk x1, #59959, lsl #32
+        // movk x1, #45750, lsl #48
+        // str x1, [x0, #616]
+        // movz x1, #17779, lsl #0
+        // movk x1, #109, lsl #16
+        // movk x1, #46538, lsl #32
+        // movk x1, #34588, lsl #48
+        // str x1, [x0, #624]
+        // movz x1, #59777, lsl #0
+        // movk x1, #2452, lsl #16
+        // movk x1, #41292, lsl #32
+        // movk x1, #23083, lsl #48
+        // str x1, [x0, #632]
+        // movz x1, #10861, lsl #0
+        // movk x1, #9476, lsl #16
+        // movk x1, #26153, lsl #32
+        // movk x1, #12176, lsl #48
+        // str x1, [x0, #640]
+        // movz x1, #62245, lsl #0
+        // movk x1, #18242, lsl #16
+        // movk x1, #57199, lsl #32
+        // movk x1, #29976, lsl #48
+        // str x1, [x0, #648]
+        // movz x1, #38032, lsl #0
+        // movk x1, #19589, lsl #16
+        // movk x1, #21843, lsl #32
+        // movk x1, #49028, lsl #48
+        // str x1, [x0, #656]
+        // movz x1, #52286, lsl #0
+        // movk x1, #22926, lsl #16
+        // movk x1, #51061, lsl #32
+        // movk x1, #13838, lsl #48
+        // str x1, [x0, #664]
+        // movz x1, #12252, lsl #0
+        // movk x1, #36838, lsl #16
+        // movk x1, #2952, lsl #32
+        // movk x1, #31767, lsl #48
+        // str x1, [x0, #672]
+        // movz x1, #16268, lsl #0
+        // movk x1, #52637, lsl #16
+        // movk x1, #11127, lsl #32
+        // movk x1, #22621, lsl #48
+        // str x1, [x0, #680]
+        // movz x1, #16283, lsl #0
+        // movk x1, #34575, lsl #16
+        // movk x1, #55258, lsl #32
+        // movk x1, #39518, lsl #48
+        // str x1, [x0, #688]
+        // movz x1, #29313, lsl #0
+        // movk x1, #10955, lsl #16
+        // movk x1, #51665, lsl #32
+        // movk x1, #35920, lsl #48
+        // str x1, [x0, #696]
+        // movz x1, #5745, lsl #0
+        // movk x1, #52648, lsl #16
+        // movk x1, #26654, lsl #32
+        // movk x1, #53923, lsl #48
+        // str x1, [x0, #704]
+        // movz x1, #15837, lsl #0
+        // movk x1, #38184, lsl #16
+        // movk x1, #46936, lsl #32
+        // movk x1, #2182, lsl #48
+        // str x1, [x0, #712]
+        // movz x1, #25215, lsl #0
+        // movk x1, #13239, lsl #16
+        // movk x1, #19408, lsl #32
+        // movk x1, #16070, lsl #48
+        // str x1, [x0, #720]
+        // movz x1, #2024, lsl #0
+        // movk x1, #12034, lsl #16
+        // movk x1, #12487, lsl #32
+        // movk x1, #42738, lsl #48
+        // str x1, [x0, #728]
+        // movz x1, #3555, lsl #0
+        // movk x1, #15225, lsl #16
+        // movk x1, #52262, lsl #32
+        // movk x1, #55289, lsl #48
+        // str x1, [x0, #736]
+        // movz x1, #48095, lsl #0
+        // movk x1, #12054, lsl #16
+        // movk x1, #14242, lsl #32
+        // movk x1, #29244, lsl #48
+        // str x1, [x0, #744]
+        // movz x1, #11862, lsl #0
+        // movk x1, #6475, lsl #16
+        // movk x1, #6988, lsl #32
+        // movk x1, #38367, lsl #48
+        // str x1, [x0, #752]
+        // movz x1, #1968, lsl #0
+        // movk x1, #29060, lsl #16
+        // movk x1, #22634, lsl #32
+        // movk x1, #42900, lsl #48
+        // str x1, [x0, #760]
+        // movz x1, #65431, lsl #0
+        // movk x1, #25430, lsl #16
+        // movk x1, #27005, lsl #32
+        // movk x1, #19064, lsl #48
+        // str x1, [x0, #768]
+        // movz x1, #9506, lsl #0
+        // movk x1, #63394, lsl #16
+        // movk x1, #11390, lsl #32
+        // movk x1, #57934, lsl #48
+        // str x1, [x0, #776]
+        // movz x1, #61368, lsl #0
+        // movk x1, #32851, lsl #16
+        // movk x1, #40678, lsl #32
+        // movk x1, #48761, lsl #48
+        // str x1, [x0, #784]
+        // movz x1, #55782, lsl #0
+        // movk x1, #45910, lsl #16
+        // movk x1, #41918, lsl #32
+        // movk x1, #43713, lsl #48
+        // str x1, [x0, #792]
+        // movz x1, #63375, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #800]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #808]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #816]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #824]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #960]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #968]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #976]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #984]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #992]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1000]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1008]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1016]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #1024]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #1032]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #1040]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #1048]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #1056]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #1064]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #1072]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #1080]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1088]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1096]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1104]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1112]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1120]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1128]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1136]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1144]
+        // movz x1, #65535, lsl #0
+        // movk x1, #65535, lsl #16
+        // movk x1, #65535, lsl #32
+        // movk x1, #65535, lsl #48
+        // str x1, [x0, #2880]
+        // movz x19, #64, lsl #0
+        // movz x5, #1, lsl #0
         r".inst 0xf9000093,0xf9000494,0xf9000895,0xf9000c96,0xf9001097,0xf9001498,0xf9001899,0xf9001c9e
 .inst 0x91000014,0x91000080,0xf9401c65,0xdac00ca5,0xf9040005,0xf9401865,0xdac00ca5,0xf9040405
 .inst 0xf9401465,0xdac00ca5,0xf9040805,0xf9401065,0xdac00ca5,0xf9040c05,0xf9400c65,0xdac00ca5
@@ -101,31 +750,252 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *
 .inst 0xf2c00001,0xf2e00001,0xf9023001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401
 .inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001
 .inst 0xf2e00001,0xf9023c01,0xd29fffe1,0xf2bfffe1,0xf2dfffe1,0xf2ffffe1,0xf905a001,0xd2800813
-.inst 0xd2800025,0xd1000673,0x8b130010,0x39600201,0xd37df271,0x8b110011,0x8a050022,0x392e0222
-.inst 0xd341fc22,0x8a050042,0x392e0622,0xd342fc22,0x8a050042,0x392e0a22,0xd343fc22,0x8a050042
-.inst 0x392e0e22,0xd344fc22,0x8a050042,0x392e1222,0xd345fc22,0x8a050042,0x392e1622,0xd346fc22
-.inst 0x8a050042,0x392e1a22,0xd347fc22,0x8a050042,0x392e1e22,0xb5fffc93,0xf9412001,0xf901e001
-.inst 0xf9412401,0xf901e401,0xf9412801,0xf901e801,0xf9412c01,0xf901ec01,0xf9413001,0xf901f001
-.inst 0xf9413401,0xf901f401,0xf9413801,0xf901f801,0xf9413c01,0xf901fc01,0xf9414001,0xf9020001
-.inst 0xf9414401,0xf9020401,0xf9414801,0xf9020801,0xf9414c01,0xf9020c01,0xf9415001,0xf9021001
-.inst 0xf9415401,0xf9021401,0xf9415801,0xf9021801,0xf9415c01,0xf9021c01,0xd286b521,0xf2a15021
-.inst 0xf2c54d81,0xf2f91a21,0xf9010001,0xd28902e1,0xf2b06501,0xf2c58501,0xf2fb2a01,0xf9010401
-.inst 0xd29da2e1,0xf2b43e21,0xf2c97ae1,0xf2feaea1,0xf9010801,0xd29a38a1,0xf2a5b401,0xf2def721
-.inst 0xf2fb0d81,0xf9010c01,0xd28c8521,0xf2b14661,0xf2d10c21,0xf2fe2781,0xf9011001,0xd296c921
-.inst 0xf2b26fa1,0xf2cf2a21,0xf2f30bc1,0xf9011401,0xd2807c01,0xf2bdeae1,0xf2ca2801,0xf2fd9281
-.inst 0xf9011801,0xd29ced41,0xf2bf2e21,0xf2ccac61,0xf2f28041,0xf9011c01,0x4e081fdd",
-        r"bl {vg_brainpoolp512r1_mul}",
+.inst 0xd2800025
+20:",
+        // sub x19, x19, #1
+        // add x16, x0, x19
+        // ldrb w1, [x16, #2048]
+        // lsl x17, x19, #3
+        // add x17, x0, x17
+        // and x2, x1, x5
+        // strb w2, [x17, #2944]
+        // lsr x2, x1, #1
+        // and x2, x2, x5
+        // strb w2, [x17, #2945]
+        // lsr x2, x1, #2
+        // and x2, x2, x5
+        // strb w2, [x17, #2946]
+        // lsr x2, x1, #3
+        // and x2, x2, x5
+        // strb w2, [x17, #2947]
+        // lsr x2, x1, #4
+        // and x2, x2, x5
+        // strb w2, [x17, #2948]
+        // lsr x2, x1, #5
+        // and x2, x2, x5
+        // strb w2, [x17, #2949]
+        // lsr x2, x1, #6
+        // and x2, x2, x5
+        // strb w2, [x17, #2950]
+        // lsr x2, x1, #7
+        // and x2, x2, x5
+        // strb w2, [x17, #2951]
+        r".inst 0xd1000673,0x8b130010,0x39600201,0xd37df271,0x8b110011,0x8a050022,0x392e0222,0xd341fc22
+.inst 0x8a050042,0x392e0622,0xd342fc22,0x8a050042,0x392e0a22,0xd343fc22,0x8a050042,0x392e0e22
+.inst 0xd344fc22,0x8a050042,0x392e1222,0xd345fc22,0x8a050042,0x392e1622,0xd346fc22,0x8a050042
+.inst 0x392e1a22,0xd347fc22,0x8a050042,0x392e1e22
+cbnz x19, 20b",
+        // ldr x1, [x0, #576]
+        // str x1, [x0, #960]
+        // ldr x1, [x0, #584]
+        // str x1, [x0, #968]
+        // ldr x1, [x0, #592]
+        // str x1, [x0, #976]
+        // ldr x1, [x0, #600]
+        // str x1, [x0, #984]
+        // ldr x1, [x0, #608]
+        // str x1, [x0, #992]
+        // ldr x1, [x0, #616]
+        // str x1, [x0, #1000]
+        // ldr x1, [x0, #624]
+        // str x1, [x0, #1008]
+        // ldr x1, [x0, #632]
+        // str x1, [x0, #1016]
+        // ldr x1, [x0, #640]
+        // str x1, [x0, #1024]
+        // ldr x1, [x0, #648]
+        // str x1, [x0, #1032]
+        // ldr x1, [x0, #656]
+        // str x1, [x0, #1040]
+        // ldr x1, [x0, #664]
+        // str x1, [x0, #1048]
+        // ldr x1, [x0, #672]
+        // str x1, [x0, #1056]
+        // ldr x1, [x0, #680]
+        // str x1, [x0, #1064]
+        // ldr x1, [x0, #688]
+        // str x1, [x0, #1072]
+        // ldr x1, [x0, #696]
+        // str x1, [x0, #1080]
+        // movz x1, #13737, lsl #0
+        // movk x1, #2689, lsl #16
+        // movk x1, #10860, lsl #32
+        // movk x1, #51409, lsl #48
+        // str x1, [x0, #512]
+        // movz x1, #18455, lsl #0
+        // movk x1, #33576, lsl #16
+        // movk x1, #11304, lsl #32
+        // movk x1, #55632, lsl #48
+        // str x1, [x0, #520]
+        // movz x1, #60695, lsl #0
+        // movk x1, #41457, lsl #16
+        // movk x1, #19415, lsl #32
+        // movk x1, #62837, lsl #48
+        // str x1, [x0, #528]
+        // movz x1, #53701, lsl #0
+        // movk x1, #11680, lsl #16
+        // movk x1, #63417, lsl #32
+        // movk x1, #55404, lsl #48
+        // str x1, [x0, #536]
+        // movz x1, #25641, lsl #0
+        // movk x1, #35379, lsl #16
+        // movk x1, #34913, lsl #32
+        // movk x1, #61756, lsl #48
+        // str x1, [x0, #544]
+        // movz x1, #46665, lsl #0
+        // movk x1, #37757, lsl #16
+        // movk x1, #31057, lsl #32
+        // movk x1, #39006, lsl #48
+        // str x1, [x0, #552]
+        // movz x1, #992, lsl #0
+        // movk x1, #61271, lsl #16
+        // movk x1, #20800, lsl #32
+        // movk x1, #60564, lsl #48
+        // str x1, [x0, #560]
+        // movz x1, #59242, lsl #0
+        // movk x1, #63857, lsl #16
+        // movk x1, #25955, lsl #32
+        // movk x1, #37890, lsl #48
+        // str x1, [x0, #568]
+        // mov v29.d[0], x30
+        r".inst 0xf9412001,0xf901e001,0xf9412401,0xf901e401,0xf9412801,0xf901e801,0xf9412c01,0xf901ec01
+.inst 0xf9413001,0xf901f001,0xf9413401,0xf901f401,0xf9413801,0xf901f801,0xf9413c01,0xf901fc01
+.inst 0xf9414001,0xf9020001,0xf9414401,0xf9020401,0xf9414801,0xf9020801,0xf9414c01,0xf9020c01
+.inst 0xf9415001,0xf9021001,0xf9415401,0xf9021401,0xf9415801,0xf9021801,0xf9415c01,0xf9021c01
+.inst 0xd286b521,0xf2a15021,0xf2c54d81,0xf2f91a21,0xf9010001,0xd28902e1,0xf2b06501,0xf2c58501
+.inst 0xf2fb2a01,0xf9010401,0xd29da2e1,0xf2b43e21,0xf2c97ae1,0xf2feaea1,0xf9010801,0xd29a38a1
+.inst 0xf2a5b401,0xf2def721,0xf2fb0d81,0xf9010c01,0xd28c8521,0xf2b14661,0xf2d10c21,0xf2fe2781
+.inst 0xf9011001,0xd296c921,0xf2b26fa1,0xf2cf2a21,0xf2f30bc1,0xf9011401,0xd2807c01,0xf2bdeae1
+.inst 0xf2ca2801,0xf2fd9281,0xf9011801,0xd29ced41,0xf2bf2e21,0xf2ccac61,0xf2f28041,0xf9011c01
+.inst 0x4e081fdd
+bl {vg_brainpoolp512r1_mul}",
+        // umov x30, v29.d[0]
+        // movz x1, #10804, lsl #0
+        // movk x1, #8425, lsl #16
+        // movk x1, #33686, lsl #32
+        // movk x1, #20606, lsl #48
+        // str x1, [x0, #512]
+        // movz x1, #23092, lsl #0
+        // movk x1, #58766, lsl #16
+        // movk x1, #25543, lsl #32
+        // movk x1, #155, lsl #48
+        // str x1, [x0, #520]
+        // movz x1, #9386, lsl #0
+        // movk x1, #11655, lsl #16
+        // movk x1, #42070, lsl #32
+        // movk x1, #57707, lsl #48
+        // str x1, [x0, #528]
+        // movz x1, #48642, lsl #0
+        // movk x1, #39031, lsl #16
+        // movk x1, #12520, lsl #32
+        // movk x1, #51006, lsl #48
+        // str x1, [x0, #536]
+        // movz x1, #9267, lsl #0
+        // movk x1, #65058, lsl #16
+        // movk x1, #3171, lsl #32
+        // movk x1, #38880, lsl #48
+        // str x1, [x0, #544]
+        // movz x1, #55325, lsl #0
+        // movk x1, #27927, lsl #16
+        // movk x1, #22444, lsl #32
+        // movk x1, #52186, lsl #48
+        // str x1, [x0, #552]
+        // movz x1, #43682, lsl #0
+        // movk x1, #2997, lsl #16
+        // movk x1, #4773, lsl #32
+        // movk x1, #25635, lsl #48
+        // str x1, [x0, #560]
+        // movz x1, #36519, lsl #0
+        // movk x1, #18206, lsl #16
+        // movk x1, #43956, lsl #32
+        // movk x1, #27210, lsl #48
+        // str x1, [x0, #568]
+        // mov v29.d[0], x30
         r".inst 0x4e083fbe,0xd2854681,0xf2a41d21,0xf2d072c1,0xf2ea0fc1,0xf9010001,0xd28b4681,0xf2bcb1c1
 .inst 0xf2cc78e1,0xf2e01361,0xf9010401,0xd2849541,0xf2a5b0e1,0xf2d48ac1,0xf2fc2d61,0xf9010801
 .inst 0xd297c041,0xf2b30ee1,0xf2c61d01,0xf2f8e7c1,0xf9010c01,0xd2848661,0xf2bfc441,0xf2c18c61
 .inst 0xf2f2fc01,0xf9011001,0xd29b03a1,0xf2ada2e1,0xf2caf581,0xf2f97b41,0xf9011401,0xd2955441
 .inst 0xf2a176a1,0xf2c254a1,0xf2ec8461,0xf9011801,0xd291d4e1,0xf2a8e3c1,0xf2d57681,0xf2ed4941
-.inst 0xf9011c01,0x4e081fdd",
-        r"bl {vg_brainpoolp512r1_inv_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2811801,0xd2807802,0xd280f003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2812001,0xd2811802,0xd2802803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9011c01,0x4e081fdd
+bl {vg_brainpoolp512r1_inv_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2240, lsl #0
+        // movz x2, #960, lsl #0
+        // movz x3, #1920, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2811801,0xd2807802,0xd280f003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2304, lsl #0
+        // movz x2, #2240, lsl #0
+        // movz x3, #320, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2812001,0xd2811802,0xd2802803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2304]
+        // ldr x9, [x0, #2312]
+        // ldr x10, [x0, #2320]
+        // ldr x11, [x0, #2328]
+        // ldr x12, [x0, #2336]
+        // ldr x13, [x0, #2344]
+        // ldr x14, [x0, #2352]
+        // ldr x15, [x0, #2360]
+        // ldr x2, [x0, #256]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #264]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #272]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #280]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #288]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #296]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #304]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #312]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #128]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #136]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #144]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #152]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #160]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #168]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #176]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #184]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #2368]
+        // str x9, [x0, #2376]
+        // str x10, [x0, #2384]
+        // str x11, [x0, #2392]
+        // str x12, [x0, #2400]
+        // str x13, [x0, #2408]
+        // str x14, [x0, #2416]
+        // str x15, [x0, #2424]
+        // mov v29.d[0], x30
+        // movz x1, #2432, lsl #0
+        // movz x2, #2048, lsl #0
+        // movz x3, #704, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9448008,0xf9448409,0xf944880a,0xf9448c0b,0xf944900c,0xf944940d
 .inst 0xf944980e,0xf9449c0f,0xf9408002,0xab020108,0xf9408402,0xba020129,0xf9408802,0xba02014a
 .inst 0xf9408c02,0xba02016b,0xf9409002,0xba02018c,0xf9409402,0xba0201ad,0xf9409802,0xba0201ce
@@ -133,8 +1003,129 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *
 .inst 0xfa020144,0xf9404c02,0xfa020165,0xf9405002,0xfa020186,0xf9405402,0xfa0201b0,0xf9405802
 .inst 0xfa0201d1,0xf9405c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf904a008,0xf904a409,0xf904a80a,0xf904ac0b
-.inst 0xf904b00c,0xf904b40d,0xf904b80e,0xf904bc0f,0x4e081fdd,0xd2813001,0xd2810002,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
+.inst 0xf904b00c,0xf904b40d,0xf904b80e,0xf904bc0f,0x4e081fdd,0xd2813001,0xd2810002,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2112]
+        // ldr x2, [x0, #128]
+        // subs x16, x1, x2
+        // ldr x1, [x0, #2120]
+        // ldr x2, [x0, #136]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2128]
+        // ldr x2, [x0, #144]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2136]
+        // ldr x2, [x0, #152]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2144]
+        // ldr x2, [x0, #160]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2152]
+        // ldr x2, [x0, #168]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2160]
+        // ldr x2, [x0, #176]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2168]
+        // ldr x2, [x0, #184]
+        // sbcs x16, x1, x2
+        // sbc x2, x7, x7
+        // add x4, x2, #0
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2112]
+        // ldr x2, [x0, #2120]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2128]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2136]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2144]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2152]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2160]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2168]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // and x2, x2, x4
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2048]
+        // ldr x2, [x0, #128]
+        // subs x16, x1, x2
+        // ldr x1, [x0, #2056]
+        // ldr x2, [x0, #136]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2064]
+        // ldr x2, [x0, #144]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2072]
+        // ldr x2, [x0, #152]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2080]
+        // ldr x2, [x0, #160]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2088]
+        // ldr x2, [x0, #168]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2096]
+        // ldr x2, [x0, #176]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2104]
+        // ldr x2, [x0, #184]
+        // sbcs x16, x1, x2
+        // sbc x2, x7, x7
+        // add x4, x2, #0
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2048]
+        // ldr x2, [x0, #2056]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2064]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2072]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2080]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2088]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2096]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2104]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // and x2, x2, x4
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2368]
+        // ldr x2, [x0, #2376]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2384]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2392]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2400]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2408]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2416]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2424]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // mov v29.d[0], x30
         r".inst 0x4e083fbe,0xd2800007,0xf9442001,0xf9404002,0xeb020030,0xf9442401,0xf9404402,0xfa020030
 .inst 0xf9442801,0xf9404802,0xfa020030,0xf9442c01,0xf9404c02,0xfa020030,0xf9443001,0xf9405002
 .inst 0xfa020030,0xf9443401,0xf9405402,0xfa020030,0xf9443801,0xf9405802,0xfa020030,0xf9443c01
@@ -150,16 +1141,100 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *
 .inst 0xf945a001,0x8a020021,0xf905a001,0xd2800007,0xf944a001,0xf944a402,0xaa020021,0xf944a802
 .inst 0xaa020021,0xf944ac02,0xaa020021,0xf944b002,0xaa020021,0xf944b402,0xaa020021,0xf944b802
 .inst 0xaa020021,0xf944bc02,0xaa020021,0xeb0100f0,0xda0700e2,0xf945a001,0x8a020021,0xf905a001
-.inst 0x4e081fdd",
-        r"bl {vg_brainpoolp512r1_inv_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2813801,0xd2812802,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2814001,0xd2810802,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2814801,0xd2811002,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2815001,0xd2813802,0xd2814003",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
+.inst 0x4e081fdd
+bl {vg_brainpoolp512r1_inv_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2496, lsl #0
+        // movz x2, #2368, lsl #0
+        // movz x3, #704, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2813801,0xd2812802,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2560, lsl #0
+        // movz x2, #2112, lsl #0
+        // movz x3, #704, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2814001,0xd2810802,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2624, lsl #0
+        // movz x2, #2176, lsl #0
+        // movz x3, #704, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2814801,0xd2811002,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2688, lsl #0
+        // movz x2, #2496, lsl #0
+        // movz x3, #2560, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2815001,0xd2813802,0xd2814003
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2624]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2632]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2640]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2648]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2656]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2664]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2672]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2680]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #128]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #136]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #144]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #152]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #160]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #168]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #176]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #184]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #2688]
+        // str x9, [x0, #2696]
+        // str x10, [x0, #2704]
+        // str x11, [x0, #2712]
+        // str x12, [x0, #2720]
+        // str x13, [x0, #2728]
+        // str x14, [x0, #2736]
+        // str x15, [x0, #2744]
+        // mov v29.d[0], x30
+        // movz x1, #2752, lsl #0
+        // movz x2, #1920, lsl #0
+        // movz x3, #2688, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9454008,0xf9454409,0xf945480a,0xf9454c0b,0xf945500c,0xf945540d
 .inst 0xf945580e,0xf9455c0f,0xf9452002,0xab020108,0xf9452402,0xba020129,0xf9452802,0xba02014a
 .inst 0xf9452c02,0xba02016b,0xf9453002,0xba02018c,0xf9453402,0xba0201ad,0xf9453802,0xba0201ce
@@ -167,10 +1242,113 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *
 .inst 0xfa020144,0xf9404c02,0xfa020165,0xf9405002,0xfa020186,0xf9405402,0xfa0201b0,0xf9405802
 .inst 0xfa0201d1,0xf9405c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9054008,0xf9054409,0xf905480a,0xf9054c0b
-.inst 0xf905500c,0xf905540d,0xf905580e,0xf9055c0f,0x4e081fdd,0xd2815801,0xd280f002,0xd2815003",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2816001,0xd2815802,0xd2802803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
+.inst 0xf905500c,0xf905540d,0xf905580e,0xf9055c0f,0x4e081fdd,0xd2815801,0xd280f002,0xd2815003
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2816, lsl #0
+        // movz x2, #2752, lsl #0
+        // movz x3, #320, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2816001,0xd2815802,0xd2802803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2816]
+        // ldr x2, [x0, #2824]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2832]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2840]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2848]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2856]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2864]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2872]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // ldr x3, [x0, #2880]
+        // ldr x1, [x0, #2368]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #56]
+        // ldr x1, [x0, #2376]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #48]
+        // ldr x1, [x0, #2384]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #40]
+        // ldr x1, [x0, #2392]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #32]
+        // ldr x1, [x0, #2400]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #24]
+        // ldr x1, [x0, #2408]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #16]
+        // ldr x1, [x0, #2416]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #8]
+        // ldr x1, [x0, #2424]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #0]
+        // ldr x1, [x0, #2816]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #120]
+        // ldr x1, [x0, #2824]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #112]
+        // ldr x1, [x0, #2832]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #104]
+        // ldr x1, [x0, #2840]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #96]
+        // ldr x1, [x0, #2848]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #88]
+        // ldr x1, [x0, #2856]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #80]
+        // ldr x1, [x0, #2864]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #72]
+        // ldr x1, [x0, #2872]
+        // and x1, x1, x3
+        // rev x1, x1
+        // str x1, [x20, #64]
+        // ldr x19, [x0, #0]
+        // ldr x20, [x0, #8]
+        // ldr x21, [x0, #16]
+        // ldr x22, [x0, #24]
+        // ldr x23, [x0, #32]
+        // ldr x24, [x0, #40]
+        // ldr x25, [x0, #48]
+        // ldr x30, [x0, #56]
+        // movz x1, #1, lsl #0
+        // and x0, x3, x1
+        // ret
         r".inst 0x4e083fbe,0xd2800007,0xf9458001,0xf9458402,0xaa020021,0xf9458802,0xaa020021,0xf9458c02
 .inst 0xaa020021,0xf9459002,0xaa020021,0xf9459402,0xaa020021,0xf9459802,0xaa020021,0xf9459c02
 .inst 0xaa020021,0xeb0100f0,0xda0700e2,0xf945a001,0x8a020021,0xf905a001,0xf945a003,0xf944a001
@@ -183,8 +1361,8 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *
 .inst 0x8a030021,0xdac00c21,0xf9002e81,0xf9459401,0x8a030021,0xdac00c21,0xf9002a81,0xf9459801
 .inst 0x8a030021,0xdac00c21,0xf9002681,0xf9459c01,0x8a030021,0xdac00c21,0xf9002281,0xf9400013
 .inst 0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021
-.inst 0x8a010060,0xd65f03c0",
-        r".p2align 6",
+.inst 0x8a010060,0xd65f03c0
+.p2align 6",
         vg_brainpoolp512r1_mul = sym super::brainpoolp512r1_mul::vg_brainpoolp512r1_mul,
         vg_brainpoolp512r1_inv_mod_p = sym super::brainpoolp512r1_inverse::vg_brainpoolp512r1_inv_mod_p,
         vg_brainpoolp512r1_mul_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_p,
@@ -209,6 +1387,660 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129], digest: *const [u8; 64], sig: *const [u8; 128], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
+        // add x4, x3, #0
+        // add x6, x0, #0
+        // add x3, x2, #0
+        // add x8, x2, #64
+        // add x2, x0, #1
+        // str x19, [x4, #0]
+        // str x20, [x4, #8]
+        // str x21, [x4, #16]
+        // str x22, [x4, #24]
+        // str x23, [x4, #32]
+        // str x24, [x4, #40]
+        // str x25, [x4, #48]
+        // str x30, [x4, #56]
+        // add x20, x0, #0
+        // add x0, x4, #0
+        // ldr x5, [x3, #56]
+        // rev x5, x5
+        // str x5, [x0, #2048]
+        // ldr x5, [x3, #48]
+        // rev x5, x5
+        // str x5, [x0, #2056]
+        // ldr x5, [x3, #40]
+        // rev x5, x5
+        // str x5, [x0, #2064]
+        // ldr x5, [x3, #32]
+        // rev x5, x5
+        // str x5, [x0, #2072]
+        // ldr x5, [x3, #24]
+        // rev x5, x5
+        // str x5, [x0, #2080]
+        // ldr x5, [x3, #16]
+        // rev x5, x5
+        // str x5, [x0, #2088]
+        // ldr x5, [x3, #8]
+        // rev x5, x5
+        // str x5, [x0, #2096]
+        // ldr x5, [x3, #0]
+        // rev x5, x5
+        // str x5, [x0, #2104]
+        // ldr x5, [x1, #56]
+        // rev x5, x5
+        // str x5, [x0, #2112]
+        // ldr x5, [x1, #48]
+        // rev x5, x5
+        // str x5, [x0, #2120]
+        // ldr x5, [x1, #40]
+        // rev x5, x5
+        // str x5, [x0, #2128]
+        // ldr x5, [x1, #32]
+        // rev x5, x5
+        // str x5, [x0, #2136]
+        // ldr x5, [x1, #24]
+        // rev x5, x5
+        // str x5, [x0, #2144]
+        // ldr x5, [x1, #16]
+        // rev x5, x5
+        // str x5, [x0, #2152]
+        // ldr x5, [x1, #8]
+        // rev x5, x5
+        // str x5, [x0, #2160]
+        // ldr x5, [x1, #0]
+        // rev x5, x5
+        // str x5, [x0, #2168]
+        // ldr x5, [x2, #56]
+        // rev x5, x5
+        // str x5, [x0, #2176]
+        // ldr x5, [x2, #48]
+        // rev x5, x5
+        // str x5, [x0, #2184]
+        // ldr x5, [x2, #40]
+        // rev x5, x5
+        // str x5, [x0, #2192]
+        // ldr x5, [x2, #32]
+        // rev x5, x5
+        // str x5, [x0, #2200]
+        // ldr x5, [x2, #24]
+        // rev x5, x5
+        // str x5, [x0, #2208]
+        // ldr x5, [x2, #16]
+        // rev x5, x5
+        // str x5, [x0, #2216]
+        // ldr x5, [x2, #8]
+        // rev x5, x5
+        // str x5, [x0, #2224]
+        // ldr x5, [x2, #0]
+        // rev x5, x5
+        // str x5, [x0, #2232]
+        // movz x1, #18675, lsl #0
+        // movk x1, #22586, lsl #16
+        // movk x1, #24662, lsl #32
+        // movk x1, #10410, lsl #48
+        // str x1, [x0, #64]
+        // movz x1, #50821, lsl #0
+        // movk x1, #11650, lsl #16
+        // movk x1, #65327, lsl #32
+        // movk x1, #10369, lsl #48
+        // str x1, [x0, #72]
+        // movz x1, #32998, lsl #0
+        // movk x1, #59043, lsl #16
+        // movk x1, #41258, lsl #32
+        // movk x1, #44749, lsl #48
+        // str x1, [x0, #80]
+        // movz x1, #26690, lsl #0
+        // movk x1, #39878, lsl #16
+        // movk x1, #39680, lsl #32
+        // movk x1, #32077, lsl #48
+        // str x1, [x0, #88]
+        // movz x1, #2161, lsl #0
+        // movk x1, #28723, lsl #16
+        // movk x1, #40138, lsl #32
+        // movk x1, #54883, lsl #48
+        // str x1, [x0, #96]
+        // movz x1, #53774, lsl #0
+        // movk x1, #46025, lsl #16
+        // movk x1, #36275, lsl #32
+        // movk x1, #52016, lsl #48
+        // str x1, [x0, #104]
+        // movz x1, #64519, lsl #0
+        // movk x1, #13257, lsl #16
+        // movk x1, #59054, lsl #32
+        // movk x1, #16340, lsl #48
+        // str x1, [x0, #112]
+        // movz x1, #50315, lsl #0
+        // movk x1, #56297, lsl #16
+        // movk x1, #40376, lsl #32
+        // movk x1, #43741, lsl #48
+        // str x1, [x0, #120]
+        // movz x1, #105, lsl #0
+        // movk x1, #40105, lsl #16
+        // movk x1, #38530, lsl #32
+        // movk x1, #46471, lsl #48
+        // str x1, [x0, #128]
+        // movz x1, #56029, lsl #0
+        // movk x1, #2141, lsl #16
+        // movk x1, #54145, lsl #32
+        // movk x1, #7601, lsl #48
+        // str x1, [x0, #136]
+        // movz x1, #4167, lsl #0
+        // movk x1, #32684, lsl #16
+        // movk x1, #24857, lsl #32
+        // movk x1, #16774, lsl #48
+        // str x1, [x0, #144]
+        // movz x1, #9753, lsl #0
+        // movk x1, #19625, lsl #16
+        // movk x1, #23617, lsl #32
+        // movk x1, #21822, lsl #48
+        // str x1, [x0, #152]
+        // movz x1, #2160, lsl #0
+        // movk x1, #28723, lsl #16
+        // movk x1, #40138, lsl #32
+        // movk x1, #54883, lsl #48
+        // str x1, [x0, #160]
+        // movz x1, #53774, lsl #0
+        // movk x1, #46025, lsl #16
+        // movk x1, #36275, lsl #32
+        // movk x1, #52016, lsl #48
+        // str x1, [x0, #168]
+        // movz x1, #64519, lsl #0
+        // movk x1, #13257, lsl #16
+        // movk x1, #59054, lsl #32
+        // movk x1, #16340, lsl #48
+        // str x1, [x0, #176]
+        // movz x1, #50315, lsl #0
+        // movk x1, #56297, lsl #16
+        // movk x1, #40376, lsl #32
+        // movk x1, #43741, lsl #48
+        // str x1, [x0, #184]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #256]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #264]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #272]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #280]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #288]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #296]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #304]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #312]
+        // movz x1, #1, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #320]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #328]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #336]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #344]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #352]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #360]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #368]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #376]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #384]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #392]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #400]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #408]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #416]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #424]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #432]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #440]
+        // movz x1, #50246, lsl #0
+        // movk x1, #59920, lsl #16
+        // movk x1, #35380, lsl #32
+        // movk x1, #55839, lsl #48
+        // str x1, [x0, #448]
+        // movz x1, #53891, lsl #0
+        // movk x1, #44967, lsl #16
+        // movk x1, #38269, lsl #32
+        // movk x1, #5348, lsl #48
+        // str x1, [x0, #456]
+        // movz x1, #48043, lsl #0
+        // movk x1, #18037, lsl #16
+        // movk x1, #19314, lsl #32
+        // movk x1, #16560, lsl #48
+        // str x1, [x0, #464]
+        // movz x1, #34815, lsl #0
+        // movk x1, #40558, lsl #16
+        // movk x1, #273, lsl #32
+        // movk x1, #53135, lsl #48
+        // str x1, [x0, #472]
+        // movz x1, #53703, lsl #0
+        // movk x1, #16256, lsl #16
+        // movk x1, #12488, lsl #32
+        // movk x1, #42476, lsl #48
+        // str x1, [x0, #480]
+        // movz x1, #34680, lsl #0
+        // movk x1, #62494, lsl #16
+        // movk x1, #3929, lsl #32
+        // movk x1, #6189, lsl #48
+        // str x1, [x0, #488]
+        // movz x1, #34060, lsl #0
+        // movk x1, #58064, lsl #16
+        // movk x1, #34042, lsl #32
+        // movk x1, #47163, lsl #48
+        // str x1, [x0, #496]
+        // movz x1, #10883, lsl #0
+        // movk x1, #8829, lsl #16
+        // movk x1, #61831, lsl #32
+        // movk x1, #24260, lsl #48
+        // str x1, [x0, #504]
+        // movz x1, #10804, lsl #0
+        // movk x1, #8425, lsl #16
+        // movk x1, #33686, lsl #32
+        // movk x1, #20606, lsl #48
+        // str x1, [x0, #512]
+        // movz x1, #23092, lsl #0
+        // movk x1, #58766, lsl #16
+        // movk x1, #25543, lsl #32
+        // movk x1, #155, lsl #48
+        // str x1, [x0, #520]
+        // movz x1, #9386, lsl #0
+        // movk x1, #11655, lsl #16
+        // movk x1, #42070, lsl #32
+        // movk x1, #57707, lsl #48
+        // str x1, [x0, #528]
+        // movz x1, #48642, lsl #0
+        // movk x1, #39031, lsl #16
+        // movk x1, #12520, lsl #32
+        // movk x1, #51006, lsl #48
+        // str x1, [x0, #536]
+        // movz x1, #9267, lsl #0
+        // movk x1, #65058, lsl #16
+        // movk x1, #3171, lsl #32
+        // movk x1, #38880, lsl #48
+        // str x1, [x0, #544]
+        // movz x1, #55325, lsl #0
+        // movk x1, #27927, lsl #16
+        // movk x1, #22444, lsl #32
+        // movk x1, #52186, lsl #48
+        // str x1, [x0, #552]
+        // movz x1, #43682, lsl #0
+        // movk x1, #2997, lsl #16
+        // movk x1, #4773, lsl #32
+        // movk x1, #25635, lsl #48
+        // str x1, [x0, #560]
+        // movz x1, #36519, lsl #0
+        // movk x1, #18206, lsl #16
+        // movk x1, #43956, lsl #32
+        // movk x1, #27210, lsl #48
+        // str x1, [x0, #568]
+        // movz x1, #55763, lsl #0
+        // movk x1, #20833, lsl #16
+        // movk x1, #38409, lsl #32
+        // movk x1, #50382, lsl #48
+        // str x1, [x0, #576]
+        // movz x1, #676, lsl #0
+        // movk x1, #10028, lsl #16
+        // movk x1, #19812, lsl #32
+        // movk x1, #26686, lsl #48
+        // str x1, [x0, #584]
+        // movz x1, #24207, lsl #0
+        // movk x1, #28149, lsl #16
+        // movk x1, #1044, lsl #32
+        // movk x1, #13483, lsl #48
+        // str x1, [x0, #592]
+        // movz x1, #8136, lsl #0
+        // movk x1, #5312, lsl #16
+        // movk x1, #21397, lsl #32
+        // movk x1, #34128, lsl #48
+        // str x1, [x0, #600]
+        // movz x1, #34615, lsl #0
+        // movk x1, #36956, lsl #16
+        // movk x1, #55151, lsl #32
+        // movk x1, #9267, lsl #48
+        // str x1, [x0, #608]
+        // movz x1, #15607, lsl #0
+        // movk x1, #62317, lsl #16
+        // movk x1, #59959, lsl #32
+        // movk x1, #45750, lsl #48
+        // str x1, [x0, #616]
+        // movz x1, #17779, lsl #0
+        // movk x1, #109, lsl #16
+        // movk x1, #46538, lsl #32
+        // movk x1, #34588, lsl #48
+        // str x1, [x0, #624]
+        // movz x1, #59777, lsl #0
+        // movk x1, #2452, lsl #16
+        // movk x1, #41292, lsl #32
+        // movk x1, #23083, lsl #48
+        // str x1, [x0, #632]
+        // movz x1, #10861, lsl #0
+        // movk x1, #9476, lsl #16
+        // movk x1, #26153, lsl #32
+        // movk x1, #12176, lsl #48
+        // str x1, [x0, #640]
+        // movz x1, #62245, lsl #0
+        // movk x1, #18242, lsl #16
+        // movk x1, #57199, lsl #32
+        // movk x1, #29976, lsl #48
+        // str x1, [x0, #648]
+        // movz x1, #38032, lsl #0
+        // movk x1, #19589, lsl #16
+        // movk x1, #21843, lsl #32
+        // movk x1, #49028, lsl #48
+        // str x1, [x0, #656]
+        // movz x1, #52286, lsl #0
+        // movk x1, #22926, lsl #16
+        // movk x1, #51061, lsl #32
+        // movk x1, #13838, lsl #48
+        // str x1, [x0, #664]
+        // movz x1, #12252, lsl #0
+        // movk x1, #36838, lsl #16
+        // movk x1, #2952, lsl #32
+        // movk x1, #31767, lsl #48
+        // str x1, [x0, #672]
+        // movz x1, #16268, lsl #0
+        // movk x1, #52637, lsl #16
+        // movk x1, #11127, lsl #32
+        // movk x1, #22621, lsl #48
+        // str x1, [x0, #680]
+        // movz x1, #16283, lsl #0
+        // movk x1, #34575, lsl #16
+        // movk x1, #55258, lsl #32
+        // movk x1, #39518, lsl #48
+        // str x1, [x0, #688]
+        // movz x1, #29313, lsl #0
+        // movk x1, #10955, lsl #16
+        // movk x1, #51665, lsl #32
+        // movk x1, #35920, lsl #48
+        // str x1, [x0, #696]
+        // movz x1, #5745, lsl #0
+        // movk x1, #52648, lsl #16
+        // movk x1, #26654, lsl #32
+        // movk x1, #53923, lsl #48
+        // str x1, [x0, #704]
+        // movz x1, #15837, lsl #0
+        // movk x1, #38184, lsl #16
+        // movk x1, #46936, lsl #32
+        // movk x1, #2182, lsl #48
+        // str x1, [x0, #712]
+        // movz x1, #25215, lsl #0
+        // movk x1, #13239, lsl #16
+        // movk x1, #19408, lsl #32
+        // movk x1, #16070, lsl #48
+        // str x1, [x0, #720]
+        // movz x1, #2024, lsl #0
+        // movk x1, #12034, lsl #16
+        // movk x1, #12487, lsl #32
+        // movk x1, #42738, lsl #48
+        // str x1, [x0, #728]
+        // movz x1, #3555, lsl #0
+        // movk x1, #15225, lsl #16
+        // movk x1, #52262, lsl #32
+        // movk x1, #55289, lsl #48
+        // str x1, [x0, #736]
+        // movz x1, #48095, lsl #0
+        // movk x1, #12054, lsl #16
+        // movk x1, #14242, lsl #32
+        // movk x1, #29244, lsl #48
+        // str x1, [x0, #744]
+        // movz x1, #11862, lsl #0
+        // movk x1, #6475, lsl #16
+        // movk x1, #6988, lsl #32
+        // movk x1, #38367, lsl #48
+        // str x1, [x0, #752]
+        // movz x1, #1968, lsl #0
+        // movk x1, #29060, lsl #16
+        // movk x1, #22634, lsl #32
+        // movk x1, #42900, lsl #48
+        // str x1, [x0, #760]
+        // movz x1, #65431, lsl #0
+        // movk x1, #25430, lsl #16
+        // movk x1, #27005, lsl #32
+        // movk x1, #19064, lsl #48
+        // str x1, [x0, #768]
+        // movz x1, #9506, lsl #0
+        // movk x1, #63394, lsl #16
+        // movk x1, #11390, lsl #32
+        // movk x1, #57934, lsl #48
+        // str x1, [x0, #776]
+        // movz x1, #61368, lsl #0
+        // movk x1, #32851, lsl #16
+        // movk x1, #40678, lsl #32
+        // movk x1, #48761, lsl #48
+        // str x1, [x0, #784]
+        // movz x1, #55782, lsl #0
+        // movk x1, #45910, lsl #16
+        // movk x1, #41918, lsl #32
+        // movk x1, #43713, lsl #48
+        // str x1, [x0, #792]
+        // movz x1, #63375, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #800]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #808]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #816]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #824]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #960]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #968]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #976]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #984]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #992]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1000]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1008]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1016]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #1024]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #1032]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #1040]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #1048]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #1056]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #1064]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #1072]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #1080]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1088]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1096]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1104]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1112]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1120]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1128]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1136]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1144]
+        // movz x1, #65535, lsl #0
+        // movk x1, #65535, lsl #16
+        // movk x1, #65535, lsl #32
+        // movk x1, #65535, lsl #48
+        // str x1, [x0, #2880]
+        // movz x19, #64, lsl #0
+        // movz x5, #1, lsl #0
         r".inst 0x91000064,0x91000006,0x91000043,0x91010048,0x91000402,0xf9000093,0xf9000494,0xf9000895
 .inst 0xf9000c96,0xf9001097,0xf9001498,0xf9001899,0xf9001c9e,0x91000014,0x91000080,0xf9401c65
 .inst 0xdac00ca5,0xf9040005,0xf9401865,0xdac00ca5,0xf9040405,0xf9401465,0xdac00ca5,0xf9040805
@@ -290,29 +2122,303 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf2c00001,0xf2e00001,0xf9022c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023001
 .inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401,0xd2800001,0xf2a00001,0xf2c00001
 .inst 0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023c01,0xd29fffe1
-.inst 0xf2bfffe1,0xf2dfffe1,0xf2ffffe1,0xf905a001,0xd2800813,0xd2800025,0xd1000673,0x8b130010
-.inst 0x39600201,0xd37df271,0x8b110011,0x8a050022,0x392e0222,0xd341fc22,0x8a050042,0x392e0622
-.inst 0xd342fc22,0x8a050042,0x392e0a22,0xd343fc22,0x8a050042,0x392e0e22,0xd344fc22,0x8a050042
-.inst 0x392e1222,0xd345fc22,0x8a050042,0x392e1622,0xd346fc22,0x8a050042,0x392e1a22,0xd347fc22
-.inst 0x8a050042,0x392e1e22,0xb5fffc93,0xf9401d05,0xdac00ca5,0xf903e005,0xf9401905,0xdac00ca5
-.inst 0xf903e405,0xf9401505,0xdac00ca5,0xf903e805,0xf9401105,0xdac00ca5,0xf903ec05,0xf9400d05
-.inst 0xdac00ca5,0xf903f005,0xf9400905,0xdac00ca5,0xf903f405,0xf9400505,0xdac00ca5,0xf903f805
-.inst 0xf9400105,0xdac00ca5,0xf903fc05,0xd29e40a1,0xf2ac2b01,0xf2c28941,0xf2e935a1,0xf9050001
-.inst 0xd28f20a1,0xf2a4e2a1,0xf2d62601,0xf2ef27e1,0xf9050401,0xd29ffa61,0xf2b20b41,0xf2df3781
-.inst 0xf2ea76e1,0xf9050801,0xd28944a1,0xf2b06a21,0xf2d34ee1,0xf2fc1821,0xf9050c01,0xd2900ae1
-.inst 0xf2bab121,0xf2cdfb01,0xf2e32901,0xf9051001,0xd29ff061,0xf2ba8561,0xf2d54be1,0xf2f42da1
-.inst 0xf9051401,0xd29dd981,0xf2a40ac1,0xf2c32801,0xf2e405c1,0xf9051801,0xd28c8a01,0xf2b53fe1
-.inst 0xf2d3a0a1,0xf2e78981,0xf9051c01,0xd2854681,0xf2a41d21,0xf2d072c1,0xf2ea0fc1,0xf9052001
-.inst 0xd28b4681,0xf2bcb1c1,0xf2cc78e1,0xf2e01361,0xf9052401,0xd2849541,0xf2a5b0e1,0xf2d48ac1
-.inst 0xf2fc2d61,0xf9052801,0xd297c041,0xf2b30ee1,0xf2c61d01,0xf2f8e7c1,0xf9052c01,0xd2848661
-.inst 0xf2bfc441,0xf2c18c61,0xf2f2fc01,0xf9053001,0xd29b03a1,0xf2ada2e1,0xf2caf581,0xf2f97b41
-.inst 0xf9053401,0xd2955441,0xf2a176a1,0xf2c254a1,0xf2ec8461,0xf9053801,0xd291d4e1,0xf2a8e3c1
-.inst 0xf2d57681,0xf2ed4941,0xf9053c01,0x910104c2,0xf9401c45,0xdac00ca5,0xf904a005,0xf9401845
-.inst 0xdac00ca5,0xf904a405,0xf9401445,0xdac00ca5,0xf904a805,0xf9401045,0xdac00ca5,0xf904ac05
-.inst 0xf9400c45,0xdac00ca5,0xf904b005,0xf9400845,0xdac00ca5,0xf904b405,0xf9400445,0xdac00ca5
-.inst 0xf904b805,0xf9400045,0xdac00ca5,0xf904bc05,0xd2800007,0x394000c1,0xd2800085,0xca050021
-.inst 0xd2800025,0xeb050030,0xda0700e2,0xf945a001,0x8a020021,0xf905a001,0x4e081fdc",
-        r"bl {vg_brainpoolp512r1_check_point}",
+.inst 0xf2bfffe1,0xf2dfffe1,0xf2ffffe1,0xf905a001,0xd2800813,0xd2800025
+20:",
+        // sub x19, x19, #1
+        // add x16, x0, x19
+        // ldrb w1, [x16, #2048]
+        // lsl x17, x19, #3
+        // add x17, x0, x17
+        // and x2, x1, x5
+        // strb w2, [x17, #2944]
+        // lsr x2, x1, #1
+        // and x2, x2, x5
+        // strb w2, [x17, #2945]
+        // lsr x2, x1, #2
+        // and x2, x2, x5
+        // strb w2, [x17, #2946]
+        // lsr x2, x1, #3
+        // and x2, x2, x5
+        // strb w2, [x17, #2947]
+        // lsr x2, x1, #4
+        // and x2, x2, x5
+        // strb w2, [x17, #2948]
+        // lsr x2, x1, #5
+        // and x2, x2, x5
+        // strb w2, [x17, #2949]
+        // lsr x2, x1, #6
+        // and x2, x2, x5
+        // strb w2, [x17, #2950]
+        // lsr x2, x1, #7
+        // and x2, x2, x5
+        // strb w2, [x17, #2951]
+        r".inst 0xd1000673,0x8b130010,0x39600201,0xd37df271,0x8b110011,0x8a050022,0x392e0222,0xd341fc22
+.inst 0x8a050042,0x392e0622,0xd342fc22,0x8a050042,0x392e0a22,0xd343fc22,0x8a050042,0x392e0e22
+.inst 0xd344fc22,0x8a050042,0x392e1222,0xd345fc22,0x8a050042,0x392e1622,0xd346fc22,0x8a050042
+.inst 0x392e1a22,0xd347fc22,0x8a050042,0x392e1e22
+cbnz x19, 20b",
+        // ldr x5, [x8, #56]
+        // rev x5, x5
+        // str x5, [x0, #1984]
+        // ldr x5, [x8, #48]
+        // rev x5, x5
+        // str x5, [x0, #1992]
+        // ldr x5, [x8, #40]
+        // rev x5, x5
+        // str x5, [x0, #2000]
+        // ldr x5, [x8, #32]
+        // rev x5, x5
+        // str x5, [x0, #2008]
+        // ldr x5, [x8, #24]
+        // rev x5, x5
+        // str x5, [x0, #2016]
+        // ldr x5, [x8, #16]
+        // rev x5, x5
+        // str x5, [x0, #2024]
+        // ldr x5, [x8, #8]
+        // rev x5, x5
+        // str x5, [x0, #2032]
+        // ldr x5, [x8, #0]
+        // rev x5, x5
+        // str x5, [x0, #2040]
+        // movz x1, #61957, lsl #0
+        // movk x1, #24920, lsl #16
+        // movk x1, #5194, lsl #32
+        // movk x1, #18861, lsl #48
+        // str x1, [x0, #2560]
+        // movz x1, #30981, lsl #0
+        // movk x1, #10005, lsl #16
+        // movk x1, #45360, lsl #32
+        // movk x1, #31039, lsl #48
+        // str x1, [x0, #2568]
+        // movz x1, #65491, lsl #0
+        // movk x1, #36954, lsl #16
+        // movk x1, #63932, lsl #32
+        // movk x1, #21431, lsl #48
+        // str x1, [x0, #2576]
+        // movz x1, #18981, lsl #0
+        // movk x1, #33617, lsl #16
+        // movk x1, #39543, lsl #32
+        // movk x1, #57537, lsl #48
+        // str x1, [x0, #2584]
+        // movz x1, #32855, lsl #0
+        // movk x1, #54665, lsl #16
+        // movk x1, #28632, lsl #32
+        // movk x1, #6472, lsl #48
+        // str x1, [x0, #2592]
+        // movz x1, #65411, lsl #0
+        // movk x1, #54315, lsl #16
+        // movk x1, #43615, lsl #32
+        // movk x1, #41325, lsl #48
+        // str x1, [x0, #2600]
+        // movz x1, #61132, lsl #0
+        // movk x1, #8278, lsl #16
+        // movk x1, #6464, lsl #32
+        // movk x1, #8238, lsl #48
+        // str x1, [x0, #2608]
+        // movz x1, #25680, lsl #0
+        // movk x1, #43519, lsl #16
+        // movk x1, #40197, lsl #32
+        // movk x1, #15436, lsl #48
+        // str x1, [x0, #2616]
+        // movz x1, #10804, lsl #0
+        // movk x1, #8425, lsl #16
+        // movk x1, #33686, lsl #32
+        // movk x1, #20606, lsl #48
+        // str x1, [x0, #2624]
+        // movz x1, #23092, lsl #0
+        // movk x1, #58766, lsl #16
+        // movk x1, #25543, lsl #32
+        // movk x1, #155, lsl #48
+        // str x1, [x0, #2632]
+        // movz x1, #9386, lsl #0
+        // movk x1, #11655, lsl #16
+        // movk x1, #42070, lsl #32
+        // movk x1, #57707, lsl #48
+        // str x1, [x0, #2640]
+        // movz x1, #48642, lsl #0
+        // movk x1, #39031, lsl #16
+        // movk x1, #12520, lsl #32
+        // movk x1, #51006, lsl #48
+        // str x1, [x0, #2648]
+        // movz x1, #9267, lsl #0
+        // movk x1, #65058, lsl #16
+        // movk x1, #3171, lsl #32
+        // movk x1, #38880, lsl #48
+        // str x1, [x0, #2656]
+        // movz x1, #55325, lsl #0
+        // movk x1, #27927, lsl #16
+        // movk x1, #22444, lsl #32
+        // movk x1, #52186, lsl #48
+        // str x1, [x0, #2664]
+        // movz x1, #43682, lsl #0
+        // movk x1, #2997, lsl #16
+        // movk x1, #4773, lsl #32
+        // movk x1, #25635, lsl #48
+        // str x1, [x0, #2672]
+        // movz x1, #36519, lsl #0
+        // movk x1, #18206, lsl #16
+        // movk x1, #43956, lsl #32
+        // movk x1, #27210, lsl #48
+        // str x1, [x0, #2680]
+        // add x2, x6, #65
+        // ldr x5, [x2, #56]
+        // rev x5, x5
+        // str x5, [x0, #2368]
+        // ldr x5, [x2, #48]
+        // rev x5, x5
+        // str x5, [x0, #2376]
+        // ldr x5, [x2, #40]
+        // rev x5, x5
+        // str x5, [x0, #2384]
+        // ldr x5, [x2, #32]
+        // rev x5, x5
+        // str x5, [x0, #2392]
+        // ldr x5, [x2, #24]
+        // rev x5, x5
+        // str x5, [x0, #2400]
+        // ldr x5, [x2, #16]
+        // rev x5, x5
+        // str x5, [x0, #2408]
+        // ldr x5, [x2, #8]
+        // rev x5, x5
+        // str x5, [x0, #2416]
+        // ldr x5, [x2, #0]
+        // rev x5, x5
+        // str x5, [x0, #2424]
+        // movz x7, #0, lsl #0
+        // ldrb w1, [x6, #0]
+        // movz x5, #4, lsl #0
+        // eor x1, x1, x5
+        // movz x5, #1, lsl #0
+        // subs x16, x1, x5
+        // sbc x2, x7, x7
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // mov v28.d[0], x30
+        r".inst 0xf9401d05,0xdac00ca5,0xf903e005,0xf9401905,0xdac00ca5,0xf903e405,0xf9401505,0xdac00ca5
+.inst 0xf903e805,0xf9401105,0xdac00ca5,0xf903ec05,0xf9400d05,0xdac00ca5,0xf903f005,0xf9400905
+.inst 0xdac00ca5,0xf903f405,0xf9400505,0xdac00ca5,0xf903f805,0xf9400105,0xdac00ca5,0xf903fc05
+.inst 0xd29e40a1,0xf2ac2b01,0xf2c28941,0xf2e935a1,0xf9050001,0xd28f20a1,0xf2a4e2a1,0xf2d62601
+.inst 0xf2ef27e1,0xf9050401,0xd29ffa61,0xf2b20b41,0xf2df3781,0xf2ea76e1,0xf9050801,0xd28944a1
+.inst 0xf2b06a21,0xf2d34ee1,0xf2fc1821,0xf9050c01,0xd2900ae1,0xf2bab121,0xf2cdfb01,0xf2e32901
+.inst 0xf9051001,0xd29ff061,0xf2ba8561,0xf2d54be1,0xf2f42da1,0xf9051401,0xd29dd981,0xf2a40ac1
+.inst 0xf2c32801,0xf2e405c1,0xf9051801,0xd28c8a01,0xf2b53fe1,0xf2d3a0a1,0xf2e78981,0xf9051c01
+.inst 0xd2854681,0xf2a41d21,0xf2d072c1,0xf2ea0fc1,0xf9052001,0xd28b4681,0xf2bcb1c1,0xf2cc78e1
+.inst 0xf2e01361,0xf9052401,0xd2849541,0xf2a5b0e1,0xf2d48ac1,0xf2fc2d61,0xf9052801,0xd297c041
+.inst 0xf2b30ee1,0xf2c61d01,0xf2f8e7c1,0xf9052c01,0xd2848661,0xf2bfc441,0xf2c18c61,0xf2f2fc01
+.inst 0xf9053001,0xd29b03a1,0xf2ada2e1,0xf2caf581,0xf2f97b41,0xf9053401,0xd2955441,0xf2a176a1
+.inst 0xf2c254a1,0xf2ec8461,0xf9053801,0xd291d4e1,0xf2a8e3c1,0xf2d57681,0xf2ed4941,0xf9053c01
+.inst 0x910104c2,0xf9401c45,0xdac00ca5,0xf904a005,0xf9401845,0xdac00ca5,0xf904a405,0xf9401445
+.inst 0xdac00ca5,0xf904a805,0xf9401045,0xdac00ca5,0xf904ac05,0xf9400c45,0xdac00ca5,0xf904b005
+.inst 0xf9400845,0xdac00ca5,0xf904b405,0xf9400445,0xdac00ca5,0xf904b805,0xf9400045,0xdac00ca5
+.inst 0xf904bc05,0xd2800007,0x394000c1,0xd2800085,0xca050021,0xd2800025,0xeb050030,0xda0700e2
+.inst 0xf945a001,0x8a020021,0xf905a001,0x4e081fdc
+bl {vg_brainpoolp512r1_check_point}",
+        // umov x30, v28.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2048]
+        // ldr x2, [x0, #128]
+        // subs x16, x1, x2
+        // ldr x1, [x0, #2056]
+        // ldr x2, [x0, #136]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2064]
+        // ldr x2, [x0, #144]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2072]
+        // ldr x2, [x0, #152]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2080]
+        // ldr x2, [x0, #160]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2088]
+        // ldr x2, [x0, #168]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2096]
+        // ldr x2, [x0, #176]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2104]
+        // ldr x2, [x0, #184]
+        // sbcs x16, x1, x2
+        // sbc x2, x7, x7
+        // add x4, x2, #0
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2048]
+        // ldr x2, [x0, #2056]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2064]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2072]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2080]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2088]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2096]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2104]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // and x2, x2, x4
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #1984]
+        // ldr x2, [x0, #128]
+        // subs x16, x1, x2
+        // ldr x1, [x0, #1992]
+        // ldr x2, [x0, #136]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2000]
+        // ldr x2, [x0, #144]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2008]
+        // ldr x2, [x0, #152]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2016]
+        // ldr x2, [x0, #160]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2024]
+        // ldr x2, [x0, #168]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2032]
+        // ldr x2, [x0, #176]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2040]
+        // ldr x2, [x0, #184]
+        // sbcs x16, x1, x2
+        // sbc x2, x7, x7
+        // add x4, x2, #0
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #1984]
+        // ldr x2, [x0, #1992]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2000]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2008]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2016]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2024]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2032]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2040]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // and x2, x2, x4
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // mov v29.d[0], x30
+        // movz x1, #2432, lsl #0
+        // movz x2, #1984, lsl #0
+        // movz x3, #704, lsl #0
         r".inst 0x4e083f9e,0xd2800007,0xf9440001,0xf9404002,0xeb020030,0xf9440401,0xf9404402,0xfa020030
 .inst 0xf9440801,0xf9404802,0xfa020030,0xf9440c01,0xf9404c02,0xfa020030,0xf9441001,0xf9405002
 .inst 0xfa020030,0xf9441401,0xf9405402,0xfa020030,0xf9441801,0xf9405802,0xfa020030,0xf9441c01
@@ -325,98 +2431,843 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf943fc01,0xf9405c02,0xfa020030,0xda0700e2,0x91000044,0xd2800007,0xf943e001,0xf943e402
 .inst 0xaa020021,0xf943e802,0xaa020021,0xf943ec02,0xaa020021,0xf943f002,0xaa020021,0xf943f402
 .inst 0xaa020021,0xf943f802,0xaa020021,0xf943fc02,0xaa020021,0xeb0100f0,0xda0700e2,0x8a040042
-.inst 0xf945a001,0x8a020021,0xf905a001,0x4e081fdd,0xd2813001,0xd280f802,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd",
-        r"bl {vg_brainpoolp512r1_inv_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2814801,0xd2810802,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2814001,0xd2810002,0xd2805803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2815001,0xd2814802,0xd280f003",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2815801,0xd2814002,0xd280f003",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2811801,0xd2815002,0xd2802803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2812001,0xd2815802,0xd2802803",
-        r"bl {vg_brainpoolp512r1_mul_mod_n}",
-        r".inst 0x4e083fbe,0xd2800813,0xd2800025,0xd1000673,0x8b130010,0x39630201,0xd37df271,0x8b110011
-.inst 0x8a050022,0x392e0222,0xd341fc22,0x8a050042,0x392e0622,0xd342fc22,0x8a050042,0x392e0a22
-.inst 0xd343fc22,0x8a050042,0x392e0e22,0xd344fc22,0x8a050042,0x392e1222,0xd345fc22,0x8a050042
-.inst 0x392e1622,0xd346fc22,0x8a050042,0x392e1a22,0xd347fc22,0x8a050042,0x392e1e22,0xb5fffc93
-.inst 0xd2800813,0xd2800025,0xd1000673,0x8b130010,0x39640201,0xd37df271,0x8b110011,0x8a050022
-.inst 0x39360222,0xd341fc22,0x8a050042,0x39360622,0xd342fc22,0x8a050042,0x39360a22,0xd343fc22
-.inst 0x8a050042,0x39360e22,0xd344fc22,0x8a050042,0x39361222,0xd345fc22,0x8a050042,0x39361622
-.inst 0xd346fc22,0x8a050042,0x39361a22,0xd347fc22,0x8a050042,0x39361e22,0xb5fffc93,0xd286b521
-.inst 0xf2a15021,0xf2c54d81,0xf2f91a21,0xf901a001,0xd28902e1,0xf2b06501,0xf2c58501,0xf2fb2a01
-.inst 0xf901a401,0xd29da2e1,0xf2b43e21,0xf2c97ae1,0xf2feaea1,0xf901a801,0xd29a38a1,0xf2a5b401
-.inst 0xf2def721,0xf2fb0d81,0xf901ac01,0xd28c8521,0xf2b14661,0xf2d10c21,0xf2fe2781,0xf901b001
-.inst 0xd296c921,0xf2b26fa1,0xf2cf2a21,0xf2f30bc1,0xf901b401,0xd2807c01,0xf2bdeae1,0xf2ca2801
-.inst 0xf2fd9281,0xf901b801,0xd29ced41,0xf2bf2e21,0xf2ccac61,0xf2f28041,0xf901bc01,0xd28001f3
-.inst 0xd1000673,0xd2800065,0x8a050262,0xca050042,0xb4001c82,0xd28001c2,0xcb130042,0xb4000702
-.inst 0xd1000442,0xd2801811,0x9b117c42,0xd2829410,0x8b100010,0x8b020210,0xf9400204,0xf901e004
+.inst 0xf945a001,0x8a020021,0xf905a001,0x4e081fdd,0xd2813001,0xd280f802,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        r".inst 0x4e083fbe,0x4e081fdd
+bl {vg_brainpoolp512r1_inv_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2624, lsl #0
+        // movz x2, #2112, lsl #0
+        // movz x3, #704, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2814801,0xd2810802,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2560, lsl #0
+        // movz x2, #2048, lsl #0
+        // movz x3, #704, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2814001,0xd2810002,0xd2805803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2688, lsl #0
+        // movz x2, #2624, lsl #0
+        // movz x3, #1920, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2815001,0xd2814802,0xd280f003
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2752, lsl #0
+        // movz x2, #2560, lsl #0
+        // movz x3, #1920, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2815801,0xd2814002,0xd280f003
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2240, lsl #0
+        // movz x2, #2688, lsl #0
+        // movz x3, #320, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2811801,0xd2815002,0xd2802803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2304, lsl #0
+        // movz x2, #2752, lsl #0
+        // movz x3, #320, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2812001,0xd2815802,0xd2802803
+bl {vg_brainpoolp512r1_mul_mod_n}",
+        // umov x30, v29.d[0]
+        // movz x19, #64, lsl #0
+        // movz x5, #1, lsl #0
+        r".inst 0x4e083fbe,0xd2800813,0xd2800025
+21:",
+        // sub x19, x19, #1
+        // add x16, x0, x19
+        // ldrb w1, [x16, #2240]
+        // lsl x17, x19, #3
+        // add x17, x0, x17
+        // and x2, x1, x5
+        // strb w2, [x17, #2944]
+        // lsr x2, x1, #1
+        // and x2, x2, x5
+        // strb w2, [x17, #2945]
+        // lsr x2, x1, #2
+        // and x2, x2, x5
+        // strb w2, [x17, #2946]
+        // lsr x2, x1, #3
+        // and x2, x2, x5
+        // strb w2, [x17, #2947]
+        // lsr x2, x1, #4
+        // and x2, x2, x5
+        // strb w2, [x17, #2948]
+        // lsr x2, x1, #5
+        // and x2, x2, x5
+        // strb w2, [x17, #2949]
+        // lsr x2, x1, #6
+        // and x2, x2, x5
+        // strb w2, [x17, #2950]
+        // lsr x2, x1, #7
+        // and x2, x2, x5
+        // strb w2, [x17, #2951]
+        r".inst 0xd1000673,0x8b130010,0x39630201,0xd37df271,0x8b110011,0x8a050022,0x392e0222,0xd341fc22
+.inst 0x8a050042,0x392e0622,0xd342fc22,0x8a050042,0x392e0a22,0xd343fc22,0x8a050042,0x392e0e22
+.inst 0xd344fc22,0x8a050042,0x392e1222,0xd345fc22,0x8a050042,0x392e1622,0xd346fc22,0x8a050042
+.inst 0x392e1a22,0xd347fc22,0x8a050042,0x392e1e22
+cbnz x19, 21b",
+        // movz x19, #64, lsl #0
+        // movz x5, #1, lsl #0
+        r".inst 0xd2800813,0xd2800025
+22:",
+        // sub x19, x19, #1
+        // add x16, x0, x19
+        // ldrb w1, [x16, #2304]
+        // lsl x17, x19, #3
+        // add x17, x0, x17
+        // and x2, x1, x5
+        // strb w2, [x17, #3456]
+        // lsr x2, x1, #1
+        // and x2, x2, x5
+        // strb w2, [x17, #3457]
+        // lsr x2, x1, #2
+        // and x2, x2, x5
+        // strb w2, [x17, #3458]
+        // lsr x2, x1, #3
+        // and x2, x2, x5
+        // strb w2, [x17, #3459]
+        // lsr x2, x1, #4
+        // and x2, x2, x5
+        // strb w2, [x17, #3460]
+        // lsr x2, x1, #5
+        // and x2, x2, x5
+        // strb w2, [x17, #3461]
+        // lsr x2, x1, #6
+        // and x2, x2, x5
+        // strb w2, [x17, #3462]
+        // lsr x2, x1, #7
+        // and x2, x2, x5
+        // strb w2, [x17, #3463]
+        r".inst 0xd1000673,0x8b130010,0x39640201,0xd37df271,0x8b110011,0x8a050022,0x39360222,0xd341fc22
+.inst 0x8a050042,0x39360622,0xd342fc22,0x8a050042,0x39360a22,0xd343fc22,0x8a050042,0x39360e22
+.inst 0xd344fc22,0x8a050042,0x39361222,0xd345fc22,0x8a050042,0x39361622,0xd346fc22,0x8a050042
+.inst 0x39361a22,0xd347fc22,0x8a050042,0x39361e22
+cbnz x19, 22b",
+        // movz x1, #13737, lsl #0
+        // movk x1, #2689, lsl #16
+        // movk x1, #10860, lsl #32
+        // movk x1, #51409, lsl #48
+        // str x1, [x0, #832]
+        // movz x1, #18455, lsl #0
+        // movk x1, #33576, lsl #16
+        // movk x1, #11304, lsl #32
+        // movk x1, #55632, lsl #48
+        // str x1, [x0, #840]
+        // movz x1, #60695, lsl #0
+        // movk x1, #41457, lsl #16
+        // movk x1, #19415, lsl #32
+        // movk x1, #62837, lsl #48
+        // str x1, [x0, #848]
+        // movz x1, #53701, lsl #0
+        // movk x1, #11680, lsl #16
+        // movk x1, #63417, lsl #32
+        // movk x1, #55404, lsl #48
+        // str x1, [x0, #856]
+        // movz x1, #25641, lsl #0
+        // movk x1, #35379, lsl #16
+        // movk x1, #34913, lsl #32
+        // movk x1, #61756, lsl #48
+        // str x1, [x0, #864]
+        // movz x1, #46665, lsl #0
+        // movk x1, #37757, lsl #16
+        // movk x1, #31057, lsl #32
+        // movk x1, #39006, lsl #48
+        // str x1, [x0, #872]
+        // movz x1, #992, lsl #0
+        // movk x1, #61271, lsl #16
+        // movk x1, #20800, lsl #32
+        // movk x1, #60564, lsl #48
+        // str x1, [x0, #880]
+        // movz x1, #59242, lsl #0
+        // movk x1, #63857, lsl #16
+        // movk x1, #25955, lsl #32
+        // movk x1, #37890, lsl #48
+        // str x1, [x0, #888]
+        // movz x19, #15, lsl #0
+        r".inst 0xd286b521,0xf2a15021,0xf2c54d81,0xf2f91a21,0xf901a001,0xd28902e1,0xf2b06501,0xf2c58501
+.inst 0xf2fb2a01,0xf901a401,0xd29da2e1,0xf2b43e21,0xf2c97ae1,0xf2feaea1,0xf901a801,0xd29a38a1
+.inst 0xf2a5b401,0xf2def721,0xf2fb0d81,0xf901ac01,0xd28c8521,0xf2b14661,0xf2d10c21,0xf2fe2781
+.inst 0xf901b001,0xd296c921,0xf2b26fa1,0xf2cf2a21,0xf2f30bc1,0xf901b401,0xd2807c01,0xf2bdeae1
+.inst 0xf2ca2801,0xf2fd9281,0xf901b801,0xd29ced41,0xf2bf2e21,0xf2ccac61,0xf2f28041,0xf901bc01
+.inst 0xd28001f3
+23:",
+        // sub x19, x19, #1
+        // movz x5, #3, lsl #0
+        // and x2, x19, x5
+        // eor x2, x2, x5
+        r".inst 0xd1000673,0xd2800065,0x8a050262,0xca050042
+cbz x2, 24f",
+        // movz x2, #14, lsl #0
+        // sub x2, x2, x19
+        r".inst 0xd28001c2,0xcb130042
+cbz x2, 26f",
+        // sub x2, x2, #1
+        // movz x17, #192, lsl #0
+        // mul x2, x2, x17
+        // movz x16, #5280, lsl #0
+        // add x16, x0, x16
+        // add x16, x16, x2
+        // ldr x4, [x16, #0]
+        // str x4, [x0, #960]
+        // ldr x4, [x16, #8]
+        // str x4, [x0, #968]
+        // ldr x4, [x16, #16]
+        // str x4, [x0, #976]
+        // ldr x4, [x16, #24]
+        // str x4, [x0, #984]
+        // ldr x4, [x16, #32]
+        // str x4, [x0, #992]
+        // ldr x4, [x16, #40]
+        // str x4, [x0, #1000]
+        // ldr x4, [x16, #48]
+        // str x4, [x0, #1008]
+        // ldr x4, [x16, #56]
+        // str x4, [x0, #1016]
+        // ldr x4, [x16, #64]
+        // str x4, [x0, #1024]
+        // ldr x4, [x16, #72]
+        // str x4, [x0, #1032]
+        // ldr x4, [x16, #80]
+        // str x4, [x0, #1040]
+        // ldr x4, [x16, #88]
+        // str x4, [x0, #1048]
+        // ldr x4, [x16, #96]
+        // str x4, [x0, #1056]
+        // ldr x4, [x16, #104]
+        // str x4, [x0, #1064]
+        // ldr x4, [x16, #112]
+        // str x4, [x0, #1072]
+        // ldr x4, [x16, #120]
+        // str x4, [x0, #1080]
+        // ldr x4, [x16, #128]
+        // str x4, [x0, #1088]
+        // ldr x4, [x16, #136]
+        // str x4, [x0, #1096]
+        // ldr x4, [x16, #144]
+        // str x4, [x0, #1104]
+        // ldr x4, [x16, #152]
+        // str x4, [x0, #1112]
+        // ldr x4, [x16, #160]
+        // str x4, [x0, #1120]
+        // ldr x4, [x16, #168]
+        // str x4, [x0, #1128]
+        // ldr x4, [x16, #176]
+        // str x4, [x0, #1136]
+        // ldr x4, [x16, #184]
+        // str x4, [x0, #1144]
+        r".inst 0xd1000442,0xd2801811,0x9b117c42,0xd2829410,0x8b100010,0x8b020210,0xf9400204,0xf901e004
 .inst 0xf9400604,0xf901e404,0xf9400a04,0xf901e804,0xf9400e04,0xf901ec04,0xf9401204,0xf901f004
 .inst 0xf9401604,0xf901f404,0xf9401a04,0xf901f804,0xf9401e04,0xf901fc04,0xf9402204,0xf9020004
 .inst 0xf9402604,0xf9020404,0xf9402a04,0xf9020804,0xf9402e04,0xf9020c04,0xf9403204,0xf9021004
 .inst 0xf9403604,0xf9021404,0xf9403a04,0xf9021804,0xf9403e04,0xf9021c04,0xf9404204,0xf9022004
 .inst 0xf9404604,0xf9022404,0xf9404a04,0xf9022804,0xf9404e04,0xf9022c04,0xf9405204,0xf9023004
-.inst 0xf9405604,0xf9023404,0xf9405a04,0xf9023804,0xf9405e04,0xf9023c04,0x14000079,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf901e001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf901e401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e801,0xd2800001,0xf2a00001
-.inst 0xf2c00001,0xf2e00001,0xf901ec01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f001
-.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f401,0xd2800001,0xf2a00001,0xf2c00001
-.inst 0xf2e00001,0xf901f801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901fc01,0xd296e1a1
-.inst 0xf2b4f8a1,0xf2d3f521,0xf2faeaa1,0xf9020001,0xd2872f41,0xf2ba4fa1,0xf2c01a01,0xf2faefc1
-.inst 0xf9020401,0xd28fe321,0xf2a32b81,0xf2cbdaa1,0xf2ea2641,0xf9020801,0xd292f7a1,0xf2ac8721
-.inst 0xf2cc9fe1,0xf2f05641,0xf9020c01,0xd29ef1c1,0xf2b1f981,0xf2cc66a1,0xf2e53381,0xf9021001
-.inst 0xd285be21,0xf2a986c1,0xf2ce4981,0xf2e699e1,0xf9021401,0xd2807f01,0xf2b986c1,0xf2c32a21
-.inst 0xf2f80561,0xf9021801,0xd2876e81,0xf2a482c1,0xf2cc48e1,0xf2eaa441,0xf9021c01,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9022001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf9022401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022801,0xd2800001,0xf2a00001
-.inst 0xf2c00001,0xf2e00001,0xf9022c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023001
-.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401,0xd2800001,0xf2a00001,0xf2c00001
-.inst 0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023c01,0xf9412001
-.inst 0xf9054001,0xf9412401,0xf9054401,0xf9412801,0xf9054801,0xf9412c01,0xf9054c01,0xf9413001
-.inst 0xf9055001,0xf9413401,0xf9055401,0xf9413801,0xf9055801,0xf9413c01,0xf9055c01,0xf9414001
-.inst 0xf9056001,0xf9414401,0xf9056401,0xf9414801,0xf9056801,0xf9414c01,0xf9056c01,0xf9415001
-.inst 0xf9057001,0xf9415401,0xf9057401,0xf9415801,0xf9057801,0xf9415c01,0xf9057c01,0xf940c001
-.inst 0xf904c001,0xf940c401,0xf904c401,0xf940c801,0xf904c801,0xf940cc01,0xf904cc01,0xf940d001
-.inst 0xf904d001,0xf940d401,0xf904d401,0xf940d801,0xf904d801,0xf940dc01,0xf904dc01,0x140000e3
-.inst 0xd2800162,0xcb130042,0xb4000702,0xd1000442,0xd2801811,0x9b117c42,0xd2829410,0x8b100010
-.inst 0x8b020210,0xf9400204,0xf901e004,0xf9400604,0xf901e404,0xf9400a04,0xf901e804,0xf9400e04
-.inst 0xf901ec04,0xf9401204,0xf901f004,0xf9401604,0xf901f404,0xf9401a04,0xf901f804,0xf9401e04
-.inst 0xf901fc04,0xf9402204,0xf9020004,0xf9402604,0xf9020404,0xf9402a04,0xf9020804,0xf9402e04
-.inst 0xf9020c04,0xf9403204,0xf9021004,0xf9403604,0xf9021404,0xf9403a04,0xf9021804,0xf9403e04
-.inst 0xf9021c04,0xf9404204,0xf9022004,0xf9404604,0xf9022404,0xf9404a04,0xf9022804,0xf9404e04
-.inst 0xf9022c04,0xf9405204,0xf9023004,0xf9405604,0xf9023404,0xf9405a04,0xf9023804,0xf9405e04
-.inst 0xf9023c04,0x14000079,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e001,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf901e401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf901e801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901ec01,0xd2800001,0xf2a00001
-.inst 0xf2c00001,0xf2e00001,0xf901f001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f401
-.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f801,0xd2800001,0xf2a00001,0xf2c00001
-.inst 0xf2e00001,0xf901fc01,0xd296e1a1,0xf2b4f8a1,0xf2d3f521,0xf2faeaa1,0xf9020001,0xd2872f41
-.inst 0xf2ba4fa1,0xf2c01a01,0xf2faefc1,0xf9020401,0xd28fe321,0xf2a32b81,0xf2cbdaa1,0xf2ea2641
-.inst 0xf9020801,0xd292f7a1,0xf2ac8721,0xf2cc9fe1,0xf2f05641,0xf9020c01,0xd29ef1c1,0xf2b1f981
-.inst 0xf2cc66a1,0xf2e53381,0xf9021001,0xd285be21,0xf2a986c1,0xf2ce4981,0xf2e699e1,0xf9021401
-.inst 0xd2807f01,0xf2b986c1,0xf2c32a21,0xf2f80561,0xf9021801,0xd2876e81,0xf2a482c1,0xf2cc48e1
-.inst 0xf2eaa441,0xf9021c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022001,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9022401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf9022801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022c01,0xd2800001,0xf2a00001
-.inst 0xf2c00001,0xf2e00001,0xf9023001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401
-.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001
-.inst 0xf2e00001,0xf9023c01,0xf944e001,0xf9054001,0xf944e401,0xf9054401,0xf944e801,0xf9054801
-.inst 0xf944ec01,0xf9054c01,0xf944f001,0xf9055001,0xf944f401,0xf9055401,0xf944f801,0xf9055801
-.inst 0xf944fc01,0xf9055c01,0xf9458001,0xf9056001,0xf9458401,0xf9056401,0xf9458801,0xf9056801
-.inst 0xf9458c01,0xf9056c01,0xf9459001,0xf9057001,0xf9459401,0xf9057401,0xf9459801,0xf9057801
-.inst 0xf9459c01,0xf9057c01,0xf940c001,0xf904c001,0xf940c401,0xf904c401,0xf940c801,0xf904c801
-.inst 0xf940cc01,0xf904cc01,0xf940d001,0xf904d001,0xf940d401,0xf904d401,0xf940d801,0xf904d801
-.inst 0xf940dc01,0xf904dc01,0x4e081fdd,0xd280c001,0xd2815002,0xd2807803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9405604,0xf9023404,0xf9405a04,0xf9023804,0xf9405e04,0xf9023c04
+b 27f
+26:",
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #960]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #968]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #976]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #984]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #992]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1000]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1008]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1016]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #1024]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #1032]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #1040]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #1048]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #1056]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #1064]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #1072]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #1080]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1088]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1096]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1104]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1112]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1120]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1128]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1136]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1144]
+        r".inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e001,0xd2800001,0xf2a00001,0xf2c00001
+.inst 0xf2e00001,0xf901e401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e801,0xd2800001
+.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf901ec01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf901f001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf901f801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901fc01
+.inst 0xd296e1a1,0xf2b4f8a1,0xf2d3f521,0xf2faeaa1,0xf9020001,0xd2872f41,0xf2ba4fa1,0xf2c01a01
+.inst 0xf2faefc1,0xf9020401,0xd28fe321,0xf2a32b81,0xf2cbdaa1,0xf2ea2641,0xf9020801,0xd292f7a1
+.inst 0xf2ac8721,0xf2cc9fe1,0xf2f05641,0xf9020c01,0xd29ef1c1,0xf2b1f981,0xf2cc66a1,0xf2e53381
+.inst 0xf9021001,0xd285be21,0xf2a986c1,0xf2ce4981,0xf2e699e1,0xf9021401,0xd2807f01,0xf2b986c1
+.inst 0xf2c32a21,0xf2f80561,0xf9021801,0xd2876e81,0xf2a482c1,0xf2cc48e1,0xf2eaa441,0xf9021c01
+.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022001,0xd2800001,0xf2a00001,0xf2c00001
+.inst 0xf2e00001,0xf9022401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022801,0xd2800001
+.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9022c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf9023001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023c01
+27:",
+        // ldr x1, [x0, #576]
+        // str x1, [x0, #2688]
+        // ldr x1, [x0, #584]
+        // str x1, [x0, #2696]
+        // ldr x1, [x0, #592]
+        // str x1, [x0, #2704]
+        // ldr x1, [x0, #600]
+        // str x1, [x0, #2712]
+        // ldr x1, [x0, #608]
+        // str x1, [x0, #2720]
+        // ldr x1, [x0, #616]
+        // str x1, [x0, #2728]
+        // ldr x1, [x0, #624]
+        // str x1, [x0, #2736]
+        // ldr x1, [x0, #632]
+        // str x1, [x0, #2744]
+        // ldr x1, [x0, #640]
+        // str x1, [x0, #2752]
+        // ldr x1, [x0, #648]
+        // str x1, [x0, #2760]
+        // ldr x1, [x0, #656]
+        // str x1, [x0, #2768]
+        // ldr x1, [x0, #664]
+        // str x1, [x0, #2776]
+        // ldr x1, [x0, #672]
+        // str x1, [x0, #2784]
+        // ldr x1, [x0, #680]
+        // str x1, [x0, #2792]
+        // ldr x1, [x0, #688]
+        // str x1, [x0, #2800]
+        // ldr x1, [x0, #696]
+        // str x1, [x0, #2808]
+        // ldr x1, [x0, #384]
+        // str x1, [x0, #2432]
+        // ldr x1, [x0, #392]
+        // str x1, [x0, #2440]
+        // ldr x1, [x0, #400]
+        // str x1, [x0, #2448]
+        // ldr x1, [x0, #408]
+        // str x1, [x0, #2456]
+        // ldr x1, [x0, #416]
+        // str x1, [x0, #2464]
+        // ldr x1, [x0, #424]
+        // str x1, [x0, #2472]
+        // ldr x1, [x0, #432]
+        // str x1, [x0, #2480]
+        // ldr x1, [x0, #440]
+        // str x1, [x0, #2488]
+        r".inst 0xf9412001,0xf9054001,0xf9412401,0xf9054401,0xf9412801,0xf9054801,0xf9412c01,0xf9054c01
+.inst 0xf9413001,0xf9055001,0xf9413401,0xf9055401,0xf9413801,0xf9055801,0xf9413c01,0xf9055c01
+.inst 0xf9414001,0xf9056001,0xf9414401,0xf9056401,0xf9414801,0xf9056801,0xf9414c01,0xf9056c01
+.inst 0xf9415001,0xf9057001,0xf9415401,0xf9057401,0xf9415801,0xf9057801,0xf9415c01,0xf9057c01
+.inst 0xf940c001,0xf904c001,0xf940c401,0xf904c401,0xf940c801,0xf904c801,0xf940cc01,0xf904cc01
+.inst 0xf940d001,0xf904d001,0xf940d401,0xf904d401,0xf940d801,0xf904d801,0xf940dc01,0xf904dc01
+b 25f
+24:",
+        // movz x2, #11, lsl #0
+        // sub x2, x2, x19
+        r".inst 0xd2800162,0xcb130042
+cbz x2, 28f",
+        // sub x2, x2, #1
+        // movz x17, #192, lsl #0
+        // mul x2, x2, x17
+        // movz x16, #5280, lsl #0
+        // add x16, x0, x16
+        // add x16, x16, x2
+        // ldr x4, [x16, #0]
+        // str x4, [x0, #960]
+        // ldr x4, [x16, #8]
+        // str x4, [x0, #968]
+        // ldr x4, [x16, #16]
+        // str x4, [x0, #976]
+        // ldr x4, [x16, #24]
+        // str x4, [x0, #984]
+        // ldr x4, [x16, #32]
+        // str x4, [x0, #992]
+        // ldr x4, [x16, #40]
+        // str x4, [x0, #1000]
+        // ldr x4, [x16, #48]
+        // str x4, [x0, #1008]
+        // ldr x4, [x16, #56]
+        // str x4, [x0, #1016]
+        // ldr x4, [x16, #64]
+        // str x4, [x0, #1024]
+        // ldr x4, [x16, #72]
+        // str x4, [x0, #1032]
+        // ldr x4, [x16, #80]
+        // str x4, [x0, #1040]
+        // ldr x4, [x16, #88]
+        // str x4, [x0, #1048]
+        // ldr x4, [x16, #96]
+        // str x4, [x0, #1056]
+        // ldr x4, [x16, #104]
+        // str x4, [x0, #1064]
+        // ldr x4, [x16, #112]
+        // str x4, [x0, #1072]
+        // ldr x4, [x16, #120]
+        // str x4, [x0, #1080]
+        // ldr x4, [x16, #128]
+        // str x4, [x0, #1088]
+        // ldr x4, [x16, #136]
+        // str x4, [x0, #1096]
+        // ldr x4, [x16, #144]
+        // str x4, [x0, #1104]
+        // ldr x4, [x16, #152]
+        // str x4, [x0, #1112]
+        // ldr x4, [x16, #160]
+        // str x4, [x0, #1120]
+        // ldr x4, [x16, #168]
+        // str x4, [x0, #1128]
+        // ldr x4, [x16, #176]
+        // str x4, [x0, #1136]
+        // ldr x4, [x16, #184]
+        // str x4, [x0, #1144]
+        r".inst 0xd1000442,0xd2801811,0x9b117c42,0xd2829410,0x8b100010,0x8b020210,0xf9400204,0xf901e004
+.inst 0xf9400604,0xf901e404,0xf9400a04,0xf901e804,0xf9400e04,0xf901ec04,0xf9401204,0xf901f004
+.inst 0xf9401604,0xf901f404,0xf9401a04,0xf901f804,0xf9401e04,0xf901fc04,0xf9402204,0xf9020004
+.inst 0xf9402604,0xf9020404,0xf9402a04,0xf9020804,0xf9402e04,0xf9020c04,0xf9403204,0xf9021004
+.inst 0xf9403604,0xf9021404,0xf9403a04,0xf9021804,0xf9403e04,0xf9021c04,0xf9404204,0xf9022004
+.inst 0xf9404604,0xf9022404,0xf9404a04,0xf9022804,0xf9404e04,0xf9022c04,0xf9405204,0xf9023004
+.inst 0xf9405604,0xf9023404,0xf9405a04,0xf9023804,0xf9405e04,0xf9023c04
+b 29f
+28:",
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #960]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #968]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #976]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #984]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #992]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1000]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1008]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1016]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #1024]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #1032]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #1040]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #1048]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #1056]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #1064]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #1072]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #1080]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1088]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1096]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1104]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1112]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1120]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1128]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1136]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1144]
+        r".inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e001,0xd2800001,0xf2a00001,0xf2c00001
+.inst 0xf2e00001,0xf901e401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e801,0xd2800001
+.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf901ec01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf901f001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf901f801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901fc01
+.inst 0xd296e1a1,0xf2b4f8a1,0xf2d3f521,0xf2faeaa1,0xf9020001,0xd2872f41,0xf2ba4fa1,0xf2c01a01
+.inst 0xf2faefc1,0xf9020401,0xd28fe321,0xf2a32b81,0xf2cbdaa1,0xf2ea2641,0xf9020801,0xd292f7a1
+.inst 0xf2ac8721,0xf2cc9fe1,0xf2f05641,0xf9020c01,0xd29ef1c1,0xf2b1f981,0xf2cc66a1,0xf2e53381
+.inst 0xf9021001,0xd285be21,0xf2a986c1,0xf2ce4981,0xf2e699e1,0xf9021401,0xd2807f01,0xf2b986c1
+.inst 0xf2c32a21,0xf2f80561,0xf9021801,0xd2876e81,0xf2a482c1,0xf2cc48e1,0xf2eaa441,0xf9021c01
+.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022001,0xd2800001,0xf2a00001,0xf2c00001
+.inst 0xf2e00001,0xf9022401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022801,0xd2800001
+.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9022c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf9023001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023c01
+29:",
+        // ldr x1, [x0, #2496]
+        // str x1, [x0, #2688]
+        // ldr x1, [x0, #2504]
+        // str x1, [x0, #2696]
+        // ldr x1, [x0, #2512]
+        // str x1, [x0, #2704]
+        // ldr x1, [x0, #2520]
+        // str x1, [x0, #2712]
+        // ldr x1, [x0, #2528]
+        // str x1, [x0, #2720]
+        // ldr x1, [x0, #2536]
+        // str x1, [x0, #2728]
+        // ldr x1, [x0, #2544]
+        // str x1, [x0, #2736]
+        // ldr x1, [x0, #2552]
+        // str x1, [x0, #2744]
+        // ldr x1, [x0, #2816]
+        // str x1, [x0, #2752]
+        // ldr x1, [x0, #2824]
+        // str x1, [x0, #2760]
+        // ldr x1, [x0, #2832]
+        // str x1, [x0, #2768]
+        // ldr x1, [x0, #2840]
+        // str x1, [x0, #2776]
+        // ldr x1, [x0, #2848]
+        // str x1, [x0, #2784]
+        // ldr x1, [x0, #2856]
+        // str x1, [x0, #2792]
+        // ldr x1, [x0, #2864]
+        // str x1, [x0, #2800]
+        // ldr x1, [x0, #2872]
+        // str x1, [x0, #2808]
+        // ldr x1, [x0, #384]
+        // str x1, [x0, #2432]
+        // ldr x1, [x0, #392]
+        // str x1, [x0, #2440]
+        // ldr x1, [x0, #400]
+        // str x1, [x0, #2448]
+        // ldr x1, [x0, #408]
+        // str x1, [x0, #2456]
+        // ldr x1, [x0, #416]
+        // str x1, [x0, #2464]
+        // ldr x1, [x0, #424]
+        // str x1, [x0, #2472]
+        // ldr x1, [x0, #432]
+        // str x1, [x0, #2480]
+        // ldr x1, [x0, #440]
+        // str x1, [x0, #2488]
+        r".inst 0xf944e001,0xf9054001,0xf944e401,0xf9054401,0xf944e801,0xf9054801,0xf944ec01,0xf9054c01
+.inst 0xf944f001,0xf9055001,0xf944f401,0xf9055401,0xf944f801,0xf9055801,0xf944fc01,0xf9055c01
+.inst 0xf9458001,0xf9056001,0xf9458401,0xf9056401,0xf9458801,0xf9056801,0xf9458c01,0xf9056c01
+.inst 0xf9459001,0xf9057001,0xf9459401,0xf9057401,0xf9459801,0xf9057801,0xf9459c01,0xf9057c01
+.inst 0xf940c001,0xf904c001,0xf940c401,0xf904c401,0xf940c801,0xf904c801,0xf940cc01,0xf904cc01
+.inst 0xf940d001,0xf904d001,0xf940d401,0xf904d401,0xf940d801,0xf904d801,0xf940dc01,0xf904dc01
+25:",
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #2688, lsl #0
+        // movz x3, #960, lsl #0
+        r".inst 0x4e081fdd,0xd280c001,0xd2815002,0xd2807803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1600, lsl #0
+        // movz x2, #2752, lsl #0
+        // movz x3, #1024, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #2432, lsl #0
+        // movz x3, #1088, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2752]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2760]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2768]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2776]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2784]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2792]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2800]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2808]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1024]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1032]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1040]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1048]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1056]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1064]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1072]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1080]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1728, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9454008,0xf9454409,0xf945480a,0xf9454c0b,0xf945500c,0xf945540d
 .inst 0xf945580e,0xf9455c0f,0xf9456002,0xab020108,0xf9456402,0xba020129,0xf9456802,0xba02014a
 .inst 0xf9456c02,0xba02016b,0xf9457002,0xba02018c,0xf9457402,0xba0201ad,0xf9457802,0xba0201ce
@@ -432,8 +3283,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008
 .inst 0xf9038409,0xf903880a,0xf9038c0b,0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd
-.inst 0xd280d801,0xd280d802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d801,0xd280d802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1600]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1608]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1616]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1624]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1632]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1640]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1648]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1656]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1728]
+        // ldr x9, [x0, #1736]
+        // ldr x10, [x0, #1744]
+        // ldr x11, [x0, #1752]
+        // ldr x12, [x0, #1760]
+        // ldr x13, [x0, #1768]
+        // ldr x14, [x0, #1776]
+        // ldr x15, [x0, #1784]
+        // ldr x2, [x0, #1792]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1800]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1808]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1816]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1824]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1832]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1840]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1848]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #1792, lsl #0
+        // movz x3, #1856, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9432002,0xab020108,0xf9432402,0xba020129,0xf9432802,0xba02014a
 .inst 0xf9432c02,0xba02016b,0xf9433002,0xba02018c,0xf9433402,0xba0201ad,0xf9433802,0xba0201ce
@@ -463,8 +3554,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf903a008,0xf903a409,0xf903a80a,0xf903ac0b
-.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1856]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1864]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1872]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1880]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1888]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1896]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1904]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1912]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2752]
+        // ldr x9, [x0, #2760]
+        // ldr x10, [x0, #2768]
+        // ldr x11, [x0, #2776]
+        // ldr x12, [x0, #2784]
+        // ldr x13, [x0, #2792]
+        // ldr x14, [x0, #2800]
+        // ldr x15, [x0, #2808]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1024]
+        // ldr x9, [x0, #1032]
+        // ldr x10, [x0, #1040]
+        // ldr x11, [x0, #1048]
+        // ldr x12, [x0, #1056]
+        // ldr x13, [x0, #1064]
+        // ldr x14, [x0, #1072]
+        // ldr x15, [x0, #1080]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1856, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1152, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -494,8 +3825,130 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b
-.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1856]
+        // ldr x9, [x0, #1864]
+        // ldr x10, [x0, #1872]
+        // ldr x11, [x0, #1880]
+        // ldr x12, [x0, #1888]
+        // ldr x13, [x0, #1896]
+        // ldr x14, [x0, #1904]
+        // ldr x15, [x0, #1912]
+        // ldr x2, [x0, #1152]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1160]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1168]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1176]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1184]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1192]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1200]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1208]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -511,10 +3964,196 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf903a008,0xf903a409
 .inst 0xf903a80a,0xf903ac0b,0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280a001
-.inst 0xd2803802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1664, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // mov v29.d[0], x30
+        // movz x1, #1216, lsl #0
+        // movz x2, #1152, lsl #0
+        // movz x3, #1280, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9428002,0xab020108,0xf9428402,0xba020129,0xf9428802,0xba02014a
 .inst 0xf9428c02,0xba02016b,0xf9429002,0xba02018c,0xf9429402,0xba0201ad,0xf9429802,0xba0201ce
@@ -537,8 +4176,131 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8
 .inst 0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e
 .inst 0x9a8f230f,0xf9028008,0xf9028409,0xf902880a,0xf9028c0b,0xf902900c,0xf902940d,0xf902980e
-.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -554,10 +4316,137 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9032008
 .inst 0xf9032409,0xf903280a,0xf9032c0b,0xf903300c,0xf903340d,0xf903380e,0xf9033c0f,0x4e081fdd
-.inst 0xd280d001,0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d001,0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1792, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1664]
+        // str x9, [x0, #1672]
+        // str x10, [x0, #1680]
+        // str x11, [x0, #1688]
+        // str x12, [x0, #1696]
+        // str x13, [x0, #1704]
+        // str x14, [x0, #1712]
+        // str x15, [x0, #1720]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -573,8 +4462,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf9034008,0xf9034409
 .inst 0xf903480a,0xf9034c0b,0xf903500c,0xf903540d,0xf903580e,0xf9035c0f,0x4e081fdd,0xd280d001
-.inst 0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1600, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9438008,0xf9438409,0xf943880a,0xf9438c0b,0xf943900c,0xf943940d
 .inst 0xf943980e,0xf9439c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -582,8 +4535,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008,0xf9038409,0xf903880a,0xf9038c0b
-.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1216]
+        // ldr x9, [x0, #1224]
+        // ldr x10, [x0, #1232]
+        // ldr x11, [x0, #1240]
+        // ldr x12, [x0, #1248]
+        // ldr x13, [x0, #1256]
+        // ldr x14, [x0, #1264]
+        // ldr x15, [x0, #1272]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1216]
+        // str x9, [x0, #1224]
+        // str x10, [x0, #1232]
+        // str x11, [x0, #1240]
+        // str x12, [x0, #1248]
+        // str x13, [x0, #1256]
+        // str x14, [x0, #1264]
+        // str x15, [x0, #1272]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9426008,0xf9426409,0xf942680a,0xf9426c0b,0xf942700c,0xf942740d
 .inst 0xf942780e,0xf9427c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -591,10 +4608,78 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9026008,0xf9026409,0xf902680a,0xf9026c0b
-.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1152, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1536]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1600, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9430002,0xeb020108,0xf9430402,0xfa020129,0xf9430802,0xfa02014a
 .inst 0xf9430c02,0xfa02016b,0xf9431002,0xfa02018c,0xf9431402,0xfa0201ad,0xf9431802,0xfa0201ce
@@ -602,10 +4687,179 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xba020129,0xf9402802,0x8a110042,0xba02014a,0xf9402c02,0x8a110042,0xba02016b,0xf9403002
 .inst 0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad,0xf9403802,0x8a110042,0xba0201ce
 .inst 0xf9403c02,0x8a110042,0xba0201ef,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b,0xf902500c
-.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1280, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1280]
+        // ldr x9, [x0, #1288]
+        // ldr x10, [x0, #1296]
+        // ldr x11, [x0, #1304]
+        // ldr x12, [x0, #1312]
+        // ldr x13, [x0, #1320]
+        // ldr x14, [x0, #1328]
+        // ldr x15, [x0, #1336]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // ldr x1, [x0, #1152]
+        // str x1, [x0, #960]
+        // ldr x1, [x0, #1160]
+        // str x1, [x0, #968]
+        // ldr x1, [x0, #1168]
+        // str x1, [x0, #976]
+        // ldr x1, [x0, #1176]
+        // str x1, [x0, #984]
+        // ldr x1, [x0, #1184]
+        // str x1, [x0, #992]
+        // ldr x1, [x0, #1192]
+        // str x1, [x0, #1000]
+        // ldr x1, [x0, #1200]
+        // str x1, [x0, #1008]
+        // ldr x1, [x0, #1208]
+        // str x1, [x0, #1016]
+        // ldr x1, [x0, #1216]
+        // str x1, [x0, #1024]
+        // ldr x1, [x0, #1224]
+        // str x1, [x0, #1032]
+        // ldr x1, [x0, #1232]
+        // str x1, [x0, #1040]
+        // ldr x1, [x0, #1240]
+        // str x1, [x0, #1048]
+        // ldr x1, [x0, #1248]
+        // str x1, [x0, #1056]
+        // ldr x1, [x0, #1256]
+        // str x1, [x0, #1064]
+        // ldr x1, [x0, #1264]
+        // str x1, [x0, #1072]
+        // ldr x1, [x0, #1272]
+        // str x1, [x0, #1080]
+        // ldr x1, [x0, #1280]
+        // str x1, [x0, #1088]
+        // ldr x1, [x0, #1288]
+        // str x1, [x0, #1096]
+        // ldr x1, [x0, #1296]
+        // str x1, [x0, #1104]
+        // ldr x1, [x0, #1304]
+        // str x1, [x0, #1112]
+        // ldr x1, [x0, #1312]
+        // str x1, [x0, #1120]
+        // ldr x1, [x0, #1320]
+        // str x1, [x0, #1128]
+        // ldr x1, [x0, #1328]
+        // str x1, [x0, #1136]
+        // ldr x1, [x0, #1336]
+        // str x1, [x0, #1144]
+        // movz x2, #15, lsl #0
+        // sub x2, x2, x19
+        // sub x2, x2, #1
+        // movz x17, #192, lsl #0
+        // mul x2, x2, x17
+        // movz x16, #5280, lsl #0
+        // add x16, x0, x16
+        // add x16, x16, x2
+        // ldr x4, [x0, #960]
+        // str x4, [x16, #0]
+        // ldr x4, [x0, #968]
+        // str x4, [x16, #8]
+        // ldr x4, [x0, #976]
+        // str x4, [x16, #16]
+        // ldr x4, [x0, #984]
+        // str x4, [x16, #24]
+        // ldr x4, [x0, #992]
+        // str x4, [x16, #32]
+        // ldr x4, [x0, #1000]
+        // str x4, [x16, #40]
+        // ldr x4, [x0, #1008]
+        // str x4, [x16, #48]
+        // ldr x4, [x0, #1016]
+        // str x4, [x16, #56]
+        // ldr x4, [x0, #1024]
+        // str x4, [x16, #64]
+        // ldr x4, [x0, #1032]
+        // str x4, [x16, #72]
+        // ldr x4, [x0, #1040]
+        // str x4, [x16, #80]
+        // ldr x4, [x0, #1048]
+        // str x4, [x16, #88]
+        // ldr x4, [x0, #1056]
+        // str x4, [x16, #96]
+        // ldr x4, [x0, #1064]
+        // str x4, [x16, #104]
+        // ldr x4, [x0, #1072]
+        // str x4, [x16, #112]
+        // ldr x4, [x0, #1080]
+        // str x4, [x16, #120]
+        // ldr x4, [x0, #1088]
+        // str x4, [x16, #128]
+        // ldr x4, [x0, #1096]
+        // str x4, [x16, #136]
+        // ldr x4, [x0, #1104]
+        // str x4, [x16, #144]
+        // ldr x4, [x0, #1112]
+        // str x4, [x16, #152]
+        // ldr x4, [x0, #1120]
+        // str x4, [x16, #160]
+        // ldr x4, [x0, #1128]
+        // str x4, [x16, #168]
+        // ldr x4, [x0, #1136]
+        // str x4, [x16, #176]
+        // ldr x4, [x0, #1144]
+        // str x4, [x16, #184]
         r".inst 0x4e083fbe,0xd2800007,0xf9428008,0xf9428409,0xf942880a,0xf9428c0b,0xf942900c,0xf942940d
 .inst 0xf942980e,0xf9429c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -626,34 +4880,344 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9420804,0xf9002a04,0xf9420c04,0xf9002e04,0xf9421004,0xf9003204,0xf9421404,0xf9003604
 .inst 0xf9421804,0xf9003a04,0xf9421c04,0xf9003e04,0xf9422004,0xf9004204,0xf9422404,0xf9004604
 .inst 0xf9422804,0xf9004a04,0xf9422c04,0xf9004e04,0xf9423004,0xf9005204,0xf9423404,0xf9005604
-.inst 0xf9423804,0xf9005a04,0xf9423c04,0xf9005e04,0xb5ff0433,0xd2800001,0xf2a00001,0xf2c00001
-.inst 0xf2e00001,0xf901e001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e401,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf901e801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf901ec01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f001,0xd2800001,0xf2a00001
-.inst 0xf2c00001,0xf2e00001,0xf901f401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f801
-.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901fc01,0xd296e1a1,0xf2b4f8a1,0xf2d3f521
-.inst 0xf2faeaa1,0xf9020001,0xd2872f41,0xf2ba4fa1,0xf2c01a01,0xf2faefc1,0xf9020401,0xd28fe321
-.inst 0xf2a32b81,0xf2cbdaa1,0xf2ea2641,0xf9020801,0xd292f7a1,0xf2ac8721,0xf2cc9fe1,0xf2f05641
-.inst 0xf9020c01,0xd29ef1c1,0xf2b1f981,0xf2cc66a1,0xf2e53381,0xf9021001,0xd285be21,0xf2a986c1
-.inst 0xf2ce4981,0xf2e699e1,0xf9021401,0xd2807f01,0xf2b986c1,0xf2c32a21,0xf2f80561,0xf9021801
-.inst 0xd2876e81,0xf2a482c1,0xf2cc48e1,0xf2eaa441,0xf9021c01,0xd2800001,0xf2a00001,0xf2c00001
-.inst 0xf2e00001,0xf9022001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022401,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9022801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf9022c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023001,0xd2800001,0xf2a00001
-.inst 0xf2c00001,0xf2e00001,0xf9023401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023801
-.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023c01,0xd2802013,0xd1000673,0xf941e001
-.inst 0xf9054001,0xf941e401,0xf9054401,0xf941e801,0xf9054801,0xf941ec01,0xf9054c01,0xf941f001
-.inst 0xf9055001,0xf941f401,0xf9055401,0xf941f801,0xf9055801,0xf941fc01,0xf9055c01,0xf9420001
-.inst 0xf9056001,0xf9420401,0xf9056401,0xf9420801,0xf9056801,0xf9420c01,0xf9056c01,0xf9421001
-.inst 0xf9057001,0xf9421401,0xf9057401,0xf9421801,0xf9057801,0xf9421c01,0xf9057c01,0xf9422001
-.inst 0xf904c001,0xf9422401,0xf904c401,0xf9422801,0xf904c801,0xf9422c01,0xf904cc01,0xf9423001
-.inst 0xf904d001,0xf9423401,0xf904d401,0xf9423801,0xf904d801,0xf9423c01,0xf904dc01,0x4e081fdd
-.inst 0xd280c001,0xd2815002,0xd2807803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9423804,0xf9005a04,0xf9423c04,0xf9005e04
+cbnz x19, 23b",
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #960]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #968]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #976]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #984]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #992]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1000]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1008]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1016]
+        // movz x1, #46861, lsl #0
+        // movk x1, #42949, lsl #16
+        // movk x1, #40873, lsl #32
+        // movk x1, #55125, lsl #48
+        // str x1, [x0, #1024]
+        // movz x1, #14714, lsl #0
+        // movk x1, #53885, lsl #16
+        // movk x1, #208, lsl #32
+        // movk x1, #55166, lsl #48
+        // str x1, [x0, #1032]
+        // movz x1, #32537, lsl #0
+        // movk x1, #6492, lsl #16
+        // movk x1, #24277, lsl #32
+        // movk x1, #20786, lsl #48
+        // str x1, [x0, #1040]
+        // movz x1, #38845, lsl #0
+        // movk x1, #25657, lsl #16
+        // movk x1, #25855, lsl #32
+        // movk x1, #33458, lsl #48
+        // str x1, [x0, #1048]
+        // movz x1, #63374, lsl #0
+        // movk x1, #36812, lsl #16
+        // movk x1, #25397, lsl #32
+        // movk x1, #10652, lsl #48
+        // str x1, [x0, #1056]
+        // movz x1, #11761, lsl #0
+        // movk x1, #19510, lsl #16
+        // movk x1, #29260, lsl #32
+        // movk x1, #13519, lsl #48
+        // str x1, [x0, #1064]
+        // movz x1, #1016, lsl #0
+        // movk x1, #52278, lsl #16
+        // movk x1, #6481, lsl #32
+        // movk x1, #49195, lsl #48
+        // str x1, [x0, #1072]
+        // movz x1, #15220, lsl #0
+        // movk x1, #9238, lsl #16
+        // movk x1, #25159, lsl #32
+        // movk x1, #21794, lsl #48
+        // str x1, [x0, #1080]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1088]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1096]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1104]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1112]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1120]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1128]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1136]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #1144]
+        // movz x19, #256, lsl #0
+        r".inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e001,0xd2800001,0xf2a00001,0xf2c00001
+.inst 0xf2e00001,0xf901e401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901e801,0xd2800001
+.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf901ec01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf901f001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901f401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf901f801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf901fc01
+.inst 0xd296e1a1,0xf2b4f8a1,0xf2d3f521,0xf2faeaa1,0xf9020001,0xd2872f41,0xf2ba4fa1,0xf2c01a01
+.inst 0xf2faefc1,0xf9020401,0xd28fe321,0xf2a32b81,0xf2cbdaa1,0xf2ea2641,0xf9020801,0xd292f7a1
+.inst 0xf2ac8721,0xf2cc9fe1,0xf2f05641,0xf9020c01,0xd29ef1c1,0xf2b1f981,0xf2cc66a1,0xf2e53381
+.inst 0xf9021001,0xd285be21,0xf2a986c1,0xf2ce4981,0xf2e699e1,0xf9021401,0xd2807f01,0xf2b986c1
+.inst 0xf2c32a21,0xf2f80561,0xf9021801,0xd2876e81,0xf2a482c1,0xf2cc48e1,0xf2eaa441,0xf9021c01
+.inst 0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022001,0xd2800001,0xf2a00001,0xf2c00001
+.inst 0xf2e00001,0xf9022401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9022801,0xd2800001
+.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9022c01,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf9023001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf9023801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9023c01
+.inst 0xd2802013
+210:",
+        // sub x19, x19, #1
+        // ldr x1, [x0, #960]
+        // str x1, [x0, #2688]
+        // ldr x1, [x0, #968]
+        // str x1, [x0, #2696]
+        // ldr x1, [x0, #976]
+        // str x1, [x0, #2704]
+        // ldr x1, [x0, #984]
+        // str x1, [x0, #2712]
+        // ldr x1, [x0, #992]
+        // str x1, [x0, #2720]
+        // ldr x1, [x0, #1000]
+        // str x1, [x0, #2728]
+        // ldr x1, [x0, #1008]
+        // str x1, [x0, #2736]
+        // ldr x1, [x0, #1016]
+        // str x1, [x0, #2744]
+        // ldr x1, [x0, #1024]
+        // str x1, [x0, #2752]
+        // ldr x1, [x0, #1032]
+        // str x1, [x0, #2760]
+        // ldr x1, [x0, #1040]
+        // str x1, [x0, #2768]
+        // ldr x1, [x0, #1048]
+        // str x1, [x0, #2776]
+        // ldr x1, [x0, #1056]
+        // str x1, [x0, #2784]
+        // ldr x1, [x0, #1064]
+        // str x1, [x0, #2792]
+        // ldr x1, [x0, #1072]
+        // str x1, [x0, #2800]
+        // ldr x1, [x0, #1080]
+        // str x1, [x0, #2808]
+        // ldr x1, [x0, #1088]
+        // str x1, [x0, #2432]
+        // ldr x1, [x0, #1096]
+        // str x1, [x0, #2440]
+        // ldr x1, [x0, #1104]
+        // str x1, [x0, #2448]
+        // ldr x1, [x0, #1112]
+        // str x1, [x0, #2456]
+        // ldr x1, [x0, #1120]
+        // str x1, [x0, #2464]
+        // ldr x1, [x0, #1128]
+        // str x1, [x0, #2472]
+        // ldr x1, [x0, #1136]
+        // str x1, [x0, #2480]
+        // ldr x1, [x0, #1144]
+        // str x1, [x0, #2488]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #2688, lsl #0
+        // movz x3, #960, lsl #0
+        r".inst 0xd1000673,0xf941e001,0xf9054001,0xf941e401,0xf9054401,0xf941e801,0xf9054801,0xf941ec01
+.inst 0xf9054c01,0xf941f001,0xf9055001,0xf941f401,0xf9055401,0xf941f801,0xf9055801,0xf941fc01
+.inst 0xf9055c01,0xf9420001,0xf9056001,0xf9420401,0xf9056401,0xf9420801,0xf9056801,0xf9420c01
+.inst 0xf9056c01,0xf9421001,0xf9057001,0xf9421401,0xf9057401,0xf9421801,0xf9057801,0xf9421c01
+.inst 0xf9057c01,0xf9422001,0xf904c001,0xf9422401,0xf904c401,0xf9422801,0xf904c801,0xf9422c01
+.inst 0xf904cc01,0xf9423001,0xf904d001,0xf9423401,0xf904d401,0xf9423801,0xf904d801,0xf9423c01
+.inst 0xf904dc01,0x4e081fdd,0xd280c001,0xd2815002,0xd2807803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1600, lsl #0
+        // movz x2, #2752, lsl #0
+        // movz x3, #1024, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #2432, lsl #0
+        // movz x3, #1088, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2752]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2760]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2768]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2776]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2784]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2792]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2800]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2808]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1024]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1032]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1040]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1048]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1056]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1064]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1072]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1080]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1728, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9454008,0xf9454409,0xf945480a,0xf9454c0b,0xf945500c,0xf945540d
 .inst 0xf945580e,0xf9455c0f,0xf9456002,0xab020108,0xf9456402,0xba020129,0xf9456802,0xba02014a
 .inst 0xf9456c02,0xba02016b,0xf9457002,0xba02018c,0xf9457402,0xba0201ad,0xf9457802,0xba0201ce
@@ -669,8 +5233,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008
 .inst 0xf9038409,0xf903880a,0xf9038c0b,0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd
-.inst 0xd280d801,0xd280d802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d801,0xd280d802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1600]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1608]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1616]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1624]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1632]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1640]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1648]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1656]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1728]
+        // ldr x9, [x0, #1736]
+        // ldr x10, [x0, #1744]
+        // ldr x11, [x0, #1752]
+        // ldr x12, [x0, #1760]
+        // ldr x13, [x0, #1768]
+        // ldr x14, [x0, #1776]
+        // ldr x15, [x0, #1784]
+        // ldr x2, [x0, #1792]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1800]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1808]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1816]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1824]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1832]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1840]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1848]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #1792, lsl #0
+        // movz x3, #1856, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9432002,0xab020108,0xf9432402,0xba020129,0xf9432802,0xba02014a
 .inst 0xf9432c02,0xba02016b,0xf9433002,0xba02018c,0xf9433402,0xba0201ad,0xf9433802,0xba0201ce
@@ -700,8 +5504,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf903a008,0xf903a409,0xf903a80a,0xf903ac0b
-.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1856]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1864]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1872]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1880]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1888]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1896]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1904]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1912]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2752]
+        // ldr x9, [x0, #2760]
+        // ldr x10, [x0, #2768]
+        // ldr x11, [x0, #2776]
+        // ldr x12, [x0, #2784]
+        // ldr x13, [x0, #2792]
+        // ldr x14, [x0, #2800]
+        // ldr x15, [x0, #2808]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1024]
+        // ldr x9, [x0, #1032]
+        // ldr x10, [x0, #1040]
+        // ldr x11, [x0, #1048]
+        // ldr x12, [x0, #1056]
+        // ldr x13, [x0, #1064]
+        // ldr x14, [x0, #1072]
+        // ldr x15, [x0, #1080]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1856, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1152, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -731,8 +5775,130 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b
-.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1856]
+        // ldr x9, [x0, #1864]
+        // ldr x10, [x0, #1872]
+        // ldr x11, [x0, #1880]
+        // ldr x12, [x0, #1888]
+        // ldr x13, [x0, #1896]
+        // ldr x14, [x0, #1904]
+        // ldr x15, [x0, #1912]
+        // ldr x2, [x0, #1152]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1160]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1168]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1176]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1184]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1192]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1200]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1208]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -748,10 +5914,196 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf903a008,0xf903a409
 .inst 0xf903a80a,0xf903ac0b,0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280a001
-.inst 0xd2803802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1664, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // mov v29.d[0], x30
+        // movz x1, #1216, lsl #0
+        // movz x2, #1152, lsl #0
+        // movz x3, #1280, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9428002,0xab020108,0xf9428402,0xba020129,0xf9428802,0xba02014a
 .inst 0xf9428c02,0xba02016b,0xf9429002,0xba02018c,0xf9429402,0xba0201ad,0xf9429802,0xba0201ce
@@ -774,8 +6126,131 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8
 .inst 0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e
 .inst 0x9a8f230f,0xf9028008,0xf9028409,0xf902880a,0xf9028c0b,0xf902900c,0xf902940d,0xf902980e
-.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -791,10 +6266,137 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9032008
 .inst 0xf9032409,0xf903280a,0xf9032c0b,0xf903300c,0xf903340d,0xf903380e,0xf9033c0f,0x4e081fdd
-.inst 0xd280d001,0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d001,0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1792, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1664]
+        // str x9, [x0, #1672]
+        // str x10, [x0, #1680]
+        // str x11, [x0, #1688]
+        // str x12, [x0, #1696]
+        // str x13, [x0, #1704]
+        // str x14, [x0, #1712]
+        // str x15, [x0, #1720]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -810,8 +6412,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf9034008,0xf9034409
 .inst 0xf903480a,0xf9034c0b,0xf903500c,0xf903540d,0xf903580e,0xf9035c0f,0x4e081fdd,0xd280d001
-.inst 0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1600, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9438008,0xf9438409,0xf943880a,0xf9438c0b,0xf943900c,0xf943940d
 .inst 0xf943980e,0xf9439c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -819,8 +6485,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008,0xf9038409,0xf903880a,0xf9038c0b
-.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1216]
+        // ldr x9, [x0, #1224]
+        // ldr x10, [x0, #1232]
+        // ldr x11, [x0, #1240]
+        // ldr x12, [x0, #1248]
+        // ldr x13, [x0, #1256]
+        // ldr x14, [x0, #1264]
+        // ldr x15, [x0, #1272]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1216]
+        // str x9, [x0, #1224]
+        // str x10, [x0, #1232]
+        // str x11, [x0, #1240]
+        // str x12, [x0, #1248]
+        // str x13, [x0, #1256]
+        // str x14, [x0, #1264]
+        // str x15, [x0, #1272]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9426008,0xf9426409,0xf942680a,0xf9426c0b,0xf942700c,0xf942740d
 .inst 0xf942780e,0xf9427c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -828,10 +6558,78 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9026008,0xf9026409,0xf902680a,0xf9026c0b
-.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1152, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1536]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1600, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9430002,0xeb020108,0xf9430402,0xfa020129,0xf9430802,0xfa02014a
 .inst 0xf9430c02,0xfa02016b,0xf9431002,0xfa02018c,0xf9431402,0xfa0201ad,0xf9431802,0xfa0201ce
@@ -839,10 +6637,175 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xba020129,0xf9402802,0x8a110042,0xba02014a,0xf9402c02,0x8a110042,0xba02016b,0xf9403002
 .inst 0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad,0xf9403802,0x8a110042,0xba0201ce
 .inst 0xf9403c02,0x8a110042,0xba0201ef,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b,0xf902500c
-.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1280, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1280]
+        // ldr x9, [x0, #1288]
+        // ldr x10, [x0, #1296]
+        // ldr x11, [x0, #1304]
+        // ldr x12, [x0, #1312]
+        // ldr x13, [x0, #1320]
+        // ldr x14, [x0, #1328]
+        // ldr x15, [x0, #1336]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // ldr x1, [x0, #1152]
+        // str x1, [x0, #960]
+        // ldr x1, [x0, #1160]
+        // str x1, [x0, #968]
+        // ldr x1, [x0, #1168]
+        // str x1, [x0, #976]
+        // ldr x1, [x0, #1176]
+        // str x1, [x0, #984]
+        // ldr x1, [x0, #1184]
+        // str x1, [x0, #992]
+        // ldr x1, [x0, #1192]
+        // str x1, [x0, #1000]
+        // ldr x1, [x0, #1200]
+        // str x1, [x0, #1008]
+        // ldr x1, [x0, #1208]
+        // str x1, [x0, #1016]
+        // ldr x1, [x0, #1216]
+        // str x1, [x0, #1024]
+        // ldr x1, [x0, #1224]
+        // str x1, [x0, #1032]
+        // ldr x1, [x0, #1232]
+        // str x1, [x0, #1040]
+        // ldr x1, [x0, #1240]
+        // str x1, [x0, #1048]
+        // ldr x1, [x0, #1248]
+        // str x1, [x0, #1056]
+        // ldr x1, [x0, #1256]
+        // str x1, [x0, #1064]
+        // ldr x1, [x0, #1264]
+        // str x1, [x0, #1072]
+        // ldr x1, [x0, #1272]
+        // str x1, [x0, #1080]
+        // ldr x1, [x0, #1280]
+        // str x1, [x0, #1088]
+        // ldr x1, [x0, #1288]
+        // str x1, [x0, #1096]
+        // ldr x1, [x0, #1296]
+        // str x1, [x0, #1104]
+        // ldr x1, [x0, #1304]
+        // str x1, [x0, #1112]
+        // ldr x1, [x0, #1312]
+        // str x1, [x0, #1120]
+        // ldr x1, [x0, #1320]
+        // str x1, [x0, #1128]
+        // ldr x1, [x0, #1328]
+        // str x1, [x0, #1136]
+        // ldr x1, [x0, #1336]
+        // str x1, [x0, #1144]
+        // ldr x1, [x0, #960]
+        // str x1, [x0, #2688]
+        // ldr x1, [x0, #968]
+        // str x1, [x0, #2696]
+        // ldr x1, [x0, #976]
+        // str x1, [x0, #2704]
+        // ldr x1, [x0, #984]
+        // str x1, [x0, #2712]
+        // ldr x1, [x0, #992]
+        // str x1, [x0, #2720]
+        // ldr x1, [x0, #1000]
+        // str x1, [x0, #2728]
+        // ldr x1, [x0, #1008]
+        // str x1, [x0, #2736]
+        // ldr x1, [x0, #1016]
+        // str x1, [x0, #2744]
+        // ldr x1, [x0, #1024]
+        // str x1, [x0, #2752]
+        // ldr x1, [x0, #1032]
+        // str x1, [x0, #2760]
+        // ldr x1, [x0, #1040]
+        // str x1, [x0, #2768]
+        // ldr x1, [x0, #1048]
+        // str x1, [x0, #2776]
+        // ldr x1, [x0, #1056]
+        // str x1, [x0, #2784]
+        // ldr x1, [x0, #1064]
+        // str x1, [x0, #2792]
+        // ldr x1, [x0, #1072]
+        // str x1, [x0, #2800]
+        // ldr x1, [x0, #1080]
+        // str x1, [x0, #2808]
+        // ldr x1, [x0, #1088]
+        // str x1, [x0, #2432]
+        // ldr x1, [x0, #1096]
+        // str x1, [x0, #2440]
+        // ldr x1, [x0, #1104]
+        // str x1, [x0, #2448]
+        // ldr x1, [x0, #1112]
+        // str x1, [x0, #2456]
+        // ldr x1, [x0, #1120]
+        // str x1, [x0, #2464]
+        // ldr x1, [x0, #1128]
+        // str x1, [x0, #2472]
+        // ldr x1, [x0, #1136]
+        // str x1, [x0, #2480]
+        // ldr x1, [x0, #1144]
+        // str x1, [x0, #2488]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #2688, lsl #0
+        // movz x3, #960, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9428008,0xf9428409,0xf942880a,0xf9428c0b,0xf942900c,0xf942940d
 .inst 0xf942980e,0xf9429c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -862,12 +6825,145 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9420801,0xf9056801,0xf9420c01,0xf9056c01,0xf9421001,0xf9057001,0xf9421401,0xf9057401
 .inst 0xf9421801,0xf9057801,0xf9421c01,0xf9057c01,0xf9422001,0xf904c001,0xf9422401,0xf904c401
 .inst 0xf9422801,0xf904c801,0xf9422c01,0xf904cc01,0xf9423001,0xf904d001,0xf9423401,0xf904d401
-.inst 0xf9423801,0xf904d801,0xf9423c01,0xf904dc01,0x4e081fdd,0xd280c001,0xd2815002,0xd2807803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9423801,0xf904d801,0xf9423c01,0xf904dc01,0x4e081fdd,0xd280c001,0xd2815002,0xd2807803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1600, lsl #0
+        // movz x2, #2752, lsl #0
+        // movz x3, #1024, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #2432, lsl #0
+        // movz x3, #1088, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2752]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2760]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2768]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2776]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2784]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2792]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2800]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2808]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1024]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1032]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1040]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1048]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1056]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1064]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1072]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1080]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1728, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9454008,0xf9454409,0xf945480a,0xf9454c0b,0xf945500c,0xf945540d
 .inst 0xf945580e,0xf9455c0f,0xf9456002,0xab020108,0xf9456402,0xba020129,0xf9456802,0xba02014a
 .inst 0xf9456c02,0xba02016b,0xf9457002,0xba02018c,0xf9457402,0xba0201ad,0xf9457802,0xba0201ce
@@ -883,8 +6979,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008
 .inst 0xf9038409,0xf903880a,0xf9038c0b,0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd
-.inst 0xd280d801,0xd280d802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d801,0xd280d802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1600]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1608]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1616]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1624]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1632]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1640]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1648]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1656]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1728]
+        // ldr x9, [x0, #1736]
+        // ldr x10, [x0, #1744]
+        // ldr x11, [x0, #1752]
+        // ldr x12, [x0, #1760]
+        // ldr x13, [x0, #1768]
+        // ldr x14, [x0, #1776]
+        // ldr x15, [x0, #1784]
+        // ldr x2, [x0, #1792]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1800]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1808]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1816]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1824]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1832]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1840]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1848]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #1792, lsl #0
+        // movz x3, #1856, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9432002,0xab020108,0xf9432402,0xba020129,0xf9432802,0xba02014a
 .inst 0xf9432c02,0xba02016b,0xf9433002,0xba02018c,0xf9433402,0xba0201ad,0xf9433802,0xba0201ce
@@ -914,8 +7250,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf903a008,0xf903a409,0xf903a80a,0xf903ac0b
-.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1856]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1864]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1872]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1880]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1888]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1896]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1904]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1912]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2752]
+        // ldr x9, [x0, #2760]
+        // ldr x10, [x0, #2768]
+        // ldr x11, [x0, #2776]
+        // ldr x12, [x0, #2784]
+        // ldr x13, [x0, #2792]
+        // ldr x14, [x0, #2800]
+        // ldr x15, [x0, #2808]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1024]
+        // ldr x9, [x0, #1032]
+        // ldr x10, [x0, #1040]
+        // ldr x11, [x0, #1048]
+        // ldr x12, [x0, #1056]
+        // ldr x13, [x0, #1064]
+        // ldr x14, [x0, #1072]
+        // ldr x15, [x0, #1080]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1856, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1152, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -945,8 +7521,130 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b
-.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1856]
+        // ldr x9, [x0, #1864]
+        // ldr x10, [x0, #1872]
+        // ldr x11, [x0, #1880]
+        // ldr x12, [x0, #1888]
+        // ldr x13, [x0, #1896]
+        // ldr x14, [x0, #1904]
+        // ldr x15, [x0, #1912]
+        // ldr x2, [x0, #1152]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1160]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1168]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1176]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1184]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1192]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1200]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1208]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -962,10 +7660,196 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf903a008,0xf903a409
 .inst 0xf903a80a,0xf903ac0b,0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280a001
-.inst 0xd2803802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1664, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // mov v29.d[0], x30
+        // movz x1, #1216, lsl #0
+        // movz x2, #1152, lsl #0
+        // movz x3, #1280, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9428002,0xab020108,0xf9428402,0xba020129,0xf9428802,0xba02014a
 .inst 0xf9428c02,0xba02016b,0xf9429002,0xba02018c,0xf9429402,0xba0201ad,0xf9429802,0xba0201ce
@@ -988,8 +7872,131 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8
 .inst 0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e
 .inst 0x9a8f230f,0xf9028008,0xf9028409,0xf902880a,0xf9028c0b,0xf902900c,0xf902940d,0xf902980e
-.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -1005,10 +8012,137 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9032008
 .inst 0xf9032409,0xf903280a,0xf9032c0b,0xf903300c,0xf903340d,0xf903380e,0xf9033c0f,0x4e081fdd
-.inst 0xd280d001,0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d001,0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1792, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1664]
+        // str x9, [x0, #1672]
+        // str x10, [x0, #1680]
+        // str x11, [x0, #1688]
+        // str x12, [x0, #1696]
+        // str x13, [x0, #1704]
+        // str x14, [x0, #1712]
+        // str x15, [x0, #1720]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -1024,8 +8158,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf9034008,0xf9034409
 .inst 0xf903480a,0xf9034c0b,0xf903500c,0xf903540d,0xf903580e,0xf9035c0f,0x4e081fdd,0xd280d001
-.inst 0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1600, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9438008,0xf9438409,0xf943880a,0xf9438c0b,0xf943900c,0xf943940d
 .inst 0xf943980e,0xf9439c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -1033,8 +8231,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008,0xf9038409,0xf903880a,0xf9038c0b
-.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1216]
+        // ldr x9, [x0, #1224]
+        // ldr x10, [x0, #1232]
+        // ldr x11, [x0, #1240]
+        // ldr x12, [x0, #1248]
+        // ldr x13, [x0, #1256]
+        // ldr x14, [x0, #1264]
+        // ldr x15, [x0, #1272]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1216]
+        // str x9, [x0, #1224]
+        // str x10, [x0, #1232]
+        // str x11, [x0, #1240]
+        // str x12, [x0, #1248]
+        // str x13, [x0, #1256]
+        // str x14, [x0, #1264]
+        // str x15, [x0, #1272]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9426008,0xf9426409,0xf942680a,0xf9426c0b,0xf942700c,0xf942740d
 .inst 0xf942780e,0xf9427c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -1042,10 +8304,78 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9026008,0xf9026409,0xf902680a,0xf9026c0b
-.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1152, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1536]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1600, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9430002,0xeb020108,0xf9430402,0xfa020129,0xf9430802,0xfa02014a
 .inst 0xf9430c02,0xfa02016b,0xf9431002,0xfa02018c,0xf9431402,0xfa0201ad,0xf9431802,0xfa0201ce
@@ -1053,10 +8383,142 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xba020129,0xf9402802,0x8a110042,0xba02014a,0xf9402c02,0x8a110042,0xba02016b,0xf9403002
 .inst 0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad,0xf9403802,0x8a110042,0xba0201ce
 .inst 0xf9403c02,0x8a110042,0xba0201ef,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b,0xf902500c
-.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1280, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1280]
+        // ldr x9, [x0, #1288]
+        // ldr x10, [x0, #1296]
+        // ldr x11, [x0, #1304]
+        // ldr x12, [x0, #1312]
+        // ldr x13, [x0, #1320]
+        // ldr x14, [x0, #1328]
+        // ldr x15, [x0, #1336]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // ldr x1, [x0, #1152]
+        // str x1, [x0, #960]
+        // ldr x1, [x0, #1160]
+        // str x1, [x0, #968]
+        // ldr x1, [x0, #1168]
+        // str x1, [x0, #976]
+        // ldr x1, [x0, #1176]
+        // str x1, [x0, #984]
+        // ldr x1, [x0, #1184]
+        // str x1, [x0, #992]
+        // ldr x1, [x0, #1192]
+        // str x1, [x0, #1000]
+        // ldr x1, [x0, #1200]
+        // str x1, [x0, #1008]
+        // ldr x1, [x0, #1208]
+        // str x1, [x0, #1016]
+        // ldr x1, [x0, #1216]
+        // str x1, [x0, #1024]
+        // ldr x1, [x0, #1224]
+        // str x1, [x0, #1032]
+        // ldr x1, [x0, #1232]
+        // str x1, [x0, #1040]
+        // ldr x1, [x0, #1240]
+        // str x1, [x0, #1048]
+        // ldr x1, [x0, #1248]
+        // str x1, [x0, #1056]
+        // ldr x1, [x0, #1256]
+        // str x1, [x0, #1064]
+        // ldr x1, [x0, #1264]
+        // str x1, [x0, #1072]
+        // ldr x1, [x0, #1272]
+        // str x1, [x0, #1080]
+        // ldr x1, [x0, #1280]
+        // str x1, [x0, #1088]
+        // ldr x1, [x0, #1288]
+        // str x1, [x0, #1096]
+        // ldr x1, [x0, #1296]
+        // str x1, [x0, #1104]
+        // ldr x1, [x0, #1304]
+        // str x1, [x0, #1112]
+        // ldr x1, [x0, #1312]
+        // str x1, [x0, #1120]
+        // ldr x1, [x0, #1320]
+        // str x1, [x0, #1128]
+        // ldr x1, [x0, #1328]
+        // str x1, [x0, #1136]
+        // ldr x1, [x0, #1336]
+        // str x1, [x0, #1144]
+        // lsl x16, x19, #1
+        // add x16, x0, x16
+        // movz x2, #0, lsl #0
+        // add x2, x2, x2
+        // ldrb w4, [x16, #2945]
+        // add x2, x2, x4
+        // add x2, x2, x2
+        // ldrb w4, [x16, #2944]
+        // add x2, x2, x4
+        // add x6, x2, #0
+        // movz x2, #0, lsl #0
+        // add x2, x2, x2
+        // ldrb w4, [x16, #3457]
+        // add x2, x2, x4
+        // add x2, x2, x2
+        // ldrb w4, [x16, #3456]
+        // add x2, x2, x4
+        // lsl x2, x2, #2
+        // add x2, x2, x6
         r".inst 0x4e083fbe,0xd2800007,0xf9428008,0xf9428409,0xf942880a,0xf9428c0b,0xf942900c,0xf942940d
 .inst 0xf942980e,0xf9429c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -1072,20 +8534,212 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9428801,0xf9022801,0xf9428c01,0xf9022c01,0xf9429001,0xf9023001,0xf9429401,0xf9023401
 .inst 0xf9429801,0xf9023801,0xf9429c01,0xf9023c01,0xd37ffa70,0x8b100010,0xd2800002,0x8b020042
 .inst 0x396e0604,0x8b040042,0x8b020042,0x396e0204,0x8b040042,0x91000046,0xd2800002,0x8b020042
-.inst 0x39760604,0x8b040042,0x8b020042,0x39760204,0x8b040042,0xd37ef442,0x8b060042,0xb400c2a2
-.inst 0xd1000442,0xd2801811,0x9b117c42,0xd2829410,0x8b100010,0x8b020210,0xf9400204,0xf9054004
+.inst 0x39760604,0x8b040042,0x8b020042,0x39760204,0x8b040042,0xd37ef442,0x8b060042
+cbz x2, 211f",
+        // sub x2, x2, #1
+        // movz x17, #192, lsl #0
+        // mul x2, x2, x17
+        // movz x16, #5280, lsl #0
+        // add x16, x0, x16
+        // add x16, x16, x2
+        // ldr x4, [x16, #0]
+        // str x4, [x0, #2688]
+        // ldr x4, [x16, #8]
+        // str x4, [x0, #2696]
+        // ldr x4, [x16, #16]
+        // str x4, [x0, #2704]
+        // ldr x4, [x16, #24]
+        // str x4, [x0, #2712]
+        // ldr x4, [x16, #32]
+        // str x4, [x0, #2720]
+        // ldr x4, [x16, #40]
+        // str x4, [x0, #2728]
+        // ldr x4, [x16, #48]
+        // str x4, [x0, #2736]
+        // ldr x4, [x16, #56]
+        // str x4, [x0, #2744]
+        // ldr x4, [x16, #64]
+        // str x4, [x0, #2752]
+        // ldr x4, [x16, #72]
+        // str x4, [x0, #2760]
+        // ldr x4, [x16, #80]
+        // str x4, [x0, #2768]
+        // ldr x4, [x16, #88]
+        // str x4, [x0, #2776]
+        // ldr x4, [x16, #96]
+        // str x4, [x0, #2784]
+        // ldr x4, [x16, #104]
+        // str x4, [x0, #2792]
+        // ldr x4, [x16, #112]
+        // str x4, [x0, #2800]
+        // ldr x4, [x16, #120]
+        // str x4, [x0, #2808]
+        // ldr x4, [x16, #128]
+        // str x4, [x0, #2432]
+        // ldr x4, [x16, #136]
+        // str x4, [x0, #2440]
+        // ldr x4, [x16, #144]
+        // str x4, [x0, #2448]
+        // ldr x4, [x16, #152]
+        // str x4, [x0, #2456]
+        // ldr x4, [x16, #160]
+        // str x4, [x0, #2464]
+        // ldr x4, [x16, #168]
+        // str x4, [x0, #2472]
+        // ldr x4, [x16, #176]
+        // str x4, [x0, #2480]
+        // ldr x4, [x16, #184]
+        // str x4, [x0, #2488]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #2688, lsl #0
+        // movz x3, #960, lsl #0
+        r".inst 0xd1000442,0xd2801811,0x9b117c42,0xd2829410,0x8b100010,0x8b020210,0xf9400204,0xf9054004
 .inst 0xf9400604,0xf9054404,0xf9400a04,0xf9054804,0xf9400e04,0xf9054c04,0xf9401204,0xf9055004
 .inst 0xf9401604,0xf9055404,0xf9401a04,0xf9055804,0xf9401e04,0xf9055c04,0xf9402204,0xf9056004
 .inst 0xf9402604,0xf9056404,0xf9402a04,0xf9056804,0xf9402e04,0xf9056c04,0xf9403204,0xf9057004
 .inst 0xf9403604,0xf9057404,0xf9403a04,0xf9057804,0xf9403e04,0xf9057c04,0xf9404204,0xf904c004
 .inst 0xf9404604,0xf904c404,0xf9404a04,0xf904c804,0xf9404e04,0xf904cc04,0xf9405204,0xf904d004
 .inst 0xf9405604,0xf904d404,0xf9405a04,0xf904d804,0xf9405e04,0xf904dc04,0x4e081fdd,0xd280c001
-.inst 0xd2815002,0xd2807803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2815002,0xd2807803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1600, lsl #0
+        // movz x2, #2752, lsl #0
+        // movz x3, #1024, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280c801,0xd2815802,0xd2808003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #2432, lsl #0
+        // movz x3, #1088, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280d001,0xd2813002,0xd2808803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2752]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2760]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2768]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2776]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2784]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2792]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2800]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2808]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1024]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1032]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1040]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1048]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1056]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1064]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1072]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1080]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1728, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9454008,0xf9454409,0xf945480a,0xf9454c0b,0xf945500c,0xf945540d
 .inst 0xf945580e,0xf9455c0f,0xf9456002,0xab020108,0xf9456402,0xba020129,0xf9456802,0xba02014a
 .inst 0xf9456c02,0xba02016b,0xf9457002,0xba02018c,0xf9457402,0xba0201ad,0xf9457802,0xba0201ce
@@ -1101,8 +8755,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008
 .inst 0xf9038409,0xf903880a,0xf9038c0b,0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd
-.inst 0xd280d801,0xd280d802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d801,0xd280d802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1600]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1608]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1616]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1624]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1632]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1640]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1648]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1656]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1728]
+        // ldr x9, [x0, #1736]
+        // ldr x10, [x0, #1744]
+        // ldr x11, [x0, #1752]
+        // ldr x12, [x0, #1760]
+        // ldr x13, [x0, #1768]
+        // ldr x14, [x0, #1776]
+        // ldr x15, [x0, #1784]
+        // ldr x2, [x0, #1792]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1800]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1808]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1816]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1824]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1832]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1840]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1848]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1728]
+        // str x9, [x0, #1736]
+        // str x10, [x0, #1744]
+        // str x11, [x0, #1752]
+        // str x12, [x0, #1760]
+        // str x13, [x0, #1768]
+        // str x14, [x0, #1776]
+        // str x15, [x0, #1784]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2688]
+        // ldr x9, [x0, #2696]
+        // ldr x10, [x0, #2704]
+        // ldr x11, [x0, #2712]
+        // ldr x12, [x0, #2720]
+        // ldr x13, [x0, #2728]
+        // ldr x14, [x0, #2736]
+        // ldr x15, [x0, #2744]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #1792, lsl #0
+        // movz x3, #1856, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9432002,0xab020108,0xf9432402,0xba020129,0xf9432802,0xba02014a
 .inst 0xf9432c02,0xba02016b,0xf9433002,0xba02018c,0xf9433402,0xba0201ad,0xf9433802,0xba0201ce
@@ -1132,8 +9026,248 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf903a008,0xf903a409,0xf903a80a,0xf903ac0b
-.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280e001,0xd280e002,0xd280e803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1856]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1864]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1872]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1880]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1888]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1896]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1904]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1912]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2752]
+        // ldr x9, [x0, #2760]
+        // ldr x10, [x0, #2768]
+        // ldr x11, [x0, #2776]
+        // ldr x12, [x0, #2784]
+        // ldr x13, [x0, #2792]
+        // ldr x14, [x0, #2800]
+        // ldr x15, [x0, #2808]
+        // ldr x2, [x0, #2432]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #2440]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #2448]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #2456]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #2464]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #2472]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #2480]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #2488]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1024]
+        // ldr x9, [x0, #1032]
+        // ldr x10, [x0, #1040]
+        // ldr x11, [x0, #1048]
+        // ldr x12, [x0, #1056]
+        // ldr x13, [x0, #1064]
+        // ldr x14, [x0, #1072]
+        // ldr x15, [x0, #1080]
+        // ldr x2, [x0, #1088]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1096]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1104]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1112]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1120]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1128]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1136]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1144]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1856, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1152, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -1163,8 +9297,130 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b
-.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902500c,0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280e801,0xd280e802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1856]
+        // ldr x9, [x0, #1864]
+        // ldr x10, [x0, #1872]
+        // ldr x11, [x0, #1880]
+        // ldr x12, [x0, #1888]
+        // ldr x13, [x0, #1896]
+        // ldr x14, [x0, #1904]
+        // ldr x15, [x0, #1912]
+        // ldr x2, [x0, #1152]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1160]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1168]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1176]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1184]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1192]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1200]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1208]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1856]
+        // str x9, [x0, #1864]
+        // str x10, [x0, #1872]
+        // str x11, [x0, #1880]
+        // str x12, [x0, #1888]
+        // str x13, [x0, #1896]
+        // str x14, [x0, #1904]
+        // str x15, [x0, #1912]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -1180,10 +9436,196 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf903a008,0xf903a409
 .inst 0xf903a80a,0xf903ac0b,0xf903b00c,0xf903b40d,0xf903b80e,0xf903bc0f,0x4e081fdd,0xd280a001
-.inst 0xd2803802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1664, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd2806802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1280]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1288]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1296]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1304]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1312]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1320]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1328]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1336]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // mov v29.d[0], x30
+        // movz x1, #1216, lsl #0
+        // movz x2, #1152, lsl #0
+        // movz x3, #1280, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9428002,0xab020108,0xf9428402,0xba020129,0xf9428802,0xba02014a
 .inst 0xf9428c02,0xba02016b,0xf9429002,0xba02018c,0xf9429402,0xba0201ad,0xf9429802,0xba0201ce
@@ -1206,8 +9648,131 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8
 .inst 0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e
 .inst 0x9a8f230f,0xf9028008,0xf9028409,0xf902880a,0xf9028c0b,0xf902900c,0xf902940d,0xf902980e
-.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9029c0f,0x4e081fdd,0xd2809801,0xd2809002,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9430008,0xf9430409,0xf943080a,0xf9430c0b,0xf943100c,0xf943140d
 .inst 0xf943180e,0xf9431c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -1223,10 +9788,137 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9403402,0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028
 .inst 0x9a892069,0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9032008
 .inst 0xf9032409,0xf903280a,0xf9032c0b,0xf903300c,0xf903340d,0xf903380e,0xf9033c0f,0x4e081fdd
-.inst 0xd280d001,0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd280d001,0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1792, lsl #0
+        // movz x2, #832, lsl #0
+        // movz x3, #1792, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280e001,0xd2806802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1600]
+        // ldr x9, [x0, #1608]
+        // ldr x10, [x0, #1616]
+        // ldr x11, [x0, #1624]
+        // ldr x12, [x0, #1632]
+        // ldr x13, [x0, #1640]
+        // ldr x14, [x0, #1648]
+        // ldr x15, [x0, #1656]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1600]
+        // str x9, [x0, #1608]
+        // str x10, [x0, #1616]
+        // str x11, [x0, #1624]
+        // str x12, [x0, #1632]
+        // str x13, [x0, #1640]
+        // str x14, [x0, #1648]
+        // str x15, [x0, #1656]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1536]
+        // ldr x9, [x0, #1544]
+        // ldr x10, [x0, #1552]
+        // ldr x11, [x0, #1560]
+        // ldr x12, [x0, #1568]
+        // ldr x13, [x0, #1576]
+        // ldr x14, [x0, #1584]
+        // ldr x15, [x0, #1592]
+        // ldr x2, [x0, #1664]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1664]
+        // str x9, [x0, #1672]
+        // str x10, [x0, #1680]
+        // str x11, [x0, #1688]
+        // str x12, [x0, #1696]
+        // str x13, [x0, #1704]
+        // str x14, [x0, #1712]
+        // str x15, [x0, #1720]
+        // mov v29.d[0], x30
+        // movz x1, #1664, lsl #0
+        // movz x2, #448, lsl #0
+        // movz x3, #1664, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9432008,0xf9432409,0xf943280a,0xf9432c0b,0xf943300c,0xf943340d
 .inst 0xf943380e,0xf9433c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -1242,8 +9934,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0x8a110042,0xba02016b,0xf9403002,0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad
 .inst 0xf9403802,0x8a110042,0xba0201ce,0xf9403c02,0x8a110042,0xba0201ef,0xf9034008,0xf9034409
 .inst 0xf903480a,0xf9034c0b,0xf903500c,0xf903540d,0xf903580e,0xf9035c0f,0x4e081fdd,0xd280d001
-.inst 0xd2803802,0xd280d003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2803802,0xd280d003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1792]
+        // ldr x9, [x0, #1800]
+        // ldr x10, [x0, #1808]
+        // ldr x11, [x0, #1816]
+        // ldr x12, [x0, #1824]
+        // ldr x13, [x0, #1832]
+        // ldr x14, [x0, #1840]
+        // ldr x15, [x0, #1848]
+        // ldr x2, [x0, #1664]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1672]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1680]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1688]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1696]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1704]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1712]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1720]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1792]
+        // str x9, [x0, #1800]
+        // str x10, [x0, #1808]
+        // str x11, [x0, #1816]
+        // str x12, [x0, #1824]
+        // str x13, [x0, #1832]
+        // str x14, [x0, #1840]
+        // str x15, [x0, #1848]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1600, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9438008,0xf9438409,0xf943880a,0xf9438c0b,0xf943900c,0xf943940d
 .inst 0xf943980e,0xf9439c0f,0xf9434002,0xab020108,0xf9434402,0xba020129,0xf9434802,0xba02014a
 .inst 0xf9434c02,0xba02016b,0xf9435002,0xba02018c,0xf9435402,0xba0201ad,0xf9435802,0xba0201ce
@@ -1251,8 +10007,72 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9038008,0xf9038409,0xf903880a,0xf9038c0b
-.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf903900c,0xf903940d,0xf903980e,0xf9039c0f,0x4e081fdd,0xd280c001,0xd280c802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1216]
+        // ldr x9, [x0, #1224]
+        // ldr x10, [x0, #1232]
+        // ldr x11, [x0, #1240]
+        // ldr x12, [x0, #1248]
+        // ldr x13, [x0, #1256]
+        // ldr x14, [x0, #1264]
+        // ldr x15, [x0, #1272]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1216]
+        // str x9, [x0, #1224]
+        // str x10, [x0, #1232]
+        // str x11, [x0, #1240]
+        // str x12, [x0, #1248]
+        // str x13, [x0, #1256]
+        // str x14, [x0, #1264]
+        // str x15, [x0, #1272]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1792, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9426008,0xf9426409,0xf942680a,0xf9426c0b,0xf942700c,0xf942740d
 .inst 0xf942780e,0xf9427c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -1260,10 +10080,78 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa020144,0xf9402c02,0xfa020165,0xf9403002,0xfa020186,0xf9403402,0xfa0201b0,0xf9403802
 .inst 0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069,0x9a8a208a,0x9a8b20ab
 .inst 0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9026008,0xf9026409,0xf902680a,0xf9026c0b
-.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902700c,0xf902740d,0xf902780e,0xf9027c0f,0x4e081fdd,0xd280c001,0xd280e802,0xd280e003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1152, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1152, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2809001,0xd280d802,0xd2809003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1152]
+        // ldr x9, [x0, #1160]
+        // ldr x10, [x0, #1168]
+        // ldr x11, [x0, #1176]
+        // ldr x12, [x0, #1184]
+        // ldr x13, [x0, #1192]
+        // ldr x14, [x0, #1200]
+        // ldr x15, [x0, #1208]
+        // ldr x2, [x0, #1536]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #1152]
+        // str x9, [x0, #1160]
+        // str x10, [x0, #1168]
+        // str x11, [x0, #1176]
+        // str x12, [x0, #1184]
+        // str x13, [x0, #1192]
+        // str x14, [x0, #1200]
+        // str x15, [x0, #1208]
+        // mov v29.d[0], x30
+        // movz x1, #1536, lsl #0
+        // movz x2, #1728, lsl #0
+        // movz x3, #1600, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf9424008,0xf9424409,0xf942480a,0xf9424c0b,0xf942500c,0xf942540d
 .inst 0xf942580e,0xf9425c0f,0xf9430002,0xeb020108,0xf9430402,0xfa020129,0xf9430802,0xfa02014a
 .inst 0xf9430c02,0xfa02016b,0xf9431002,0xfa02018c,0xf9431402,0xfa0201ad,0xf9431802,0xfa0201ce
@@ -1271,10 +10159,123 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xba020129,0xf9402802,0x8a110042,0xba02014a,0xf9402c02,0x8a110042,0xba02016b,0xf9403002
 .inst 0x8a110042,0xba02018c,0xf9403402,0x8a110042,0xba0201ad,0xf9403802,0x8a110042,0xba0201ce
 .inst 0xf9403c02,0x8a110042,0xba0201ef,0xf9024008,0xf9024409,0xf902480a,0xf9024c0b,0xf902500c
-.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf902540d,0xf902580e,0xf9025c0f,0x4e081fdd,0xd280c001,0xd280d802,0xd280c803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #1280, lsl #0
+        // movz x2, #1856, lsl #0
+        // movz x3, #1280, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd280a001,0xd280e802,0xd280a003
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #1280]
+        // ldr x9, [x0, #1288]
+        // ldr x10, [x0, #1296]
+        // ldr x11, [x0, #1304]
+        // ldr x12, [x0, #1312]
+        // ldr x13, [x0, #1320]
+        // ldr x14, [x0, #1328]
+        // ldr x15, [x0, #1336]
+        // ldr x2, [x0, #1536]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1544]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1552]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1560]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1568]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1576]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1584]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1592]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #1280]
+        // str x9, [x0, #1288]
+        // str x10, [x0, #1296]
+        // str x11, [x0, #1304]
+        // str x12, [x0, #1312]
+        // str x13, [x0, #1320]
+        // str x14, [x0, #1328]
+        // str x15, [x0, #1336]
+        // ldr x1, [x0, #1152]
+        // str x1, [x0, #960]
+        // ldr x1, [x0, #1160]
+        // str x1, [x0, #968]
+        // ldr x1, [x0, #1168]
+        // str x1, [x0, #976]
+        // ldr x1, [x0, #1176]
+        // str x1, [x0, #984]
+        // ldr x1, [x0, #1184]
+        // str x1, [x0, #992]
+        // ldr x1, [x0, #1192]
+        // str x1, [x0, #1000]
+        // ldr x1, [x0, #1200]
+        // str x1, [x0, #1008]
+        // ldr x1, [x0, #1208]
+        // str x1, [x0, #1016]
+        // ldr x1, [x0, #1216]
+        // str x1, [x0, #1024]
+        // ldr x1, [x0, #1224]
+        // str x1, [x0, #1032]
+        // ldr x1, [x0, #1232]
+        // str x1, [x0, #1040]
+        // ldr x1, [x0, #1240]
+        // str x1, [x0, #1048]
+        // ldr x1, [x0, #1248]
+        // str x1, [x0, #1056]
+        // ldr x1, [x0, #1256]
+        // str x1, [x0, #1064]
+        // ldr x1, [x0, #1264]
+        // str x1, [x0, #1072]
+        // ldr x1, [x0, #1272]
+        // str x1, [x0, #1080]
+        // ldr x1, [x0, #1280]
+        // str x1, [x0, #1088]
+        // ldr x1, [x0, #1288]
+        // str x1, [x0, #1096]
+        // ldr x1, [x0, #1296]
+        // str x1, [x0, #1104]
+        // ldr x1, [x0, #1304]
+        // str x1, [x0, #1112]
+        // ldr x1, [x0, #1312]
+        // str x1, [x0, #1120]
+        // ldr x1, [x0, #1320]
+        // str x1, [x0, #1128]
+        // ldr x1, [x0, #1328]
+        // str x1, [x0, #1136]
+        // ldr x1, [x0, #1336]
+        // str x1, [x0, #1144]
         r".inst 0x4e083fbe,0xd2800007,0xf9428008,0xf9428409,0xf942880a,0xf9428c0b,0xf942900c,0xf942940d
 .inst 0xf942980e,0xf9429c0f,0xf9430002,0xab020108,0xf9430402,0xba020129,0xf9430802,0xba02014a
 .inst 0xf9430c02,0xba02016b,0xf9431002,0xba02018c,0xf9431402,0xba0201ad,0xf9431802,0xba0201ce
@@ -1288,26 +10289,281 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9426801,0xf9020801,0xf9426c01,0xf9020c01,0xf9427001,0xf9021001,0xf9427401,0xf9021401
 .inst 0xf9427801,0xf9021801,0xf9427c01,0xf9021c01,0xf9428001,0xf9022001,0xf9428401,0xf9022401
 .inst 0xf9428801,0xf9022801,0xf9428c01,0xf9022c01,0xf9429001,0xf9023001,0xf9429401,0xf9023401
-.inst 0xf9429801,0xf9023801,0xf9429c01,0xf9023c01,0x14000001,0xb5fdb7b3,0xd29e40a1,0xf2ac2b01
-.inst 0xf2c28941,0xf2e935a1,0xf9046001,0xd28f20a1,0xf2a4e2a1,0xf2d62601,0xf2ef27e1,0xf9046401
-.inst 0xd29ffa61,0xf2b20b41,0xf2df3781,0xf2ea76e1,0xf9046801,0xd28944a1,0xf2b06a21,0xf2d34ee1
-.inst 0xf2fc1821,0xf9046c01,0xd2900ae1,0xf2bab121,0xf2cdfb01,0xf2e32901,0xf9047001,0xd29ff061
-.inst 0xf2ba8561,0xf2d54be1,0xf2f42da1,0xf9047401,0xd29dd981,0xf2a40ac1,0xf2c32801,0xf2e405c1
-.inst 0xf9047801,0xd28c8a01,0xf2b53fe1,0xf2d3a0a1,0xf2e78981,0xf9047c01,0xd29e95e1,0xf2bfb6c1
-.inst 0xf2de4ac1,0xf2e20f21,0xf903c001,0xd284ebc1,0xf2a026a1,0xf2c2c0e1,0xf2e73541,0xf903c401
-.inst 0xd286d2e1,0xf2a90401,0xf2cea021,0xf2ec4581,0xf903c801,0xd2993be1,0xf2a15961,0xf2c1b821
-.inst 0xf2e0a761,0xf903cc01,0xd28012a1,0xf2b3ddc1,0xf2db7221,0xf2e20521,0xf903d001,0xd29277e1
-.inst 0xf2b62241,0xf2c40a01,0xf2f0d981,0xf903d401,0xd29dfd41,0xf2b31021,0xf2dbb1a1,0xf2fbfb21
-.inst 0xf903d801,0xd29288e1,0xf2a7e661,0xf2de8da1,0xf2f2c2c1,0xf903dc01,0xd2891141,0xf2b77221
-.inst 0xf2d93a61,0xf2ee6441,0xf9004001,0xd29d74e1,0xf2a4a481,0xf2c575c1,0xf2e15a01,0xf9004401
-.inst 0xd28e13e1,0xf2acdee1,0xf2c80221,0xf2eda8e1,0xf9004801,0xd2884521,0xf2a9e3a1,0xf2c7d7e1
-.inst 0xf2e501e1,0xf9004c01,0xd2800021,0xf2a00001,0xf2c00001,0xf2e00001,0xf9005001,0xd2800001
-.inst 0xf2a00001,0xf2c00001,0xf2e00001,0xf9005401,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001
-.inst 0xf9005801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9005c01,0x4e081fdd,0xd2811801
-.inst 0xd2810002,0xd2811803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
-        r".inst 0x4e083fbe,0x4e081fdd,0xd2812001,0xd2811802,0xd2808803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xf9429801,0xf9023801,0xf9429c01,0xf9023c01
+b 212f
+211:
+212:
+cbnz x19, 210b",
+        // movz x1, #61957, lsl #0
+        // movk x1, #24920, lsl #16
+        // movk x1, #5194, lsl #32
+        // movk x1, #18861, lsl #48
+        // str x1, [x0, #2240]
+        // movz x1, #30981, lsl #0
+        // movk x1, #10005, lsl #16
+        // movk x1, #45360, lsl #32
+        // movk x1, #31039, lsl #48
+        // str x1, [x0, #2248]
+        // movz x1, #65491, lsl #0
+        // movk x1, #36954, lsl #16
+        // movk x1, #63932, lsl #32
+        // movk x1, #21431, lsl #48
+        // str x1, [x0, #2256]
+        // movz x1, #18981, lsl #0
+        // movk x1, #33617, lsl #16
+        // movk x1, #39543, lsl #32
+        // movk x1, #57537, lsl #48
+        // str x1, [x0, #2264]
+        // movz x1, #32855, lsl #0
+        // movk x1, #54665, lsl #16
+        // movk x1, #28632, lsl #32
+        // movk x1, #6472, lsl #48
+        // str x1, [x0, #2272]
+        // movz x1, #65411, lsl #0
+        // movk x1, #54315, lsl #16
+        // movk x1, #43615, lsl #32
+        // movk x1, #41325, lsl #48
+        // str x1, [x0, #2280]
+        // movz x1, #61132, lsl #0
+        // movk x1, #8278, lsl #16
+        // movk x1, #6464, lsl #32
+        // movk x1, #8238, lsl #48
+        // str x1, [x0, #2288]
+        // movz x1, #25680, lsl #0
+        // movk x1, #43519, lsl #16
+        // movk x1, #40197, lsl #32
+        // movk x1, #15436, lsl #48
+        // str x1, [x0, #2296]
+        // movz x1, #62639, lsl #0
+        // movk x1, #64950, lsl #16
+        // movk x1, #62038, lsl #32
+        // movk x1, #4217, lsl #48
+        // str x1, [x0, #1920]
+        // movz x1, #10078, lsl #0
+        // movk x1, #309, lsl #16
+        // movk x1, #5639, lsl #32
+        // movk x1, #14762, lsl #48
+        // str x1, [x0, #1928]
+        // movz x1, #13975, lsl #0
+        // movk x1, #18464, lsl #16
+        // movk x1, #29953, lsl #32
+        // movk x1, #25132, lsl #48
+        // str x1, [x0, #1936]
+        // movz x1, #51679, lsl #0
+        // movk x1, #2763, lsl #16
+        // movk x1, #3521, lsl #32
+        // movk x1, #1339, lsl #48
+        // str x1, [x0, #1944]
+        // movz x1, #149, lsl #0
+        // movk x1, #40686, lsl #16
+        // movk x1, #56209, lsl #32
+        // movk x1, #4137, lsl #48
+        // str x1, [x0, #1952]
+        // movz x1, #37823, lsl #0
+        // movk x1, #45330, lsl #16
+        // movk x1, #8272, lsl #32
+        // movk x1, #34508, lsl #48
+        // str x1, [x0, #1960]
+        // movz x1, #61418, lsl #0
+        // movk x1, #39041, lsl #16
+        // movk x1, #56717, lsl #32
+        // movk x1, #57305, lsl #48
+        // str x1, [x0, #1968]
+        // movz x1, #37959, lsl #0
+        // movk x1, #16179, lsl #16
+        // movk x1, #62573, lsl #32
+        // movk x1, #38422, lsl #48
+        // str x1, [x0, #1976]
+        // movz x1, #18570, lsl #0
+        // movk x1, #48017, lsl #16
+        // movk x1, #51667, lsl #32
+        // movk x1, #29474, lsl #48
+        // str x1, [x0, #128]
+        // movz x1, #60327, lsl #0
+        // movk x1, #9508, lsl #16
+        // movk x1, #11182, lsl #32
+        // movk x1, #2768, lsl #48
+        // str x1, [x0, #136]
+        // movz x1, #28831, lsl #0
+        // movk x1, #26359, lsl #16
+        // movk x1, #16401, lsl #32
+        // movk x1, #27975, lsl #48
+        // str x1, [x0, #144]
+        // movz x1, #16937, lsl #0
+        // movk x1, #20253, lsl #16
+        // movk x1, #16063, lsl #32
+        // movk x1, #10255, lsl #48
+        // str x1, [x0, #152]
+        // movz x1, #1, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #160]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #168]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #176]
+        // movz x1, #0, lsl #0
+        // movk x1, #0, lsl #16
+        // movk x1, #0, lsl #32
+        // movk x1, #0, lsl #48
+        // str x1, [x0, #184]
+        // mov v29.d[0], x30
+        // movz x1, #2240, lsl #0
+        // movz x2, #2048, lsl #0
+        // movz x3, #2240, lsl #0
+        r".inst 0xd29e40a1,0xf2ac2b01,0xf2c28941,0xf2e935a1,0xf9046001,0xd28f20a1,0xf2a4e2a1,0xf2d62601
+.inst 0xf2ef27e1,0xf9046401,0xd29ffa61,0xf2b20b41,0xf2df3781,0xf2ea76e1,0xf9046801,0xd28944a1
+.inst 0xf2b06a21,0xf2d34ee1,0xf2fc1821,0xf9046c01,0xd2900ae1,0xf2bab121,0xf2cdfb01,0xf2e32901
+.inst 0xf9047001,0xd29ff061,0xf2ba8561,0xf2d54be1,0xf2f42da1,0xf9047401,0xd29dd981,0xf2a40ac1
+.inst 0xf2c32801,0xf2e405c1,0xf9047801,0xd28c8a01,0xf2b53fe1,0xf2d3a0a1,0xf2e78981,0xf9047c01
+.inst 0xd29e95e1,0xf2bfb6c1,0xf2de4ac1,0xf2e20f21,0xf903c001,0xd284ebc1,0xf2a026a1,0xf2c2c0e1
+.inst 0xf2e73541,0xf903c401,0xd286d2e1,0xf2a90401,0xf2cea021,0xf2ec4581,0xf903c801,0xd2993be1
+.inst 0xf2a15961,0xf2c1b821,0xf2e0a761,0xf903cc01,0xd28012a1,0xf2b3ddc1,0xf2db7221,0xf2e20521
+.inst 0xf903d001,0xd29277e1,0xf2b62241,0xf2c40a01,0xf2f0d981,0xf903d401,0xd29dfd41,0xf2b31021
+.inst 0xf2dbb1a1,0xf2fbfb21,0xf903d801,0xd29288e1,0xf2a7e661,0xf2de8da1,0xf2f2c2c1,0xf903dc01
+.inst 0xd2891141,0xf2b77221,0xf2d93a61,0xf2ee6441,0xf9004001,0xd29d74e1,0xf2a4a481,0xf2c575c1
+.inst 0xf2e15a01,0xf9004401,0xd28e13e1,0xf2acdee1,0xf2c80221,0xf2eda8e1,0xf9004801,0xd2884521
+.inst 0xf2a9e3a1,0xf2c7d7e1,0xf2e501e1,0xf9004c01,0xd2800021,0xf2a00001,0xf2c00001,0xf2e00001
+.inst 0xf9005001,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9005401,0xd2800001,0xf2a00001
+.inst 0xf2c00001,0xf2e00001,0xf9005801,0xd2800001,0xf2a00001,0xf2c00001,0xf2e00001,0xf9005c01
+.inst 0x4e081fdd,0xd2811801,0xd2810002,0xd2811803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // mov v29.d[0], x30
+        // movz x1, #2304, lsl #0
+        // movz x2, #2240, lsl #0
+        // movz x3, #1088, lsl #0
+        r".inst 0x4e083fbe,0x4e081fdd,0xd2812001,0xd2811802,0xd2808803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #2304]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #2312]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #2320]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #2328]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #2336]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #2344]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #2352]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #2360]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #2624]
+        // str x9, [x0, #2632]
+        // str x10, [x0, #2640]
+        // str x11, [x0, #2648]
+        // str x12, [x0, #2656]
+        // str x13, [x0, #2664]
+        // str x14, [x0, #2672]
+        // str x15, [x0, #2680]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #2240]
+        // ldr x9, [x0, #2248]
+        // ldr x10, [x0, #2256]
+        // ldr x11, [x0, #2264]
+        // ldr x12, [x0, #2272]
+        // ldr x13, [x0, #2280]
+        // ldr x14, [x0, #2288]
+        // ldr x15, [x0, #2296]
+        // ldr x2, [x0, #1920]
+        // adds x8, x8, x2
+        // ldr x2, [x0, #1928]
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #1936]
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #1944]
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #1952]
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #1960]
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #1968]
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #1976]
+        // adcs x15, x15, x2
+        // adc x21, x7, x7
+        // ldr x2, [x0, #64]
+        // subs x1, x8, x2
+        // ldr x2, [x0, #72]
+        // sbcs x3, x9, x2
+        // ldr x2, [x0, #80]
+        // sbcs x4, x10, x2
+        // ldr x2, [x0, #88]
+        // sbcs x5, x11, x2
+        // ldr x2, [x0, #96]
+        // sbcs x6, x12, x2
+        // ldr x2, [x0, #104]
+        // sbcs x16, x13, x2
+        // ldr x2, [x0, #112]
+        // sbcs x17, x14, x2
+        // ldr x2, [x0, #120]
+        // sbcs x24, x15, x2
+        // sbcs x2, x21, x7
+        // csel x8, x1, x8, hs
+        // csel x9, x3, x9, hs
+        // csel x10, x4, x10, hs
+        // csel x11, x5, x11, hs
+        // csel x12, x6, x12, hs
+        // csel x13, x16, x13, hs
+        // csel x14, x17, x14, hs
+        // csel x15, x24, x15, hs
+        // str x8, [x0, #2240]
+        // str x9, [x0, #2248]
+        // str x10, [x0, #2256]
+        // str x11, [x0, #2264]
+        // str x12, [x0, #2272]
+        // str x13, [x0, #2280]
+        // str x14, [x0, #2288]
+        // str x15, [x0, #2296]
+        // mov v29.d[0], x30
+        // movz x1, #2304, lsl #0
+        // movz x2, #2240, lsl #0
+        // movz x3, #1088, lsl #0
         r".inst 0x4e083fbe,0xd2800007,0xf941e008,0xf941e409,0xf941e80a,0xf941ec0b,0xf941f00c,0xf941f40d
 .inst 0xf941f80e,0xf941fc0f,0xf9448002,0xeb020108,0xf9448402,0xfa020129,0xf9448802,0xfa02014a
 .inst 0xf9448c02,0xfa02016b,0xf9449002,0xfa02018c,0xf9449402,0xfa0201ad,0xf9449802,0xfa0201ce
@@ -1323,8 +10579,171 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xfa0201b0,0xf9403802,0xfa0201d1,0xf9403c02,0xfa0201f8,0xfa0702a2,0x9a882028,0x9a892069
 .inst 0x9a8a208a,0x9a8b20ab,0x9a8c20cc,0x9a8d220d,0x9a8e222e,0x9a8f230f,0xf9046008,0xf9046409
 .inst 0xf904680a,0xf9046c0b,0xf904700c,0xf904740d,0xf904780e,0xf9047c0f,0x4e081fdd,0xd2812001
-.inst 0xd2811802,0xd2808803",
-        r"bl {vg_brainpoolp512r1_mul_mod_p}",
+.inst 0xd2811802,0xd2808803
+bl {vg_brainpoolp512r1_mul_mod_p}",
+        // umov x30, v29.d[0]
+        // movz x7, #0, lsl #0
+        // ldr x8, [x0, #960]
+        // ldr x9, [x0, #968]
+        // ldr x10, [x0, #976]
+        // ldr x11, [x0, #984]
+        // ldr x12, [x0, #992]
+        // ldr x13, [x0, #1000]
+        // ldr x14, [x0, #1008]
+        // ldr x15, [x0, #1016]
+        // ldr x2, [x0, #2304]
+        // subs x8, x8, x2
+        // ldr x2, [x0, #2312]
+        // sbcs x9, x9, x2
+        // ldr x2, [x0, #2320]
+        // sbcs x10, x10, x2
+        // ldr x2, [x0, #2328]
+        // sbcs x11, x11, x2
+        // ldr x2, [x0, #2336]
+        // sbcs x12, x12, x2
+        // ldr x2, [x0, #2344]
+        // sbcs x13, x13, x2
+        // ldr x2, [x0, #2352]
+        // sbcs x14, x14, x2
+        // ldr x2, [x0, #2360]
+        // sbcs x15, x15, x2
+        // sbc x17, x7, x7
+        // ldr x2, [x0, #64]
+        // and x2, x2, x17
+        // adds x8, x8, x2
+        // ldr x2, [x0, #72]
+        // and x2, x2, x17
+        // adcs x9, x9, x2
+        // ldr x2, [x0, #80]
+        // and x2, x2, x17
+        // adcs x10, x10, x2
+        // ldr x2, [x0, #88]
+        // and x2, x2, x17
+        // adcs x11, x11, x2
+        // ldr x2, [x0, #96]
+        // and x2, x2, x17
+        // adcs x12, x12, x2
+        // ldr x2, [x0, #104]
+        // and x2, x2, x17
+        // adcs x13, x13, x2
+        // ldr x2, [x0, #112]
+        // and x2, x2, x17
+        // adcs x14, x14, x2
+        // ldr x2, [x0, #120]
+        // and x2, x2, x17
+        // adcs x15, x15, x2
+        // str x8, [x0, #2496]
+        // str x9, [x0, #2504]
+        // str x10, [x0, #2512]
+        // str x11, [x0, #2520]
+        // str x12, [x0, #2528]
+        // str x13, [x0, #2536]
+        // str x14, [x0, #2544]
+        // str x15, [x0, #2552]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2624]
+        // ldr x2, [x0, #2632]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2640]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2648]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2656]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2664]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2672]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2680]
+        // orr x1, x1, x2
+        // movz x5, #1, lsl #0
+        // subs x16, x1, x5
+        // sbc x2, x7, x7
+        // add x4, x2, #0
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2048]
+        // ldr x2, [x0, #128]
+        // subs x16, x1, x2
+        // ldr x1, [x0, #2056]
+        // ldr x2, [x0, #136]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2064]
+        // ldr x2, [x0, #144]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2072]
+        // ldr x2, [x0, #152]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2080]
+        // ldr x2, [x0, #160]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2088]
+        // ldr x2, [x0, #168]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2096]
+        // ldr x2, [x0, #176]
+        // sbcs x16, x1, x2
+        // ldr x1, [x0, #2104]
+        // ldr x2, [x0, #184]
+        // sbcs x16, x1, x2
+        // sbc x2, x7, x7
+        // add x6, x2, #0
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #2496]
+        // ldr x2, [x0, #2504]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2512]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2520]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2528]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2536]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2544]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #2552]
+        // orr x1, x1, x2
+        // movz x5, #1, lsl #0
+        // subs x16, x1, x5
+        // sbc x2, x7, x7
+        // and x2, x2, x6
+        // orr x2, x2, x4
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // movz x7, #0, lsl #0
+        // ldr x1, [x0, #1088]
+        // ldr x2, [x0, #1096]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #1104]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #1112]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #1120]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #1128]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #1136]
+        // orr x1, x1, x2
+        // ldr x2, [x0, #1144]
+        // orr x1, x1, x2
+        // subs x16, x7, x1
+        // sbc x2, x7, x7
+        // ldr x1, [x0, #2880]
+        // and x1, x1, x2
+        // str x1, [x0, #2880]
+        // ldr x3, [x0, #2880]
+        // ldr x19, [x0, #0]
+        // ldr x20, [x0, #8]
+        // ldr x21, [x0, #16]
+        // ldr x22, [x0, #24]
+        // ldr x23, [x0, #32]
+        // ldr x24, [x0, #40]
+        // ldr x25, [x0, #48]
+        // ldr x30, [x0, #56]
+        // movz x1, #1, lsl #0
+        // and x0, x3, x1
+        // ret
         r".inst 0x4e083fbe,0xd2800007,0xf941e008,0xf941e409,0xf941e80a,0xf941ec0b,0xf941f00c,0xf941f40d
 .inst 0xf941f80e,0xf941fc0f,0xf9448002,0xeb020108,0xf9448402,0xfa020129,0xf9448802,0xfa02014a
 .inst 0xf9448c02,0xfa02016b,0xf9449002,0xfa02018c,0xf9449402,0xfa0201ad,0xf9449802,0xfa0201ce
@@ -1345,8 +10764,8 @@ pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129
 .inst 0xf9422c02,0xaa020021,0xf9423002,0xaa020021,0xf9423402,0xaa020021,0xf9423802,0xaa020021
 .inst 0xf9423c02,0xaa020021,0xeb0100f0,0xda0700e2,0xf945a001,0x8a020021,0xf905a001,0xf945a003
 .inst 0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e
-.inst 0xd2800021,0x8a010060,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd2800021,0x8a010060,0xd65f03c0
+.p2align 6",
         vg_brainpoolp512r1_check_point = sym super::brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
         vg_brainpoolp512r1_mul_mod_n = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_n,
         vg_brainpoolp512r1_inv_mod_n = sym super::brainpoolp512r1_inverse::vg_brainpoolp512r1_inv_mod_n,

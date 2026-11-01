@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.TCB.AArch64.Encode
 public import VerifiedGarbage.TCB.Print
 
 /-!
@@ -8,6 +8,14 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** Emits the GNU/LLVM assembler syntax used by Rust's
 `asm!`/`naked_asm!` on AArch64.
+
+Each straight-line instruction, and the return, is printed as its machine
+code (`Encode.lean`), `.inst <word>`, after a line `// <the instruction's
+text>`, which the emitter writes as a Rust comment (`Rust.template`): the
+assembler only copies the words. The branches (`cbz`, `cbnz`, `b`), the call
+(`bl`), the address of a static (`adrp` and `add`, `symLines`) and
+alignment (`.p2align`) are printed as text, for the assembler and linker to
+lay out.
 
 `align k` (`Isa.lean`) prints as `.p2align k`, which the assembler fills, in
 a code section, with NOPs (`HINT #0`, `0xD503201F`: every A64 instruction is
@@ -26,13 +34,6 @@ not align anything relative to it.
 @[expose] public section
 
 namespace VG.AArch64
-
-def Reg.index : Reg → Nat
-  | .x0 => 0 | .x1 => 1 | .x2 => 2 | .x3 => 3 | .x4 => 4 | .x5 => 5 | .x6 => 6 | .x7 => 7
-  | .x8 => 8 | .x9 => 9 | .x10 => 10 | .x11 => 11 | .x12 => 12 | .x13 => 13 | .x14 => 14
-  | .x15 => 15 | .x16 => 16 | .x17 => 17 | .x19 => 19 | .x20 => 20 | .x21 => 21
-  | .x22 => 22 | .x23 => 23 | .x24 => 24 | .x25 => 25 | .x26 => 26 | .x27 => 27 | .x28 => 28
-  | .x30 => 30
 
 /-- A condition code's mnemonic suffix. -/
 def CondCode.name : CondCode → String
@@ -231,13 +232,22 @@ def Instr.asm : Instr → List String
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
   | .align k => [s!".p2align {k}"]
 
+/-- The lines of an instruction: each of its instructions' text (`asm`) as a
+comment, then that instruction's word (`encode`); its text if it has no
+encoding (`align`, `adrSym`, printed by `symLines`, or an instruction that
+`unencodable` reports, which the emitter refuses). -/
+def Instr.code (i : Instr) : List String :=
+  match i.encode with
+  | some ws => (i.asm.zip ws).flatMap fun (t, w) => [s!"// {t}", instLine w]
+  | none => i.asm
+
 def printer : Printer isa where
-  instr := Instr.asm
+  instr := Instr.code
   branch c l := match c with
     | .zero sz r => [s!"cbz {r.name sz}, {l}"]
     | .nonzero sz r => [s!"cbnz {r.name sz}, {l}"]
   jump l := s!"b {l}"
-  ret := ["ret"]
+  ret := ["// ret", instLine retWord]
   call := "bl"
   -- The static's page and offset, in the syntax of the object format
   -- (`TCB/Rust.lean`); `asm` gives ELF's, for reading.
@@ -264,6 +274,7 @@ def printer : Printer isa where
   unencodable
     | .align k =>
       if k ∈ [4, 5, 6] then none else some s!"`.p2align {k}`: only 4, 5 and 6 are allowed"
-    | _ => none
+    | .adrSym .. => none
+    | i => if i.encode.isNone then some "an operand does not fit its field" else none
 
 end VG.AArch64

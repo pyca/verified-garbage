@@ -74,11 +74,11 @@ def run (i : Instr) : Option (BitVec 64) := (exec i input).map (·.gpr .x0)
 #guard dstOf (.logicRor .eor .x .x0 .x1 .x2 63) == some .x0
 #guard dstOf (.bicRor .x .x0 .x1 .x2 63) == some .x0
 
-#guard printer.instr (.logicRor .and .w .x0 .x1 .x2 0) == ["and w0, w1, w2, ror #0"]
-#guard printer.instr (.logicRor .orr .x .x0 .x1 .x2 1) == ["orr x0, x1, x2, ror #1"]
-#guard printer.instr (.logicRor .eor .x .x0 .x1 .x2 63) == ["eor x0, x1, x2, ror #63"]
-#guard printer.instr (.bicRor .w .x0 .x1 .x2 31) == ["bic w0, w1, w2, ror #31"]
-#guard printer.instr (.bicRor .x .x0 .x1 .x2 0) == ["bic x0, x1, x2, ror #0"]
+#guard Instr.asm (.logicRor .and .w .x0 .x1 .x2 0) == ["and w0, w1, w2, ror #0"]
+#guard Instr.asm (.logicRor .orr .x .x0 .x1 .x2 1) == ["orr x0, x1, x2, ror #1"]
+#guard Instr.asm (.logicRor .eor .x .x0 .x1 .x2 63) == ["eor x0, x1, x2, ror #63"]
+#guard Instr.asm (.bicRor .w .x0 .x1 .x2 31) == ["bic w0, w1, w2, ror #31"]
+#guard Instr.asm (.bicRor .x .x0 .x1 .x2 0) == ["bic x0, x1, x2, ror #0"]
 
 -- The result is public exactly when both source operands are public.
 #guard ((AArch64.Taint.step (AArch64.Taint.ofRegs [.x1, .x2])

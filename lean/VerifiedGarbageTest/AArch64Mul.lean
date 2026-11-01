@@ -91,12 +91,12 @@ def lsl (n : BitVec 64) (sh : Nat) (x w : BitVec 64) : Bool :=
 
 /-! ## Printing -/
 
-#guard printer.instr (.madd .x .x0 .x1 .x2 .x3) == ["madd x0, x1, x2, x3"]
-#guard printer.instr (.madd .w .x4 .x5 .x6 .x30) == ["madd w4, w5, w6, w30"]
-#guard printer.instr (.mul .x .x0 .x1 .x2) == ["mul x0, x1, x2"]
-#guard printer.instr (.mul .w .x19 .x20 .x21) == ["mul w19, w20, w21"]
-#guard printer.instr (.lsl .x .x0 .x1 26) == ["lsl x0, x1, #26"]
-#guard printer.instr (.lsl .w .x0 .x1 31) == ["lsl w0, w1, #31"]
+#guard Instr.asm (.madd .x .x0 .x1 .x2 .x3) == ["madd x0, x1, x2, x3"]
+#guard Instr.asm (.madd .w .x4 .x5 .x6 .x30) == ["madd w4, w5, w6, w30"]
+#guard Instr.asm (.mul .x .x0 .x1 .x2) == ["mul x0, x1, x2"]
+#guard Instr.asm (.mul .w .x19 .x20 .x21) == ["mul w19, w20, w21"]
+#guard Instr.asm (.lsl .x .x0 .x1 26) == ["lsl x0, x1, #26"]
+#guard Instr.asm (.lsl .w .x0 .x1 31) == ["lsl w0, w1, #31"]
 
 -- In the ARMv8.0-A baseline.
 #guard isa.requires (.madd .x .x0 .x1 .x2 .x3) == []

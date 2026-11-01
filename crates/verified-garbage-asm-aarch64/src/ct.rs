@@ -14,9 +14,37 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd2800004,0xcb030029,0xb4000069,0x52800000,0x1400000f,0xd2800008,0xb4000161,0x8b080005
-.inst 0x394000a6,0x8b080045,0x394000a7,0xca0700c6,0xaa060084,0x91000508,0xcb010109,0xb5ffff09
-.inst 0x14000001,0xd1000484,0xd37ffc80,0xd65f03c0",
-        r".p2align 6",
+        // movz x4, #0, lsl #0
+        // sub x9, x1, x3
+        r".inst 0xd2800004,0xcb030029
+cbz x9, 20f",
+        // movz w0, #0, lsl #0
+        r".inst 0x52800000
+b 21f
+20:",
+        // movz x8, #0, lsl #0
+        r".inst 0xd2800008
+cbz x1, 22f
+24:",
+        // add x5, x0, x8
+        // ldrb w6, [x5, #0]
+        // add x5, x2, x8
+        // ldrb w7, [x5, #0]
+        // eor x6, x6, x7
+        // orr x4, x4, x6
+        // add x8, x8, #1
+        // sub x9, x8, x1
+        r".inst 0x8b080005,0x394000a6,0x8b080045,0x394000a7,0xca0700c6,0xaa060084,0x91000508,0xcb010109
+cbnz x9, 24b
+b 23f
+22:
+23:",
+        // sub x4, x4, #1
+        // lsr x0, x4, #63
+        r".inst 0xd1000484,0xd37ffc80
+21:",
+        // ret
+        r".inst 0xd65f03c0
+.p2align 6",
     )
 }

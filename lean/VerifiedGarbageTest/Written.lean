@@ -102,7 +102,8 @@ object does).
 pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 16], \
 key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        r\"ret
+        // ret
+        r\".inst 0xd65f03c0
 .p2align 6\",
     )
 }

@@ -23,22 +23,150 @@ pub const VG_CMAC_AES_UPDATE_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_update_aes_cbc(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xb4000e64,0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816
-.inst 0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a,0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009
-.inst 0x3dc0013e,0xd1004129,0x3dc0013d,0xd1002826,0xd1003027,0x3dc00040,0x6e3e1e1f,0x6e3e1c00
-.inst 0xb4000806,0xb4000447,0x3dc00061,0x6e3f1c21,0x4e284820,0x4e286800,0x4e284a20,0x4e286800
-.inst 0x4e284a40,0x4e286800,0x4e284a60,0x4e286800,0x4e284a80,0x4e286800,0x4e284aa0,0x4e286800
-.inst 0x4e284ac0,0x4e286800,0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800,0x4e284b20,0x4e286800
-.inst 0x4e284b40,0x4e286800,0x4e284b60,0x4e286800,0x4e284b80,0x4e286800,0x4e284ba0,0x91004063
-.inst 0xd1000484,0xb5fffc24,0x1400001d,0x3dc00061,0x6e3f1c21,0x4e284820,0x4e286800,0x4e284a20
-.inst 0x4e286800,0x4e284a40,0x4e286800,0x4e284a60,0x4e286800,0x4e284a80,0x4e286800,0x4e284aa0
-.inst 0x4e286800,0x4e284ac0,0x4e286800,0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800,0x4e284b20
-.inst 0x4e286800,0x4e284b40,0x4e286800,0x4e284ba0,0x91004063,0xd1000484,0xb5fffca4,0x14000019
-.inst 0x3dc00061,0x6e3f1c21,0x4e284820,0x4e286800,0x4e284a20,0x4e286800,0x4e284a40,0x4e286800
+        r".arch_extension aes
+cbz x4, 20f",
+        // ldr q16, [x0, #0]
+        // ldr q17, [x0, #16]
+        // ldr q18, [x0, #32]
+        // ldr q19, [x0, #48]
+        // ldr q20, [x0, #64]
+        // ldr q21, [x0, #80]
+        // ldr q22, [x0, #96]
+        // ldr q23, [x0, #112]
+        // ldr q24, [x0, #128]
+        // ldr q25, [x0, #144]
+        // ldr q26, [x0, #160]
+        // ldr q27, [x0, #176]
+        // ldr q28, [x0, #192]
+        // lsl x9, x1, #4
+        // add x9, x0, x9
+        // ldr q30, [x9, #0]
+        // sub x9, x9, #16
+        // ldr q29, [x9, #0]
+        // sub x6, x1, #10
+        // sub x7, x1, #12
+        // ldr q0, [x2, #0]
+        // eor v31.16b, v16.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        r".inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+.inst 0x3dc02018,0x3dc02419,0x3dc0281a,0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e
+.inst 0xd1004129,0x3dc0013d,0xd1002826,0xd1003027,0x3dc00040,0x6e3e1e1f,0x6e3e1c00
+cbz x6, 22f
+cbz x7, 24f
+26:",
+        // ldr q1, [x3, #0]
+        // eor v1.16b, v1.16b, v31.16b
+        // aese v0.16b, v1.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v17.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v18.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v19.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v20.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v21.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v22.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v23.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v24.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v25.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v26.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v27.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v28.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v29.16b
+        // add x3, x3, #16
+        // sub x4, x4, #1
+        r".inst 0x3dc00061,0x6e3f1c21,0x4e284820,0x4e286800,0x4e284a20,0x4e286800,0x4e284a40,0x4e286800
 .inst 0x4e284a60,0x4e286800,0x4e284a80,0x4e286800,0x4e284aa0,0x4e286800,0x4e284ac0,0x4e286800
-.inst 0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800,0x4e284ba0,0x91004063,0xd1000484,0xb5fffd24
-.inst 0x6e3e1c00,0x3d800040,0x14000001,0xd65f03c0",
-        r".p2align 6",
+.inst 0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800,0x4e284b20,0x4e286800,0x4e284b40,0x4e286800
+.inst 0x4e284b60,0x4e286800,0x4e284b80,0x4e286800,0x4e284ba0,0x91004063,0xd1000484
+cbnz x4, 26b
+b 25f
+24:
+27:",
+        // ldr q1, [x3, #0]
+        // eor v1.16b, v1.16b, v31.16b
+        // aese v0.16b, v1.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v17.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v18.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v19.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v20.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v21.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v22.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v23.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v24.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v25.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v26.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v29.16b
+        // add x3, x3, #16
+        // sub x4, x4, #1
+        r".inst 0x3dc00061,0x6e3f1c21,0x4e284820,0x4e286800,0x4e284a20,0x4e286800,0x4e284a40,0x4e286800
+.inst 0x4e284a60,0x4e286800,0x4e284a80,0x4e286800,0x4e284aa0,0x4e286800,0x4e284ac0,0x4e286800
+.inst 0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800,0x4e284b20,0x4e286800,0x4e284b40,0x4e286800
+.inst 0x4e284ba0,0x91004063,0xd1000484
+cbnz x4, 27b
+25:
+b 23f
+22:
+28:",
+        // ldr q1, [x3, #0]
+        // eor v1.16b, v1.16b, v31.16b
+        // aese v0.16b, v1.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v17.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v18.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v19.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v20.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v21.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v22.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v23.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v24.16b
+        // aesmc v0.16b, v0.16b
+        // aese v0.16b, v29.16b
+        // add x3, x3, #16
+        // sub x4, x4, #1
+        r".inst 0x3dc00061,0x6e3f1c21,0x4e284820,0x4e286800,0x4e284a20,0x4e286800,0x4e284a40,0x4e286800
+.inst 0x4e284a60,0x4e286800,0x4e284a80,0x4e286800,0x4e284aa0,0x4e286800,0x4e284ac0,0x4e286800
+.inst 0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800,0x4e284ba0,0x91004063,0xd1000484
+cbnz x4, 28b
+23:",
+        // eor v0.16b, v0.16b, v30.16b
+        // str q0, [x2, #0]
+        r".inst 0x6e3e1c00,0x3d800040
+b 21f
+20:
+21:",
+        // ret
+        r".inst 0xd65f03c0
+.arch_extension noaes
+.p2align 6",
     )
 }
 
@@ -62,15 +190,71 @@ pub const VG_CMAC_AES_SUBKEYS_AES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_subkeys_aes(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // str x19, [x3, #2064]
+        // str x20, [x3, #2072]
+        // str x30, [x3, #2080]
+        // add x19, x2, #0
+        // add x20, x3, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x3, #2048]
+        // str x9, [x3, #2056]
+        // str x9, [x2, #0]
+        // str x9, [x2, #8]
+        // add x2, x20, #2048
+        // add x3, x19, #0
+        // movz x4, #1, lsl #0
+        // add x5, x20, #0
         r".inst 0xf9040873,0xf9040c74,0xf904107e,0x91000053,0x91000074,0xd2800009,0xf9040069,0xf9040469
-.inst 0xf9000049,0xf9000449,0x91200282,0x91000263,0xd2800024,0x91000285",
-        r"bl {vg_aes_ctr32_aes}",
+.inst 0xf9000049,0xf9000449,0x91200282,0x91000263,0xd2800024,0x91000285
+bl {vg_aes_ctr32_aes}",
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #8]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #0]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #8]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x30, [x20, #2080]
+        // ldr x19, [x20, #2064]
+        // ldr x20, [x20, #2072]
+        // ret
         r".inst 0xf9400269,0xf940066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9000269,0xf900066a,0xf9400269,0xf940066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c
 .inst 0xcb0b018b,0xd28010ec,0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a
-.inst 0xdac00d29,0xdac00d4a,0xf9000a69,0xf9000e6a,0xf944129e,0xf9440a93,0xf9440e94,0xd65f03c0",
-        r".p2align 6",
+.inst 0xdac00d29,0xdac00d4a,0xf9000a69,0xf9000e6a,0xf944129e,0xf9440a93,0xf9440e94,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -96,14 +280,63 @@ pub const VG_CMAC_AES_UPDATE_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_update_aes(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // str x19, [x5, #2064]
+        // str x20, [x5, #2072]
+        // str x21, [x5, #2080]
+        // str x22, [x5, #2088]
+        // str x23, [x5, #2096]
+        // str x30, [x5, #2104]
+        // str x24, [x5, #2112]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x2, #0
+        // add x22, x3, #0
+        // add x23, x4, #0
+        // add x24, x5, #0
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8,0xb40002f7,0xf94002a9,0xf94002ca
-.inst 0xca0a0129,0xf9040309,0xf94006a9,0xf94006ca,0xca0a0129,0xf9040709,0xd2800009,0xf90002a9
-.inst 0xf90006a9,0x91000260,0x91000281,0x91200302,0x910002a3,0xd2800024,0x91000305",
-        r"bl {vg_aes_ctr32_aes}",
-        r".inst 0x910042d6,0xd10006f7,0xb5fffd97,0x14000001,0xf9440b13,0xf9440f14,0xf9441315,0xf9441716
-.inst 0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0",
-        r".p2align 6",
+.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
+cbz x23, 20f
+22:",
+        // ldr x9, [x21, #0]
+        // ldr x10, [x22, #0]
+        // eor x9, x9, x10
+        // str x9, [x24, #2048]
+        // ldr x9, [x21, #8]
+        // ldr x10, [x22, #8]
+        // eor x9, x9, x10
+        // str x9, [x24, #2056]
+        // movz x9, #0, lsl #0
+        // str x9, [x21, #0]
+        // str x9, [x21, #8]
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x24, #2048
+        // add x3, x21, #0
+        // movz x4, #1, lsl #0
+        // add x5, x24, #0
+        r".inst 0xf94002a9,0xf94002ca,0xca0a0129,0xf9040309,0xf94006a9,0xf94006ca,0xca0a0129,0xf9040709
+.inst 0xd2800009,0xf90002a9,0xf90006a9,0x91000260,0x91000281,0x91200302,0x910002a3,0xd2800024
+.inst 0x91000305
+bl {vg_aes_ctr32_aes}",
+        // add x22, x22, #16
+        // sub x23, x23, #1
+        r".inst 0x910042d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:",
+        // ldr x19, [x24, #2064]
+        // ldr x20, [x24, #2072]
+        // ldr x21, [x24, #2080]
+        // ldr x22, [x24, #2088]
+        // ldr x23, [x24, #2096]
+        // ldr x30, [x24, #2104]
+        // ldr x24, [x24, #2112]
+        // ret
+        r".inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -130,16 +363,80 @@ pub const VG_CMAC_AES_FINALIZE_AES_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finalize_aes(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xd1004089,0xb4000349,0xd2800009,0xf90400a9,0xf90404a9,0x912000a6,0x91000067,0x91000088
-.inst 0xb4000104,0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001
-.inst 0xd2801009,0x390000c9,0xf94400a9,0xf940800a,0xca0a0129,0xf90400a9,0xf94404a9,0xf940840a
-.inst 0xca0a0129,0xf90404a9,0x14000009,0xf9400069,0xf940780a,0xca0a0129,0xf90400a9,0xf9400469
-.inst 0xf9407c0a,0xca0a0129,0xf90404a9,0xf94400a9,0xf940004a,0xca0a0129,0xf90400a9,0xf94404a9
-.inst 0xf940044a,0xca0a0129,0xf90404a9,0xd2800009,0xf9000049,0xf9000449,0xf90408b3,0xf9040cbe
-.inst 0x910000b3,0x91000043,0x912000a2,0xd2800024",
-        r"bl {vg_aes_ctr32_aes}",
-        r".inst 0xf9440e7e,0xf9440a73,0xd65f03c0",
-        r".p2align 6",
+        r".arch_extension aes",
+        // sub x9, x4, #16
+        r".inst 0xd1004089
+cbz x9, 20f",
+        // movz x9, #0, lsl #0
+        // str x9, [x5, #2048]
+        // str x9, [x5, #2056]
+        // add x6, x5, #2048
+        // add x7, x3, #0
+        // add x8, x4, #0
+        r".inst 0xd2800009,0xf90400a9,0xf90404a9,0x912000a6,0x91000067,0x91000088
+cbz x4, 22f
+24:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 24b
+b 23f
+22:
+23:",
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x5, #2048]
+        // ldr x10, [x0, #256]
+        // eor x9, x9, x10
+        // str x9, [x5, #2048]
+        // ldr x9, [x5, #2056]
+        // ldr x10, [x0, #264]
+        // eor x9, x9, x10
+        // str x9, [x5, #2056]
+        r".inst 0xd2801009,0x390000c9,0xf94400a9,0xf940800a,0xca0a0129,0xf90400a9,0xf94404a9,0xf940840a
+.inst 0xca0a0129,0xf90404a9
+b 21f
+20:",
+        // ldr x9, [x3, #0]
+        // ldr x10, [x0, #240]
+        // eor x9, x9, x10
+        // str x9, [x5, #2048]
+        // ldr x9, [x3, #8]
+        // ldr x10, [x0, #248]
+        // eor x9, x9, x10
+        // str x9, [x5, #2056]
+        r".inst 0xf9400069,0xf940780a,0xca0a0129,0xf90400a9,0xf9400469,0xf9407c0a,0xca0a0129,0xf90404a9
+21:",
+        // ldr x9, [x5, #2048]
+        // ldr x10, [x2, #0]
+        // eor x9, x9, x10
+        // str x9, [x5, #2048]
+        // ldr x9, [x5, #2056]
+        // ldr x10, [x2, #8]
+        // eor x9, x9, x10
+        // str x9, [x5, #2056]
+        // movz x9, #0, lsl #0
+        // str x9, [x2, #0]
+        // str x9, [x2, #8]
+        // str x19, [x5, #2064]
+        // str x30, [x5, #2072]
+        // add x19, x5, #0
+        // add x3, x2, #0
+        // add x2, x5, #2048
+        // movz x4, #1, lsl #0
+        r".inst 0xf94400a9,0xf940004a,0xca0a0129,0xf90400a9,0xf94404a9,0xf940044a,0xca0a0129,0xf90404a9
+.inst 0xd2800009,0xf9000049,0xf9000449,0xf90408b3,0xf9040cbe,0x910000b3,0x91000043,0x912000a2
+.inst 0xd2800024
+bl {vg_aes_ctr32_aes}",
+        // ldr x30, [x19, #2072]
+        // ldr x19, [x19, #2064]
+        // ret
+        r".inst 0xf9440e7e,0xf9440a73,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -162,14 +459,42 @@ pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2304
+        // add x3, sp, #0
+        // str x19, [x3, #2176]
+        // str x20, [x3, #2184]
+        // str x21, [x3, #2192]
+        // str x30, [x3, #2200]
+        // add x19, x0, #0
+        // add x20, x3, #0
+        // lsr x21, x2, #2
+        // add x21, x21, #6
+        // add x0, x1, #0
+        // add x1, x2, #0
+        // add x2, x19, #0
         r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
-.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262",
-        r"bl {vg_aes_expand_key_scratch_aes}",
-        r".inst 0x91000260,0x910002a1,0x9103c262,0x91000283",
-        r"bl {vg_cmac_aes_subkeys_aes}",
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
+bl {vg_aes_expand_key_scratch_aes}",
+        // add x0, x19, #0
+        // add x1, x21, #0
+        // add x2, x19, #240
+        // add x3, x20, #0
+        r".inst 0x91000260,0x910002a1,0x9103c262,0x91000283
+bl {vg_cmac_aes_subkeys_aes}",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #272]
+        // str x9, [x19, #280]
+        // ldr x30, [x20, #2200]
+        // ldr x19, [x20, #2176]
+        // ldr x21, [x20, #2192]
+        // ldr x20, [x20, #2184]
+        // add sp, sp, #2304
+        // ret
         r".inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
-.inst 0xd65f03c0",
-        r".p2align 6",
+.inst 0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes,
     )
@@ -194,12 +519,39 @@ pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2304
+        // add x4, sp, #0
+        // ldr x9, [x0, #272]
+        // str x9, [x3, #0]
+        // ldr x9, [x0, #280]
+        // str x9, [x3, #8]
+        // str x19, [x4, #2176]
+        // str x30, [x4, #2184]
+        // add x19, x4, #0
+        // add x5, x4, #0
+        // add x4, x2, #0
+        // add x2, x3, #0
+        // add x3, x0, #288
         r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
-.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003,0xb40000c4,0xd1000484,0xd28001e9
-.inst 0x8a090084,0x91000484,0x14000001",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
+cbz x4, 20f",
+        // sub x4, x4, #1
+        // movz x9, #15, lsl #0
+        // and x4, x4, x9
+        // add x4, x4, #1
+        r".inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
+b 21f
+20:
+21:
+bl {vg_cmac_aes_finalize_aes}",
+        // ldr x30, [x19, #2184]
+        // ldr x19, [x19, #2176]
+        // add sp, sp, #2304
+        // ret
+        r".inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes,
     )
 }
@@ -220,15 +572,69 @@ pub unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: u
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        // str x19, [x3, #2064]
+        // str x20, [x3, #2072]
+        // str x30, [x3, #2080]
+        // add x19, x2, #0
+        // add x20, x3, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x3, #2048]
+        // str x9, [x3, #2056]
+        // str x9, [x2, #0]
+        // str x9, [x2, #8]
+        // add x2, x20, #2048
+        // add x3, x19, #0
+        // movz x4, #1, lsl #0
+        // add x5, x20, #0
         r".inst 0xf9040873,0xf9040c74,0xf904107e,0x91000053,0x91000074,0xd2800009,0xf9040069,0xf9040469
-.inst 0xf9000049,0xf9000449,0x91200282,0x91000263,0xd2800024,0x91000285",
-        r"bl {vg_aes_ctr32}",
+.inst 0xf9000049,0xf9000449,0x91200282,0x91000263,0xd2800024,0x91000285
+bl {vg_aes_ctr32}",
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #8]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #0]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #8]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #16]
+        // str x10, [x19, #24]
+        // ldr x30, [x20, #2080]
+        // ldr x19, [x20, #2064]
+        // ldr x20, [x20, #2072]
+        // ret
         r".inst 0xf9400269,0xf940066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9000269,0xf900066a,0xf9400269,0xf940066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c
 .inst 0xcb0b018b,0xd28010ec,0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a
-.inst 0xdac00d29,0xdac00d4a,0xf9000a69,0xf9000e6a,0xf944129e,0xf9440a93,0xf9440e94,0xd65f03c0",
-        r".p2align 6",
+.inst 0xdac00d29,0xdac00d4a,0xf9000a69,0xf9000e6a,0xf944129e,0xf9440a93,0xf9440e94,0xd65f03c0
+.p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -250,14 +656,61 @@ pub unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        // str x19, [x5, #2064]
+        // str x20, [x5, #2072]
+        // str x21, [x5, #2080]
+        // str x22, [x5, #2088]
+        // str x23, [x5, #2096]
+        // str x30, [x5, #2104]
+        // str x24, [x5, #2112]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x2, #0
+        // add x22, x3, #0
+        // add x23, x4, #0
+        // add x24, x5, #0
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8,0xb40002f7,0xf94002a9,0xf94002ca
-.inst 0xca0a0129,0xf9040309,0xf94006a9,0xf94006ca,0xca0a0129,0xf9040709,0xd2800009,0xf90002a9
-.inst 0xf90006a9,0x91000260,0x91000281,0x91200302,0x910002a3,0xd2800024,0x91000305",
-        r"bl {vg_aes_ctr32}",
-        r".inst 0x910042d6,0xd10006f7,0xb5fffd97,0x14000001,0xf9440b13,0xf9440f14,0xf9441315,0xf9441716
-.inst 0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0",
-        r".p2align 6",
+.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
+cbz x23, 20f
+22:",
+        // ldr x9, [x21, #0]
+        // ldr x10, [x22, #0]
+        // eor x9, x9, x10
+        // str x9, [x24, #2048]
+        // ldr x9, [x21, #8]
+        // ldr x10, [x22, #8]
+        // eor x9, x9, x10
+        // str x9, [x24, #2056]
+        // movz x9, #0, lsl #0
+        // str x9, [x21, #0]
+        // str x9, [x21, #8]
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x24, #2048
+        // add x3, x21, #0
+        // movz x4, #1, lsl #0
+        // add x5, x24, #0
+        r".inst 0xf94002a9,0xf94002ca,0xca0a0129,0xf9040309,0xf94006a9,0xf94006ca,0xca0a0129,0xf9040709
+.inst 0xd2800009,0xf90002a9,0xf90006a9,0x91000260,0x91000281,0x91200302,0x910002a3,0xd2800024
+.inst 0x91000305
+bl {vg_aes_ctr32}",
+        // add x22, x22, #16
+        // sub x23, x23, #1
+        r".inst 0x910042d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:",
+        // ldr x19, [x24, #2064]
+        // ldr x20, [x24, #2072]
+        // ldr x21, [x24, #2080]
+        // ldr x22, [x24, #2088]
+        // ldr x23, [x24, #2096]
+        // ldr x30, [x24, #2104]
+        // ldr x24, [x24, #2112]
+        // ret
+        r".inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -280,16 +733,78 @@ pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xd1004089,0xb4000349,0xd2800009,0xf90400a9,0xf90404a9,0x912000a6,0x91000067,0x91000088
-.inst 0xb4000104,0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001
-.inst 0xd2801009,0x390000c9,0xf94400a9,0xf940800a,0xca0a0129,0xf90400a9,0xf94404a9,0xf940840a
-.inst 0xca0a0129,0xf90404a9,0x14000009,0xf9400069,0xf940780a,0xca0a0129,0xf90400a9,0xf9400469
-.inst 0xf9407c0a,0xca0a0129,0xf90404a9,0xf94400a9,0xf940004a,0xca0a0129,0xf90400a9,0xf94404a9
-.inst 0xf940044a,0xca0a0129,0xf90404a9,0xd2800009,0xf9000049,0xf9000449,0xf90408b3,0xf9040cbe
-.inst 0x910000b3,0x91000043,0x912000a2,0xd2800024",
-        r"bl {vg_aes_ctr32}",
-        r".inst 0xf9440e7e,0xf9440a73,0xd65f03c0",
-        r".p2align 6",
+        // sub x9, x4, #16
+        r".inst 0xd1004089
+cbz x9, 20f",
+        // movz x9, #0, lsl #0
+        // str x9, [x5, #2048]
+        // str x9, [x5, #2056]
+        // add x6, x5, #2048
+        // add x7, x3, #0
+        // add x8, x4, #0
+        r".inst 0xd2800009,0xf90400a9,0xf90404a9,0x912000a6,0x91000067,0x91000088
+cbz x4, 22f
+24:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 24b
+b 23f
+22:
+23:",
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x5, #2048]
+        // ldr x10, [x0, #256]
+        // eor x9, x9, x10
+        // str x9, [x5, #2048]
+        // ldr x9, [x5, #2056]
+        // ldr x10, [x0, #264]
+        // eor x9, x9, x10
+        // str x9, [x5, #2056]
+        r".inst 0xd2801009,0x390000c9,0xf94400a9,0xf940800a,0xca0a0129,0xf90400a9,0xf94404a9,0xf940840a
+.inst 0xca0a0129,0xf90404a9
+b 21f
+20:",
+        // ldr x9, [x3, #0]
+        // ldr x10, [x0, #240]
+        // eor x9, x9, x10
+        // str x9, [x5, #2048]
+        // ldr x9, [x3, #8]
+        // ldr x10, [x0, #248]
+        // eor x9, x9, x10
+        // str x9, [x5, #2056]
+        r".inst 0xf9400069,0xf940780a,0xca0a0129,0xf90400a9,0xf9400469,0xf9407c0a,0xca0a0129,0xf90404a9
+21:",
+        // ldr x9, [x5, #2048]
+        // ldr x10, [x2, #0]
+        // eor x9, x9, x10
+        // str x9, [x5, #2048]
+        // ldr x9, [x5, #2056]
+        // ldr x10, [x2, #8]
+        // eor x9, x9, x10
+        // str x9, [x5, #2056]
+        // movz x9, #0, lsl #0
+        // str x9, [x2, #0]
+        // str x9, [x2, #8]
+        // str x19, [x5, #2064]
+        // str x30, [x5, #2072]
+        // add x19, x5, #0
+        // add x3, x2, #0
+        // add x2, x5, #2048
+        // movz x4, #1, lsl #0
+        r".inst 0xf94400a9,0xf940004a,0xca0a0129,0xf90400a9,0xf94404a9,0xf940044a,0xca0a0129,0xf90404a9
+.inst 0xd2800009,0xf9000049,0xf9000449,0xf90408b3,0xf9040cbe,0x910000b3,0x91000043,0x912000a2
+.inst 0xd2800024
+bl {vg_aes_ctr32}",
+        // ldr x30, [x19, #2072]
+        // ldr x19, [x19, #2064]
+        // ret
+        r".inst 0xf9440e7e,0xf9440a73,0xd65f03c0
+.p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -308,14 +823,40 @@ pub unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2304
+        // add x3, sp, #0
+        // str x19, [x3, #2176]
+        // str x20, [x3, #2184]
+        // str x21, [x3, #2192]
+        // str x30, [x3, #2200]
+        // add x19, x0, #0
+        // add x20, x3, #0
+        // lsr x21, x2, #2
+        // add x21, x21, #6
+        // add x0, x1, #0
+        // add x1, x2, #0
+        // add x2, x19, #0
         r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
-.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262",
-        r"bl {vg_aes_expand_key_scratch}",
-        r".inst 0x91000260,0x910002a1,0x9103c262,0x91000283",
-        r"bl {vg_cmac_aes_subkeys}",
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
+bl {vg_aes_expand_key_scratch}",
+        // add x0, x19, #0
+        // add x1, x21, #0
+        // add x2, x19, #240
+        // add x3, x20, #0
+        r".inst 0x91000260,0x910002a1,0x9103c262,0x91000283
+bl {vg_cmac_aes_subkeys}",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #272]
+        // str x9, [x19, #280]
+        // ldr x30, [x20, #2200]
+        // ldr x19, [x20, #2176]
+        // ldr x21, [x20, #2192]
+        // ldr x20, [x20, #2184]
+        // add sp, sp, #2304
+        // ret
         r".inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
-.inst 0xd65f03c0",
-        r".p2align 6",
+.inst 0xd65f03c0
+.p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
@@ -336,12 +877,37 @@ pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8,
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2304
+        // add x4, sp, #0
+        // ldr x9, [x0, #272]
+        // str x9, [x3, #0]
+        // ldr x9, [x0, #280]
+        // str x9, [x3, #8]
+        // str x19, [x4, #2176]
+        // str x30, [x4, #2184]
+        // add x19, x4, #0
+        // add x5, x4, #0
+        // add x4, x2, #0
+        // add x2, x3, #0
+        // add x3, x0, #288
         r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
-.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003,0xb40000c4,0xd1000484,0xd28001e9
-.inst 0x8a090084,0x91000484,0x14000001",
-        r"bl {vg_cmac_aes_finalize}",
-        r".inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
+cbz x4, 20f",
+        // sub x4, x4, #1
+        // movz x9, #15, lsl #0
+        // and x4, x4, x9
+        // add x4, x4, #1
+        r".inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
+b 21f
+20:
+21:
+bl {vg_cmac_aes_finalize}",
+        // ldr x30, [x19, #2184]
+        // ldr x19, [x19, #2176]
+        // add sp, sp, #2304
+        // ret
+        r".inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
+.p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
     )
 }
@@ -364,21 +930,139 @@ pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2304
+        // add x5, sp, #0
+        // str x19, [x5, #2176]
+        // str x20, [x5, #2184]
+        // str x21, [x5, #2192]
+        // str x22, [x5, #2200]
+        // str x24, [x5, #2208]
+        // str x30, [x5, #2216]
+        // str x23, [x5, #2224]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x3, #0
+        // add x22, x4, #0
+        // add x23, x5, #0
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7,0xb40000c2,0xd1000449
-.inst 0xd28001ea,0x8a0a0129,0x91000529,0x14000002,0xd2800009,0xd344feca,0xb400006a,0xd280020a
-.inst 0x14000002,0x910002ca,0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b,0xb400006b,0x91000148
-.inst 0x14000001,0x9100010a,0x8b090266,0x910480c6,0x910002a7,0xb4000108,0x394000e9,0x390000c9
-.inst 0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b0a02b5,0xcb0a02d6,0xd2800004
-.inst 0xb4000076,0xd2800024,0x14000001,0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5",
-        r"bl {vg_cmac_aes_update_aes}",
-        r".inst 0xd2800018,0xb40000d6,0xd10006d8,0xd28001e9,0x8a090309,0xcb090318,0x14000001,0xd344ff04
-.inst 0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5",
-        r"bl {vg_cmac_aes_update_aes}",
-        r".inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8,0xb4000108,0x394000e9,0x390000c9
-.inst 0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0xf94442f3,0xf94446f4,0xf9444af5
-.inst 0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+cbz x2, 20f",
+        // sub x9, x2, #1
+        // movz x10, #15, lsl #0
+        // and x9, x9, x10
+        // add x9, x9, #1
+        r".inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
+b 21f
+20:",
+        // movz x9, #0, lsl #0
+        r".inst 0xd2800009
+21:",
+        // lsr x10, x22, #4
+        r".inst 0xd344feca
+cbz x10, 22f",
+        // movz x10, #16, lsl #0
+        r".inst 0xd280020a
+b 23f
+22:",
+        // add x10, x22, #0
+        r".inst 0x910002ca
+23:",
+        // movz x8, #16, lsl #0
+        // sub x8, x8, x9
+        // sub x11, x10, x8
+        // lsr x11, x11, #63
+        r".inst 0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b
+cbz x11, 24f",
+        // add x8, x10, #0
+        r".inst 0x91000148
+b 25f
+24:
+25:",
+        // add x10, x8, #0
+        // add x6, x19, x9
+        // add x6, x6, #288
+        // add x7, x21, #0
+        r".inst 0x9100010a,0x8b090266,0x910480c6,0x910002a7
+cbz x8, 26f
+28:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 28b
+b 27f
+26:
+27:",
+        // add x21, x21, x10
+        // sub x22, x22, x10
+        // movz x4, #0, lsl #0
+        r".inst 0x8b0a02b5,0xcb0a02d6,0xd2800004
+cbz x22, 29f",
+        // movz x4, #1, lsl #0
+        r".inst 0xd2800024
+b 210f
+29:
+210:",
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x19, #272
+        // add x3, x19, #288
+        // add x5, x23, #0
+        r".inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+bl {vg_cmac_aes_update_aes}",
+        // movz x24, #0, lsl #0
+        r".inst 0xd2800018
+cbz x22, 211f",
+        // sub x24, x22, #1
+        // movz x9, #15, lsl #0
+        // and x9, x24, x9
+        // sub x24, x24, x9
+        r".inst 0xd10006d8,0xd28001e9,0x8a090309,0xcb090318
+b 212f
+211:
+212:",
+        // lsr x4, x24, #4
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x19, #272
+        // add x3, x21, #0
+        // add x5, x23, #0
+        r".inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+bl {vg_cmac_aes_update_aes}",
+        // add x21, x21, x24
+        // sub x22, x22, x24
+        // add x6, x19, #288
+        // add x7, x21, #0
+        // add x8, x22, #0
+        r".inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
+cbz x8, 213f
+215:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 215b
+b 214f
+213:
+214:",
+        // ldr x19, [x23, #2176]
+        // ldr x20, [x23, #2184]
+        // ldr x21, [x23, #2192]
+        // ldr x22, [x23, #2200]
+        // ldr x24, [x23, #2208]
+        // ldr x30, [x23, #2216]
+        // ldr x23, [x23, #2224]
+        // add sp, sp, #2304
+        // ret
+        r".inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
+.inst 0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
     )
 }
@@ -401,21 +1085,139 @@ pub const VG_CMAC_AES_ABSORB_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb_aes_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2304
+        // add x5, sp, #0
+        // str x19, [x5, #2176]
+        // str x20, [x5, #2184]
+        // str x21, [x5, #2192]
+        // str x22, [x5, #2200]
+        // str x24, [x5, #2208]
+        // str x30, [x5, #2216]
+        // str x23, [x5, #2224]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x3, #0
+        // add x22, x4, #0
+        // add x23, x5, #0
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7,0xb40000c2,0xd1000449
-.inst 0xd28001ea,0x8a0a0129,0x91000529,0x14000002,0xd2800009,0xd344feca,0xb400006a,0xd280020a
-.inst 0x14000002,0x910002ca,0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b,0xb400006b,0x91000148
-.inst 0x14000001,0x9100010a,0x8b090266,0x910480c6,0x910002a7,0xb4000108,0x394000e9,0x390000c9
-.inst 0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b0a02b5,0xcb0a02d6,0xd2800004
-.inst 0xb4000076,0xd2800024,0x14000001,0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
-        r".inst 0xd2800018,0xb40000d6,0xd10006d8,0xd28001e9,0x8a090309,0xcb090318,0x14000001,0xd344ff04
-.inst 0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
-        r".inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8,0xb4000108,0x394000e9,0x390000c9
-.inst 0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0xf94442f3,0xf94446f4,0xf9444af5
-.inst 0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+cbz x2, 20f",
+        // sub x9, x2, #1
+        // movz x10, #15, lsl #0
+        // and x9, x9, x10
+        // add x9, x9, #1
+        r".inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
+b 21f
+20:",
+        // movz x9, #0, lsl #0
+        r".inst 0xd2800009
+21:",
+        // lsr x10, x22, #4
+        r".inst 0xd344feca
+cbz x10, 22f",
+        // movz x10, #16, lsl #0
+        r".inst 0xd280020a
+b 23f
+22:",
+        // add x10, x22, #0
+        r".inst 0x910002ca
+23:",
+        // movz x8, #16, lsl #0
+        // sub x8, x8, x9
+        // sub x11, x10, x8
+        // lsr x11, x11, #63
+        r".inst 0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b
+cbz x11, 24f",
+        // add x8, x10, #0
+        r".inst 0x91000148
+b 25f
+24:
+25:",
+        // add x10, x8, #0
+        // add x6, x19, x9
+        // add x6, x6, #288
+        // add x7, x21, #0
+        r".inst 0x9100010a,0x8b090266,0x910480c6,0x910002a7
+cbz x8, 26f
+28:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 28b
+b 27f
+26:
+27:",
+        // add x21, x21, x10
+        // sub x22, x22, x10
+        // movz x4, #0, lsl #0
+        r".inst 0x8b0a02b5,0xcb0a02d6,0xd2800004
+cbz x22, 29f",
+        // movz x4, #1, lsl #0
+        r".inst 0xd2800024
+b 210f
+29:
+210:",
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x19, #272
+        // add x3, x19, #288
+        // add x5, x23, #0
+        r".inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+bl {vg_cmac_aes_update_aes_cbc}",
+        // movz x24, #0, lsl #0
+        r".inst 0xd2800018
+cbz x22, 211f",
+        // sub x24, x22, #1
+        // movz x9, #15, lsl #0
+        // and x9, x24, x9
+        // sub x24, x24, x9
+        r".inst 0xd10006d8,0xd28001e9,0x8a090309,0xcb090318
+b 212f
+211:
+212:",
+        // lsr x4, x24, #4
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x19, #272
+        // add x3, x21, #0
+        // add x5, x23, #0
+        r".inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+bl {vg_cmac_aes_update_aes_cbc}",
+        // add x21, x21, x24
+        // sub x22, x22, x24
+        // add x6, x19, #288
+        // add x7, x21, #0
+        // add x8, x22, #0
+        r".inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
+cbz x8, 213f
+215:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 215b
+b 214f
+213:
+214:",
+        // ldr x19, [x23, #2176]
+        // ldr x20, [x23, #2184]
+        // ldr x21, [x23, #2192]
+        // ldr x22, [x23, #2200]
+        // ldr x24, [x23, #2208]
+        // ldr x30, [x23, #2216]
+        // ldr x23, [x23, #2224]
+        // add sp, sp, #2304
+        // ret
+        r".inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
+.inst 0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
     )
 }
@@ -434,21 +1236,137 @@ pub unsafe extern "C" fn vg_cmac_aes_absorb_aes_cbc(state: *mut [u64; 38], round
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2304
+        // add x5, sp, #0
+        // str x19, [x5, #2176]
+        // str x20, [x5, #2184]
+        // str x21, [x5, #2192]
+        // str x22, [x5, #2200]
+        // str x24, [x5, #2208]
+        // str x30, [x5, #2216]
+        // str x23, [x5, #2224]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x3, #0
+        // add x22, x4, #0
+        // add x23, x5, #0
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7,0xb40000c2,0xd1000449
-.inst 0xd28001ea,0x8a0a0129,0x91000529,0x14000002,0xd2800009,0xd344feca,0xb400006a,0xd280020a
-.inst 0x14000002,0x910002ca,0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b,0xb400006b,0x91000148
-.inst 0x14000001,0x9100010a,0x8b090266,0x910480c6,0x910002a7,0xb4000108,0x394000e9,0x390000c9
-.inst 0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b0a02b5,0xcb0a02d6,0xd2800004
-.inst 0xb4000076,0xd2800024,0x14000001,0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5",
-        r"bl {vg_cmac_aes_update}",
-        r".inst 0xd2800018,0xb40000d6,0xd10006d8,0xd28001e9,0x8a090309,0xcb090318,0x14000001,0xd344ff04
-.inst 0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5",
-        r"bl {vg_cmac_aes_update}",
-        r".inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8,0xb4000108,0x394000e9,0x390000c9
-.inst 0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0xf94442f3,0xf94446f4,0xf9444af5
-.inst 0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+cbz x2, 20f",
+        // sub x9, x2, #1
+        // movz x10, #15, lsl #0
+        // and x9, x9, x10
+        // add x9, x9, #1
+        r".inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
+b 21f
+20:",
+        // movz x9, #0, lsl #0
+        r".inst 0xd2800009
+21:",
+        // lsr x10, x22, #4
+        r".inst 0xd344feca
+cbz x10, 22f",
+        // movz x10, #16, lsl #0
+        r".inst 0xd280020a
+b 23f
+22:",
+        // add x10, x22, #0
+        r".inst 0x910002ca
+23:",
+        // movz x8, #16, lsl #0
+        // sub x8, x8, x9
+        // sub x11, x10, x8
+        // lsr x11, x11, #63
+        r".inst 0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b
+cbz x11, 24f",
+        // add x8, x10, #0
+        r".inst 0x91000148
+b 25f
+24:
+25:",
+        // add x10, x8, #0
+        // add x6, x19, x9
+        // add x6, x6, #288
+        // add x7, x21, #0
+        r".inst 0x9100010a,0x8b090266,0x910480c6,0x910002a7
+cbz x8, 26f
+28:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 28b
+b 27f
+26:
+27:",
+        // add x21, x21, x10
+        // sub x22, x22, x10
+        // movz x4, #0, lsl #0
+        r".inst 0x8b0a02b5,0xcb0a02d6,0xd2800004
+cbz x22, 29f",
+        // movz x4, #1, lsl #0
+        r".inst 0xd2800024
+b 210f
+29:
+210:",
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x19, #272
+        // add x3, x19, #288
+        // add x5, x23, #0
+        r".inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+bl {vg_cmac_aes_update}",
+        // movz x24, #0, lsl #0
+        r".inst 0xd2800018
+cbz x22, 211f",
+        // sub x24, x22, #1
+        // movz x9, #15, lsl #0
+        // and x9, x24, x9
+        // sub x24, x24, x9
+        r".inst 0xd10006d8,0xd28001e9,0x8a090309,0xcb090318
+b 212f
+211:
+212:",
+        // lsr x4, x24, #4
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x19, #272
+        // add x3, x21, #0
+        // add x5, x23, #0
+        r".inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+bl {vg_cmac_aes_update}",
+        // add x21, x21, x24
+        // sub x22, x22, x24
+        // add x6, x19, #288
+        // add x7, x21, #0
+        // add x8, x22, #0
+        r".inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
+cbz x8, 213f
+215:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 215b
+b 214f
+213:
+214:",
+        // ldr x19, [x23, #2176]
+        // ldr x20, [x23, #2184]
+        // ldr x21, [x23, #2192]
+        // ldr x22, [x23, #2200]
+        // ldr x24, [x23, #2208]
+        // ldr x30, [x23, #2216]
+        // ldr x23, [x23, #2224]
+        // add sp, sp, #2304
+        // ret
+        r".inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
+.inst 0xd65f03c0
+.p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
 }
