@@ -1388,6 +1388,12 @@ impl AesGcm {
         if len >= 512 {
             return Ok(self.seal_pieces_split(nonce, aad, plaintext, out));
         }
+        // Pending #3841: keep its platform-copy route below the new split threshold.
+        #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+        if len >= 128 {
+            copy_pieces(plaintext, out);
+            return self.encrypt_in_place(nonce, aad, out);
+        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
