@@ -1,13 +1,18 @@
 //! RSA prime generation (`verified_garbage::rsa_keygen`), with the octets of
 //! known numbers as the first candidate:
 //!
-//! * each prime of the two-prime private keys of the RSA test vector files
-//!   (`rsa_*_test.json`) whose length `generate_prime_from` takes and whose
-//!   two most significant bits are set, as a candidate sets them: followed
-//!   by random octets for its witnesses, it is accepted, with the key's
-//!   public exponent, and with the key's other prime as the other prime;
-//!   given as the other prime itself, it is too close, and the key's other
-//!   prime, following it, is accepted;
+//! * each two-prime private key of the RSA test vector files
+//!   (`rsa_*_test.json`) whose primes are as long as each other, of a length
+//!   `generate_prime_from` takes, with their two most significant bits set
+//!   (as a candidate sets them): with the key's public exponent, each prime,
+//!   given as the other prime and as the first candidate, is too close, and
+//!   the key's other prime, following it (and random octets for its
+//!   witnesses), is accepted. Each accepted test costs at least 16
+//!   Miller–Rabin rounds, so each prime is accepted once, in the run that
+//!   also rejects the other prime as too close; and for the first key of
+//!   each length the prime is also accepted with no other prime from the
+//!   same octets, reading as many. (A key with one such prime only accepts
+//!   it with the other prime given.)
 //! * each number of `primality_test.json` of such a length and form (only
 //!   composites, Carmichael numbers and worst cases for Miller–Rabin):
 //!   followed by random octets, it is never the prime returned, with `e = 1`
@@ -29,7 +34,7 @@
     feature = "alloc"
 ))]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::json_struct;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
@@ -45,12 +50,12 @@ json_struct! {
     }
 }
 
-/// A prime, with the file it is from, the key's other prime and its public
-/// exponent.
-struct Prime {
+/// A key's primes `p` and `q` (as long as each other), with the file it is
+/// from and its public exponent.
+struct Pair {
     p: Vec<u8>,
-    name: String,
     q: Vec<u8>,
+    name: String,
     e: Vec<u8>,
 }
 
@@ -72,32 +77,43 @@ fn then_random(x: &[u8]) -> Vec<u8> {
     v
 }
 
-/// Checks the prime `p` of the key with the other prime `q` (as long) and
-/// the public exponent `e`, from the file `name`.
-fn check_prime(name: &str, p: &[u8], q: &[u8], e: &[u8]) {
-    let len = p.len();
+/// Checks that `prime` is accepted as the first candidate with `other`,
+/// the key's other prime (as long), as the other prime and the public
+/// exponent `e`: after `other` itself, too close, if `other` is a candidate;
+/// and, if `alone`, with no other prime from the same octets.
+fn check_prime(name: &str, prime: &[u8], other: &[u8], e: &[u8], alone: bool) {
+    let len = prime.len();
     let bits = 8 * len;
-    let rand = then_random(p);
-    let (got, used) = generate_prime_from(bits, e, None, &rand).unwrap();
-    assert_eq!(got, p, "{name}");
-    let whole = used >= 17 * len && used.is_multiple_of(len);
-    assert!(whole, "{name}: {used}");
-    let (got, used2) = generate_prime_from(bits, e, Some(q), &rand).unwrap();
-    assert_eq!((&got[..], used2), (p, used), "{name}: with q");
-    if candidate(q) {
-        let mut rand = p.to_vec();
-        rand.extend(then_random(q));
-        let (got, used) = generate_prime_from(bits, e, Some(p), &rand).unwrap();
-        assert_eq!(got, q, "{name}: after p, too close");
-        assert!(used >= 18 * len, "{name}: {used}");
+    let rand = then_random(prime);
+    // The octets `prime`'s test read, from where `prime` starts.
+    let read = if candidate(other) {
+        let mut after = other.to_vec();
+        after.extend_from_slice(&rand);
+        let (got, used) = generate_prime_from(bits, e, Some(other), &after).unwrap();
+        assert_eq!(got, prime, "{name}: after the other prime, too close");
+        // The other prime, too close, reads its own octets only.
+        assert!(used >= len, "{name}: {used}");
+        used - len
+    } else {
+        let (got, used) = generate_prime_from(bits, e, Some(other), &rand).unwrap();
+        assert_eq!(got, prime, "{name}: with the other prime");
+        used
+    };
+    assert!(
+        read >= 17 * len && read.is_multiple_of(len),
+        "{name}: {read}"
+    );
+    if alone {
+        let (got, used) = generate_prime_from(bits, e, None, &rand).unwrap();
+        assert_eq!((&got[..], used), (prime, read), "{name}: alone");
     }
 }
 
 #[test]
 fn rsa_keygen_primes() {
     require_vectors!();
-    // Each prime once, with the first file that has it.
-    let mut primes: BTreeMap<Vec<u8>, (String, Vec<u8>, Vec<u8>)> = BTreeMap::new();
+    // Each key once (by its primes), with the first file that has it.
+    let mut pairs: BTreeMap<(Vec<u8>, Vec<u8>), Pair> = BTreeMap::new();
     for name in harness::all_files().unwrap() {
         if !(name.starts_with("rsa_") && name.ends_with("_test.json")) {
             continue;
@@ -114,24 +130,34 @@ fn rsa_keygen_primes() {
                 continue;
             };
             let (p, q) = (trim_zeros(&p.0), trim_zeros(&q.0));
-            for (a, b) in [(p, q), (q, p)] {
-                // Every key's primes are as long as each other.
-                if candidate(a) && b.len() == a.len() {
-                    primes.entry(a.to_vec()).or_insert((
-                        name.clone(),
-                        b.to_vec(),
-                        public_exponent.0.clone(),
-                    ));
-                }
+            if p.len() == q.len() && (candidate(p) || candidate(q)) {
+                pairs
+                    .entry((p.to_vec(), q.to_vec()))
+                    .or_insert_with(|| Pair {
+                        p: p.to_vec(),
+                        q: q.to_vec(),
+                        name: name.clone(),
+                        e: public_exponent.0.clone(),
+                    });
             }
         }
     }
-    let primes: Vec<Prime> = primes
-        .into_iter()
-        .map(|(p, (name, q, e))| Prime { p, name, q, e })
-        .collect();
-    assert!(!primes.is_empty());
-    harness::par_each(&primes, |x| check_prime(&x.name, &x.p, &x.q, &x.e));
+    let pairs: Vec<Pair> = pairs.into_values().collect();
+    assert!(!pairs.is_empty());
+    // Each test: the key, the prime accepted, the other prime, and whether
+    // the prime is also accepted alone (the first test of each length).
+    let mut tests: Vec<(&Pair, &[u8], &[u8], bool)> = Vec::new();
+    let mut lengths = BTreeSet::new();
+    for x in &pairs {
+        for (prime, other) in [(&x.p, &x.q), (&x.q, &x.p)] {
+            if candidate(prime) {
+                tests.push((x, prime, other, lengths.insert(prime.len())));
+            }
+        }
+    }
+    harness::par_each(&tests, |&(x, prime, other, alone)| {
+        check_prime(&x.name, prime, other, &x.e, alone)
+    });
 }
 
 #[test]
