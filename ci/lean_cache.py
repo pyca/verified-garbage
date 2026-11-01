@@ -314,8 +314,8 @@ def stored_files(source):
 def bundle(lean, archive_dirs, out):
     """Publish existing caches without unpacking or repacking any module.
 
-    The caches must cover disjoint modules. GNU tar concatenates their
-    files.tar archives, decompressed, without extracting the small files.
+    The caches must cover disjoint modules. Copy their tar members into one
+    files.tar without extracting the small files or requiring GNU tar.
     Only indexed modules are included; leftover archives are ignored.
     """
     index, logs, archives = {}, {}, []
@@ -343,16 +343,15 @@ def bundle(lean, archive_dirs, out):
     # file holds only miscellaneous files, never expanded module outputs.
     with tempfile.TemporaryDirectory(prefix="lean-cache-bundle-") as tmp:
         files = Path(tmp) / FILES
-        for i, directory in enumerate(archive_dirs):
-            part = files if i == 0 else Path(tmp) / f"{i}.tar"
-            source = stored_files(lean / directory)
-            if source.name == STORED:
-                with gzip.open(source) as f, open(part, "wb") as g:
-                    shutil.copyfileobj(f, g)
-            else:
-                shutil.copyfile(source, part)
-            if i:
-                subprocess.run(["tar", "--concatenate", "--file", str(files), str(part)], check=True)
+        with tarfile.open(files, mode="w") as combined:
+            for directory in archive_dirs:
+                with tarfile.open(stored_files(lean / directory), mode="r|*") as source:
+                    for member in source:
+                        if member.isfile():
+                            with source.extractfile(member) as data:
+                                combined.addfile(member, data)
+                        else:
+                            combined.addfile(member)
         with tarfile.open(fileobj=out, mode="w|", dereference=True) as tar:
             tar.add(files, arcname=str(LTAR / FILES))
             for name, data in ((INDEX, json.dumps(index, sort_keys=True).encode()), (LOGS, logs_bytes(logs))):

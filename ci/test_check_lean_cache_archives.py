@@ -11,6 +11,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 
 import lean_cache
 
@@ -421,6 +422,47 @@ class LeanArchiveTests(unittest.TestCase):
         (self.lean / directories[0] / "index.json").write_text("{}")
         with self.assertRaisesRegex(ValueError, "Empty"):
             lean_cache.bundle(self.lean, directories, data)
+
+    def test_bundle_copies_compressed_and_plain_tar_members_without_external_tar(self):
+        directories = self.independent_caches()
+        first, second = self.lean / directories[0], self.lean / directories[1]
+        # Include metadata, links, empty files and a PAX long name. Keep
+        # duplicate names in source order, as tar concatenation does.
+        members = []
+        for name, kind, body in [('directory', tarfile.DIRTYPE, b''),
+                                 ('directory/script', tarfile.REGTYPE, b'#!/bin/sh\n'),
+                                 ('symlink', tarfile.SYMTYPE, b''),
+                                 ('hardlink', tarfile.LNKTYPE, b''),
+                                 ('empty', tarfile.REGTYPE, b''),
+                                 ('long/' + 'x' * 150, tarfile.REGTYPE, b'long'),
+                                 ('directory/script', tarfile.REGTYPE, b'last')]:
+            member = tarfile.TarInfo(name)
+            member.type, member.size = kind, len(body)
+            member.mode, member.uid, member.gid, member.mtime = 0o755, 123, 456, 123456
+            member.uname, member.gname = 'owner', 'group'
+            if kind in (tarfile.SYMTYPE, tarfile.LNKTYPE):
+                member.linkname = 'directory/script'
+            members.append((member, body))
+        with tarfile.open(first / lean_cache.STORED, 'w:gz') as tar:
+            for member, body in members[:-1]:
+                tar.addfile(member, io.BytesIO(body))
+        (second / lean_cache.STORED).unlink()
+        with tarfile.open(second / lean_cache.FILES, 'w') as tar:
+            member, body = members[-1]
+            tar.addfile(member, io.BytesIO(body))
+        data = io.BytesIO()
+        with mock.patch.object(lean_cache.subprocess, 'run', side_effect=AssertionError('external tool')):
+            lean_cache.bundle(self.lean, directories, data)
+        with tarfile.open(fileobj=io.BytesIO(data.getvalue())) as outer:
+            with tarfile.open(fileobj=outer.extractfile('.lake/ltar/files.tar')) as combined:
+                actual = combined.getmembers()
+                self.assertEqual(len(actual), len(members))
+                for got, (want, body) in zip(actual, members):
+                    for field in ('name', 'type', 'size', 'mode', 'uid', 'gid', 'mtime',
+                                  'uname', 'gname', 'linkname'):
+                        self.assertEqual(getattr(got, field), getattr(want, field))
+                    if got.isfile():
+                        self.assertEqual(combined.extractfile(got).read(), body)
 
     def test_reuse_repacks_missing_or_changed_archives(self):
         packages = Path(".lake/mathlib-ltar")
