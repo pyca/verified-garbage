@@ -15,13 +15,61 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem16_cbd2(b: *const [u8; 128], f: *mut [u16; 256]) {
     core::arch::naked_asm!(
+        // movz x9, #255, lsl #0
+        // movk x9, #256, lsl #16
+        // movk x9, #2, lsl #32
+        // dup v16.2d, x9
+        // movz x9, #3340, lsl #0
+        // dup v17.2d, x9
+        // movz x9, #85, lsl #0
+        // dup v18.16b, w9
+        // movz x9, #51, lsl #0
+        // dup v19.16b, w9
+        // movz x9, #34, lsl #0
+        // dup v20.16b, w9
+        // movz x9, #15, lsl #0
+        // dup v21.16b, w9
+        // movz x10, #8, lsl #0
         r".inst 0xd2801fe9,0xf2a02009,0xf2c00049,0x4e080d30,0xd281a189,0x4e080d31,0xd2800aa9,0x4e010d32
-.inst 0xd2800669,0x4e010d33,0xd2800449,0x4e010d34,0xd28001e9,0x4e010d35,0xd280010a,0x3dc00000
-.inst 0x6f0f0401,0x4e321c00,0x4e321c21,0x4e218400,0x6f0e0401,0x4e331c00,0x4e331c21,0x4e348400
-.inst 0x6e218400,0x4e351c02,0x6f0c0403,0x4e033844,0x4e040205,0x4e040226,0x4e0638a7,0x4e0678a5
-.inst 0x3d800027,0x3d800425,0x4e037844,0x4e040205,0x4e040226,0x4e0638a7,0x4e0678a5,0x3d800827
-.inst 0x3d800c25,0x91004000,0x91010021,0xd100054a,0xb5fffc6a,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd2800669,0x4e010d33,0xd2800449,0x4e010d34,0xd28001e9,0x4e010d35,0xd280010a
+20:",
+        // ldr q0, [x0, #0]
+        // ushr v1.16b, v0.16b, #1
+        // and v0.16b, v0.16b, v18.16b
+        // and v1.16b, v1.16b, v18.16b
+        // add v0.16b, v0.16b, v1.16b
+        // ushr v1.16b, v0.16b, #2
+        // and v0.16b, v0.16b, v19.16b
+        // and v1.16b, v1.16b, v19.16b
+        // add v0.16b, v0.16b, v20.16b
+        // sub v0.16b, v0.16b, v1.16b
+        // and v2.16b, v0.16b, v21.16b
+        // ushr v3.16b, v0.16b, #4
+        // zip1 v4.16b, v2.16b, v3.16b
+        // tbl v5.16b, {v16.16b}, v4.16b
+        // tbl v6.16b, {v17.16b}, v4.16b
+        // zip1 v7.16b, v5.16b, v6.16b
+        // zip2 v5.16b, v5.16b, v6.16b
+        // str q7, [x1, #0]
+        // str q5, [x1, #16]
+        // zip2 v4.16b, v2.16b, v3.16b
+        // tbl v5.16b, {v16.16b}, v4.16b
+        // tbl v6.16b, {v17.16b}, v4.16b
+        // zip1 v7.16b, v5.16b, v6.16b
+        // zip2 v5.16b, v5.16b, v6.16b
+        // str q7, [x1, #32]
+        // str q5, [x1, #48]
+        // add x0, x0, #16
+        // add x1, x1, #64
+        // sub x10, x10, #1
+        r".inst 0x3dc00000,0x6f0f0401,0x4e321c00,0x4e321c21,0x4e218400,0x6f0e0401,0x4e331c00,0x4e331c21
+.inst 0x4e348400,0x6e218400,0x4e351c02,0x6f0c0403,0x4e033844,0x4e040205,0x4e040226,0x4e0638a7
+.inst 0x4e0678a5,0x3d800027,0x3d800425,0x4e037844,0x4e040205,0x4e040226,0x4e0638a7,0x4e0678a5
+.inst 0x3d800827,0x3d800c25,0x91004000,0x91010021,0xd100054a
+cbnz x10, 20b",
+        // ret
+        r".inst 0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -40,9 +88,87 @@ pub unsafe extern "C" fn vg_mlkem16_cbd2(b: *const [u8; 128], f: *mut [u16; 256]
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem16_ntt(f: *mut [u16; 256], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        // umov x7, v8.d[0]
+        // umov x8, v9.d[0]
+        // umov x9, v10.d[0]
+        // umov x10, v11.d[0]
+        // umov x11, v12.d[0]
+        // umov x12, v13.d[0]
+        // umov x13, v14.d[0]
+        // umov x14, v15.d[0]
         r".inst 0x4e083d07,0x4e083d28,0x4e083d49,0x4e083d6a,0x4e083d8b,0x4e083dac,0x4e083dcd,0x4e083dee",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLKEM16_NTT_ZETAS}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLKEM16_NTT_ZETAS}")),
+        // add x2, x1, #160
+        // movz x5, #3329, lsl #0
+        // mov v7.h[0], w5
+        // movz x5, #20159, lsl #0
+        // mov v7.h[1], w5
+        // add x3, x0, #0
+        // movz x4, #4, lsl #0
+        // ldr q0, [x1, #0]
+        // ldr q1, [x1, #16]
+        // ldr q21, [x0, #64]
+        // ldr q5, [x0, #448]
+        // ldr q30, [x0, #272]
+        // ldr q24, [x0, #320]
+        // ldr q12, [x0, #128]
+        // sqrdmulh v9.8h, v5.8h, v0.h[1]
+        // mul v23.8h, v5.8h, v0.h[0]
+        // sqrdmulh v17.8h, v24.8h, v0.h[1]
+        // ldr q13, [x0, #192]
+        // mls v23.8h, v9.8h, v7.h[0]
+        // mul v8.8h, v24.8h, v0.h[0]
+        // mls v8.8h, v17.8h, v7.h[0]
+        // add v9.8h, v13.8h, v23.8h
+        // sub v10.8h, v13.8h, v23.8h
+        // mul v11.8h, v30.8h, v0.h[0]
+        // ldr q13, [x0, #384]
+        // sqrdmulh v28.8h, v9.8h, v0.h[3]
+        // sub v29.8h, v21.8h, v8.8h
+        // mul v26.8h, v9.8h, v0.h[2]
+        // add v8.8h, v21.8h, v8.8h
+        // mul v2.8h, v13.8h, v0.h[0]
+        // mls v26.8h, v28.8h, v7.h[0]
+        // mul v28.8h, v10.8h, v0.h[4]
+        // sqrdmulh v23.8h, v10.8h, v0.h[5]
+        // add v22.8h, v8.8h, v26.8h
+        // sqrdmulh v10.8h, v13.8h, v0.h[1]
+        // sqrdmulh v21.8h, v22.8h, v0.h[7]
+        // ldr q13, [x0, #256]
+        // mul v16.8h, v22.8h, v0.h[6]
+        // mls v28.8h, v23.8h, v7.h[0]
+        // mls v2.8h, v10.8h, v7.h[0]
+        // sqrdmulh v23.8h, v13.8h, v0.h[1]
+        // sub v10.8h, v29.8h, v28.8h
+        // add v17.8h, v29.8h, v28.8h
+        // mls v16.8h, v21.8h, v7.h[0]
+        // sub v18.8h, v12.8h, v2.8h
+        // ldr q29, [x0, #0]
+        // sqrdmulh v14.8h, v17.8h, v1.h[3]
+        // add v22.8h, v12.8h, v2.8h
+        // sqrdmulh v9.8h, v18.8h, v0.h[5]
+        // mul v21.8h, v13.8h, v0.h[0]
+        // ldr q13, [x0, #336]
+        // mul v5.8h, v18.8h, v0.h[4]
+        // mls v5.8h, v9.8h, v7.h[0]
+        // mul v18.8h, v13.8h, v0.h[0]
+        // mls v21.8h, v23.8h, v7.h[0]
+        // sqrdmulh v2.8h, v13.8h, v0.h[1]
+        // mul v13.8h, v17.8h, v1.h[2]
+        // sub v4.8h, v29.8h, v21.8h
+        // mls v13.8h, v14.8h, v7.h[0]
+        // add v25.8h, v29.8h, v21.8h
+        // add v6.8h, v4.8h, v5.8h
+        // sqrdmulh v15.8h, v22.8h, v0.h[3]
+        // sub v21.8h, v4.8h, v5.8h
+        // sub v5.8h, v8.8h, v26.8h
+        // mul v23.8h, v22.8h, v0.h[2]
+        // add v28.8h, v6.8h, v13.8h
+        // sub v13.8h, v6.8h, v13.8h
+        // mul v4.8h, v5.8h, v1.h[0]
+        // sub x4, x4, #2
+        // add x1, x1, #32
         r".inst 0x91028022,0xd281a025,0x4e021ca7,0xd289d7e5,0x4e061ca7,0x91000003,0xd2800084,0x3dc00020
 .inst 0x3dc00421,0x3dc01015,0x3dc07005,0x3dc0441e,0x3dc05018,0x3dc0200c,0x4f50d0a9,0x4f4080b7
 .inst 0x4f50d311,0x3dc0300d,0x6f474137,0x4f408308,0x6f474228,0x4e7785a9,0x6e7785aa,0x4f4083cb
@@ -51,63 +177,509 @@ pub unsafe extern "C" fn vg_mlkem16_ntt(f: *mut [u16; 256], scratch: *mut [u64; 
 .inst 0x4f50d1b7,0x6e7c87aa,0x4e7c87b1,0x6f4742b0,0x6e628592,0x3dc0001d,0x4f71d22e,0x4e628596
 .inst 0x4f50da49,0x4f4081b5,0x3dc0540d,0x4f408a45,0x6f474125,0x4f4081b2,0x6f4742f5,0x4f50d1a2
 .inst 0x4f61822d,0x6e7587a4,0x6f4741cd,0x4e7587b9,0x4e658486,0x4f70d2cf,0x6e658495,0x6e7a8505
-.inst 0x4f6082d7,0x4e6d84dc,0x6e6d84cd,0x4f4180a4,0xd1000884,0x91008021,0x6f4741f7,0x3dc06406
-.inst 0x3dc0240f,0x3dc00413,0x4f418956,0x3dc01418,0x3d80500d,0x4f50d0cd,0x6e778734,0x4f50d3c3
-.inst 0x3d80401c,0x3dc0481e,0x4f4080c8,0x4f51d95b,0x6f47406b,0x6f474052,0x3dc0581f,0x4f51d0aa
-.inst 0x6f4741a8,0x3dc0740d,0x6e72870e,0x4e728709,0x4f50d3e2,0x6f474144,0x4e77872a,0x6e6b8678
-.inst 0x4e6b8679,0x4f50d1bc,0x4f4083cb,0x4f4081b1,0x6e70854d,0x6e6885e6,0x6f474391,0x3d80100d
-.inst 0x6f474376,0x3dc0340d,0x4e64869a,0x4f4083f2,0x4e70855b,0x3d80201a,0x4f50d8df,0x4e7686a3
-.inst 0x3d80001b,0x4f4088da,0x4e7185a6,0x6e7185a5,0x3d806003,0x6e7686b1,0x4f70d0ca,0x6e64868d
-.inst 0x4e6885f4,0x4f50d8ac,0x3d80300d,0x4f6080c8,0x3d807011,0x6f474148,0x4f4088bd,0x6f47419d
-.inst 0x6e688525,0x4e688523,0x4f70d28f,0x4f4180a4,0x4e7d85c6,0x4f70d869,0x4f71d0cc,0x6e7d85ca
-.inst 0x4f6180d7,0x6f4743fa,0x6f474197,0x4f608870,0x4e7a870d,0x6e7a8715,0x6f474130,0x4e7785bc
-.inst 0x6e7785ad,0x4f608297,0xd1000484,0x91004000,0xb5fff644,0x4f51d0a3,0x6f4741f7,0x3dc06405
-.inst 0x4f41895d,0x6f474064,0x6e778733,0x4f50d0bf,0x4f50d3c6,0x6e648663,0x4f4080a5,0x3d803003
-.inst 0x4f51d94c,0x6f474052,0x3dc07403,0x6f4743e5,0x4f50d06a,0x6f4740cb,0x3dc0241f,0x4f40807e
-.inst 0x6f47415e,0x6e6587ea,0x6f47419d,0x3dc03406,0x4f50d94f,0x4f408951,0x4e7e84ca,0x6e7e84c6
-.inst 0x4f70d14c,0x6e7d86bb,0x4f50d8c3,0x4f60814a,0x3dc01414,0x6f47418a,0x4f4088c2,0x4e728686
-.inst 0x4e6587e5,0x6f474062,0x6e6a84df,0x4f70d0ac,0x6e728696,0x4e6a84c6,0x4f4183f4,0x4e6286de
-.inst 0x4f70d8c3,0x4f71d3ca,0x4f6183c9,0x3dc0041e,0x6f4741f1,0x6f474149,0x4f6088cf,0x4e6b87d8
-.inst 0x6e6286ca,0x6f47406f,0x4e648666,0x4e778736,0x4f51d943,0x3d80500d,0x6e6b87d3,0x4e7086d9
-.inst 0x4f6080a5,0x6e7086cd,0x3d80401c,0x6f474185,0x3d80100d,0x3d802006,0x4e7d86b5,0x4f51d3ed
-.inst 0x3d800019,0x4e71866c,0x6e71867f,0x4f41895e,0x3d806015,0x4e658715,0x4e698586,0x6f47407e
-.inst 0x3d80701b,0x6e6f86aa,0x6e69858c,0x6f4741b4,0x3d804406,0x3d80140a,0x6e65870d,0x4e6f86a3
-.inst 0x3d80540c,0x6e7e87ea,0x4e7e87f5,0x3d800403,0x4e7485ac,0x6e7485ad,0x3d806415,0x3d80740a
-.inst 0x3d80240c,0x3d80340d,0x91000060,0xd2800104,0x3dc00802,0x3dc0002d,0x3dc00c1e,0x3dc01059
-.inst 0x3dc00005,0x3dc01812,0x3dc01c0c,0x4f5dd051,0x3dc00424,0x3dc00417,0x4f5dd3d5,0x3dc00858
-.inst 0x3dc00049,0x4f4d83ca,0x4f4d804b,0x6f4742aa,0x4f54d19d,0x4f448181,0x4e6a86f5,0x6e6a86ea
-.inst 0x4f448248,0x4f7dd2b7,0x4f6d82a2,0x6f4743a1,0x6f4742e2,0x3dc0044f,0x4f5dd940,0x6f47422b
-.inst 0x3dc0141d,0x4f4d8957,0x6f474017,0x6e6187b0,0x4e6b84a3,0x6e6b84bf,0x4f54da16,0x4e62847e
-.inst 0x6e628460,0x4f54d25c,0x4e7787f5,0x6e7787f3,0x4f448a1a,0x4e806bc3,0x3dc01457,0x4e936ab2
-.inst 0x6f4742da,0x4e802bcd,0x6f474388,0x4ed2687f,0x4e932aab,0x4e6187bb,0x6e6fb7e6,0x4ecb29a2
-.inst 0x4ecb69ad,0x4e699fe1,0x3dc0100b,0x6e6fb5bd,0x6f4740c1,0x4ed22866,0x4e699db1,0x6e68856d
-.inst 0x4f74d36a,0x6e7a85ac,0x6e6184d2,0x6f4743b1,0x4e6184de,0x4e7a85a6,0x3dc00c4d,0x6e77b650
-.inst 0x4e8c28dc,0x4e799e57,0x3dc01c59,0x4e718454,0x4e789fc0,0x6e6db7dd,0x6e71845e,0x6f474217
-.inst 0xd1000884,0x91008021,0x91018042,0x3dc01453,0x6e7787df,0x6f4743a0,0x4e688570,0x3dc02812
-.inst 0x4e8c68ce,0x4f64837a,0x3dc00024,0x3dc01058,0x3dc02c15,0x6f47415a,0x4e7787d7,0x6e60868f
-.inst 0x3dc02409,0x4e60868a,0x4f448248,0x3dc00041,0x4e9f2afb,0x4f54d24c,0x4e8f2945,0x6e7a861e
-.inst 0x4edb68ad,0x4f54d2a2,0x4e7a861d,0x4f4482a0,0x3d80080d,0x4e9e2bab,0x6f474188,0x4e9e6bba
-.inst 0x4edc6966,0x6f474040,0x4ece6b50,0x4ece2b5a,0x4edb28b4,0x6e79b4dd,0x4e8f694f,0x6e79b60d
-.inst 0x3d800014,0x6e60853e,0x4e60853b,0x4e619cd1,0x4f54dbd6,0x4e619e12,0x6f4741b2,0x4f448bc2
-.inst 0x6f4742c2,0x4e9f6af6,0x6e728743,0x3dc00c59,0x6f4743b1,0x4ed669ff,0x4ed629f4,0x4e728750
-.inst 0x6e73b47a,0x4edc2975,0x3dc0200b,0x6e79b61d,0x3d800414,0x4e7186b4,0x3d800c1f,0x4e789c77
-.inst 0x3dc01c59,0x6e68856d,0x6f474357,0x3dc00841,0x6e6285ac,0x4e6285a6,0x4f74d36a,0x6e7186be
-.inst 0x4e619e00,0x4e8c28dc,0xd1000484,0x91010000,0x91004021,0x91018042,0xb5fff6a4,0x4e688576
-.inst 0x4f64837b,0x4e8c68d1,0x3dc0004f,0x6f47415b,0x4e7787c4,0x6e7787d2,0x3dc00c46,0x6f4743a0
-.inst 0x3dc0084c,0x3dc01058,0x3dc01442,0x4e922889,0x4e7b86ca,0x6e7b86cd,0x6e608681,0x4e8d6955
-.inst 0x4e60869b,0x4ed16aa3,0x4e8d294d,0x4e812b7f,0x6e79b46a,0x4edc69a5,0x4edc29ad,0x4ed12ab5
-.inst 0x6e79b4b1,0x4ec96bfe,0x4e6f9c79,0x3d80081e,0x4e92689e,0x6f474159,0x4e816b63,0x4e6f9cb4
-.inst 0x4ede686a,0x6f474234,0x3d800c0a,0x6e7986b2,0x4e7986aa,0x4ede2863,0x6e62b65e,0x4e6c9d4c
-.inst 0x6e66b546,0x3d800403,0x4e7485b5,0x4e789e4a,0x6e7485ad,0x6f4743ca,0x6f4740cc,0x4ec92bfe
-.inst 0x6e6a85a3,0x4e6a85a6,0x4e6c86aa,0x6e6c86b5,0x4e8368cd,0x4e95294c,0x4e956955,0x4e8328c3
-.inst 0x3d80001e,0x4ecd6aaa,0x4ecd2aad,0x4ec36995,0x4ec32983,0x3d801c0a,0x3d80140d,0x3d801003
-.inst 0x3d801815,0x91020000,0x91018042,0xd2800145,0x4e0a1ca7,0x4e0204fe,0xd2800104,0x3dc00070
-.inst 0x3dc00471,0x3dc00872,0x3dc00c73,0x4f67d214,0x4f67d235,0x4f67d256,0x4f67d277,0x6f474290
-.inst 0x6f4742b1,0x6f4742d2,0x6f4742f3,0x4f110614,0x4f110635,0x4f110656,0x4f110677,0x4e3e1e94
-.inst 0x4e3e1eb5,0x4e3e1ed6,0x4e3e1ef7,0x4e748610,0x4e758631,0x4e768652,0x4e778673,0x3d800070
-.inst 0x3d800471,0x3d800872,0x3d800c73,0x91010063,0xd1000484,0xb5fffc44,0x4e081ce8,0x4e081d09
-.inst 0x4e081d2a,0x4e081d4b,0x4e081d6c,0x4e081d8d,0x4e081dae,0x4e081dcf,0xd65f03c0",
-        r".p2align 6",
+.inst 0x4f6082d7,0x4e6d84dc,0x6e6d84cd,0x4f4180a4,0xd1000884,0x91008021
+20:",
+        // mls v23.8h, v15.8h, v7.h[0]
+        // ldr q6, [x0, #400]
+        // ldr q15, [x0, #144]
+        // ldr q19, [x0, #16]
+        // mul v22.8h, v10.8h, v1.h[4]
+        // ldr q24, [x0, #80]
+        // str q13, [x0, #320]
+        // sqrdmulh v13.8h, v6.8h, v0.h[1]
+        // sub v20.8h, v25.8h, v23.8h
+        // sqrdmulh v3.8h, v30.8h, v0.h[1]
+        // str q28, [x0, #256]
+        // ldr q30, [x0, #288]
+        // mul v8.8h, v6.8h, v0.h[0]
+        // sqrdmulh v27.8h, v10.8h, v1.h[5]
+        // mls v11.8h, v3.8h, v7.h[0]
+        // mls v18.8h, v2.8h, v7.h[0]
+        // ldr q31, [x0, #352]
+        // sqrdmulh v10.8h, v5.8h, v1.h[1]
+        // mls v8.8h, v13.8h, v7.h[0]
+        // ldr q13, [x0, #464]
+        // sub v14.8h, v24.8h, v18.8h
+        // add v9.8h, v24.8h, v18.8h
+        // sqrdmulh v2.8h, v31.8h, v0.h[1]
+        // mls v4.8h, v10.8h, v7.h[0]
+        // add v10.8h, v25.8h, v23.8h
+        // sub v24.8h, v19.8h, v11.8h
+        // add v25.8h, v19.8h, v11.8h
+        // sqrdmulh v28.8h, v13.8h, v0.h[1]
+        // mul v11.8h, v30.8h, v0.h[0]
+        // mul v17.8h, v13.8h, v0.h[0]
+        // sub v13.8h, v10.8h, v16.8h
+        // sub v6.8h, v15.8h, v8.8h
+        // mls v17.8h, v28.8h, v7.h[0]
+        // str q13, [x0, #64]
+        // mls v22.8h, v27.8h, v7.h[0]
+        // ldr q13, [x0, #208]
+        // add v26.8h, v20.8h, v4.8h
+        // mul v18.8h, v31.8h, v0.h[0]
+        // add v27.8h, v10.8h, v16.8h
+        // str q26, [x0, #128]
+        // sqrdmulh v31.8h, v6.8h, v0.h[5]
+        // add v3.8h, v21.8h, v22.8h
+        // str q27, [x0, #0]
+        // mul v26.8h, v6.8h, v0.h[4]
+        // add v6.8h, v13.8h, v17.8h
+        // sub v5.8h, v13.8h, v17.8h
+        // str q3, [x0, #384]
+        // sub v17.8h, v21.8h, v22.8h
+        // sqrdmulh v10.8h, v6.8h, v0.h[3]
+        // sub v13.8h, v20.8h, v4.8h
+        // add v20.8h, v15.8h, v8.8h
+        // sqrdmulh v12.8h, v5.8h, v0.h[5]
+        // str q13, [x0, #192]
+        // mul v8.8h, v6.8h, v0.h[2]
+        // str q17, [x0, #448]
+        // mls v8.8h, v10.8h, v7.h[0]
+        // mul v29.8h, v5.8h, v0.h[4]
+        // mls v29.8h, v12.8h, v7.h[0]
+        // sub v5.8h, v9.8h, v8.8h
+        // add v3.8h, v9.8h, v8.8h
+        // sqrdmulh v15.8h, v20.8h, v0.h[3]
+        // mul v4.8h, v5.8h, v1.h[0]
+        // add v6.8h, v14.8h, v29.8h
+        // sqrdmulh v9.8h, v3.8h, v0.h[7]
+        // sqrdmulh v12.8h, v6.8h, v1.h[3]
+        // sub v10.8h, v14.8h, v29.8h
+        // mul v23.8h, v6.8h, v1.h[2]
+        // mls v26.8h, v31.8h, v7.h[0]
+        // mls v23.8h, v12.8h, v7.h[0]
+        // mul v16.8h, v3.8h, v0.h[6]
+        // add v13.8h, v24.8h, v26.8h
+        // sub v21.8h, v24.8h, v26.8h
+        // mls v16.8h, v9.8h, v7.h[0]
+        // add v28.8h, v13.8h, v23.8h
+        // sub v13.8h, v13.8h, v23.8h
+        // mul v23.8h, v20.8h, v0.h[2]
+        // sub x4, x4, #1
+        // add x0, x0, #16
+        r".inst 0x6f4741f7,0x3dc06406,0x3dc0240f,0x3dc00413,0x4f418956,0x3dc01418,0x3d80500d,0x4f50d0cd
+.inst 0x6e778734,0x4f50d3c3,0x3d80401c,0x3dc0481e,0x4f4080c8,0x4f51d95b,0x6f47406b,0x6f474052
+.inst 0x3dc0581f,0x4f51d0aa,0x6f4741a8,0x3dc0740d,0x6e72870e,0x4e728709,0x4f50d3e2,0x6f474144
+.inst 0x4e77872a,0x6e6b8678,0x4e6b8679,0x4f50d1bc,0x4f4083cb,0x4f4081b1,0x6e70854d,0x6e6885e6
+.inst 0x6f474391,0x3d80100d,0x6f474376,0x3dc0340d,0x4e64869a,0x4f4083f2,0x4e70855b,0x3d80201a
+.inst 0x4f50d8df,0x4e7686a3,0x3d80001b,0x4f4088da,0x4e7185a6,0x6e7185a5,0x3d806003,0x6e7686b1
+.inst 0x4f70d0ca,0x6e64868d,0x4e6885f4,0x4f50d8ac,0x3d80300d,0x4f6080c8,0x3d807011,0x6f474148
+.inst 0x4f4088bd,0x6f47419d,0x6e688525,0x4e688523,0x4f70d28f,0x4f4180a4,0x4e7d85c6,0x4f70d869
+.inst 0x4f71d0cc,0x6e7d85ca,0x4f6180d7,0x6f4743fa,0x6f474197,0x4f608870,0x4e7a870d,0x6e7a8715
+.inst 0x6f474130,0x4e7785bc,0x6e7785ad,0x4f608297,0xd1000484,0x91004000
+cbnz x4, 20b",
+        // sqrdmulh v3.8h, v5.8h, v1.h[1]
+        // mls v23.8h, v15.8h, v7.h[0]
+        // ldr q5, [x0, #400]
+        // mul v29.8h, v10.8h, v1.h[4]
+        // mls v4.8h, v3.8h, v7.h[0]
+        // sub v19.8h, v25.8h, v23.8h
+        // sqrdmulh v31.8h, v5.8h, v0.h[1]
+        // sqrdmulh v6.8h, v30.8h, v0.h[1]
+        // sub v3.8h, v19.8h, v4.8h
+        // mul v5.8h, v5.8h, v0.h[0]
+        // str q3, [x0, #192]
+        // sqrdmulh v12.8h, v10.8h, v1.h[5]
+        // mls v18.8h, v2.8h, v7.h[0]
+        // ldr q3, [x0, #464]
+        // mls v5.8h, v31.8h, v7.h[0]
+        // sqrdmulh v10.8h, v3.8h, v0.h[1]
+        // mls v11.8h, v6.8h, v7.h[0]
+        // ldr q31, [x0, #144]
+        // mul v30.8h, v3.8h, v0.h[0]
+        // mls v30.8h, v10.8h, v7.h[0]
+        // sub v10.8h, v31.8h, v5.8h
+        // mls v29.8h, v12.8h, v7.h[0]
+        // ldr q6, [x0, #208]
+        // sqrdmulh v15.8h, v10.8h, v0.h[5]
+        // mul v17.8h, v10.8h, v0.h[4]
+        // add v10.8h, v6.8h, v30.8h
+        // sub v6.8h, v6.8h, v30.8h
+        // sqrdmulh v12.8h, v10.8h, v0.h[3]
+        // sub v27.8h, v21.8h, v29.8h
+        // sqrdmulh v3.8h, v6.8h, v0.h[5]
+        // mul v10.8h, v10.8h, v0.h[2]
+        // ldr q20, [x0, #80]
+        // mls v10.8h, v12.8h, v7.h[0]
+        // mul v2.8h, v6.8h, v0.h[4]
+        // add v6.8h, v20.8h, v18.8h
+        // add v5.8h, v31.8h, v5.8h
+        // mls v2.8h, v3.8h, v7.h[0]
+        // sub v31.8h, v6.8h, v10.8h
+        // sqrdmulh v12.8h, v5.8h, v0.h[3]
+        // sub v22.8h, v20.8h, v18.8h
+        // add v6.8h, v6.8h, v10.8h
+        // mul v20.8h, v31.8h, v1.h[0]
+        // add v30.8h, v22.8h, v2.8h
+        // sqrdmulh v3.8h, v6.8h, v0.h[7]
+        // sqrdmulh v10.8h, v30.8h, v1.h[3]
+        // mul v9.8h, v30.8h, v1.h[2]
+        // ldr q30, [x0, #16]
+        // mls v17.8h, v15.8h, v7.h[0]
+        // mls v9.8h, v10.8h, v7.h[0]
+        // mul v15.8h, v6.8h, v0.h[6]
+        // add v24.8h, v30.8h, v11.8h
+        // sub v10.8h, v22.8h, v2.8h
+        // mls v15.8h, v3.8h, v7.h[0]
+        // add v6.8h, v19.8h, v4.8h
+        // add v22.8h, v25.8h, v23.8h
+        // sqrdmulh v3.8h, v10.8h, v1.h[5]
+        // str q13, [x0, #320]
+        // sub v19.8h, v30.8h, v11.8h
+        // add v25.8h, v22.8h, v16.8h
+        // mul v5.8h, v5.8h, v0.h[2]
+        // sub v13.8h, v22.8h, v16.8h
+        // str q28, [x0, #256]
+        // mls v5.8h, v12.8h, v7.h[0]
+        // str q13, [x0, #64]
+        // str q6, [x0, #128]
+        // add v21.8h, v21.8h, v29.8h
+        // sqrdmulh v13.8h, v31.8h, v1.h[1]
+        // str q25, [x0, #0]
+        // add v12.8h, v19.8h, v17.8h
+        // sub v31.8h, v19.8h, v17.8h
+        // mul v30.8h, v10.8h, v1.h[4]
+        // str q21, [x0, #384]
+        // add v21.8h, v24.8h, v5.8h
+        // add v6.8h, v12.8h, v9.8h
+        // mls v30.8h, v3.8h, v7.h[0]
+        // str q27, [x0, #448]
+        // sub v10.8h, v21.8h, v15.8h
+        // sub v12.8h, v12.8h, v9.8h
+        // mls v20.8h, v13.8h, v7.h[0]
+        // str q6, [x0, #272]
+        // str q10, [x0, #80]
+        // sub v13.8h, v24.8h, v5.8h
+        // add v3.8h, v21.8h, v15.8h
+        // str q12, [x0, #336]
+        // sub v10.8h, v31.8h, v30.8h
+        // add v21.8h, v31.8h, v30.8h
+        // str q3, [x0, #16]
+        // add v12.8h, v13.8h, v20.8h
+        // sub v13.8h, v13.8h, v20.8h
+        // str q21, [x0, #400]
+        // str q10, [x0, #464]
+        // str q12, [x0, #144]
+        // str q13, [x0, #208]
+        // add x0, x3, #0
+        // movz x4, #8, lsl #0
+        // ldr q2, [x0, #32]
+        // ldr q13, [x1, #0]
+        // ldr q30, [x0, #48]
+        // ldr q25, [x2, #64]
+        // ldr q5, [x0, #0]
+        // ldr q18, [x0, #96]
+        // ldr q12, [x0, #112]
+        // sqrdmulh v17.8h, v2.8h, v13.h[1]
+        // ldr q4, [x1, #16]
+        // ldr q23, [x0, #16]
+        // sqrdmulh v21.8h, v30.8h, v13.h[1]
+        // ldr q24, [x2, #32]
+        // ldr q9, [x2, #0]
+        // mul v10.8h, v30.8h, v13.h[0]
+        // mul v11.8h, v2.8h, v13.h[0]
+        // mls v10.8h, v21.8h, v7.h[0]
+        // sqrdmulh v29.8h, v12.8h, v4.h[1]
+        // mul v1.8h, v12.8h, v4.h[0]
+        // add v21.8h, v23.8h, v10.8h
+        // sub v10.8h, v23.8h, v10.8h
+        // mul v8.8h, v18.8h, v4.h[0]
+        // sqrdmulh v23.8h, v21.8h, v13.h[3]
+        // mul v2.8h, v21.8h, v13.h[2]
+        // mls v1.8h, v29.8h, v7.h[0]
+        // mls v2.8h, v23.8h, v7.h[0]
+        // ldr q15, [x2, #16]
+        // sqrdmulh v0.8h, v10.8h, v13.h[5]
+        // mls v11.8h, v17.8h, v7.h[0]
+        // ldr q29, [x0, #80]
+        // mul v23.8h, v10.8h, v13.h[4]
+        // mls v23.8h, v0.8h, v7.h[0]
+        // sub v16.8h, v29.8h, v1.8h
+        // add v3.8h, v5.8h, v11.8h
+        // sub v31.8h, v5.8h, v11.8h
+        // sqrdmulh v22.8h, v16.8h, v4.h[5]
+        // add v30.8h, v3.8h, v2.8h
+        // sub v0.8h, v3.8h, v2.8h
+        // sqrdmulh v28.8h, v18.8h, v4.h[1]
+        // add v21.8h, v31.8h, v23.8h
+        // sub v19.8h, v31.8h, v23.8h
+        // mul v26.8h, v16.8h, v4.h[4]
+        // trn2 v3.4s, v30.4s, v0.4s
+        // ldr q23, [x2, #80]
+        // trn2 v18.4s, v21.4s, v19.4s
+        // mls v26.8h, v22.8h, v7.h[0]
+        // trn1 v13.4s, v30.4s, v0.4s
+        // mls v8.8h, v28.8h, v7.h[0]
+        // trn2 v31.2d, v3.2d, v18.2d
+        // trn1 v11.4s, v21.4s, v19.4s
+        // add v27.8h, v29.8h, v1.8h
+        // sqrdmulh v6.8h, v31.8h, v15.8h
+        // trn1 v2.2d, v13.2d, v11.2d
+        // trn2 v13.2d, v13.2d, v11.2d
+        // mul v1.8h, v31.8h, v9.8h
+        // ldr q11, [x0, #64]
+        // sqrdmulh v29.8h, v13.8h, v15.8h
+        // mls v1.8h, v6.8h, v7.h[0]
+        // trn1 v6.2d, v3.2d, v18.2d
+        // mul v17.8h, v13.8h, v9.8h
+        // sub v13.8h, v11.8h, v8.8h
+        // sqrdmulh v10.8h, v27.8h, v4.h[3]
+        // sub v12.8h, v13.8h, v26.8h
+        // sub v18.8h, v6.8h, v1.8h
+        // mls v17.8h, v29.8h, v7.h[0]
+        // add v30.8h, v6.8h, v1.8h
+        // add v6.8h, v13.8h, v26.8h
+        // ldr q13, [x2, #48]
+        // sqrdmulh v16.8h, v18.8h, v23.8h
+        // trn1 v28.4s, v6.4s, v12.4s
+        // mul v23.8h, v18.8h, v25.8h
+        // ldr q25, [x2, #112]
+        // add v20.8h, v2.8h, v17.8h
+        // mul v0.8h, v30.8h, v24.8h
+        // sqrdmulh v29.8h, v30.8h, v13.8h
+        // sub v30.8h, v2.8h, v17.8h
+        // mls v23.8h, v16.8h, v7.h[0]
+        // sub x4, x4, #2
+        // add x1, x1, #32
+        // add x2, x2, #96
+        r".inst 0x4f51d0a3,0x6f4741f7,0x3dc06405,0x4f41895d,0x6f474064,0x6e778733,0x4f50d0bf,0x4f50d3c6
+.inst 0x6e648663,0x4f4080a5,0x3d803003,0x4f51d94c,0x6f474052,0x3dc07403,0x6f4743e5,0x4f50d06a
+.inst 0x6f4740cb,0x3dc0241f,0x4f40807e,0x6f47415e,0x6e6587ea,0x6f47419d,0x3dc03406,0x4f50d94f
+.inst 0x4f408951,0x4e7e84ca,0x6e7e84c6,0x4f70d14c,0x6e7d86bb,0x4f50d8c3,0x4f60814a,0x3dc01414
+.inst 0x6f47418a,0x4f4088c2,0x4e728686,0x4e6587e5,0x6f474062,0x6e6a84df,0x4f70d0ac,0x6e728696
+.inst 0x4e6a84c6,0x4f4183f4,0x4e6286de,0x4f70d8c3,0x4f71d3ca,0x4f6183c9,0x3dc0041e,0x6f4741f1
+.inst 0x6f474149,0x4f6088cf,0x4e6b87d8,0x6e6286ca,0x6f47406f,0x4e648666,0x4e778736,0x4f51d943
+.inst 0x3d80500d,0x6e6b87d3,0x4e7086d9,0x4f6080a5,0x6e7086cd,0x3d80401c,0x6f474185,0x3d80100d
+.inst 0x3d802006,0x4e7d86b5,0x4f51d3ed,0x3d800019,0x4e71866c,0x6e71867f,0x4f41895e,0x3d806015
+.inst 0x4e658715,0x4e698586,0x6f47407e,0x3d80701b,0x6e6f86aa,0x6e69858c,0x6f4741b4,0x3d804406
+.inst 0x3d80140a,0x6e65870d,0x4e6f86a3,0x3d80540c,0x6e7e87ea,0x4e7e87f5,0x3d800403,0x4e7485ac
+.inst 0x6e7485ad,0x3d806415,0x3d80740a,0x3d80240c,0x3d80340d,0x91000060,0xd2800104,0x3dc00802
+.inst 0x3dc0002d,0x3dc00c1e,0x3dc01059,0x3dc00005,0x3dc01812,0x3dc01c0c,0x4f5dd051,0x3dc00424
+.inst 0x3dc00417,0x4f5dd3d5,0x3dc00858,0x3dc00049,0x4f4d83ca,0x4f4d804b,0x6f4742aa,0x4f54d19d
+.inst 0x4f448181,0x4e6a86f5,0x6e6a86ea,0x4f448248,0x4f7dd2b7,0x4f6d82a2,0x6f4743a1,0x6f4742e2
+.inst 0x3dc0044f,0x4f5dd940,0x6f47422b,0x3dc0141d,0x4f4d8957,0x6f474017,0x6e6187b0,0x4e6b84a3
+.inst 0x6e6b84bf,0x4f54da16,0x4e62847e,0x6e628460,0x4f54d25c,0x4e7787f5,0x6e7787f3,0x4f448a1a
+.inst 0x4e806bc3,0x3dc01457,0x4e936ab2,0x6f4742da,0x4e802bcd,0x6f474388,0x4ed2687f,0x4e932aab
+.inst 0x4e6187bb,0x6e6fb7e6,0x4ecb29a2,0x4ecb69ad,0x4e699fe1,0x3dc0100b,0x6e6fb5bd,0x6f4740c1
+.inst 0x4ed22866,0x4e699db1,0x6e68856d,0x4f74d36a,0x6e7a85ac,0x6e6184d2,0x6f4743b1,0x4e6184de
+.inst 0x4e7a85a6,0x3dc00c4d,0x6e77b650,0x4e8c28dc,0x4e799e57,0x3dc01c59,0x4e718454,0x4e789fc0
+.inst 0x6e6db7dd,0x6e71845e,0x6f474217,0xd1000884,0x91008021,0x91018042
+21:",
+        // ldr q19, [x2, #80]
+        // sub v31.8h, v30.8h, v23.8h
+        // mls v0.8h, v29.8h, v7.h[0]
+        // add v16.8h, v11.8h, v8.8h
+        // ldr q18, [x0, #160]
+        // trn2 v14.4s, v6.4s, v12.4s
+        // mul v26.8h, v27.8h, v4.h[2]
+        // ldr q4, [x1, #0]
+        // ldr q24, [x2, #64]
+        // ldr q21, [x0, #176]
+        // mls v26.8h, v10.8h, v7.h[0]
+        // add v23.8h, v30.8h, v23.8h
+        // sub v15.8h, v20.8h, v0.8h
+        // ldr q9, [x0, #144]
+        // add v10.8h, v20.8h, v0.8h
+        // mul v8.8h, v18.8h, v4.h[0]
+        // ldr q1, [x2, #0]
+        // trn1 v27.4s, v23.4s, v31.4s
+        // sqrdmulh v12.8h, v18.8h, v4.h[1]
+        // trn1 v5.4s, v10.4s, v15.4s
+        // sub v30.8h, v16.8h, v26.8h
+        // trn2 v13.2d, v5.2d, v27.2d
+        // sqrdmulh v2.8h, v21.8h, v4.h[1]
+        // add v29.8h, v16.8h, v26.8h
+        // mul v0.8h, v21.8h, v4.h[0]
+        // str q13, [x0, #32]
+        // trn1 v11.4s, v29.4s, v30.4s
+        // mls v8.8h, v12.8h, v7.h[0]
+        // trn2 v26.4s, v29.4s, v30.4s
+        // trn2 v6.2d, v11.2d, v28.2d
+        // mls v0.8h, v2.8h, v7.h[0]
+        // trn2 v16.2d, v26.2d, v14.2d
+        // trn1 v26.2d, v26.2d, v14.2d
+        // trn1 v20.2d, v5.2d, v27.2d
+        // sqrdmulh v29.8h, v6.8h, v25.8h
+        // trn2 v15.4s, v10.4s, v15.4s
+        // sqrdmulh v13.8h, v16.8h, v25.8h
+        // str q20, [x0, #0]
+        // sub v30.8h, v9.8h, v0.8h
+        // add v27.8h, v9.8h, v0.8h
+        // mul v17.8h, v6.8h, v1.8h
+        // sqrdmulh v22.8h, v30.8h, v4.h[5]
+        // mul v18.8h, v16.8h, v1.8h
+        // mls v18.8h, v13.8h, v7.h[0]
+        // mul v2.8h, v30.8h, v4.h[4]
+        // mls v2.8h, v22.8h, v7.h[0]
+        // trn2 v22.4s, v23.4s, v31.4s
+        // sub v3.8h, v26.8h, v18.8h
+        // ldr q25, [x2, #48]
+        // mls v17.8h, v29.8h, v7.h[0]
+        // trn2 v31.2d, v15.2d, v22.2d
+        // trn1 v20.2d, v15.2d, v22.2d
+        // add v16.8h, v26.8h, v18.8h
+        // sqrdmulh v26.8h, v3.8h, v19.8h
+        // trn1 v21.2d, v11.2d, v28.2d
+        // ldr q11, [x0, #128]
+        // sqrdmulh v29.8h, v16.8h, v25.8h
+        // str q20, [x0, #16]
+        // add v20.8h, v21.8h, v17.8h
+        // str q31, [x0, #48]
+        // mul v23.8h, v3.8h, v24.8h
+        // ldr q25, [x2, #112]
+        // sub v13.8h, v11.8h, v8.8h
+        // mls v23.8h, v26.8h, v7.h[0]
+        // ldr q1, [x2, #32]
+        // sub v12.8h, v13.8h, v2.8h
+        // add v6.8h, v13.8h, v2.8h
+        // sqrdmulh v10.8h, v27.8h, v4.h[3]
+        // sub v30.8h, v21.8h, v17.8h
+        // mul v0.8h, v16.8h, v1.8h
+        // trn1 v28.4s, v6.4s, v12.4s
+        // sub x4, x4, #1
+        // add x0, x0, #64
+        // add x1, x1, #16
+        // add x2, x2, #96
+        r".inst 0x3dc01453,0x6e7787df,0x6f4743a0,0x4e688570,0x3dc02812,0x4e8c68ce,0x4f64837a,0x3dc00024
+.inst 0x3dc01058,0x3dc02c15,0x6f47415a,0x4e7787d7,0x6e60868f,0x3dc02409,0x4e60868a,0x4f448248
+.inst 0x3dc00041,0x4e9f2afb,0x4f54d24c,0x4e8f2945,0x6e7a861e,0x4edb68ad,0x4f54d2a2,0x4e7a861d
+.inst 0x4f4482a0,0x3d80080d,0x4e9e2bab,0x6f474188,0x4e9e6bba,0x4edc6966,0x6f474040,0x4ece6b50
+.inst 0x4ece2b5a,0x4edb28b4,0x6e79b4dd,0x4e8f694f,0x6e79b60d,0x3d800014,0x6e60853e,0x4e60853b
+.inst 0x4e619cd1,0x4f54dbd6,0x4e619e12,0x6f4741b2,0x4f448bc2,0x6f4742c2,0x4e9f6af6,0x6e728743
+.inst 0x3dc00c59,0x6f4743b1,0x4ed669ff,0x4ed629f4,0x4e728750,0x6e73b47a,0x4edc2975,0x3dc0200b
+.inst 0x6e79b61d,0x3d800414,0x4e7186b4,0x3d800c1f,0x4e789c77,0x3dc01c59,0x6e68856d,0x6f474357
+.inst 0x3dc00841,0x6e6285ac,0x4e6285a6,0x4f74d36a,0x6e7186be,0x4e619e00,0x4e8c28dc,0xd1000484
+.inst 0x91010000,0x91004021,0x91018042
+cbnz x4, 21b",
+        // add v22.8h, v11.8h, v8.8h
+        // mul v27.8h, v27.8h, v4.h[2]
+        // trn2 v17.4s, v6.4s, v12.4s
+        // ldr q15, [x2, #0]
+        // mls v27.8h, v10.8h, v7.h[0]
+        // add v4.8h, v30.8h, v23.8h
+        // sub v18.8h, v30.8h, v23.8h
+        // ldr q6, [x2, #48]
+        // mls v0.8h, v29.8h, v7.h[0]
+        // ldr q12, [x2, #32]
+        // ldr q24, [x2, #64]
+        // ldr q2, [x2, #80]
+        // trn1 v9.4s, v4.4s, v18.4s
+        // add v10.8h, v22.8h, v27.8h
+        // sub v13.8h, v22.8h, v27.8h
+        // sub v1.8h, v20.8h, v0.8h
+        // trn2 v21.4s, v10.4s, v13.4s
+        // add v27.8h, v20.8h, v0.8h
+        // trn2 v3.2d, v21.2d, v17.2d
+        // trn1 v13.4s, v10.4s, v13.4s
+        // trn1 v31.4s, v27.4s, v1.4s
+        // sqrdmulh v10.8h, v3.8h, v25.8h
+        // trn2 v5.2d, v13.2d, v28.2d
+        // trn1 v13.2d, v13.2d, v28.2d
+        // trn1 v21.2d, v21.2d, v17.2d
+        // sqrdmulh v17.8h, v5.8h, v25.8h
+        // trn2 v30.2d, v31.2d, v9.2d
+        // mul v25.8h, v3.8h, v15.8h
+        // str q30, [x0, #32]
+        // trn2 v30.4s, v4.4s, v18.4s
+        // mls v25.8h, v10.8h, v7.h[0]
+        // trn2 v3.4s, v27.4s, v1.4s
+        // mul v20.8h, v5.8h, v15.8h
+        // trn2 v10.2d, v3.2d, v30.2d
+        // mls v20.8h, v17.8h, v7.h[0]
+        // str q10, [x0, #48]
+        // sub v18.8h, v21.8h, v25.8h
+        // add v10.8h, v21.8h, v25.8h
+        // trn1 v3.2d, v3.2d, v30.2d
+        // sqrdmulh v30.8h, v18.8h, v2.8h
+        // mul v12.8h, v10.8h, v12.8h
+        // sqrdmulh v6.8h, v10.8h, v6.8h
+        // str q3, [x0, #16]
+        // add v21.8h, v13.8h, v20.8h
+        // mul v10.8h, v18.8h, v24.8h
+        // sub v13.8h, v13.8h, v20.8h
+        // mls v10.8h, v30.8h, v7.h[0]
+        // mls v12.8h, v6.8h, v7.h[0]
+        // trn1 v30.2d, v31.2d, v9.2d
+        // sub v3.8h, v13.8h, v10.8h
+        // add v6.8h, v13.8h, v10.8h
+        // add v10.8h, v21.8h, v12.8h
+        // sub v21.8h, v21.8h, v12.8h
+        // trn2 v13.4s, v6.4s, v3.4s
+        // trn1 v12.4s, v10.4s, v21.4s
+        // trn2 v21.4s, v10.4s, v21.4s
+        // trn1 v3.4s, v6.4s, v3.4s
+        // str q30, [x0, #0]
+        // trn2 v10.2d, v21.2d, v13.2d
+        // trn1 v13.2d, v21.2d, v13.2d
+        // trn2 v21.2d, v12.2d, v3.2d
+        // trn1 v3.2d, v12.2d, v3.2d
+        // str q10, [x0, #112]
+        // str q13, [x0, #80]
+        // str q3, [x0, #64]
+        // str q21, [x0, #96]
+        // add x0, x0, #128
+        // add x2, x2, #96
+        // movz x5, #10, lsl #0
+        // mov v7.h[2], w5
+        // dup v30.8h, v7.h[0]
+        // movz x4, #8, lsl #0
+        r".inst 0x4e688576,0x4f64837b,0x4e8c68d1,0x3dc0004f,0x6f47415b,0x4e7787c4,0x6e7787d2,0x3dc00c46
+.inst 0x6f4743a0,0x3dc0084c,0x3dc01058,0x3dc01442,0x4e922889,0x4e7b86ca,0x6e7b86cd,0x6e608681
+.inst 0x4e8d6955,0x4e60869b,0x4ed16aa3,0x4e8d294d,0x4e812b7f,0x6e79b46a,0x4edc69a5,0x4edc29ad
+.inst 0x4ed12ab5,0x6e79b4b1,0x4ec96bfe,0x4e6f9c79,0x3d80081e,0x4e92689e,0x6f474159,0x4e816b63
+.inst 0x4e6f9cb4,0x4ede686a,0x6f474234,0x3d800c0a,0x6e7986b2,0x4e7986aa,0x4ede2863,0x6e62b65e
+.inst 0x4e6c9d4c,0x6e66b546,0x3d800403,0x4e7485b5,0x4e789e4a,0x6e7485ad,0x6f4743ca,0x6f4740cc
+.inst 0x4ec92bfe,0x6e6a85a3,0x4e6a85a6,0x4e6c86aa,0x6e6c86b5,0x4e8368cd,0x4e95294c,0x4e956955
+.inst 0x4e8328c3,0x3d80001e,0x4ecd6aaa,0x4ecd2aad,0x4ec36995,0x4ec32983,0x3d801c0a,0x3d80140d
+.inst 0x3d801003,0x3d801815,0x91020000,0x91018042,0xd2800145,0x4e0a1ca7,0x4e0204fe,0xd2800104
+22:",
+        // ldr q16, [x3, #0]
+        // ldr q17, [x3, #16]
+        // ldr q18, [x3, #32]
+        // ldr q19, [x3, #48]
+        // sqrdmulh v20.8h, v16.8h, v7.h[2]
+        // sqrdmulh v21.8h, v17.8h, v7.h[2]
+        // sqrdmulh v22.8h, v18.8h, v7.h[2]
+        // sqrdmulh v23.8h, v19.8h, v7.h[2]
+        // mls v16.8h, v20.8h, v7.h[0]
+        // mls v17.8h, v21.8h, v7.h[0]
+        // mls v18.8h, v22.8h, v7.h[0]
+        // mls v19.8h, v23.8h, v7.h[0]
+        // sshr v20.8h, v16.8h, #15
+        // sshr v21.8h, v17.8h, #15
+        // sshr v22.8h, v18.8h, #15
+        // sshr v23.8h, v19.8h, #15
+        // and v20.16b, v20.16b, v30.16b
+        // and v21.16b, v21.16b, v30.16b
+        // and v22.16b, v22.16b, v30.16b
+        // and v23.16b, v23.16b, v30.16b
+        // add v16.8h, v16.8h, v20.8h
+        // add v17.8h, v17.8h, v21.8h
+        // add v18.8h, v18.8h, v22.8h
+        // add v19.8h, v19.8h, v23.8h
+        // str q16, [x3, #0]
+        // str q17, [x3, #16]
+        // str q18, [x3, #32]
+        // str q19, [x3, #48]
+        // add x3, x3, #64
+        // sub x4, x4, #1
+        r".inst 0x3dc00070,0x3dc00471,0x3dc00872,0x3dc00c73,0x4f67d214,0x4f67d235,0x4f67d256,0x4f67d277
+.inst 0x6f474290,0x6f4742b1,0x6f4742d2,0x6f4742f3,0x4f110614,0x4f110635,0x4f110656,0x4f110677
+.inst 0x4e3e1e94,0x4e3e1eb5,0x4e3e1ed6,0x4e3e1ef7,0x4e748610,0x4e758631,0x4e768652,0x4e778673
+.inst 0x3d800070,0x3d800471,0x3d800872,0x3d800c73,0x91010063,0xd1000484
+cbnz x4, 22b",
+        // mov v8.d[0], x7
+        // mov v9.d[0], x8
+        // mov v10.d[0], x9
+        // mov v11.d[0], x10
+        // mov v12.d[0], x11
+        // mov v13.d[0], x12
+        // mov v14.d[0], x13
+        // mov v15.d[0], x14
+        // ret
+        r".inst 0x4e081ce8,0x4e081d09,0x4e081d2a,0x4e081d4b,0x4e081d6c,0x4e081d8d,0x4e081dae,0x4e081dcf
+.inst 0xd65f03c0
+.p2align 6",
         VG_MLKEM16_NTT_ZETAS = sym super::consts::VG_MLKEM16_NTT_ZETAS,
     )
 }
@@ -127,9 +699,142 @@ pub unsafe extern "C" fn vg_mlkem16_ntt(f: *mut [u16; 256], scratch: *mut [u64; 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem16_inv_ntt(f: *mut [u16; 256], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        // umov x7, v8.d[0]
+        // umov x8, v9.d[0]
+        // umov x9, v10.d[0]
+        // umov x10, v11.d[0]
+        // umov x11, v12.d[0]
+        // umov x12, v13.d[0]
+        // umov x13, v14.d[0]
+        // umov x14, v15.d[0]
         r".inst 0x4e083d07,0x4e083d28,0x4e083d49,0x4e083d6a,0x4e083d8b,0x4e083dac,0x4e083dcd,0x4e083dee",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLKEM16_INTT_ZETAS}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLKEM16_INTT_ZETAS}")),
+        // add x2, x1, #160
+        // movz x5, #3329, lsl #0
+        // mov v7.h[0], w5
+        // movz x5, #10, lsl #0
+        // mov v7.h[2], w5
+        // movz x5, #3303, lsl #0
+        // dup v29.8h, w5
+        // movz x5, #32512, lsl #0
+        // dup v30.8h, w5
+        // add x3, x0, #0
+        // movz x4, #8, lsl #0
+        // ldr q13, [x3, #32]
+        // ldr q8, [x3, #48]
+        // ldr q6, [x3, #0]
+        // ldr q16, [x3, #16]
+        // ldr q4, [x3, #80]
+        // ldr q11, [x3, #64]
+        // ldr q3, [x3, #112]
+        // trn1 v23.4s, v13.4s, v8.4s
+        // ldr q0, [x3, #96]
+        // trn2 v19.4s, v6.4s, v16.4s
+        // trn2 v21.4s, v13.4s, v8.4s
+        // trn1 v6.4s, v6.4s, v16.4s
+        // ldr q24, [x2, #32]
+        // trn1 v10.2d, v19.2d, v21.2d
+        // ldr q16, [x2, #0]
+        // trn1 v5.2d, v6.2d, v23.2d
+        // trn1 v28.4s, v0.4s, v3.4s
+        // trn2 v18.2d, v6.2d, v23.2d
+        // mul v31.8h, v10.8h, v29.8h
+        // trn2 v13.4s, v0.4s, v3.4s
+        // ldr q14, [x2, #16]
+        // sqrdmulh v26.8h, v18.8h, v30.8h
+        // ldr q20, [x2, #64]
+        // mul v17.8h, v18.8h, v29.8h
+        // trn2 v18.2d, v19.2d, v21.2d
+        // mul v9.8h, v18.8h, v29.8h
+        // trn1 v12.4s, v11.4s, v4.4s
+        // sqrdmulh v22.8h, v18.8h, v30.8h
+        // sqrdmulh v3.8h, v10.8h, v30.8h
+        // sqrdmulh v25.8h, v5.8h, v30.8h
+        // mls v9.8h, v22.8h, v7.h[0]
+        // mls v17.8h, v26.8h, v7.h[0]
+        // trn2 v26.4s, v11.4s, v4.4s
+        // mul v8.8h, v5.8h, v29.8h
+        // trn1 v10.2d, v26.2d, v13.2d
+        // ldr q11, [x2, #80]
+        // mls v31.8h, v3.8h, v7.h[0]
+        // trn1 v6.2d, v12.2d, v28.2d
+        // trn2 v3.2d, v26.2d, v13.2d
+        // ldr q4, [x2, #48]
+        // mls v8.8h, v25.8h, v7.h[0]
+        // sub v19.8h, v17.8h, v9.8h
+        // trn2 v13.2d, v12.2d, v28.2d
+        // sqrdmulh v1.8h, v3.8h, v30.8h
+        // add v9.8h, v17.8h, v9.8h
+        // mul v18.8h, v19.8h, v20.8h
+        // add v28.8h, v8.8h, v31.8h
+        // sqrdmulh v20.8h, v19.8h, v11.8h
+        // sub v12.8h, v28.8h, v9.8h
+        // sub v23.8h, v8.8h, v31.8h
+        // sqrdmulh v11.8h, v13.8h, v30.8h
+        // sqrdmulh v5.8h, v23.8h, v4.8h
+        // mul v0.8h, v23.8h, v24.8h
+        // mul v2.8h, v13.8h, v29.8h
+        // mls v0.8h, v5.8h, v7.h[0]
+        // add v24.8h, v28.8h, v9.8h
+        // mls v18.8h, v20.8h, v7.h[0]
+        // sqrdmulh v15.8h, v6.8h, v30.8h
+        // sqrdmulh v25.8h, v12.8h, v14.8h
+        // mul v21.8h, v12.8h, v16.8h
+        // sub v23.8h, v0.8h, v18.8h
+        // sqrdmulh v8.8h, v23.8h, v14.8h
+        // mul v23.8h, v23.8h, v16.8h
+        // mls v21.8h, v25.8h, v7.h[0]
+        // mls v23.8h, v8.8h, v7.h[0]
+        // mul v14.8h, v3.8h, v29.8h
+        // add v3.8h, v0.8h, v18.8h
+        // trn2 v4.4s, v24.4s, v3.4s
+        // mls v14.8h, v1.8h, v7.h[0]
+        // trn1 v9.4s, v24.4s, v3.4s
+        // trn2 v12.4s, v21.4s, v23.4s
+        // mls v2.8h, v11.8h, v7.h[0]
+        // trn1 v28.4s, v21.4s, v23.4s
+        // ldr q11, [x1, #0]
+        // mul v31.8h, v10.8h, v29.8h
+        // trn1 v25.2d, v4.2d, v12.2d
+        // trn1 v20.2d, v9.2d, v28.2d
+        // ldr q23, [x2, #176]
+        // trn2 v13.2d, v4.2d, v12.2d
+        // sqrdmulh v21.8h, v10.8h, v30.8h
+        // trn2 v4.2d, v9.2d, v28.2d
+        // ldr q9, [x2, #160]
+        // mul v27.8h, v6.8h, v29.8h
+        // add v26.8h, v20.8h, v25.8h
+        // sub v3.8h, v2.8h, v14.8h
+        // sqrdmulh v12.8h, v26.8h, v7.h[2]
+        // add v5.8h, v4.8h, v13.8h
+        // sub v8.8h, v4.8h, v13.8h
+        // add v10.8h, v2.8h, v14.8h
+        // sqrdmulh v6.8h, v5.8h, v7.h[2]
+        // ldr q2, [x2, #112]
+        // mls v27.8h, v15.8h, v7.h[0]
+        // ldr q15, [x2, #128]
+        // mls v31.8h, v21.8h, v7.h[0]
+        // sqrdmulh v23.8h, v3.8h, v23.8h
+        // mls v26.8h, v12.8h, v7.h[0]
+        // add v21.8h, v27.8h, v31.8h
+        // mls v5.8h, v6.8h, v7.h[0]
+        // sub v6.8h, v27.8h, v31.8h
+        // sub v14.8h, v21.8h, v10.8h
+        // ldr q27, [x2, #96]
+        // mul v3.8h, v3.8h, v9.8h
+        // mls v3.8h, v23.8h, v7.h[0]
+        // ldr q13, [x2, #144]
+        // sub v12.8h, v26.8h, v5.8h
+        // add v5.8h, v26.8h, v5.8h
+        // sqrdmulh v31.8h, v8.8h, v11.h[5]
+        // sqrdmulh v19.8h, v12.8h, v11.h[1]
+        // mul v24.8h, v12.8h, v11.h[0]
+        // sqrdmulh v13.8h, v6.8h, v13.8h
+        // mls v24.8h, v19.8h, v7.h[0]
+        // sub x4, x4, #2
+        // add x1, x1, #16
+        // add x2, x2, #192
         r".inst 0x91028022,0xd281a025,0x4e021ca7,0xd2800145,0x4e0a1ca7,0xd2819ce5,0x4e020cbd,0xd28fe005
 .inst 0x4e020cbe,0x91000003,0xd2800104,0x3dc0086d,0x3dc00c68,0x3dc00066,0x3dc00470,0x3dc01464
 .inst 0x3dc0106b,0x3dc01c63,0x4e8829b7,0x3dc01860,0x4e9068d3,0x4e8869b5,0x4e9028c6,0x3dc00858
@@ -145,48 +850,461 @@ pub unsafe extern "C" fn vg_mlkem16_inv_ntt(f: *mut [u16; 256], scratch: *mut [u
 .inst 0x4f67d34c,0x4e6d8485,0x6e6d8488,0x4e6e844a,0x4f67d0a6,0x3dc01c42,0x6f4741fb,0x3dc0204f
 .inst 0x6f4742bf,0x6e77b477,0x6f47419a,0x4e7f8775,0x6f4740c5,0x6e7f8766,0x6e6a86ae,0x3dc0185b
 .inst 0x4e699c63,0x6f4742e3,0x3dc0244d,0x6e65874c,0x4e658745,0x4f5bd91f,0x4f5bd193,0x4f4b8198
-.inst 0x6e6db4cd,0x6f474278,0xd1000884,0x91004021,0x91030042,0x4e6a86b0,0x4e6f9cd2,0x6e798693
-.inst 0x3dc02875,0x3d800065,0x6f4741b2,0x6e62b5cf,0x3dc0246a,0x3dc0206c,0x3d800878,0x4f4b8905
-.inst 0x6e638640,0x3dc02c78,0x6f4743e5,0x3dc0145a,0x4e8a6981,0x4e638646,0x6e62b414,0x4e8a298d
-.inst 0x4e862a12,0x4e7b9c16,0x4e982ab1,0x4f7bd260,0x4ed129b9,0x6f474296,0x4e986ab5,0x4e7d9f38
-.inst 0x4ed169bc,0x6e7eb724,0x4ed56823,0x4e7d9f91,0x6e7eb79f,0x3dc00442,0x6f474098,0x4f6b8264
-.inst 0x3dc01053,0x6f474004,0x4e7b9dc0,0x6f4741e0,0x6e658488,0x4e7d9c6c,0x4f4b8117,0x4e866a1c
-.inst 0x4f5bd10a,0x4e962809,0x4e966816,0x3dc0002b,0x6f4743f1,0x4ec92a54,0x4ec96a4e,0x3dc0084f
-.inst 0x4ed52826,0x6e7eb469,0x4ed62b99,0x4ed66b90,0x6f474157,0x4e798681,0x6e7eb4d5,0x4e7085c8
-.inst 0x3dc0005b,0x4f67d11c,0x6f47412c,0x4f67d03f,0x4e7d9cc0,0x6e6c862a,0x6f4742a0,0x4ebc1f95
-.inst 0x4ebf1fed,0x6e7ab556,0x6f4742a8,0x6f4741a1,0x4e608715,0x3d800c77,0x6e608706,0x4e739d43
-.inst 0x4e658480,0x4f67d00d,0x3dc00c4a,0x4e688425,0x6f4742c3,0x6e688428,0x4f4b8118,0x4f5bd108
-.inst 0x4ead1da1,0x6e6ab4cd,0x6f474020,0x4e6c862a,0x6f474118,0x6e7085c8,0x4f5bd91f,0x6e6a86ae
-.inst 0x3d800460,0xd1000484,0x91004021,0x91018042,0x91010063,0xb5fff404,0x4e6f9ccf,0x6e798696
-.inst 0x4e6a86a4,0x3d800878,0x6f4741af,0x3d800065,0x3dc00029,0x6e62b5dc,0x4e7b9dd0,0x6e6385f2
-.inst 0x4e6385ef,0x6e62b640,0x4e8f6898,0x4e8f2882,0x4e7b9e52,0x6f474390,0x6f474012,0x4f4b8917
-.inst 0x4f7bd2cc,0x4e922a11,0x4e926a04,0x6f4743f7,0x4ed16843,0x4ec46b06,0x4f6b82da,0x4ed1285c
-.inst 0x6f47419a,0x4e668479,0x6e668472,0x4ec42b18,0x4f67d321,0x6e78879b,0x4f59da42,0x4e78879c
-.inst 0x4f698378,0x4f67d38c,0x4f498a54,0x6f474054,0x4f79d373,0x4eac1d8f,0x6f474039,0x4e778748
-.inst 0x6e778744,0x6f4741fc,0x6f474278,0x4f4b8082,0x6e798793,0x4f5bd08f,0x4e798799,0x6e74870a
-.inst 0x3d801079,0x4f59d276,0x4e74871c,0x4f59d159,0x4f49827b,0x4f49815a,0x4f67d394,0x4f67d110
-.inst 0x6f47433a,0x6f4741e2,0x4eb41e8f,0x4eb01e01,0x6f4742db,0x6f4741fc,0x6f474028,0x3d80187b
-.inst 0x3d800c62,0x3d80147c,0x3d801c7a,0x3d800468,0xd2800084,0x3dc00420,0x3dc00821,0x3dc0001a
-.inst 0x3dc0100d,0x3dc0301c,0x3dc05002,0x3dc02006,0x3dc04009,0x3dc0701d,0x3dc06017,0x6e6d8751
-.inst 0x4e6d8744,0x3dc03419,0x3dc01418,0x4e7c84c5,0x4f608a33,0x6e7c84ca,0x3dc0541e,0x4f70da2c
-.inst 0x4e628531,0x6e62853c,0x3dc02402,0x6e7d86fa,0x4f51d15f,0x4e7d86f6,0x3dc04403,0x4f71d389
-.inst 0x6e658494,0x6e76863b,0x3dc0041d,0x4e658490,0x4f51db44,0x4e768626,0x3dc07416,0x4f618388
-.inst 0x6e798455,0x6e668605,0x4f418b51,0x4f41815a,0x6f4743fa,0x6f474091,0x6f474193,0x6f474128
-.inst 0x4f50db6a,0x6e7a866c,0x4e7a8669,0x4f70d29a,0x6e71850b,0x4e71850e,0x4f70d18d,0x4e6e8537
-.inst 0x4f50d97c,0x6e6e8533,0x4f408b71,0x3d801017,0x4f60828e,0x4f408968,0x4f608184,0x6f47434e
-.inst 0x6f474151,0x6f474388,0x6f4741a4,0x6e7185ca,0x4e7185d4,0x4f50d0bc,0x4f4080b2,0x3d802014
-.inst 0x6e68848d,0x4f408157,0x4f408271,0x4f50d1a9,0x6f474392,0x4f50d14a,0xd1000884,0x9100c021
-.inst 0x91020063,0x6e7e846c,0x4f4182ab,0x4e68849c,0x3dc06414,0x4e66861b,0x4f71d188,0x4e7887b0
-.inst 0x3d80301c,0x6f474157,0x3d80001b,0x4e76868f,0x3d804012,0x4f4081ae,0x4e798442,0x6e76869a
-.inst 0x4f618184,0x6e628605,0x3d806017,0x4e7e8474,0x4f51db5b,0x4e628610,0x4f418b52,0x6e6f869f
-.inst 0x6f474104,0x6e7887bc,0x6f474372,0x3dc07816,0x4f608b9a,0x4f6080a2,0x6e72848c,0x4f70db98
-.inst 0x6f47412e,0x4f50d98a,0x6f47431a,0x3dc01818,0x4f408988,0x3d80700e,0x4e72849c,0x4f70d0a5
-.inst 0x4e6f8686,0x4f50d263,0x6e66860d,0x4f51d2ac,0x4f50d1b5,0x4f50dbfb,0x3dc03819,0x6f47418b
-.inst 0x4f408bf7,0x4f4081b2,0x4e6b875e,0x6e6b874d,0x6f474377,0x4e7c87cc,0x6e7c87d3,0x6f4740a2
-.inst 0x3d80140c,0x4f70d1ba,0x6f474148,0x3dc0581e,0x6e778454,0x4f6081a4,0x4e77844d,0x6f474344
-.inst 0x3dc02802,0x4f408297,0x3dc0081d,0x4f50d28a,0x3d80240d,0x6e68848d,0x6f474071,0x3dc04803
-.inst 0x6f4742b2,0x6e798455,0x4f50d1a9,0x3d805011,0x4f408271,0xd1000484,0x91004000,0xb5fff644
-.inst 0x6f474157,0x3dc0640b,0x3d804012,0x4e7e847b,0x4f4081ad,0x6e7887a5,0x4e66860e,0x6f47412d
+.inst 0x6e6db4cd,0x6f474278,0xd1000884,0x91004021,0x91030042
+20:",
+        // add v16.8h, v21.8h, v10.8h
+        // mul v18.8h, v6.8h, v15.8h
+        // sub v19.8h, v20.8h, v25.8h
+        // ldr q21, [x3, #160]
+        // str q5, [x3, #0]
+        // mls v18.8h, v13.8h, v7.h[0]
+        // sqrdmulh v15.8h, v14.8h, v2.8h
+        // ldr q10, [x3, #144]
+        // ldr q12, [x3, #128]
+        // str q24, [x3, #32]
+        // mul v5.8h, v8.8h, v11.h[4]
+        // sub v0.8h, v18.8h, v3.8h
+        // ldr q24, [x3, #176]
+        // mls v5.8h, v31.8h, v7.h[0]
+        // ldr q26, [x2, #80]
+        // trn2 v1.4s, v12.4s, v10.4s
+        // add v6.8h, v18.8h, v3.8h
+        // sqrdmulh v20.8h, v0.8h, v2.8h
+        // trn1 v13.4s, v12.4s, v10.4s
+        // trn1 v18.4s, v16.4s, v6.4s
+        // mul v22.8h, v0.8h, v27.8h
+        // trn1 v17.4s, v21.4s, v24.4s
+        // sqrdmulh v0.8h, v19.8h, v11.h[3]
+        // trn1 v25.2d, v13.2d, v17.2d
+        // mls v22.8h, v20.8h, v7.h[0]
+        // trn2 v21.4s, v21.4s, v24.4s
+        // mul v24.8h, v25.8h, v29.8h
+        // trn2 v28.2d, v13.2d, v17.2d
+        // sqrdmulh v4.8h, v25.8h, v30.8h
+        // trn2 v3.2d, v1.2d, v21.2d
+        // mul v17.8h, v28.8h, v29.8h
+        // sqrdmulh v31.8h, v28.8h, v30.8h
+        // ldr q2, [x2, #16]
+        // mls v24.8h, v4.8h, v7.h[0]
+        // mul v4.8h, v19.8h, v11.h[2]
+        // ldr q19, [x2, #64]
+        // mls v4.8h, v0.8h, v7.h[0]
+        // mul v0.8h, v14.8h, v27.8h
+        // mls v0.8h, v15.8h, v7.h[0]
+        // sub v8.8h, v4.8h, v5.8h
+        // mul v12.8h, v3.8h, v29.8h
+        // mul v23.8h, v8.8h, v11.h[0]
+        // trn2 v28.4s, v16.4s, v6.4s
+        // sqrdmulh v10.8h, v8.8h, v11.h[1]
+        // trn1 v9.4s, v0.4s, v22.4s
+        // trn2 v22.4s, v0.4s, v22.4s
+        // ldr q11, [x1, #0]
+        // mls v17.8h, v31.8h, v7.h[0]
+        // trn1 v20.2d, v18.2d, v9.2d
+        // trn2 v14.2d, v18.2d, v9.2d
+        // ldr q15, [x2, #32]
+        // trn1 v6.2d, v1.2d, v21.2d
+        // sqrdmulh v9.8h, v3.8h, v30.8h
+        // trn1 v25.2d, v28.2d, v22.2d
+        // trn2 v16.2d, v28.2d, v22.2d
+        // mls v23.8h, v10.8h, v7.h[0]
+        // add v1.8h, v20.8h, v25.8h
+        // sqrdmulh v21.8h, v6.8h, v30.8h
+        // add v8.8h, v14.8h, v16.8h
+        // ldr q27, [x2, #0]
+        // sqrdmulh v28.8h, v8.8h, v7.h[2]
+        // mls v12.8h, v9.8h, v7.h[0]
+        // sqrdmulh v31.8h, v1.8h, v7.h[2]
+        // mul v0.8h, v6.8h, v29.8h
+        // sub v10.8h, v17.8h, v12.8h
+        // mls v0.8h, v21.8h, v7.h[0]
+        // mov v21.16b, v28.16b
+        // mov v13.16b, v31.16b
+        // sqrdmulh v22.8h, v10.8h, v26.8h
+        // mls v8.8h, v21.8h, v7.h[0]
+        // mls v1.8h, v13.8h, v7.h[0]
+        // add v21.8h, v24.8h, v0.8h
+        // str q23, [x3, #48]
+        // sub v6.8h, v24.8h, v0.8h
+        // mul v3.8h, v10.8h, v19.8h
+        // add v0.8h, v4.8h, v5.8h
+        // sqrdmulh v13.8h, v0.8h, v7.h[2]
+        // ldr q10, [x2, #48]
+        // add v5.8h, v1.8h, v8.8h
+        // mls v3.8h, v22.8h, v7.h[0]
+        // sub v8.8h, v1.8h, v8.8h
+        // mul v24.8h, v8.8h, v11.h[0]
+        // sqrdmulh v8.8h, v8.8h, v11.h[1]
+        // mov v1.16b, v13.16b
+        // sqrdmulh v13.8h, v6.8h, v10.8h
+        // mls v0.8h, v1.8h, v7.h[0]
+        // add v10.8h, v17.8h, v12.8h
+        // mls v24.8h, v8.8h, v7.h[0]
+        // sub v8.8h, v14.8h, v16.8h
+        // sqrdmulh v31.8h, v8.8h, v11.h[5]
+        // sub v14.8h, v21.8h, v10.8h
+        // str q0, [x3, #16]
+        // sub x4, x4, #1
+        // add x1, x1, #16
+        // add x2, x2, #96
+        // add x3, x3, #64
+        r".inst 0x4e6a86b0,0x4e6f9cd2,0x6e798693,0x3dc02875,0x3d800065,0x6f4741b2,0x6e62b5cf,0x3dc0246a
+.inst 0x3dc0206c,0x3d800878,0x4f4b8905,0x6e638640,0x3dc02c78,0x6f4743e5,0x3dc0145a,0x4e8a6981
+.inst 0x4e638646,0x6e62b414,0x4e8a298d,0x4e862a12,0x4e7b9c16,0x4e982ab1,0x4f7bd260,0x4ed129b9
+.inst 0x6f474296,0x4e986ab5,0x4e7d9f38,0x4ed169bc,0x6e7eb724,0x4ed56823,0x4e7d9f91,0x6e7eb79f
+.inst 0x3dc00442,0x6f474098,0x4f6b8264,0x3dc01053,0x6f474004,0x4e7b9dc0,0x6f4741e0,0x6e658488
+.inst 0x4e7d9c6c,0x4f4b8117,0x4e866a1c,0x4f5bd10a,0x4e962809,0x4e966816,0x3dc0002b,0x6f4743f1
+.inst 0x4ec92a54,0x4ec96a4e,0x3dc0084f,0x4ed52826,0x6e7eb469,0x4ed62b99,0x4ed66b90,0x6f474157
+.inst 0x4e798681,0x6e7eb4d5,0x4e7085c8,0x3dc0005b,0x4f67d11c,0x6f47412c,0x4f67d03f,0x4e7d9cc0
+.inst 0x6e6c862a,0x6f4742a0,0x4ebc1f95,0x4ebf1fed,0x6e7ab556,0x6f4742a8,0x6f4741a1,0x4e608715
+.inst 0x3d800c77,0x6e608706,0x4e739d43,0x4e658480,0x4f67d00d,0x3dc00c4a,0x4e688425,0x6f4742c3
+.inst 0x6e688428,0x4f4b8118,0x4f5bd108,0x4ead1da1,0x6e6ab4cd,0x6f474020,0x4e6c862a,0x6f474118
+.inst 0x6e7085c8,0x4f5bd91f,0x6e6a86ae,0x3d800460,0xd1000484,0x91004021,0x91018042,0x91010063
+cbnz x4, 20b",
+        // mul v15.8h, v6.8h, v15.8h
+        // sub v22.8h, v20.8h, v25.8h
+        // add v4.8h, v21.8h, v10.8h
+        // str q24, [x3, #32]
+        // mls v15.8h, v13.8h, v7.h[0]
+        // str q5, [x3, #0]
+        // ldr q9, [x1, #0]
+        // sqrdmulh v28.8h, v14.8h, v2.8h
+        // mul v16.8h, v14.8h, v27.8h
+        // sub v18.8h, v15.8h, v3.8h
+        // add v15.8h, v15.8h, v3.8h
+        // sqrdmulh v0.8h, v18.8h, v2.8h
+        // trn2 v24.4s, v4.4s, v15.4s
+        // trn1 v2.4s, v4.4s, v15.4s
+        // mul v18.8h, v18.8h, v27.8h
+        // mls v16.8h, v28.8h, v7.h[0]
+        // mls v18.8h, v0.8h, v7.h[0]
+        // mul v23.8h, v8.8h, v11.h[4]
+        // sqrdmulh v12.8h, v22.8h, v11.h[3]
+        // trn1 v17.4s, v16.4s, v18.4s
+        // trn2 v4.4s, v16.4s, v18.4s
+        // mls v23.8h, v31.8h, v7.h[0]
+        // trn2 v3.2d, v2.2d, v17.2d
+        // trn2 v6.2d, v24.2d, v4.2d
+        // mul v26.8h, v22.8h, v11.h[2]
+        // trn1 v28.2d, v2.2d, v17.2d
+        // mls v26.8h, v12.8h, v7.h[0]
+        // add v25.8h, v3.8h, v6.8h
+        // sub v18.8h, v3.8h, v6.8h
+        // trn1 v24.2d, v24.2d, v4.2d
+        // sqrdmulh v1.8h, v25.8h, v7.h[2]
+        // sub v27.8h, v28.8h, v24.8h
+        // sqrdmulh v2.8h, v18.8h, v9.h[5]
+        // add v28.8h, v28.8h, v24.8h
+        // mul v24.8h, v27.8h, v9.h[2]
+        // sqrdmulh v12.8h, v28.8h, v7.h[2]
+        // mul v20.8h, v18.8h, v9.h[4]
+        // mls v20.8h, v2.8h, v7.h[0]
+        // sqrdmulh v19.8h, v27.8h, v9.h[3]
+        // mov v15.16b, v12.16b
+        // mls v25.8h, v1.8h, v7.h[0]
+        // add v8.8h, v26.8h, v23.8h
+        // sub v4.8h, v26.8h, v23.8h
+        // mls v28.8h, v15.8h, v7.h[0]
+        // mls v24.8h, v19.8h, v7.h[0]
+        // mul v2.8h, v4.8h, v11.h[0]
+        // sub v19.8h, v28.8h, v25.8h
+        // sqrdmulh v15.8h, v4.8h, v11.h[1]
+        // add v25.8h, v28.8h, v25.8h
+        // sub v10.8h, v24.8h, v20.8h
+        // str q25, [x3, #64]
+        // sqrdmulh v22.8h, v19.8h, v9.h[1]
+        // add v28.8h, v24.8h, v20.8h
+        // sqrdmulh v25.8h, v10.8h, v9.h[1]
+        // mul v27.8h, v19.8h, v9.h[0]
+        // mul v26.8h, v10.8h, v9.h[0]
+        // sqrdmulh v20.8h, v28.8h, v7.h[2]
+        // sqrdmulh v16.8h, v8.8h, v7.h[2]
+        // mls v26.8h, v25.8h, v7.h[0]
+        // mls v2.8h, v15.8h, v7.h[0]
+        // mov v15.16b, v20.16b
+        // mov v1.16b, v16.16b
+        // mls v27.8h, v22.8h, v7.h[0]
+        // mls v28.8h, v15.8h, v7.h[0]
+        // mls v8.8h, v1.8h, v7.h[0]
+        // str q27, [x3, #96]
+        // str q2, [x3, #48]
+        // str q28, [x3, #80]
+        // str q26, [x3, #112]
+        // str q8, [x3, #16]
+        // movz x4, #4, lsl #0
+        // ldr q0, [x1, #16]
+        // ldr q1, [x1, #32]
+        // ldr q26, [x0, #0]
+        // ldr q13, [x0, #64]
+        // ldr q28, [x0, #192]
+        // ldr q2, [x0, #320]
+        // ldr q6, [x0, #128]
+        // ldr q9, [x0, #256]
+        // ldr q29, [x0, #448]
+        // ldr q23, [x0, #384]
+        // sub v17.8h, v26.8h, v13.8h
+        // add v4.8h, v26.8h, v13.8h
+        // ldr q25, [x0, #208]
+        // ldr q24, [x0, #80]
+        // add v5.8h, v6.8h, v28.8h
+        // mul v19.8h, v17.8h, v0.h[6]
+        // sub v10.8h, v6.8h, v28.8h
+        // ldr q30, [x0, #336]
+        // sqrdmulh v12.8h, v17.8h, v0.h[7]
+        // add v17.8h, v9.8h, v2.8h
+        // sub v28.8h, v9.8h, v2.8h
+        // ldr q2, [x0, #144]
+        // sub v26.8h, v23.8h, v29.8h
+        // sqrdmulh v31.8h, v10.8h, v1.h[1]
+        // add v22.8h, v23.8h, v29.8h
+        // ldr q3, [x0, #272]
+        // sqrdmulh v9.8h, v28.8h, v1.h[3]
+        // sub v20.8h, v4.8h, v5.8h
+        // sub v27.8h, v17.8h, v22.8h
+        // ldr q29, [x0, #16]
+        // add v16.8h, v4.8h, v5.8h
+        // sqrdmulh v4.8h, v26.8h, v1.h[5]
+        // add v6.8h, v17.8h, v22.8h
+        // ldr q22, [x0, #464]
+        // mul v8.8h, v28.8h, v1.h[2]
+        // sub v21.8h, v2.8h, v25.8h
+        // sub v5.8h, v16.8h, v6.8h
+        // mul v17.8h, v26.8h, v1.h[4]
+        // mul v26.8h, v10.8h, v1.h[0]
+        // mls v26.8h, v31.8h, v7.h[0]
+        // mls v17.8h, v4.8h, v7.h[0]
+        // mls v19.8h, v12.8h, v7.h[0]
+        // mls v8.8h, v9.8h, v7.h[0]
+        // sqrdmulh v10.8h, v27.8h, v0.h[5]
+        // sub v12.8h, v19.8h, v26.8h
+        // add v9.8h, v19.8h, v26.8h
+        // sqrdmulh v26.8h, v20.8h, v0.h[3]
+        // sub v11.8h, v8.8h, v17.8h
+        // add v14.8h, v8.8h, v17.8h
+        // sqrdmulh v13.8h, v12.8h, v0.h[3]
+        // add v23.8h, v9.8h, v14.8h
+        // sqrdmulh v28.8h, v11.8h, v0.h[5]
+        // sub v19.8h, v9.8h, v14.8h
+        // mul v17.8h, v27.8h, v0.h[4]
+        // str q23, [x0, #64]
+        // mul v14.8h, v20.8h, v0.h[2]
+        // mul v8.8h, v11.8h, v0.h[4]
+        // mul v4.8h, v12.8h, v0.h[2]
+        // mls v14.8h, v26.8h, v7.h[0]
+        // mls v17.8h, v10.8h, v7.h[0]
+        // mls v8.8h, v28.8h, v7.h[0]
+        // mls v4.8h, v13.8h, v7.h[0]
+        // sub v10.8h, v14.8h, v17.8h
+        // add v20.8h, v14.8h, v17.8h
+        // sqrdmulh v28.8h, v5.8h, v0.h[1]
+        // mul v18.8h, v5.8h, v0.h[0]
+        // str q20, [x0, #128]
+        // sub v13.8h, v4.8h, v8.8h
+        // mul v23.8h, v10.8h, v0.h[0]
+        // mul v17.8h, v19.8h, v0.h[0]
+        // sqrdmulh v9.8h, v13.8h, v0.h[1]
+        // mls v18.8h, v28.8h, v7.h[0]
+        // sqrdmulh v10.8h, v10.8h, v0.h[1]
+        // sub x4, x4, #2
+        // add x1, x1, #48
+        // add x3, x3, #128
+        r".inst 0x4e6f9ccf,0x6e798696,0x4e6a86a4,0x3d800878,0x6f4741af,0x3d800065,0x3dc00029,0x6e62b5dc
+.inst 0x4e7b9dd0,0x6e6385f2,0x4e6385ef,0x6e62b640,0x4e8f6898,0x4e8f2882,0x4e7b9e52,0x6f474390
+.inst 0x6f474012,0x4f4b8917,0x4f7bd2cc,0x4e922a11,0x4e926a04,0x6f4743f7,0x4ed16843,0x4ec46b06
+.inst 0x4f6b82da,0x4ed1285c,0x6f47419a,0x4e668479,0x6e668472,0x4ec42b18,0x4f67d321,0x6e78879b
+.inst 0x4f59da42,0x4e78879c,0x4f698378,0x4f67d38c,0x4f498a54,0x6f474054,0x4f79d373,0x4eac1d8f
+.inst 0x6f474039,0x4e778748,0x6e778744,0x6f4741fc,0x6f474278,0x4f4b8082,0x6e798793,0x4f5bd08f
+.inst 0x4e798799,0x6e74870a,0x3d801079,0x4f59d276,0x4e74871c,0x4f59d159,0x4f49827b,0x4f49815a
+.inst 0x4f67d394,0x4f67d110,0x6f47433a,0x6f4741e2,0x4eb41e8f,0x4eb01e01,0x6f4742db,0x6f4741fc
+.inst 0x6f474028,0x3d80187b,0x3d800c62,0x3d80147c,0x3d801c7a,0x3d800468,0xd2800084,0x3dc00420
+.inst 0x3dc00821,0x3dc0001a,0x3dc0100d,0x3dc0301c,0x3dc05002,0x3dc02006,0x3dc04009,0x3dc0701d
+.inst 0x3dc06017,0x6e6d8751,0x4e6d8744,0x3dc03419,0x3dc01418,0x4e7c84c5,0x4f608a33,0x6e7c84ca
+.inst 0x3dc0541e,0x4f70da2c,0x4e628531,0x6e62853c,0x3dc02402,0x6e7d86fa,0x4f51d15f,0x4e7d86f6
+.inst 0x3dc04403,0x4f71d389,0x6e658494,0x6e76863b,0x3dc0041d,0x4e658490,0x4f51db44,0x4e768626
+.inst 0x3dc07416,0x4f618388,0x6e798455,0x6e668605,0x4f418b51,0x4f41815a,0x6f4743fa,0x6f474091
+.inst 0x6f474193,0x6f474128,0x4f50db6a,0x6e7a866c,0x4e7a8669,0x4f70d29a,0x6e71850b,0x4e71850e
+.inst 0x4f70d18d,0x4e6e8537,0x4f50d97c,0x6e6e8533,0x4f408b71,0x3d801017,0x4f60828e,0x4f408968
+.inst 0x4f608184,0x6f47434e,0x6f474151,0x6f474388,0x6f4741a4,0x6e7185ca,0x4e7185d4,0x4f50d0bc
+.inst 0x4f4080b2,0x3d802014,0x6e68848d,0x4f408157,0x4f408271,0x4f50d1a9,0x6f474392,0x4f50d14a
+.inst 0xd1000884,0x9100c021,0x91020063
+21:",
+        // sub v12.8h, v3.8h, v30.8h
+        // mul v11.8h, v21.8h, v1.h[0]
+        // add v28.8h, v4.8h, v8.8h
+        // ldr q20, [x0, #400]
+        // add v27.8h, v16.8h, v6.8h
+        // sqrdmulh v8.8h, v12.8h, v1.h[3]
+        // add v16.8h, v29.8h, v24.8h
+        // str q28, [x0, #192]
+        // mls v23.8h, v10.8h, v7.h[0]
+        // str q27, [x0, #0]
+        // add v15.8h, v20.8h, v22.8h
+        // str q18, [x0, #256]
+        // mul v14.8h, v13.8h, v0.h[0]
+        // add v2.8h, v2.8h, v25.8h
+        // sub v26.8h, v20.8h, v22.8h
+        // mul v4.8h, v12.8h, v1.h[2]
+        // sub v5.8h, v16.8h, v2.8h
+        // str q23, [x0, #384]
+        // add v20.8h, v3.8h, v30.8h
+        // sqrdmulh v27.8h, v26.8h, v1.h[5]
+        // add v16.8h, v16.8h, v2.8h
+        // mul v18.8h, v26.8h, v1.h[4]
+        // sub v31.8h, v20.8h, v15.8h
+        // mls v4.8h, v8.8h, v7.h[0]
+        // sub v28.8h, v29.8h, v24.8h
+        // mls v18.8h, v27.8h, v7.h[0]
+        // ldr q22, [x0, #480]
+        // mul v26.8h, v28.8h, v0.h[6]
+        // mul v2.8h, v5.8h, v0.h[2]
+        // sub v12.8h, v4.8h, v18.8h
+        // sqrdmulh v24.8h, v28.8h, v0.h[7]
+        // mls v14.8h, v9.8h, v7.h[0]
+        // sqrdmulh v10.8h, v12.8h, v0.h[5]
+        // mls v26.8h, v24.8h, v7.h[0]
+        // ldr q24, [x0, #96]
+        // mul v8.8h, v12.8h, v0.h[4]
+        // str q14, [x0, #448]
+        // add v28.8h, v4.8h, v18.8h
+        // sqrdmulh v5.8h, v5.8h, v0.h[3]
+        // add v6.8h, v20.8h, v15.8h
+        // sqrdmulh v3.8h, v19.8h, v0.h[1]
+        // sub v13.8h, v16.8h, v6.8h
+        // sqrdmulh v12.8h, v21.8h, v1.h[1]
+        // sqrdmulh v21.8h, v13.8h, v0.h[1]
+        // sqrdmulh v27.8h, v31.8h, v0.h[5]
+        // ldr q25, [x0, #224]
+        // mls v11.8h, v12.8h, v7.h[0]
+        // mul v23.8h, v31.8h, v0.h[4]
+        // mul v18.8h, v13.8h, v0.h[0]
+        // add v30.8h, v26.8h, v11.8h
+        // sub v13.8h, v26.8h, v11.8h
+        // mls v23.8h, v27.8h, v7.h[0]
+        // add v12.8h, v30.8h, v28.8h
+        // sub v19.8h, v30.8h, v28.8h
+        // mls v2.8h, v5.8h, v7.h[0]
+        // str q12, [x0, #80]
+        // sqrdmulh v26.8h, v13.8h, v0.h[3]
+        // mls v8.8h, v10.8h, v7.h[0]
+        // ldr q30, [x0, #352]
+        // sub v20.8h, v2.8h, v23.8h
+        // mul v4.8h, v13.8h, v0.h[2]
+        // add v13.8h, v2.8h, v23.8h
+        // mls v4.8h, v26.8h, v7.h[0]
+        // ldr q2, [x0, #160]
+        // mul v23.8h, v20.8h, v0.h[0]
+        // ldr q29, [x0, #32]
+        // sqrdmulh v10.8h, v20.8h, v0.h[1]
+        // str q13, [x0, #144]
+        // sub v13.8h, v4.8h, v8.8h
+        // mls v17.8h, v3.8h, v7.h[0]
+        // ldr q3, [x0, #288]
+        // mls v18.8h, v21.8h, v7.h[0]
+        // sub v21.8h, v2.8h, v25.8h
+        // sqrdmulh v9.8h, v13.8h, v0.h[1]
+        // str q17, [x0, #320]
+        // mul v17.8h, v19.8h, v0.h[0]
+        // sub x4, x4, #1
+        // add x0, x0, #16
+        r".inst 0x6e7e846c,0x4f4182ab,0x4e68849c,0x3dc06414,0x4e66861b,0x4f71d188,0x4e7887b0,0x3d80301c
+.inst 0x6f474157,0x3d80001b,0x4e76868f,0x3d804012,0x4f4081ae,0x4e798442,0x6e76869a,0x4f618184
+.inst 0x6e628605,0x3d806017,0x4e7e8474,0x4f51db5b,0x4e628610,0x4f418b52,0x6e6f869f,0x6f474104
+.inst 0x6e7887bc,0x6f474372,0x3dc07816,0x4f608b9a,0x4f6080a2,0x6e72848c,0x4f70db98,0x6f47412e
+.inst 0x4f50d98a,0x6f47431a,0x3dc01818,0x4f408988,0x3d80700e,0x4e72849c,0x4f70d0a5,0x4e6f8686
+.inst 0x4f50d263,0x6e66860d,0x4f51d2ac,0x4f50d1b5,0x4f50dbfb,0x3dc03819,0x6f47418b,0x4f408bf7
+.inst 0x4f4081b2,0x4e6b875e,0x6e6b874d,0x6f474377,0x4e7c87cc,0x6e7c87d3,0x6f4740a2,0x3d80140c
+.inst 0x4f70d1ba,0x6f474148,0x3dc0581e,0x6e778454,0x4f6081a4,0x4e77844d,0x6f474344,0x3dc02802
+.inst 0x4f408297,0x3dc0081d,0x4f50d28a,0x3d80240d,0x6e68848d,0x6f474071,0x3dc04803,0x6f4742b2
+.inst 0x6e798455,0x4f50d1a9,0x3d805011,0x4f408271,0xd1000484,0x91004000
+cbnz x4, 21b",
+        // mls v23.8h, v10.8h, v7.h[0]
+        // ldr q11, [x0, #400]
+        // str q18, [x0, #256]
+        // add v27.8h, v3.8h, v30.8h
+        // mul v13.8h, v13.8h, v0.h[0]
+        // sub v5.8h, v29.8h, v24.8h
+        // add v14.8h, v16.8h, v6.8h
+        // mls v13.8h, v9.8h, v7.h[0]
+        // add v10.8h, v11.8h, v22.8h
+        // str q23, [x0, #384]
+        // sub v20.8h, v11.8h, v22.8h
+        // sub v23.8h, v27.8h, v10.8h
+        // sqrdmulh v16.8h, v21.8h, v1.h[1]
+        // sqrdmulh v31.8h, v23.8h, v0.h[5]
+        // str q13, [x0, #448]
+        // add v13.8h, v4.8h, v8.8h
+        // mul v18.8h, v21.8h, v1.h[0]
+        // str q13, [x0, #192]
+        // sqrdmulh v13.8h, v19.8h, v0.h[1]
+        // sqrdmulh v28.8h, v20.8h, v1.h[5]
+        // str q14, [x0, #0]
+        // mul v4.8h, v20.8h, v1.h[4]
+        // mls v17.8h, v13.8h, v7.h[0]
+        // sub v13.8h, v3.8h, v30.8h
+        // sqrdmulh v8.8h, v13.8h, v1.h[3]
+        // mul v12.8h, v13.8h, v1.h[2]
+        // mls v4.8h, v28.8h, v7.h[0]
+        // mls v12.8h, v8.8h, v7.h[0]
+        // mls v18.8h, v16.8h, v7.h[0]
+        // str q17, [x0, #320]
+        // sqrdmulh v15.8h, v5.8h, v0.h[7]
+        // add v11.8h, v27.8h, v10.8h
+        // mul v16.8h, v5.8h, v0.h[6]
+        // sub v8.8h, v12.8h, v4.8h
+        // sqrdmulh v28.8h, v8.8h, v0.h[5]
+        // add v13.8h, v2.8h, v25.8h
+        // mls v16.8h, v15.8h, v7.h[0]
+        // add v26.8h, v12.8h, v4.8h
+        // mul v8.8h, v8.8h, v0.h[4]
+        // add v4.8h, v29.8h, v24.8h
+        // mls v8.8h, v28.8h, v7.h[0]
+        // sub v20.8h, v4.8h, v13.8h
+        // add v14.8h, v4.8h, v13.8h
+        // add v12.8h, v16.8h, v18.8h
+        // sqrdmulh v22.8h, v20.8h, v0.h[3]
+        // add v27.8h, v14.8h, v11.8h
+        // sub v13.8h, v16.8h, v18.8h
+        // mul v4.8h, v20.8h, v0.h[2]
+        // str q27, [x0, #16]
+        // sub v24.8h, v12.8h, v26.8h
+        // sqrdmulh v3.8h, v13.8h, v0.h[3]
+        // mul v13.8h, v13.8h, v0.h[2]
+        // sqrdmulh v27.8h, v24.8h, v0.h[1]
+        // mls v13.8h, v3.8h, v7.h[0]
+        // mul v9.8h, v24.8h, v0.h[0]
+        // mls v9.8h, v27.8h, v7.h[0]
+        // add v30.8h, v13.8h, v8.8h
+        // sub v13.8h, v13.8h, v8.8h
+        // mls v4.8h, v22.8h, v7.h[0]
+        // str q30, [x0, #208]
+        // sqrdmulh v16.8h, v13.8h, v0.h[1]
+        // str q9, [x0, #336]
+        // mul v9.8h, v13.8h, v0.h[0]
+        // add v13.8h, v12.8h, v26.8h
+        // str q13, [x0, #80]
+        // mul v13.8h, v23.8h, v0.h[4]
+        // sub v23.8h, v14.8h, v11.8h
+        // mls v13.8h, v31.8h, v7.h[0]
+        // mls v9.8h, v16.8h, v7.h[0]
+        // mul v30.8h, v23.8h, v0.h[0]
+        // sub v24.8h, v4.8h, v13.8h
+        // add v13.8h, v4.8h, v13.8h
+        // sqrdmulh v23.8h, v23.8h, v0.h[1]
+        // str q9, [x0, #464]
+        // str q13, [x0, #144]
+        // sqrdmulh v13.8h, v24.8h, v0.h[1]
+        // mul v21.8h, v24.8h, v0.h[0]
+        // mls v30.8h, v23.8h, v7.h[0]
+        // mls v21.8h, v13.8h, v7.h[0]
+        // str q30, [x0, #272]
+        // str q21, [x0, #400]
+        // add x0, x0, #32
+        // sub x3, x0, #64
+        // movz x5, #10, lsl #0
+        // mov v7.h[2], w5
+        // dup v30.8h, v7.h[0]
+        // movz x4, #8, lsl #0
+        r".inst 0x6f474157,0x3dc0640b,0x3d804012,0x4e7e847b,0x4f4081ad,0x6e7887a5,0x4e66860e,0x6f47412d
 .inst 0x4e76856a,0x3d806017,0x6e768574,0x6e6a8777,0x4f51d2b0,0x4f50daff,0x3d80700d,0x4e68848d
 .inst 0x4f4182b2,0x3d80300d,0x4f50d26d,0x4f51da9c,0x3d80000e,0x4f418a84,0x6f4741b1,0x6e7e846d
 .inst 0x4f71d1a8,0x4f6181ac,0x6f474384,0x6f47410c,0x6f474212,0x3d805011,0x4f70d8af,0x4e6a876b
@@ -196,13 +1314,55 @@ pub unsafe extern "C" fn vg_mlkem16_inv_ntt(f: *mut [u16; 256], scratch: *mut [u
 .inst 0x4e6885be,0x6e6885ad,0x6f4742c4,0x3d80341e,0x4f50d1b0,0x3d805409,0x4f4081a9,0x4e7a858d
 .inst 0x3d80140d,0x4f408aed,0x6e6b85d7,0x6f4743ed,0x6f474209,0x4f4082fe,0x6e6d8498,0x4e6d848d
 .inst 0x4f50d2f7,0x3d807409,0x3d80240d,0x4f50d30d,0x4f408315,0x6f4742fe,0x6f4741b5,0x3d80441e
-.inst 0x3d806415,0x91008000,0xd1010003,0xd2800145,0x4e0a1ca7,0x4e0204fe,0xd2800104,0x3dc00070
-.inst 0x3dc00471,0x3dc00872,0x3dc00c73,0x4f67d214,0x4f67d235,0x4f67d256,0x4f67d277,0x6f474290
-.inst 0x6f4742b1,0x6f4742d2,0x6f4742f3,0x4f110614,0x4f110635,0x4f110656,0x4f110677,0x4e3e1e94
-.inst 0x4e3e1eb5,0x4e3e1ed6,0x4e3e1ef7,0x4e748610,0x4e758631,0x4e768652,0x4e778673,0x3d800070
-.inst 0x3d800471,0x3d800872,0x3d800c73,0x91010063,0xd1000484,0xb5fffc44,0x4e081ce8,0x4e081d09
-.inst 0x4e081d2a,0x4e081d4b,0x4e081d6c,0x4e081d8d,0x4e081dae,0x4e081dcf,0xd65f03c0",
-        r".p2align 6",
+.inst 0x3d806415,0x91008000,0xd1010003,0xd2800145,0x4e0a1ca7,0x4e0204fe,0xd2800104
+22:",
+        // ldr q16, [x3, #0]
+        // ldr q17, [x3, #16]
+        // ldr q18, [x3, #32]
+        // ldr q19, [x3, #48]
+        // sqrdmulh v20.8h, v16.8h, v7.h[2]
+        // sqrdmulh v21.8h, v17.8h, v7.h[2]
+        // sqrdmulh v22.8h, v18.8h, v7.h[2]
+        // sqrdmulh v23.8h, v19.8h, v7.h[2]
+        // mls v16.8h, v20.8h, v7.h[0]
+        // mls v17.8h, v21.8h, v7.h[0]
+        // mls v18.8h, v22.8h, v7.h[0]
+        // mls v19.8h, v23.8h, v7.h[0]
+        // sshr v20.8h, v16.8h, #15
+        // sshr v21.8h, v17.8h, #15
+        // sshr v22.8h, v18.8h, #15
+        // sshr v23.8h, v19.8h, #15
+        // and v20.16b, v20.16b, v30.16b
+        // and v21.16b, v21.16b, v30.16b
+        // and v22.16b, v22.16b, v30.16b
+        // and v23.16b, v23.16b, v30.16b
+        // add v16.8h, v16.8h, v20.8h
+        // add v17.8h, v17.8h, v21.8h
+        // add v18.8h, v18.8h, v22.8h
+        // add v19.8h, v19.8h, v23.8h
+        // str q16, [x3, #0]
+        // str q17, [x3, #16]
+        // str q18, [x3, #32]
+        // str q19, [x3, #48]
+        // add x3, x3, #64
+        // sub x4, x4, #1
+        r".inst 0x3dc00070,0x3dc00471,0x3dc00872,0x3dc00c73,0x4f67d214,0x4f67d235,0x4f67d256,0x4f67d277
+.inst 0x6f474290,0x6f4742b1,0x6f4742d2,0x6f4742f3,0x4f110614,0x4f110635,0x4f110656,0x4f110677
+.inst 0x4e3e1e94,0x4e3e1eb5,0x4e3e1ed6,0x4e3e1ef7,0x4e748610,0x4e758631,0x4e768652,0x4e778673
+.inst 0x3d800070,0x3d800471,0x3d800872,0x3d800c73,0x91010063,0xd1000484
+cbnz x4, 22b",
+        // mov v8.d[0], x7
+        // mov v9.d[0], x8
+        // mov v10.d[0], x9
+        // mov v11.d[0], x10
+        // mov v12.d[0], x11
+        // mov v13.d[0], x12
+        // mov v14.d[0], x13
+        // mov v15.d[0], x14
+        // ret
+        r".inst 0x4e081ce8,0x4e081d09,0x4e081d2a,0x4e081d4b,0x4e081d6c,0x4e081d8d,0x4e081dae,0x4e081dcf
+.inst 0xd65f03c0
+.p2align 6",
         VG_MLKEM16_INTT_ZETAS = sym super::consts::VG_MLKEM16_INTT_ZETAS,
     )
 }

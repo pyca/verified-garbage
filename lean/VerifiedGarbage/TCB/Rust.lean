@@ -238,6 +238,23 @@ def commentOf : Line → Option String
     if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
   | _ => none
 
+/-- The template line `t` added to the run of lines `run` (reversed): joined
+to the line before it if both are `.inst` lines (`.inst <word>`, as
+AArch64's printer emits each instruction, `TCB/AArch64/Encode.lean`) and
+that one has fewer than 8 words, as `.inst <words>, <word>`, which the
+assembler reads as the same instructions (GNU as, "`.inst`": "one or more
+expressions", each emitted in turn as an instruction); else a line of its
+own. So a run of encoded instructions is a few lines for rustc and the
+assembler to read, not one per instruction. -/
+def pushLine (t : String) : List String → List String
+  | p :: run =>
+    let w := (t.drop 6).toString
+    if t.startsWith ".inst " && p.startsWith ".inst " && !w.contains ',' &&
+        (p.splitOn ",").length < 8 then
+      (p ++ "," ++ w) :: run
+    else t :: p :: run
+  | [] => [t]
+
 /-- The arguments of `naked_asm!` for the template lines `ls`: each run of
 lines that are text alone (`lineText`) as one string literal (`literal`) of
 those lines separated by newlines, the others as arguments of their own
@@ -251,7 +268,8 @@ that line is in, so the assembler never sees it. A comment after a line that
 no comment is about (e.g. a label or a branch, after the commented
 instructions before it) starts a new literal, so that each literal's
 comments are just above it: one literal per run of commented lines and the
-lines after them, not per line. -/
+lines after them, not per line. Consecutive `.inst` lines are joined
+(`pushLine`). -/
 def template (call : String) (ls : List Line) : String :=
   go ls [] [] false false
 where
@@ -266,7 +284,7 @@ where
         if tail then flush run cs ++ go ls [] [c] false true
         else go ls run (c :: cs) false true
       | none => match lineText call l with
-        | some t => go ls (t :: run) cs (tail || !after) false
+        | some t => go ls (pushLine t run) cs (tail || !after) false
         | none => flush run cs ++ line call l ++ go ls [] [] false false
   /-- The comments `cs`, then the run of text lines `run` as one string
   literal (both reversed). -/
@@ -876,13 +894,14 @@ def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 /-- The directory of the crate of the target named `t` that holds its
 generated files: `src/`, which its crate compiles, for a target whose
 printer emits its straight-line code as machine code (RISC-V's,
-`TCB/RISCV64/Encode.lean`), and `asm/`, the code as printed, for the others,
+`TCB/RISCV64/Encode.lean`, and AArch64's, `TCB/AArch64/Encode.lean`), and
+`asm/`, the code as printed, for the others,
 whose crates compile it as it is (ARM's) or pre-assembled
 (`ci/preassemble.py` writes their `src/`). Keyed on the target here, rather
 than being a field of its `Printer`, so that it does not change what every
 proof imports. -/
 def codeSubdir : String → String
-  | "riscv64" => "src"
+  | "riscv64" | "aarch64" => "src"
   | _ => "asm"
 
 /-- The directory of the target `t`'s generated files, under `crates/`:

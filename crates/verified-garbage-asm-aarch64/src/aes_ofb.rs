@@ -23,14 +23,58 @@ pub const VG_AES_OFB_AES_FEATURES: verified_garbage_cpu::Features = verified_gar
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ofb_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // str x19, [x5, #2064]
+        // str x20, [x5, #2072]
+        // str x21, [x5, #2080]
+        // str x22, [x5, #2088]
+        // str x23, [x5, #2096]
+        // str x30, [x5, #2104]
+        // str x24, [x5, #2112]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x2, #0
+        // add x22, x3, #0
+        // add x23, x4, #0
+        // add x24, x5, #0
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8,0xb4000277,0x91000260,0x91000281
-.inst 0x910002a2,0xd2800023,0x91000304",
-        r"bl {vg_aes_encrypt_blocks_aes}",
+.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
+cbz x23, 20f
+22:",
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x21, #0
+        // movz x3, #1, lsl #0
+        // add x4, x24, #0
+        r".inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_aes}",
+        // ldr x9, [x22, #0]
+        // ldr x10, [x21, #0]
+        // eor x9, x9, x10
+        // str x9, [x22, #0]
+        // ldr x9, [x22, #8]
+        // ldr x10, [x21, #8]
+        // eor x9, x9, x10
+        // str x9, [x22, #8]
+        // add x22, x22, #16
+        // sub x23, x23, #1
         r".inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0x910042d6,0xd10006f7,0xb5fffe17,0x14000001,0xf9440b13,0xf9440f14,0xf9441315,0xf9441716
-.inst 0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0",
-        r".p2align 6",
+.inst 0x910042d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:",
+        // ldr x19, [x24, #2064]
+        // ldr x20, [x24, #2072]
+        // ldr x21, [x24, #2080]
+        // ldr x22, [x24, #2088]
+        // ldr x23, [x24, #2096]
+        // ldr x30, [x24, #2104]
+        // ldr x24, [x24, #2112]
+        // ret
+        r".inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -52,14 +96,56 @@ pub unsafe extern "C" fn vg_aes_ofb_aes(schedule: *const [u8; 240], rounds: usiz
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        // str x19, [x5, #2064]
+        // str x20, [x5, #2072]
+        // str x21, [x5, #2080]
+        // str x22, [x5, #2088]
+        // str x23, [x5, #2096]
+        // str x30, [x5, #2104]
+        // str x24, [x5, #2112]
+        // add x19, x0, #0
+        // add x20, x1, #0
+        // add x21, x2, #0
+        // add x22, x3, #0
+        // add x23, x4, #0
+        // add x24, x5, #0
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8,0xb4000277,0x91000260,0x91000281
-.inst 0x910002a2,0xd2800023,0x91000304",
-        r"bl {vg_aes_encrypt_blocks}",
+.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
+cbz x23, 20f
+22:",
+        // add x0, x19, #0
+        // add x1, x20, #0
+        // add x2, x21, #0
+        // movz x3, #1, lsl #0
+        // add x4, x24, #0
+        r".inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks}",
+        // ldr x9, [x22, #0]
+        // ldr x10, [x21, #0]
+        // eor x9, x9, x10
+        // str x9, [x22, #0]
+        // ldr x9, [x22, #8]
+        // ldr x10, [x21, #8]
+        // eor x9, x9, x10
+        // str x9, [x22, #8]
+        // add x22, x22, #16
+        // sub x23, x23, #1
         r".inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0x910042d6,0xd10006f7,0xb5fffe17,0x14000001,0xf9440b13,0xf9440f14,0xf9441315,0xf9441716
-.inst 0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0",
-        r".p2align 6",
+.inst 0x910042d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:",
+        // ldr x19, [x24, #2064]
+        // ldr x20, [x24, #2072]
+        // ldr x21, [x24, #2080]
+        // ldr x22, [x24, #2088]
+        // ldr x23, [x24, #2096]
+        // ldr x30, [x24, #2104]
+        // ldr x24, [x24, #2112]
+        // ret
+        r".inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

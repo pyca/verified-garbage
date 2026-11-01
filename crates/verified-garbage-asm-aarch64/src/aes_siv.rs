@@ -20,15 +20,45 @@ pub const VG_AES_SIV_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2560
+        // add x3, sp, #0
+        // str x19, [x3, #2176]
+        // str x20, [x3, #2184]
+        // str x21, [x3, #2192]
+        // str x22, [x3, #2200]
+        // str x30, [x3, #2208]
+        // add x19, x0, #0
+        // lsr x20, x1, #1
+        // add x21, x2, #0
+        // add x22, x3, #0
+        // add x1, x20, #0
         r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
-.inst 0xd341fc34,0x91000055,0x91000076,0x91000281",
-        r"bl {vg_aes_expand_key_scratch_aes}",
-        r".inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3",
-        r"bl {vg_cmac_aes_subkeys_aes}",
-        r".inst 0x8b140260,0x91000281,0x910442a2,0x910002c3",
-        r"bl {vg_aes_expand_key_scratch_aes}",
-        r".inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd341fc34,0x91000055,0x91000076,0x91000281
+bl {vg_aes_expand_key_scratch_aes}",
+        // add x0, x21, #0
+        // lsr x1, x20, #2
+        // add x1, x1, #6
+        // add x2, x21, #240
+        // add x3, x22, #0
+        r".inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3
+bl {vg_cmac_aes_subkeys_aes}",
+        // add x0, x19, x20
+        // add x1, x20, #0
+        // add x2, x21, #272
+        // add x3, x22, #0
+        r".inst 0x8b140260,0x91000281,0x910442a2,0x910002c3
+bl {vg_aes_expand_key_scratch_aes}",
+        // ldr x19, [x22, #2176]
+        // ldr x20, [x22, #2184]
+        // ldr x21, [x22, #2192]
+        // ldr x30, [x22, #2208]
+        // ldr x22, [x22, #2200]
+        // add sp, sp, #2560
+        // ret
+        r".inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes,
     )
@@ -48,15 +78,43 @@ pub unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2560
+        // add x3, sp, #0
+        // str x19, [x3, #2176]
+        // str x20, [x3, #2184]
+        // str x21, [x3, #2192]
+        // str x22, [x3, #2200]
+        // str x30, [x3, #2208]
+        // add x19, x0, #0
+        // lsr x20, x1, #1
+        // add x21, x2, #0
+        // add x22, x3, #0
+        // add x1, x20, #0
         r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
-.inst 0xd341fc34,0x91000055,0x91000076,0x91000281",
-        r"bl {vg_aes_expand_key_scratch}",
-        r".inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3",
-        r"bl {vg_cmac_aes_subkeys}",
-        r".inst 0x8b140260,0x91000281,0x910442a2,0x910002c3",
-        r"bl {vg_aes_expand_key_scratch}",
-        r".inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd341fc34,0x91000055,0x91000076,0x91000281
+bl {vg_aes_expand_key_scratch}",
+        // add x0, x21, #0
+        // lsr x1, x20, #2
+        // add x1, x1, #6
+        // add x2, x21, #240
+        // add x3, x22, #0
+        r".inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3
+bl {vg_cmac_aes_subkeys}",
+        // add x0, x19, x20
+        // add x1, x20, #0
+        // add x2, x21, #272
+        // add x3, x22, #0
+        r".inst 0x8b140260,0x91000281,0x910442a2,0x910002c3
+bl {vg_aes_expand_key_scratch}",
+        // ldr x19, [x22, #2176]
+        // ldr x20, [x22, #2184]
+        // ldr x21, [x22, #2192]
+        // ldr x30, [x22, #2208]
+        // ldr x22, [x22, #2200]
+        // add sp, sp, #2560
+        // ret
+        r".inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0
+.p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
@@ -82,59 +140,407 @@ pub const VG_AES_SIV_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2576
+        // add x7, sp, #0
+        // str x19, [x7, #160]
+        // str x20, [x7, #168]
+        // str x21, [x7, #176]
+        // str x22, [x7, #184]
+        // str x23, [x7, #192]
+        // str x24, [x7, #200]
+        // str x25, [x7, #208]
+        // str x26, [x7, #216]
+        // str x27, [x7, #224]
+        // str x28, [x7, #232]
+        // str x30, [x7, #240]
+        // str x6, [x7, #248]
+        // add x19, x7, #0
+        // add x20, x0, #0
+        // add x21, x1, #0
+        // add x24, x2, #0
+        // add x25, x3, #0
+        // add x26, x4, #0
+        // add x27, x5, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #16]
+        // str x9, [x19, #24]
+        // str x9, [x19, #2560]
+        // str x9, [x19, #2568]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #2560
+        // add x3, x19, #16
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0xb4000739,0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c,0xb40000d7
-.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c,0x14000001,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91020262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes}",
-        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+cbz x25, 20f
+22:",
+        // ldr x22, [x24, #0]
+        // ldr x23, [x24, #8]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // movz x28, #0, lsl #0
+        r".inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f",
+        // sub x28, x23, #1
+        // movz x9, #15, lsl #0
+        // and x9, x28, x9
+        // sub x28, x28, x9
+        r".inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:",
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes}",
+        // add x3, x22, x28
+        // sub x4, x23, x28
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x5, x19, #256
+        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+bl {vg_cmac_aes_finalize_aes}",
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #2568]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #2560]
+        // str x10, [x19, #2568]
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #128]
+        // eor x9, x9, x10
+        // str x9, [x19, #2560]
+        // ldr x9, [x19, #2568]
+        // ldr x10, [x19, #136]
+        // eor x9, x9, x10
+        // str x9, [x19, #2568]
+        // add x24, x24, #16
+        // sub x25, x25, #1
         r".inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739,0xb5fff959,0x14000001,0x91000356,0x91000377
-.inst 0xd344fee9,0xb40007e9,0xd10006e9,0xd344fd29,0xd280001c,0xb4000089,0xd1000529,0xd37ced3c
-.inst 0x14000001,0x91008266,0x8b1c02c7,0xcb1c02e8,0xb4000108,0x394000e9,0x390000c9,0x910004e7
-.inst 0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a
-.inst 0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a,0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269
-.inst 0xf9000669,0xd344ff84,0x91000280,0x910002a1,0x91000262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes}",
-        r".inst 0xd10006e9,0xd344fd29,0xd2800019,0xb4000069,0xd2800039,0x14000001,0x91000324,0x91000280
-.inst 0x910002a1,0x91000262,0x91008263,0x91040265",
-        r"bl {vg_cmac_aes_update_aes}",
+.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // lsr x9, x23, #4
+        r".inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 25f",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x28, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 27f",
+        // sub x9, x9, #1
+        // lsl x28, x9, #4
+        r".inst 0xd1000529,0xd37ced3c
+b 28f
+27:
+28:",
+        // add x6, x19, #32
+        // add x7, x22, x28
+        // sub x8, x23, x28
+        r".inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 29f
+211:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 211b
+b 210f
+29:
+210:",
+        // sub x6, x23, x28
+        // add x6, x19, x6
+        // ldr x9, [x6, #16]
+        // ldr x10, [x19, #2560]
+        // eor x9, x9, x10
+        // str x9, [x6, #16]
+        // ldr x9, [x6, #24]
+        // ldr x10, [x19, #2568]
+        // eor x9, x9, x10
+        // str x9, [x6, #24]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #0]
+        // str x9, [x19, #8]
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269,0xf9000669,0xd344ff84,0x91000280,0x910002a1
+.inst 0x91000262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes}",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x25, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 212f",
+        // movz x25, #1, lsl #0
+        r".inst 0xd2800039
+b 213f
+212:
+213:",
+        // add x4, x25, #0
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x19, #32
+        // add x5, x19, #256
+        r".inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91040265
+bl {vg_cmac_aes_update_aes}",
+        // lsl x9, x25, #4
+        // add x3, x19, #32
+        // add x3, x3, x9
+        // sub x4, x23, x28
+        // sub x4, x4, x9
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x5, x19, #256
         r".inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x91000262
-.inst 0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0x1400003b,0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8,0xb4000108
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b170266
-.inst 0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69,0xf9404a69
-.inst 0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec,0x8a0c016b
-.inst 0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a,0xf9004a69
-.inst 0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a,0xca0a0129
-.inst 0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262,0x91008263
-.inst 0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0x91040265
+bl {vg_cmac_aes_finalize_aes}
+b 26f
+25:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // add x6, x19, #32
+        // add x7, x22, #0
+        // add x8, x23, #0
+        r".inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 214f
+216:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 216b
+b 215f
+214:
+215:",
+        // add x6, x19, x23
+        // add x6, x6, #32
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x19, #2560]
+        // str x9, [x19, #144]
+        // ldr x9, [x19, #2568]
+        // str x9, [x19, #152]
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #144]
+        // eor x9, x9, x10
+        // str x9, [x19, #32]
+        // ldr x9, [x19, #40]
+        // ldr x10, [x19, #152]
+        // eor x9, x9, x10
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #0]
+        // str x9, [x19, #8]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x19, #32
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
+        r".inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262
+.inst 0x91008263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+26:",
+        // ldr x9, [x19, #0]
+        // str x9, [x19, #64]
+        // ldr x9, [x19, #8]
+        // movz x10, #128, lsl #0
+        // movk x10, #128, lsl #32
+        // bic x9, x9, x10, ror #0
+        // str x9, [x19, #72]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // lsr x4, x23, #4
+        // lsl x4, x4, #33
+        // lsr x4, x4, #33
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x22, #0
+        // add x5, x19, #256
         r".inst 0xf9400269,0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269
 .inst 0xf9003269,0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1
-.inst 0x91018262,0x910002c3,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
+.inst 0x91018262,0x910002c3,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // lsl x9, x9, #33
+        // lsr x9, x9, #33
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // ldr x11, [x19, #64]
+        // rev x11, x11
+        // adds x10, x10, x9
+        // movz x12, #0, lsl #0
+        // adc x11, x11, x12
+        // rev x10, x10
+        // rev x11, x11
+        // str x11, [x19, #64]
+        // str x10, [x19, #72]
+        // lsl x9, x9, #4
+        // add x22, x22, x9
+        // sub x23, x23, x9
         r".inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
-.inst 0xcb0902f7,0xb4000677,0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669
-.inst 0xf9003669,0x91044280,0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
-        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267,0xb4000069,0xd2800208,0x14000001,0x394000c9
-.inst 0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508,0xb5ffff28,0xf9402669
-.inst 0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a,0xdac00d29
-.inst 0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a,0xb4000069,0xcb0a02f7
-.inst 0x14000002,0xd2800017,0xb5fffa17,0x14000001,0x91000356,0x91000377,0xf9407e69,0xf940026a
-.inst 0xf900012a,0xf940066a,0xf900052a,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678
-.inst 0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xcb0902f7
+cbz x23, 217f
+219:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #80]
+        // str x9, [x19, #88]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x19, #80
+        // movz x4, #1, lsl #0
+        // add x5, x19, #256
+        r".inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // add x8, x23, #0
+        // add x6, x22, #0
+        // add x7, x19, #80
+        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 220f",
+        // movz x8, #16, lsl #0
+        r".inst 0xd2800208
+b 221f
+220:
+221:
+222:",
+        // ldrb w9, [x6, #0]
+        // ldrb w10, [x7, #0]
+        // eor x9, x9, x10
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // add x7, x7, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 222b",
+        // ldr x9, [x19, #72]
+        // rev x9, x9
+        // ldr x10, [x19, #64]
+        // rev x10, x10
+        // movz x11, #1, lsl #0
+        // adds x9, x9, x11
+        // movz x11, #0, lsl #0
+        // adc x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x10, [x19, #64]
+        // str x9, [x19, #72]
+        // add x22, x22, #16
+        // lsr x9, x23, #4
+        // movz x10, #16, lsl #0
+        r".inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 223f",
+        // sub x23, x23, x10
+        r".inst 0xcb0a02f7
+b 224f
+223:",
+        // movz x23, #0, lsl #0
+        r".inst 0xd2800017
+224:
+cbnz x23, 219b
+b 218f
+217:
+218:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // ldr x9, [x19, #248]
+        // ldr x10, [x19, #0]
+        // str x10, [x9, #0]
+        // ldr x10, [x19, #8]
+        // str x10, [x9, #8]
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2576
+        // ret
+        r".inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
+.inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
+.inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
@@ -161,63 +567,450 @@ pub const VG_AES_SIV_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2576
+        // add x7, sp, #0
+        // str x19, [x7, #160]
+        // str x20, [x7, #168]
+        // str x21, [x7, #176]
+        // str x22, [x7, #184]
+        // str x23, [x7, #192]
+        // str x24, [x7, #200]
+        // str x25, [x7, #208]
+        // str x26, [x7, #216]
+        // str x27, [x7, #224]
+        // str x28, [x7, #232]
+        // str x30, [x7, #240]
+        // str x6, [x7, #248]
+        // add x19, x7, #0
+        // add x20, x0, #0
+        // add x21, x1, #0
+        // add x24, x2, #0
+        // add x25, x3, #0
+        // add x26, x4, #0
+        // add x27, x5, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #16]
+        // str x9, [x19, #24]
+        // str x9, [x19, #2560]
+        // str x9, [x19, #2568]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #2560
+        // add x3, x19, #16
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0xb4000739,0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c,0xb40000d7
-.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c,0x14000001,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91020262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes}",
-        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+cbz x25, 20f
+22:",
+        // ldr x22, [x24, #0]
+        // ldr x23, [x24, #8]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // movz x28, #0, lsl #0
+        r".inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f",
+        // sub x28, x23, #1
+        // movz x9, #15, lsl #0
+        // and x9, x28, x9
+        // sub x28, x28, x9
+        r".inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:",
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes}",
+        // add x3, x22, x28
+        // sub x4, x23, x28
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x5, x19, #256
+        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+bl {vg_cmac_aes_finalize_aes}",
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #2568]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #2560]
+        // str x10, [x19, #2568]
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #128]
+        // eor x9, x9, x10
+        // str x9, [x19, #2560]
+        // ldr x9, [x19, #2568]
+        // ldr x10, [x19, #136]
+        // eor x9, x9, x10
+        // str x9, [x19, #2568]
+        // add x24, x24, #16
+        // sub x25, x25, #1
         r".inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739,0xb5fff959,0x14000001,0x91000356,0x91000377
-.inst 0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269,0xf9002269,0xf9400669
-.inst 0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269,0xf9402669,0xf9003669
-.inst 0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262,0x910002c3,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
+.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // ldr x9, [x19, #248]
+        // ldr x10, [x9, #0]
+        // str x10, [x19, #0]
+        // ldr x10, [x9, #8]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // str x9, [x19, #64]
+        // ldr x9, [x19, #8]
+        // movz x10, #128, lsl #0
+        // movk x10, #128, lsl #32
+        // bic x9, x9, x10, ror #0
+        // str x9, [x19, #72]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // lsr x4, x23, #4
+        // lsl x4, x4, #33
+        // lsr x4, x4, #33
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0x91000356,0x91000377,0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269
+.inst 0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269
+.inst 0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262
+.inst 0x910002c3,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // lsl x9, x9, #33
+        // lsr x9, x9, #33
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // ldr x11, [x19, #64]
+        // rev x11, x11
+        // adds x10, x10, x9
+        // movz x12, #0, lsl #0
+        // adc x11, x11, x12
+        // rev x10, x10
+        // rev x11, x11
+        // str x11, [x19, #64]
+        // str x10, [x19, #72]
+        // lsl x9, x9, #4
+        // add x22, x22, x9
+        // sub x23, x23, x9
         r".inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
-.inst 0xcb0902f7,0xb4000677,0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669
-.inst 0xf9003669,0x91044280,0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
-        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267,0xb4000069,0xd2800208,0x14000001,0x394000c9
-.inst 0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508,0xb5ffff28,0xf9402669
-.inst 0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a,0xdac00d29
-.inst 0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a,0xb4000069,0xcb0a02f7
-.inst 0x14000002,0xd2800017,0xb5fffa17,0x14000001,0x91000356,0x91000377,0xd344fee9,0xb40007e9
-.inst 0xd10006e9,0xd344fd29,0xd280001c,0xb4000089,0xd1000529,0xd37ced3c,0x14000001,0x91008266
-.inst 0x8b1c02c7,0xcb1c02e8,0xb4000108,0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
-.inst 0xb5ffff68,0x14000001,0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9
-.inst 0xf9400cc9,0xf945066a,0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84
-.inst 0x91000280,0x910002a1,0x9101c262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes}",
-        r".inst 0xd10006e9,0xd344fd29,0xd2800019,0xb4000069,0xd2800039,0x14000001,0x91000324,0x91000280
-.inst 0x910002a1,0x9101c262,0x91008263,0x91040265",
-        r"bl {vg_cmac_aes_update_aes}",
+.inst 0xcb0902f7
+cbz x23, 25f
+27:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #80]
+        // str x9, [x19, #88]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x19, #80
+        // movz x4, #1, lsl #0
+        // add x5, x19, #256
+        r".inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // add x8, x23, #0
+        // add x6, x22, #0
+        // add x7, x19, #80
+        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 28f",
+        // movz x8, #16, lsl #0
+        r".inst 0xd2800208
+b 29f
+28:
+29:
+210:",
+        // ldrb w9, [x6, #0]
+        // ldrb w10, [x7, #0]
+        // eor x9, x9, x10
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // add x7, x7, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 210b",
+        // ldr x9, [x19, #72]
+        // rev x9, x9
+        // ldr x10, [x19, #64]
+        // rev x10, x10
+        // movz x11, #1, lsl #0
+        // adds x9, x9, x11
+        // movz x11, #0, lsl #0
+        // adc x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x10, [x19, #64]
+        // str x9, [x19, #72]
+        // add x22, x22, #16
+        // lsr x9, x23, #4
+        // movz x10, #16, lsl #0
+        r".inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 211f",
+        // sub x23, x23, x10
+        r".inst 0xcb0a02f7
+b 212f
+211:",
+        // movz x23, #0, lsl #0
+        r".inst 0xd2800017
+212:
+cbnz x23, 27b
+b 26f
+25:
+26:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // lsr x9, x23, #4
+        r".inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 213f",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x28, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 215f",
+        // sub x9, x9, #1
+        // lsl x28, x9, #4
+        r".inst 0xd1000529,0xd37ced3c
+b 216f
+215:
+216:",
+        // add x6, x19, #32
+        // add x7, x22, x28
+        // sub x8, x23, x28
+        r".inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 217f
+219:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 219b
+b 218f
+217:
+218:",
+        // sub x6, x23, x28
+        // add x6, x19, x6
+        // ldr x9, [x6, #16]
+        // ldr x10, [x19, #2560]
+        // eor x9, x9, x10
+        // str x9, [x6, #16]
+        // ldr x9, [x6, #24]
+        // ldr x10, [x19, #2568]
+        // eor x9, x9, x10
+        // str x9, [x6, #24]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84,0x91000280,0x910002a1
+.inst 0x9101c262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes}",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x25, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 220f",
+        // movz x25, #1, lsl #0
+        r".inst 0xd2800039
+b 221f
+220:
+221:",
+        // add x4, x25, #0
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x19, #32
+        // add x5, x19, #256
+        r".inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91040265
+bl {vg_cmac_aes_update_aes}",
+        // lsl x9, x25, #4
+        // add x3, x19, #32
+        // add x3, x3, x9
+        // sub x4, x23, x28
+        // sub x4, x4, x9
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x5, x19, #256
         r".inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x9101c262
-.inst 0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0x1400003b,0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8,0xb4000108
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b170266
-.inst 0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69,0xf9404a69
-.inst 0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec,0x8a0c016b
-.inst 0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a,0xf9004a69
-.inst 0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a,0xca0a0129
-.inst 0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262,0x91008263
-.inst 0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0x91040265
+bl {vg_cmac_aes_finalize_aes}
+b 214f
+213:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // add x6, x19, #32
+        // add x7, x22, #0
+        // add x8, x23, #0
+        r".inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 222f
+224:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 224b
+b 223f
+222:
+223:",
+        // add x6, x19, x23
+        // add x6, x6, #32
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x19, #2560]
+        // str x9, [x19, #144]
+        // ldr x9, [x19, #2568]
+        // str x9, [x19, #152]
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #144]
+        // eor x9, x9, x10
+        // str x9, [x19, #32]
+        // ldr x9, [x19, #40]
+        // ldr x10, [x19, #152]
+        // eor x9, x9, x10
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x19, #32
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
+        r".inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262
+.inst 0x91008263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+214:",
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #112]
+        // eor x9, x9, x10
+        // ldr x10, [x19, #8]
+        // ldr x11, [x19, #120]
+        // eor x10, x10, x11
+        // orr x9, x9, x10
+        // sub x10, x9, #1
+        // bic x10, x10, x9, ror #0
+        // lsr x0, x10, #63
+        // movz x11, #0, lsl #0
+        // sub x11, x11, x0
+        // add x6, x26, #0
+        // lsr x8, x27, #3
         r".inst 0xf9400269,0xf9403a6a,0xca0a0129,0xf940066a,0xf9403e6b,0xca0b014a,0xaa0a0129,0xd100052a
-.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68,0xb4000108,0xf94000c9
-.inst 0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508,0xb5ffff68,0x14000001,0xd3430b68,0xd37dfd08
-.inst 0xb4000108,0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508,0xb5ffff68,0x14000001
-.inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68
+cbz x8, 225f
+227:",
+        // ldr x9, [x6, #0]
+        // and x9, x9, x11
+        // str x9, [x6, #0]
+        // add x6, x6, #8
+        // sub x8, x8, #1
+        r".inst 0xf94000c9,0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508
+cbnz x8, 227b
+b 226f
+225:
+226:",
+        // lsl x8, x27, #61
+        // lsr x8, x8, #61
+        r".inst 0xd3430b68,0xd37dfd08
+cbz x8, 228f
+230:",
+        // ldrb w9, [x6, #0]
+        // and x9, x9, x11
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508
+cbnz x8, 230b
+b 229f
+228:
+229:",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2576
+        // ret
+        r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
@@ -244,59 +1037,407 @@ pub const VG_AES_SIV_ENCRYPT_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt_aes_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2576
+        // add x7, sp, #0
+        // str x19, [x7, #160]
+        // str x20, [x7, #168]
+        // str x21, [x7, #176]
+        // str x22, [x7, #184]
+        // str x23, [x7, #192]
+        // str x24, [x7, #200]
+        // str x25, [x7, #208]
+        // str x26, [x7, #216]
+        // str x27, [x7, #224]
+        // str x28, [x7, #232]
+        // str x30, [x7, #240]
+        // str x6, [x7, #248]
+        // add x19, x7, #0
+        // add x20, x0, #0
+        // add x21, x1, #0
+        // add x24, x2, #0
+        // add x25, x3, #0
+        // add x26, x4, #0
+        // add x27, x5, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #16]
+        // str x9, [x19, #24]
+        // str x9, [x19, #2560]
+        // str x9, [x19, #2568]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #2560
+        // add x3, x19, #16
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0xb4000739,0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c,0xb40000d7
-.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c,0x14000001,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91020262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
-        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+cbz x25, 20f
+22:",
+        // ldr x22, [x24, #0]
+        // ldr x23, [x24, #8]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // movz x28, #0, lsl #0
+        r".inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f",
+        // sub x28, x23, #1
+        // movz x9, #15, lsl #0
+        // and x9, x28, x9
+        // sub x28, x28, x9
+        r".inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:",
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes_cbc}",
+        // add x3, x22, x28
+        // sub x4, x23, x28
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x5, x19, #256
+        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+bl {vg_cmac_aes_finalize_aes}",
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #2568]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #2560]
+        // str x10, [x19, #2568]
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #128]
+        // eor x9, x9, x10
+        // str x9, [x19, #2560]
+        // ldr x9, [x19, #2568]
+        // ldr x10, [x19, #136]
+        // eor x9, x9, x10
+        // str x9, [x19, #2568]
+        // add x24, x24, #16
+        // sub x25, x25, #1
         r".inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739,0xb5fff959,0x14000001,0x91000356,0x91000377
-.inst 0xd344fee9,0xb40007e9,0xd10006e9,0xd344fd29,0xd280001c,0xb4000089,0xd1000529,0xd37ced3c
-.inst 0x14000001,0x91008266,0x8b1c02c7,0xcb1c02e8,0xb4000108,0x394000e9,0x390000c9,0x910004e7
-.inst 0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a
-.inst 0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a,0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269
-.inst 0xf9000669,0xd344ff84,0x91000280,0x910002a1,0x91000262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
-        r".inst 0xd10006e9,0xd344fd29,0xd2800019,0xb4000069,0xd2800039,0x14000001,0x91000324,0x91000280
-.inst 0x910002a1,0x91000262,0x91008263,0x91040265",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
+.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // lsr x9, x23, #4
+        r".inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 25f",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x28, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 27f",
+        // sub x9, x9, #1
+        // lsl x28, x9, #4
+        r".inst 0xd1000529,0xd37ced3c
+b 28f
+27:
+28:",
+        // add x6, x19, #32
+        // add x7, x22, x28
+        // sub x8, x23, x28
+        r".inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 29f
+211:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 211b
+b 210f
+29:
+210:",
+        // sub x6, x23, x28
+        // add x6, x19, x6
+        // ldr x9, [x6, #16]
+        // ldr x10, [x19, #2560]
+        // eor x9, x9, x10
+        // str x9, [x6, #16]
+        // ldr x9, [x6, #24]
+        // ldr x10, [x19, #2568]
+        // eor x9, x9, x10
+        // str x9, [x6, #24]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #0]
+        // str x9, [x19, #8]
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269,0xf9000669,0xd344ff84,0x91000280,0x910002a1
+.inst 0x91000262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes_cbc}",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x25, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 212f",
+        // movz x25, #1, lsl #0
+        r".inst 0xd2800039
+b 213f
+212:
+213:",
+        // add x4, x25, #0
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x19, #32
+        // add x5, x19, #256
+        r".inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91040265
+bl {vg_cmac_aes_update_aes_cbc}",
+        // lsl x9, x25, #4
+        // add x3, x19, #32
+        // add x3, x3, x9
+        // sub x4, x23, x28
+        // sub x4, x4, x9
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x5, x19, #256
         r".inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x91000262
-.inst 0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0x1400003b,0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8,0xb4000108
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b170266
-.inst 0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69,0xf9404a69
-.inst 0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec,0x8a0c016b
-.inst 0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a,0xf9004a69
-.inst 0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a,0xca0a0129
-.inst 0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262,0x91008263
-.inst 0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0x91040265
+bl {vg_cmac_aes_finalize_aes}
+b 26f
+25:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // add x6, x19, #32
+        // add x7, x22, #0
+        // add x8, x23, #0
+        r".inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 214f
+216:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 216b
+b 215f
+214:
+215:",
+        // add x6, x19, x23
+        // add x6, x6, #32
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x19, #2560]
+        // str x9, [x19, #144]
+        // ldr x9, [x19, #2568]
+        // str x9, [x19, #152]
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #144]
+        // eor x9, x9, x10
+        // str x9, [x19, #32]
+        // ldr x9, [x19, #40]
+        // ldr x10, [x19, #152]
+        // eor x9, x9, x10
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #0]
+        // str x9, [x19, #8]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x19, #32
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
+        r".inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262
+.inst 0x91008263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+26:",
+        // ldr x9, [x19, #0]
+        // str x9, [x19, #64]
+        // ldr x9, [x19, #8]
+        // movz x10, #128, lsl #0
+        // movk x10, #128, lsl #32
+        // bic x9, x9, x10, ror #0
+        // str x9, [x19, #72]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // lsr x4, x23, #4
+        // lsl x4, x4, #33
+        // lsr x4, x4, #33
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x22, #0
+        // add x5, x19, #256
         r".inst 0xf9400269,0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269
 .inst 0xf9003269,0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1
-.inst 0x91018262,0x910002c3,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
+.inst 0x91018262,0x910002c3,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // lsl x9, x9, #33
+        // lsr x9, x9, #33
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // ldr x11, [x19, #64]
+        // rev x11, x11
+        // adds x10, x10, x9
+        // movz x12, #0, lsl #0
+        // adc x11, x11, x12
+        // rev x10, x10
+        // rev x11, x11
+        // str x11, [x19, #64]
+        // str x10, [x19, #72]
+        // lsl x9, x9, #4
+        // add x22, x22, x9
+        // sub x23, x23, x9
         r".inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
-.inst 0xcb0902f7,0xb4000677,0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669
-.inst 0xf9003669,0x91044280,0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
-        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267,0xb4000069,0xd2800208,0x14000001,0x394000c9
-.inst 0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508,0xb5ffff28,0xf9402669
-.inst 0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a,0xdac00d29
-.inst 0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a,0xb4000069,0xcb0a02f7
-.inst 0x14000002,0xd2800017,0xb5fffa17,0x14000001,0x91000356,0x91000377,0xf9407e69,0xf940026a
-.inst 0xf900012a,0xf940066a,0xf900052a,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678
-.inst 0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xcb0902f7
+cbz x23, 217f
+219:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #80]
+        // str x9, [x19, #88]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x19, #80
+        // movz x4, #1, lsl #0
+        // add x5, x19, #256
+        r".inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // add x8, x23, #0
+        // add x6, x22, #0
+        // add x7, x19, #80
+        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 220f",
+        // movz x8, #16, lsl #0
+        r".inst 0xd2800208
+b 221f
+220:
+221:
+222:",
+        // ldrb w9, [x6, #0]
+        // ldrb w10, [x7, #0]
+        // eor x9, x9, x10
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // add x7, x7, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 222b",
+        // ldr x9, [x19, #72]
+        // rev x9, x9
+        // ldr x10, [x19, #64]
+        // rev x10, x10
+        // movz x11, #1, lsl #0
+        // adds x9, x9, x11
+        // movz x11, #0, lsl #0
+        // adc x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x10, [x19, #64]
+        // str x9, [x19, #72]
+        // add x22, x22, #16
+        // lsr x9, x23, #4
+        // movz x10, #16, lsl #0
+        r".inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 223f",
+        // sub x23, x23, x10
+        r".inst 0xcb0a02f7
+b 224f
+223:",
+        // movz x23, #0, lsl #0
+        r".inst 0xd2800017
+224:
+cbnz x23, 219b
+b 218f
+217:
+218:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // ldr x9, [x19, #248]
+        // ldr x10, [x19, #0]
+        // str x10, [x9, #0]
+        // ldr x10, [x19, #8]
+        // str x10, [x9, #8]
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2576
+        // ret
+        r".inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
+.inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
+.inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
@@ -323,63 +1464,450 @@ pub const VG_AES_SIV_DECRYPT_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt_aes_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
+        r".arch_extension aes",
+        // sub sp, sp, #2576
+        // add x7, sp, #0
+        // str x19, [x7, #160]
+        // str x20, [x7, #168]
+        // str x21, [x7, #176]
+        // str x22, [x7, #184]
+        // str x23, [x7, #192]
+        // str x24, [x7, #200]
+        // str x25, [x7, #208]
+        // str x26, [x7, #216]
+        // str x27, [x7, #224]
+        // str x28, [x7, #232]
+        // str x30, [x7, #240]
+        // str x6, [x7, #248]
+        // add x19, x7, #0
+        // add x20, x0, #0
+        // add x21, x1, #0
+        // add x24, x2, #0
+        // add x25, x3, #0
+        // add x26, x4, #0
+        // add x27, x5, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #16]
+        // str x9, [x19, #24]
+        // str x9, [x19, #2560]
+        // str x9, [x19, #2568]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #2560
+        // add x3, x19, #16
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0xb4000739,0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c,0xb40000d7
-.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c,0x14000001,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91020262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
-        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+cbz x25, 20f
+22:",
+        // ldr x22, [x24, #0]
+        // ldr x23, [x24, #8]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // movz x28, #0, lsl #0
+        r".inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f",
+        // sub x28, x23, #1
+        // movz x9, #15, lsl #0
+        // and x9, x28, x9
+        // sub x28, x28, x9
+        r".inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:",
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes_cbc}",
+        // add x3, x22, x28
+        // sub x4, x23, x28
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x5, x19, #256
+        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+bl {vg_cmac_aes_finalize_aes}",
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #2568]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #2560]
+        // str x10, [x19, #2568]
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #128]
+        // eor x9, x9, x10
+        // str x9, [x19, #2560]
+        // ldr x9, [x19, #2568]
+        // ldr x10, [x19, #136]
+        // eor x9, x9, x10
+        // str x9, [x19, #2568]
+        // add x24, x24, #16
+        // sub x25, x25, #1
         r".inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739,0xb5fff959,0x14000001,0x91000356,0x91000377
-.inst 0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269,0xf9002269,0xf9400669
-.inst 0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269,0xf9402669,0xf9003669
-.inst 0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262,0x910002c3,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
+.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // ldr x9, [x19, #248]
+        // ldr x10, [x9, #0]
+        // str x10, [x19, #0]
+        // ldr x10, [x9, #8]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // str x9, [x19, #64]
+        // ldr x9, [x19, #8]
+        // movz x10, #128, lsl #0
+        // movk x10, #128, lsl #32
+        // bic x9, x9, x10, ror #0
+        // str x9, [x19, #72]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // lsr x4, x23, #4
+        // lsl x4, x4, #33
+        // lsr x4, x4, #33
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0x91000356,0x91000377,0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269
+.inst 0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269
+.inst 0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262
+.inst 0x910002c3,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // lsl x9, x9, #33
+        // lsr x9, x9, #33
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // ldr x11, [x19, #64]
+        // rev x11, x11
+        // adds x10, x10, x9
+        // movz x12, #0, lsl #0
+        // adc x11, x11, x12
+        // rev x10, x10
+        // rev x11, x11
+        // str x11, [x19, #64]
+        // str x10, [x19, #72]
+        // lsl x9, x9, #4
+        // add x22, x22, x9
+        // sub x23, x23, x9
         r".inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
-.inst 0xcb0902f7,0xb4000677,0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669
-.inst 0xf9003669,0x91044280,0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265",
-        r"bl {vg_aes_ctr32_aes}",
-        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267,0xb4000069,0xd2800208,0x14000001,0x394000c9
-.inst 0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508,0xb5ffff28,0xf9402669
-.inst 0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a,0xdac00d29
-.inst 0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a,0xb4000069,0xcb0a02f7
-.inst 0x14000002,0xd2800017,0xb5fffa17,0x14000001,0x91000356,0x91000377,0xd344fee9,0xb40007e9
-.inst 0xd10006e9,0xd344fd29,0xd280001c,0xb4000089,0xd1000529,0xd37ced3c,0x14000001,0x91008266
-.inst 0x8b1c02c7,0xcb1c02e8,0xb4000108,0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
-.inst 0xb5ffff68,0x14000001,0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9
-.inst 0xf9400cc9,0xf945066a,0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84
-.inst 0x91000280,0x910002a1,0x9101c262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
-        r".inst 0xd10006e9,0xd344fd29,0xd2800019,0xb4000069,0xd2800039,0x14000001,0x91000324,0x91000280
-.inst 0x910002a1,0x9101c262,0x91008263,0x91040265",
-        r"bl {vg_cmac_aes_update_aes_cbc}",
+.inst 0xcb0902f7
+cbz x23, 25f
+27:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #80]
+        // str x9, [x19, #88]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x19, #80
+        // movz x4, #1, lsl #0
+        // add x5, x19, #256
+        r".inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+bl {vg_aes_ctr32_aes}",
+        // lsr x9, x23, #4
+        // add x8, x23, #0
+        // add x6, x22, #0
+        // add x7, x19, #80
+        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 28f",
+        // movz x8, #16, lsl #0
+        r".inst 0xd2800208
+b 29f
+28:
+29:
+210:",
+        // ldrb w9, [x6, #0]
+        // ldrb w10, [x7, #0]
+        // eor x9, x9, x10
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // add x7, x7, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 210b",
+        // ldr x9, [x19, #72]
+        // rev x9, x9
+        // ldr x10, [x19, #64]
+        // rev x10, x10
+        // movz x11, #1, lsl #0
+        // adds x9, x9, x11
+        // movz x11, #0, lsl #0
+        // adc x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x10, [x19, #64]
+        // str x9, [x19, #72]
+        // add x22, x22, #16
+        // lsr x9, x23, #4
+        // movz x10, #16, lsl #0
+        r".inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 211f",
+        // sub x23, x23, x10
+        r".inst 0xcb0a02f7
+b 212f
+211:",
+        // movz x23, #0, lsl #0
+        r".inst 0xd2800017
+212:
+cbnz x23, 27b
+b 26f
+25:
+26:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // lsr x9, x23, #4
+        r".inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 213f",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x28, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 215f",
+        // sub x9, x9, #1
+        // lsl x28, x9, #4
+        r".inst 0xd1000529,0xd37ced3c
+b 216f
+215:
+216:",
+        // add x6, x19, #32
+        // add x7, x22, x28
+        // sub x8, x23, x28
+        r".inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 217f
+219:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 219b
+b 218f
+217:
+218:",
+        // sub x6, x23, x28
+        // add x6, x19, x6
+        // ldr x9, [x6, #16]
+        // ldr x10, [x19, #2560]
+        // eor x9, x9, x10
+        // str x9, [x6, #16]
+        // ldr x9, [x6, #24]
+        // ldr x10, [x19, #2568]
+        // eor x9, x9, x10
+        // str x9, [x6, #24]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84,0x91000280,0x910002a1
+.inst 0x9101c262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update_aes_cbc}",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x25, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 220f",
+        // movz x25, #1, lsl #0
+        r".inst 0xd2800039
+b 221f
+220:
+221:",
+        // add x4, x25, #0
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x19, #32
+        // add x5, x19, #256
+        r".inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91040265
+bl {vg_cmac_aes_update_aes_cbc}",
+        // lsl x9, x25, #4
+        // add x3, x19, #32
+        // add x3, x3, x9
+        // sub x4, x23, x28
+        // sub x4, x4, x9
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x5, x19, #256
         r".inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x9101c262
-.inst 0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
-        r".inst 0x1400003b,0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8,0xb4000108
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b170266
-.inst 0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69,0xf9404a69
-.inst 0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec,0x8a0c016b
-.inst 0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a,0xf9004a69
-.inst 0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a,0xca0a0129
-.inst 0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262,0x91008263
-.inst 0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize_aes}",
+.inst 0x91040265
+bl {vg_cmac_aes_finalize_aes}
+b 214f
+213:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // add x6, x19, #32
+        // add x7, x22, #0
+        // add x8, x23, #0
+        r".inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 222f
+224:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 224b
+b 223f
+222:
+223:",
+        // add x6, x19, x23
+        // add x6, x6, #32
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x19, #2560]
+        // str x9, [x19, #144]
+        // ldr x9, [x19, #2568]
+        // str x9, [x19, #152]
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #144]
+        // eor x9, x9, x10
+        // str x9, [x19, #32]
+        // ldr x9, [x19, #40]
+        // ldr x10, [x19, #152]
+        // eor x9, x9, x10
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x19, #32
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
+        r".inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262
+.inst 0x91008263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize_aes}
+214:",
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #112]
+        // eor x9, x9, x10
+        // ldr x10, [x19, #8]
+        // ldr x11, [x19, #120]
+        // eor x10, x10, x11
+        // orr x9, x9, x10
+        // sub x10, x9, #1
+        // bic x10, x10, x9, ror #0
+        // lsr x0, x10, #63
+        // movz x11, #0, lsl #0
+        // sub x11, x11, x0
+        // add x6, x26, #0
+        // lsr x8, x27, #3
         r".inst 0xf9400269,0xf9403a6a,0xca0a0129,0xf940066a,0xf9403e6b,0xca0b014a,0xaa0a0129,0xd100052a
-.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68,0xb4000108,0xf94000c9
-.inst 0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508,0xb5ffff68,0x14000001,0xd3430b68,0xd37dfd08
-.inst 0xb4000108,0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508,0xb5ffff68,0x14000001
-.inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68
+cbz x8, 225f
+227:",
+        // ldr x9, [x6, #0]
+        // and x9, x9, x11
+        // str x9, [x6, #0]
+        // add x6, x6, #8
+        // sub x8, x8, #1
+        r".inst 0xf94000c9,0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508
+cbnz x8, 227b
+b 226f
+225:
+226:",
+        // lsl x8, x27, #61
+        // lsr x8, x8, #61
+        r".inst 0xd3430b68,0xd37dfd08
+cbz x8, 228f
+230:",
+        // ldrb w9, [x6, #0]
+        // and x9, x9, x11
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508
+cbnz x8, 230b
+b 229f
+228:
+229:",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2576
+        // ret
+        r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.arch_extension noaes
+.p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
@@ -402,59 +1930,405 @@ pub unsafe extern "C" fn vg_aes_siv_decrypt_aes_cbc(ctx: *const [u64; 64], round
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        // sub sp, sp, #2576
+        // add x7, sp, #0
+        // str x19, [x7, #160]
+        // str x20, [x7, #168]
+        // str x21, [x7, #176]
+        // str x22, [x7, #184]
+        // str x23, [x7, #192]
+        // str x24, [x7, #200]
+        // str x25, [x7, #208]
+        // str x26, [x7, #216]
+        // str x27, [x7, #224]
+        // str x28, [x7, #232]
+        // str x30, [x7, #240]
+        // str x6, [x7, #248]
+        // add x19, x7, #0
+        // add x20, x0, #0
+        // add x21, x1, #0
+        // add x24, x2, #0
+        // add x25, x3, #0
+        // add x26, x4, #0
+        // add x27, x5, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #16]
+        // str x9, [x19, #24]
+        // str x9, [x19, #2560]
+        // str x9, [x19, #2568]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #2560
+        // add x3, x19, #16
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
-        r".inst 0xb4000739,0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c,0xb40000d7
-.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c,0x14000001,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91020262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update}",
-        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
+.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize}
+cbz x25, 20f
+22:",
+        // ldr x22, [x24, #0]
+        // ldr x23, [x24, #8]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // movz x28, #0, lsl #0
+        r".inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f",
+        // sub x28, x23, #1
+        // movz x9, #15, lsl #0
+        // and x9, x28, x9
+        // sub x28, x28, x9
+        r".inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:",
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update}",
+        // add x3, x22, x28
+        // sub x4, x23, x28
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x5, x19, #256
+        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+bl {vg_cmac_aes_finalize}",
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #2568]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #2560]
+        // str x10, [x19, #2568]
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #128]
+        // eor x9, x9, x10
+        // str x9, [x19, #2560]
+        // ldr x9, [x19, #2568]
+        // ldr x10, [x19, #136]
+        // eor x9, x9, x10
+        // str x9, [x19, #2568]
+        // add x24, x24, #16
+        // sub x25, x25, #1
         r".inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739,0xb5fff959,0x14000001,0x91000356,0x91000377
-.inst 0xd344fee9,0xb40007e9,0xd10006e9,0xd344fd29,0xd280001c,0xb4000089,0xd1000529,0xd37ced3c
-.inst 0x14000001,0x91008266,0x8b1c02c7,0xcb1c02e8,0xb4000108,0x394000e9,0x390000c9,0x910004e7
-.inst 0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a
-.inst 0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a,0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269
-.inst 0xf9000669,0xd344ff84,0x91000280,0x910002a1,0x91000262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update}",
-        r".inst 0xd10006e9,0xd344fd29,0xd2800019,0xb4000069,0xd2800039,0x14000001,0x91000324,0x91000280
-.inst 0x910002a1,0x91000262,0x91008263,0x91040265",
-        r"bl {vg_cmac_aes_update}",
+.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // lsr x9, x23, #4
+        r".inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 25f",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x28, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 27f",
+        // sub x9, x9, #1
+        // lsl x28, x9, #4
+        r".inst 0xd1000529,0xd37ced3c
+b 28f
+27:
+28:",
+        // add x6, x19, #32
+        // add x7, x22, x28
+        // sub x8, x23, x28
+        r".inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 29f
+211:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 211b
+b 210f
+29:
+210:",
+        // sub x6, x23, x28
+        // add x6, x19, x6
+        // ldr x9, [x6, #16]
+        // ldr x10, [x19, #2560]
+        // eor x9, x9, x10
+        // str x9, [x6, #16]
+        // ldr x9, [x6, #24]
+        // ldr x10, [x19, #2568]
+        // eor x9, x9, x10
+        // str x9, [x6, #24]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #0]
+        // str x9, [x19, #8]
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269,0xf9000669,0xd344ff84,0x91000280,0x910002a1
+.inst 0x91000262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update}",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x25, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 212f",
+        // movz x25, #1, lsl #0
+        r".inst 0xd2800039
+b 213f
+212:
+213:",
+        // add x4, x25, #0
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x19, #32
+        // add x5, x19, #256
+        r".inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91040265
+bl {vg_cmac_aes_update}",
+        // lsl x9, x25, #4
+        // add x3, x19, #32
+        // add x3, x3, x9
+        // sub x4, x23, x28
+        // sub x4, x4, x9
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x5, x19, #256
         r".inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x91000262
-.inst 0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
-        r".inst 0x1400003b,0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8,0xb4000108
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b170266
-.inst 0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69,0xf9404a69
-.inst 0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec,0x8a0c016b
-.inst 0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a,0xf9004a69
-.inst 0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a,0xca0a0129
-.inst 0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262,0x91008263
-.inst 0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
+.inst 0x91040265
+bl {vg_cmac_aes_finalize}
+b 26f
+25:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // add x6, x19, #32
+        // add x7, x22, #0
+        // add x8, x23, #0
+        r".inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 214f
+216:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 216b
+b 215f
+214:
+215:",
+        // add x6, x19, x23
+        // add x6, x6, #32
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x19, #2560]
+        // str x9, [x19, #144]
+        // ldr x9, [x19, #2568]
+        // str x9, [x19, #152]
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #144]
+        // eor x9, x9, x10
+        // str x9, [x19, #32]
+        // ldr x9, [x19, #40]
+        // ldr x10, [x19, #152]
+        // eor x9, x9, x10
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #0]
+        // str x9, [x19, #8]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #0
+        // add x3, x19, #32
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
+        r".inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262
+.inst 0x91008263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize}
+26:",
+        // ldr x9, [x19, #0]
+        // str x9, [x19, #64]
+        // ldr x9, [x19, #8]
+        // movz x10, #128, lsl #0
+        // movk x10, #128, lsl #32
+        // bic x9, x9, x10, ror #0
+        // str x9, [x19, #72]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // lsr x4, x23, #4
+        // lsl x4, x4, #33
+        // lsr x4, x4, #33
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x22, #0
+        // add x5, x19, #256
         r".inst 0xf9400269,0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269
 .inst 0xf9003269,0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1
-.inst 0x91018262,0x910002c3,0x91040265",
-        r"bl {vg_aes_ctr32}",
+.inst 0x91018262,0x910002c3,0x91040265
+bl {vg_aes_ctr32}",
+        // lsr x9, x23, #4
+        // lsl x9, x9, #33
+        // lsr x9, x9, #33
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // ldr x11, [x19, #64]
+        // rev x11, x11
+        // adds x10, x10, x9
+        // movz x12, #0, lsl #0
+        // adc x11, x11, x12
+        // rev x10, x10
+        // rev x11, x11
+        // str x11, [x19, #64]
+        // str x10, [x19, #72]
+        // lsl x9, x9, #4
+        // add x22, x22, x9
+        // sub x23, x23, x9
         r".inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
-.inst 0xcb0902f7,0xb4000677,0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669
-.inst 0xf9003669,0x91044280,0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265",
-        r"bl {vg_aes_ctr32}",
-        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267,0xb4000069,0xd2800208,0x14000001,0x394000c9
-.inst 0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508,0xb5ffff28,0xf9402669
-.inst 0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a,0xdac00d29
-.inst 0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a,0xb4000069,0xcb0a02f7
-.inst 0x14000002,0xd2800017,0xb5fffa17,0x14000001,0x91000356,0x91000377,0xf9407e69,0xf940026a
-.inst 0xf900012a,0xf940066a,0xf900052a,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678
-.inst 0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xcb0902f7
+cbz x23, 217f
+219:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #80]
+        // str x9, [x19, #88]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x19, #80
+        // movz x4, #1, lsl #0
+        // add x5, x19, #256
+        r".inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+bl {vg_aes_ctr32}",
+        // lsr x9, x23, #4
+        // add x8, x23, #0
+        // add x6, x22, #0
+        // add x7, x19, #80
+        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 220f",
+        // movz x8, #16, lsl #0
+        r".inst 0xd2800208
+b 221f
+220:
+221:
+222:",
+        // ldrb w9, [x6, #0]
+        // ldrb w10, [x7, #0]
+        // eor x9, x9, x10
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // add x7, x7, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 222b",
+        // ldr x9, [x19, #72]
+        // rev x9, x9
+        // ldr x10, [x19, #64]
+        // rev x10, x10
+        // movz x11, #1, lsl #0
+        // adds x9, x9, x11
+        // movz x11, #0, lsl #0
+        // adc x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x10, [x19, #64]
+        // str x9, [x19, #72]
+        // add x22, x22, #16
+        // lsr x9, x23, #4
+        // movz x10, #16, lsl #0
+        r".inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 223f",
+        // sub x23, x23, x10
+        r".inst 0xcb0a02f7
+b 224f
+223:",
+        // movz x23, #0, lsl #0
+        r".inst 0xd2800017
+224:
+cbnz x23, 219b
+b 218f
+217:
+218:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // ldr x9, [x19, #248]
+        // ldr x10, [x19, #0]
+        // str x10, [x9, #0]
+        // ldr x10, [x19, #8]
+        // str x10, [x9, #8]
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2576
+        // ret
+        r".inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
+.inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
+.inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
@@ -477,63 +2351,448 @@ pub unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
+        // sub sp, sp, #2576
+        // add x7, sp, #0
+        // str x19, [x7, #160]
+        // str x20, [x7, #168]
+        // str x21, [x7, #176]
+        // str x22, [x7, #184]
+        // str x23, [x7, #192]
+        // str x24, [x7, #200]
+        // str x25, [x7, #208]
+        // str x26, [x7, #216]
+        // str x27, [x7, #224]
+        // str x28, [x7, #232]
+        // str x30, [x7, #240]
+        // str x6, [x7, #248]
+        // add x19, x7, #0
+        // add x20, x0, #0
+        // add x21, x1, #0
+        // add x24, x2, #0
+        // add x25, x3, #0
+        // add x26, x4, #0
+        // add x27, x5, #0
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #16]
+        // str x9, [x19, #24]
+        // str x9, [x19, #2560]
+        // str x9, [x19, #2568]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #2560
+        // add x3, x19, #16
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
-        r".inst 0xb4000739,0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c,0xb40000d7
-.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c,0x14000001,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91020262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update}",
-        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
+.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize}
+cbz x25, 20f
+22:",
+        // ldr x22, [x24, #0]
+        // ldr x23, [x24, #8]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #128]
+        // str x9, [x19, #136]
+        // movz x28, #0, lsl #0
+        r".inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f",
+        // sub x28, x23, #1
+        // movz x9, #15, lsl #0
+        // and x9, x28, x9
+        // sub x28, x28, x9
+        r".inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:",
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update}",
+        // add x3, x22, x28
+        // sub x4, x23, x28
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #128
+        // add x5, x19, #256
+        r".inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+bl {vg_cmac_aes_finalize}",
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #2568]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #2560]
+        // str x10, [x19, #2568]
+        // ldr x9, [x19, #2560]
+        // ldr x10, [x19, #128]
+        // eor x9, x9, x10
+        // str x9, [x19, #2560]
+        // ldr x9, [x19, #2568]
+        // ldr x10, [x19, #136]
+        // eor x9, x9, x10
+        // str x9, [x19, #2568]
+        // add x24, x24, #16
+        // sub x25, x25, #1
         r".inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739,0xb5fff959,0x14000001,0x91000356,0x91000377
-.inst 0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269,0xf9002269,0xf9400669
-.inst 0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269,0xf9402669,0xf9003669
-.inst 0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262,0x910002c3,0x91040265",
-        r"bl {vg_aes_ctr32}",
+.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // ldr x9, [x19, #248]
+        // ldr x10, [x9, #0]
+        // str x10, [x19, #0]
+        // ldr x10, [x9, #8]
+        // str x10, [x19, #8]
+        // ldr x9, [x19, #0]
+        // str x9, [x19, #64]
+        // ldr x9, [x19, #8]
+        // movz x10, #128, lsl #0
+        // movk x10, #128, lsl #32
+        // bic x9, x9, x10, ror #0
+        // str x9, [x19, #72]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // lsr x4, x23, #4
+        // lsl x4, x4, #33
+        // lsr x4, x4, #33
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0x91000356,0x91000377,0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269
+.inst 0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269
+.inst 0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262
+.inst 0x910002c3,0x91040265
+bl {vg_aes_ctr32}",
+        // lsr x9, x23, #4
+        // lsl x9, x9, #33
+        // lsr x9, x9, #33
+        // ldr x10, [x19, #72]
+        // rev x10, x10
+        // ldr x11, [x19, #64]
+        // rev x11, x11
+        // adds x10, x10, x9
+        // movz x12, #0, lsl #0
+        // adc x11, x11, x12
+        // rev x10, x10
+        // rev x11, x11
+        // str x11, [x19, #64]
+        // str x10, [x19, #72]
+        // lsl x9, x9, #4
+        // add x22, x22, x9
+        // sub x23, x23, x9
         r".inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
-.inst 0xcb0902f7,0xb4000677,0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669
-.inst 0xf9003669,0x91044280,0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265",
-        r"bl {vg_aes_ctr32}",
-        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267,0xb4000069,0xd2800208,0x14000001,0x394000c9
-.inst 0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508,0xb5ffff28,0xf9402669
-.inst 0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a,0xdac00d29
-.inst 0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a,0xb4000069,0xcb0a02f7
-.inst 0x14000002,0xd2800017,0xb5fffa17,0x14000001,0x91000356,0x91000377,0xd344fee9,0xb40007e9
-.inst 0xd10006e9,0xd344fd29,0xd280001c,0xb4000089,0xd1000529,0xd37ced3c,0x14000001,0x91008266
-.inst 0x8b1c02c7,0xcb1c02e8,0xb4000108,0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
-.inst 0xb5ffff68,0x14000001,0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9
-.inst 0xf9400cc9,0xf945066a,0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84
-.inst 0x91000280,0x910002a1,0x9101c262,0x910002c3,0x91040265",
-        r"bl {vg_cmac_aes_update}",
-        r".inst 0xd10006e9,0xd344fd29,0xd2800019,0xb4000069,0xd2800039,0x14000001,0x91000324,0x91000280
-.inst 0x910002a1,0x9101c262,0x91008263,0x91040265",
-        r"bl {vg_cmac_aes_update}",
+.inst 0xcb0902f7
+cbz x23, 25f
+27:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #80]
+        // str x9, [x19, #88]
+        // ldr x9, [x19, #64]
+        // str x9, [x19, #96]
+        // ldr x9, [x19, #72]
+        // str x9, [x19, #104]
+        // add x0, x20, #272
+        // add x1, x21, #0
+        // add x2, x19, #96
+        // add x3, x19, #80
+        // movz x4, #1, lsl #0
+        // add x5, x19, #256
+        r".inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+bl {vg_aes_ctr32}",
+        // lsr x9, x23, #4
+        // add x8, x23, #0
+        // add x6, x22, #0
+        // add x7, x19, #80
+        r".inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 28f",
+        // movz x8, #16, lsl #0
+        r".inst 0xd2800208
+b 29f
+28:
+29:
+210:",
+        // ldrb w9, [x6, #0]
+        // ldrb w10, [x7, #0]
+        // eor x9, x9, x10
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // add x7, x7, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 210b",
+        // ldr x9, [x19, #72]
+        // rev x9, x9
+        // ldr x10, [x19, #64]
+        // rev x10, x10
+        // movz x11, #1, lsl #0
+        // adds x9, x9, x11
+        // movz x11, #0, lsl #0
+        // adc x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x10, [x19, #64]
+        // str x9, [x19, #72]
+        // add x22, x22, #16
+        // lsr x9, x23, #4
+        // movz x10, #16, lsl #0
+        r".inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 211f",
+        // sub x23, x23, x10
+        r".inst 0xcb0a02f7
+b 212f
+211:",
+        // movz x23, #0, lsl #0
+        r".inst 0xd2800017
+212:
+cbnz x23, 27b
+b 26f
+25:
+26:",
+        // add x22, x26, #0
+        // add x23, x27, #0
+        // lsr x9, x23, #4
+        r".inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 213f",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x28, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 215f",
+        // sub x9, x9, #1
+        // lsl x28, x9, #4
+        r".inst 0xd1000529,0xd37ced3c
+b 216f
+215:
+216:",
+        // add x6, x19, #32
+        // add x7, x22, x28
+        // sub x8, x23, x28
+        r".inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 217f
+219:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 219b
+b 218f
+217:
+218:",
+        // sub x6, x23, x28
+        // add x6, x19, x6
+        // ldr x9, [x6, #16]
+        // ldr x10, [x19, #2560]
+        // eor x9, x9, x10
+        // str x9, [x6, #16]
+        // ldr x9, [x6, #24]
+        // ldr x10, [x19, #2568]
+        // eor x9, x9, x10
+        // str x9, [x6, #24]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // lsr x4, x28, #4
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x22, #0
+        // add x5, x19, #256
+        r".inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84,0x91000280,0x910002a1
+.inst 0x9101c262,0x910002c3,0x91040265
+bl {vg_cmac_aes_update}",
+        // sub x9, x23, #1
+        // lsr x9, x9, #4
+        // movz x25, #0, lsl #0
+        r".inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 220f",
+        // movz x25, #1, lsl #0
+        r".inst 0xd2800039
+b 221f
+220:
+221:",
+        // add x4, x25, #0
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x19, #32
+        // add x5, x19, #256
+        r".inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91040265
+bl {vg_cmac_aes_update}",
+        // lsl x9, x25, #4
+        // add x3, x19, #32
+        // add x3, x3, x9
+        // sub x4, x23, x28
+        // sub x4, x4, x9
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x5, x19, #256
         r".inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x9101c262
-.inst 0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
-        r".inst 0x1400003b,0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8,0xb4000108
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508,0xb5ffff68,0x14000001,0x8b170266
-.inst 0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69,0xf9404a69
-.inst 0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec,0x8a0c016b
-.inst 0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a,0xf9004a69
-.inst 0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a,0xca0a0129
-.inst 0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262,0x91008263
-.inst 0xd2800204,0x91040265",
-        r"bl {vg_cmac_aes_finalize}",
+.inst 0x91040265
+bl {vg_cmac_aes_finalize}
+b 214f
+213:",
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #32]
+        // str x9, [x19, #40]
+        // add x6, x19, #32
+        // add x7, x22, #0
+        // add x8, x23, #0
+        r".inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 222f
+224:",
+        // ldrb w9, [x7, #0]
+        // strb w9, [x6, #0]
+        // add x7, x7, #1
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 224b
+b 223f
+222:
+223:",
+        // add x6, x19, x23
+        // add x6, x6, #32
+        // movz x9, #128, lsl #0
+        // strb w9, [x6, #0]
+        // ldr x9, [x19, #2560]
+        // str x9, [x19, #144]
+        // ldr x9, [x19, #2568]
+        // str x9, [x19, #152]
+        // ldr x9, [x19, #144]
+        // ldr x10, [x19, #152]
+        // rev x9, x9
+        // rev x10, x10
+        // lsr x11, x9, #63
+        // movz x12, #0, lsl #0
+        // sub x11, x12, x11
+        // movz x12, #135, lsl #0
+        // and x11, x11, x12
+        // lsr x12, x10, #63
+        // lsl x9, x9, #1
+        // orr x9, x9, x12
+        // lsl x10, x10, #1
+        // eor x10, x10, x11
+        // rev x9, x9
+        // rev x10, x10
+        // str x9, [x19, #144]
+        // str x10, [x19, #152]
+        // ldr x9, [x19, #32]
+        // ldr x10, [x19, #144]
+        // eor x9, x9, x10
+        // str x9, [x19, #32]
+        // ldr x9, [x19, #40]
+        // ldr x10, [x19, #152]
+        // eor x9, x9, x10
+        // str x9, [x19, #40]
+        // movz x9, #0, lsl #0
+        // str x9, [x19, #112]
+        // str x9, [x19, #120]
+        // add x0, x20, #0
+        // add x1, x21, #0
+        // add x2, x19, #112
+        // add x3, x19, #32
+        // movz x4, #16, lsl #0
+        // add x5, x19, #256
+        r".inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262
+.inst 0x91008263,0xd2800204,0x91040265
+bl {vg_cmac_aes_finalize}
+214:",
+        // ldr x9, [x19, #0]
+        // ldr x10, [x19, #112]
+        // eor x9, x9, x10
+        // ldr x10, [x19, #8]
+        // ldr x11, [x19, #120]
+        // eor x10, x10, x11
+        // orr x9, x9, x10
+        // sub x10, x9, #1
+        // bic x10, x10, x9, ror #0
+        // lsr x0, x10, #63
+        // movz x11, #0, lsl #0
+        // sub x11, x11, x0
+        // add x6, x26, #0
+        // lsr x8, x27, #3
         r".inst 0xf9400269,0xf9403a6a,0xca0a0129,0xf940066a,0xf9403e6b,0xca0b014a,0xaa0a0129,0xd100052a
-.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68,0xb4000108,0xf94000c9
-.inst 0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508,0xb5ffff68,0x14000001,0xd3430b68,0xd37dfd08
-.inst 0xb4000108,0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508,0xb5ffff68,0x14000001
-.inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68
+cbz x8, 225f
+227:",
+        // ldr x9, [x6, #0]
+        // and x9, x9, x11
+        // str x9, [x6, #0]
+        // add x6, x6, #8
+        // sub x8, x8, #1
+        r".inst 0xf94000c9,0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508
+cbnz x8, 227b
+b 226f
+225:
+226:",
+        // lsl x8, x27, #61
+        // lsr x8, x8, #61
+        r".inst 0xd3430b68,0xd37dfd08
+cbz x8, 228f
+230:",
+        // ldrb w9, [x6, #0]
+        // and x9, x9, x11
+        // strb w9, [x6, #0]
+        // add x6, x6, #1
+        // sub x8, x8, #1
+        r".inst 0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508
+cbnz x8, 230b
+b 229f
+228:
+229:",
+        // ldr x20, [x19, #168]
+        // ldr x21, [x19, #176]
+        // ldr x22, [x19, #184]
+        // ldr x23, [x19, #192]
+        // ldr x24, [x19, #200]
+        // ldr x25, [x19, #208]
+        // ldr x26, [x19, #216]
+        // ldr x27, [x19, #224]
+        // ldr x28, [x19, #232]
+        // ldr x30, [x19, #240]
+        // ldr x19, [x19, #160]
+        // add sp, sp, #2576
+        // ret
+        r".inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,

@@ -16,120 +16,1142 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd1000424,0xd348fc84,0xb5007a64,0x4e083d0a,0x4e083d2b,0x4e083d4e,0x4e083d6f,0x4e083d90
-.inst 0x4e083db1,0xd2802006,0xf2a06046,0xf2c0a086,0xf2e0e0c6,0xd2812107,0xf2a16147,0xf2c1a187
-.inst 0xf2e1e1c7,0x4e081cc8,0x4e181ce8,0xd2800206,0x4e010cc7,0x4e278509,0x4e27852a,0x4e27854b
-.inst 0xd2800806,0x4e010ccc,0xd2801006,0x4e010ccd,0x4ea81d10,0x4ea91d31,0x4eaa1d52,0x4eab1d73
-.inst 0x6e2c1d14,0x6e2c1d35,0x6e2c1d56,0x6e2c1d77,0x6e2d1d18,0x6e2d1d39,0x6e2d1d5a,0x6e2d1d7b
-.inst 0x6e2d1e9c,0x6e2d1ebd,0x6e2d1ede,0x6e2d1eff,0x6f00e400,0x6f00e404,0x91000007,0x91000025
-.inst 0xd2800204,0xd2800008,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e030604,0x6e0104b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e050604,0x6e0304b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e070604,0x6e0504b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e090604,0x6e0704b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e0b0604,0x6e0904b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e0d0604,0x6e0b04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e0f0604,0x6e0d04b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e110604,0x6e0f04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e130604,0x6e1104b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e150604,0x6e1304b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e170604,0x6e1504b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e190604,0x6e1704b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e1b0604,0x6e1904b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e1d0604,0x6e1b04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5,0xb4000045
-.inst 0x14000003,0x91000007,0x91000025,0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205
-.inst 0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91
-.inst 0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95
-.inst 0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99
-.inst 0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d
-.inst 0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e1f0604,0x6e1d04b0,0x394000e6,0x4e010cc6
-.inst 0x4e268400,0x910004e7,0xd10004a5,0xb4000045,0x14000003,0x91000007,0x91000025,0x4e248400
-.inst 0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5
-.inst 0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93
-.inst 0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97
-.inst 0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b
-.inst 0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f
-.inst 0x4e010624,0x6e1f04b0,0x6e288527,0x6e278400,0x4eb01e07,0x4eb11e30,0x4eb21e51,0x4eb31e72
-.inst 0x4eb41e93,0x4eb51eb4,0x4eb61ed5,0x4eb71ef6,0x4eb81f17,0x4eb91f38,0x4eba1f59,0x4ebb1f7a
-.inst 0x4ebc1f9b,0x4ebd1fbc,0x4ebe1fdd,0x4ebf1ffe,0x4ea71cff,0x91004108,0xd1000484,0xb5ff9564
-.inst 0x91000040,0xd2801fe9,0x91000106,0x8a0900c6,0x8b060007,0x3d8000f0,0x91004106,0x8a0900c6
+        // sub x4, x1, #1
+        // lsr x4, x4, #8
+        r".inst 0xd1000424,0xd348fc84
+cbnz x4, 20f",
+        // umov x10, v8.d[0]
+        // umov x11, v9.d[0]
+        // umov x14, v10.d[0]
+        // umov x15, v11.d[0]
+        // umov x16, v12.d[0]
+        // umov x17, v13.d[0]
+        // movz x6, #256, lsl #0
+        // movk x6, #770, lsl #16
+        // movk x6, #1284, lsl #32
+        // movk x6, #1798, lsl #48
+        // movz x7, #2312, lsl #0
+        // movk x7, #2826, lsl #16
+        // movk x7, #3340, lsl #32
+        // movk x7, #3854, lsl #48
+        // mov v8.d[0], x6
+        // mov v8.d[1], x7
+        // movz x6, #16, lsl #0
+        // dup v7.16b, w6
+        // add v9.16b, v8.16b, v7.16b
+        // add v10.16b, v9.16b, v7.16b
+        // add v11.16b, v10.16b, v7.16b
+        // movz x6, #64, lsl #0
+        // dup v12.16b, w6
+        // movz x6, #128, lsl #0
+        // dup v13.16b, w6
+        // mov v16.16b, v8.16b
+        // mov v17.16b, v9.16b
+        // mov v18.16b, v10.16b
+        // mov v19.16b, v11.16b
+        // eor v20.16b, v8.16b, v12.16b
+        // eor v21.16b, v9.16b, v12.16b
+        // eor v22.16b, v10.16b, v12.16b
+        // eor v23.16b, v11.16b, v12.16b
+        // eor v24.16b, v8.16b, v13.16b
+        // eor v25.16b, v9.16b, v13.16b
+        // eor v26.16b, v10.16b, v13.16b
+        // eor v27.16b, v11.16b, v13.16b
+        // eor v28.16b, v20.16b, v13.16b
+        // eor v29.16b, v21.16b, v13.16b
+        // eor v30.16b, v22.16b, v13.16b
+        // eor v31.16b, v23.16b, v13.16b
+        // movi v0.2d, #0
+        // movi v4.2d, #0
+        // add x7, x0, #0
+        // add x5, x1, #0
+        // movz x4, #16, lsl #0
+        // movz x8, #0, lsl #0
+        r".inst 0x4e083d0a,0x4e083d2b,0x4e083d4e,0x4e083d6f,0x4e083d90,0x4e083db1,0xd2802006,0xf2a06046
+.inst 0xf2c0a086,0xf2e0e0c6,0xd2812107,0xf2a16147,0xf2c1a187,0xf2e1e1c7,0x4e081cc8,0x4e181ce8
+.inst 0xd2800206,0x4e010cc7,0x4e278509,0x4e27852a,0x4e27854b,0xd2800806,0x4e010ccc,0xd2801006
+.inst 0x4e010ccd,0x4ea81d10,0x4ea91d31,0x4eaa1d52,0x4eab1d73,0x6e2c1d14,0x6e2c1d35,0x6e2c1d56
+.inst 0x6e2c1d77,0x6e2d1d18,0x6e2d1d39,0x6e2d1d5a,0x6e2d1d7b,0x6e2d1e9c,0x6e2d1ebd,0x6e2d1ede
+.inst 0x6e2d1eff,0x6f00e400,0x6f00e404,0x91000007,0x91000025,0xd2800204,0xd2800008
+22:",
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 23f
+b 24f
+23:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+24:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[1]
+        // mov v16.b[0], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e030604,0x6e0104b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 25f
+b 26f
+25:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+26:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[2]
+        // mov v16.b[1], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e050604,0x6e0304b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 27f
+b 28f
+27:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+28:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[3]
+        // mov v16.b[2], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e070604,0x6e0504b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 29f
+b 210f
+29:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+210:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[4]
+        // mov v16.b[3], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e090604,0x6e0704b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 211f
+b 212f
+211:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+212:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[5]
+        // mov v16.b[4], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e0b0604,0x6e0904b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 213f
+b 214f
+213:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+214:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[6]
+        // mov v16.b[5], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e0d0604,0x6e0b04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 215f
+b 216f
+215:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+216:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[7]
+        // mov v16.b[6], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e0f0604,0x6e0d04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 217f
+b 218f
+217:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+218:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[8]
+        // mov v16.b[7], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e110604,0x6e0f04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 219f
+b 220f
+219:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+220:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[9]
+        // mov v16.b[8], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e130604,0x6e1104b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 221f
+b 222f
+221:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+222:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[10]
+        // mov v16.b[9], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e150604,0x6e1304b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 223f
+b 224f
+223:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+224:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[11]
+        // mov v16.b[10], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e170604,0x6e1504b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 225f
+b 226f
+225:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+226:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[12]
+        // mov v16.b[11], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e190604,0x6e1704b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 227f
+b 228f
+227:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+228:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[13]
+        // mov v16.b[12], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e1b0604,0x6e1904b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 229f
+b 230f
+229:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+230:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[14]
+        // mov v16.b[13], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e1d0604,0x6e1b04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 231f
+b 232f
+231:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+232:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v16.b[15]
+        // mov v16.b[14], v5.b[0]
+        // ldrb w6, [x7, #0]
+        // dup v6.16b, w6
+        // add v0.16b, v0.16b, v6.16b
+        // add x7, x7, #1
+        // sub x5, x5, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e1f0604,0x6e1d04b0,0x394000e6,0x4e010cc6,0x4e268400,0x910004e7,0xd10004a5
+cbz x5, 233f
+b 234f
+233:",
+        // add x7, x0, #0
+        // add x5, x1, #0
+        r".inst 0x91000007,0x91000025
+234:",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // dup v4.16b, v17.b[0]
+        // mov v16.b[15], v5.b[0]
+        // sub v7.16b, v9.16b, v8.16b
+        // sub v0.16b, v0.16b, v7.16b
+        // mov v7.16b, v16.16b
+        // mov v16.16b, v17.16b
+        // mov v17.16b, v18.16b
+        // mov v18.16b, v19.16b
+        // mov v19.16b, v20.16b
+        // mov v20.16b, v21.16b
+        // mov v21.16b, v22.16b
+        // mov v22.16b, v23.16b
+        // mov v23.16b, v24.16b
+        // mov v24.16b, v25.16b
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v27.16b
+        // mov v27.16b, v28.16b
+        // mov v28.16b, v29.16b
+        // mov v29.16b, v30.16b
+        // mov v30.16b, v31.16b
+        // mov v31.16b, v7.16b
+        // add x8, x8, #16
+        // sub x4, x4, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e010624,0x6e1f04b0,0x6e288527,0x6e278400,0x4eb01e07,0x4eb11e30,0x4eb21e51
+.inst 0x4eb31e72,0x4eb41e93,0x4eb51eb4,0x4eb61ed5,0x4eb71ef6,0x4eb81f17,0x4eb91f38,0x4eba1f59
+.inst 0x4ebb1f7a,0x4ebc1f9b,0x4ebd1fbc,0x4ebe1fdd,0x4ebf1ffe,0x4ea71cff,0x91004108,0xd1000484
+cbnz x4, 22b",
+        // add x0, x2, #0
+        // movz x9, #255, lsl #0
+        // add x6, x8, #0
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q16, [x7, #0]
+        // add x6, x8, #16
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q17, [x7, #0]
+        // add x6, x8, #32
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q18, [x7, #0]
+        // add x6, x8, #48
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q19, [x7, #0]
+        // add x6, x8, #64
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q20, [x7, #0]
+        // add x6, x8, #80
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q21, [x7, #0]
+        // add x6, x8, #96
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q22, [x7, #0]
+        // add x6, x8, #112
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q23, [x7, #0]
+        // add x6, x8, #128
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q24, [x7, #0]
+        // add x6, x8, #144
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q25, [x7, #0]
+        // add x6, x8, #160
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q26, [x7, #0]
+        // add x6, x8, #176
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q27, [x7, #0]
+        // add x6, x8, #192
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q28, [x7, #0]
+        // add x6, x8, #208
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q29, [x7, #0]
+        // add x6, x8, #224
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q30, [x7, #0]
+        // add x6, x8, #240
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q31, [x7, #0]
+        // movz w6, #0, lsl #0
+        // strb w6, [x0, #256]
+        // strb w6, [x0, #257]
+        // movz w0, #0, lsl #0
+        // mov v8.d[0], x10
+        // mov v9.d[0], x11
+        // mov v10.d[0], x14
+        // mov v11.d[0], x15
+        // mov v12.d[0], x16
+        // mov v13.d[0], x17
+        r".inst 0x91000040,0xd2801fe9,0x91000106,0x8a0900c6,0x8b060007,0x3d8000f0,0x91004106,0x8a0900c6
 .inst 0x8b060007,0x3d8000f1,0x91008106,0x8a0900c6,0x8b060007,0x3d8000f2,0x9100c106,0x8a0900c6
 .inst 0x8b060007,0x3d8000f3,0x91010106,0x8a0900c6,0x8b060007,0x3d8000f4,0x91014106,0x8a0900c6
 .inst 0x8b060007,0x3d8000f5,0x91018106,0x8a0900c6,0x8b060007,0x3d8000f6,0x9101c106,0x8a0900c6
@@ -138,8 +1160,15 @@ pub unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [
 .inst 0x8b060007,0x3d8000fb,0x91030106,0x8a0900c6,0x8b060007,0x3d8000fc,0x91034106,0x8a0900c6
 .inst 0x8b060007,0x3d8000fd,0x91038106,0x8a0900c6,0x8b060007,0x3d8000fe,0x9103c106,0x8a0900c6
 .inst 0x8b060007,0x3d8000ff,0x52800006,0x39040006,0x39040406,0x52800000,0x4e081d48,0x4e081d69
-.inst 0x4e081dca,0x4e081deb,0x4e081e0c,0x4e081e2d,0x14000002,0x52800020,0xd65f03c0",
-        r".p2align 6",
+.inst 0x4e081dca,0x4e081deb,0x4e081e0c,0x4e081e2d
+b 21f
+20:",
+        // movz w0, #1, lsl #0
+        r".inst 0x52800020
+21:",
+        // ret
+        r".inst 0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -156,160 +1185,1475 @@ pub unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xb40099a2,0x4e083d0a,0x4e083d2b,0x4e083d4e,0x4e083d6f,0x4e083d90,0x4e083db1,0x4e083dc3
-.inst 0x3944000c,0x3944040d,0xd2801fe9,0x8b020184,0x91000586,0x8a0900c6,0xd28001e7,0x8a0700c5
-.inst 0xcb0500c8,0x91000106,0x8a0900c6,0x8b060007,0x3dc000f0,0x91004106,0x8a0900c6,0x8b060007
-.inst 0x3dc000f1,0x91008106,0x8a0900c6,0x8b060007,0x3dc000f2,0x9100c106,0x8a0900c6,0x8b060007
-.inst 0x3dc000f3,0x91010106,0x8a0900c6,0x8b060007,0x3dc000f4,0x91014106,0x8a0900c6,0x8b060007
-.inst 0x3dc000f5,0x91018106,0x8a0900c6,0x8b060007,0x3dc000f6,0x9101c106,0x8a0900c6,0x8b060007
-.inst 0x3dc000f7,0x91020106,0x8a0900c6,0x8b060007,0x3dc000f8,0x91024106,0x8a0900c6,0x8b060007
-.inst 0x3dc000f9,0x91028106,0x8a0900c6,0x8b060007,0x3dc000fa,0x9102c106,0x8a0900c6,0x8b060007
-.inst 0x3dc000fb,0x91030106,0x8a0900c6,0x8b060007,0x3dc000fc,0x91034106,0x8a0900c6,0x8b060007
-.inst 0x3dc000fd,0x91038106,0x8a0900c6,0x8b060007,0x3dc000fe,0x9103c106,0x8a0900c6,0x8b060007
-.inst 0x3dc000ff,0xd2802006,0xf2a06046,0xf2c0a086,0xf2e0e0c6,0xd2812107,0xf2a16147,0xf2c1a187
-.inst 0xf2e1e1c7,0x4e081cc8,0x4e181ce8,0xd2800206,0x4e010cc7,0x4e278509,0x4e27852a,0x4e27854b
-.inst 0xd2800806,0x4e010ccc,0xd2801006,0x4e010ccd,0xcb0801a6,0x4e010cc0,0xcb080126,0x910004c6
-.inst 0x4e010cce,0x4e010ca7,0x4e070204,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e030604,0x6e0104b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e050604,0x6e0304b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e070604,0x6e0504b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e090604,0x6e0704b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e0b0604,0x6e0904b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e0d0604,0x6e0b04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e0f0604,0x6e0d04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e110604,0x6e0f04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e130604,0x6e1104b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e150604,0x6e1304b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e170604,0x6e1504b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e190604,0x6e1704b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e1b0604,0x6e1904b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e1d0604,0x6e1b04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e1f0604,0x6e1d04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0xb50007e5,0xb40007a2,0x4e248400,0x6e2c1c01,0x6e2d1c02
-.inst 0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386,0x4ea61ca5,0x6e208d07,0x6ea71c90
-.inst 0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67,0x6ea71c93,0x6e218d07,0x6ea71c94
-.inst 0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67,0x6ea71c97,0x6e228d07,0x6ea71c98
-.inst 0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67,0x6ea71c9b,0x6e238d07,0x6ea71c9c
-.inst 0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67,0x6ea71c9f,0x4e258486,0x4e2e84c6
-.inst 0x4e010624,0x6e1f04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23,0x4e066207,0x4e017287,0x4e026301
-.inst 0x4e037381,0x4ea11ce7,0xe043ce6,0x39400027,0x4a0600e7,0x39000027,0x91000421,0xd1000442
-.inst 0x14000001,0x14000002,0xd10004a5,0x6e288527,0x6e278400,0x6e2785ce,0x4eb01e07,0x4eb11e30
-.inst 0x4eb21e51,0x4eb31e72,0x4eb41e93,0x4eb51eb4,0x4eb61ed5,0x4eb71ef6,0x4eb81f17,0x4eb91f38
-.inst 0x4eba1f59,0x4ebb1f7a,0x4ebc1f9b,0x4ebd1fbc,0x4ebe1fdd,0x4ebf1ffe,0x4ea71cff,0x91004108
-.inst 0xb5ff7d62,0x91000106,0x8a0900c6,0x8b060007,0x3d8000f0,0x91004106,0x8a0900c6,0x8b060007
-.inst 0x3d8000f1,0x91008106,0x8a0900c6,0x8b060007,0x3d8000f2,0x9100c106,0x8a0900c6,0x8b060007
-.inst 0x3d8000f3,0x91010106,0x8a0900c6,0x8b060007,0x3d8000f4,0x91014106,0x8a0900c6,0x8b060007
-.inst 0x3d8000f5,0x91018106,0x8a0900c6,0x8b060007,0x3d8000f6,0x9101c106,0x8a0900c6,0x8b060007
-.inst 0x3d8000f7,0x91020106,0x8a0900c6,0x8b060007,0x3d8000f8,0x91024106,0x8a0900c6,0x8b060007
-.inst 0x3d8000f9,0x91028106,0x8a0900c6,0x8b060007,0x3d8000fa,0x9102c106,0x8a0900c6,0x8b060007
-.inst 0x3d8000fb,0x91030106,0x8a0900c6,0x8b060007,0x3d8000fc,0x91034106,0x8a0900c6,0x8b060007
-.inst 0x3d8000fd,0x91038106,0x8a0900c6,0x8b060007,0x3d8000fe,0x9103c106,0x8a0900c6,0x8b060007
-.inst 0x3d8000ff,0x39040004,0xe043c06,0x8b0800c6,0x39040406,0x4e081d48,0x4e081d69,0x4e081dca
-.inst 0x4e081deb,0x4e081e0c,0x4e081e2d,0x4e081c6e,0x14000001,0xd65f03c0",
-        r".p2align 6",
+        r"cbz x2, 20f",
+        // umov x10, v8.d[0]
+        // umov x11, v9.d[0]
+        // umov x14, v10.d[0]
+        // umov x15, v11.d[0]
+        // umov x16, v12.d[0]
+        // umov x17, v13.d[0]
+        // umov x3, v14.d[0]
+        // ldrb w12, [x0, #256]
+        // ldrb w13, [x0, #257]
+        // movz x9, #255, lsl #0
+        // add x4, x12, x2
+        // add x6, x12, #1
+        // and x6, x6, x9
+        // movz x7, #15, lsl #0
+        // and x5, x6, x7
+        // sub x8, x6, x5
+        // add x6, x8, #0
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q16, [x7, #0]
+        // add x6, x8, #16
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q17, [x7, #0]
+        // add x6, x8, #32
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q18, [x7, #0]
+        // add x6, x8, #48
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q19, [x7, #0]
+        // add x6, x8, #64
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q20, [x7, #0]
+        // add x6, x8, #80
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q21, [x7, #0]
+        // add x6, x8, #96
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q22, [x7, #0]
+        // add x6, x8, #112
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q23, [x7, #0]
+        // add x6, x8, #128
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q24, [x7, #0]
+        // add x6, x8, #144
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q25, [x7, #0]
+        // add x6, x8, #160
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q26, [x7, #0]
+        // add x6, x8, #176
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q27, [x7, #0]
+        // add x6, x8, #192
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q28, [x7, #0]
+        // add x6, x8, #208
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q29, [x7, #0]
+        // add x6, x8, #224
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q30, [x7, #0]
+        // add x6, x8, #240
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // ldr q31, [x7, #0]
+        // movz x6, #256, lsl #0
+        // movk x6, #770, lsl #16
+        // movk x6, #1284, lsl #32
+        // movk x6, #1798, lsl #48
+        // movz x7, #2312, lsl #0
+        // movk x7, #2826, lsl #16
+        // movk x7, #3340, lsl #32
+        // movk x7, #3854, lsl #48
+        // mov v8.d[0], x6
+        // mov v8.d[1], x7
+        // movz x6, #16, lsl #0
+        // dup v7.16b, w6
+        // add v9.16b, v8.16b, v7.16b
+        // add v10.16b, v9.16b, v7.16b
+        // add v11.16b, v10.16b, v7.16b
+        // movz x6, #64, lsl #0
+        // dup v12.16b, w6
+        // movz x6, #128, lsl #0
+        // dup v13.16b, w6
+        // sub x6, x13, x8
+        // dup v0.16b, w6
+        // sub x6, x9, x8
+        // add x6, x6, #1
+        // dup v14.16b, w6
+        // dup v7.16b, w5
+        // tbl v4.16b, {v16.16b}, v7.16b
+        r".inst 0x4e083d0a,0x4e083d2b,0x4e083d4e,0x4e083d6f,0x4e083d90,0x4e083db1,0x4e083dc3,0x3944000c
+.inst 0x3944040d,0xd2801fe9,0x8b020184,0x91000586,0x8a0900c6,0xd28001e7,0x8a0700c5,0xcb0500c8
+.inst 0x91000106,0x8a0900c6,0x8b060007,0x3dc000f0,0x91004106,0x8a0900c6,0x8b060007,0x3dc000f1
+.inst 0x91008106,0x8a0900c6,0x8b060007,0x3dc000f2,0x9100c106,0x8a0900c6,0x8b060007,0x3dc000f3
+.inst 0x91010106,0x8a0900c6,0x8b060007,0x3dc000f4,0x91014106,0x8a0900c6,0x8b060007,0x3dc000f5
+.inst 0x91018106,0x8a0900c6,0x8b060007,0x3dc000f6,0x9101c106,0x8a0900c6,0x8b060007,0x3dc000f7
+.inst 0x91020106,0x8a0900c6,0x8b060007,0x3dc000f8,0x91024106,0x8a0900c6,0x8b060007,0x3dc000f9
+.inst 0x91028106,0x8a0900c6,0x8b060007,0x3dc000fa,0x9102c106,0x8a0900c6,0x8b060007,0x3dc000fb
+.inst 0x91030106,0x8a0900c6,0x8b060007,0x3dc000fc,0x91034106,0x8a0900c6,0x8b060007,0x3dc000fd
+.inst 0x91038106,0x8a0900c6,0x8b060007,0x3dc000fe,0x9103c106,0x8a0900c6,0x8b060007,0x3dc000ff
+.inst 0xd2802006,0xf2a06046,0xf2c0a086,0xf2e0e0c6,0xd2812107,0xf2a16147,0xf2c1a187,0xf2e1e1c7
+.inst 0x4e081cc8,0x4e181ce8,0xd2800206,0x4e010cc7,0x4e278509,0x4e27852a,0x4e27854b,0xd2800806
+.inst 0x4e010ccc,0xd2801006,0x4e010ccd,0xcb0801a6,0x4e010cc0,0xcb080126,0x910004c6,0x4e010cce
+.inst 0x4e010ca7,0x4e070204
+22:
+cbnz x5, 23f
+cbz x2, 25f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[1]
+        // mov v16.b[0], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e030604,0x6e0104b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 26f
+25:
+26:
+b 24f
+23:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+24:
+cbnz x5, 27f
+cbz x2, 29f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[2]
+        // mov v16.b[1], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e050604,0x6e0304b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 210f
+29:
+210:
+b 28f
+27:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+28:
+cbnz x5, 211f
+cbz x2, 213f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[3]
+        // mov v16.b[2], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e070604,0x6e0504b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 214f
+213:
+214:
+b 212f
+211:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+212:
+cbnz x5, 215f
+cbz x2, 217f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[4]
+        // mov v16.b[3], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e090604,0x6e0704b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 218f
+217:
+218:
+b 216f
+215:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+216:
+cbnz x5, 219f
+cbz x2, 221f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[5]
+        // mov v16.b[4], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e0b0604,0x6e0904b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 222f
+221:
+222:
+b 220f
+219:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+220:
+cbnz x5, 223f
+cbz x2, 225f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[6]
+        // mov v16.b[5], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e0d0604,0x6e0b04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 226f
+225:
+226:
+b 224f
+223:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+224:
+cbnz x5, 227f
+cbz x2, 229f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[7]
+        // mov v16.b[6], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e0f0604,0x6e0d04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 230f
+229:
+230:
+b 228f
+227:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+228:
+cbnz x5, 231f
+cbz x2, 233f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[8]
+        // mov v16.b[7], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e110604,0x6e0f04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 234f
+233:
+234:
+b 232f
+231:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+232:
+cbnz x5, 235f
+cbz x2, 237f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[9]
+        // mov v16.b[8], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e130604,0x6e1104b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 238f
+237:
+238:
+b 236f
+235:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+236:
+cbnz x5, 239f
+cbz x2, 241f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[10]
+        // mov v16.b[9], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e150604,0x6e1304b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 242f
+241:
+242:
+b 240f
+239:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+240:
+cbnz x5, 243f
+cbz x2, 245f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[11]
+        // mov v16.b[10], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e170604,0x6e1504b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 246f
+245:
+246:
+b 244f
+243:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+244:
+cbnz x5, 247f
+cbz x2, 249f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[12]
+        // mov v16.b[11], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e190604,0x6e1704b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 250f
+249:
+250:
+b 248f
+247:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+248:
+cbnz x5, 251f
+cbz x2, 253f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[13]
+        // mov v16.b[12], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e1b0604,0x6e1904b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 254f
+253:
+254:
+b 252f
+251:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+252:
+cbnz x5, 255f
+cbz x2, 257f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[14]
+        // mov v16.b[13], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e1d0604,0x6e1b04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 258f
+257:
+258:
+b 256f
+255:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+256:
+cbnz x5, 259f
+cbz x2, 261f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v16.b[15]
+        // mov v16.b[14], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e1f0604,0x6e1d04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 262f
+261:
+262:
+b 260f
+259:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+260:
+cbnz x5, 263f
+cbz x2, 265f",
+        // add v0.16b, v0.16b, v4.16b
+        // eor v1.16b, v0.16b, v12.16b
+        // eor v2.16b, v0.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v5.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbx v5.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v6.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v6.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v5.16b, v5.16b, v6.16b
+        // cmeq v7.16b, v8.16b, v0.16b
+        // bit v16.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v0.16b
+        // bit v17.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v0.16b
+        // bit v18.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v0.16b
+        // bit v19.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v1.16b
+        // bit v20.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v1.16b
+        // bit v21.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v1.16b
+        // bit v22.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v1.16b
+        // bit v23.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v2.16b
+        // bit v24.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v2.16b
+        // bit v25.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v2.16b
+        // bit v26.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v2.16b
+        // bit v27.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v8.16b, v3.16b
+        // bit v28.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v9.16b, v3.16b
+        // bit v29.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v10.16b, v3.16b
+        // bit v30.16b, v4.16b, v7.16b
+        // cmeq v7.16b, v11.16b, v3.16b
+        // bit v31.16b, v4.16b, v7.16b
+        // add v6.16b, v4.16b, v5.16b
+        // add v6.16b, v6.16b, v14.16b
+        // dup v4.16b, v17.b[0]
+        // mov v16.b[15], v5.b[0]
+        // eor v1.16b, v6.16b, v12.16b
+        // eor v2.16b, v6.16b, v13.16b
+        // eor v3.16b, v1.16b, v13.16b
+        // tbl v7.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v6.16b
+        // tbx v7.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v1.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbx v1.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v7.16b, v7.16b, v1.16b
+        // umov w6, v7.s[0]
+        // ldrb w7, [x1, #0]
+        // eor w7, w7, w6
+        // strb w7, [x1, #0]
+        // add x1, x1, #1
+        // sub x2, x2, #1
+        r".inst 0x4e248400,0x6e2c1c01,0x6e2d1c02,0x6e2d1c23,0x4e006205,0x4e017285,0x4e026306,0x4e037386
+.inst 0x4ea61ca5,0x6e208d07,0x6ea71c90,0x6e208d27,0x6ea71c91,0x6e208d47,0x6ea71c92,0x6e208d67
+.inst 0x6ea71c93,0x6e218d07,0x6ea71c94,0x6e218d27,0x6ea71c95,0x6e218d47,0x6ea71c96,0x6e218d67
+.inst 0x6ea71c97,0x6e228d07,0x6ea71c98,0x6e228d27,0x6ea71c99,0x6e228d47,0x6ea71c9a,0x6e228d67
+.inst 0x6ea71c9b,0x6e238d07,0x6ea71c9c,0x6e238d27,0x6ea71c9d,0x6e238d47,0x6ea71c9e,0x6e238d67
+.inst 0x6ea71c9f,0x4e258486,0x4e2e84c6,0x4e010624,0x6e1f04b0,0x6e2c1cc1,0x6e2d1cc2,0x6e2d1c23
+.inst 0x4e066207,0x4e017287,0x4e026301,0x4e037381,0x4ea11ce7,0x0e043ce6,0x39400027,0x4a0600e7
+.inst 0x39000027,0x91000421,0xd1000442
+b 266f
+265:
+266:
+b 264f
+263:",
+        // sub x5, x5, #1
+        r".inst 0xd10004a5
+264:",
+        // sub v7.16b, v9.16b, v8.16b
+        // sub v0.16b, v0.16b, v7.16b
+        // sub v14.16b, v14.16b, v7.16b
+        // mov v7.16b, v16.16b
+        // mov v16.16b, v17.16b
+        // mov v17.16b, v18.16b
+        // mov v18.16b, v19.16b
+        // mov v19.16b, v20.16b
+        // mov v20.16b, v21.16b
+        // mov v21.16b, v22.16b
+        // mov v22.16b, v23.16b
+        // mov v23.16b, v24.16b
+        // mov v24.16b, v25.16b
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v27.16b
+        // mov v27.16b, v28.16b
+        // mov v28.16b, v29.16b
+        // mov v29.16b, v30.16b
+        // mov v30.16b, v31.16b
+        // mov v31.16b, v7.16b
+        // add x8, x8, #16
+        r".inst 0x6e288527,0x6e278400,0x6e2785ce,0x4eb01e07,0x4eb11e30,0x4eb21e51,0x4eb31e72,0x4eb41e93
+.inst 0x4eb51eb4,0x4eb61ed5,0x4eb71ef6,0x4eb81f17,0x4eb91f38,0x4eba1f59,0x4ebb1f7a,0x4ebc1f9b
+.inst 0x4ebd1fbc,0x4ebe1fdd,0x4ebf1ffe,0x4ea71cff,0x91004108
+cbnz x2, 22b",
+        // add x6, x8, #0
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q16, [x7, #0]
+        // add x6, x8, #16
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q17, [x7, #0]
+        // add x6, x8, #32
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q18, [x7, #0]
+        // add x6, x8, #48
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q19, [x7, #0]
+        // add x6, x8, #64
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q20, [x7, #0]
+        // add x6, x8, #80
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q21, [x7, #0]
+        // add x6, x8, #96
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q22, [x7, #0]
+        // add x6, x8, #112
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q23, [x7, #0]
+        // add x6, x8, #128
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q24, [x7, #0]
+        // add x6, x8, #144
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q25, [x7, #0]
+        // add x6, x8, #160
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q26, [x7, #0]
+        // add x6, x8, #176
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q27, [x7, #0]
+        // add x6, x8, #192
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q28, [x7, #0]
+        // add x6, x8, #208
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q29, [x7, #0]
+        // add x6, x8, #224
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q30, [x7, #0]
+        // add x6, x8, #240
+        // and x6, x6, x9
+        // add x7, x0, x6
+        // str q31, [x7, #0]
+        // strb w4, [x0, #256]
+        // umov w6, v0.s[0]
+        // add x6, x6, x8
+        // strb w6, [x0, #257]
+        // mov v8.d[0], x10
+        // mov v9.d[0], x11
+        // mov v10.d[0], x14
+        // mov v11.d[0], x15
+        // mov v12.d[0], x16
+        // mov v13.d[0], x17
+        // mov v14.d[0], x3
+        r".inst 0x91000106,0x8a0900c6,0x8b060007,0x3d8000f0,0x91004106,0x8a0900c6,0x8b060007,0x3d8000f1
+.inst 0x91008106,0x8a0900c6,0x8b060007,0x3d8000f2,0x9100c106,0x8a0900c6,0x8b060007,0x3d8000f3
+.inst 0x91010106,0x8a0900c6,0x8b060007,0x3d8000f4,0x91014106,0x8a0900c6,0x8b060007,0x3d8000f5
+.inst 0x91018106,0x8a0900c6,0x8b060007,0x3d8000f6,0x9101c106,0x8a0900c6,0x8b060007,0x3d8000f7
+.inst 0x91020106,0x8a0900c6,0x8b060007,0x3d8000f8,0x91024106,0x8a0900c6,0x8b060007,0x3d8000f9
+.inst 0x91028106,0x8a0900c6,0x8b060007,0x3d8000fa,0x9102c106,0x8a0900c6,0x8b060007,0x3d8000fb
+.inst 0x91030106,0x8a0900c6,0x8b060007,0x3d8000fc,0x91034106,0x8a0900c6,0x8b060007,0x3d8000fd
+.inst 0x91038106,0x8a0900c6,0x8b060007,0x3d8000fe,0x9103c106,0x8a0900c6,0x8b060007,0x3d8000ff
+.inst 0x39040004,0x0e043c06,0x8b0800c6,0x39040406,0x4e081d48,0x4e081d69,0x4e081dca,0x4e081deb
+.inst 0x4e081e0c,0x4e081e2d,0x4e081c6e
+b 21f
+20:
+21:",
+        // ret
+        r".inst 0xd65f03c0
+.p2align 6",
     )
 }

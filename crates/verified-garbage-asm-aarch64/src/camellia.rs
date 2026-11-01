@@ -17,6 +17,267 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
+        // sub sp, sp, #3248
+        // add x3, sp, #0
+        // add x5, x3, #0
+        // add x3, x1, #0
+        // str x19, [x5, #2944]
+        // str x20, [x5, #2952]
+        // str x21, [x5, #2960]
+        // str x22, [x5, #2968]
+        // str x23, [x5, #2976]
+        // str x24, [x5, #2984]
+        // str x25, [x5, #2992]
+        // str x26, [x5, #3000]
+        // str x27, [x5, #3008]
+        // str x28, [x5, #3016]
+        // movz x21, #255, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #384]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x5, #392]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #400]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // str x21, [x5, #408]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #255, lsl #32
+        // str x21, [x5, #416]
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #0]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #8]
+        // movz x21, #0, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #16]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #24]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #32]
+        // movz x21, #65535, lsl #0
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #40]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #48]
+        // movz x21, #255, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #56]
+        // add x1, x1, #64
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #32
+        // str x21, [x1, #0]
+        // movz x21, #255, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #8]
+        // movz x21, #65535, lsl #0
+        // str x21, [x1, #16]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #24]
+        // movz x21, #255, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #32]
+        // movz x21, #255, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #40]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #48]
+        // movz x21, #255, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #56]
+        // add x1, x1, #64
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #0]
+        // movz x21, #255, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #8]
+        // movz x21, #255, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #16]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #24]
+        // movz x21, #0, lsl #0
+        // movk x21, #255, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #32]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #40]
+        // movz x21, #65535, lsl #0
+        // movk x21, #65535, lsl #16
+        // str x21, [x1, #48]
+        // movz x21, #65535, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #56]
+        // add x1, x1, #64
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #0]
+        // movz x21, #0, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #32
+        // str x21, [x1, #8]
+        // movz x21, #255, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #16]
+        // movz x21, #0, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #24]
+        // movz x21, #65535, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #32]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #40]
+        // movz x21, #65535, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #32
+        // str x21, [x1, #48]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #56]
+        // add x1, x1, #64
+        // movz x21, #0, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #0]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #8]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #16]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #24]
+        // movz x21, #65535, lsl #0
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #32]
+        // movz x21, #0, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #40]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #48]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #56]
+        // add x1, x1, #64
+        // movz x21, #65280, lsl #0
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #0]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #255, lsl #48
+        // str x21, [x1, #8]
+        // movz x21, #0, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #16]
+        // movz x21, #0, lsl #0
+        // movk x21, #255, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #24]
+        // movz x21, #65535, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #32]
+        // movz x21, #65535, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65280, lsl #48
+        // str x21, [x1, #40]
+        // movz x21, #0, lsl #0
+        // movk x21, #65535, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #48]
+        // movz x21, #65535, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65535, lsl #32
+        // movk x21, #65535, lsl #48
+        // str x21, [x1, #56]
+        // add x1, x1, #64
+        // ldr x21, [x0, #0]
+        // str x21, [x5, #3024]
+        // ldr x21, [x0, #8]
+        // str x21, [x5, #3032]
+        // sub x22, x3, #16
         r".inst 0xd132c3ff,0x910003e3,0x91000065,0x91000023,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6
 .inst 0xf905d0b7,0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5
 .inst 0xf2c01ff5,0xf2e01ff5,0xf900c0b5,0xd29fe015,0xf2bfe015,0xf2dfe015,0xf2ffe015,0xf900c4b5
@@ -49,63 +310,1781 @@ pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, 
 .inst 0xf9000835,0xd2800015,0xf2c01ff5,0xf2ffe015,0xf9000c35,0xd29ffff5,0xf2a01ff5,0xf2ffe015
 .inst 0xf9001035,0xd29ffff5,0xf2bfe015,0xf2ffe015,0xf9001435,0xd2800015,0xf2bffff5,0xf2dfe015
 .inst 0xf2fffff5,0xf9001835,0xd29ffff5,0xf2bfe015,0xf2dffff5,0xf2fffff5,0xf9001c35,0x91010021
-.inst 0xf9400015,0xf905e8b5,0xf9400415,0xf905ecb5,0xd1004076,0xb40001b6,0xf9400815,0xf905f0b5
-.inst 0xd1006076,0xb4000096,0xf9400c15,0xf905f4b5,0x14000005,0xd2800017,0xd10006f7,0xca1702b5
-.inst 0xf905f4b5,0x14000004,0xd2800015,0xf905f0b5,0xf905f4b5,0x910000a1,0x910c0021,0xf945e8b5
-.inst 0xf905f8b5,0xf945ecb5,0xf905fcb5,0xf945f0b5,0xf945f8b6,0xca1602b5,0xf905f8b5,0xf945f4b5
-.inst 0xf945fcb6,0xca1602b5,0xf905fcb5,0xd2800064,0x910000a0,0x912fc000,0xf9400406,0x910000c7
-.inst 0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee
-.inst 0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673
-.inst 0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5
-.inst 0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7
-.inst 0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108
-.inst 0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5
-.inst 0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b
-.inst 0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c
-.inst 0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5
-.inst 0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7
-.inst 0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108
-.inst 0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5
-.inst 0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b
-.inst 0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c
-.inst 0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5
-.inst 0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129
-.inst 0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a
-.inst 0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5
-.inst 0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129
-.inst 0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a
-.inst 0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5
-.inst 0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b
-.inst 0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108
-.inst 0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7
-.inst 0xf90128a8,0xf9012ca9,0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad,0xf9400006,0x910000c7
-.inst 0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee
-.inst 0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673
-.inst 0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5
-.inst 0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7
-.inst 0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108
-.inst 0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5
-.inst 0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b
-.inst 0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c
-.inst 0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5
-.inst 0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7
-.inst 0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108
-.inst 0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5
-.inst 0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b
-.inst 0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c
-.inst 0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5
-.inst 0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129
-.inst 0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a
-.inst 0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5
-.inst 0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129
-.inst 0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a
-.inst 0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5
-.inst 0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b
-.inst 0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108
-.inst 0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf90100a6,0xf90104a7
-.inst 0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0xf9400035,0xca1500c6
-.inst 0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035,0xca15014a
-.inst 0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf940c8b8,0x910001b6
+.inst 0xf9400015,0xf905e8b5,0xf9400415,0xf905ecb5,0xd1004076
+cbz x22, 20f",
+        // ldr x21, [x0, #16]
+        // str x21, [x5, #3040]
+        // sub x22, x3, #24
+        r".inst 0xf9400815,0xf905f0b5,0xd1006076
+cbz x22, 22f",
+        // ldr x21, [x0, #24]
+        // str x21, [x5, #3048]
+        r".inst 0xf9400c15,0xf905f4b5
+b 23f
+22:",
+        // movz x23, #0, lsl #0
+        // sub x23, x23, #1
+        // eor x21, x21, x23
+        // str x21, [x5, #3048]
+        r".inst 0xd2800017,0xd10006f7,0xca1702b5,0xf905f4b5
+23:
+b 21f
+20:",
+        // movz x21, #0, lsl #0
+        // str x21, [x5, #3040]
+        // str x21, [x5, #3048]
+        r".inst 0xd2800015,0xf905f0b5,0xf905f4b5
+21:",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // ldr x21, [x5, #3024]
+        // str x21, [x5, #3056]
+        // ldr x21, [x5, #3032]
+        // str x21, [x5, #3064]
+        // ldr x21, [x5, #3040]
+        // ldr x22, [x5, #3056]
+        // eor x21, x21, x22
+        // str x21, [x5, #3056]
+        // ldr x21, [x5, #3048]
+        // ldr x22, [x5, #3064]
+        // eor x21, x21, x22
+        // str x21, [x5, #3064]
+        // movz x4, #3, lsl #0
+        // add x0, x5, #0
+        // add x0, x0, #3056
+        r".inst 0x910000a1,0x910c0021,0xf945e8b5,0xf905f8b5,0xf945ecb5,0xf905fcb5,0xf945f0b5,0xf945f8b6
+.inst 0xca1602b5,0xf905f8b5,0xf945f4b5,0xf945fcb6,0xca1602b5,0xf905fcb5,0xd2800064,0x910000a0
+.inst 0x912fc000
+24:",
+        // ldr x6, [x0, #8]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #576]
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // ldr x21, [x5, #584]
+        // eor x7, x7, x21
+        // str x7, [x5, #584]
+        // ldr x21, [x5, #592]
+        // eor x8, x8, x21
+        // str x8, [x5, #592]
+        // ldr x21, [x5, #600]
+        // eor x9, x9, x21
+        // str x9, [x5, #600]
+        // ldr x21, [x5, #608]
+        // eor x10, x10, x21
+        // str x10, [x5, #608]
+        // ldr x21, [x5, #616]
+        // eor x11, x11, x21
+        // str x11, [x5, #616]
+        // ldr x21, [x5, #624]
+        // eor x12, x12, x21
+        // str x12, [x5, #624]
+        // ldr x21, [x5, #632]
+        // eor x13, x13, x21
+        // str x13, [x5, #632]
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #512]
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // ldr x21, [x5, #520]
+        // eor x7, x7, x21
+        // str x7, [x5, #520]
+        // ldr x21, [x5, #528]
+        // eor x8, x8, x21
+        // str x8, [x5, #528]
+        // ldr x21, [x5, #536]
+        // eor x9, x9, x21
+        // str x9, [x5, #536]
+        // ldr x21, [x5, #544]
+        // eor x10, x10, x21
+        // str x10, [x5, #544]
+        // ldr x21, [x5, #552]
+        // eor x11, x11, x21
+        // str x11, [x5, #552]
+        // ldr x21, [x5, #560]
+        // eor x12, x12, x21
+        // str x12, [x5, #560]
+        // ldr x21, [x5, #568]
+        // eor x13, x13, x21
+        // str x13, [x5, #568]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3056]
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3064]
+        // add x1, x1, #128
+        // lsr x22, x4, #1
+        r".inst 0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9,0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad
+.inst 0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xf90100a6,0xf90104a7,0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad
+.inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xf940c8b8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191
+.inst 0xca0f00d3,0xca070154,0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba
+.inst 0xca1c035a,0xca09019b,0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151
+.inst 0xca19014a,0xca060129,0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339
+.inst 0xf90008b9,0xca1301d9,0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af
+.inst 0xca13020f,0xca1c01ef,0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad
+.inst 0xca1a02fa,0xca1c035a,0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294
+.inst 0xca0702d6,0xca1c02d6,0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7
+.inst 0xf90004a6,0x8a0b01c6,0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1
+.inst 0x8a170271,0xca070231,0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275
+.inst 0xca0702b5,0xca11018c,0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5
+.inst 0xca15037b,0xca1600c6,0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5
+.inst 0xca0e00d1,0xca0c037b,0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6
+.inst 0xca0e02d6,0x8a1602b6,0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7
+.inst 0x8a0a018a,0x8a1a00da,0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7
+.inst 0x8a1802d8,0x8a08018c,0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4
+.inst 0x8a140210,0xf94020b4,0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6
+.inst 0xca170357,0xca0901ef,0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf
+.inst 0xca1501b5,0xca160339,0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287
+.inst 0xca0d014a,0xca0b035a,0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7
+.inst 0xca0c02f7,0xca0a026a,0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218
+.inst 0xca070210,0xca1701cb,0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129
+.inst 0xca1002d6,0xca1c02d6,0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306
+.inst 0xf940ccb8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5
+.inst 0x8a1802b5,0xca1500e7,0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129
+.inst 0xca0b0155,0x8a1802b5,0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5
+.inst 0xca15018c,0xca1601b5,0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5
+.inst 0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5
+.inst 0x8a1702b5,0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7
+.inst 0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5
+.inst 0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115
+.inst 0x8a1802b5,0xca150108,0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108
+.inst 0x93c8a115,0x8a1802b5,0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5
+.inst 0xca150129,0x93c9e135,0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135
+.inst 0x8a1802b5,0xca150129,0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a
+.inst 0x93cae155,0x8a1702b5,0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5
+.inst 0xca15014a,0x93cb2175,0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175
+.inst 0x8a1702b5,0xca15016b,0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b
+.inst 0x93cc2195,0x8a1802b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5
+.inst 0xca15018c,0x93cc2195,0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5
+.inst 0x8a1802b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad
+.inst 0x93cd21b5,0x8a1702b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6
+.inst 0xf90120a6,0xf94124b5,0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5
+.inst 0xca150129,0xf9012ca9,0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab
+.inst 0xf94138b5,0xca15018c,0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6
+.inst 0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a
+.inst 0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6
 .inst 0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5
 .inst 0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115
 .inst 0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6
@@ -153,181 +2132,695 @@ pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, 
 .inst 0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195
 .inst 0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad
 .inst 0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5
-.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6,0xf90120a6,0xf94124b5
-.inst 0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5,0xca150129,0xf9012ca9
-.inst 0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab,0xf94138b5,0xca15018c
-.inst 0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6,0xf9402435,0xca1500e7
-.inst 0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a,0xf9403435,0xca15016b
-.inst 0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6,0xca0c01b5,0x8a1802b5
-.inst 0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b,0xca090155
-.inst 0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5,0xca150108
-.inst 0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xd280001c,0xd100079c
-.inst 0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3,0xca070154,0xca100155,0xca0f0196
-.inst 0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a,0xca09019b,0xf90000ba,0xca07017a
-.inst 0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a,0xca060129,0xca1c0129,0xca130106
-.inst 0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9,0xca1301d9,0xca1601ce,0xca1401f6
-.inst 0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f,0xca1c01ef,0xca1b0210,0xca1c0210
-.inst 0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa,0xca1c035a,0xca1602f7,0xca1c02f7
-.inst 0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6,0xca1c02d6,0x8a0a0107,0x8a1a028c
-.inst 0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6,0x8a0b01c6,0xca0700c6,0xf90014ae
-.inst 0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271,0xca070231,0xf9001cb3,0xf94008b3
-.inst 0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5,0xca11018c,0xca15037b,0xca1100c6
-.inst 0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b,0xca1600c6,0xca1001ce,0xca1b0190
-.inst 0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1,0xca0c037b,0x8a11037b,0xca0e037b
-.inst 0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6,0x8a1602b6,0xca160210,0xca060216
-.inst 0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a,0x8a1a00da,0x8a0d036d,0x8a0f022f
-.inst 0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8,0x8a08018c,0x8a1400c6,0xf94024b4
-.inst 0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210,0xf94020b4,0x8a1402b5,0xf94018b4
-.inst 0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357,0xca0901ef,0xca180333,0xca070154
-.inst 0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5,0xca160339,0xca0c0318,0xca06018c
-.inst 0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a,0xca0b035a,0xca140129,0xca1900c6
-.inst 0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7,0xca0a026a,0xca150108,0xca0c01ef
-.inst 0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210,0xca1701cb,0xca1c016b,0xca0600e7
-.inst 0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6,0xca1c02d6,0xca19010d,0xca1a01ec
-.inst 0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8,0x910001b6,0xca0c01b5,0x8a1802b5
-.inst 0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b,0xca090155
-.inst 0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5,0xca150108
-.inst 0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xf940d0b8,0x910000d6
-.inst 0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5,0xca1500e7,0xca090115,0x8a1802b5
-.inst 0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155,0x8a1802b5,0xca15014a,0xca0c0175
-.inst 0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c,0xca1601b5,0x8a1802b5,0xca1501ad
-.inst 0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6
-.inst 0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5,0xca1500c6,0x93c6a0d5,0x8a1802b5
-.inst 0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c7e0f5
-.inst 0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7
-.inst 0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108,0x93c8e115,0x8a1702b5
-.inst 0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108,0x93c92135
-.inst 0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93c9e135,0x8a1702b5,0xca150129
-.inst 0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93ca2155,0x8a1802b5
-.inst 0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155,0x8a1702b5,0xca15014a,0x93ca2155
-.inst 0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cb2175,0x8a1802b5,0xca15016b
-.inst 0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5,0xca15016b,0x93cb2175,0x8a1702b5
-.inst 0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195,0x8a1802b5,0xca15018c,0x93cca195
-.inst 0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195,0x8a1702b5,0xca15018c
-.inst 0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad,0x93cda1b5,0x8a1802b5
-.inst 0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5,0xca1501ad,0x93cda1b5
-.inst 0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5,0xca1500e7,0xf90104a7
-.inst 0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9,0xf94110b5,0xca15014a
-.inst 0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c,0xf90118ac,0xf9411cb5
-.inst 0xca1501ad,0xf9011cad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
-.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
-.inst 0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
-.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
-.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
-.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
-.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
-.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
-.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
-.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
-.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
-.inst 0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
-.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
-.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
-.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
-.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
-.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
-.inst 0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
-.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
-.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
-.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
-.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
-.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
-.inst 0x93d5c2b5,0xca1501ad,0xf905f8a6,0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa
-.inst 0xf94134ab,0xf94138ac,0xf9413cad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1
-.inst 0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4
-.inst 0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5
-.inst 0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55
-.inst 0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5
-.inst 0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5
-.inst 0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55
-.inst 0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5
-.inst 0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5
-.inst 0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15
-.inst 0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5
-.inst 0xca1501ad,0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5
-.inst 0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15
-.inst 0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5
-.inst 0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5
-.inst 0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95
-.inst 0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5
-.inst 0xca1501ad,0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5
-.inst 0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15
-.inst 0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5
-.inst 0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5
-.inst 0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95
-.inst 0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5
-.inst 0xca1501ad,0x93d5c2b5,0xca1501ad,0xf905fca6,0x91020021,0xd341fc96,0xb50000d6,0xf945f8b5
-.inst 0xf90608b5,0xf945fcb5,0xf9060cb5,0x14000018,0xd1000c96,0xb40001d6,0xf945f8b5,0xf90600b5
-.inst 0xf945fcb5,0xf90604b5,0xf945f0b5,0xf945f8b6,0xca1602b5,0xf905f8b5,0xf945f4b5,0xf945fcb6
-.inst 0xca1602b5,0xf905fcb5,0x14000009,0xf945e8b5,0xf945f8b6,0xca1602b5,0xf905f8b5,0xf945ecb5
-.inst 0xf945fcb6,0xca1602b5,0xf905fcb5,0xd1000484,0xb5ff3144,0xf945e8a6,0xdac00cc6,0xf945eca7
-.inst 0xdac00ce7,0xf945f0a8,0xdac00d08,0xf945f4a9,0xdac00d29,0xf94600aa,0xdac00d4a,0xf94604ab
-.inst 0xdac00d6b,0xf94608ac,0xdac00d8c,0xf9460cad,0xdac00dad,0xd1004075,0xb4001495,0x910000d5
-.inst 0xdac00eb5,0xf9000055,0x910000f5,0xdac00eb5,0xf9000455,0x91000195,0xdac00eb5,0xf9000855
-.inst 0x910001b5,0xdac00eb5,0xf9000c55,0xd371c115,0xd371fd36,0xaa1602b5,0xdac00eb5,0xf9001055
-.inst 0xd371c135,0xd371fd16,0xaa1602b5,0xdac00eb5,0xf9001455,0xd371c155,0xd371fd76,0xaa1602b5
-.inst 0xdac00eb5,0xf9001855,0xd371c175,0xd371fd56,0xaa1602b5,0xdac00eb5,0xf9001c55,0xd3628515
-.inst 0xd362fd36,0xaa1602b5,0xdac00eb5,0xf9002055,0xd3628535,0xd362fd16,0xaa1602b5,0xdac00eb5
-.inst 0xf9002455,0xd3628595,0xd362fdb6,0xaa1602b5,0xdac00eb5,0xf9002855,0xd36285b5,0xd362fd96
-.inst 0xaa1602b5,0xdac00eb5,0xf9002c55,0xd35348d5,0xd353fcf6,0xaa1602b5,0xdac00eb5,0xf9003055
-.inst 0xd35348f5,0xd353fcd6,0xaa1602b5,0xdac00eb5,0xf9003455,0xd3534955,0xd353fd76,0xaa1602b5
-.inst 0xdac00eb5,0xf9003855,0xd3534975,0xd353fd56,0xaa1602b5,0xdac00eb5,0xf9003c55,0xd3440cd5
-.inst 0xd344fcf6,0xaa1602b5,0xdac00eb5,0xf9004055,0xd3440cf5,0xd344fcd6,0xaa1602b5,0xdac00eb5
-.inst 0xf9004455,0xd3440d15,0xd344fd36,0xaa1602b5,0xdac00eb5,0xf9004855,0xd3440d35,0xd344fd16
-.inst 0xaa1602b5,0xdac00eb5,0xf9004c55,0xd3440d95,0xd344fdb6,0xaa1602b5,0xdac00eb5,0xf9005055
-.inst 0xd3440db5,0xd344fd96,0xaa1602b5,0xdac00eb5,0xf9005455,0xd373c8f5,0xd373fcd6,0xaa1602b5
-.inst 0xdac00eb5,0xf9005855,0xd373c8d5,0xd373fcf6,0xaa1602b5,0xdac00eb5,0xf9005c55,0xd373c975
-.inst 0xd373fd56,0xaa1602b5,0xdac00eb5,0xf9006055,0xd373c955,0xd373fd76,0xaa1602b5,0xdac00eb5
-.inst 0xf9006455,0xd3628535,0xd362fd16,0xaa1602b5,0xdac00eb5,0xf9006855,0xd3628515,0xd362fd36
-.inst 0xaa1602b5,0xdac00eb5,0xf9006c55,0xd3628575,0xd362fd56,0xaa1602b5,0xdac00eb5,0xf9007055
-.inst 0xd3628555,0xd362fd76,0xaa1602b5,0xdac00eb5,0xf9007455,0xd35140f5,0xd351fcd6,0xaa1602b5
-.inst 0xdac00eb5,0xf9007855,0xd35140d5,0xd351fcf6,0xaa1602b5,0xdac00eb5,0xf9007c55,0xd35141b5
-.inst 0xd351fd96,0xaa1602b5,0xdac00eb5,0xf9008055,0xd3514195,0xd351fdb6,0xaa1602b5,0xdac00eb5
-.inst 0xf9008455,0x1400007b,0x910000d5,0xdac00eb5,0xf9000055,0x910000f5,0xdac00eb5,0xf9000455
-.inst 0x91000155,0xdac00eb5,0xf9000855,0x91000175,0xdac00eb5,0xf9000c55,0xd371c0d5,0xd371fcf6
-.inst 0xaa1602b5,0xdac00eb5,0xf9001055,0xd371c0f5,0xd371fcd6,0xaa1602b5,0xdac00eb5,0xf9001455
-.inst 0xd371c155,0xd371fd76,0xaa1602b5,0xdac00eb5,0xf9001855,0xd371c175,0xd371fd56,0xaa1602b5
-.inst 0xdac00eb5,0xf9001c55,0xd3628555,0xd362fd76,0xaa1602b5,0xdac00eb5,0xf9002055,0xd3628575
-.inst 0xd362fd56,0xaa1602b5,0xdac00eb5,0xf9002455,0xd35348d5,0xd353fcf6,0xaa1602b5,0xdac00eb5
-.inst 0xf9002855,0xd35348f5,0xd353fcd6,0xaa1602b5,0xdac00eb5,0xf9002c55,0xd3534955,0xd353fd76
-.inst 0xaa1602b5,0xdac00eb5,0xf9003055,0xd3440cf5,0xd344fcd6,0xaa1602b5,0xdac00eb5,0xf9003455
-.inst 0xd3440d55,0xd344fd76,0xaa1602b5,0xdac00eb5,0xf9003855,0xd3440d75,0xd344fd56,0xaa1602b5
-.inst 0xdac00eb5,0xf9003c55,0xd373c8f5,0xd373fcd6,0xaa1602b5,0xdac00eb5,0xf9004055,0xd373c8d5
-.inst 0xd373fcf6,0xaa1602b5,0xdac00eb5,0xf9004455,0xd36284f5,0xd362fcd6,0xaa1602b5,0xdac00eb5
-.inst 0xf9004855,0xd36284d5,0xd362fcf6,0xaa1602b5,0xdac00eb5,0xf9004c55,0xd3628575,0xd362fd56
-.inst 0xaa1602b5,0xdac00eb5,0xf9005055,0xd3628555,0xd362fd76,0xaa1602b5,0xdac00eb5,0xf9005455
-.inst 0xd35140f5,0xd351fcd6,0xaa1602b5,0xdac00eb5,0xf9005855,0xd35140d5,0xd351fcf6,0xaa1602b5
-.inst 0xdac00eb5,0xf9005c55,0xd3514175,0xd351fd56,0xaa1602b5,0xdac00eb5,0xf9006055,0xd3514155
-.inst 0xd351fd76,0xaa1602b5,0xdac00eb5,0xf9006455,0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6
-.inst 0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba,0xf945e0bb,0xf945e4bc,0xd2800011,0x910003f0
+.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5
+.inst 0xca1500e7,0xf90104a7,0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9
+.inst 0xf94110b5,0xca15014a,0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c
+.inst 0xf90118ac,0xf9411cb5,0xca1501ad,0xf9011cad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f
+.inst 0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673
+.inst 0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7
+.inst 0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108
+.inst 0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5
+.inst 0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108
+.inst 0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7
+.inst 0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5
+.inst 0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a
+.inst 0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7
+.inst 0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5
+.inst 0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6
+.inst 0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7
+.inst 0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5
+.inst 0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a
+.inst 0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b
+.inst 0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5
+.inst 0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6
+.inst 0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7
+.inst 0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5
+.inst 0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a
+.inst 0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b
+.inst 0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5
+.inst 0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xf905f8a6,0xf94120a6,0xf94124a7,0xf94128a8
+.inst 0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad,0xd280000e,0xf2bfffee,0xd29fe00f
+.inst 0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673
+.inst 0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5
+.inst 0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5
+.inst 0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95
+.inst 0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5
+.inst 0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5
+.inst 0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75
+.inst 0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5
+.inst 0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5
+.inst 0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35
+.inst 0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5
+.inst 0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5
+.inst 0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35
+.inst 0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5
+.inst 0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5
+.inst 0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5
+.inst 0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5
+.inst 0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5
+.inst 0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35
+.inst 0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5
+.inst 0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5
+.inst 0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5
+.inst 0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xf905fca6,0x91020021,0xd341fc96
+cbnz x22, 25f",
+        // ldr x21, [x5, #3056]
+        // str x21, [x5, #3088]
+        // ldr x21, [x5, #3064]
+        // str x21, [x5, #3096]
+        r".inst 0xf945f8b5,0xf90608b5,0xf945fcb5,0xf9060cb5
+b 26f
+25:",
+        // sub x22, x4, #3
+        r".inst 0xd1000c96
+cbz x22, 27f",
+        // ldr x21, [x5, #3056]
+        // str x21, [x5, #3072]
+        // ldr x21, [x5, #3064]
+        // str x21, [x5, #3080]
+        // ldr x21, [x5, #3040]
+        // ldr x22, [x5, #3056]
+        // eor x21, x21, x22
+        // str x21, [x5, #3056]
+        // ldr x21, [x5, #3048]
+        // ldr x22, [x5, #3064]
+        // eor x21, x21, x22
+        // str x21, [x5, #3064]
+        r".inst 0xf945f8b5,0xf90600b5,0xf945fcb5,0xf90604b5,0xf945f0b5,0xf945f8b6,0xca1602b5,0xf905f8b5
+.inst 0xf945f4b5,0xf945fcb6,0xca1602b5,0xf905fcb5
+b 28f
+27:",
+        // ldr x21, [x5, #3024]
+        // ldr x22, [x5, #3056]
+        // eor x21, x21, x22
+        // str x21, [x5, #3056]
+        // ldr x21, [x5, #3032]
+        // ldr x22, [x5, #3064]
+        // eor x21, x21, x22
+        // str x21, [x5, #3064]
+        r".inst 0xf945e8b5,0xf945f8b6,0xca1602b5,0xf905f8b5,0xf945ecb5,0xf945fcb6,0xca1602b5,0xf905fcb5
+28:
+26:",
+        // sub x4, x4, #1
+        r".inst 0xd1000484
+cbnz x4, 24b",
+        // ldr x6, [x5, #3024]
+        // rev x6, x6
+        // ldr x7, [x5, #3032]
+        // rev x7, x7
+        // ldr x8, [x5, #3040]
+        // rev x8, x8
+        // ldr x9, [x5, #3048]
+        // rev x9, x9
+        // ldr x10, [x5, #3072]
+        // rev x10, x10
+        // ldr x11, [x5, #3080]
+        // rev x11, x11
+        // ldr x12, [x5, #3088]
+        // rev x12, x12
+        // ldr x13, [x5, #3096]
+        // rev x13, x13
+        // sub x21, x3, #16
+        r".inst 0xf945e8a6,0xdac00cc6,0xf945eca7,0xdac00ce7,0xf945f0a8,0xdac00d08,0xf945f4a9,0xdac00d29
+.inst 0xf94600aa,0xdac00d4a,0xf94604ab,0xdac00d6b,0xf94608ac,0xdac00d8c,0xf9460cad,0xdac00dad
+.inst 0xd1004075
+cbz x21, 29f",
+        // add x21, x6, #0
+        // rev x21, x21
+        // str x21, [x2, #0]
+        // add x21, x7, #0
+        // rev x21, x21
+        // str x21, [x2, #8]
+        // add x21, x12, #0
+        // rev x21, x21
+        // str x21, [x2, #16]
+        // add x21, x13, #0
+        // rev x21, x21
+        // str x21, [x2, #24]
+        // lsl x21, x8, #15
+        // lsr x22, x9, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #32]
+        // lsl x21, x9, #15
+        // lsr x22, x8, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #40]
+        // lsl x21, x10, #15
+        // lsr x22, x11, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #48]
+        // lsl x21, x11, #15
+        // lsr x22, x10, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #56]
+        // lsl x21, x8, #30
+        // lsr x22, x9, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #64]
+        // lsl x21, x9, #30
+        // lsr x22, x8, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #72]
+        // lsl x21, x12, #30
+        // lsr x22, x13, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #80]
+        // lsl x21, x13, #30
+        // lsr x22, x12, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #88]
+        // lsl x21, x6, #45
+        // lsr x22, x7, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #96]
+        // lsl x21, x7, #45
+        // lsr x22, x6, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #104]
+        // lsl x21, x10, #45
+        // lsr x22, x11, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #112]
+        // lsl x21, x11, #45
+        // lsr x22, x10, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #120]
+        // lsl x21, x6, #60
+        // lsr x22, x7, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #128]
+        // lsl x21, x7, #60
+        // lsr x22, x6, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #136]
+        // lsl x21, x8, #60
+        // lsr x22, x9, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #144]
+        // lsl x21, x9, #60
+        // lsr x22, x8, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #152]
+        // lsl x21, x12, #60
+        // lsr x22, x13, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #160]
+        // lsl x21, x13, #60
+        // lsr x22, x12, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #168]
+        // lsl x21, x7, #13
+        // lsr x22, x6, #51
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #176]
+        // lsl x21, x6, #13
+        // lsr x22, x7, #51
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #184]
+        // lsl x21, x11, #13
+        // lsr x22, x10, #51
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #192]
+        // lsl x21, x10, #13
+        // lsr x22, x11, #51
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #200]
+        // lsl x21, x9, #30
+        // lsr x22, x8, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #208]
+        // lsl x21, x8, #30
+        // lsr x22, x9, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #216]
+        // lsl x21, x11, #30
+        // lsr x22, x10, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #224]
+        // lsl x21, x10, #30
+        // lsr x22, x11, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #232]
+        // lsl x21, x7, #47
+        // lsr x22, x6, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #240]
+        // lsl x21, x6, #47
+        // lsr x22, x7, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #248]
+        // lsl x21, x13, #47
+        // lsr x22, x12, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #256]
+        // lsl x21, x12, #47
+        // lsr x22, x13, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #264]
+        r".inst 0x910000d5,0xdac00eb5,0xf9000055,0x910000f5,0xdac00eb5,0xf9000455,0x91000195,0xdac00eb5
+.inst 0xf9000855,0x910001b5,0xdac00eb5,0xf9000c55,0xd371c115,0xd371fd36,0xaa1602b5,0xdac00eb5
+.inst 0xf9001055,0xd371c135,0xd371fd16,0xaa1602b5,0xdac00eb5,0xf9001455,0xd371c155,0xd371fd76
+.inst 0xaa1602b5,0xdac00eb5,0xf9001855,0xd371c175,0xd371fd56,0xaa1602b5,0xdac00eb5,0xf9001c55
+.inst 0xd3628515,0xd362fd36,0xaa1602b5,0xdac00eb5,0xf9002055,0xd3628535,0xd362fd16,0xaa1602b5
+.inst 0xdac00eb5,0xf9002455,0xd3628595,0xd362fdb6,0xaa1602b5,0xdac00eb5,0xf9002855,0xd36285b5
+.inst 0xd362fd96,0xaa1602b5,0xdac00eb5,0xf9002c55,0xd35348d5,0xd353fcf6,0xaa1602b5,0xdac00eb5
+.inst 0xf9003055,0xd35348f5,0xd353fcd6,0xaa1602b5,0xdac00eb5,0xf9003455,0xd3534955,0xd353fd76
+.inst 0xaa1602b5,0xdac00eb5,0xf9003855,0xd3534975,0xd353fd56,0xaa1602b5,0xdac00eb5,0xf9003c55
+.inst 0xd3440cd5,0xd344fcf6,0xaa1602b5,0xdac00eb5,0xf9004055,0xd3440cf5,0xd344fcd6,0xaa1602b5
+.inst 0xdac00eb5,0xf9004455,0xd3440d15,0xd344fd36,0xaa1602b5,0xdac00eb5,0xf9004855,0xd3440d35
+.inst 0xd344fd16,0xaa1602b5,0xdac00eb5,0xf9004c55,0xd3440d95,0xd344fdb6,0xaa1602b5,0xdac00eb5
+.inst 0xf9005055,0xd3440db5,0xd344fd96,0xaa1602b5,0xdac00eb5,0xf9005455,0xd373c8f5,0xd373fcd6
+.inst 0xaa1602b5,0xdac00eb5,0xf9005855,0xd373c8d5,0xd373fcf6,0xaa1602b5,0xdac00eb5,0xf9005c55
+.inst 0xd373c975,0xd373fd56,0xaa1602b5,0xdac00eb5,0xf9006055,0xd373c955,0xd373fd76,0xaa1602b5
+.inst 0xdac00eb5,0xf9006455,0xd3628535,0xd362fd16,0xaa1602b5,0xdac00eb5,0xf9006855,0xd3628515
+.inst 0xd362fd36,0xaa1602b5,0xdac00eb5,0xf9006c55,0xd3628575,0xd362fd56,0xaa1602b5,0xdac00eb5
+.inst 0xf9007055,0xd3628555,0xd362fd76,0xaa1602b5,0xdac00eb5,0xf9007455,0xd35140f5,0xd351fcd6
+.inst 0xaa1602b5,0xdac00eb5,0xf9007855,0xd35140d5,0xd351fcf6,0xaa1602b5,0xdac00eb5,0xf9007c55
+.inst 0xd35141b5,0xd351fd96,0xaa1602b5,0xdac00eb5,0xf9008055,0xd3514195,0xd351fdb6,0xaa1602b5
+.inst 0xdac00eb5,0xf9008455
+b 210f
+29:",
+        // add x21, x6, #0
+        // rev x21, x21
+        // str x21, [x2, #0]
+        // add x21, x7, #0
+        // rev x21, x21
+        // str x21, [x2, #8]
+        // add x21, x10, #0
+        // rev x21, x21
+        // str x21, [x2, #16]
+        // add x21, x11, #0
+        // rev x21, x21
+        // str x21, [x2, #24]
+        // lsl x21, x6, #15
+        // lsr x22, x7, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #32]
+        // lsl x21, x7, #15
+        // lsr x22, x6, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #40]
+        // lsl x21, x10, #15
+        // lsr x22, x11, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #48]
+        // lsl x21, x11, #15
+        // lsr x22, x10, #49
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #56]
+        // lsl x21, x10, #30
+        // lsr x22, x11, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #64]
+        // lsl x21, x11, #30
+        // lsr x22, x10, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #72]
+        // lsl x21, x6, #45
+        // lsr x22, x7, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #80]
+        // lsl x21, x7, #45
+        // lsr x22, x6, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #88]
+        // lsl x21, x10, #45
+        // lsr x22, x11, #19
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #96]
+        // lsl x21, x7, #60
+        // lsr x22, x6, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #104]
+        // lsl x21, x10, #60
+        // lsr x22, x11, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #112]
+        // lsl x21, x11, #60
+        // lsr x22, x10, #4
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #120]
+        // lsl x21, x7, #13
+        // lsr x22, x6, #51
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #128]
+        // lsl x21, x6, #13
+        // lsr x22, x7, #51
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #136]
+        // lsl x21, x7, #30
+        // lsr x22, x6, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #144]
+        // lsl x21, x6, #30
+        // lsr x22, x7, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #152]
+        // lsl x21, x11, #30
+        // lsr x22, x10, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #160]
+        // lsl x21, x10, #30
+        // lsr x22, x11, #34
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #168]
+        // lsl x21, x7, #47
+        // lsr x22, x6, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #176]
+        // lsl x21, x6, #47
+        // lsr x22, x7, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #184]
+        // lsl x21, x11, #47
+        // lsr x22, x10, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #192]
+        // lsl x21, x10, #47
+        // lsr x22, x11, #17
+        // orr x21, x21, x22
+        // rev x21, x21
+        // str x21, [x2, #200]
+        r".inst 0x910000d5,0xdac00eb5,0xf9000055,0x910000f5,0xdac00eb5,0xf9000455,0x91000155,0xdac00eb5
+.inst 0xf9000855,0x91000175,0xdac00eb5,0xf9000c55,0xd371c0d5,0xd371fcf6,0xaa1602b5,0xdac00eb5
+.inst 0xf9001055,0xd371c0f5,0xd371fcd6,0xaa1602b5,0xdac00eb5,0xf9001455,0xd371c155,0xd371fd76
+.inst 0xaa1602b5,0xdac00eb5,0xf9001855,0xd371c175,0xd371fd56,0xaa1602b5,0xdac00eb5,0xf9001c55
+.inst 0xd3628555,0xd362fd76,0xaa1602b5,0xdac00eb5,0xf9002055,0xd3628575,0xd362fd56,0xaa1602b5
+.inst 0xdac00eb5,0xf9002455,0xd35348d5,0xd353fcf6,0xaa1602b5,0xdac00eb5,0xf9002855,0xd35348f5
+.inst 0xd353fcd6,0xaa1602b5,0xdac00eb5,0xf9002c55,0xd3534955,0xd353fd76,0xaa1602b5,0xdac00eb5
+.inst 0xf9003055,0xd3440cf5,0xd344fcd6,0xaa1602b5,0xdac00eb5,0xf9003455,0xd3440d55,0xd344fd76
+.inst 0xaa1602b5,0xdac00eb5,0xf9003855,0xd3440d75,0xd344fd56,0xaa1602b5,0xdac00eb5,0xf9003c55
+.inst 0xd373c8f5,0xd373fcd6,0xaa1602b5,0xdac00eb5,0xf9004055,0xd373c8d5,0xd373fcf6,0xaa1602b5
+.inst 0xdac00eb5,0xf9004455,0xd36284f5,0xd362fcd6,0xaa1602b5,0xdac00eb5,0xf9004855,0xd36284d5
+.inst 0xd362fcf6,0xaa1602b5,0xdac00eb5,0xf9004c55,0xd3628575,0xd362fd56,0xaa1602b5,0xdac00eb5
+.inst 0xf9005055,0xd3628555,0xd362fd76,0xaa1602b5,0xdac00eb5,0xf9005455,0xd35140f5,0xd351fcd6
+.inst 0xaa1602b5,0xdac00eb5,0xf9005855,0xd35140d5,0xd351fcf6,0xaa1602b5,0xdac00eb5,0xf9005c55
+.inst 0xd3514175,0xd351fd56,0xaa1602b5,0xdac00eb5,0xf9006055,0xd3514155,0xd351fd76,0xaa1602b5
+.inst 0xdac00eb5,0xf9006455
+210:",
+        // ldr x19, [x5, #2944]
+        // ldr x20, [x5, #2952]
+        // ldr x21, [x5, #2960]
+        // ldr x22, [x5, #2968]
+        // ldr x23, [x5, #2976]
+        // ldr x24, [x5, #2984]
+        // ldr x25, [x5, #2992]
+        // ldr x26, [x5, #3000]
+        // ldr x27, [x5, #3008]
+        // ldr x28, [x5, #3016]
+        // movz x17, #0, lsl #0
+        // add x16, sp, #0
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #512
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #1024
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #1536
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #2048
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #2560
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #3072
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // add sp, sp, #3248
+        // ret
+        r".inst 0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba
+.inst 0xf945e0bb,0xf945e4bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
+.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
+.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611
+.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
+.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
+.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
+.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
+.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
+.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911803f0,0xa9004611
+.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
+.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
+.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
 .inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
 .inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
-.inst 0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0x912803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
 .inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
 .inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
 .inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
-.inst 0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
-.inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
-.inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
-.inst 0xa91e4611,0xa91f4611,0x911803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
-.inst 0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611
-.inst 0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611
-.inst 0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
-.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
-.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912803f0,0xa9004611,0xa9014611,0xa9024611
-.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
-.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
-.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
-.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0x9132c3ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -345,361 +2838,266 @@ pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
+        // sub sp, sp, #3248
+        // add x4, sp, #0
+        // add x5, x4, #0
+        // str x19, [x5, #2944]
+        // str x20, [x5, #2952]
+        // str x21, [x5, #2960]
+        // str x22, [x5, #2968]
+        // str x23, [x5, #2976]
+        // str x24, [x5, #2984]
+        // str x25, [x5, #2992]
+        // str x26, [x5, #3000]
+        // str x27, [x5, #3008]
+        // str x28, [x5, #3016]
+        // movz x21, #255, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #384]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x5, #392]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #400]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // str x21, [x5, #408]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #255, lsl #32
+        // str x21, [x5, #416]
+        // sub x21, x1, #18
         r".inst 0xd132c3ff,0x910003e4,0x91000085,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7
 .inst 0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5
 .inst 0xf2e01ff5,0xf900c0b5,0xd29fe015,0xf2bfe015,0xf2dfe015,0xf2ffe015,0xf900c4b5,0xd2800015
 .inst 0xf2dfe015,0xf2e01ff5,0xf900c8b5,0xd29fe015,0xf2a01ff5,0xf900ccb5,0xd2800015,0xf2bfe015
-.inst 0xf2c01ff5,0xf900d0b5,0xd1004835,0xb40000b5,0x910000a4,0x912c0084,0xd2800456,0x14000004
-.inst 0x910000a4,0x91240084,0xd2800356,0x910000a1,0x910c0021,0xf9400006,0x910000c7,0x910000c8
-.inst 0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f
-.inst 0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673
-.inst 0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5
-.inst 0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5
-.inst 0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35
-.inst 0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5
-.inst 0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5
-.inst 0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5
-.inst 0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5
-.inst 0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5
-.inst 0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35
-.inst 0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5
-.inst 0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5
-.inst 0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5
-.inst 0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5
-.inst 0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5
-.inst 0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95
-.inst 0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5
-.inst 0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5
-.inst 0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75
-.inst 0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5
-.inst 0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5
-.inst 0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35
-.inst 0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828
-.inst 0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021,0x91002000,0xd10006d6
-.inst 0xb5ffe6b6,0xb400f5c3,0xd343fc75,0xb5000075,0x91000070,0x14000002,0xd2800110,0x9100004e
-.inst 0x910000af,0x912f41ef,0x91000211,0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce
-.inst 0x910041ef,0xd1000631,0xb5ffff31,0x910000a1,0x910c0021,0xf945eca6,0xf945f4a7,0xf945fca8
-.inst 0xf94604a9,0xf9460caa,0xf94614ab,0xf9461cac,0xf94624ad,0xd280000e,0xf2bfffee,0xd29fe00f
-.inst 0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673
-.inst 0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5
-.inst 0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5
-.inst 0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35
-.inst 0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5
-.inst 0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5
-.inst 0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5
-.inst 0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5
-.inst 0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5
-.inst 0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35
-.inst 0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5
-.inst 0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5
-.inst 0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5
-.inst 0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5
-.inst 0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5
-.inst 0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95
-.inst 0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5
-.inst 0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5
-.inst 0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75
-.inst 0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5
-.inst 0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5
-.inst 0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35
-.inst 0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7,0xf90128a8
-.inst 0xf9012ca9,0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad,0xf945e8a6,0xf945f0a7,0xf945f8a8
-.inst 0xf94600a9,0xf94608aa,0xf94610ab,0xf94618ac,0xf94620ad,0xd280000e,0xf2bfffee,0xd29fe00f
-.inst 0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673
-.inst 0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5
-.inst 0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5
-.inst 0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35
-.inst 0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5
-.inst 0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5
-.inst 0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5
-.inst 0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5
-.inst 0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5
-.inst 0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35
-.inst 0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5
-.inst 0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5
-.inst 0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5
-.inst 0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5
-.inst 0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5
-.inst 0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95
-.inst 0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5
-.inst 0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5
-.inst 0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75
-.inst 0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5
-.inst 0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5
-.inst 0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35
-.inst 0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9400035,0xca1500c6,0xf9400435
-.inst 0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435
-.inst 0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf90100a6,0xf90104a7,0xf90108a8
-.inst 0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0xf94120b5,0xf9402037,0xca1702b5
-.inst 0xf90120b5,0xf94124b5,0xf9402437,0xca1702b5,0xf90124b5,0xf94128b5,0xf9402837,0xca1702b5
-.inst 0xf90128b5,0xf9412cb5,0xf9402c37,0xca1702b5,0xf9012cb5,0xf94130b5,0xf9403037,0xca1702b5
-.inst 0xf90130b5,0xf94134b5,0xf9403437,0xca1702b5,0xf90134b5,0xf94138b5,0xf9403837,0xca1702b5
-.inst 0xf90138b5,0xf9413cb5,0xf9403c37,0xca1702b5,0xf9013cb5,0x91020021,0x91060020,0xf9400035
-.inst 0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035
-.inst 0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf940c8b8
-.inst 0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175
-.inst 0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129
-.inst 0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5
-.inst 0xca1500c6,0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3
-.inst 0xca070154,0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a
-.inst 0xca09019b,0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a
-.inst 0xca060129,0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9
-.inst 0xca1301d9,0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f
-.inst 0xca1c01ef,0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa
-.inst 0xca1c035a,0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6
-.inst 0xca1c02d6,0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6
-.inst 0x8a0b01c6,0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271
-.inst 0xca070231,0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5
-.inst 0xca11018c,0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b
-.inst 0xca1600c6,0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1
-.inst 0xca0c037b,0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6
-.inst 0x8a1602b6,0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a
-.inst 0x8a1a00da,0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8
-.inst 0x8a08018c,0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210
-.inst 0xf94020b4,0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357
-.inst 0xca0901ef,0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5
-.inst 0xca160339,0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a
-.inst 0xca0b035a,0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7
-.inst 0xca0a026a,0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210
-.inst 0xca1701cb,0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6
-.inst 0xca1c02d6,0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8
-.inst 0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175
-.inst 0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129
-.inst 0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5
-.inst 0xca1500c6,0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5
-.inst 0xca1500e7,0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155
-.inst 0x8a1802b5,0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c
-.inst 0xca1601b5,0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6
-.inst 0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5
-.inst 0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5
-.inst 0x8a1802b5,0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7
-.inst 0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5
-.inst 0xca150108,0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115
-.inst 0x8a1802b5,0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129
-.inst 0x93c9e135,0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5
-.inst 0xca150129,0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155
-.inst 0x8a1702b5,0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a
-.inst 0x93cb2175,0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5
-.inst 0xca15016b,0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195
-.inst 0x8a1802b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c
-.inst 0x93cc2195,0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5
-.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5
-.inst 0x8a1702b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6,0xf90120a6
-.inst 0xf94124b5,0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5,0xca150129
-.inst 0xf9012ca9,0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab,0xf94138b5
-.inst 0xca15018c,0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6,0xf9402435
-.inst 0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a,0xf9403435
-.inst 0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6,0xca0c01b5
-.inst 0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b
-.inst 0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5
-.inst 0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xd280001c
-.inst 0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3,0xca070154,0xca100155
-.inst 0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a,0xca09019b,0xf90000ba
-.inst 0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a,0xca060129,0xca1c0129
-.inst 0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9,0xca1301d9,0xca1601ce
-.inst 0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f,0xca1c01ef,0xca1b0210
-.inst 0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa,0xca1c035a,0xca1602f7
-.inst 0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6,0xca1c02d6,0x8a0a0107
-.inst 0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6,0x8a0b01c6,0xca0700c6
-.inst 0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271,0xca070231,0xf9001cb3
-.inst 0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5,0xca11018c,0xca15037b
-.inst 0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b,0xca1600c6,0xca1001ce
-.inst 0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1,0xca0c037b,0x8a11037b
-.inst 0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6,0x8a1602b6,0xca160210
-.inst 0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a,0x8a1a00da,0x8a0d036d
-.inst 0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8,0x8a08018c,0x8a1400c6
-.inst 0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210,0xf94020b4,0x8a1402b5
-.inst 0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357,0xca0901ef,0xca180333
-.inst 0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5,0xca160339,0xca0c0318
-.inst 0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a,0xca0b035a,0xca140129
-.inst 0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7,0xca0a026a,0xca150108
-.inst 0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210,0xca1701cb,0xca1c016b
-.inst 0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6,0xca1c02d6,0xca19010d
-.inst 0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8,0x910001b6,0xca0c01b5
-.inst 0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b
-.inst 0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5
-.inst 0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xf940d0b8
-.inst 0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5,0xca1500e7,0xca090115
-.inst 0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155,0x8a1802b5,0xca15014a
-.inst 0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c,0xca1601b5,0x8a1802b5
-.inst 0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6,0x93c6a0d5,0x8a1802b5
-.inst 0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5,0xca1500c6,0x93c6a0d5
-.inst 0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7
-.inst 0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7,0x93c7a0f5,0x8a1802b5
-.inst 0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108,0x93c8e115
-.inst 0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108
-.inst 0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93c9e135,0x8a1702b5
-.inst 0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93ca2155
-.inst 0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155,0x8a1702b5,0xca15014a
-.inst 0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cb2175,0x8a1802b5
-.inst 0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5,0xca15016b,0x93cb2175
-.inst 0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195,0x8a1802b5,0xca15018c
-.inst 0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195,0x8a1702b5
-.inst 0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad,0x93cda1b5
-.inst 0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5,0xca1501ad
-.inst 0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5,0xca1500e7
-.inst 0xf90104a7,0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9,0xf94110b5
-.inst 0xca15014a,0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c,0xf90118ac
-.inst 0xf9411cb5,0xca1501ad,0xf9011cad,0x91020021,0xcb000035,0xb5ff9655,0xcb040035,0xb5000055
-.inst 0x140000c8,0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac
-.inst 0xf9413cad,0xf940c0b8,0xf9403c37,0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9403837
-.inst 0xaa170195,0x93d522b5,0x8a1802b5,0xca15018c,0xf9403437,0xaa170175,0x93d522b5,0x8a1802b5
-.inst 0xca15016b,0xf9403037,0xaa170155,0x93d522b5,0x8a1802b5,0xca15014a,0xf9402c37,0xaa170135
-.inst 0x93d522b5,0x8a1802b5,0xca150129,0xf9402837,0xaa170115,0x93d522b5,0x8a1802b5,0xca150108
-.inst 0xf9402437,0xaa1700f5,0x93d522b5,0x8a1802b5,0xca1500e7,0xf9402037,0xaa1700d5,0x93d522b5
-.inst 0x8a1802b5,0xca1500c6,0xf940c4b8,0x910001b6,0xf9403837,0x8a170195,0x93d5e2b5,0x8a1802b5
-.inst 0xca1501ad,0xf9403437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c,0xf9403037,0x8a170155
-.inst 0x93d5e2b5,0x8a1802b5,0xca15016b,0xf9402c37,0x8a170135,0x93d5e2b5,0x8a1802b5,0xca15014a
-.inst 0xf9402837,0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9402437,0x8a1700f5,0x93d5e2b5
-.inst 0x8a1802b5,0xca150108,0xf9402037,0x8a1700d5,0x93d5e2b5,0x8a1802b5,0xca1500e7,0xf9403c37
-.inst 0x8a1702d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9
-.inst 0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad,0xf94100a6,0xf94104a7,0xf94108a8,0xf9410ca9
-.inst 0xf94110aa,0xf94114ab,0xf94118ac,0xf9411cad,0xf940c4b8,0x910001b6,0xf9401837,0x8a170195
-.inst 0x93d5e2b5,0x8a1802b5,0xca1501ad,0xf9401437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c
-.inst 0xf9401037,0x8a170155,0x93d5e2b5,0x8a1802b5,0xca15016b,0xf9400c37,0x8a170135,0x93d5e2b5
-.inst 0x8a1802b5,0xca15014a,0xf9400837,0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9400437
-.inst 0x8a1700f5,0x93d5e2b5,0x8a1802b5,0xca150108,0xf9400037,0x8a1700d5,0x93d5e2b5,0x8a1802b5
-.inst 0xca1500e7,0xf9401c37,0x8a1702d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf940c0b8,0xf9401c37
-.inst 0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9401837,0xaa170195,0x93d522b5,0x8a1802b5
-.inst 0xca15018c,0xf9401437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b,0xf9401037,0xaa170155
-.inst 0x93d522b5,0x8a1802b5,0xca15014a,0xf9400c37,0xaa170135,0x93d522b5,0x8a1802b5,0xca150129
-.inst 0xf9400837,0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9400437,0xaa1700f5,0x93d522b5
-.inst 0x8a1802b5,0xca1500e7,0xf9400037,0xaa1700d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90100a6
-.inst 0xf90104a7,0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0x91020021
-.inst 0xcb040035,0xb5ff7cb5,0xf9402035,0xca1500c6,0xf9402435,0xca1500e7,0xf9402835,0xca150108
-.inst 0xf9402c35,0xca150129,0xf9403035,0xca15014a,0xf9403435,0xca15016b,0xf9403835,0xca15018c
-.inst 0xf9403c35,0xca1501ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
-.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
-.inst 0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
-.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
-.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
-.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
-.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
-.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
-.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
-.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
-.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
-.inst 0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
-.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
-.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
-.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
-.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
-.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
-.inst 0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
-.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
-.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
-.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
-.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
-.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
-.inst 0x93d5c2b5,0xca1501ad,0xf905eca6,0xf905f4a7,0xf905fca8,0xf90604a9,0xf9060caa,0xf90614ab
-.inst 0xf9061cac,0xf90624ad,0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab
-.inst 0xf94138ac,0xf9413cad,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108
-.inst 0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c
-.inst 0xf9401c35,0xca1501ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
-.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
-.inst 0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
-.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
-.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
-.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
-.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
-.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
-.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
-.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
-.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
-.inst 0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
-.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
-.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
-.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
-.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
-.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
-.inst 0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
-.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
-.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
-.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
-.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
-.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
-.inst 0x93d5c2b5,0xca1501ad,0xf905e8a6,0xf905f0a7,0xf905f8a8,0xf90600a9,0xf90608aa,0xf90610ab
-.inst 0xf90618ac,0xf90620ad,0xd343fc75,0xb5000075,0x91000070,0x14000002,0xd2800110,0x910000ae
-.inst 0x912f41ce,0x9100004f,0x91000211,0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce
-.inst 0x910041ef,0xd1000631,0xb5ffff31,0xcb100063,0x91020042,0xb5ff0aa3,0x14000001,0xf945c0b3
-.inst 0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba,0xf945e0bb
-.inst 0xf945e4bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
-.inst 0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611
-.inst 0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611
-.inst 0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
-.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
-.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611
-.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
-.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
-.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
-.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911803f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
-.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
-.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
-.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
-.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912803f0
-.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
-.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
-.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
-.inst 0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
-.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0",
-        r".p2align 6",
-    )
-}
-
-/// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd132c3ff,0x910003e4,0x91000085,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7
-.inst 0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5
-.inst 0xf2e01ff5,0xf900c0b5,0xd29fe015,0xf2bfe015,0xf2dfe015,0xf2ffe015,0xf900c4b5,0xd2800015
-.inst 0xf2dfe015,0xf2e01ff5,0xf900c8b5,0xd29fe015,0xf2a01ff5,0xf900ccb5,0xd2800015,0xf2bfe015
-.inst 0xf2c01ff5,0xf900d0b5,0xd1004835,0xb40000d5,0x910000a4,0x912c0084,0x91040000,0xd28003d6
-.inst 0x14000005,0x910000a4,0x91240084,0x91030000,0xd28002d6,0x910000a1,0x910c0021,0xf9400006
-.inst 0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e
-.inst 0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673
-.inst 0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5
-.inst 0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5
-.inst 0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5
-.inst 0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55
-.inst 0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5
-.inst 0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5
-.inst 0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5
-.inst 0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5
-.inst 0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5
-.inst 0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55
-.inst 0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5
-.inst 0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5
-.inst 0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5
-.inst 0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5
-.inst 0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5
-.inst 0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5
-.inst 0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5
-.inst 0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5
-.inst 0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5
-.inst 0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5
-.inst 0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5
-.inst 0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026
-.inst 0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021
-.inst 0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
+.inst 0xf2c01ff5,0xf900d0b5,0xd1004835
+cbz x21, 20f",
+        // add x4, x5, #0
+        // add x4, x4, #2816
+        // movz x22, #34, lsl #0
+        r".inst 0x910000a4,0x912c0084,0xd2800456
+b 21f
+20:",
+        // add x4, x5, #0
+        // add x4, x4, #2304
+        // movz x22, #26, lsl #0
+        r".inst 0x910000a4,0x91240084,0xd2800356
+21:",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        r".inst 0x910000a1,0x910c0021
+22:",
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // add x0, x0, #8
+        // sub x22, x22, #1
+        r".inst 0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
 .inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
 .inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
 .inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
@@ -724,7 +3122,2971 @@ pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rou
 .inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
 .inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
 .inst 0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d
-.inst 0x91010021,0xd1002000,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb
+.inst 0x91010021,0x91002000,0xd10006d6
+cbnz x22, 22b
+cbz x3, 23f
+25:",
+        // lsr x21, x3, #3
+        r".inst 0xd343fc75
+cbnz x21, 26f",
+        // add x16, x3, #0
+        r".inst 0x91000070
+b 27f
+26:",
+        // movz x16, #8, lsl #0
+        r".inst 0xd2800110
+27:",
+        // add x14, x2, #0
+        // add x15, x5, #0
+        // add x15, x15, #3024
+        // add x17, x16, #0
+        r".inst 0x9100004e,0x910000af,0x912f41ef,0x91000211
+28:",
+        // ldr x21, [x14, #0]
+        // str x21, [x15, #0]
+        // ldr x21, [x14, #8]
+        // str x21, [x15, #8]
+        // add x14, x14, #16
+        // add x15, x15, #16
+        // sub x17, x17, #1
+        r".inst 0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce,0x910041ef,0xd1000631
+cbnz x17, 28b",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // ldr x6, [x5, #3032]
+        // ldr x7, [x5, #3048]
+        // ldr x8, [x5, #3064]
+        // ldr x9, [x5, #3080]
+        // ldr x10, [x5, #3096]
+        // ldr x11, [x5, #3112]
+        // ldr x12, [x5, #3128]
+        // ldr x13, [x5, #3144]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x5, #3024]
+        // ldr x7, [x5, #3040]
+        // ldr x8, [x5, #3056]
+        // ldr x9, [x5, #3072]
+        // ldr x10, [x5, #3088]
+        // ldr x11, [x5, #3104]
+        // ldr x12, [x5, #3120]
+        // ldr x13, [x5, #3136]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // ldr x21, [x5, #576]
+        // ldr x23, [x1, #64]
+        // eor x21, x21, x23
+        // str x21, [x5, #576]
+        // ldr x21, [x5, #584]
+        // ldr x23, [x1, #72]
+        // eor x21, x21, x23
+        // str x21, [x5, #584]
+        // ldr x21, [x5, #592]
+        // ldr x23, [x1, #80]
+        // eor x21, x21, x23
+        // str x21, [x5, #592]
+        // ldr x21, [x5, #600]
+        // ldr x23, [x1, #88]
+        // eor x21, x21, x23
+        // str x21, [x5, #600]
+        // ldr x21, [x5, #608]
+        // ldr x23, [x1, #96]
+        // eor x21, x21, x23
+        // str x21, [x5, #608]
+        // ldr x21, [x5, #616]
+        // ldr x23, [x1, #104]
+        // eor x21, x21, x23
+        // str x21, [x5, #616]
+        // ldr x21, [x5, #624]
+        // ldr x23, [x1, #112]
+        // eor x21, x21, x23
+        // str x21, [x5, #624]
+        // ldr x21, [x5, #632]
+        // ldr x23, [x1, #120]
+        // eor x21, x21, x23
+        // str x21, [x5, #632]
+        // add x1, x1, #128
+        r".inst 0x910000a1,0x910c0021,0xf945eca6,0xf945f4a7,0xf945fca8,0xf94604a9,0xf9460caa,0xf94614ab
+.inst 0xf9461cac,0xf94624ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9,0xf90130aa,0xf90134ab
+.inst 0xf90138ac,0xf9013cad,0xf945e8a6,0xf945f0a7,0xf945f8a8,0xf94600a9,0xf94608aa,0xf94610ab
+.inst 0xf94618ac,0xf94620ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108
+.inst 0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c
+.inst 0xf9401c35,0xca1501ad,0xf90100a6,0xf90104a7,0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab
+.inst 0xf90118ac,0xf9011cad,0xf94120b5,0xf9402037,0xca1702b5,0xf90120b5,0xf94124b5,0xf9402437
+.inst 0xca1702b5,0xf90124b5,0xf94128b5,0xf9402837,0xca1702b5,0xf90128b5,0xf9412cb5,0xf9402c37
+.inst 0xca1702b5,0xf9012cb5,0xf94130b5,0xf9403037,0xca1702b5,0xf90130b5,0xf94134b5,0xf9403437
+.inst 0xca1702b5,0xf90134b5,0xf94138b5,0xf9403837,0xca1702b5,0xf90138b5,0xf9413cb5,0xf9403c37
+.inst 0xca1702b5,0xf9013cb5,0x91020021
+29:",
+        // add x0, x1, #384
+        r".inst 0x91060020
+210:",
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #576]
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // ldr x21, [x5, #584]
+        // eor x7, x7, x21
+        // str x7, [x5, #584]
+        // ldr x21, [x5, #592]
+        // eor x8, x8, x21
+        // str x8, [x5, #592]
+        // ldr x21, [x5, #600]
+        // eor x9, x9, x21
+        // str x9, [x5, #600]
+        // ldr x21, [x5, #608]
+        // eor x10, x10, x21
+        // str x10, [x5, #608]
+        // ldr x21, [x5, #616]
+        // eor x11, x11, x21
+        // str x11, [x5, #616]
+        // ldr x21, [x5, #624]
+        // eor x12, x12, x21
+        // str x12, [x5, #624]
+        // ldr x21, [x5, #632]
+        // eor x13, x13, x21
+        // str x13, [x5, #632]
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #512]
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // ldr x21, [x5, #520]
+        // eor x7, x7, x21
+        // str x7, [x5, #520]
+        // ldr x21, [x5, #528]
+        // eor x8, x8, x21
+        // str x8, [x5, #528]
+        // ldr x21, [x5, #536]
+        // eor x9, x9, x21
+        // str x9, [x5, #536]
+        // ldr x21, [x5, #544]
+        // eor x10, x10, x21
+        // str x10, [x5, #544]
+        // ldr x21, [x5, #552]
+        // eor x11, x11, x21
+        // str x11, [x5, #552]
+        // ldr x21, [x5, #560]
+        // eor x12, x12, x21
+        // str x12, [x5, #560]
+        // ldr x21, [x5, #568]
+        // eor x13, x13, x21
+        // str x13, [x5, #568]
+        // add x1, x1, #128
+        // sub x21, x1, x0
+        r".inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xf940c8b8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191
+.inst 0xca0f00d3,0xca070154,0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba
+.inst 0xca1c035a,0xca09019b,0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151
+.inst 0xca19014a,0xca060129,0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339
+.inst 0xf90008b9,0xca1301d9,0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af
+.inst 0xca13020f,0xca1c01ef,0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad
+.inst 0xca1a02fa,0xca1c035a,0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294
+.inst 0xca0702d6,0xca1c02d6,0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7
+.inst 0xf90004a6,0x8a0b01c6,0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1
+.inst 0x8a170271,0xca070231,0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275
+.inst 0xca0702b5,0xca11018c,0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5
+.inst 0xca15037b,0xca1600c6,0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5
+.inst 0xca0e00d1,0xca0c037b,0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6
+.inst 0xca0e02d6,0x8a1602b6,0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7
+.inst 0x8a0a018a,0x8a1a00da,0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7
+.inst 0x8a1802d8,0x8a08018c,0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4
+.inst 0x8a140210,0xf94020b4,0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6
+.inst 0xca170357,0xca0901ef,0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf
+.inst 0xca1501b5,0xca160339,0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287
+.inst 0xca0d014a,0xca0b035a,0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7
+.inst 0xca0c02f7,0xca0a026a,0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218
+.inst 0xca070210,0xca1701cb,0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129
+.inst 0xca1002d6,0xca1c02d6,0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306
+.inst 0xf940ccb8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5
+.inst 0x8a1802b5,0xca1500e7,0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129
+.inst 0xca0b0155,0x8a1802b5,0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5
+.inst 0xca15018c,0xca1601b5,0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5
+.inst 0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5
+.inst 0x8a1702b5,0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7
+.inst 0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5
+.inst 0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115
+.inst 0x8a1802b5,0xca150108,0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108
+.inst 0x93c8a115,0x8a1802b5,0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5
+.inst 0xca150129,0x93c9e135,0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135
+.inst 0x8a1802b5,0xca150129,0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a
+.inst 0x93cae155,0x8a1702b5,0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5
+.inst 0xca15014a,0x93cb2175,0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175
+.inst 0x8a1702b5,0xca15016b,0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b
+.inst 0x93cc2195,0x8a1802b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5
+.inst 0xca15018c,0x93cc2195,0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5
+.inst 0x8a1802b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad
+.inst 0x93cd21b5,0x8a1702b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6
+.inst 0xf90120a6,0xf94124b5,0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5
+.inst 0xca150129,0xf9012ca9,0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab
+.inst 0xf94138b5,0xca15018c,0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6
+.inst 0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a
+.inst 0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6
+.inst 0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5
+.inst 0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115
+.inst 0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6
+.inst 0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3,0xca070154
+.inst 0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a,0xca09019b
+.inst 0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a,0xca060129
+.inst 0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9,0xca1301d9
+.inst 0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f,0xca1c01ef
+.inst 0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa,0xca1c035a
+.inst 0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6,0xca1c02d6
+.inst 0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6,0x8a0b01c6
+.inst 0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271,0xca070231
+.inst 0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5,0xca11018c
+.inst 0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b,0xca1600c6
+.inst 0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1,0xca0c037b
+.inst 0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6,0x8a1602b6
+.inst 0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a,0x8a1a00da
+.inst 0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8,0x8a08018c
+.inst 0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210,0xf94020b4
+.inst 0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357,0xca0901ef
+.inst 0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5,0xca160339
+.inst 0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a,0xca0b035a
+.inst 0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7,0xca0a026a
+.inst 0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210,0xca1701cb
+.inst 0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6,0xca1c02d6
+.inst 0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8,0x910001b6
+.inst 0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5
+.inst 0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115
+.inst 0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6
+.inst 0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5,0xca1500e7
+.inst 0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155,0x8a1802b5
+.inst 0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c,0xca1601b5
+.inst 0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6,0x93c6a0d5
+.inst 0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5,0xca1500c6
+.inst 0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5,0x8a1802b5
+.inst 0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7,0x93c7a0f5
+.inst 0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108
+.inst 0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115,0x8a1802b5
+.inst 0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93c9e135
+.inst 0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129
+.inst 0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155,0x8a1702b5
+.inst 0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cb2175
+.inst 0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5,0xca15016b
+.inst 0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195,0x8a1802b5
+.inst 0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195
+.inst 0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad
+.inst 0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5
+.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5
+.inst 0xca1500e7,0xf90104a7,0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9
+.inst 0xf94110b5,0xca15014a,0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c
+.inst 0xf90118ac,0xf9411cb5,0xca1501ad,0xf9011cad,0x91020021,0xcb000035
+cbnz x21, 210b",
+        // sub x21, x1, x4
+        r".inst 0xcb040035
+cbnz x21, 211f
+b 212f
+211:",
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // ldr x24, [x5, #384]
+        // ldr x23, [x1, #120]
+        // orr x21, x13, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #112]
+        // orr x21, x12, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #104]
+        // orr x21, x11, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #96]
+        // orr x21, x10, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #88]
+        // orr x21, x9, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #80]
+        // orr x21, x8, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #72]
+        // orr x21, x7, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #64]
+        // orr x21, x6, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #392]
+        // add x22, x13, #0
+        // ldr x23, [x1, #112]
+        // and x21, x12, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #104]
+        // and x21, x11, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #96]
+        // and x21, x10, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #88]
+        // and x21, x9, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #80]
+        // and x21, x8, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #72]
+        // and x21, x7, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #64]
+        // and x21, x6, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #120]
+        // and x21, x22, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x5, #512]
+        // ldr x7, [x5, #520]
+        // ldr x8, [x5, #528]
+        // ldr x9, [x5, #536]
+        // ldr x10, [x5, #544]
+        // ldr x11, [x5, #552]
+        // ldr x12, [x5, #560]
+        // ldr x13, [x5, #568]
+        // ldr x24, [x5, #392]
+        // add x22, x13, #0
+        // ldr x23, [x1, #48]
+        // and x21, x12, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #40]
+        // and x21, x11, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #32]
+        // and x21, x10, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #24]
+        // and x21, x9, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #16]
+        // and x21, x8, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #8]
+        // and x21, x7, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #0]
+        // and x21, x6, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #56]
+        // and x21, x22, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x1, #56]
+        // orr x21, x13, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #48]
+        // orr x21, x12, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #40]
+        // orr x21, x11, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #32]
+        // orr x21, x10, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #24]
+        // orr x21, x9, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #16]
+        // orr x21, x8, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #8]
+        // orr x21, x7, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #0]
+        // orr x21, x6, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // add x1, x1, #128
+        r".inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
+.inst 0xf940c0b8,0xf9403c37,0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9403837,0xaa170195
+.inst 0x93d522b5,0x8a1802b5,0xca15018c,0xf9403437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b
+.inst 0xf9403037,0xaa170155,0x93d522b5,0x8a1802b5,0xca15014a,0xf9402c37,0xaa170135,0x93d522b5
+.inst 0x8a1802b5,0xca150129,0xf9402837,0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9402437
+.inst 0xaa1700f5,0x93d522b5,0x8a1802b5,0xca1500e7,0xf9402037,0xaa1700d5,0x93d522b5,0x8a1802b5
+.inst 0xca1500c6,0xf940c4b8,0x910001b6,0xf9403837,0x8a170195,0x93d5e2b5,0x8a1802b5,0xca1501ad
+.inst 0xf9403437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c,0xf9403037,0x8a170155,0x93d5e2b5
+.inst 0x8a1802b5,0xca15016b,0xf9402c37,0x8a170135,0x93d5e2b5,0x8a1802b5,0xca15014a,0xf9402837
+.inst 0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9402437,0x8a1700f5,0x93d5e2b5,0x8a1802b5
+.inst 0xca150108,0xf9402037,0x8a1700d5,0x93d5e2b5,0x8a1802b5,0xca1500e7,0xf9403c37,0x8a1702d5
+.inst 0x93d522b5,0x8a1802b5,0xca1500c6,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9,0xf90130aa
+.inst 0xf90134ab,0xf90138ac,0xf9013cad,0xf94100a6,0xf94104a7,0xf94108a8,0xf9410ca9,0xf94110aa
+.inst 0xf94114ab,0xf94118ac,0xf9411cad,0xf940c4b8,0x910001b6,0xf9401837,0x8a170195,0x93d5e2b5
+.inst 0x8a1802b5,0xca1501ad,0xf9401437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c,0xf9401037
+.inst 0x8a170155,0x93d5e2b5,0x8a1802b5,0xca15016b,0xf9400c37,0x8a170135,0x93d5e2b5,0x8a1802b5
+.inst 0xca15014a,0xf9400837,0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9400437,0x8a1700f5
+.inst 0x93d5e2b5,0x8a1802b5,0xca150108,0xf9400037,0x8a1700d5,0x93d5e2b5,0x8a1802b5,0xca1500e7
+.inst 0xf9401c37,0x8a1702d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf940c0b8,0xf9401c37,0xaa1701b5
+.inst 0x93d522b5,0x8a1802b5,0xca1501ad,0xf9401837,0xaa170195,0x93d522b5,0x8a1802b5,0xca15018c
+.inst 0xf9401437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b,0xf9401037,0xaa170155,0x93d522b5
+.inst 0x8a1802b5,0xca15014a,0xf9400c37,0xaa170135,0x93d522b5,0x8a1802b5,0xca150129,0xf9400837
+.inst 0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9400437,0xaa1700f5,0x93d522b5,0x8a1802b5
+.inst 0xca1500e7,0xf9400037,0xaa1700d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90100a6,0xf90104a7
+.inst 0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0x91020021
+212:",
+        // sub x21, x1, x4
+        r".inst 0xcb040035
+cbnz x21, 29b",
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3032]
+        // str x7, [x5, #3048]
+        // str x8, [x5, #3064]
+        // str x9, [x5, #3080]
+        // str x10, [x5, #3096]
+        // str x11, [x5, #3112]
+        // str x12, [x5, #3128]
+        // str x13, [x5, #3144]
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3024]
+        // str x7, [x5, #3040]
+        // str x8, [x5, #3056]
+        // str x9, [x5, #3072]
+        // str x10, [x5, #3088]
+        // str x11, [x5, #3104]
+        // str x12, [x5, #3120]
+        // str x13, [x5, #3136]
+        // lsr x21, x3, #3
+        r".inst 0xf9402035,0xca1500c6,0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129
+.inst 0xf9403035,0xca15014a,0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xf905eca6,0xf905f4a7,0xf905fca8,0xf90604a9,0xf9060caa,0xf90614ab,0xf9061cac,0xf90624ad
+.inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
+.inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xf905e8a6,0xf905f0a7,0xf905f8a8,0xf90600a9,0xf90608aa,0xf90610ab,0xf90618ac,0xf90620ad
+.inst 0xd343fc75
+cbnz x21, 213f",
+        // add x16, x3, #0
+        r".inst 0x91000070
+b 214f
+213:",
+        // movz x16, #8, lsl #0
+        r".inst 0xd2800110
+214:",
+        // add x14, x5, #0
+        // add x14, x14, #3024
+        // add x15, x2, #0
+        // add x17, x16, #0
+        r".inst 0x910000ae,0x912f41ce,0x9100004f,0x91000211
+215:",
+        // ldr x21, [x14, #0]
+        // str x21, [x15, #0]
+        // ldr x21, [x14, #8]
+        // str x21, [x15, #8]
+        // add x14, x14, #16
+        // add x15, x15, #16
+        // sub x17, x17, #1
+        r".inst 0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce,0x910041ef,0xd1000631
+cbnz x17, 215b",
+        // sub x3, x3, x16
+        // add x2, x2, #128
+        r".inst 0xcb100063,0x91020042
+cbnz x3, 25b
+b 24f
+23:
+24:",
+        // ldr x19, [x5, #2944]
+        // ldr x20, [x5, #2952]
+        // ldr x21, [x5, #2960]
+        // ldr x22, [x5, #2968]
+        // ldr x23, [x5, #2976]
+        // ldr x24, [x5, #2984]
+        // ldr x25, [x5, #2992]
+        // ldr x26, [x5, #3000]
+        // ldr x27, [x5, #3008]
+        // ldr x28, [x5, #3016]
+        // movz x17, #0, lsl #0
+        // add x16, sp, #0
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #512
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #1024
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #1536
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #2048
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #2560
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #3072
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // add sp, sp, #3248
+        // ret
+        r".inst 0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba
+.inst 0xf945e0bb,0xf945e4bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
+.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
+.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611
+.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
+.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
+.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
+.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
+.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
+.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911803f0,0xa9004611
+.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
+.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
+.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
+.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
+.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
+.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
+.inst 0x912803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        // sub sp, sp, #3248
+        // add x4, sp, #0
+        // add x5, x4, #0
+        // str x19, [x5, #2944]
+        // str x20, [x5, #2952]
+        // str x21, [x5, #2960]
+        // str x22, [x5, #2968]
+        // str x23, [x5, #2976]
+        // str x24, [x5, #2984]
+        // str x25, [x5, #2992]
+        // str x26, [x5, #3000]
+        // str x27, [x5, #3008]
+        // str x28, [x5, #3016]
+        // movz x21, #255, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #384]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x5, #392]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #400]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // str x21, [x5, #408]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #255, lsl #32
+        // str x21, [x5, #416]
+        // sub x21, x1, #18
+        r".inst 0xd132c3ff,0x910003e4,0x91000085,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7
+.inst 0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5
+.inst 0xf2e01ff5,0xf900c0b5,0xd29fe015,0xf2bfe015,0xf2dfe015,0xf2ffe015,0xf900c4b5,0xd2800015
+.inst 0xf2dfe015,0xf2e01ff5,0xf900c8b5,0xd29fe015,0xf2a01ff5,0xf900ccb5,0xd2800015,0xf2bfe015
+.inst 0xf2c01ff5,0xf900d0b5,0xd1004835
+cbz x21, 20f",
+        // add x4, x5, #0
+        // add x4, x4, #2816
+        // add x0, x0, #256
+        // movz x22, #30, lsl #0
+        r".inst 0x910000a4,0x912c0084,0x91040000,0xd28003d6
+b 21f
+20:",
+        // add x4, x5, #0
+        // add x4, x4, #2304
+        // add x0, x0, #192
+        // movz x22, #22, lsl #0
+        r".inst 0x910000a4,0x91240084,0x91030000,0xd28002d6
+21:",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // ldr x6, [x0, #8]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // sub x0, x0, #8
+        r".inst 0x910000a1,0x910c0021,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb
 .inst 0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
 .inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
 .inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
@@ -749,486 +6111,7 @@ pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rou
 .inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
 .inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
 .inst 0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b
-.inst 0xf900182c,0xf9001c2d,0x91010021,0xd1002000,0xd10006d6,0xb5ffe6b6,0xd1002000,0xf9400006
-.inst 0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e
-.inst 0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673
-.inst 0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5
-.inst 0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5
-.inst 0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5
-.inst 0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55
-.inst 0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5
-.inst 0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5
-.inst 0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5
-.inst 0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5
-.inst 0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5
-.inst 0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55
-.inst 0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5
-.inst 0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5
-.inst 0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5
-.inst 0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5
-.inst 0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5
-.inst 0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5
-.inst 0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5
-.inst 0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5
-.inst 0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5
-.inst 0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5
-.inst 0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5
-.inst 0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026
-.inst 0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021
-.inst 0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
-.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
-.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
-.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
-.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
-.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
-.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
-.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
-.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
-.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
-.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
-.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
-.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
-.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
-.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
-.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
-.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
-.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
-.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
-.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
-.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
-.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
-.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
-.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
-.inst 0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d
-.inst 0x91010021,0xb400f5c3,0xd343fc75,0xb5000075,0x91000070,0x14000002,0xd2800110,0x9100004e
-.inst 0x910000af,0x912f41ef,0x91000211,0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce
-.inst 0x910041ef,0xd1000631,0xb5ffff31,0x910000a1,0x910c0021,0xf945eca6,0xf945f4a7,0xf945fca8
-.inst 0xf94604a9,0xf9460caa,0xf94614ab,0xf9461cac,0xf94624ad,0xd280000e,0xf2bfffee,0xd29fe00f
-.inst 0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673
-.inst 0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5
-.inst 0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5
-.inst 0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35
-.inst 0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5
-.inst 0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5
-.inst 0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5
-.inst 0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5
-.inst 0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5
-.inst 0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35
-.inst 0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5
-.inst 0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5
-.inst 0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5
-.inst 0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5
-.inst 0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5
-.inst 0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95
-.inst 0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5
-.inst 0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5
-.inst 0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75
-.inst 0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5
-.inst 0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5
-.inst 0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35
-.inst 0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7,0xf90128a8
-.inst 0xf9012ca9,0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad,0xf945e8a6,0xf945f0a7,0xf945f8a8
-.inst 0xf94600a9,0xf94608aa,0xf94610ab,0xf94618ac,0xf94620ad,0xd280000e,0xf2bfffee,0xd29fe00f
-.inst 0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673
-.inst 0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5
-.inst 0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5
-.inst 0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35
-.inst 0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5
-.inst 0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5
-.inst 0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5
-.inst 0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5
-.inst 0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5
-.inst 0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35
-.inst 0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5
-.inst 0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5
-.inst 0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5
-.inst 0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5
-.inst 0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5
-.inst 0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95
-.inst 0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5
-.inst 0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5
-.inst 0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75
-.inst 0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5
-.inst 0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5
-.inst 0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35
-.inst 0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9400035,0xca1500c6,0xf9400435
-.inst 0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435
-.inst 0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf90100a6,0xf90104a7,0xf90108a8
-.inst 0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0xf94120b5,0xf9402037,0xca1702b5
-.inst 0xf90120b5,0xf94124b5,0xf9402437,0xca1702b5,0xf90124b5,0xf94128b5,0xf9402837,0xca1702b5
-.inst 0xf90128b5,0xf9412cb5,0xf9402c37,0xca1702b5,0xf9012cb5,0xf94130b5,0xf9403037,0xca1702b5
-.inst 0xf90130b5,0xf94134b5,0xf9403437,0xca1702b5,0xf90134b5,0xf94138b5,0xf9403837,0xca1702b5
-.inst 0xf90138b5,0xf9413cb5,0xf9403c37,0xca1702b5,0xf9013cb5,0x91020021,0x91060020,0xf9400035
-.inst 0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035
-.inst 0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf940c8b8
-.inst 0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175
-.inst 0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129
-.inst 0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5
-.inst 0xca1500c6,0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3
-.inst 0xca070154,0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a
-.inst 0xca09019b,0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a
-.inst 0xca060129,0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9
-.inst 0xca1301d9,0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f
-.inst 0xca1c01ef,0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa
-.inst 0xca1c035a,0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6
-.inst 0xca1c02d6,0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6
-.inst 0x8a0b01c6,0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271
-.inst 0xca070231,0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5
-.inst 0xca11018c,0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b
-.inst 0xca1600c6,0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1
-.inst 0xca0c037b,0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6
-.inst 0x8a1602b6,0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a
-.inst 0x8a1a00da,0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8
-.inst 0x8a08018c,0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210
-.inst 0xf94020b4,0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357
-.inst 0xca0901ef,0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5
-.inst 0xca160339,0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a
-.inst 0xca0b035a,0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7
-.inst 0xca0a026a,0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210
-.inst 0xca1701cb,0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6
-.inst 0xca1c02d6,0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8
-.inst 0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175
-.inst 0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129
-.inst 0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5
-.inst 0xca1500c6,0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5
-.inst 0xca1500e7,0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155
-.inst 0x8a1802b5,0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c
-.inst 0xca1601b5,0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6
-.inst 0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5
-.inst 0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5
-.inst 0x8a1802b5,0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7
-.inst 0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5
-.inst 0xca150108,0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115
-.inst 0x8a1802b5,0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129
-.inst 0x93c9e135,0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5
-.inst 0xca150129,0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155
-.inst 0x8a1702b5,0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a
-.inst 0x93cb2175,0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5
-.inst 0xca15016b,0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195
-.inst 0x8a1802b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c
-.inst 0x93cc2195,0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5
-.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5
-.inst 0x8a1702b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6,0xf90120a6
-.inst 0xf94124b5,0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5,0xca150129
-.inst 0xf9012ca9,0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab,0xf94138b5
-.inst 0xca15018c,0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6,0xf9402435
-.inst 0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a,0xf9403435
-.inst 0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6,0xca0c01b5
-.inst 0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b
-.inst 0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5
-.inst 0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xd280001c
-.inst 0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3,0xca070154,0xca100155
-.inst 0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a,0xca09019b,0xf90000ba
-.inst 0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a,0xca060129,0xca1c0129
-.inst 0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9,0xca1301d9,0xca1601ce
-.inst 0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f,0xca1c01ef,0xca1b0210
-.inst 0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa,0xca1c035a,0xca1602f7
-.inst 0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6,0xca1c02d6,0x8a0a0107
-.inst 0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6,0x8a0b01c6,0xca0700c6
-.inst 0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271,0xca070231,0xf9001cb3
-.inst 0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5,0xca11018c,0xca15037b
-.inst 0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b,0xca1600c6,0xca1001ce
-.inst 0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1,0xca0c037b,0x8a11037b
-.inst 0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6,0x8a1602b6,0xca160210
-.inst 0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a,0x8a1a00da,0x8a0d036d
-.inst 0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8,0x8a08018c,0x8a1400c6
-.inst 0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210,0xf94020b4,0x8a1402b5
-.inst 0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357,0xca0901ef,0xca180333
-.inst 0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5,0xca160339,0xca0c0318
-.inst 0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a,0xca0b035a,0xca140129
-.inst 0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7,0xca0a026a,0xca150108
-.inst 0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210,0xca1701cb,0xca1c016b
-.inst 0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6,0xca1c02d6,0xca19010d
-.inst 0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8,0x910001b6,0xca0c01b5
-.inst 0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b
-.inst 0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5
-.inst 0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xf940d0b8
-.inst 0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5,0xca1500e7,0xca090115
-.inst 0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155,0x8a1802b5,0xca15014a
-.inst 0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c,0xca1601b5,0x8a1802b5
-.inst 0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6,0x93c6a0d5,0x8a1802b5
-.inst 0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5,0xca1500c6,0x93c6a0d5
-.inst 0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7
-.inst 0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7,0x93c7a0f5,0x8a1802b5
-.inst 0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108,0x93c8e115
-.inst 0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108
-.inst 0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93c9e135,0x8a1702b5
-.inst 0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93ca2155
-.inst 0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155,0x8a1702b5,0xca15014a
-.inst 0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cb2175,0x8a1802b5
-.inst 0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5,0xca15016b,0x93cb2175
-.inst 0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195,0x8a1802b5,0xca15018c
-.inst 0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195,0x8a1702b5
-.inst 0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad,0x93cda1b5
-.inst 0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5,0xca1501ad
-.inst 0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5,0xca1500e7
-.inst 0xf90104a7,0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9,0xf94110b5
-.inst 0xca15014a,0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c,0xf90118ac
-.inst 0xf9411cb5,0xca1501ad,0xf9011cad,0x91020021,0xcb000035,0xb5ff9655,0xcb040035,0xb5000055
-.inst 0x140000c8,0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac
-.inst 0xf9413cad,0xf940c0b8,0xf9403c37,0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9403837
-.inst 0xaa170195,0x93d522b5,0x8a1802b5,0xca15018c,0xf9403437,0xaa170175,0x93d522b5,0x8a1802b5
-.inst 0xca15016b,0xf9403037,0xaa170155,0x93d522b5,0x8a1802b5,0xca15014a,0xf9402c37,0xaa170135
-.inst 0x93d522b5,0x8a1802b5,0xca150129,0xf9402837,0xaa170115,0x93d522b5,0x8a1802b5,0xca150108
-.inst 0xf9402437,0xaa1700f5,0x93d522b5,0x8a1802b5,0xca1500e7,0xf9402037,0xaa1700d5,0x93d522b5
-.inst 0x8a1802b5,0xca1500c6,0xf940c4b8,0x910001b6,0xf9403837,0x8a170195,0x93d5e2b5,0x8a1802b5
-.inst 0xca1501ad,0xf9403437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c,0xf9403037,0x8a170155
-.inst 0x93d5e2b5,0x8a1802b5,0xca15016b,0xf9402c37,0x8a170135,0x93d5e2b5,0x8a1802b5,0xca15014a
-.inst 0xf9402837,0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9402437,0x8a1700f5,0x93d5e2b5
-.inst 0x8a1802b5,0xca150108,0xf9402037,0x8a1700d5,0x93d5e2b5,0x8a1802b5,0xca1500e7,0xf9403c37
-.inst 0x8a1702d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9
-.inst 0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad,0xf94100a6,0xf94104a7,0xf94108a8,0xf9410ca9
-.inst 0xf94110aa,0xf94114ab,0xf94118ac,0xf9411cad,0xf940c4b8,0x910001b6,0xf9401837,0x8a170195
-.inst 0x93d5e2b5,0x8a1802b5,0xca1501ad,0xf9401437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c
-.inst 0xf9401037,0x8a170155,0x93d5e2b5,0x8a1802b5,0xca15016b,0xf9400c37,0x8a170135,0x93d5e2b5
-.inst 0x8a1802b5,0xca15014a,0xf9400837,0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9400437
-.inst 0x8a1700f5,0x93d5e2b5,0x8a1802b5,0xca150108,0xf9400037,0x8a1700d5,0x93d5e2b5,0x8a1802b5
-.inst 0xca1500e7,0xf9401c37,0x8a1702d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf940c0b8,0xf9401c37
-.inst 0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9401837,0xaa170195,0x93d522b5,0x8a1802b5
-.inst 0xca15018c,0xf9401437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b,0xf9401037,0xaa170155
-.inst 0x93d522b5,0x8a1802b5,0xca15014a,0xf9400c37,0xaa170135,0x93d522b5,0x8a1802b5,0xca150129
-.inst 0xf9400837,0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9400437,0xaa1700f5,0x93d522b5
-.inst 0x8a1802b5,0xca1500e7,0xf9400037,0xaa1700d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90100a6
-.inst 0xf90104a7,0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0x91020021
-.inst 0xcb040035,0xb5ff7cb5,0xf9402035,0xca1500c6,0xf9402435,0xca1500e7,0xf9402835,0xca150108
-.inst 0xf9402c35,0xca150129,0xf9403035,0xca15014a,0xf9403435,0xca15016b,0xf9403835,0xca15018c
-.inst 0xf9403c35,0xca1501ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
-.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
-.inst 0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
-.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
-.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
-.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
-.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
-.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
-.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
-.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
-.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
-.inst 0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
-.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
-.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
-.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
-.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
-.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
-.inst 0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
-.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
-.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
-.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
-.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
-.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
-.inst 0x93d5c2b5,0xca1501ad,0xf905eca6,0xf905f4a7,0xf905fca8,0xf90604a9,0xf9060caa,0xf90614ab
-.inst 0xf9061cac,0xf90624ad,0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab
-.inst 0xf94138ac,0xf9413cad,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108
-.inst 0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c
-.inst 0xf9401c35,0xca1501ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
-.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
-.inst 0xf2c1e1f4,0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
-.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
-.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
-.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
-.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
-.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
-.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
-.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
-.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
-.inst 0x93d5f2b5,0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
-.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
-.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
-.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
-.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
-.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
-.inst 0x93d5e2b5,0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
-.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
-.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
-.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
-.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
-.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
-.inst 0x93d5c2b5,0xca1501ad,0xf905e8a6,0xf905f0a7,0xf905f8a8,0xf90600a9,0xf90608aa,0xf90610ab
-.inst 0xf90618ac,0xf90620ad,0xd343fc75,0xb5000075,0x91000070,0x14000002,0xd2800110,0x910000ae
-.inst 0x912f41ce,0x9100004f,0x91000211,0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce
-.inst 0x910041ef,0xd1000631,0xb5ffff31,0xcb100063,0x91020042,0xb5ff0aa3,0x14000001,0xf945c0b3
-.inst 0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba,0xf945e0bb
-.inst 0xf945e4bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
-.inst 0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611
-.inst 0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611
-.inst 0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
-.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
-.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611
-.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
-.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
-.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
-.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911803f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
-.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
-.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
-.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
-.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912803f0
-.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
-.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
-.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
-.inst 0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
-.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0",
-        r".p2align 6",
-    )
-}
-
-/// Prepares Camellia's subkeys for `vg_camellia_crypt_prepared`: writes at the bytes 384..424, 768..2432 (18 rounds) or 384..424, 768..2944 (24 rounds) of `ws` the subkeys of `rounds` rounds written by `vg_camellia_expand_key` at `schedule`, in the order of encryption (`decrypt = 0`) or decryption (`decrypt = 1`), in the implementation's encoding (`VG.Spec.Camellia.Prepared.Layout.encode`). Every byte of `ws` but those of the ranges 0..3248 keeps its value. It is not part of the library's Rust API.
-///
-/// Contract: `VG.Spec.Camellia.Prepared.prepareContract`. Constant time: only pointers, `ws_len`, `rounds` and `decrypt` may affect timing, not the subkeys.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `decrypt` must be 0 or 1.
-/// * `ws_len` must be at least 406.
-/// * The bytes 0..3248 of `ws` are unspecified on return and hold secrets, which the caller must destroy.
-/// * `ws` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `ws` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_prepare_keys(schedule: *const [u8; 272], rounds: usize, decrypt: usize, ws: *mut u64, ws_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0x91000065,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7,0xf905d4b8,0xf905d8b9
-.inst 0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5,0xf2e01ff5,0xf900c0b5
-.inst 0xd29fe015,0xf2bfe015,0xf2dfe015,0xf2ffe015,0xf900c4b5,0xd2800015,0xf2dfe015,0xf2e01ff5
-.inst 0xf900c8b5,0xd29fe015,0xf2a01ff5,0xf900ccb5,0xd2800015,0xf2bfe015,0xf2c01ff5,0xf900d0b5
-.inst 0xd1004835,0xb4008002,0xb40000d5,0x910000a4,0x912c0084,0x91040000,0xd28003d6,0x14000005
-.inst 0x910000a4,0x91240084,0x91030000,0xd28002d6,0x910000a1,0x910c0021,0xf9400006,0x910000c7
-.inst 0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee
-.inst 0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673
-.inst 0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5
-.inst 0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7
-.inst 0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108
-.inst 0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5
-.inst 0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b
-.inst 0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c
-.inst 0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5
-.inst 0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7
-.inst 0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108
-.inst 0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5
-.inst 0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b
-.inst 0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c
-.inst 0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5
-.inst 0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129
-.inst 0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a
-.inst 0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5
-.inst 0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129
-.inst 0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a
-.inst 0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5
-.inst 0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b
-.inst 0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108
-.inst 0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026,0xf9000427
-.inst 0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021,0xf9400406
-.inst 0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e
-.inst 0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673
-.inst 0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5
-.inst 0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5
-.inst 0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5
-.inst 0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55
-.inst 0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5
-.inst 0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5
-.inst 0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5
-.inst 0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5
-.inst 0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5
-.inst 0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55
-.inst 0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5
-.inst 0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5
-.inst 0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5
-.inst 0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5
-.inst 0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5
-.inst 0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5
-.inst 0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5
-.inst 0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5
-.inst 0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5
-.inst 0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5
-.inst 0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5
-.inst 0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026
-.inst 0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021
-.inst 0xd1002000,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc
-.inst 0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1
-.inst 0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4
-.inst 0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5
-.inst 0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5
-.inst 0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5
-.inst 0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75
-.inst 0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5
-.inst 0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5
-.inst 0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5
-.inst 0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5
-.inst 0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5
-.inst 0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75
-.inst 0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5
-.inst 0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5
-.inst 0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15
-.inst 0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5
-.inst 0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5
-.inst 0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5
-.inst 0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5
-.inst 0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5
-.inst 0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5
-.inst 0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5
-.inst 0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5
-.inst 0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c
-.inst 0xf9001c2d,0x91010021,0xd1002000,0xd10006d6,0xb5ffe6b6,0xd1002000,0xf9400006,0x910000c7
-.inst 0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee
-.inst 0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673
-.inst 0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5
-.inst 0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7
-.inst 0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108
-.inst 0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5
-.inst 0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b
-.inst 0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c
-.inst 0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5
-.inst 0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7
-.inst 0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108
-.inst 0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5
-.inst 0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b
-.inst 0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c
-.inst 0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5
-.inst 0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129
-.inst 0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a
-.inst 0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5
-.inst 0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129
-.inst 0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a
-.inst 0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5
-.inst 0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b
-.inst 0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108
-.inst 0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026,0xf9000427
-.inst 0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021,0xf9400406
-.inst 0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd,0xd280000e
-.inst 0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673
-.inst 0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5
-.inst 0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5
-.inst 0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5
-.inst 0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55
-.inst 0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5
-.inst 0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5
-.inst 0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5
-.inst 0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5
-.inst 0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5
-.inst 0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55
-.inst 0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5
-.inst 0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5
-.inst 0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5
-.inst 0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5
-.inst 0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5
-.inst 0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5
-.inst 0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5
-.inst 0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5
-.inst 0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5
-.inst 0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5
-.inst 0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5
-.inst 0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026
-.inst 0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d,0x91010021
-.inst 0x140000d7,0xb40000b5,0x910000a4,0x912c0084,0xd2800456,0x14000004,0x910000a4,0x91240084
-.inst 0xd2800356,0x910000a1,0x910c0021,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca
+.inst 0xf900182c,0xf9001c2d,0x91010021,0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca
 .inst 0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1
 .inst 0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4
 .inst 0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5
@@ -1253,89 +6136,2132 @@ pub unsafe extern "C" fn vg_camellia_prepare_keys(schedule: *const [u8; 272], ro
 .inst 0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15
 .inst 0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5
 .inst 0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a
-.inst 0xf900142b,0xf900182c,0xf9001c2d,0x91010021,0x91002000,0xd10006d6,0xb5ffe6b6,0xf945c0b3
-.inst 0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba,0xf945e0bb
-.inst 0xf945e4bc,0xd65f03c0",
-        r".p2align 6",
-    )
-}
-
-/// Camellia ECB (RFC 3713 §2.3, SP 800-38A §6.1) with `rounds` rounds of the 8 16-byte blocks at byte 3024 of `ws`, in place, under the subkeys that `vg_camellia_prepare_keys` wrote for `rounds` rounds at the bytes 384..424, 768..2432 (18 rounds) or 384..424, 768..2944 (24 rounds), in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..384, 424..768, 2944..3152 (the blocks' among them, not the subkeys') keeps its value, so the subkeys serve every batch. It is not part of the library's Rust API.
-///
-/// Contract: `VG.Spec.Camellia.Prepared.cryptContract`. Constant time: only pointers, `ws_len` and `rounds` may affect timing, not the subkeys or the blocks.
-///
-/// # Safety
-///
-/// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
-/// * `rounds` must be 18 or 24, as `vg_camellia_prepare_keys` was given.
-/// * `ws_len` must be at least 406.
-/// * `ws` must hold the subkeys as `vg_camellia_prepare_keys` wrote them for `rounds` rounds.
-/// * The bytes 0..384, 424..768, 2944..3152 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
-/// * `ws` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0x91000025,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7,0xf905d4b8,0xf905d8b9
-.inst 0xf905dcba,0xf905e0bb,0xf905e4bc,0xd1004815,0xb4000095,0x910000a4,0x912c0084,0x14000003
-.inst 0x910000a4,0x91240084,0x910000a1,0x910c0021,0xf945eca6,0xf945f4a7,0xf945fca8,0xf94604a9
-.inst 0xf9460caa,0xf94614ab,0xf9461cac,0xf94624ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f
-.inst 0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673
-.inst 0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6
-.inst 0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7
-.inst 0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5
-.inst 0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a
-.inst 0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b
-.inst 0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5
-.inst 0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6
-.inst 0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7
-.inst 0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5
-.inst 0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a
-.inst 0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b
-.inst 0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5
-.inst 0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7
-.inst 0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108
-.inst 0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5
-.inst 0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108
-.inst 0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7
-.inst 0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5
-.inst 0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a
-.inst 0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7
-.inst 0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5
-.inst 0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9
-.inst 0xf90130aa,0xf90134ab,0xf90138ac,0xf9013cad,0xf945e8a6,0xf945f0a7,0xf945f8a8,0xf94600a9
-.inst 0xf94608aa,0xf94610ab,0xf94618ac,0xf94620ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f
-.inst 0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673
-.inst 0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6
-.inst 0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7
-.inst 0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5
-.inst 0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a
-.inst 0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b
-.inst 0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5
-.inst 0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6
-.inst 0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7
-.inst 0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5
-.inst 0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a
-.inst 0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b
-.inst 0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5
-.inst 0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7
-.inst 0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108
-.inst 0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5
-.inst 0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108
-.inst 0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7
-.inst 0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5
-.inst 0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a
-.inst 0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7
-.inst 0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5
-.inst 0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7
-.inst 0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b
-.inst 0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf90100a6,0xf90104a7,0xf90108a8,0xf9010ca9
-.inst 0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0xf94120b5,0xf9402037,0xca1702b5,0xf90120b5
-.inst 0xf94124b5,0xf9402437,0xca1702b5,0xf90124b5,0xf94128b5,0xf9402837,0xca1702b5,0xf90128b5
-.inst 0xf9412cb5,0xf9402c37,0xca1702b5,0xf9012cb5,0xf94130b5,0xf9403037,0xca1702b5,0xf90130b5
-.inst 0xf94134b5,0xf9403437,0xca1702b5,0xf90134b5,0xf94138b5,0xf9403837,0xca1702b5,0xf90138b5
-.inst 0xf9413cb5,0xf9403c37,0xca1702b5,0xf9013cb5,0x91020021,0x91060020,0xf9400035,0xca1500c6
-.inst 0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129,0xf9401035,0xca15014a
-.inst 0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad,0xf940c8b8,0x910001b6
+.inst 0xf900142b,0xf900182c,0xf9001c2d,0x91010021,0xd1002000
+22:",
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // sub x0, x0, #8
+        // sub x22, x22, #1
+        r".inst 0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d
+.inst 0x91010021,0xd1002000,0xd10006d6
+cbnz x22, 22b",
+        // sub x0, x0, #8
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // ldr x6, [x0, #8]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        r".inst 0xd1002000,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc
+.inst 0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1
+.inst 0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4
+.inst 0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5
+.inst 0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5
+.inst 0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5
+.inst 0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75
+.inst 0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5
+.inst 0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5
+.inst 0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5
+.inst 0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5
+.inst 0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5
+.inst 0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75
+.inst 0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5
+.inst 0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5
+.inst 0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15
+.inst 0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5
+.inst 0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5
+.inst 0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5
+.inst 0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5
+.inst 0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5
+.inst 0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5
+.inst 0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5
+.inst 0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5
+.inst 0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c
+.inst 0xf9001c2d,0x91010021,0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb
+.inst 0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b
+.inst 0xf900182c,0xf9001c2d,0x91010021
+cbz x3, 23f
+25:",
+        // lsr x21, x3, #3
+        r".inst 0xd343fc75
+cbnz x21, 26f",
+        // add x16, x3, #0
+        r".inst 0x91000070
+b 27f
+26:",
+        // movz x16, #8, lsl #0
+        r".inst 0xd2800110
+27:",
+        // add x14, x2, #0
+        // add x15, x5, #0
+        // add x15, x15, #3024
+        // add x17, x16, #0
+        r".inst 0x9100004e,0x910000af,0x912f41ef,0x91000211
+28:",
+        // ldr x21, [x14, #0]
+        // str x21, [x15, #0]
+        // ldr x21, [x14, #8]
+        // str x21, [x15, #8]
+        // add x14, x14, #16
+        // add x15, x15, #16
+        // sub x17, x17, #1
+        r".inst 0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce,0x910041ef,0xd1000631
+cbnz x17, 28b",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // ldr x6, [x5, #3032]
+        // ldr x7, [x5, #3048]
+        // ldr x8, [x5, #3064]
+        // ldr x9, [x5, #3080]
+        // ldr x10, [x5, #3096]
+        // ldr x11, [x5, #3112]
+        // ldr x12, [x5, #3128]
+        // ldr x13, [x5, #3144]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x5, #3024]
+        // ldr x7, [x5, #3040]
+        // ldr x8, [x5, #3056]
+        // ldr x9, [x5, #3072]
+        // ldr x10, [x5, #3088]
+        // ldr x11, [x5, #3104]
+        // ldr x12, [x5, #3120]
+        // ldr x13, [x5, #3136]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // ldr x21, [x5, #576]
+        // ldr x23, [x1, #64]
+        // eor x21, x21, x23
+        // str x21, [x5, #576]
+        // ldr x21, [x5, #584]
+        // ldr x23, [x1, #72]
+        // eor x21, x21, x23
+        // str x21, [x5, #584]
+        // ldr x21, [x5, #592]
+        // ldr x23, [x1, #80]
+        // eor x21, x21, x23
+        // str x21, [x5, #592]
+        // ldr x21, [x5, #600]
+        // ldr x23, [x1, #88]
+        // eor x21, x21, x23
+        // str x21, [x5, #600]
+        // ldr x21, [x5, #608]
+        // ldr x23, [x1, #96]
+        // eor x21, x21, x23
+        // str x21, [x5, #608]
+        // ldr x21, [x5, #616]
+        // ldr x23, [x1, #104]
+        // eor x21, x21, x23
+        // str x21, [x5, #616]
+        // ldr x21, [x5, #624]
+        // ldr x23, [x1, #112]
+        // eor x21, x21, x23
+        // str x21, [x5, #624]
+        // ldr x21, [x5, #632]
+        // ldr x23, [x1, #120]
+        // eor x21, x21, x23
+        // str x21, [x5, #632]
+        // add x1, x1, #128
+        r".inst 0x910000a1,0x910c0021,0xf945eca6,0xf945f4a7,0xf945fca8,0xf94604a9,0xf9460caa,0xf94614ab
+.inst 0xf9461cac,0xf94624ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9,0xf90130aa,0xf90134ab
+.inst 0xf90138ac,0xf9013cad,0xf945e8a6,0xf945f0a7,0xf945f8a8,0xf94600a9,0xf94608aa,0xf94610ab
+.inst 0xf94618ac,0xf94620ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108
+.inst 0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c
+.inst 0xf9401c35,0xca1501ad,0xf90100a6,0xf90104a7,0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab
+.inst 0xf90118ac,0xf9011cad,0xf94120b5,0xf9402037,0xca1702b5,0xf90120b5,0xf94124b5,0xf9402437
+.inst 0xca1702b5,0xf90124b5,0xf94128b5,0xf9402837,0xca1702b5,0xf90128b5,0xf9412cb5,0xf9402c37
+.inst 0xca1702b5,0xf9012cb5,0xf94130b5,0xf9403037,0xca1702b5,0xf90130b5,0xf94134b5,0xf9403437
+.inst 0xca1702b5,0xf90134b5,0xf94138b5,0xf9403837,0xca1702b5,0xf90138b5,0xf9413cb5,0xf9403c37
+.inst 0xca1702b5,0xf9013cb5,0x91020021
+29:",
+        // add x0, x1, #384
+        r".inst 0x91060020
+210:",
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #576]
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // ldr x21, [x5, #584]
+        // eor x7, x7, x21
+        // str x7, [x5, #584]
+        // ldr x21, [x5, #592]
+        // eor x8, x8, x21
+        // str x8, [x5, #592]
+        // ldr x21, [x5, #600]
+        // eor x9, x9, x21
+        // str x9, [x5, #600]
+        // ldr x21, [x5, #608]
+        // eor x10, x10, x21
+        // str x10, [x5, #608]
+        // ldr x21, [x5, #616]
+        // eor x11, x11, x21
+        // str x11, [x5, #616]
+        // ldr x21, [x5, #624]
+        // eor x12, x12, x21
+        // str x12, [x5, #624]
+        // ldr x21, [x5, #632]
+        // eor x13, x13, x21
+        // str x13, [x5, #632]
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #512]
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // ldr x21, [x5, #520]
+        // eor x7, x7, x21
+        // str x7, [x5, #520]
+        // ldr x21, [x5, #528]
+        // eor x8, x8, x21
+        // str x8, [x5, #528]
+        // ldr x21, [x5, #536]
+        // eor x9, x9, x21
+        // str x9, [x5, #536]
+        // ldr x21, [x5, #544]
+        // eor x10, x10, x21
+        // str x10, [x5, #544]
+        // ldr x21, [x5, #552]
+        // eor x11, x11, x21
+        // str x11, [x5, #552]
+        // ldr x21, [x5, #560]
+        // eor x12, x12, x21
+        // str x12, [x5, #560]
+        // ldr x21, [x5, #568]
+        // eor x13, x13, x21
+        // str x13, [x5, #568]
+        // add x1, x1, #128
+        // sub x21, x1, x0
+        r".inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xf940c8b8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191
+.inst 0xca0f00d3,0xca070154,0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba
+.inst 0xca1c035a,0xca09019b,0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151
+.inst 0xca19014a,0xca060129,0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339
+.inst 0xf90008b9,0xca1301d9,0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af
+.inst 0xca13020f,0xca1c01ef,0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad
+.inst 0xca1a02fa,0xca1c035a,0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294
+.inst 0xca0702d6,0xca1c02d6,0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7
+.inst 0xf90004a6,0x8a0b01c6,0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1
+.inst 0x8a170271,0xca070231,0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275
+.inst 0xca0702b5,0xca11018c,0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5
+.inst 0xca15037b,0xca1600c6,0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5
+.inst 0xca0e00d1,0xca0c037b,0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6
+.inst 0xca0e02d6,0x8a1602b6,0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7
+.inst 0x8a0a018a,0x8a1a00da,0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7
+.inst 0x8a1802d8,0x8a08018c,0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4
+.inst 0x8a140210,0xf94020b4,0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6
+.inst 0xca170357,0xca0901ef,0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf
+.inst 0xca1501b5,0xca160339,0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287
+.inst 0xca0d014a,0xca0b035a,0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7
+.inst 0xca0c02f7,0xca0a026a,0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218
+.inst 0xca070210,0xca1701cb,0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129
+.inst 0xca1002d6,0xca1c02d6,0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306
+.inst 0xf940ccb8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5
+.inst 0x8a1802b5,0xca1500e7,0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129
+.inst 0xca0b0155,0x8a1802b5,0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5
+.inst 0xca15018c,0xca1601b5,0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5
+.inst 0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5
+.inst 0x8a1702b5,0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7
+.inst 0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5
+.inst 0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115
+.inst 0x8a1802b5,0xca150108,0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108
+.inst 0x93c8a115,0x8a1802b5,0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5
+.inst 0xca150129,0x93c9e135,0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135
+.inst 0x8a1802b5,0xca150129,0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a
+.inst 0x93cae155,0x8a1702b5,0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5
+.inst 0xca15014a,0x93cb2175,0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175
+.inst 0x8a1702b5,0xca15016b,0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b
+.inst 0x93cc2195,0x8a1802b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5
+.inst 0xca15018c,0x93cc2195,0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5
+.inst 0x8a1802b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad
+.inst 0x93cd21b5,0x8a1702b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6
+.inst 0xf90120a6,0xf94124b5,0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5
+.inst 0xca150129,0xf9012ca9,0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab
+.inst 0xf94138b5,0xca15018c,0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6
+.inst 0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a
+.inst 0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6
 .inst 0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5
 .inst 0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115
 .inst 0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6
@@ -1383,64 +8309,216 @@ pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64,
 .inst 0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195
 .inst 0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad
 .inst 0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5
-.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6,0xf90120a6,0xf94124b5
-.inst 0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5,0xca150129,0xf9012ca9
-.inst 0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab,0xf94138b5,0xca15018c
-.inst 0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6,0xf9402435,0xca1500e7
-.inst 0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a,0xf9403435,0xca15016b
-.inst 0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6,0xca0c01b5,0x8a1802b5
-.inst 0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b,0xca090155
-.inst 0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5,0xca150108
-.inst 0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xd280001c,0xd100079c
-.inst 0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3,0xca070154,0xca100155,0xca0f0196
-.inst 0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a,0xca09019b,0xf90000ba,0xca07017a
-.inst 0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a,0xca060129,0xca1c0129,0xca130106
-.inst 0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9,0xca1301d9,0xca1601ce,0xca1401f6
-.inst 0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f,0xca1c01ef,0xca1b0210,0xca1c0210
-.inst 0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa,0xca1c035a,0xca1602f7,0xca1c02f7
-.inst 0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6,0xca1c02d6,0x8a0a0107,0x8a1a028c
-.inst 0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6,0x8a0b01c6,0xca0700c6,0xf90014ae
-.inst 0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271,0xca070231,0xf9001cb3,0xf94008b3
-.inst 0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5,0xca11018c,0xca15037b,0xca1100c6
-.inst 0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b,0xca1600c6,0xca1001ce,0xca1b0190
-.inst 0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1,0xca0c037b,0x8a11037b,0xca0e037b
-.inst 0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6,0x8a1602b6,0xca160210,0xca060216
-.inst 0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a,0x8a1a00da,0x8a0d036d,0x8a0f022f
-.inst 0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8,0x8a08018c,0x8a1400c6,0xf94024b4
-.inst 0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210,0xf94020b4,0x8a1402b5,0xf94018b4
-.inst 0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357,0xca0901ef,0xca180333,0xca070154
-.inst 0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5,0xca160339,0xca0c0318,0xca06018c
-.inst 0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a,0xca0b035a,0xca140129,0xca1900c6
-.inst 0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7,0xca0a026a,0xca150108,0xca0c01ef
-.inst 0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210,0xca1701cb,0xca1c016b,0xca0600e7
-.inst 0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6,0xca1c02d6,0xca19010d,0xca1a01ec
-.inst 0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8,0x910001b6,0xca0c01b5,0x8a1802b5
-.inst 0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5,0xca15016b,0xca090155
-.inst 0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115,0x8a1802b5,0xca150108
-.inst 0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6,0xf940d0b8,0x910000d6
-.inst 0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5,0xca1500e7,0xca090115,0x8a1802b5
-.inst 0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155,0x8a1802b5,0xca15014a,0xca0c0175
-.inst 0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c,0xca1601b5,0x8a1802b5,0xca1501ad
-.inst 0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6
-.inst 0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5,0xca1500c6,0x93c6a0d5,0x8a1802b5
-.inst 0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c7e0f5
-.inst 0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7
-.inst 0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108,0x93c8e115,0x8a1702b5
-.inst 0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108,0x93c92135
-.inst 0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93c9e135,0x8a1702b5,0xca150129
-.inst 0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93ca2155,0x8a1802b5
-.inst 0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155,0x8a1702b5,0xca15014a,0x93ca2155
-.inst 0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cb2175,0x8a1802b5,0xca15016b
-.inst 0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5,0xca15016b,0x93cb2175,0x8a1702b5
-.inst 0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195,0x8a1802b5,0xca15018c,0x93cca195
-.inst 0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195,0x8a1702b5,0xca15018c
-.inst 0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad,0x93cda1b5,0x8a1802b5
-.inst 0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5,0xca1501ad,0x93cda1b5
-.inst 0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5,0xca1500e7,0xf90104a7
-.inst 0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9,0xf94110b5,0xca15014a
-.inst 0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c,0xf90118ac,0xf9411cb5
-.inst 0xca1501ad,0xf9011cad,0x91020021,0xcb000035,0xb5ff9655,0xcb040035,0xb5000055,0x140000c8
-.inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
+.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5
+.inst 0xca1500e7,0xf90104a7,0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9
+.inst 0xf94110b5,0xca15014a,0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c
+.inst 0xf90118ac,0xf9411cb5,0xca1501ad,0xf9011cad,0x91020021,0xcb000035
+cbnz x21, 210b",
+        // sub x21, x1, x4
+        r".inst 0xcb040035
+cbnz x21, 211f
+b 212f
+211:",
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // ldr x24, [x5, #384]
+        // ldr x23, [x1, #120]
+        // orr x21, x13, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #112]
+        // orr x21, x12, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #104]
+        // orr x21, x11, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #96]
+        // orr x21, x10, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #88]
+        // orr x21, x9, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #80]
+        // orr x21, x8, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #72]
+        // orr x21, x7, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #64]
+        // orr x21, x6, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #392]
+        // add x22, x13, #0
+        // ldr x23, [x1, #112]
+        // and x21, x12, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #104]
+        // and x21, x11, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #96]
+        // and x21, x10, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #88]
+        // and x21, x9, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #80]
+        // and x21, x8, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #72]
+        // and x21, x7, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #64]
+        // and x21, x6, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #120]
+        // and x21, x22, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x5, #512]
+        // ldr x7, [x5, #520]
+        // ldr x8, [x5, #528]
+        // ldr x9, [x5, #536]
+        // ldr x10, [x5, #544]
+        // ldr x11, [x5, #552]
+        // ldr x12, [x5, #560]
+        // ldr x13, [x5, #568]
+        // ldr x24, [x5, #392]
+        // add x22, x13, #0
+        // ldr x23, [x1, #48]
+        // and x21, x12, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #40]
+        // and x21, x11, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #32]
+        // and x21, x10, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #24]
+        // and x21, x9, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #16]
+        // and x21, x8, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #8]
+        // and x21, x7, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #0]
+        // and x21, x6, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #56]
+        // and x21, x22, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x1, #56]
+        // orr x21, x13, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #48]
+        // orr x21, x12, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #40]
+        // orr x21, x11, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #32]
+        // orr x21, x10, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #24]
+        // orr x21, x9, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #16]
+        // orr x21, x8, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #8]
+        // orr x21, x7, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #0]
+        // orr x21, x6, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // add x1, x1, #128
+        r".inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
 .inst 0xf940c0b8,0xf9403c37,0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9403837,0xaa170195
 .inst 0x93d522b5,0x8a1802b5,0xca15018c,0xf9403437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b
 .inst 0xf9403037,0xaa170155,0x93d522b5,0x8a1802b5,0xca15014a,0xf9402c37,0xaa170135,0x93d522b5
@@ -1464,12 +8542,1951 @@ pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64,
 .inst 0x8a1802b5,0xca15014a,0xf9400c37,0xaa170135,0x93d522b5,0x8a1802b5,0xca150129,0xf9400837
 .inst 0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9400437,0xaa1700f5,0x93d522b5,0x8a1802b5
 .inst 0xca1500e7,0xf9400037,0xaa1700d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90100a6,0xf90104a7
-.inst 0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0x91020021,0xcb040035
-.inst 0xb5ff7cb5,0xf9402035,0xca1500c6,0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35
-.inst 0xca150129,0xf9403035,0xca15014a,0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35
-.inst 0xca1501ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1
+.inst 0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0x91020021
+212:",
+        // sub x21, x1, x4
+        r".inst 0xcb040035
+cbnz x21, 29b",
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3032]
+        // str x7, [x5, #3048]
+        // str x8, [x5, #3064]
+        // str x9, [x5, #3080]
+        // str x10, [x5, #3096]
+        // str x11, [x5, #3112]
+        // str x12, [x5, #3128]
+        // str x13, [x5, #3144]
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3024]
+        // str x7, [x5, #3040]
+        // str x8, [x5, #3056]
+        // str x9, [x5, #3072]
+        // str x10, [x5, #3088]
+        // str x11, [x5, #3104]
+        // str x12, [x5, #3120]
+        // str x13, [x5, #3136]
+        // lsr x21, x3, #3
+        r".inst 0xf9402035,0xca1500c6,0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129
+.inst 0xf9403035,0xca15014a,0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xf905eca6,0xf905f4a7,0xf905fca8,0xf90604a9,0xf9060caa,0xf90614ab,0xf9061cac,0xf90624ad
+.inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
+.inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xf905e8a6,0xf905f0a7,0xf905f8a8,0xf90600a9,0xf90608aa,0xf90610ab,0xf90618ac,0xf90620ad
+.inst 0xd343fc75
+cbnz x21, 213f",
+        // add x16, x3, #0
+        r".inst 0x91000070
+b 214f
+213:",
+        // movz x16, #8, lsl #0
+        r".inst 0xd2800110
+214:",
+        // add x14, x5, #0
+        // add x14, x14, #3024
+        // add x15, x2, #0
+        // add x17, x16, #0
+        r".inst 0x910000ae,0x912f41ce,0x9100004f,0x91000211
+215:",
+        // ldr x21, [x14, #0]
+        // str x21, [x15, #0]
+        // ldr x21, [x14, #8]
+        // str x21, [x15, #8]
+        // add x14, x14, #16
+        // add x15, x15, #16
+        // sub x17, x17, #1
+        r".inst 0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce,0x910041ef,0xd1000631
+cbnz x17, 215b",
+        // sub x3, x3, x16
+        // add x2, x2, #128
+        r".inst 0xcb100063,0x91020042
+cbnz x3, 25b
+b 24f
+23:
+24:",
+        // ldr x19, [x5, #2944]
+        // ldr x20, [x5, #2952]
+        // ldr x21, [x5, #2960]
+        // ldr x22, [x5, #2968]
+        // ldr x23, [x5, #2976]
+        // ldr x24, [x5, #2984]
+        // ldr x25, [x5, #2992]
+        // ldr x26, [x5, #3000]
+        // ldr x27, [x5, #3008]
+        // ldr x28, [x5, #3016]
+        // movz x17, #0, lsl #0
+        // add x16, sp, #0
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #512
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #1024
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #1536
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #2048
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #2560
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // stp x17, x17, [x16, #176]
+        // stp x17, x17, [x16, #192]
+        // stp x17, x17, [x16, #208]
+        // stp x17, x17, [x16, #224]
+        // stp x17, x17, [x16, #240]
+        // stp x17, x17, [x16, #256]
+        // stp x17, x17, [x16, #272]
+        // stp x17, x17, [x16, #288]
+        // stp x17, x17, [x16, #304]
+        // stp x17, x17, [x16, #320]
+        // stp x17, x17, [x16, #336]
+        // stp x17, x17, [x16, #352]
+        // stp x17, x17, [x16, #368]
+        // stp x17, x17, [x16, #384]
+        // stp x17, x17, [x16, #400]
+        // stp x17, x17, [x16, #416]
+        // stp x17, x17, [x16, #432]
+        // stp x17, x17, [x16, #448]
+        // stp x17, x17, [x16, #464]
+        // stp x17, x17, [x16, #480]
+        // stp x17, x17, [x16, #496]
+        // add x16, sp, #3072
+        // stp x17, x17, [x16, #0]
+        // stp x17, x17, [x16, #16]
+        // stp x17, x17, [x16, #32]
+        // stp x17, x17, [x16, #48]
+        // stp x17, x17, [x16, #64]
+        // stp x17, x17, [x16, #80]
+        // stp x17, x17, [x16, #96]
+        // stp x17, x17, [x16, #112]
+        // stp x17, x17, [x16, #128]
+        // stp x17, x17, [x16, #144]
+        // stp x17, x17, [x16, #160]
+        // add sp, sp, #3248
+        // ret
+        r".inst 0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba
+.inst 0xf945e0bb,0xf945e4bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
+.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
+.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611
+.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
+.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
+.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
+.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
+.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
+.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911803f0,0xa9004611
+.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
+.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
+.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
+.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
+.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
+.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
+.inst 0x912803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// Prepares Camellia's subkeys for `vg_camellia_crypt_prepared`: writes at the bytes 384..424, 768..2432 (18 rounds) or 384..424, 768..2944 (24 rounds) of `ws` the subkeys of `rounds` rounds written by `vg_camellia_expand_key` at `schedule`, in the order of encryption (`decrypt = 0`) or decryption (`decrypt = 1`), in the implementation's encoding (`VG.Spec.Camellia.Prepared.Layout.encode`). Every byte of `ws` but those of the ranges 0..3248 keeps its value. It is not part of the library's Rust API.
+///
+/// Contract: `VG.Spec.Camellia.Prepared.prepareContract`. Constant time: only pointers, `ws_len`, `rounds` and `decrypt` may affect timing, not the subkeys.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `decrypt` must be 0 or 1.
+/// * `ws_len` must be at least 406.
+/// * The bytes 0..3248 of `ws` are unspecified on return and hold secrets, which the caller must destroy.
+/// * `ws` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `ws` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_camellia_prepare_keys(schedule: *const [u8; 272], rounds: usize, decrypt: usize, ws: *mut u64, ws_len: usize) {
+    core::arch::naked_asm!(
+        // add x5, x3, #0
+        // str x19, [x5, #2944]
+        // str x20, [x5, #2952]
+        // str x21, [x5, #2960]
+        // str x22, [x5, #2968]
+        // str x23, [x5, #2976]
+        // str x24, [x5, #2984]
+        // str x25, [x5, #2992]
+        // str x26, [x5, #3000]
+        // str x27, [x5, #3008]
+        // str x28, [x5, #3016]
+        // movz x21, #255, lsl #0
+        // movk x21, #255, lsl #16
+        // movk x21, #255, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #384]
+        // movz x21, #65280, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #65280, lsl #32
+        // movk x21, #65280, lsl #48
+        // str x21, [x5, #392]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #32
+        // movk x21, #255, lsl #48
+        // str x21, [x5, #400]
+        // movz x21, #65280, lsl #0
+        // movk x21, #255, lsl #16
+        // str x21, [x5, #408]
+        // movz x21, #0, lsl #0
+        // movk x21, #65280, lsl #16
+        // movk x21, #255, lsl #32
+        // str x21, [x5, #416]
+        // sub x21, x1, #18
+        r".inst 0x91000065,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7,0xf905d4b8,0xf905d8b9
+.inst 0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5,0xf2e01ff5,0xf900c0b5
+.inst 0xd29fe015,0xf2bfe015,0xf2dfe015,0xf2ffe015,0xf900c4b5,0xd2800015,0xf2dfe015,0xf2e01ff5
+.inst 0xf900c8b5,0xd29fe015,0xf2a01ff5,0xf900ccb5,0xd2800015,0xf2bfe015,0xf2c01ff5,0xf900d0b5
+.inst 0xd1004835
+cbz x2, 20f
+cbz x21, 22f",
+        // add x4, x5, #0
+        // add x4, x4, #2816
+        // add x0, x0, #256
+        // movz x22, #30, lsl #0
+        r".inst 0x910000a4,0x912c0084,0x91040000,0xd28003d6
+b 23f
+22:",
+        // add x4, x5, #0
+        // add x4, x4, #2304
+        // add x0, x0, #192
+        // movz x22, #22, lsl #0
+        r".inst 0x910000a4,0x91240084,0x91030000,0xd28002d6
+23:",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // ldr x6, [x0, #8]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // sub x0, x0, #8
+        r".inst 0x910000a1,0x910c0021,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb
+.inst 0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b
+.inst 0xf900182c,0xf9001c2d,0x91010021,0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca
+.inst 0x910000cb,0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1
+.inst 0xf2aaaab1,0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4
+.inst 0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5
+.inst 0xca1500c6,0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15
+.inst 0xca0802b5,0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5
+.inst 0xca150129,0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5
+.inst 0xca15014a,0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95
+.inst 0xca0c02b5,0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5
+.inst 0xca1501ad,0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5
+.inst 0xca1500c6,0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15
+.inst 0xca0802b5,0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5
+.inst 0xca150129,0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5
+.inst 0xca15014a,0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95
+.inst 0xca0c02b5,0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5
+.inst 0xca1501ad,0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5
+.inst 0xca1500c6,0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55
+.inst 0xca0b02b5,0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5
+.inst 0xca1501ad,0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5
+.inst 0xca1500c6,0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55
+.inst 0xca0c02b5,0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5
+.inst 0xca1501ad,0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5
+.inst 0xca1500c6,0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15
+.inst 0xca0c02b5,0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5
+.inst 0xca1501ad,0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a
+.inst 0xf900142b,0xf900182c,0xf9001c2d,0x91010021,0xd1002000
+24:",
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // sub x0, x0, #8
+        // sub x22, x22, #1
+        r".inst 0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d
+.inst 0x91010021,0xd1002000,0xd10006d6
+cbnz x22, 24b",
+        // sub x0, x0, #8
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // ldr x6, [x0, #8]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        r".inst 0xd1002000,0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc
+.inst 0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1
 .inst 0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4
-.inst 0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15
+.inst 0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5
+.inst 0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5
+.inst 0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5
+.inst 0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75
+.inst 0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5
+.inst 0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5
+.inst 0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5
+.inst 0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5
+.inst 0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5
+.inst 0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75
+.inst 0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5
+.inst 0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5
+.inst 0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15
 .inst 0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5
 .inst 0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5
 .inst 0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5
@@ -1478,49 +10495,2527 @@ pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64,
 .inst 0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5
 .inst 0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5
 .inst 0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5
-.inst 0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5
-.inst 0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5
-.inst 0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5
-.inst 0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75
-.inst 0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5
-.inst 0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5
-.inst 0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5
-.inst 0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5
-.inst 0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5
-.inst 0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75
-.inst 0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5
-.inst 0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5
-.inst 0xca1501ad,0xf905eca6,0xf905f4a7,0xf905fca8,0xf90604a9,0xf9060caa,0xf90614ab,0xf9061cac
-.inst 0xf90624ad,0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac
-.inst 0xf9413cad,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35
-.inst 0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35
-.inst 0xca1501ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1
-.inst 0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4
-.inst 0xf2e1e1f4,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15
-.inst 0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5
-.inst 0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5
-.inst 0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5
-.inst 0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5
-.inst 0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5
-.inst 0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5
-.inst 0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5
-.inst 0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5
-.inst 0xca150129,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5
-.inst 0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5
-.inst 0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5
-.inst 0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75
-.inst 0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5
-.inst 0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5
-.inst 0xca1501ad,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5
-.inst 0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5
-.inst 0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5
-.inst 0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75
-.inst 0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5
-.inst 0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5
-.inst 0xca1501ad,0xf905e8a6,0xf905f0a7,0xf905f8a8,0xf90600a9,0xf90608aa,0xf90610ab,0xf90618ac
-.inst 0xf90620ad,0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9
-.inst 0xf945dcba,0xf945e0bb,0xf945e4bc,0xd65f03c0",
-        r".p2align 6",
+.inst 0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c
+.inst 0xf9001c2d,0x91010021,0xf9400406,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb
+.inst 0x910000cc,0x910000cd,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b
+.inst 0xf900182c,0xf9001c2d,0x91010021
+b 21f
+20:
+cbz x21, 25f",
+        // add x4, x5, #0
+        // add x4, x4, #2816
+        // movz x22, #34, lsl #0
+        r".inst 0x910000a4,0x912c0084,0xd2800456
+b 26f
+25:",
+        // add x4, x5, #0
+        // add x4, x4, #2304
+        // movz x22, #26, lsl #0
+        r".inst 0x910000a4,0x91240084,0xd2800356
+26:",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        r".inst 0x910000a1,0x910c0021
+27:",
+        // ldr x6, [x0, #0]
+        // add x7, x6, #0
+        // add x8, x6, #0
+        // add x9, x6, #0
+        // add x10, x6, #0
+        // add x11, x6, #0
+        // add x12, x6, #0
+        // add x13, x6, #0
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x1, #0]
+        // str x7, [x1, #8]
+        // str x8, [x1, #16]
+        // str x9, [x1, #24]
+        // str x10, [x1, #32]
+        // str x11, [x1, #40]
+        // str x12, [x1, #48]
+        // str x13, [x1, #56]
+        // add x1, x1, #64
+        // add x0, x0, #8
+        // sub x22, x22, #1
+        r".inst 0xf9400006,0x910000c7,0x910000c8,0x910000c9,0x910000ca,0x910000cb,0x910000cc,0x910000cd
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xf9000026,0xf9000427,0xf9000828,0xf9000c29,0xf900102a,0xf900142b,0xf900182c,0xf9001c2d
+.inst 0x91010021,0x91002000,0xd10006d6
+cbnz x22, 27b
+21:",
+        // ldr x19, [x5, #2944]
+        // ldr x20, [x5, #2952]
+        // ldr x21, [x5, #2960]
+        // ldr x22, [x5, #2968]
+        // ldr x23, [x5, #2976]
+        // ldr x24, [x5, #2984]
+        // ldr x25, [x5, #2992]
+        // ldr x26, [x5, #3000]
+        // ldr x27, [x5, #3008]
+        // ldr x28, [x5, #3016]
+        // ret
+        r".inst 0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba
+.inst 0xf945e0bb,0xf945e4bc,0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// Camellia ECB (RFC 3713 §2.3, SP 800-38A §6.1) with `rounds` rounds of the 8 16-byte blocks at byte 3024 of `ws`, in place, under the subkeys that `vg_camellia_prepare_keys` wrote for `rounds` rounds at the bytes 384..424, 768..2432 (18 rounds) or 384..424, 768..2944 (24 rounds), in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..384, 424..768, 2944..3152 (the blocks' among them, not the subkeys') keeps its value, so the subkeys serve every batch. It is not part of the library's Rust API.
+///
+/// Contract: `VG.Spec.Camellia.Prepared.cryptContract`. Constant time: only pointers, `ws_len` and `rounds` may affect timing, not the subkeys or the blocks.
+///
+/// # Safety
+///
+/// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
+/// * `rounds` must be 18 or 24, as `vg_camellia_prepare_keys` was given.
+/// * `ws_len` must be at least 406.
+/// * `ws` must hold the subkeys as `vg_camellia_prepare_keys` wrote them for `rounds` rounds.
+/// * The bytes 0..384, 424..768, 2944..3152 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
+/// * `ws` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
+    core::arch::naked_asm!(
+        // add x5, x1, #0
+        // str x19, [x5, #2944]
+        // str x20, [x5, #2952]
+        // str x21, [x5, #2960]
+        // str x22, [x5, #2968]
+        // str x23, [x5, #2976]
+        // str x24, [x5, #2984]
+        // str x25, [x5, #2992]
+        // str x26, [x5, #3000]
+        // str x27, [x5, #3008]
+        // str x28, [x5, #3016]
+        // sub x21, x0, #18
+        r".inst 0x91000025,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7,0xf905d4b8,0xf905d8b9
+.inst 0xf905dcba,0xf905e0bb,0xf905e4bc,0xd1004815
+cbz x21, 20f",
+        // add x4, x5, #0
+        // add x4, x4, #2816
+        r".inst 0x910000a4,0x912c0084
+b 21f
+20:",
+        // add x4, x5, #0
+        // add x4, x4, #2304
+        r".inst 0x910000a4,0x91240084
+21:",
+        // add x1, x5, #0
+        // add x1, x1, #768
+        // ldr x6, [x5, #3032]
+        // ldr x7, [x5, #3048]
+        // ldr x8, [x5, #3064]
+        // ldr x9, [x5, #3080]
+        // ldr x10, [x5, #3096]
+        // ldr x11, [x5, #3112]
+        // ldr x12, [x5, #3128]
+        // ldr x13, [x5, #3144]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x5, #3024]
+        // ldr x7, [x5, #3040]
+        // ldr x8, [x5, #3056]
+        // ldr x9, [x5, #3072]
+        // ldr x10, [x5, #3088]
+        // ldr x11, [x5, #3104]
+        // ldr x12, [x5, #3120]
+        // ldr x13, [x5, #3136]
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // ldr x21, [x5, #576]
+        // ldr x23, [x1, #64]
+        // eor x21, x21, x23
+        // str x21, [x5, #576]
+        // ldr x21, [x5, #584]
+        // ldr x23, [x1, #72]
+        // eor x21, x21, x23
+        // str x21, [x5, #584]
+        // ldr x21, [x5, #592]
+        // ldr x23, [x1, #80]
+        // eor x21, x21, x23
+        // str x21, [x5, #592]
+        // ldr x21, [x5, #600]
+        // ldr x23, [x1, #88]
+        // eor x21, x21, x23
+        // str x21, [x5, #600]
+        // ldr x21, [x5, #608]
+        // ldr x23, [x1, #96]
+        // eor x21, x21, x23
+        // str x21, [x5, #608]
+        // ldr x21, [x5, #616]
+        // ldr x23, [x1, #104]
+        // eor x21, x21, x23
+        // str x21, [x5, #616]
+        // ldr x21, [x5, #624]
+        // ldr x23, [x1, #112]
+        // eor x21, x21, x23
+        // str x21, [x5, #624]
+        // ldr x21, [x5, #632]
+        // ldr x23, [x1, #120]
+        // eor x21, x21, x23
+        // str x21, [x5, #632]
+        // add x1, x1, #128
+        r".inst 0x910000a1,0x910c0021,0xf945eca6,0xf945f4a7,0xf945fca8,0xf94604a9,0xf9460caa,0xf94614ab
+.inst 0xf9461cac,0xf94624ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9,0xf90130aa,0xf90134ab
+.inst 0xf90138ac,0xf9013cad,0xf945e8a6,0xf945f0a7,0xf945f8a8,0xf94600a9,0xf94608aa,0xf94610ab
+.inst 0xf94618ac,0xf94620ad,0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1
+.inst 0xf2caaab1,0xf2eaaab1,0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4
+.inst 0xf2c1e1f4,0xf2e1e1f4,0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6
+.inst 0xd350fcf5,0xca0702b5,0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5
+.inst 0x8a0e02b5,0xca150108,0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129
+.inst 0x93d5c2b5,0xca150129,0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a
+.inst 0xd350fd75,0xca0b02b5,0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5
+.inst 0x8a0e02b5,0xca15018c,0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad
+.inst 0x93d5c2b5,0xca1501ad,0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6
+.inst 0xd348fcf5,0xca0702b5,0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5
+.inst 0x8a0f02b5,0xca150108,0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129
+.inst 0x93d5e2b5,0xca150129,0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a
+.inst 0xd348fd75,0xca0b02b5,0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5
+.inst 0x8a0f02b5,0xca15018c,0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad
+.inst 0x93d5e2b5,0xca1501ad,0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6
+.inst 0xd341fd15,0xca0902b5,0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5
+.inst 0x8a1102b5,0xca15016b,0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad
+.inst 0x93d5feb5,0xca15018c,0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6
+.inst 0xd342fcf5,0xca0902b5,0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5
+.inst 0x8a1302b5,0xca15018c,0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad
+.inst 0x93d5fab5,0xca15016b,0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6
+.inst 0xd344fcf5,0xca0b02b5,0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5
+.inst 0x8a1402b5,0xca15018c,0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad
+.inst 0x93d5f2b5,0xca150129,0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108
+.inst 0xf9400c35,0xca150129,0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c
+.inst 0xf9401c35,0xca1501ad,0xf90100a6,0xf90104a7,0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab
+.inst 0xf90118ac,0xf9011cad,0xf94120b5,0xf9402037,0xca1702b5,0xf90120b5,0xf94124b5,0xf9402437
+.inst 0xca1702b5,0xf90124b5,0xf94128b5,0xf9402837,0xca1702b5,0xf90128b5,0xf9412cb5,0xf9402c37
+.inst 0xca1702b5,0xf9012cb5,0xf94130b5,0xf9403037,0xca1702b5,0xf90130b5,0xf94134b5,0xf9403437
+.inst 0xca1702b5,0xf90134b5,0xf94138b5,0xf9403837,0xca1702b5,0xf90138b5,0xf9413cb5,0xf9403c37
+.inst 0xca1702b5,0xf9013cb5,0x91020021
+22:",
+        // add x0, x1, #384
+        r".inst 0x91060020
+23:",
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #576]
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // ldr x21, [x5, #584]
+        // eor x7, x7, x21
+        // str x7, [x5, #584]
+        // ldr x21, [x5, #592]
+        // eor x8, x8, x21
+        // str x8, [x5, #592]
+        // ldr x21, [x5, #600]
+        // eor x9, x9, x21
+        // str x9, [x5, #600]
+        // ldr x21, [x5, #608]
+        // eor x10, x10, x21
+        // str x10, [x5, #608]
+        // ldr x21, [x5, #616]
+        // eor x11, x11, x21
+        // str x11, [x5, #616]
+        // ldr x21, [x5, #624]
+        // eor x12, x12, x21
+        // str x12, [x5, #624]
+        // ldr x21, [x5, #632]
+        // eor x13, x13, x21
+        // str x13, [x5, #632]
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // ldr x24, [x5, #400]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // movz x28, #0, lsl #0
+        // sub x28, x28, #1
+        // eor x14, x13, x7
+        // eor x15, x11, x9
+        // eor x16, x8, x14
+        // eor x17, x12, x6
+        // eor x19, x6, x15
+        // eor x20, x10, x7
+        // eor x21, x10, x16
+        // eor x22, x12, x15
+        // eor x23, x8, x17
+        // eor x24, x16, x17
+        // eor x25, x13, x12
+        // eor x26, x13, x17
+        // eor x26, x26, x28
+        // eor x27, x12, x9
+        // str x26, [x5, #0]
+        // eor x26, x11, x7
+        // str x13, [x5, #8]
+        // eor x13, x11, x6
+        // eor x11, x11, x16
+        // eor x17, x10, x17
+        // eor x10, x10, x25
+        // eor x9, x9, x6
+        // eor x9, x9, x28
+        // eor x6, x8, x19
+        // eor x8, x8, x20
+        // eor x8, x8, x28
+        // eor x25, x7, x22
+        // eor x25, x25, x28
+        // str x25, [x5, #16]
+        // eor x25, x14, x19
+        // eor x14, x14, x22
+        // eor x22, x15, x20
+        // str x25, [x5, #24]
+        // eor x25, x15, x21
+        // eor x15, x15, x24
+        // str x15, [x5, #32]
+        // eor x15, x16, x19
+        // eor x15, x15, x28
+        // eor x16, x16, x27
+        // eor x16, x16, x28
+        // eor x19, x19, x20
+        // eor x19, x19, x28
+        // eor x13, x21, x13
+        // eor x13, x13, x28
+        // eor x26, x23, x26
+        // eor x26, x26, x28
+        // eor x23, x23, x22
+        // eor x23, x23, x28
+        // ldr x22, [x5, #8]
+        // eor x20, x22, x12
+        // eor x20, x20, x28
+        // eor x20, x20, x12
+        // eor x22, x22, x7
+        // eor x22, x22, x28
+        // and x7, x8, x10
+        // and x12, x20, x26
+        // eor x12, x12, x7
+        // and x27, x21, x13
+        // eor x27, x27, x7
+        // and x7, x6, x15
+        // str x6, [x5, #8]
+        // and x6, x14, x11
+        // eor x6, x6, x7
+        // str x14, [x5, #40]
+        // and x14, x24, x9
+        // eor x14, x14, x7
+        // and x7, x17, x25
+        // str x17, [x5, #48]
+        // and x17, x19, x23
+        // eor x17, x17, x7
+        // str x19, [x5, #56]
+        // ldr x19, [x5, #16]
+        // str x24, [x5, #64]
+        // ldr x24, [x5, #0]
+        // str x21, [x5, #72]
+        // and x21, x19, x24
+        // eor x21, x21, x7
+        // eor x12, x12, x17
+        // eor x27, x27, x21
+        // eor x6, x6, x17
+        // eor x14, x14, x21
+        // ldr x21, [x5, #32]
+        // eor x12, x12, x21
+        // ldr x21, [x5, #24]
+        // eor x27, x27, x21
+        // eor x6, x6, x22
+        // eor x14, x14, x16
+        // eor x16, x12, x27
+        // and x12, x12, x6
+        // eor x22, x14, x12
+        // and x21, x16, x22
+        // eor x21, x21, x27
+        // eor x17, x6, x14
+        // eor x27, x27, x12
+        // and x27, x27, x17
+        // eor x27, x27, x14
+        // eor x6, x6, x27
+        // eor x17, x22, x27
+        // and x14, x14, x17
+        // eor x6, x14, x6
+        // eor x22, x22, x14
+        // and x22, x21, x22
+        // eor x16, x16, x22
+        // eor x22, x16, x6
+        // eor x14, x21, x27
+        // eor x17, x21, x16
+        // eor x12, x27, x6
+        // eor x7, x14, x22
+        // and x10, x12, x10
+        // and x26, x6, x26
+        // and x13, x27, x13
+        // and x15, x17, x15
+        // and x11, x16, x11
+        // and x9, x21, x9
+        // and x25, x14, x25
+        // and x23, x7, x23
+        // and x24, x22, x24
+        // and x12, x12, x8
+        // and x6, x6, x20
+        // ldr x20, [x5, #72]
+        // and x27, x27, x20
+        // ldr x20, [x5, #8]
+        // and x17, x17, x20
+        // ldr x20, [x5, #40]
+        // and x16, x16, x20
+        // ldr x20, [x5, #64]
+        // and x21, x21, x20
+        // ldr x20, [x5, #48]
+        // and x14, x14, x20
+        // ldr x20, [x5, #56]
+        // and x7, x7, x20
+        // and x22, x22, x19
+        // eor x23, x26, x23
+        // eor x15, x15, x9
+        // eor x19, x25, x24
+        // eor x20, x10, x7
+        // eor x27, x27, x23
+        // eor x8, x17, x15
+        // str x15, [x5, #16]
+        // eor x15, x14, x19
+        // eor x21, x13, x21
+        // eor x25, x25, x22
+        // eor x24, x24, x12
+        // eor x12, x12, x6
+        // eor x16, x16, x8
+        // eor x7, x7, x15
+        // str x7, [x5, #56]
+        // eor x7, x20, x27
+        // eor x10, x10, x13
+        // eor x26, x26, x11
+        // eor x9, x9, x20
+        // eor x6, x6, x25
+        // eor x17, x17, x27
+        // eor x14, x14, x23
+        // eor x22, x22, x24
+        // ldr x23, [x5, #16]
+        // eor x23, x23, x12
+        // eor x10, x19, x10
+        // eor x8, x8, x21
+        // eor x15, x15, x12
+        // eor x21, x21, x24
+        // eor x25, x25, x14
+        // ldr x14, [x5, #56]
+        // eor x24, x16, x14
+        // eor x16, x16, x7
+        // eor x11, x14, x23
+        // eor x11, x11, x28
+        // eor x7, x7, x6
+        // eor x7, x7, x28
+        // eor x26, x26, x9
+        // eor x9, x17, x21
+        // eor x9, x9, x28
+        // eor x22, x22, x16
+        // eor x22, x22, x28
+        // eor x13, x8, x25
+        // eor x12, x15, x26
+        // eor x12, x12, x28
+        // add x8, x7, #0
+        // add x7, x22, #0
+        // add x6, x24, #0
+        // ldr x24, [x5, #408]
+        // add x22, x13, #0
+        // eor x21, x13, x12
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // eor x21, x12, x11
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x11, x10
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x10, x9
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x9, x8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x8, x7
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x7, x6
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x6, x22
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #416]
+        // add x22, x6, #0
+        // eor x21, x6, x7
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // eor x21, x7, x8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // eor x21, x8, x9
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // eor x21, x9, x10
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // eor x21, x10, x11
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // eor x21, x11, x12
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // eor x21, x12, x13
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // eor x21, x13, x22
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x5, #392]
+        // ror x21, x6, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x6, #56
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #8
+        // and x21, x21, x23
+        // eor x6, x6, x21
+        // ror x21, x6, #40
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ror x21, x7, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x7, #56
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #8
+        // and x21, x21, x23
+        // eor x7, x7, x21
+        // ror x21, x7, #40
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ror x21, x8, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x8, #56
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #8
+        // and x21, x21, x23
+        // eor x8, x8, x21
+        // ror x21, x8, #40
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ror x21, x9, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x9, #56
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #8
+        // and x21, x21, x23
+        // eor x9, x9, x21
+        // ror x21, x9, #40
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ror x21, x10, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x10, #56
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #8
+        // and x21, x21, x23
+        // eor x10, x10, x21
+        // ror x21, x10, #40
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ror x21, x11, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x11, #56
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #8
+        // and x21, x21, x23
+        // eor x11, x11, x21
+        // ror x21, x11, #40
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ror x21, x12, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x12, #56
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #8
+        // and x21, x21, x23
+        // eor x12, x12, x21
+        // ror x21, x12, #40
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ror x21, x13, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ror x21, x13, #56
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #8
+        // and x21, x21, x23
+        // eor x13, x13, x21
+        // ror x21, x13, #40
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x21, [x5, #512]
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // ldr x21, [x5, #520]
+        // eor x7, x7, x21
+        // str x7, [x5, #520]
+        // ldr x21, [x5, #528]
+        // eor x8, x8, x21
+        // str x8, [x5, #528]
+        // ldr x21, [x5, #536]
+        // eor x9, x9, x21
+        // str x9, [x5, #536]
+        // ldr x21, [x5, #544]
+        // eor x10, x10, x21
+        // str x10, [x5, #544]
+        // ldr x21, [x5, #552]
+        // eor x11, x11, x21
+        // str x11, [x5, #552]
+        // ldr x21, [x5, #560]
+        // eor x12, x12, x21
+        // str x12, [x5, #560]
+        // ldr x21, [x5, #568]
+        // eor x13, x13, x21
+        // str x13, [x5, #568]
+        // add x1, x1, #128
+        // sub x21, x1, x0
+        r".inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xf940c8b8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191
+.inst 0xca0f00d3,0xca070154,0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba
+.inst 0xca1c035a,0xca09019b,0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151
+.inst 0xca19014a,0xca060129,0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339
+.inst 0xf90008b9,0xca1301d9,0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af
+.inst 0xca13020f,0xca1c01ef,0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad
+.inst 0xca1a02fa,0xca1c035a,0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294
+.inst 0xca0702d6,0xca1c02d6,0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7
+.inst 0xf90004a6,0x8a0b01c6,0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1
+.inst 0x8a170271,0xca070231,0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275
+.inst 0xca0702b5,0xca11018c,0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5
+.inst 0xca15037b,0xca1600c6,0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5
+.inst 0xca0e00d1,0xca0c037b,0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6
+.inst 0xca0e02d6,0x8a1602b6,0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7
+.inst 0x8a0a018a,0x8a1a00da,0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7
+.inst 0x8a1802d8,0x8a08018c,0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4
+.inst 0x8a140210,0xf94020b4,0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6
+.inst 0xca170357,0xca0901ef,0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf
+.inst 0xca1501b5,0xca160339,0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287
+.inst 0xca0d014a,0xca0b035a,0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7
+.inst 0xca0c02f7,0xca0a026a,0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218
+.inst 0xca070210,0xca1701cb,0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129
+.inst 0xca1002d6,0xca1c02d6,0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306
+.inst 0xf940ccb8,0x910001b6,0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c
+.inst 0xca0a0175,0x8a1802b5,0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5
+.inst 0xca150129,0xca070115,0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5
+.inst 0x8a1802b5,0xca1500c6,0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5
+.inst 0x8a1802b5,0xca1500e7,0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129
+.inst 0xca0b0155,0x8a1802b5,0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5
+.inst 0xca15018c,0xca1601b5,0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5
+.inst 0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5
+.inst 0x8a1702b5,0xca1500c6,0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7
+.inst 0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5
+.inst 0xca1500e7,0x93c7a0f5,0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115
+.inst 0x8a1802b5,0xca150108,0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108
+.inst 0x93c8a115,0x8a1802b5,0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5
+.inst 0xca150129,0x93c9e135,0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135
+.inst 0x8a1802b5,0xca150129,0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a
+.inst 0x93cae155,0x8a1702b5,0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5
+.inst 0xca15014a,0x93cb2175,0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175
+.inst 0x8a1702b5,0xca15016b,0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b
+.inst 0x93cc2195,0x8a1802b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5
+.inst 0xca15018c,0x93cc2195,0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5
+.inst 0x8a1802b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad
+.inst 0x93cd21b5,0x8a1702b5,0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94120b5,0xca1500c6
+.inst 0xf90120a6,0xf94124b5,0xca1500e7,0xf90124a7,0xf94128b5,0xca150108,0xf90128a8,0xf9412cb5
+.inst 0xca150129,0xf9012ca9,0xf94130b5,0xca15014a,0xf90130aa,0xf94134b5,0xca15016b,0xf90134ab
+.inst 0xf94138b5,0xca15018c,0xf90138ac,0xf9413cb5,0xca1501ad,0xf9013cad,0xf9402035,0xca1500c6
+.inst 0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129,0xf9403035,0xca15014a
+.inst 0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad,0xf940c8b8,0x910001b6
+.inst 0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5
+.inst 0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115
+.inst 0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6
+.inst 0xd280001c,0xd100079c,0xca0701ae,0xca09016f,0xca0e0110,0xca060191,0xca0f00d3,0xca070154
+.inst 0xca100155,0xca0f0196,0xca110117,0xca110218,0xca0c01b9,0xca1101ba,0xca1c035a,0xca09019b
+.inst 0xf90000ba,0xca07017a,0xf90004ad,0xca06016d,0xca10016b,0xca110151,0xca19014a,0xca060129
+.inst 0xca1c0129,0xca130106,0xca140108,0xca1c0108,0xca1600f9,0xca1c0339,0xf90008b9,0xca1301d9
+.inst 0xca1601ce,0xca1401f6,0xf9000cb9,0xca1501f9,0xca1801ef,0xf90010af,0xca13020f,0xca1c01ef
+.inst 0xca1b0210,0xca1c0210,0xca140273,0xca1c0273,0xca0d02ad,0xca1c01ad,0xca1a02fa,0xca1c035a
+.inst 0xca1602f7,0xca1c02f7,0xf94004b6,0xca0c02d4,0xca1c0294,0xca0c0294,0xca0702d6,0xca1c02d6
+.inst 0x8a0a0107,0x8a1a028c,0xca07018c,0x8a0d02bb,0xca07037b,0x8a0f00c7,0xf90004a6,0x8a0b01c6
+.inst 0xca0700c6,0xf90014ae,0x8a09030e,0xca0701ce,0x8a190227,0xf90018b1,0x8a170271,0xca070231
+.inst 0xf9001cb3,0xf94008b3,0xf90020b8,0xf94000b8,0xf90024b5,0x8a180275,0xca0702b5,0xca11018c
+.inst 0xca15037b,0xca1100c6,0xca1501ce,0xf94010b5,0xca15018c,0xf9400cb5,0xca15037b,0xca1600c6
+.inst 0xca1001ce,0xca1b0190,0x8a06018c,0xca0c01d6,0x8a160215,0xca1b02b5,0xca0e00d1,0xca0c037b
+.inst 0x8a11037b,0xca0e037b,0xca1b00c6,0xca1b02d1,0x8a1101ce,0xca0601c6,0xca0e02d6,0x8a1602b6
+.inst 0xca160210,0xca060216,0xca1b02ae,0xca1002b1,0xca06036c,0xca1601c7,0x8a0a018a,0x8a1a00da
+.inst 0x8a0d036d,0x8a0f022f,0x8a0b020b,0x8a0902a9,0x8a1901d9,0x8a1700f7,0x8a1802d8,0x8a08018c
+.inst 0x8a1400c6,0xf94024b4,0x8a14037b,0xf94004b4,0x8a140231,0xf94014b4,0x8a140210,0xf94020b4
+.inst 0x8a1402b5,0xf94018b4,0x8a1401ce,0xf9401cb4,0x8a1400e7,0x8a1302d6,0xca170357,0xca0901ef
+.inst 0xca180333,0xca070154,0xca17037b,0xca0f0228,0xf90008af,0xca1301cf,0xca1501b5,0xca160339
+.inst 0xca0c0318,0xca06018c,0xca080210,0xca0f00e7,0xf9001ca7,0xca1b0287,0xca0d014a,0xca0b035a
+.inst 0xca140129,0xca1900c6,0xca1b0231,0xca1701ce,0xca1802d6,0xf94008b7,0xca0c02f7,0xca0a026a
+.inst 0xca150108,0xca0c01ef,0xca1802b5,0xca0e0339,0xf9401cae,0xca0e0218,0xca070210,0xca1701cb
+.inst 0xca1c016b,0xca0600e7,0xca1c00e7,0xca09035a,0xca150229,0xca1c0129,0xca1002d6,0xca1c02d6
+.inst 0xca19010d,0xca1a01ec,0xca1c018c,0x910000e8,0x910002c7,0x91000306,0xf940ccb8,0x910001b6
+.inst 0xca0c01b5,0x8a1802b5,0xca1501ad,0xca0b0195,0x8a1802b5,0xca15018c,0xca0a0175,0x8a1802b5
+.inst 0xca15016b,0xca090155,0x8a1802b5,0xca15014a,0xca080135,0x8a1802b5,0xca150129,0xca070115
+.inst 0x8a1802b5,0xca150108,0xca0600f5,0x8a1802b5,0xca1500e7,0xca1600d5,0x8a1802b5,0xca1500c6
+.inst 0xf940d0b8,0x910000d6,0xca0700d5,0x8a1802b5,0xca1500c6,0xca0800f5,0x8a1802b5,0xca1500e7
+.inst 0xca090115,0x8a1802b5,0xca150108,0xca0a0135,0x8a1802b5,0xca150129,0xca0b0155,0x8a1802b5
+.inst 0xca15014a,0xca0c0175,0x8a1802b5,0xca15016b,0xca0d0195,0x8a1802b5,0xca15018c,0xca1601b5
+.inst 0x8a1802b5,0xca1501ad,0xf940c0b8,0xf940c4b7,0x93c620d5,0x8a1802b5,0xca1500c6,0x93c6a0d5
+.inst 0x8a1802b5,0xca1500c6,0x93c6e0d5,0x8a1702b5,0xca1500c6,0x93c620d5,0x8a1702b5,0xca1500c6
+.inst 0x93c6a0d5,0x8a1802b5,0xca1500c6,0x93c720f5,0x8a1802b5,0xca1500e7,0x93c7a0f5,0x8a1802b5
+.inst 0xca1500e7,0x93c7e0f5,0x8a1702b5,0xca1500e7,0x93c720f5,0x8a1702b5,0xca1500e7,0x93c7a0f5
+.inst 0x8a1802b5,0xca1500e7,0x93c82115,0x8a1802b5,0xca150108,0x93c8a115,0x8a1802b5,0xca150108
+.inst 0x93c8e115,0x8a1702b5,0xca150108,0x93c82115,0x8a1702b5,0xca150108,0x93c8a115,0x8a1802b5
+.inst 0xca150108,0x93c92135,0x8a1802b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129,0x93c9e135
+.inst 0x8a1702b5,0xca150129,0x93c92135,0x8a1702b5,0xca150129,0x93c9a135,0x8a1802b5,0xca150129
+.inst 0x93ca2155,0x8a1802b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cae155,0x8a1702b5
+.inst 0xca15014a,0x93ca2155,0x8a1702b5,0xca15014a,0x93caa155,0x8a1802b5,0xca15014a,0x93cb2175
+.inst 0x8a1802b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cbe175,0x8a1702b5,0xca15016b
+.inst 0x93cb2175,0x8a1702b5,0xca15016b,0x93cba175,0x8a1802b5,0xca15016b,0x93cc2195,0x8a1802b5
+.inst 0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cce195,0x8a1702b5,0xca15018c,0x93cc2195
+.inst 0x8a1702b5,0xca15018c,0x93cca195,0x8a1802b5,0xca15018c,0x93cd21b5,0x8a1802b5,0xca1501ad
+.inst 0x93cda1b5,0x8a1802b5,0xca1501ad,0x93cde1b5,0x8a1702b5,0xca1501ad,0x93cd21b5,0x8a1702b5
+.inst 0xca1501ad,0x93cda1b5,0x8a1802b5,0xca1501ad,0xf94100b5,0xca1500c6,0xf90100a6,0xf94104b5
+.inst 0xca1500e7,0xf90104a7,0xf94108b5,0xca150108,0xf90108a8,0xf9410cb5,0xca150129,0xf9010ca9
+.inst 0xf94110b5,0xca15014a,0xf90110aa,0xf94114b5,0xca15016b,0xf90114ab,0xf94118b5,0xca15018c
+.inst 0xf90118ac,0xf9411cb5,0xca1501ad,0xf9011cad,0x91020021,0xcb000035
+cbnz x21, 23b",
+        // sub x21, x1, x4
+        r".inst 0xcb040035
+cbnz x21, 24f
+b 25f
+24:",
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // ldr x24, [x5, #384]
+        // ldr x23, [x1, #120]
+        // orr x21, x13, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #112]
+        // orr x21, x12, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #104]
+        // orr x21, x11, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #96]
+        // orr x21, x10, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #88]
+        // orr x21, x9, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #80]
+        // orr x21, x8, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #72]
+        // orr x21, x7, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #64]
+        // orr x21, x6, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #392]
+        // add x22, x13, #0
+        // ldr x23, [x1, #112]
+        // and x21, x12, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #104]
+        // and x21, x11, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #96]
+        // and x21, x10, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #88]
+        // and x21, x9, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #80]
+        // and x21, x8, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #72]
+        // and x21, x7, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #64]
+        // and x21, x6, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #120]
+        // and x21, x22, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // str x6, [x5, #576]
+        // str x7, [x5, #584]
+        // str x8, [x5, #592]
+        // str x9, [x5, #600]
+        // str x10, [x5, #608]
+        // str x11, [x5, #616]
+        // str x12, [x5, #624]
+        // str x13, [x5, #632]
+        // ldr x6, [x5, #512]
+        // ldr x7, [x5, #520]
+        // ldr x8, [x5, #528]
+        // ldr x9, [x5, #536]
+        // ldr x10, [x5, #544]
+        // ldr x11, [x5, #552]
+        // ldr x12, [x5, #560]
+        // ldr x13, [x5, #568]
+        // ldr x24, [x5, #392]
+        // add x22, x13, #0
+        // ldr x23, [x1, #48]
+        // and x21, x12, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #40]
+        // and x21, x11, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #32]
+        // and x21, x10, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #24]
+        // and x21, x9, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #16]
+        // and x21, x8, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #8]
+        // and x21, x7, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #0]
+        // and x21, x6, x23
+        // ror x21, x21, #56
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #56]
+        // and x21, x22, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // ldr x24, [x5, #384]
+        // ldr x23, [x1, #56]
+        // orr x21, x13, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x13, x13, x21
+        // ldr x23, [x1, #48]
+        // orr x21, x12, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x12, x12, x21
+        // ldr x23, [x1, #40]
+        // orr x21, x11, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x11, x11, x21
+        // ldr x23, [x1, #32]
+        // orr x21, x10, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x10, x10, x21
+        // ldr x23, [x1, #24]
+        // orr x21, x9, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x9, x9, x21
+        // ldr x23, [x1, #16]
+        // orr x21, x8, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x8, x8, x21
+        // ldr x23, [x1, #8]
+        // orr x21, x7, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x7, x7, x21
+        // ldr x23, [x1, #0]
+        // orr x21, x6, x23
+        // ror x21, x21, #8
+        // and x21, x21, x24
+        // eor x6, x6, x21
+        // str x6, [x5, #512]
+        // str x7, [x5, #520]
+        // str x8, [x5, #528]
+        // str x9, [x5, #536]
+        // str x10, [x5, #544]
+        // str x11, [x5, #552]
+        // str x12, [x5, #560]
+        // str x13, [x5, #568]
+        // add x1, x1, #128
+        r".inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
+.inst 0xf940c0b8,0xf9403c37,0xaa1701b5,0x93d522b5,0x8a1802b5,0xca1501ad,0xf9403837,0xaa170195
+.inst 0x93d522b5,0x8a1802b5,0xca15018c,0xf9403437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b
+.inst 0xf9403037,0xaa170155,0x93d522b5,0x8a1802b5,0xca15014a,0xf9402c37,0xaa170135,0x93d522b5
+.inst 0x8a1802b5,0xca150129,0xf9402837,0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9402437
+.inst 0xaa1700f5,0x93d522b5,0x8a1802b5,0xca1500e7,0xf9402037,0xaa1700d5,0x93d522b5,0x8a1802b5
+.inst 0xca1500c6,0xf940c4b8,0x910001b6,0xf9403837,0x8a170195,0x93d5e2b5,0x8a1802b5,0xca1501ad
+.inst 0xf9403437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c,0xf9403037,0x8a170155,0x93d5e2b5
+.inst 0x8a1802b5,0xca15016b,0xf9402c37,0x8a170135,0x93d5e2b5,0x8a1802b5,0xca15014a,0xf9402837
+.inst 0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9402437,0x8a1700f5,0x93d5e2b5,0x8a1802b5
+.inst 0xca150108,0xf9402037,0x8a1700d5,0x93d5e2b5,0x8a1802b5,0xca1500e7,0xf9403c37,0x8a1702d5
+.inst 0x93d522b5,0x8a1802b5,0xca1500c6,0xf90120a6,0xf90124a7,0xf90128a8,0xf9012ca9,0xf90130aa
+.inst 0xf90134ab,0xf90138ac,0xf9013cad,0xf94100a6,0xf94104a7,0xf94108a8,0xf9410ca9,0xf94110aa
+.inst 0xf94114ab,0xf94118ac,0xf9411cad,0xf940c4b8,0x910001b6,0xf9401837,0x8a170195,0x93d5e2b5
+.inst 0x8a1802b5,0xca1501ad,0xf9401437,0x8a170175,0x93d5e2b5,0x8a1802b5,0xca15018c,0xf9401037
+.inst 0x8a170155,0x93d5e2b5,0x8a1802b5,0xca15016b,0xf9400c37,0x8a170135,0x93d5e2b5,0x8a1802b5
+.inst 0xca15014a,0xf9400837,0x8a170115,0x93d5e2b5,0x8a1802b5,0xca150129,0xf9400437,0x8a1700f5
+.inst 0x93d5e2b5,0x8a1802b5,0xca150108,0xf9400037,0x8a1700d5,0x93d5e2b5,0x8a1802b5,0xca1500e7
+.inst 0xf9401c37,0x8a1702d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf940c0b8,0xf9401c37,0xaa1701b5
+.inst 0x93d522b5,0x8a1802b5,0xca1501ad,0xf9401837,0xaa170195,0x93d522b5,0x8a1802b5,0xca15018c
+.inst 0xf9401437,0xaa170175,0x93d522b5,0x8a1802b5,0xca15016b,0xf9401037,0xaa170155,0x93d522b5
+.inst 0x8a1802b5,0xca15014a,0xf9400c37,0xaa170135,0x93d522b5,0x8a1802b5,0xca150129,0xf9400837
+.inst 0xaa170115,0x93d522b5,0x8a1802b5,0xca150108,0xf9400437,0xaa1700f5,0x93d522b5,0x8a1802b5
+.inst 0xca1500e7,0xf9400037,0xaa1700d5,0x93d522b5,0x8a1802b5,0xca1500c6,0xf90100a6,0xf90104a7
+.inst 0xf90108a8,0xf9010ca9,0xf90110aa,0xf90114ab,0xf90118ac,0xf9011cad,0x91020021
+25:",
+        // sub x21, x1, x4
+        r".inst 0xcb040035
+cbnz x21, 22b",
+        // ldr x21, [x1, #64]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #72]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #80]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #88]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #96]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #104]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #112]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #120]
+        // eor x13, x13, x21
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3032]
+        // str x7, [x5, #3048]
+        // str x8, [x5, #3064]
+        // str x9, [x5, #3080]
+        // str x10, [x5, #3096]
+        // str x11, [x5, #3112]
+        // str x12, [x5, #3128]
+        // str x13, [x5, #3144]
+        // ldr x6, [x5, #576]
+        // ldr x7, [x5, #584]
+        // ldr x8, [x5, #592]
+        // ldr x9, [x5, #600]
+        // ldr x10, [x5, #608]
+        // ldr x11, [x5, #616]
+        // ldr x12, [x5, #624]
+        // ldr x13, [x5, #632]
+        // ldr x21, [x1, #0]
+        // eor x6, x6, x21
+        // ldr x21, [x1, #8]
+        // eor x7, x7, x21
+        // ldr x21, [x1, #16]
+        // eor x8, x8, x21
+        // ldr x21, [x1, #24]
+        // eor x9, x9, x21
+        // ldr x21, [x1, #32]
+        // eor x10, x10, x21
+        // ldr x21, [x1, #40]
+        // eor x11, x11, x21
+        // ldr x21, [x1, #48]
+        // eor x12, x12, x21
+        // ldr x21, [x1, #56]
+        // eor x13, x13, x21
+        // movz x14, #0, lsl #0
+        // movk x14, #65535, lsl #16
+        // movz x15, #65280, lsl #0
+        // movk x15, #65280, lsl #32
+        // movz x17, #21845, lsl #0
+        // movk x17, #21845, lsl #16
+        // movk x17, #21845, lsl #32
+        // movk x17, #21845, lsl #48
+        // movz x19, #13107, lsl #0
+        // movk x19, #13107, lsl #16
+        // movk x19, #13107, lsl #32
+        // movk x19, #13107, lsl #48
+        // movz x20, #3855, lsl #0
+        // movk x20, #3855, lsl #16
+        // movk x20, #3855, lsl #32
+        // movk x20, #3855, lsl #48
+        // lsr x21, x6, #1
+        // eor x21, x21, x7
+        // and x21, x21, x17
+        // eor x7, x7, x21
+        // ror x21, x21, #63
+        // eor x6, x6, x21
+        // lsr x21, x8, #1
+        // eor x21, x21, x9
+        // and x21, x21, x17
+        // eor x9, x9, x21
+        // ror x21, x21, #63
+        // eor x8, x8, x21
+        // lsr x21, x10, #1
+        // eor x21, x21, x11
+        // and x21, x21, x17
+        // eor x11, x11, x21
+        // ror x21, x21, #63
+        // eor x10, x10, x21
+        // lsr x21, x12, #1
+        // eor x21, x21, x13
+        // and x21, x21, x17
+        // eor x13, x13, x21
+        // ror x21, x21, #63
+        // eor x12, x12, x21
+        // lsr x21, x6, #2
+        // eor x21, x21, x8
+        // and x21, x21, x19
+        // eor x8, x8, x21
+        // ror x21, x21, #62
+        // eor x6, x6, x21
+        // lsr x21, x7, #2
+        // eor x21, x21, x9
+        // and x21, x21, x19
+        // eor x9, x9, x21
+        // ror x21, x21, #62
+        // eor x7, x7, x21
+        // lsr x21, x10, #2
+        // eor x21, x21, x12
+        // and x21, x21, x19
+        // eor x12, x12, x21
+        // ror x21, x21, #62
+        // eor x10, x10, x21
+        // lsr x21, x11, #2
+        // eor x21, x21, x13
+        // and x21, x21, x19
+        // eor x13, x13, x21
+        // ror x21, x21, #62
+        // eor x11, x11, x21
+        // lsr x21, x6, #4
+        // eor x21, x21, x10
+        // and x21, x21, x20
+        // eor x10, x10, x21
+        // ror x21, x21, #60
+        // eor x6, x6, x21
+        // lsr x21, x7, #4
+        // eor x21, x21, x11
+        // and x21, x21, x20
+        // eor x11, x11, x21
+        // ror x21, x21, #60
+        // eor x7, x7, x21
+        // lsr x21, x8, #4
+        // eor x21, x21, x12
+        // and x21, x21, x20
+        // eor x12, x12, x21
+        // ror x21, x21, #60
+        // eor x8, x8, x21
+        // lsr x21, x9, #4
+        // eor x21, x21, x13
+        // and x21, x21, x20
+        // eor x13, x13, x21
+        // ror x21, x21, #60
+        // eor x9, x9, x21
+        // lsr x21, x6, #8
+        // eor x21, x21, x6
+        // and x21, x21, x15
+        // eor x6, x6, x21
+        // ror x21, x21, #56
+        // eor x6, x6, x21
+        // lsr x21, x7, #8
+        // eor x21, x21, x7
+        // and x21, x21, x15
+        // eor x7, x7, x21
+        // ror x21, x21, #56
+        // eor x7, x7, x21
+        // lsr x21, x8, #8
+        // eor x21, x21, x8
+        // and x21, x21, x15
+        // eor x8, x8, x21
+        // ror x21, x21, #56
+        // eor x8, x8, x21
+        // lsr x21, x9, #8
+        // eor x21, x21, x9
+        // and x21, x21, x15
+        // eor x9, x9, x21
+        // ror x21, x21, #56
+        // eor x9, x9, x21
+        // lsr x21, x10, #8
+        // eor x21, x21, x10
+        // and x21, x21, x15
+        // eor x10, x10, x21
+        // ror x21, x21, #56
+        // eor x10, x10, x21
+        // lsr x21, x11, #8
+        // eor x21, x21, x11
+        // and x21, x21, x15
+        // eor x11, x11, x21
+        // ror x21, x21, #56
+        // eor x11, x11, x21
+        // lsr x21, x12, #8
+        // eor x21, x21, x12
+        // and x21, x21, x15
+        // eor x12, x12, x21
+        // ror x21, x21, #56
+        // eor x12, x12, x21
+        // lsr x21, x13, #8
+        // eor x21, x21, x13
+        // and x21, x21, x15
+        // eor x13, x13, x21
+        // ror x21, x21, #56
+        // eor x13, x13, x21
+        // lsr x21, x6, #16
+        // eor x21, x21, x6
+        // and x21, x21, x14
+        // eor x6, x6, x21
+        // ror x21, x21, #48
+        // eor x6, x6, x21
+        // lsr x21, x7, #16
+        // eor x21, x21, x7
+        // and x21, x21, x14
+        // eor x7, x7, x21
+        // ror x21, x21, #48
+        // eor x7, x7, x21
+        // lsr x21, x8, #16
+        // eor x21, x21, x8
+        // and x21, x21, x14
+        // eor x8, x8, x21
+        // ror x21, x21, #48
+        // eor x8, x8, x21
+        // lsr x21, x9, #16
+        // eor x21, x21, x9
+        // and x21, x21, x14
+        // eor x9, x9, x21
+        // ror x21, x21, #48
+        // eor x9, x9, x21
+        // lsr x21, x10, #16
+        // eor x21, x21, x10
+        // and x21, x21, x14
+        // eor x10, x10, x21
+        // ror x21, x21, #48
+        // eor x10, x10, x21
+        // lsr x21, x11, #16
+        // eor x21, x21, x11
+        // and x21, x21, x14
+        // eor x11, x11, x21
+        // ror x21, x21, #48
+        // eor x11, x11, x21
+        // lsr x21, x12, #16
+        // eor x21, x21, x12
+        // and x21, x21, x14
+        // eor x12, x12, x21
+        // ror x21, x21, #48
+        // eor x12, x12, x21
+        // lsr x21, x13, #16
+        // eor x21, x21, x13
+        // and x21, x21, x14
+        // eor x13, x13, x21
+        // ror x21, x21, #48
+        // eor x13, x13, x21
+        // str x6, [x5, #3024]
+        // str x7, [x5, #3040]
+        // str x8, [x5, #3056]
+        // str x9, [x5, #3072]
+        // str x10, [x5, #3088]
+        // str x11, [x5, #3104]
+        // str x12, [x5, #3120]
+        // str x13, [x5, #3136]
+        // ldr x19, [x5, #2944]
+        // ldr x20, [x5, #2952]
+        // ldr x21, [x5, #2960]
+        // ldr x22, [x5, #2968]
+        // ldr x23, [x5, #2976]
+        // ldr x24, [x5, #2984]
+        // ldr x25, [x5, #2992]
+        // ldr x26, [x5, #3000]
+        // ldr x27, [x5, #3008]
+        // ldr x28, [x5, #3016]
+        // ret
+        r".inst 0xf9402035,0xca1500c6,0xf9402435,0xca1500e7,0xf9402835,0xca150108,0xf9402c35,0xca150129
+.inst 0xf9403035,0xca15014a,0xf9403435,0xca15016b,0xf9403835,0xca15018c,0xf9403c35,0xca1501ad
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xf905eca6,0xf905f4a7,0xf905fca8,0xf90604a9,0xf9060caa,0xf90614ab,0xf9061cac,0xf90624ad
+.inst 0xf94120a6,0xf94124a7,0xf94128a8,0xf9412ca9,0xf94130aa,0xf94134ab,0xf94138ac,0xf9413cad
+.inst 0xf9400035,0xca1500c6,0xf9400435,0xca1500e7,0xf9400835,0xca150108,0xf9400c35,0xca150129
+.inst 0xf9401035,0xca15014a,0xf9401435,0xca15016b,0xf9401835,0xca15018c,0xf9401c35,0xca1501ad
+.inst 0xd280000e,0xf2bfffee,0xd29fe00f,0xf2dfe00f,0xd28aaab1,0xf2aaaab1,0xf2caaab1,0xf2eaaab1
+.inst 0xd2866673,0xf2a66673,0xf2c66673,0xf2e66673,0xd281e1f4,0xf2a1e1f4,0xf2c1e1f4,0xf2e1e1f4
+.inst 0xd341fcd5,0xca0702b5,0x8a1102b5,0xca1500e7,0x93d5feb5,0xca1500c6,0xd341fd15,0xca0902b5
+.inst 0x8a1102b5,0xca150129,0x93d5feb5,0xca150108,0xd341fd55,0xca0b02b5,0x8a1102b5,0xca15016b
+.inst 0x93d5feb5,0xca15014a,0xd341fd95,0xca0d02b5,0x8a1102b5,0xca1501ad,0x93d5feb5,0xca15018c
+.inst 0xd342fcd5,0xca0802b5,0x8a1302b5,0xca150108,0x93d5fab5,0xca1500c6,0xd342fcf5,0xca0902b5
+.inst 0x8a1302b5,0xca150129,0x93d5fab5,0xca1500e7,0xd342fd55,0xca0c02b5,0x8a1302b5,0xca15018c
+.inst 0x93d5fab5,0xca15014a,0xd342fd75,0xca0d02b5,0x8a1302b5,0xca1501ad,0x93d5fab5,0xca15016b
+.inst 0xd344fcd5,0xca0a02b5,0x8a1402b5,0xca15014a,0x93d5f2b5,0xca1500c6,0xd344fcf5,0xca0b02b5
+.inst 0x8a1402b5,0xca15016b,0x93d5f2b5,0xca1500e7,0xd344fd15,0xca0c02b5,0x8a1402b5,0xca15018c
+.inst 0x93d5f2b5,0xca150108,0xd344fd35,0xca0d02b5,0x8a1402b5,0xca1501ad,0x93d5f2b5,0xca150129
+.inst 0xd348fcd5,0xca0602b5,0x8a0f02b5,0xca1500c6,0x93d5e2b5,0xca1500c6,0xd348fcf5,0xca0702b5
+.inst 0x8a0f02b5,0xca1500e7,0x93d5e2b5,0xca1500e7,0xd348fd15,0xca0802b5,0x8a0f02b5,0xca150108
+.inst 0x93d5e2b5,0xca150108,0xd348fd35,0xca0902b5,0x8a0f02b5,0xca150129,0x93d5e2b5,0xca150129
+.inst 0xd348fd55,0xca0a02b5,0x8a0f02b5,0xca15014a,0x93d5e2b5,0xca15014a,0xd348fd75,0xca0b02b5
+.inst 0x8a0f02b5,0xca15016b,0x93d5e2b5,0xca15016b,0xd348fd95,0xca0c02b5,0x8a0f02b5,0xca15018c
+.inst 0x93d5e2b5,0xca15018c,0xd348fdb5,0xca0d02b5,0x8a0f02b5,0xca1501ad,0x93d5e2b5,0xca1501ad
+.inst 0xd350fcd5,0xca0602b5,0x8a0e02b5,0xca1500c6,0x93d5c2b5,0xca1500c6,0xd350fcf5,0xca0702b5
+.inst 0x8a0e02b5,0xca1500e7,0x93d5c2b5,0xca1500e7,0xd350fd15,0xca0802b5,0x8a0e02b5,0xca150108
+.inst 0x93d5c2b5,0xca150108,0xd350fd35,0xca0902b5,0x8a0e02b5,0xca150129,0x93d5c2b5,0xca150129
+.inst 0xd350fd55,0xca0a02b5,0x8a0e02b5,0xca15014a,0x93d5c2b5,0xca15014a,0xd350fd75,0xca0b02b5
+.inst 0x8a0e02b5,0xca15016b,0x93d5c2b5,0xca15016b,0xd350fd95,0xca0c02b5,0x8a0e02b5,0xca15018c
+.inst 0x93d5c2b5,0xca15018c,0xd350fdb5,0xca0d02b5,0x8a0e02b5,0xca1501ad,0x93d5c2b5,0xca1501ad
+.inst 0xf905e8a6,0xf905f0a7,0xf905f8a8,0xf90600a9,0xf90608aa,0xf90610ab,0xf90618ac,0xf90620ad
+.inst 0xf945c0b3,0xf945c4b4,0xf945c8b5,0xf945ccb6,0xf945d0b7,0xf945d4b8,0xf945d8b9,0xf945dcba
+.inst 0xf945e0bb,0xf945e4bc,0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -1540,6 +13035,171 @@ pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64,
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_camellia_prepare_encrypt_keys(schedule: *const [u8; 272], rounds: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
+        // add x5, x2, #0
+        // add x9, x21, #0
+        // movz x21, #33392, lsl #0
+        // movk x21, #60460, lsl #16
+        // movk x21, #10163, lsl #32
+        // movk x21, #58816, lsl #48
+        // str x21, [x5, #0]
+        // movz x21, #34276, lsl #0
+        // movk x21, #13655, lsl #16
+        // movk x21, #3306, lsl #32
+        // movk x21, #16814, lsl #48
+        // str x21, [x5, #8]
+        // movz x21, #61219, lsl #0
+        // movk x21, #37739, lsl #16
+        // movk x21, #6469, lsl #32
+        // movk x21, #8613, lsl #48
+        // str x21, [x5, #16]
+        // movz x21, #3821, lsl #0
+        // movk x21, #20047, lsl #16
+        // movk x21, #25885, lsl #32
+        // movk x21, #48530, lsl #48
+        // str x21, [x5, #24]
+        // movz x21, #47238, lsl #0
+        // movk x21, #36783, lsl #16
+        // movk x21, #60284, lsl #32
+        // movk x21, #52767, lsl #48
+        // str x21, [x5, #32]
+        // movz x21, #12350, lsl #0
+        // movk x21, #24540, lsl #16
+        // movk x21, #50526, lsl #32
+        // movk x21, #6667, lsl #48
+        // str x21, [x5, #40]
+        // movz x21, #57766, lsl #0
+        // movk x21, #51769, lsl #16
+        // movk x21, #18389, lsl #32
+        // movk x21, #15709, lsl #48
+        // str x21, [x5, #48]
+        // movz x21, #473, lsl #0
+        // movk x21, #54874, lsl #16
+        // movk x21, #22097, lsl #32
+        // movk x21, #19820, lsl #48
+        // str x21, [x5, #56]
+        // movz x21, #3467, lsl #0
+        // movk x21, #26266, lsl #16
+        // movk x21, #52475, lsl #32
+        // movk x21, #11696, lsl #48
+        // str x21, [x5, #64]
+        // movz x21, #4724, lsl #0
+        // movk x21, #8235, lsl #16
+        // movk x21, #45552, lsl #32
+        // movk x21, #39300, lsl #48
+        // str x21, [x5, #72]
+        // movz x21, #19679, lsl #0
+        // movk x21, #49867, lsl #16
+        // movk x21, #32308, lsl #32
+        // movk x21, #1398, lsl #48
+        // str x21, [x5, #80]
+        // movz x21, #46957, lsl #0
+        // movk x21, #12713, lsl #16
+        // movk x21, #6097, lsl #32
+        // movk x21, #55044, lsl #48
+        // str x21, [x5, #88]
+        // movz x21, #22548, lsl #0
+        // movk x21, #24890, lsl #16
+        // movk x21, #7134, lsl #32
+        // movk x21, #7185, lsl #48
+        // str x21, [x5, #96]
+        // movz x21, #3890, lsl #0
+        // movk x21, #5788, lsl #16
+        // movk x21, #6227, lsl #32
+        // movk x21, #8946, lsl #48
+        // str x21, [x5, #104]
+        // movz x21, #17662, lsl #0
+        // movk x21, #45775, lsl #16
+        // movk x21, #46531, lsl #32
+        // movk x21, #37242, lsl #48
+        // str x21, [x5, #112]
+        // movz x21, #2084, lsl #0
+        // movk x21, #43240, lsl #16
+        // movk x21, #64608, lsl #32
+        // movk x21, #20585, lsl #48
+        // str x21, [x5, #120]
+        // movz x21, #53418, lsl #0
+        // movk x21, #32160, lsl #16
+        // movk x21, #35233, lsl #32
+        // movk x21, #38754, lsl #48
+        // str x21, [x5, #128]
+        // movz x21, #23380, lsl #0
+        // movk x21, #38174, lsl #16
+        // movk x21, #65504, lsl #32
+        // movk x21, #53860, lsl #48
+        // str x21, [x5, #136]
+        // movz x21, #50192, lsl #0
+        // movk x21, #18432, lsl #16
+        // movk x21, #63395, lsl #32
+        // movk x21, #56181, lsl #48
+        // str x21, [x5, #144]
+        // movz x21, #906, lsl #0
+        // movk x21, #56038, lsl #16
+        // movk x21, #16137, lsl #32
+        // movk x21, #38109, lsl #48
+        // str x21, [x5, #152]
+        // movz x21, #23687, lsl #0
+        // movk x21, #643, lsl #16
+        // movk x21, #19149, lsl #32
+        // movk x21, #13200, lsl #48
+        // str x21, [x5, #160]
+        // movz x21, #26483, lsl #0
+        // movk x21, #62454, lsl #16
+        // movk x21, #32669, lsl #32
+        // movk x21, #58047, lsl #48
+        // str x21, [x5, #168]
+        // movz x21, #39762, lsl #0
+        // movk x21, #9944, lsl #16
+        // movk x21, #14280, lsl #32
+        // movk x21, #15302, lsl #48
+        // str x21, [x5, #176]
+        // movz x21, #38529, lsl #0
+        // movk x21, #19311, lsl #16
+        // movk x21, #48659, lsl #32
+        // movk x21, #11875, lsl #48
+        // str x21, [x5, #184]
+        // movz x21, #31209, lsl #0
+        // movk x21, #36007, lsl #16
+        // movk x21, #28319, lsl #32
+        // movk x21, #36540, lsl #48
+        // str x21, [x5, #192]
+        // movz x21, #62761, lsl #0
+        // movk x21, #46841, lsl #16
+        // movk x21, #64815, lsl #32
+        // movk x21, #22964, lsl #48
+        // str x21, [x5, #200]
+        // movz x21, #39032, lsl #0
+        // movk x21, #27142, lsl #16
+        // movk x21, #18151, lsl #32
+        // movk x21, #47729, lsl #48
+        // str x21, [x5, #208]
+        // movz x21, #9684, lsl #0
+        // movk x21, #17067, lsl #16
+        // movk x21, #41608, lsl #32
+        // movk x21, #64141, lsl #48
+        // str x21, [x5, #216]
+        // movz x21, #1906, lsl #0
+        // movk x21, #21945, lsl #16
+        // movk x21, #61176, lsl #32
+        // movk x21, #2732, lsl #48
+        // str x21, [x5, #224]
+        // movz x21, #18742, lsl #0
+        // movk x21, #26666, lsl #16
+        // movk x21, #14396, lsl #32
+        // movk x21, #42225, lsl #48
+        // str x21, [x5, #232]
+        // movz x21, #10304, lsl #0
+        // movk x21, #31699, lsl #16
+        // movk x21, #51643, lsl #32
+        // movk x21, #49475, lsl #48
+        // str x21, [x5, #240]
+        // movz x21, #58133, lsl #0
+        // movk x21, #62637, lsl #16
+        // movk x21, #51063, lsl #32
+        // movk x21, #40576, lsl #48
+        // str x21, [x5, #248]
+        // add x14, x0, #0
+        // add x15, x5, #256
+        // movz x17, #17, lsl #0
         r".inst 0x91000045,0x910002a9,0xd2904e15,0xf2bd8595,0xf2c4f675,0xf2fcb815,0xf90000b5,0xd290bc95
 .inst 0xf2a6aaf5,0xf2c19d55,0xf2e835d5,0xf90004b5,0xd29de475,0xf2b26d75,0xf2c328b5,0xf2e434b5
 .inst 0xf90008b5,0xd281ddb5,0xf2a9c9f5,0xf2cca3b5,0xf2f7b255,0xf9000cb5,0xd29710d5,0xf2b1f5f5
@@ -1560,9 +13220,21 @@ pub unsafe extern "C" fn vg_camellia_prepare_encrypt_keys(schedule: *const [u8; 
 .inst 0xf90068b5,0xd284ba95,0xf2a85575,0xf2d45115,0xf2ff51b5,0xf9006cb5,0xd280ee55,0xf2aab735
 .inst 0xf2dddf15,0xf2e15595,0xf90070b5,0xd28926d5,0xf2ad0555,0xf2c70795,0xf2f49e35,0xf90074b5
 .inst 0xd2850815,0xf2af7a75,0xf2d93775,0xf2f82875,0xf90078b5,0xd29c62b5,0xf2be95b5,0xf2d8eef5
-.inst 0xf2f3d015,0xf9007cb5,0x9100000e,0x910400af,0xd2800231,0xf94001d5,0xf90001f5,0xf94005d5
-.inst 0xf90005f5,0x910041ce,0x910041ef,0xd1000631,0xb5ffff31,0x91000135,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf2f3d015,0xf9007cb5,0x9100000e,0x910400af,0xd2800231
+20:",
+        // ldr x21, [x14, #0]
+        // str x21, [x15, #0]
+        // ldr x21, [x14, #8]
+        // str x21, [x15, #8]
+        // add x14, x14, #16
+        // add x15, x15, #16
+        // sub x17, x17, #1
+        r".inst 0xf94001d5,0xf90001f5,0xf94005d5,0xf90005f5,0x910041ce,0x910041ef,0xd1000631
+cbnz x17, 20b",
+        // add x21, x9, #0
+        // ret
+        r".inst 0x91000135,0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -1581,6 +13253,800 @@ pub unsafe extern "C" fn vg_camellia_prepare_encrypt_keys(schedule: *const [u8; 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_camellia_encrypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
+        // add x5, x1, #0
+        // add x1, x0, #0
+        // ldr q16, [x5, #0]
+        // ldr q17, [x5, #16]
+        // ldr q18, [x5, #32]
+        // ldr q19, [x5, #48]
+        // ldr q20, [x5, #64]
+        // ldr q21, [x5, #80]
+        // ldr q22, [x5, #96]
+        // ldr q23, [x5, #112]
+        // ldr q24, [x5, #128]
+        // ldr q25, [x5, #144]
+        // ldr q26, [x5, #160]
+        // ldr q27, [x5, #176]
+        // ldr q28, [x5, #192]
+        // ldr q29, [x5, #208]
+        // ldr q30, [x5, #224]
+        // ldr q31, [x5, #240]
+        // movz w15, #64, lsl #0
+        // dup v4.16b, w15
+        // movz w15, #128, lsl #0
+        // dup v5.16b, w15
+        // movz w15, #192, lsl #0
+        // dup v6.16b, w15
+        // movz x15, #65280, lsl #0
+        // movk x15, #255, lsl #32
+        // dup v7.2d, x15
+        // movz x13, #0, lsl #0
+        // movk x13, #65280, lsl #16
+        // movk x13, #255, lsl #48
+        // movz x14, #0, lsl #0
+        // movk x14, #255, lsl #16
+        // movk x14, #65280, lsl #32
+        // ldr x6, [x5, #768]
+        // rev x6, x6
+        // ldr x7, [x5, #776]
+        // rev x7, x7
+        // ldr x10, [x5, #256]
+        // rev x10, x10
+        // eor x6, x6, x10
+        // ldr x10, [x5, #264]
+        // rev x10, x10
+        // eor x7, x7, x10
+        // ldr x8, [x5, #272]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #280]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #288]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #296]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #304]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #312]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #320]
+        // rev x8, x8
+        // lsr x10, x6, #32
+        // add w12, w6, #0
+        // lsr x16, x8, #32
+        // and w11, w10, w16
+        // extr w11, w11, w11, #31
+        // eor w12, w12, w11
+        // orr w11, w12, w8
+        // eor w10, w10, w11
+        // lsl x6, x10, #32
+        // orr x6, x6, x12
+        // ldr x8, [x5, #328]
+        // rev x8, x8
+        // lsr x10, x7, #32
+        // add w12, w7, #0
+        // lsr x16, x8, #32
+        // orr w11, w12, w8
+        // eor w10, w10, w11
+        // and w11, w10, w16
+        // extr w11, w11, w11, #31
+        // eor w12, w12, w11
+        // lsl x7, x10, #32
+        // orr x7, x7, x12
+        // ldr x8, [x5, #336]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #344]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #352]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #360]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #368]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #376]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #384]
+        // rev x8, x8
+        // lsr x10, x6, #32
+        // add w12, w6, #0
+        // lsr x16, x8, #32
+        // and w11, w10, w16
+        // extr w11, w11, w11, #31
+        // eor w12, w12, w11
+        // orr w11, w12, w8
+        // eor w10, w10, w11
+        // lsl x6, x10, #32
+        // orr x6, x6, x12
+        // ldr x8, [x5, #392]
+        // rev x8, x8
+        // lsr x10, x7, #32
+        // add w12, w7, #0
+        // lsr x16, x8, #32
+        // orr w11, w12, w8
+        // eor w10, w10, w11
+        // and w11, w10, w16
+        // extr w11, w11, w11, #31
+        // eor w12, w12, w11
+        // lsl x7, x10, #32
+        // orr x7, x7, x12
+        // ldr x8, [x5, #400]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #408]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #416]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #424]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #432]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #440]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // sub x8, x1, #18
         r".inst 0x91000025,0x91000001,0x3dc000b0,0x3dc004b1,0x3dc008b2,0x3dc00cb3,0x3dc010b4,0x3dc014b5
 .inst 0x3dc018b6,0x3dc01cb7,0x3dc020b8,0x3dc024b9,0x3dc028ba,0x3dc02cbb,0x3dc030bc,0x3dc034bd
 .inst 0x3dc038be,0x3dc03cbf,0x5280080f,0x4e010de4,0x5280100f,0x4e010de5,0x5280180f,0x4e010de6
@@ -1616,9 +14082,9 @@ pub unsafe extern "C" fn vg_camellia_encrypt_prepared(rounds: usize, ws: *mut u6
 .inst 0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a
 .inst 0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231,0x4a110210
 .inst 0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00c6,0xf940a0a8,0xdac00d08,0xd360fcca
-.inst 0x110000cc,0xd360fd10,0xa10014b,0x138b7d6b,0x4a0b018c,0x2a08018b,0x4a0b014a,0xd3607d46
+.inst 0x110000cc,0xd360fd10,0x0a10014b,0x138b7d6b,0x4a0b018c,0x2a08018b,0x4a0b014a,0xd3607d46
 .inst 0xaa0c00c6,0xf940a4a8,0xdac00d08,0xd360fcea,0x110000ec,0xd360fd10,0x2a08018b,0x4a0b014a
-.inst 0xa10014b,0x138b7d6b,0x4a0b018c,0xd3607d47,0xaa0c00e7,0xf940a8a8,0xdac00d08,0xca0800ca
+.inst 0x0a10014b,0x138b7d6b,0x4a0b018c,0xd3607d47,0xaa0c00e7,0xf940a8a8,0xdac00d08,0xca0800ca
 .inst 0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200
 .inst 0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401
 .inst 0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b
@@ -1648,9 +14114,9 @@ pub unsafe extern "C" fn vg_camellia_encrypt_prepared(rounds: usize, ws: *mut u6
 .inst 0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401
 .inst 0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231
 .inst 0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00c6,0xf940c0a8
-.inst 0xdac00d08,0xd360fcca,0x110000cc,0xd360fd10,0xa10014b,0x138b7d6b,0x4a0b018c,0x2a08018b
+.inst 0xdac00d08,0xd360fcca,0x110000cc,0xd360fd10,0x0a10014b,0x138b7d6b,0x4a0b018c,0x2a08018b
 .inst 0x4a0b014a,0xd3607d46,0xaa0c00c6,0xf940c4a8,0xdac00d08,0xd360fcea,0x110000ec,0xd360fd10
-.inst 0x2a08018b,0x4a0b014a,0xa10014b,0x138b7d6b,0x4a0b018c,0xd3607d47,0xaa0c00e7,0xf940c8a8
+.inst 0x2a08018b,0x4a0b014a,0x0a10014b,0x138b7d6b,0x4a0b018c,0xd3607d47,0xaa0c00e7,0xf940c8a8
 .inst 0xdac00d08,0xca0800ca,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02
 .inst 0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00
 .inst 0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20
@@ -1680,42 +14146,327 @@ pub unsafe extern "C" fn vg_camellia_encrypt_prepared(rounds: usize, ws: *mut u6
 .inst 0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3
 .inst 0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210
 .inst 0x138c2191,0x4acc4231,0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a
-.inst 0xca0a00c6,0xd1004828,0xb40021c8,0xf940e0a8,0xdac00d08,0xd360fcca,0x110000cc,0xd360fd10
-.inst 0xa10014b,0x138b7d6b,0x4a0b018c,0x2a08018b,0x4a0b014a,0xd3607d46,0xaa0c00c6,0xf940e4a8
-.inst 0xdac00d08,0xd360fcea,0x110000ec,0xd360fd10,0x2a08018b,0x4a0b014a,0xa10014b,0x138b7d6b
-.inst 0x4a0b018c,0xd3607d47,0xaa0c00e7,0xf940e8a8,0xdac00d08,0xca0800ca,0x4e080d40,0x4f095401
+.inst 0xca0a00c6,0xd1004828
+cbz x8, 20f",
+        // ldr x8, [x5, #448]
+        // rev x8, x8
+        // lsr x10, x6, #32
+        // add w12, w6, #0
+        // lsr x16, x8, #32
+        // and w11, w10, w16
+        // extr w11, w11, w11, #31
+        // eor w12, w12, w11
+        // orr w11, w12, w8
+        // eor w10, w10, w11
+        // lsl x6, x10, #32
+        // orr x6, x6, x12
+        // ldr x8, [x5, #456]
+        // rev x8, x8
+        // lsr x10, x7, #32
+        // add w12, w7, #0
+        // lsr x16, x8, #32
+        // orr w11, w12, w8
+        // eor w10, w10, w11
+        // and w11, w10, w16
+        // extr w11, w11, w11, #31
+        // eor w12, w12, w11
+        // lsl x7, x10, #32
+        // orr x7, x7, x12
+        // ldr x8, [x5, #464]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #472]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #480]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #488]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x8, [x5, #496]
+        // rev x8, x8
+        // eor x10, x6, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x7, x7, x10
+        // ldr x8, [x5, #504]
+        // rev x8, x8
+        // eor x10, x7, x8
+        // dup v0.2d, x10
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v7.16b
+        // eor v1.16b, v0.16b, v4.16b
+        // eor v2.16b, v0.16b, v5.16b
+        // eor v3.16b, v0.16b, v6.16b
+        // tbl v0.16b, {v16.16b, v17.16b, v18.16b, v19.16b}, v0.16b
+        // tbl v1.16b, {v20.16b, v21.16b, v22.16b, v23.16b}, v1.16b
+        // tbl v2.16b, {v24.16b, v25.16b, v26.16b, v27.16b}, v2.16b
+        // tbl v3.16b, {v28.16b, v29.16b, v30.16b, v31.16b}, v3.16b
+        // orr v2.16b, v2.16b, v3.16b
+        // orr v0.16b, v0.16b, v1.16b
+        // orr v0.16b, v0.16b, v2.16b
+        // dup v3.2d, x13
+        // shl v1.16b, v0.16b, #1
+        // sri v1.16b, v0.16b, #7
+        // bit v0.16b, v1.16b, v3.16b
+        // dup v3.2d, x14
+        // shl v1.16b, v0.16b, #7
+        // sri v1.16b, v0.16b, #1
+        // bit v0.16b, v1.16b, v3.16b
+        // umov x10, v0.d[0]
+        // lsr x11, x10, #32
+        // add w12, w10, #0
+        // eor w16, w11, w11, ror #8
+        // eor w16, w16, w11, ror #16
+        // extr w17, w12, w12, #8
+        // eor w17, w17, w12, ror #16
+        // eor w17, w17, w12, ror #24
+        // eor w16, w16, w17
+        // eor w12, w11, w11, ror #24
+        // eor w12, w12, w17
+        // lsl x10, x16, #32
+        // orr x10, x10, x12
+        // eor x6, x6, x10
+        // ldr x10, [x5, #512]
+        // rev x10, x10
+        // eor x7, x7, x10
+        // ldr x10, [x5, #520]
+        // rev x10, x10
+        // eor x6, x6, x10
+        // rev x7, x7
+        // rev x6, x6
+        // str x7, [x5, #768]
+        // str x6, [x5, #776]
+        r".inst 0xf940e0a8,0xdac00d08,0xd360fcca,0x110000cc,0xd360fd10,0x0a10014b,0x138b7d6b,0x4a0b018c
+.inst 0x2a08018b,0x4a0b014a,0xd3607d46,0xaa0c00c6,0xf940e4a8,0xdac00d08,0xd360fcea,0x110000ec
+.inst 0xd360fd10,0x2a08018b,0x4a0b014a,0x0a10014b,0x138b7d6b,0x4a0b018c,0xd3607d47,0xaa0c00e7
+.inst 0xf940e8a8,0xdac00d08,0xca0800ca,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01
+.inst 0x6e251c02,0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00
+.inst 0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401
+.inst 0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231
+.inst 0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00e7,0xf940eca8
+.inst 0xdac00d08,0xca0800ea,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02
+.inst 0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00
+.inst 0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20
+.inst 0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231
+.inst 0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00c6,0xf940f0a8,0xdac00d08
+.inst 0xca0800ca,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03
+.inst 0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3
+.inst 0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a
+.inst 0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231,0x4a110210
+.inst 0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00e7,0xf940f4a8,0xdac00d08,0xca0800ea
+.inst 0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200
+.inst 0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401
+.inst 0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b
+.inst 0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231,0x4a110210,0x4acb616c
+.inst 0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00c6,0xf940f8a8,0xdac00d08,0xca0800ca,0x4e080d40
+.inst 0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200,0x4e016281
+.inst 0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401
+.inst 0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c
+.inst 0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c
+.inst 0xd3607e0a,0xaa0c014a,0xca0a00e7,0xf940fca8,0xdac00d08,0xca0800ea,0x4e080d40,0x4f095401
 .inst 0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200,0x4e016281,0x4e026302
 .inst 0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20
 .inst 0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170
 .inst 0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a
-.inst 0xaa0c014a,0xca0a00e7,0xf940eca8,0xdac00d08,0xca0800ea,0x4e080d40,0x4f095401,0x6f094401
-.inst 0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383
-.inst 0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3
-.inst 0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210
-.inst 0x138c2191,0x4acc4231,0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a
-.inst 0xca0a00c6,0xf940f0a8,0xdac00d08,0xca0800ca,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20
-.inst 0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42
-.inst 0x4ea11c00,0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401
-.inst 0x6f0f4401,0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191
-.inst 0x4acc4231,0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00e7
-.inst 0xf940f4a8,0xdac00d08,0xca0800ea,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01
-.inst 0x6e251c02,0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00
-.inst 0x4ea21c00,0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401
-.inst 0x6ea31c20,0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231
-.inst 0x4acc6231,0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00c6,0xf940f8a8
-.inst 0xdac00d08,0xca0800ca,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02
-.inst 0x6e261c03,0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00
-.inst 0x4e080da3,0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20
-.inst 0x4e083c0a,0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231
-.inst 0x4a110210,0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00e7,0xf940fca8,0xdac00d08
-.inst 0xca0800ea,0x4e080d40,0x4f095401,0x6f094401,0x6ea71c20,0x6e241c01,0x6e251c02,0x6e261c03
-.inst 0x4e006200,0x4e016281,0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x4e080da3
-.inst 0x4f095401,0x6f094401,0x6ea31c20,0x4e080dc3,0x4f0f5401,0x6f0f4401,0x6ea31c20,0x4e083c0a
-.inst 0xd360fd4b,0x1100014c,0x4acb2170,0x4acb4210,0x138c2191,0x4acc4231,0x4acc6231,0x4a110210
-.inst 0x4acb616c,0x4a11018c,0xd3607e0a,0xaa0c014a,0xca0a00c6,0xf94100aa,0xdac00d4a,0xca0a00e7
-.inst 0xf94104aa,0xdac00d4a,0xca0a00c6,0xdac00ce7,0xdac00cc6,0xf90180a7,0xf90184a6,0x1400000b
-.inst 0xf940e0aa,0xdac00d4a,0xca0a00e7,0xf940e4aa,0xdac00d4a,0xca0a00c6,0xdac00ce7,0xdac00cc6
-.inst 0xf90180a7,0xf90184a6,0xd65f03c0",
-        r".p2align 6",
+.inst 0xaa0c014a,0xca0a00c6,0xf94100aa,0xdac00d4a,0xca0a00e7,0xf94104aa,0xdac00d4a,0xca0a00c6
+.inst 0xdac00ce7,0xdac00cc6,0xf90180a7,0xf90184a6
+b 21f
+20:",
+        // ldr x10, [x5, #448]
+        // rev x10, x10
+        // eor x7, x7, x10
+        // ldr x10, [x5, #456]
+        // rev x10, x10
+        // eor x6, x6, x10
+        // rev x7, x7
+        // rev x6, x6
+        // str x7, [x5, #768]
+        // str x6, [x5, #776]
+        r".inst 0xf940e0aa,0xdac00d4a,0xca0a00e7,0xf940e4aa,0xdac00d4a,0xca0a00c6,0xdac00ce7,0xdac00cc6
+.inst 0xf90180a7,0xf90184a6
+21:",
+        // ret
+        r".inst 0xd65f03c0
+.p2align 6",
     )
 }

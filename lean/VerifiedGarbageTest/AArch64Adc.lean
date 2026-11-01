@@ -95,8 +95,8 @@ def run (i : Instr) (a b : BitVec 64) (carry : Bool) : Option (BitVec 64 × Bool
 #guard dstOf (.adc .x .x0 .x1 .x2) == some .x0
 #guard dstOf (.sbc .x .x0 .x1 .x2) == some .x0
 
-#guard printer.instr (.adc .x .x0 .x1 .x2) == ["adc x0, x1, x2"]
-#guard printer.instr (.sbc .w .x0 .x1 .x2) == ["sbc w0, w1, w2"]
+#guard Instr.asm (.adc .x .x0 .x1 .x2) == ["adc x0, x1, x2"]
+#guard Instr.asm (.sbc .w .x0 .x1 .x2) == ["sbc w0, w1, w2"]
 
 -- As for ADCS and SBCS, the untracked carry makes the result secret.
 #guard ((AArch64.Taint.step (AArch64.Taint.ofRegs [.x1, .x2])

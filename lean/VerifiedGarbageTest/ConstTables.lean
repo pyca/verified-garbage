@@ -105,8 +105,9 @@ pub unsafe extern \"C\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
         concat!(\"adrp x0, \", vg_sym_page!(\"{VG_TEST_TABLE}\")),
         concat!(\"add x0, x0, \", vg_sym_pageoff!(\"{VG_TEST_TABLE}\")),
-        r\"ldr x0, [x0, #8]
-ret
+        // ldr x0, [x0, #8]
+        // ret
+        r\".inst 0xf9400400,0xd65f03c0
 .p2align 6\",
         VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
     )

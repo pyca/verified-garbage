@@ -108,9 +108,10 @@ pub unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
     core::arch::naked_asm!(
         concat!(\"adrp x1, \", vg_sym_page!(\"{VG_TEST_LDRQTBL}\")),
         concat!(\"add x1, x1, \", vg_sym_pageoff!(\"{VG_TEST_LDRQTBL}\")),
-        r\"ldr q0, [x1, #16]
-umov x0, v0.d[1]
-ret
+        // ldr q0, [x1, #16]
+        // umov x0, v0.d[1]
+        // ret
+        r\".inst 0x3dc00420,0x4e183c00,0xd65f03c0
 .p2align 6\",
         VG_TEST_LDRQTBL = sym super::consts::VG_TEST_LDRQTBL,
     )

@@ -279,45 +279,45 @@ def sampleA64 : Prog AArch64.isa :=
 #guard text (AArch64.printer.function sampleA64) == [
   "cbz x2, 20f",
   "22:",
-  "add w4, w5, w6",
-  "add x0, x1, x30",
-  "add x1, x1, #64",
-  "sub x2, x2, #1",
-  "and w7, w8, w9",
-  "orr w7, w8, w9",
-  "eor x7, x8, x9",
-  "ror w13, w8, #25",
-  "lsr w14, w15, #10",
-  "rev w12, w12",
-  "movz w13, #12184, lsl #0",
-  "movk w13, #17034, lsl #16",
-  "ldr w12, [x1, #60]",
-  "str w12, [x3, #4]",
-  "ldr x16, [x17, #8]",
-  "str x20, [x19, #16]",
-  "sub w4, w5, w6",
-  "sub x0, x1, x30",
-  "rev x9, x10",
-  "ldrb w11, [x20, #0]",
-  "ldrb w21, [x22, #4095]",
-  "strb w23, [x24, #7]",
-  "strb w25, [x26, #4095]",
-  "ldr x9, [sp, #0]",
-  "ldr x10, [sp, #32760]",
-  "str x11, [sp, #0]",
-  "str x30, [sp, #32760]",
+  "// add w4, w5, w6", ".inst 0x0b0600a4",
+  "// add x0, x1, x30", ".inst 0x8b1e0020",
+  "// add x1, x1, #64", ".inst 0x91010021",
+  "// sub x2, x2, #1", ".inst 0xd1000442",
+  "// and w7, w8, w9", ".inst 0x0a090107",
+  "// orr w7, w8, w9", ".inst 0x2a090107",
+  "// eor x7, x8, x9", ".inst 0xca090107",
+  "// ror w13, w8, #25", ".inst 0x1388650d",
+  "// lsr w14, w15, #10", ".inst 0x530a7dee",
+  "// rev w12, w12", ".inst 0x5ac0098c",
+  "// movz w13, #12184, lsl #0", ".inst 0x5285f30d",
+  "// movk w13, #17034, lsl #16", ".inst 0x72a8514d",
+  "// ldr w12, [x1, #60]", ".inst 0xb9403c2c",
+  "// str w12, [x3, #4]", ".inst 0xb900046c",
+  "// ldr x16, [x17, #8]", ".inst 0xf9400630",
+  "// str x20, [x19, #16]", ".inst 0xf9000a74",
+  "// sub w4, w5, w6", ".inst 0x4b0600a4",
+  "// sub x0, x1, x30", ".inst 0xcb1e0020",
+  "// rev x9, x10", ".inst 0xdac00d49",
+  "// ldrb w11, [x20, #0]", ".inst 0x3940028b",
+  "// ldrb w21, [x22, #4095]", ".inst 0x397ffed5",
+  "// strb w23, [x24, #7]", ".inst 0x39001f17",
+  "// strb w25, [x26, #4095]", ".inst 0x393fff59",
+  "// ldr x9, [sp, #0]", ".inst 0xf94003e9",
+  "// ldr x10, [sp, #32760]", ".inst 0xf97fffea",
+  "// str x11, [sp, #0]", ".inst 0xf90003eb",
+  "// str x30, [sp, #32760]", ".inst 0xf93ffffe",
   "cbnz x2, 22b",
   "b 21f",
   "20:",
   "21:",
-  "ret"
+  "// ret", ".inst 0xd65f03c0"
 ]
 
 -- AArch64 alignment padding before a loop's head: `.p2align k`, ahead of
 -- the label, and refused for any `k` but 4, 5 and 6; a NOP in the model.
 #guard text (AArch64.printer.function
     (.seq (.block [.align 5]) (.loop (.block [.subImm .x .x2 .x2 1]) (.nonzero .x .x2)))) ==
-  [".p2align 5", "20:", "sub x2, x2, #1", "cbnz x2, 20b", "ret"]
+  [".p2align 5", "20:", "// sub x2, x2, #1", ".inst 0xd1000442", "cbnz x2, 20b", "// ret", ".inst 0xd65f03c0"]
 #guard AArch64.Instr.asm (.align 4) == [".p2align 4"]
 #guard AArch64.Instr.asm (.align 6) == [".p2align 6"]
 #guard [4, 5, 6].all fun k => AArch64.printer.unencodable (.align k) == none
@@ -630,12 +630,22 @@ def sampleRV : Prog RISCV64.isa :=
     .alloc 4096, .free 4096].all (·.unencodable.isSome)
 #guard RISCV64.Instr.unencodable (.lla .a0 "VG_TABLE") == none
 #guard RISCV64.Instr.unencodable (.alloc 4064) == none
--- RISC-V's generated files, already machine code, are in its crate's
--- `src/`, which it compiles; every other target's, the code as printed, in
--- its `asm/`.
+-- RISC-V's and AArch64's generated files, already machine code, are in
+-- their crates' `src/`, which they compile; every other target's, the code
+-- as printed, in its `asm/`.
 #guard Rust.codeDir "riscv64" == "verified-garbage-asm-riscv64/src"
-#guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all fun t =>
+#guard Rust.codeDir "aarch64" == "verified-garbage-asm-aarch64/src"
+#guard ["x86_64", "x86", "arm", "powerpc64le"].all fun t =>
   Rust.codeDir t == s!"verified-garbage-asm-{t}/asm"
+-- Consecutive `.inst` lines are joined, 8 words a line at most; nothing
+-- else is.
+#guard Rust.template "bl" ((List.range 10).map fun i => .text s!".inst 0x{i}") ==
+  "        r\".inst 0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7\n.inst 0x8,0x9\",\n"
+#guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
+    .call "vg_f", .text ".inst 0x4"] ==
+  "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
+#guard Rust.template "bl" [.text ".insn 4, 0x1", .text ".insn 4, 0x2"] ==
+  "        r\".insn 4, 0x1\n.insn 4, 0x2\",\n"
 -- A comment line is a printer's `// ` line of one line: anything else is
 -- assembly.
 #guard Rust.commentOf (.text "// add a0, a1, a2") == some "// add a0, a1, a2"
@@ -756,7 +766,8 @@ def callSample : Prog X86_64.isa :=
 
 #guard printer.function callSample == [
   .text "mov rdi, rbx", .call "vg_f", .text "mov rax, rdx", .text "ret"]
-#guard AArch64.printer.function (.call "vg_f" (.block []) : Prog AArch64.isa) == [.call "vg_f", .text "ret"]
+#guard AArch64.printer.function (.call "vg_f" (.block []) : Prog AArch64.isa) ==
+  [.call "vg_f", .text "// ret", .text ".inst 0xd65f03c0"]
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) == [.call "vg_f", .text "ret"]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 #guard PPC64LE.printer.function (.call "vg_f" (.block []) : Prog PPC64LE.isa) ==
@@ -791,12 +802,12 @@ instructions. -/
 -- Save the link register around a call (AArch64).
 #guard text (AArch64.printer.function
     (.frame (.push .x30) (.call "vg_f" (.block [])) (.pop .x30) : Prog AArch64.isa)) == [
-  "str x30, [sp, #-16]!", "<call vg_f>", "ldr x30, [sp], #16", "ret"]
+  "// str x30, [sp, #-16]!", ".inst 0xf81f0ffe", "<call vg_f>", "// ldr x30, [sp], #16", ".inst 0xf84107fe", "// ret", ".inst 0xd65f03c0"]
 
 -- The address of a static (AArch64): its page and the offset in the page, in the
 -- syntax of the object format (`TCB/Rust.lean`).
 #guard text (AArch64.printer.function (.block [.adrSym .x16 "VG_TABLE"] : Prog AArch64.isa)) == [
-  "adrp x16, <page VG_TABLE>", "add x16, x16, <pageoff VG_TABLE>", "ret"]
+  "adrp x16, <page VG_TABLE>", "add x16, x16, <pageoff VG_TABLE>", "// ret", ".inst 0xd65f03c0"]
 
 -- The address of a static (ARMv7): `movw` and `movt` of its distance from the
 -- `pc` the `add` between labels 2 and 3 reads, the same text in ARM and Thumb

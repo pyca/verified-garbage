@@ -41,8 +41,8 @@ def run (c : Bool) (i : Instr) : Option (BitVec 64) := (exec i (input c)).map (Â
 #guard Instr.requires (.csel .x .x0 .x1 .x2) == []
 #guard dstOf (.csel .x .x0 .x1 .x2) == some .x0
 
-#guard printer.instr (.csel .x .x0 .x1 .x2) == ["csel x0, x1, x2, hs"]
-#guard printer.instr (.csel .w .x0 .x1 .x2) == ["csel w0, w1, w2, hs"]
+#guard Instr.asm (.csel .x .x0 .x1 .x2) == ["csel x0, x1, x2, hs"]
+#guard Instr.asm (.csel .w .x0 .x1 .x2) == ["csel w0, w1, w2, hs"]
 
 -- The carry is secret in this domain, so the result is too.
 #guard ((AArch64.Taint.step (AArch64.Taint.ofRegs [.x1, .x2])

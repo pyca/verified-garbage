@@ -20,6 +20,1731 @@ pub const VG_KECCAK_F1600_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // str q8, [x1, #0]
+        // str q9, [x1, #16]
+        // str q10, [x1, #32]
+        // str q11, [x1, #48]
+        // str q12, [x1, #64]
+        // str q13, [x1, #80]
+        // str q14, [x1, #96]
+        // str q15, [x1, #112]
+        // ldr q0, [x0, #0]
+        // ext v1.16b, v0.16b, v0.16b, #8
+        // ldr q2, [x0, #16]
+        // ext v3.16b, v2.16b, v2.16b, #8
+        // ldr q4, [x0, #32]
+        // ext v5.16b, v4.16b, v4.16b, #8
+        // ldr q6, [x0, #48]
+        // ext v7.16b, v6.16b, v6.16b, #8
+        // ldr q8, [x0, #64]
+        // ext v9.16b, v8.16b, v8.16b, #8
+        // ldr q10, [x0, #80]
+        // ext v11.16b, v10.16b, v10.16b, #8
+        // ldr q12, [x0, #96]
+        // ext v13.16b, v12.16b, v12.16b, #8
+        // ldr q14, [x0, #112]
+        // ext v15.16b, v14.16b, v14.16b, #8
+        // ldr q16, [x0, #128]
+        // ext v17.16b, v16.16b, v16.16b, #8
+        // ldr q18, [x0, #144]
+        // ext v19.16b, v18.16b, v18.16b, #8
+        // ldr q20, [x0, #160]
+        // ext v21.16b, v20.16b, v20.16b, #8
+        // ldr q22, [x0, #176]
+        // ext v23.16b, v22.16b, v22.16b, #8
+        // ldr x17, [x0, #192]
+        // dup v24.2d, x17
+        // movz x16, #1, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32898, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32906, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32768, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32907, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #138, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #136, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32907, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #139, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32905, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32771, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32770, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #128, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32778, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32896, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32776, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // zip1 v25.2d, v0.2d, v1.2d
+        // str q25, [x0, #0]
+        // zip1 v25.2d, v2.2d, v3.2d
+        // str q25, [x0, #16]
+        // zip1 v25.2d, v4.2d, v5.2d
+        // str q25, [x0, #32]
+        // zip1 v25.2d, v6.2d, v7.2d
+        // str q25, [x0, #48]
+        // zip1 v25.2d, v8.2d, v9.2d
+        // str q25, [x0, #64]
+        // zip1 v25.2d, v10.2d, v11.2d
+        // str q25, [x0, #80]
+        // zip1 v25.2d, v12.2d, v13.2d
+        // str q25, [x0, #96]
+        // zip1 v25.2d, v14.2d, v15.2d
+        // str q25, [x0, #112]
+        // zip1 v25.2d, v16.2d, v17.2d
+        // str q25, [x0, #128]
+        // zip1 v25.2d, v18.2d, v19.2d
+        // str q25, [x0, #144]
+        // zip1 v25.2d, v20.2d, v21.2d
+        // str q25, [x0, #160]
+        // zip1 v25.2d, v22.2d, v23.2d
+        // str q25, [x0, #176]
+        // umov x17, v24.d[0]
+        // str x17, [x0, #192]
+        // ldr q8, [x1, #0]
+        // ldr q9, [x1, #16]
+        // ldr q10, [x1, #32]
+        // ldr q11, [x1, #48]
+        // ldr q12, [x1, #64]
+        // ldr q13, [x1, #80]
+        // ldr q14, [x1, #96]
+        // ldr q15, [x1, #112]
+        // ret
         r".inst 0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e,0x3d801c2f
 .inst 0x3dc00000,0x6e004001,0x3dc00402,0x6e024043,0x3dc00804,0x6e044085,0x3dc00c06,0x6e0640c7
 .inst 0x3dc01008,0x6e084109,0x3dc0140a,0x6e0a414b,0x3dc0180c,0x6e0c418d,0x3dc01c0e,0x6e0e41cf
@@ -235,8 +1960,9 @@ pub unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scratch: *m
 .inst 0x3d800c19,0x4ec93919,0x3d801019,0x4ecb3959,0x3d801419,0x4ecd3999,0x3d801819,0x4ecf39d9
 .inst 0x3d801c19,0x4ed13a19,0x3d802019,0x4ed33a59,0x3d802419,0x4ed53a99,0x3d802819,0x4ed73ad9
 .inst 0x3d802c19,0x4e083f11,0xf9006011,0x3dc00028,0x3dc00429,0x3dc0082a,0x3dc00c2b,0x3dc0102c
-.inst 0x3dc0142d,0x3dc0182e,0x3dc01c2f,0xd65f03c0",
-        r".p2align 6",
+.inst 0x3dc0142d,0x3dc0182e,0x3dc01c2f,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
     )
 }
 
@@ -254,6 +1980,2682 @@ pub unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scratch: *m
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        // dup v0.2d, x19
+        // dup v1.2d, x20
+        // dup v2.2d, x21
+        // dup v3.2d, x22
+        // dup v4.2d, x23
+        // dup v5.2d, x24
+        // dup v6.2d, x25
+        // dup v7.2d, x26
+        // dup v16.2d, x27
+        // dup v17.2d, x28
+        // dup v18.2d, x30
+        // dup v30.2d, x0
+        // dup v31.2d, x1
+        // add x30, x0, #0
+        // ldr x0, [x30, #0]
+        // ldr x1, [x30, #8]
+        // ldr x2, [x30, #16]
+        // ldr x3, [x30, #24]
+        // ldr x4, [x30, #32]
+        // ldr x5, [x30, #40]
+        // ldr x6, [x30, #48]
+        // ldr x7, [x30, #56]
+        // ldr x8, [x30, #64]
+        // ldr x9, [x30, #72]
+        // ldr x10, [x30, #80]
+        // ldr x11, [x30, #88]
+        // ldr x12, [x30, #96]
+        // ldr x13, [x30, #104]
+        // ldr x14, [x30, #112]
+        // ldr x15, [x30, #120]
+        // ldr x16, [x30, #128]
+        // ldr x17, [x30, #136]
+        // ldr x25, [x30, #144]
+        // ldr x19, [x30, #152]
+        // ldr x20, [x30, #160]
+        // ldr x21, [x30, #168]
+        // ldr x22, [x30, #176]
+        // ldr x23, [x30, #184]
+        // ldr x24, [x30, #192]
+        // eor x26, x0, x5, ror #0
+        // dup v24.2d, x4
+        // dup v25.2d, x9
+        // eor x27, x1, x6, ror #0
+        // eor x28, x2, x7, ror #0
+        // eor x30, x3, x8, ror #0
+        // eor x4, x4, x9, ror #0
+        // eor x26, x26, x10, ror #0
+        // eor x27, x27, x11, ror #0
+        // eor x28, x28, x12, ror #0
+        // eor x30, x30, x13, ror #0
+        // eor x4, x4, x14, ror #0
+        // eor x26, x26, x15, ror #0
+        // eor x27, x27, x16, ror #0
+        // eor x28, x28, x17, ror #0
+        // eor x30, x30, x25, ror #0
+        // eor x4, x4, x19, ror #0
+        // eor x26, x26, x20, ror #0
+        // eor x27, x27, x21, ror #0
+        // eor x28, x28, x22, ror #0
+        // eor x30, x30, x23, ror #0
+        // eor x4, x4, x24, ror #0
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9, ror #0
+        // eor x6, x6, x9, ror #0
+        // eor x11, x11, x9, ror #0
+        // eor x16, x16, x9, ror #0
+        // eor x21, x21, x9, ror #0
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // eor x2, x2, x9, ror #0
+        // eor x7, x7, x9, ror #0
+        // eor x12, x12, x9, ror #0
+        // eor x17, x17, x9, ror #0
+        // eor x22, x22, x9, ror #0
+        // eor x0, x0, x4, ror #0
+        // eor x5, x5, x4, ror #0
+        // eor x10, x10, x4, ror #0
+        // eor x15, x15, x4, ror #0
+        // eor x20, x20, x4, ror #0
+        // umov x4, v24.d[0]
+        // umov x9, v25.d[0]
+        // eor x3, x3, x28, ror #0
+        // eor x8, x8, x28, ror #0
+        // eor x13, x13, x28, ror #0
+        // eor x25, x25, x28, ror #0
+        // eor x23, x23, x28, ror #0
+        // eor x4, x4, x30, ror #0
+        // eor x9, x9, x30, ror #0
+        // eor x14, x14, x30, ror #0
+        // eor x19, x19, x30, ror #0
+        // eor x24, x24, x30, ror #0
+        // bic x26, x12, x6, ror #63
+        // bic x27, x25, x12, ror #42
+        // bic x28, x0, x24, ror #50
+        // bic x30, x6, x0, ror #44
+        // eor x0, x0, x26, ror #21
+        // bic x26, x24, x25, ror #57
+        // eor x6, x6, x27, ror #23
+        // eor x25, x25, x28, ror #21
+        // eor x24, x24, x30, ror #34
+        // eor x12, x12, x26, ror #29
+        // bic x26, x10, x9, ror #47
+        // bic x27, x16, x10, ror #42
+        // bic x28, x3, x22, ror #31
+        // bic x30, x9, x3, ror #56
+        // eor x3, x3, x26, ror #25
+        // bic x26, x22, x16, ror #16
+        // eor x9, x9, x27, ror #39
+        // eor x16, x16, x28, ror #17
+        // eor x22, x22, x30, ror #41
+        // eor x10, x10, x26, ror #6
+        // bic x26, x13, x7, ror #19
+        // bic x27, x19, x13, ror #47
+        // bic x28, x1, x20, ror #47
+        // bic x30, x7, x1, ror #5
+        // eor x1, x1, x26, ror #40
+        // bic x26, x20, x19, ror #10
+        // eor x7, x7, x27, ror #62
+        // eor x19, x19, x28, ror #7
+        // eor x20, x20, x30, ror #12
+        // eor x13, x13, x26, ror #7
+        // bic x26, x11, x5, ror #38
+        // bic x27, x17, x11, ror #5
+        // bic x28, x4, x23, ror #35
+        // bic x30, x5, x4, ror #9
+        // eor x4, x4, x26, ror #17
+        // bic x26, x23, x17, ror #41
+        // eor x5, x5, x27, ror #21
+        // eor x17, x17, x28, ror #52
+        // eor x23, x23, x30, ror #20
+        // eor x11, x11, x26, ror #18
+        // bic x26, x14, x8, ror #48
+        // bic x27, x15, x14, ror #2
+        // bic x28, x2, x21, ror #60
+        // bic x30, x8, x2, ror #57
+        // eor x2, x2, x26, ror #23
+        // bic x26, x21, x15, ror #25
+        // eor x8, x8, x27, ror #14
+        // eor x15, x15, x28, ror #43
+        // eor x21, x21, x30, ror #11
+        // eor x14, x14, x26, ror #37
+        // movz x26, #1, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x3, ror #36
+        // dup v24.2d, x24
+        // dup v25.2d, x22
+        // eor x27, x6, x9, ror #24
+        // eor x28, x12, x10, ror #40
+        // eor x30, x25, x16, ror #40
+        // eor x24, x24, x22, ror #17
+        // eor x26, x26, x1, ror #63
+        // eor x27, x27, x7, ror #38
+        // eor x28, x28, x13, ror #18
+        // eor x30, x30, x19, ror #13
+        // eor x24, x24, x20, ror #60
+        // eor x26, x26, x4, ror #37
+        // eor x27, x27, x5, ror #8
+        // eor x28, x28, x11, ror #33
+        // eor x30, x30, x17, ror #6
+        // eor x24, x24, x23, ror #22
+        // eor x26, x26, x2, ror #2
+        // eor x27, x27, x8, ror #53
+        // eor x28, x28, x14, ror #4
+        // eor x30, x30, x15, ror #44
+        // eor x24, x24, x21, ror #12
+        // eor x22, x26, x28, ror #20
+        // eor x6, x6, x22, ror #44
+        // eor x9, x9, x22, ror #20
+        // eor x7, x7, x22, ror #6
+        // eor x5, x5, x22, ror #36
+        // eor x8, x8, x22, ror #55
+        // eor x22, x27, x30, ror #22
+        // eor x28, x28, x24, ror #28
+        // eor x30, x30, x26, ror #20
+        // eor x24, x24, x27, ror #33
+        // eor x12, x12, x22, ror #63
+        // eor x10, x10, x22, ror #23
+        // eor x13, x13, x22, ror #45
+        // eor x11, x11, x22, ror #30
+        // eor x14, x14, x22, ror #59
+        // eor x0, x0, x24, ror #50
+        // eor x3, x3, x24, ror #14
+        // eor x1, x1, x24, ror #51
+        // eor x4, x4, x24, ror #13
+        // eor x2, x2, x24, ror #48
+        // umov x22, v24.d[0]
+        // umov x24, v25.d[0]
+        // eor x25, x25, x28, ror #42
+        // eor x16, x16, x28, ror #2
+        // eor x19, x19, x28, ror #29
+        // eor x17, x17, x28, ror #36
+        // eor x15, x15, x28, ror #62
+        // eor x22, x22, x30, ror #57
+        // eor x24, x24, x30, ror #40
+        // eor x20, x20, x30, ror #61
+        // eor x23, x23, x30, ror #35
+        // eor x21, x21, x30, ror #45
+        // bic x26, x13, x9, ror #4
+        // bic x27, x17, x13, ror #32
+        // bic x28, x0, x21, ror #48
+        // bic x30, x9, x0, ror #0
+        // eor x0, x0, x26, ror #60
+        // bic x26, x21, x17, ror #44
+        // eor x9, x9, x27, ror #28
+        // eor x17, x17, x28, ror #36
+        // eor x21, x21, x30, ror #16
+        // eor x13, x13, x26, ror #52
+        // bic x26, x1, x24, ror #51
+        // bic x27, x5, x1, ror #13
+        // bic x28, x25, x14, ror #13
+        // bic x30, x24, x25, ror #32
+        // eor x25, x25, x26, ror #45
+        // bic x26, x14, x5, ror #19
+        // eor x24, x24, x27, ror #0
+        // eor x5, x5, x28, ror #32
+        // eor x14, x14, x30, ror #19
+        // eor x1, x1, x26, ror #32
+        // bic x26, x19, x10, ror #24
+        // bic x27, x23, x19, ror #31
+        // bic x28, x6, x2, ror #29
+        // bic x30, x10, x6, ror #28
+        // eor x6, x6, x26, ror #12
+        // bic x26, x2, x23, ror #16
+        // eor x10, x10, x27, ror #9
+        // eor x23, x23, x28, ror #19
+        // eor x2, x2, x30, ror #7
+        // eor x19, x19, x26, ror #17
+        // bic x26, x7, x3, ror #16
+        // bic x27, x11, x7, ror #9
+        // bic x28, x22, x15, ror #8
+        // bic x30, x3, x22, ror #23
+        // eor x22, x22, x26, ror #25
+        // bic x26, x15, x11, ror #8
+        // eor x3, x3, x27, ror #39
+        // eor x11, x11, x28, ror #48
+        // eor x15, x15, x30, ror #33
+        // eor x7, x7, x26, ror #47
+        // bic x26, x20, x16, ror #21
+        // bic x27, x4, x20, ror #11
+        // bic x28, x12, x8, ror #48
+        // bic x30, x16, x12, ror #59
+        // eor x12, x12, x26, ror #48
+        // bic x26, x8, x4, ror #53
+        // eor x16, x16, x27, ror #32
+        // eor x4, x4, x28, ror #27
+        // eor x8, x8, x30, ror #21
+        // eor x20, x20, x26, ror #0
+        // movz x26, #32898, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x25, ror #15
+        // dup v24.2d, x21
+        // dup v25.2d, x14
+        // eor x27, x9, x24, ror #47
+        // eor x28, x13, x1, ror #0
+        // eor x30, x17, x5, ror #19
+        // eor x21, x21, x14, ror #44
+        // eor x26, x26, x6, ror #19
+        // eor x27, x27, x10, ror #55
+        // eor x28, x28, x19, ror #35
+        // eor x30, x30, x23, ror #36
+        // eor x21, x21, x2, ror #0
+        // eor x26, x26, x22, ror #23
+        // eor x27, x27, x3, ror #0
+        // eor x28, x28, x7, ror #52
+        // eor x30, x30, x11, ror #11
+        // eor x21, x21, x15, ror #47
+        // eor x26, x26, x12, ror #23
+        // eor x27, x27, x16, ror #28
+        // eor x28, x28, x20, ror #11
+        // eor x30, x30, x4, ror #32
+        // eor x21, x21, x8, ror #23
+        // eor x14, x26, x28, ror #59
+        // eor x9, x9, x14, ror #0
+        // eor x24, x24, x14, ror #17
+        // eor x10, x10, x14, ror #9
+        // eor x3, x3, x14, ror #0
+        // eor x16, x16, x14, ror #36
+        // eor x14, x27, x30, ror #27
+        // eor x28, x28, x21, ror #51
+        // eor x30, x30, x26, ror #35
+        // eor x21, x21, x27, ror #15
+        // eor x13, x13, x14, ror #4
+        // eor x1, x1, x14, ror #4
+        // eor x19, x19, x14, ror #33
+        // eor x7, x7, x14, ror #16
+        // eor x20, x20, x14, ror #57
+        // eor x0, x0, x21, ror #48
+        // eor x25, x25, x21, ror #33
+        // eor x6, x6, x21, ror #29
+        // eor x22, x22, x21, ror #25
+        // eor x12, x12, x21, ror #25
+        // umov x14, v24.d[0]
+        // umov x21, v25.d[0]
+        // eor x17, x17, x28, ror #32
+        // eor x5, x5, x28, ror #13
+        // eor x23, x23, x28, ror #60
+        // eor x11, x11, x28, ror #21
+        // eor x4, x4, x28, ror #0
+        // eor x14, x14, x30, ror #44
+        // eor x21, x21, x30, ror #0
+        // eor x2, x2, x30, ror #44
+        // eor x15, x15, x30, ror #61
+        // eor x8, x8, x30, ror #21
+        // bic x26, x19, x24, ror #15
+        // bic x27, x11, x19, ror #34
+        // bic x28, x0, x8, ror #57
+        // bic x30, x24, x0, ror #61
+        // eor x0, x0, x26, ror #52
+        // bic x26, x8, x11, ror #25
+        // eor x24, x24, x27, ror #15
+        // eor x11, x11, x28, ror #46
+        // eor x8, x8, x30, ror #10
+        // eor x19, x19, x26, ror #5
+        // bic x26, x6, x21, ror #56
+        // bic x27, x3, x6, ror #61
+        // bic x28, x17, x20, ror #10
+        // bic x30, x21, x17, ror #56
+        // eor x17, x17, x26, ror #16
+        // bic x26, x20, x3, ror #9
+        // eor x21, x21, x27, ror #11
+        // eor x3, x3, x28, ror #45
+        // eor x20, x20, x30, ror #62
+        // eor x6, x6, x26, ror #58
+        // bic x26, x23, x1, ror #15
+        // bic x27, x15, x23, ror #16
+        // bic x28, x9, x12, ror #6
+        // bic x30, x1, x9, ror #9
+        // eor x9, x9, x26, ror #40
+        // bic x26, x12, x15, ror #18
+        // eor x1, x1, x27, ror #33
+        // eor x15, x15, x28, ror #40
+        // eor x12, x12, x30, ror #49
+        // eor x23, x23, x26, ror #30
+        // bic x26, x10, x25, ror #62
+        // bic x27, x7, x10, ror #12
+        // bic x28, x14, x4, ror #47
+        // bic x30, x25, x14, ror #42
+        // eor x14, x14, x26, ror #24
+        // bic x26, x4, x7, ror #29
+        // eor x25, x25, x27, ror #54
+        // eor x7, x7, x28, ror #52
+        // eor x4, x4, x30, ror #39
+        // eor x10, x10, x26, ror #23
+        // bic x26, x2, x5, ror #47
+        // bic x27, x22, x2, ror #27
+        // bic x28, x13, x16, ror #28
+        // bic x30, x5, x13, ror #6
+        // eor x13, x13, x26, ror #11
+        // bic x26, x16, x22, ror #20
+        // eor x5, x5, x27, ror #54
+        // eor x22, x22, x28, ror #16
+        // eor x16, x16, x30, ror #30
+        // eor x2, x2, x26, ror #17
+        // movz x26, #32906, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x17, ror #0
+        // dup v24.2d, x8
+        // dup v25.2d, x20
+        // eor x27, x24, x21, ror #5
+        // eor x28, x19, x6, ror #28
+        // eor x30, x11, x3, ror #1
+        // eor x8, x8, x20, ror #17
+        // eor x26, x26, x9, ror #63
+        // eor x27, x27, x1, ror #51
+        // eor x28, x28, x23, ror #51
+        // eor x30, x30, x15, ror #5
+        // eor x8, x8, x12, ror #12
+        // eor x26, x26, x14, ror #21
+        // eor x27, x27, x25, ror #40
+        // eor x28, x28, x10, ror #57
+        // eor x30, x30, x7, ror #15
+        // eor x8, x8, x4, ror #11
+        // eor x26, x26, x13, ror #62
+        // eor x27, x27, x5, ror #53
+        // eor x28, x28, x2, ror #21
+        // eor x30, x30, x22, ror #28
+        // eor x8, x8, x16, ror #33
+        // eor x20, x26, x28, ror #51
+        // eor x24, x24, x20, ror #61
+        // eor x21, x21, x20, ror #56
+        // eor x1, x1, x20, ror #10
+        // eor x25, x25, x20, ror #21
+        // eor x5, x5, x20, ror #8
+        // eor x20, x27, x30, ror #14
+        // eor x28, x28, x8, ror #4
+        // eor x30, x30, x26, ror #45
+        // eor x8, x8, x27, ror #9
+        // eor x19, x19, x20, ror #15
+        // eor x6, x6, x20, ror #51
+        // eor x23, x23, x20, ror #28
+        // eor x10, x10, x20, ror #22
+        // eor x2, x2, x20, ror #58
+        // eor x0, x0, x8, ror #57
+        // eor x17, x17, x8, ror #57
+        // eor x9, x9, x8, ror #58
+        // eor x14, x14, x8, ror #36
+        // eor x13, x13, x8, ror #59
+        // umov x8, v24.d[0]
+        // umov x20, v25.d[0]
+        // eor x11, x11, x28, ror #34
+        // eor x3, x3, x28, ror #33
+        // eor x15, x15, x28, ror #29
+        // eor x7, x7, x28, ror #19
+        // eor x22, x22, x28, ror #6
+        // eor x8, x8, x30, ror #25
+        // eor x20, x20, x30, ror #8
+        // eor x12, x12, x30, ror #13
+        // eor x4, x4, x30, ror #14
+        // eor x16, x16, x30, ror #56
+        // bic x26, x23, x21, ror #32
+        // bic x27, x7, x23, ror #48
+        // bic x28, x0, x16, ror #12
+        // bic x30, x21, x0, ror #36
+        // eor x0, x0, x26, ror #60
+        // bic x26, x16, x7, ror #0
+        // eor x21, x21, x27, ror #48
+        // eor x7, x7, x28, ror #52
+        // eor x16, x16, x30, ror #16
+        // eor x23, x23, x26, ror #16
+        // bic x26, x9, x20, ror #58
+        // bic x27, x25, x9, ror #62
+        // bic x28, x11, x2, ror #22
+        // bic x30, x20, x11, ror #0
+        // eor x11, x11, x26, ror #6
+        // bic x26, x2, x25, ror #50
+        // eor x20, x20, x27, ror #8
+        // eor x25, x25, x28, ror #56
+        // eor x2, x2, x30, ror #42
+        // eor x9, x9, x26, ror #16
+        // bic x26, x15, x6, ror #12
+        // bic x27, x4, x15, ror #2
+        // bic x28, x24, x13, ror #42
+        // bic x30, x6, x24, ror #56
+        // eor x24, x24, x26, ror #60
+        // bic x26, x13, x4, ror #16
+        // eor x6, x6, x27, ror #50
+        // eor x4, x4, x28, ror #6
+        // eor x13, x13, x30, ror #30
+        // eor x15, x15, x26, ror #46
+        // bic x26, x1, x17, ror #48
+        // bic x27, x10, x1, ror #14
+        // bic x28, x8, x22, ror #24
+        // bic x30, x17, x8, ror #2
+        // eor x8, x8, x26, ror #14
+        // bic x26, x22, x10, ror #40
+        // eor x17, x17, x27, ror #2
+        // eor x10, x10, x28, ror #0
+        // eor x22, x22, x30, ror #38
+        // eor x1, x1, x26, ror #10
+        // bic x26, x12, x3, ror #62
+        // bic x27, x14, x12, ror #50
+        // bic x28, x19, x5, ror #0
+        // bic x30, x3, x19, ror #26
+        // eor x19, x19, x26, ror #40
+        // bic x26, x5, x14, ror #54
+        // eor x3, x3, x27, ror #16
+        // eor x14, x14, x28, ror #10
+        // eor x5, x5, x30, ror #38
+        // eor x12, x12, x26, ror #24
+        // movz x26, #32768, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x11, ror #54
+        // dup v24.2d, x16
+        // dup v25.2d, x2
+        // eor x27, x21, x20, ror #26
+        // eor x28, x23, x9, ror #0
+        // eor x30, x7, x25, ror #50
+        // eor x16, x16, x2, ror #0
+        // eor x26, x26, x24, ror #2
+        // eor x27, x27, x6, ror #46
+        // eor x28, x28, x15, ror #2
+        // eor x30, x30, x4, ror #48
+        // eor x16, x16, x13, ror #32
+        // eor x26, x26, x8, ror #30
+        // eor x27, x27, x17, ror #0
+        // eor x28, x28, x1, ror #48
+        // eor x30, x30, x10, ror #18
+        // eor x16, x16, x22, ror #42
+        // eor x26, x26, x19, ror #54
+        // eor x27, x27, x3, ror #0
+        // eor x28, x28, x12, ror #34
+        // eor x30, x30, x14, ror #32
+        // eor x16, x16, x5, ror #42
+        // eor x2, x26, x28, ror #59
+        // eor x21, x21, x2, ror #36
+        // eor x20, x20, x2, ror #10
+        // eor x6, x6, x2, ror #54
+        // eor x17, x17, x2, ror #36
+        // eor x3, x3, x2, ror #36
+        // eor x2, x27, x30, ror #47
+        // eor x28, x28, x16, ror #15
+        // eor x30, x30, x26, ror #51
+        // eor x16, x16, x27, ror #15
+        // eor x23, x23, x2, ror #32
+        // eor x9, x9, x2, ror #32
+        // eor x15, x15, x2, ror #30
+        // eor x1, x1, x2, ror #48
+        // eor x12, x12, x2, ror #62
+        // eor x0, x0, x16, ror #12
+        // eor x11, x11, x16, ror #22
+        // eor x24, x24, x16, ror #10
+        // eor x8, x8, x16, ror #46
+        // eor x19, x19, x16, ror #22
+        // umov x2, v24.d[0]
+        // umov x16, v25.d[0]
+        // eor x7, x7, x28, ror #48
+        // eor x25, x25, x28, ror #62
+        // eor x4, x4, x28, ror #0
+        // eor x10, x10, x28, ror #30
+        // eor x14, x14, x28, ror #16
+        // eor x2, x2, x30, ror #0
+        // eor x16, x16, x30, ror #0
+        // eor x13, x13, x30, ror #32
+        // eor x22, x22, x30, ror #22
+        // eor x5, x5, x30, ror #22
+        // bic x26, x15, x20, ror #55
+        // bic x27, x10, x15, ror #10
+        // bic x28, x0, x5, ror #40
+        // bic x30, x20, x0, ror #54
+        // eor x0, x0, x26, ror #19
+        // bic x26, x5, x10, ror #33
+        // eor x20, x20, x27, ror #63
+        // eor x10, x10, x28, ror #55
+        // eor x5, x5, x30, ror #34
+        // eor x15, x15, x26, ror #21
+        // bic x26, x24, x16, ror #57
+        // bic x27, x17, x24, ror #16
+        // bic x28, x7, x12, ror #49
+        // bic x30, x16, x7, ror #56
+        // eor x7, x7, x26, ror #15
+        // bic x26, x12, x17, ror #14
+        // eor x16, x16, x27, ror #55
+        // eor x17, x17, x28, ror #1
+        // eor x12, x12, x30, ror #23
+        // eor x24, x24, x26, ror #34
+        // bic x26, x4, x9, ror #19
+        // bic x27, x22, x4, ror #53
+        // bic x28, x21, x19, ror #9
+        // bic x30, x9, x21, ror #37
+        // eor x21, x21, x26, ror #8
+        // bic x26, x19, x22, ror #10
+        // eor x9, x9, x27, ror #56
+        // eor x22, x22, x28, ror #45
+        // eor x19, x19, x30, ror #18
+        // eor x4, x4, x26, ror #1
+        // bic x26, x6, x11, ror #18
+        // bic x27, x1, x6, ror #35
+        // bic x28, x2, x14, ror #3
+        // bic x30, x11, x2, ror #31
+        // eor x2, x2, x26, ror #15
+        // bic x26, x14, x1, ror #41
+        // eor x11, x11, x27, ror #11
+        // eor x1, x1, x28, ror #20
+        // eor x14, x14, x30, ror #30
+        // eor x6, x6, x26, ror #52
+        // bic x26, x13, x25, ror #2
+        // bic x27, x8, x13, ror #16
+        // bic x28, x23, x3, ror #28
+        // bic x30, x25, x23, ror #55
+        // eor x23, x23, x26, ror #7
+        // bic x26, x3, x8, ror #27
+        // eor x25, x25, x27, ror #46
+        // eor x8, x8, x28, ror #9
+        // eor x3, x3, x30, ror #45
+        // eor x13, x13, x26, ror #21
+        // movz x26, #32907, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x7, ror #48
+        // dup v24.2d, x5
+        // dup v25.2d, x12
+        // eor x27, x20, x16, ror #46
+        // eor x28, x15, x24, ror #44
+        // eor x30, x10, x17, ror #38
+        // eor x5, x5, x12, ror #57
+        // eor x26, x26, x21, ror #27
+        // eor x27, x27, x9, ror #44
+        // eor x28, x28, x4, ror #16
+        // eor x30, x30, x22, ror #37
+        // eor x5, x5, x19, ror #60
+        // eor x26, x26, x2, ror #49
+        // eor x27, x27, x11, ror #8
+        // eor x28, x28, x6, ror #45
+        // eor x30, x30, x1, ror #20
+        // eor x5, x5, x14, ror #12
+        // eor x26, x26, x23, ror #62
+        // eor x27, x27, x25, ror #61
+        // eor x28, x28, x13, ror #50
+        // eor x30, x30, x8, ror #44
+        // eor x5, x5, x3, ror #50
+        // eor x12, x26, x28, ror #18
+        // eor x20, x20, x12, ror #54
+        // eor x16, x16, x12, ror #8
+        // eor x9, x9, x12, ror #10
+        // eor x11, x11, x12, ror #46
+        // eor x25, x25, x12, ror #57
+        // eor x12, x27, x30, ror #62
+        // eor x28, x28, x5, ror #20
+        // eor x30, x30, x26, ror #54
+        // eor x5, x5, x27, ror #33
+        // eor x15, x15, x12, ror #55
+        // eor x24, x24, x12, ror #11
+        // eor x4, x4, x12, ror #39
+        // eor x6, x6, x12, ror #10
+        // eor x13, x13, x12, ror #5
+        // eor x0, x0, x5, ror #40
+        // eor x7, x7, x5, ror #56
+        // eor x21, x21, x5, ror #13
+        // eor x2, x2, x5, ror #55
+        // eor x23, x23, x5, ror #42
+        // umov x5, v24.d[0]
+        // umov x12, v25.d[0]
+        // eor x10, x10, x28, ror #10
+        // eor x17, x17, x28, ror #36
+        // eor x22, x22, x28, ror #37
+        // eor x1, x1, x28, ror #54
+        // eor x8, x8, x28, ror #30
+        // eor x5, x5, x30, ror #33
+        // eor x12, x12, x30, ror #40
+        // eor x19, x19, x30, ror #37
+        // eor x14, x14, x30, ror #21
+        // eor x3, x3, x30, ror #47
+        // bic x26, x4, x16, ror #20
+        // bic x27, x1, x4, ror #48
+        // bic x28, x0, x3, ror #12
+        // bic x30, x16, x0, ror #52
+        // eor x0, x0, x26, ror #56
+        // bic x26, x3, x1, ror #60
+        // eor x16, x16, x27, ror #60
+        // eor x1, x1, x28, ror #56
+        // eor x3, x3, x30, ror #0
+        // eor x4, x4, x26, ror #20
+        // bic x26, x21, x12, ror #53
+        // bic x27, x11, x21, ror #51
+        // bic x28, x10, x13, ror #27
+        // bic x30, x12, x10, ror #32
+        // eor x10, x10, x26, ror #43
+        // bic x26, x13, x11, ror #29
+        // eor x12, x12, x27, ror #24
+        // eor x11, x11, x28, ror #8
+        // eor x13, x13, x30, ror #5
+        // eor x21, x21, x26, ror #48
+        // bic x26, x22, x24, ror #36
+        // bic x27, x14, x22, ror #41
+        // bic x28, x20, x23, ror #35
+        // bic x30, x24, x20, ror #16
+        // eor x20, x20, x26, ror #12
+        // bic x26, x23, x14, ror #0
+        // eor x24, x24, x27, ror #51
+        // eor x14, x14, x28, ror #29
+        // eor x23, x23, x30, ror #13
+        // eor x22, x22, x26, ror #23
+        // bic x26, x9, x7, ror #32
+        // bic x27, x6, x9, ror #59
+        // bic x28, x5, x8, ror #48
+        // bic x30, x7, x5, ror #1
+        // eor x5, x5, x26, ror #31
+        // bic x26, x8, x6, ror #52
+        // eor x7, x7, x27, ror #37
+        // eor x6, x6, x28, ror #28
+        // eor x8, x8, x30, ror #15
+        // eor x9, x9, x26, ror #17
+        // bic x26, x19, x17, ror #59
+        // bic x27, x2, x19, ror #53
+        // bic x28, x15, x25, ror #48
+        // bic x30, x17, x15, ror #29
+        // eor x15, x15, x26, ror #40
+        // bic x26, x25, x2, ror #3
+        // eor x17, x17, x27, ror #16
+        // eor x2, x2, x28, ror #13
+        // eor x25, x25, x30, ror #51
+        // eor x19, x19, x26, ror #8
+        // movz x26, #1, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x10, ror #45
+        // dup v24.2d, x3
+        // dup v25.2d, x13
+        // eor x27, x16, x12, ror #1
+        // eor x28, x4, x21, ror #32
+        // eor x30, x1, x11, ror #29
+        // eor x3, x3, x13, ror #60
+        // eor x26, x26, x20, ror #9
+        // eor x27, x27, x24, ror #45
+        // eor x28, x28, x22, ror #29
+        // eor x30, x30, x14, ror #36
+        // eor x3, x3, x23, ror #32
+        // eor x26, x26, x5, ror #13
+        // eor x27, x27, x7, ror #0
+        // eor x28, x28, x9, ror #52
+        // eor x30, x30, x6, ror #41
+        // eor x3, x3, x8, ror #49
+        // eor x26, x26, x15, ror #21
+        // eor x27, x27, x17, ror #44
+        // eor x28, x28, x19, ror #5
+        // eor x30, x30, x2, ror #0
+        // eor x3, x3, x25, ror #57
+        // eor x13, x26, x28, ror #55
+        // eor x16, x16, x13, ror #52
+        // eor x12, x12, x13, ror #51
+        // eor x24, x24, x13, ror #7
+        // eor x7, x7, x13, ror #52
+        // eor x17, x17, x13, ror #8
+        // eor x13, x27, x30, ror #59
+        // eor x28, x28, x3, ror #19
+        // eor x30, x30, x26, ror #55
+        // eor x3, x3, x27, ror #63
+        // eor x4, x4, x13, ror #20
+        // eor x21, x21, x13, ror #52
+        // eor x22, x22, x13, ror #55
+        // eor x9, x9, x13, ror #32
+        // eor x19, x19, x13, ror #15
+        // eor x0, x0, x3, ror #12
+        // eor x10, x10, x3, ror #31
+        // eor x20, x20, x3, ror #3
+        // eor x5, x5, x3, ror #63
+        // eor x15, x15, x3, ror #55
+        // umov x3, v24.d[0]
+        // umov x13, v25.d[0]
+        // eor x1, x1, x28, ror #48
+        // eor x11, x11, x28, ror #19
+        // eor x14, x14, x28, ror #12
+        // eor x6, x6, x28, ror #7
+        // eor x2, x2, x28, ror #48
+        // eor x3, x3, x30, ror #60
+        // eor x13, x13, x30, ror #0
+        // eor x23, x23, x30, ror #28
+        // eor x8, x8, x30, ror #11
+        // eor x25, x25, x30, ror #3
+        // bic x26, x22, x12, ror #55
+        // bic x27, x6, x22, ror #14
+        // bic x28, x0, x25, ror #55
+        // bic x30, x12, x0, ror #31
+        // eor x0, x0, x26, ror #42
+        // bic x26, x25, x6, ror #37
+        // eor x12, x12, x27, ror #59
+        // eor x6, x6, x28, ror #36
+        // eor x25, x25, x30, ror #42
+        // eor x22, x22, x26, ror #13
+        // bic x26, x20, x13, ror #46
+        // bic x27, x7, x20, ror #39
+        // bic x28, x1, x19, ror #20
+        // bic x30, x13, x1, ror #56
+        // eor x1, x1, x26, ror #26
+        // bic x26, x19, x7, ror #31
+        // eor x13, x13, x27, ror #43
+        // eor x7, x7, x28, ror #13
+        // eor x19, x19, x30, ror #52
+        // eor x20, x20, x26, ror #58
+        // bic x26, x14, x21, ror #63
+        // bic x27, x8, x14, ror #30
+        // bic x28, x16, x15, ror #56
+        // bic x30, x21, x16, ror #57
+        // eor x16, x16, x26, ror #8
+        // bic x26, x15, x8, ror #50
+        // eor x21, x21, x27, ror #35
+        // eor x8, x8, x28, ror #22
+        // eor x15, x15, x30, ror #15
+        // eor x14, x14, x26, ror #48
+        // bic x26, x24, x10, ror #26
+        // bic x27, x9, x24, ror #18
+        // bic x28, x3, x2, ror #31
+        // bic x30, x10, x3, ror #40
+        // eor x3, x3, x26, ror #62
+        // bic x26, x2, x9, ror #13
+        // eor x10, x10, x27, ror #20
+        // eor x9, x9, x28, ror #20
+        // eor x2, x2, x30, ror #57
+        // eor x24, x24, x26, ror #33
+        // bic x26, x23, x11, ror #41
+        // bic x27, x5, x23, ror #33
+        // bic x28, x4, x17, ror #60
+        // bic x30, x11, x4, ror #12
+        // eor x4, x4, x26, ror #11
+        // bic x26, x17, x5, ror #46
+        // eor x11, x11, x27, ror #54
+        // eor x5, x5, x28, ror #22
+        // eor x17, x17, x30, ror #56
+        // eor x23, x23, x26, ror #49
+        // movz x26, #32897, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x1, ror #44
+        // dup v24.2d, x25
+        // dup v25.2d, x19
+        // eor x27, x12, x13, ror #19
+        // eor x28, x22, x20, ror #28
+        // eor x30, x6, x7, ror #3
+        // eor x25, x25, x19, ror #9
+        // eor x26, x26, x16, ror #11
+        // eor x27, x27, x21, ror #49
+        // eor x28, x28, x14, ror #41
+        // eor x30, x30, x8, ror #25
+        // eor x25, x25, x15, ror #12
+        // eor x26, x26, x3, ror #49
+        // eor x27, x27, x10, ror #40
+        // eor x28, x28, x24, ror #5
+        // eor x30, x30, x9, ror #1
+        // eor x25, x25, x2, ror #25
+        // eor x26, x26, x4, ror #58
+        // eor x27, x27, x11, ror #13
+        // eor x28, x28, x23, ror #27
+        // eor x30, x30, x5, ror #8
+        // eor x25, x25, x17, ror #63
+        // eor x19, x26, x28, ror #41
+        // eor x12, x12, x19, ror #31
+        // eor x13, x13, x19, ror #12
+        // eor x21, x21, x19, ror #46
+        // eor x10, x10, x19, ror #55
+        // eor x11, x11, x19, ror #18
+        // eor x19, x27, x30, ror #58
+        // eor x28, x28, x25, ror #12
+        // eor x30, x30, x26, ror #35
+        // eor x25, x25, x27, ror #41
+        // eor x22, x22, x19, ror #55
+        // eor x20, x20, x19, ror #27
+        // eor x14, x14, x19, ror #14
+        // eor x24, x24, x19, ror #50
+        // eor x23, x23, x19, ror #28
+        // eor x0, x0, x25, ror #55
+        // eor x1, x1, x25, ror #11
+        // eor x16, x16, x25, ror #44
+        // eor x3, x3, x25, ror #6
+        // eor x4, x4, x25, ror #61
+        // umov x19, v24.d[0]
+        // umov x25, v25.d[0]
+        // eor x6, x6, x28, ror #14
+        // eor x7, x7, x28, ror #11
+        // eor x8, x8, x28, ror #53
+        // eor x9, x9, x28, ror #13
+        // eor x5, x5, x28, ror #6
+        // eor x19, x19, x30, ror #37
+        // eor x25, x25, x30, ror #28
+        // eor x15, x15, x30, ror #25
+        // eor x2, x2, x30, ror #12
+        // eor x17, x17, x30, ror #38
+        // bic x26, x14, x13, ror #32
+        // bic x27, x9, x14, ror #32
+        // bic x28, x0, x17, ror #40
+        // bic x30, x13, x0, ror #56
+        // eor x0, x0, x26, ror #40
+        // bic x26, x17, x9, ror #32
+        // eor x13, x13, x27, ror #0
+        // eor x9, x9, x28, ror #56
+        // eor x17, x17, x30, ror #32
+        // eor x14, x14, x26, ror #0
+        // bic x26, x16, x25, ror #36
+        // bic x27, x10, x16, ror #44
+        // bic x28, x6, x23, ror #8
+        // bic x30, x25, x6, ror #20
+        // eor x6, x6, x26, ror #8
+        // bic x26, x23, x10, ror #20
+        // eor x25, x25, x27, ror #48
+        // eor x10, x10, x28, ror #36
+        // eor x23, x23, x30, ror #36
+        // eor x16, x16, x26, ror #0
+        // bic x26, x8, x20, ror #36
+        // bic x27, x2, x8, ror #20
+        // bic x28, x12, x4, ror #8
+        // bic x30, x20, x12, ror #32
+        // eor x12, x12, x26, ror #60
+        // bic x26, x4, x2, ror #32
+        // eor x20, x20, x27, ror #8
+        // eor x2, x2, x28, ror #24
+        // eor x4, x4, x30, ror #24
+        // eor x8, x8, x26, ror #12
+        // bic x26, x21, x1, ror #0
+        // bic x27, x24, x21, ror #40
+        // bic x28, x19, x5, ror #16
+        // bic x30, x1, x19, ror #20
+        // eor x19, x19, x26, ror #44
+        // bic x26, x5, x24, ror #52
+        // eor x1, x1, x27, ror #24
+        // eor x24, x24, x28, ror #60
+        // eor x5, x5, x30, ror #28
+        // eor x21, x21, x26, ror #36
+        // bic x26, x15, x7, ror #12
+        // bic x27, x3, x15, ror #20
+        // bic x28, x22, x11, ror #0
+        // bic x30, x7, x22, ror #4
+        // eor x22, x22, x26, ror #48
+        // bic x26, x11, x3, ror #28
+        // eor x7, x7, x27, ror #32
+        // eor x3, x3, x28, ror #36
+        // eor x11, x11, x30, ror #60
+        // eor x15, x15, x26, ror #16
+        // movz x26, #32777, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x6, ror #0
+        // dup v24.2d, x17
+        // dup v25.2d, x23
+        // eor x27, x13, x25, ror #36
+        // eor x28, x14, x16, ror #32
+        // eor x30, x9, x10, ror #20
+        // eor x17, x17, x23, ror #32
+        // eor x26, x26, x12, ror #32
+        // eor x27, x27, x20, ror #56
+        // eor x28, x28, x8, ror #52
+        // eor x30, x30, x2, ror #0
+        // eor x17, x17, x4, ror #0
+        // eor x26, x26, x19, ror #28
+        // eor x27, x27, x1, ror #0
+        // eor x28, x28, x21, ror #32
+        // eor x30, x30, x24, ror #24
+        // eor x17, x17, x5, ror #4
+        // eor x26, x26, x22, ror #44
+        // eor x27, x27, x7, ror #32
+        // eor x28, x28, x15, ror #52
+        // eor x30, x30, x3, ror #0
+        // eor x17, x17, x11, ror #4
+        // eor x23, x26, x28, ror #39
+        // eor x13, x13, x23, ror #56
+        // eor x25, x25, x23, ror #20
+        // eor x20, x20, x23, ror #0
+        // eor x1, x1, x23, ror #56
+        // eor x7, x7, x23, ror #24
+        // eor x23, x27, x30, ror #63
+        // eor x28, x28, x17, ror #63
+        // eor x30, x30, x26, ror #55
+        // eor x17, x17, x27, ror #31
+        // eor x14, x14, x23, ror #32
+        // eor x16, x16, x23, ror #0
+        // eor x8, x8, x23, ror #44
+        // eor x21, x21, x23, ror #0
+        // eor x15, x15, x23, ror #44
+        // eor x0, x0, x17, ror #40
+        // eor x6, x6, x17, ror #40
+        // eor x12, x12, x17, ror #8
+        // eor x19, x19, x17, ror #12
+        // eor x22, x22, x17, ror #60
+        // umov x17, v24.d[0]
+        // umov x23, v25.d[0]
+        // eor x9, x9, x28, ror #32
+        // eor x10, x10, x28, ror #12
+        // eor x2, x2, x28, ror #32
+        // eor x24, x24, x28, ror #8
+        // eor x3, x3, x28, ror #32
+        // eor x17, x17, x30, ror #32
+        // eor x23, x23, x30, ror #0
+        // eor x4, x4, x30, ror #32
+        // eor x5, x5, x30, ror #28
+        // eor x11, x11, x30, ror #28
+        // bic x26, x8, x25, ror #15
+        // bic x27, x24, x8, ror #38
+        // bic x28, x0, x11, ror #30
+        // bic x30, x25, x0, ror #0
+        // eor x0, x0, x26, ror #49
+        // bic x26, x11, x24, ror #45
+        // eor x25, x25, x27, ror #11
+        // eor x24, x24, x28, ror #53
+        // eor x11, x11, x30, ror #34
+        // eor x8, x8, x26, ror #45
+        // bic x26, x12, x23, ror #23
+        // bic x27, x1, x12, ror #2
+        // bic x28, x9, x15, ror #51
+        // bic x30, x23, x9, ror #56
+        // eor x9, x9, x26, ror #49
+        // bic x26, x15, x1, ror #60
+        // eor x23, x23, x27, ror #39
+        // eor x1, x1, x28, ror #17
+        // eor x15, x15, x30, ror #21
+        // eor x12, x12, x26, ror #2
+        // bic x26, x2, x16, ror #19
+        // bic x27, x5, x2, ror #11
+        // bic x28, x13, x22, ror #19
+        // bic x30, x16, x13, ror #5
+        // eor x13, x13, x26, ror #40
+        // bic x26, x22, x5, ror #10
+        // eor x16, x16, x27, ror #34
+        // eor x5, x5, x28, ror #35
+        // eor x22, x22, x30, ror #40
+        // eor x2, x2, x26, ror #43
+        // bic x26, x20, x6, ror #38
+        // bic x27, x21, x20, ror #61
+        // bic x28, x17, x3, ror #3
+        // bic x30, x6, x17, ror #49
+        // eor x17, x17, x26, ror #41
+        // bic x26, x3, x21, ror #41
+        // eor x6, x6, x27, ror #29
+        // eor x21, x21, x28, ror #20
+        // eor x3, x3, x30, ror #12
+        // eor x20, x20, x26, ror #26
+        // bic x26, x4, x10, ror #36
+        // bic x27, x19, x4, ror #14
+        // bic x28, x14, x7, ror #60
+        // bic x30, x10, x14, ror #5
+        // eor x14, x14, x26, ror #23
+        // bic x26, x7, x19, ror #13
+        // eor x10, x10, x27, ror #14
+        // eor x19, x19, x28, ror #55
+        // eor x7, x7, x30, ror #63
+        // eor x4, x4, x26, ror #37
+        // movz x26, #138, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x9, ror #44
+        // dup v24.2d, x11
+        // dup v25.2d, x15
+        // eor x27, x25, x23, ror #52
+        // eor x28, x8, x12, ror #44
+        // eor x30, x24, x1, ror #16
+        // eor x11, x11, x15, ror #1
+        // eor x26, x26, x13, ror #7
+        // eor x27, x27, x16, ror #2
+        // eor x28, x28, x2, ror #62
+        // eor x30, x30, x5, ror #25
+        // eor x11, x11, x22, ror #60
+        // eor x26, x26, x17, ror #13
+        // eor x27, x27, x6, ror #28
+        // eor x28, x28, x20, ror #5
+        // eor x30, x30, x21, ror #46
+        // eor x11, x11, x3, ror #50
+        // eor x26, x26, x14, ror #42
+        // eor x27, x27, x10, ror #37
+        // eor x28, x28, x4, ror #16
+        // eor x30, x30, x19, ror #40
+        // eor x11, x11, x7, ror #8
+        // eor x15, x26, x28, ror #48
+        // eor x25, x25, x15, ror #0
+        // eor x23, x23, x15, ror #12
+        // eor x16, x16, x15, ror #62
+        // eor x6, x6, x15, ror #36
+        // eor x10, x10, x15, ror #27
+        // eor x15, x27, x30, ror #10
+        // eor x28, x28, x11, ror #44
+        // eor x30, x30, x26, ror #52
+        // eor x11, x11, x27, ror #33
+        // eor x8, x8, x15, ror #15
+        // eor x12, x12, x15, ror #35
+        // eor x2, x2, x15, ror #17
+        // eor x20, x20, x15, ror #10
+        // eor x4, x4, x15, ror #63
+        // eor x0, x0, x11, ror #30
+        // eor x9, x9, x11, ror #50
+        // eor x13, x13, x11, ror #23
+        // eor x17, x17, x11, ror #17
+        // eor x14, x14, x11, ror #52
+        // umov x11, v24.d[0]
+        // umov x15, v25.d[0]
+        // eor x24, x24, x28, ror #38
+        // eor x1, x1, x28, ror #22
+        // eor x5, x5, x28, ror #13
+        // eor x21, x21, x28, ror #56
+        // eor x19, x19, x28, ror #62
+        // eor x11, x11, x30, ror #45
+        // eor x15, x15, x30, ror #44
+        // eor x22, x22, x30, ror #49
+        // eor x3, x3, x30, ror #59
+        // eor x7, x7, x30, ror #37
+        // bic x26, x2, x23, ror #4
+        // bic x27, x21, x2, ror #32
+        // bic x28, x0, x7, ror #24
+        // bic x30, x23, x0, ror #56
+        // eor x0, x0, x26, ror #4
+        // bic x26, x7, x21, ror #12
+        // eor x23, x23, x27, ror #28
+        // eor x21, x21, x28, ror #28
+        // eor x7, x7, x30, ror #48
+        // eor x2, x2, x26, ror #20
+        // bic x26, x13, x15, ror #7
+        // bic x27, x6, x13, ror #21
+        // bic x28, x24, x4, ror #21
+        // bic x30, x15, x24, ror #36
+        // eor x24, x24, x26, ror #21
+        // bic x26, x4, x6, ror #43
+        // eor x15, x15, x27, ror #36
+        // eor x6, x6, x28, ror #0
+        // eor x4, x4, x30, ror #7
+        // eor x13, x13, x26, ror #0
+        // bic x26, x5, x12, ror #12
+        // bic x27, x3, x5, ror #3
+        // bic x28, x25, x14, ror #25
+        // bic x30, x12, x25, ror #40
+        // eor x25, x25, x26, ror #12
+        // bic x26, x14, x3, ror #48
+        // eor x12, x12, x27, ror #49
+        // eor x3, x3, x28, ror #55
+        // eor x14, x14, x30, ror #63
+        // eor x5, x5, x26, ror #13
+        // bic x26, x16, x9, ror #16
+        // bic x27, x20, x16, ror #17
+        // bic x28, x11, x19, ror #56
+        // bic x30, x9, x11, ror #59
+        // eor x11, x11, x26, ror #53
+        // bic x26, x19, x20, ror #44
+        // eor x9, x9, x27, ror #31
+        // eor x20, x20, x28, ror #28
+        // eor x19, x19, x30, ror #13
+        // eor x16, x16, x26, ror #3
+        // bic x26, x22, x1, ror #49
+        // bic x27, x17, x22, ror #15
+        // bic x28, x8, x10, ror #48
+        // bic x30, x1, x8, ror #15
+        // eor x8, x8, x26, ror #0
+        // bic x26, x10, x17, ror #1
+        // eor x1, x1, x27, ror #0
+        // eor x17, x17, x28, ror #15
+        // eor x10, x10, x30, ror #1
+        // eor x22, x22, x26, ror #48
+        // movz x26, #136, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x24, ror #47
+        // dup v24.2d, x7
+        // dup v25.2d, x4
+        // eor x27, x23, x15, ror #3
+        // eor x28, x2, x13, ror #0
+        // eor x30, x21, x6, ror #11
+        // eor x7, x7, x4, ror #44
+        // eor x26, x26, x25, ror #63
+        // eor x27, x27, x12, ror #15
+        // eor x28, x28, x5, ror #7
+        // eor x30, x30, x3, ror #36
+        // eor x7, x7, x14, ror #0
+        // eor x26, x26, x11, ror #3
+        // eor x27, x27, x9, ror #0
+        // eor x28, x28, x16, ror #52
+        // eor x30, x30, x20, ror #3
+        // eor x7, x7, x19, ror #35
+        // eor x26, x26, x8, ror #51
+        // eor x27, x27, x1, ror #28
+        // eor x28, x28, x22, ror #47
+        // eor x30, x30, x17, ror #0
+        // eor x7, x7, x10, ror #11
+        // eor x4, x26, x28, ror #3
+        // eor x23, x23, x4, ror #56
+        // eor x15, x15, x4, ror #53
+        // eor x12, x12, x4, ror #41
+        // eor x9, x9, x4, ror #56
+        // eor x1, x1, x4, ror #28
+        // eor x4, x27, x30, ror #27
+        // eor x28, x28, x7, ror #19
+        // eor x30, x30, x26, ror #27
+        // eor x7, x7, x27, ror #47
+        // eor x2, x2, x4, ror #4
+        // eor x13, x13, x4, ror #4
+        // eor x5, x5, x4, ror #61
+        // eor x16, x16, x4, ror #16
+        // eor x22, x22, x4, ror #21
+        // eor x0, x0, x7, ror #24
+        // eor x24, x24, x7, ror #41
+        // eor x25, x25, x7, ror #25
+        // eor x11, x11, x7, ror #21
+        // eor x8, x8, x7, ror #37
+        // umov x4, v24.d[0]
+        // umov x7, v25.d[0]
+        // eor x21, x21, x28, ror #32
+        // eor x6, x6, x28, ror #21
+        // eor x3, x3, x28, ror #60
+        // eor x20, x20, x28, ror #29
+        // eor x17, x17, x28, ror #32
+        // eor x4, x4, x30, ror #12
+        // eor x7, x7, x30, ror #32
+        // eor x14, x14, x30, ror #12
+        // eor x19, x19, x30, ror #41
+        // eor x10, x10, x30, ror #1
+        // bic x26, x5, x15, ror #63
+        // bic x27, x20, x5, ror #14
+        // bic x28, x0, x10, ror #21
+        // bic x30, x15, x0, ror #33
+        // eor x0, x0, x26, ror #32
+        // bic x26, x10, x20, ror #61
+        // eor x15, x15, x27, ror #51
+        // eor x20, x20, x28, ror #46
+        // eor x10, x10, x30, ror #10
+        // eor x5, x5, x26, ror #53
+        // bic x26, x25, x7, ror #52
+        // bic x27, x9, x25, ror #33
+        // bic x28, x21, x22, ror #46
+        // bic x30, x7, x21, ror #24
+        // eor x21, x21, x26, ror #52
+        // bic x26, x22, x9, ror #37
+        // eor x7, x7, x27, ror #43
+        // eor x9, x9, x28, ror #45
+        // eor x22, x22, x30, ror #58
+        // eor x25, x25, x26, ror #58
+        // bic x26, x3, x13, ror #15
+        // bic x27, x19, x3, ror #60
+        // bic x28, x23, x8, ror #26
+        // bic x30, x13, x23, ror #9
+        // eor x23, x23, x26, ror #40
+        // bic x26, x8, x19, ror #18
+        // eor x13, x13, x27, ror #53
+        // eor x19, x19, x28, ror #20
+        // eor x8, x8, x30, ror #29
+        // eor x3, x3, x26, ror #50
+        // bic x26, x12, x24, ror #62
+        // bic x27, x16, x12, ror #36
+        // bic x28, x4, x17, ror #47
+        // bic x30, x24, x4, ror #50
+        // eor x4, x4, x26, ror #16
+        // bic x26, x17, x16, ror #61
+        // eor x24, x24, x27, ror #30
+        // eor x16, x16, x28, ror #20
+        // eor x17, x17, x30, ror #31
+        // eor x12, x12, x26, ror #31
+        // bic x26, x14, x6, ror #7
+        // bic x27, x11, x14, ror #23
+        // bic x28, x2, x1, ror #28
+        // bic x30, x6, x2, ror #14
+        // eor x2, x2, x26, ror #43
+        // bic x26, x1, x11, ror #56
+        // eor x6, x6, x27, ror #34
+        // eor x11, x11, x28, ror #44
+        // eor x1, x1, x30, ror #22
+        // eor x14, x14, x26, ror #49
+        // movz x26, #32777, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x21, ror #8
+        // dup v24.2d, x10
+        // dup v25.2d, x22
+        // eor x27, x15, x7, ror #17
+        // eor x28, x5, x25, ror #28
+        // eor x30, x20, x9, ror #9
+        // eor x10, x10, x22, ror #33
+        // eor x26, x26, x23, ror #7
+        // eor x27, x27, x13, ror #31
+        // eor x28, x28, x3, ror #15
+        // eor x30, x30, x19, ror #33
+        // eor x10, x10, x8, ror #12
+        // eor x26, x26, x4, ror #61
+        // eor x27, x27, x24, ror #44
+        // eor x28, x28, x12, ror #45
+        // eor x30, x30, x16, ror #23
+        // eor x10, x10, x17, ror #23
+        // eor x26, x26, x2, ror #6
+        // eor x27, x27, x6, ror #25
+        // eor x28, x28, x14, ror #17
+        // eor x30, x30, x11, ror #8
+        // eor x10, x10, x1, ror #13
+        // eor x22, x26, x28, ror #31
+        // eor x15, x15, x22, ror #33
+        // eor x7, x7, x22, ror #16
+        // eor x13, x13, x22, ror #2
+        // eor x24, x24, x22, ror #53
+        // eor x6, x6, x22, ror #8
+        // eor x22, x27, x30, ror #50
+        // eor x28, x28, x10, ror #52
+        // eor x30, x30, x26, ror #45
+        // eor x10, x10, x27, ror #9
+        // eor x5, x5, x22, ror #63
+        // eor x25, x25, x22, ror #35
+        // eor x3, x3, x22, ror #48
+        // eor x12, x12, x22, ror #18
+        // eor x14, x14, x22, ror #46
+        // eor x0, x0, x10, ror #21
+        // eor x21, x21, x10, ror #13
+        // eor x23, x23, x10, ror #14
+        // eor x4, x4, x10, ror #24
+        // eor x2, x2, x10, ror #15
+        // umov x10, v24.d[0]
+        // umov x22, v25.d[0]
+        // eor x20, x20, x28, ror #14
+        // eor x9, x9, x28, ror #5
+        // eor x19, x19, x28, ror #45
+        // eor x16, x16, x28, ror #55
+        // eor x11, x11, x28, ror #6
+        // eor x10, x10, x30, ror #61
+        // eor x22, x22, x30, ror #28
+        // eor x8, x8, x30, ror #49
+        // eor x17, x17, x30, ror #38
+        // eor x1, x1, x30, ror #48
+        // bic x26, x3, x7, ror #0
+        // bic x27, x16, x3, ror #48
+        // bic x28, x0, x1, ror #20
+        // bic x30, x7, x0, ror #60
+        // eor x0, x0, x26, ror #4
+        // bic x26, x1, x16, ror #0
+        // eor x7, x7, x27, ror #16
+        // eor x16, x16, x28, ror #44
+        // eor x1, x1, x30, ror #48
+        // eor x3, x3, x26, ror #16
+        // bic x26, x23, x22, ror #30
+        // bic x27, x24, x23, ror #38
+        // bic x28, x20, x14, ror #62
+        // bic x30, x22, x20, ror #20
+        // eor x20, x20, x26, ror #14
+        // bic x26, x14, x24, ror #42
+        // eor x22, x22, x27, ror #60
+        // eor x24, x24, x28, ror #24
+        // eor x14, x14, x30, ror #46
+        // eor x23, x23, x26, ror #48
+        // bic x26, x19, x25, ror #28
+        // bic x27, x17, x19, ror #54
+        // bic x28, x15, x2, ror #22
+        // bic x30, x25, x15, ror #40
+        // eor x15, x15, x26, ror #60
+        // bic x26, x2, x17, ror #48
+        // eor x25, x25, x27, ror #46
+        // eor x17, x17, x28, ror #58
+        // eor x2, x2, x30, ror #2
+        // eor x19, x19, x26, ror #26
+        // bic x26, x13, x21, ror #48
+        // bic x27, x12, x13, ror #54
+        // bic x28, x10, x11, ror #40
+        // bic x30, x21, x10, ror #22
+        // eor x10, x10, x26, ror #58
+        // bic x26, x11, x12, ror #28
+        // eor x21, x21, x27, ror #26
+        // eor x12, x12, x28, ror #60
+        // eor x11, x11, x30, ror #2
+        // eor x13, x13, x26, ror #46
+        // bic x26, x8, x9, ror #42
+        // bic x27, x4, x8, ror #38
+        // bic x28, x5, x6, ror #20
+        // bic x30, x9, x5, ror #62
+        // eor x5, x5, x26, ror #24
+        // bic x26, x6, x4, ror #30
+        // eor x9, x9, x27, ror #48
+        // eor x4, x4, x28, ror #14
+        // eor x6, x6, x30, ror #46
+        // eor x8, x8, x26, ror #60
+        // movz x26, #10, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x20, ror #54
+        // dup v24.2d, x1
+        // dup v25.2d, x14
+        // eor x27, x7, x22, ror #30
+        // eor x28, x3, x23, ror #0
+        // eor x30, x16, x24, ror #10
+        // eor x1, x1, x14, ror #32
+        // eor x26, x26, x15, ror #30
+        // eor x27, x27, x25, ror #50
+        // eor x28, x28, x19, ror #22
+        // eor x30, x30, x17, ror #16
+        // eor x1, x1, x2, ror #32
+        // eor x26, x26, x10, ror #58
+        // eor x27, x27, x21, ror #32
+        // eor x28, x28, x13, ror #48
+        // eor x30, x30, x12, ror #42
+        // eor x1, x1, x11, ror #14
+        // eor x26, x26, x5, ror #34
+        // eor x27, x27, x9, ror #32
+        // eor x28, x28, x8, ror #54
+        // eor x30, x30, x4, ror #0
+        // eor x1, x1, x6, ror #34
+        // eor x14, x26, x28, ror #3
+        // eor x7, x7, x14, ror #60
+        // eor x22, x22, x14, ror #30
+        // eor x25, x25, x14, ror #10
+        // eor x21, x21, x14, ror #28
+        // eor x9, x9, x14, ror #28
+        // eor x14, x27, x30, ror #15
+        // eor x28, x28, x1, ror #15
+        // eor x30, x30, x26, ror #43
+        // eor x1, x1, x27, ror #47
+        // eor x3, x3, x14, ror #0
+        // eor x23, x23, x14, ror #0
+        // eor x19, x19, x14, ror #42
+        // eor x13, x13, x14, ror #16
+        // eor x8, x8, x14, ror #10
+        // eor x0, x0, x1, ror #20
+        // eor x20, x20, x1, ror #30
+        // eor x15, x15, x1, ror #54
+        // eor x10, x10, x1, ror #26
+        // eor x5, x5, x1, ror #50
+        // umov x1, v24.d[0]
+        // umov x14, v25.d[0]
+        // eor x16, x16, x28, ror #48
+        // eor x24, x24, x28, ror #38
+        // eor x17, x17, x28, ror #32
+        // eor x12, x12, x28, ror #6
+        // eor x4, x4, x28, ror #48
+        // eor x1, x1, x30, ror #0
+        // eor x14, x14, x30, ror #32
+        // eor x2, x2, x30, ror #32
+        // eor x11, x11, x30, ror #50
+        // eor x6, x6, x30, ror #30
+        // bic x26, x19, x22, ror #7
+        // bic x27, x12, x19, ror #6
+        // bic x28, x0, x6, ror #40
+        // bic x30, x22, x0, ror #10
+        // eor x0, x0, x26, ror #47
+        // bic x26, x6, x12, ror #1
+        // eor x22, x22, x27, ror #51
+        // eor x12, x12, x28, ror #23
+        // eor x6, x6, x30, ror #14
+        // eor x19, x19, x26, ror #57
+        // bic x26, x15, x14, ror #5
+        // bic x27, x21, x15, ror #36
+        // bic x28, x16, x8, ror #5
+        // bic x30, x14, x16, ror #24
+        // eor x16, x16, x26, ror #35
+        // bic x26, x8, x21, ror #58
+        // eor x14, x14, x27, ror #23
+        // eor x21, x21, x28, ror #1
+        // eor x8, x8, x30, ror #35
+        // eor x15, x15, x26, ror #34
+        // bic x26, x17, x23, ror #51
+        // bic x27, x11, x17, ror #49
+        // bic x28, x7, x5, ror #13
+        // bic x30, x23, x7, ror #5
+        // eor x7, x7, x26, ror #8
+        // bic x26, x5, x11, ror #10
+        // eor x23, x23, x27, ror #28
+        // eor x11, x11, x28, ror #41
+        // eor x5, x5, x30, ror #46
+        // eor x17, x17, x26, ror #5
+        // bic x26, x25, x20, ror #38
+        // bic x27, x13, x25, ror #7
+        // bic x28, x1, x4, ror #35
+        // bic x30, x20, x1, ror #39
+        // eor x1, x1, x26, ror #51
+        // bic x26, x4, x13, ror #9
+        // eor x20, x20, x27, ror #19
+        // eor x13, x13, x28, ror #20
+        // eor x4, x4, x30, ror #54
+        // eor x25, x25, x26, ror #48
+        // bic x26, x2, x24, ror #26
+        // bic x27, x10, x2, ror #60
+        // bic x28, x3, x9, ror #28
+        // bic x30, x24, x3, ror #31
+        // eor x3, x3, x26, ror #7
+        // bic x26, x9, x10, ror #47
+        // eor x24, x24, x27, ror #42
+        // eor x10, x10, x28, ror #53
+        // eor x9, x9, x30, ror #5
+        // eor x2, x2, x26, ror #21
+        // movz x26, #32907, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x16, ror #56
+        // dup v24.2d, x6
+        // dup v25.2d, x8
+        // eor x27, x22, x14, ror #42
+        // eor x28, x19, x15, ror #44
+        // eor x30, x12, x21, ror #14
+        // eor x6, x6, x8, ror #21
+        // eor x26, x26, x7, ror #3
+        // eor x27, x27, x23, ror #8
+        // eor x28, x28, x17, ror #28
+        // eor x30, x30, x11, ror #49
+        // eor x6, x6, x5, ror #40
+        // eor x26, x26, x1, ror #57
+        // eor x27, x27, x20, ror #28
+        // eor x28, x28, x25, ror #61
+        // eor x30, x30, x13, ror #60
+        // eor x6, x6, x4, ror #52
+        // eor x26, x26, x3, ror #6
+        // eor x27, x27, x24, ror #49
+        // eor x28, x28, x2, ror #30
+        // eor x30, x30, x10, ror #40
+        // eor x6, x6, x9, ror #58
+        // eor x8, x26, x28, ror #46
+        // eor x22, x22, x8, ror #10
+        // eor x14, x14, x8, ror #32
+        // eor x23, x23, x8, ror #2
+        // eor x20, x20, x8, ror #46
+        // eor x24, x24, x8, ror #25
+        // eor x8, x27, x30, ror #50
+        // eor x28, x28, x6, ror #56
+        // eor x30, x30, x26, ror #22
+        // eor x6, x6, x27, ror #13
+        // eor x19, x19, x8, ror #7
+        // eor x15, x15, x8, ror #27
+        // eor x17, x17, x8, ror #43
+        // eor x25, x25, x8, ror #10
+        // eor x2, x2, x8, ror #41
+        // eor x0, x0, x6, ror #40
+        // eor x16, x16, x6, ror #48
+        // eor x7, x7, x6, ror #37
+        // eor x1, x1, x6, ror #47
+        // eor x3, x3, x6, ror #34
+        // umov x6, v24.d[0]
+        // umov x8, v25.d[0]
+        // eor x12, x12, x28, ror #6
+        // eor x21, x21, x28, ror #56
+        // eor x11, x11, x28, ror #21
+        // eor x13, x13, x28, ror #10
+        // eor x10, x10, x28, ror #30
+        // eor x6, x6, x30, ror #1
+        // eor x8, x8, x30, ror #44
+        // eor x5, x5, x30, ror #25
+        // eor x4, x4, x30, ror #13
+        // eor x9, x9, x30, ror #7
+        // bic x26, x17, x14, ror #20
+        // bic x27, x13, x17, ror #16
+        // bic x28, x0, x9, ror #20
+        // bic x30, x14, x0, ror #12
+        // eor x0, x0, x26, ror #32
+        // bic x26, x9, x13, ror #60
+        // eor x14, x14, x27, ror #28
+        // eor x13, x13, x28, ror #48
+        // eor x9, x9, x30, ror #32
+        // eor x17, x17, x26, ror #52
+        // bic x26, x7, x8, ror #41
+        // bic x27, x20, x7, ror #27
+        // bic x28, x12, x2, ror #3
+        // bic x30, x8, x12, ror #36
+        // eor x12, x12, x26, ror #51
+        // bic x26, x2, x20, ror #21
+        // eor x8, x8, x27, ror #60
+        // eor x20, x20, x28, ror #40
+        // eor x2, x2, x30, ror #25
+        // eor x7, x7, x26, ror #16
+        // bic x26, x11, x15, ror #20
+        // bic x27, x4, x11, ror #45
+        // bic x28, x22, x3, ror #63
+        // bic x30, x15, x22, ror #32
+        // eor x22, x22, x26, ror #12
+        // bic x26, x3, x4, ror #32
+        // eor x15, x15, x27, ror #63
+        // eor x4, x4, x28, ror #33
+        // eor x3, x3, x30, ror #33
+        // eor x11, x11, x26, ror #51
+        // bic x26, x23, x16, ror #32
+        // bic x27, x25, x23, ror #23
+        // bic x28, x6, x10, ror #12
+        // bic x30, x16, x6, ror #57
+        // eor x6, x6, x26, ror #39
+        // bic x26, x10, x25, ror #4
+        // eor x16, x16, x27, ror #9
+        // eor x25, x25, x28, ror #48
+        // eor x10, x10, x30, ror #59
+        // eor x23, x23, x26, ror #37
+        // bic x26, x5, x21, ror #23
+        // bic x27, x1, x5, ror #25
+        // bic x28, x19, x24, ror #52
+        // bic x30, x21, x19, ror #49
+        // eor x19, x19, x26, ror #56
+        // bic x26, x24, x1, ror #43
+        // eor x21, x21, x27, ror #16
+        // eor x1, x1, x28, ror #33
+        // eor x24, x24, x30, ror #27
+        // eor x5, x5, x26, ror #60
+        // movz x26, #139, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x12, ror #13
+        // dup v24.2d, x9
+        // dup v25.2d, x2
+        // eor x27, x14, x8, ror #53
+        // eor x28, x17, x7, ror #32
+        // eor x30, x13, x20, ror #21
+        // eor x9, x9, x2, ror #60
+        // eor x26, x26, x22, ror #53
+        // eor x27, x27, x15, ror #33
+        // eor x28, x28, x11, ror #33
+        // eor x30, x30, x4, ror #4
+        // eor x9, x9, x3, ror #32
+        // eor x26, x26, x6, ror #13
+        // eor x27, x27, x16, ror #32
+        // eor x28, x28, x23, ror #20
+        // eor x30, x30, x25, ror #13
+        // eor x9, x9, x10, ror #5
+        // eor x26, x26, x19, ror #49
+        // eor x27, x27, x21, ror #12
+        // eor x28, x28, x5, ror #9
+        // eor x30, x30, x1, ror #0
+        // eor x9, x9, x24, ror #17
+        // eor x2, x26, x28, ror #31
+        // eor x14, x14, x2, ror #12
+        // eor x8, x8, x2, ror #23
+        // eor x15, x15, x2, ror #43
+        // eor x16, x16, x2, ror #44
+        // eor x21, x21, x2, ror #0
+        // eor x2, x27, x30, ror #27
+        // eor x28, x28, x9, ror #51
+        // eor x30, x30, x26, ror #47
+        // eor x9, x9, x27, ror #31
+        // eor x17, x17, x2, ror #20
+        // eor x7, x7, x2, ror #52
+        // eor x11, x11, x2, ror #51
+        // eor x23, x23, x2, ror #0
+        // eor x5, x5, x2, ror #11
+        // eor x0, x0, x9, ror #20
+        // eor x12, x12, x9, ror #7
+        // eor x22, x22, x9, ror #31
+        // eor x6, x6, x9, ror #7
+        // eor x19, x19, x9, ror #35
+        // umov x2, v24.d[0]
+        // umov x9, v25.d[0]
+        // eor x13, x13, x28, ror #16
+        // eor x20, x20, x28, ror #59
+        // eor x4, x4, x28, ror #12
+        // eor x25, x25, x28, ror #3
+        // eor x1, x1, x28, ror #16
+        // eor x2, x2, x30, ror #60
+        // eor x9, x9, x30, ror #0
+        // eor x3, x3, x30, ror #28
+        // eor x10, x10, x30, ror #55
+        // eor x24, x24, x30, ror #43
+        // bic x26, x11, x8, ror #39
+        // bic x27, x25, x11, ror #14
+        // bic x28, x0, x24, ror #23
+        // bic x30, x8, x0, ror #3
+        // eor x0, x0, x26, ror #22
+        // bic x26, x24, x25, ror #49
+        // eor x8, x8, x27, ror #11
+        // eor x25, x25, x28, ror #56
+        // eor x24, x24, x30, ror #38
+        // eor x11, x11, x26, ror #1
+        // bic x26, x22, x9, ror #10
+        // bic x27, x16, x22, ror #11
+        // bic x28, x13, x5, ror #56
+        // bic x30, x9, x13, ror #56
+        // eor x13, x13, x26, ror #62
+        // bic x26, x5, x16, ror #59
+        // eor x9, x9, x27, ror #43
+        // eor x16, x16, x28, ror #13
+        // eor x5, x5, x30, ror #16
+        // eor x22, x22, x26, ror #58
+        // bic x26, x4, x7, ror #63
+        // bic x27, x10, x4, ror #42
+        // bic x28, x14, x19, ror #44
+        // bic x30, x7, x14, ror #57
+        // eor x14, x14, x26, ror #8
+        // bic x26, x19, x10, ror #50
+        // eor x7, x7, x27, ror #23
+        // eor x10, x10, x28, ror #34
+        // eor x19, x19, x30, ror #27
+        // eor x4, x4, x26, ror #36
+        // bic x26, x15, x12, ror #30
+        // bic x27, x23, x15, ror #38
+        // bic x28, x2, x1, ror #31
+        // bic x30, x12, x2, ror #16
+        // eor x2, x2, x26, ror #18
+        // bic x26, x1, x23, ror #13
+        // eor x12, x12, x27, ror #60
+        // eor x23, x23, x28, ror #20
+        // eor x1, x1, x30, ror #17
+        // eor x15, x15, x26, ror #13
+        // bic x26, x3, x20, ror #33
+        // bic x27, x6, x3, ror #41
+        // bic x28, x17, x21, ror #28
+        // bic x30, x20, x17, ror #52
+        // eor x17, x17, x26, ror #43
+        // bic x26, x21, x6, ror #38
+        // eor x20, x20, x27, ror #54
+        // eor x6, x6, x28, ror #62
+        // eor x21, x21, x30, ror #48
+        // eor x3, x3, x26, ror #49
+        // movz x26, #32905, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x13, ror #52
+        // dup v24.2d, x24
+        // dup v25.2d, x5
+        // eor x27, x8, x9, ror #63
+        // eor x28, x11, x22, ror #28
+        // eor x30, x25, x16, ror #31
+        // eor x24, x24, x5, ror #21
+        // eor x26, x26, x14, ror #51
+        // eor x27, x27, x7, ror #61
+        // eor x28, x28, x4, ror #37
+        // eor x30, x30, x10, ror #9
+        // eor x24, x24, x19, ror #8
+        // eor x26, x26, x2, ror #57
+        // eor x27, x27, x12, ror #44
+        // eor x28, x28, x15, ror #53
+        // eor x30, x30, x23, ror #29
+        // eor x24, x24, x1, ror #1
+        // eor x26, x26, x17, ror #34
+        // eor x27, x27, x20, ror #49
+        // eor x28, x28, x3, ror #55
+        // eor x30, x30, x6, ror #28
+        // eor x24, x24, x21, ror #39
+        // eor x5, x26, x28, ror #21
+        // eor x8, x8, x5, ror #3
+        // eor x9, x9, x5, ror #4
+        // eor x7, x7, x5, ror #6
+        // eor x12, x12, x5, ror #23
+        // eor x20, x20, x5, ror #18
+        // eor x5, x27, x30, ror #10
+        // eor x28, x28, x24, ror #0
+        // eor x30, x30, x26, ror #55
+        // eor x24, x24, x27, ror #37
+        // eor x11, x11, x5, ror #39
+        // eor x22, x22, x5, ror #11
+        // eor x4, x4, x5, ror #2
+        // eor x15, x15, x5, ror #50
+        // eor x3, x3, x5, ror #48
+        // eor x0, x0, x24, ror #23
+        // eor x13, x13, x24, ror #35
+        // eor x14, x14, x24, ror #36
+        // eor x2, x2, x24, ror #30
+        // eor x17, x17, x24, ror #53
+        // umov x5, v24.d[0]
+        // umov x24, v25.d[0]
+        // eor x25, x25, x28, ror #14
+        // eor x16, x16, x28, ror #47
+        // eor x10, x10, x28, ror #5
+        // eor x23, x23, x28, ror #49
+        // eor x6, x6, x28, ror #50
+        // eor x5, x5, x30, ror #49
+        // eor x24, x24, x30, ror #28
+        // eor x19, x19, x30, ror #41
+        // eor x1, x1, x30, ror #48
+        // eor x21, x21, x30, ror #10
+        // bic x26, x4, x9, ror #0
+        // bic x27, x23, x4, ror #0
+        // bic x28, x0, x21, ror #48
+        // bic x30, x9, x0, ror #48
+        // eor x0, x0, x26, ror #16
+        // bic x26, x21, x23, ror #32
+        // eor x9, x9, x27, ror #0
+        // eor x23, x23, x28, ror #48
+        // eor x21, x21, x30, ror #32
+        // eor x4, x4, x26, ror #32
+        // bic x26, x14, x24, ror #40
+        // bic x27, x12, x14, ror #52
+        // bic x28, x25, x3, ror #36
+        // bic x30, x24, x25, ror #20
+        // eor x25, x25, x26, ror #4
+        // bic x26, x3, x12, ror #44
+        // eor x24, x24, x27, ror #36
+        // eor x12, x12, x28, ror #48
+        // eor x3, x3, x30, ror #8
+        // eor x14, x14, x26, ror #32
+        // bic x26, x10, x22, ror #52
+        // bic x27, x1, x10, ror #40
+        // bic x28, x8, x17, ror #20
+        // bic x30, x22, x8, ror #16
+        // eor x8, x8, x26, ror #60
+        // bic x26, x17, x1, ror #0
+        // eor x22, x22, x27, ror #36
+        // eor x1, x1, x28, ror #44
+        // eor x17, x17, x30, ror #28
+        // eor x10, x10, x26, ror #24
+        // bic x26, x7, x13, ror #32
+        // bic x27, x15, x7, ror #52
+        // bic x28, x5, x6, ror #48
+        // bic x30, x13, x5, ror #44
+        // eor x5, x5, x26, ror #52
+        // bic x26, x6, x15, ror #16
+        // eor x13, x13, x27, ror #44
+        // eor x15, x15, x28, ror #0
+        // eor x6, x6, x30, ror #36
+        // eor x7, x7, x26, ror #60
+        // bic x26, x19, x16, ror #56
+        // bic x27, x2, x19, ror #40
+        // bic x28, x11, x20, ror #20
+        // bic x30, x16, x11, ror #40
+        // eor x11, x11, x26, ror #32
+        // bic x26, x20, x2, ror #36
+        // eor x16, x16, x27, ror #32
+        // eor x2, x2, x28, ror #8
+        // eor x20, x20, x30, ror #4
+        // eor x19, x19, x26, ror #52
+        // movz x26, #32771, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x25, ror #44
+        // dup v24.2d, x21
+        // dup v25.2d, x3
+        // eor x27, x9, x24, ror #8
+        // eor x28, x4, x14, ror #32
+        // eor x30, x23, x12, ror #44
+        // eor x21, x21, x3, ror #32
+        // eor x26, x26, x8, ror #60
+        // eor x27, x27, x22, ror #28
+        // eor x28, x28, x10, ror #40
+        // eor x30, x30, x1, ror #0
+        // eor x21, x21, x17, ror #32
+        // eor x26, x26, x5, ror #60
+        // eor x27, x27, x13, ror #0
+        // eor x28, x28, x7, ror #32
+        // eor x30, x30, x15, ror #44
+        // eor x21, x21, x6, ror #60
+        // eor x26, x26, x11, ror #24
+        // eor x27, x27, x16, ror #32
+        // eor x28, x28, x19, ror #40
+        // eor x30, x30, x2, ror #0
+        // eor x21, x21, x20, ror #60
+        // eor x3, x26, x28, ror #15
+        // eor x9, x9, x3, ror #48
+        // eor x24, x24, x3, ror #40
+        // eor x22, x22, x3, ror #20
+        // eor x13, x13, x3, ror #48
+        // eor x16, x16, x3, ror #16
+        // eor x3, x27, x30, ror #63
+        // eor x28, x28, x21, ror #31
+        // eor x30, x30, x26, ror #47
+        // eor x21, x21, x27, ror #31
+        // eor x4, x4, x3, ror #0
+        // eor x14, x14, x3, ror #32
+        // eor x10, x10, x3, ror #24
+        // eor x7, x7, x3, ror #32
+        // eor x19, x19, x3, ror #24
+        // eor x0, x0, x21, ror #48
+        // eor x25, x25, x21, ror #4
+        // eor x8, x8, x21, ror #52
+        // eor x5, x5, x21, ror #52
+        // eor x11, x11, x21, ror #24
+        // umov x3, v24.d[0]
+        // umov x21, v25.d[0]
+        // eor x23, x23, x28, ror #0
+        // eor x12, x12, x28, ror #20
+        // eor x1, x1, x28, ror #0
+        // eor x15, x15, x28, ror #20
+        // eor x2, x2, x28, ror #0
+        // eor x3, x3, x30, ror #32
+        // eor x21, x21, x30, ror #0
+        // eor x17, x17, x30, ror #0
+        // eor x6, x6, x30, ror #36
+        // eor x20, x20, x30, ror #36
+        // bic x26, x10, x24, ror #31
+        // bic x27, x15, x10, ror #38
+        // bic x28, x0, x20, ror #30
+        // bic x30, x24, x0, ror #20
+        // eor x0, x0, x26, ror #13
+        // bic x26, x20, x15, ror #9
+        // eor x24, x24, x27, ror #59
+        // eor x15, x15, x28, ror #25
+        // eor x20, x20, x30, ror #14
+        // eor x10, x10, x26, ror #17
+        // bic x26, x8, x21, ror #3
+        // bic x27, x13, x8, ror #22
+        // bic x28, x23, x19, ror #7
+        // bic x30, x21, x23, ror #56
+        // eor x23, x23, x26, ror #5
+        // bic x26, x19, x13, ror #40
+        // eor x21, x21, x27, ror #39
+        // eor x13, x13, x28, ror #17
+        // eor x19, x19, x30, ror #1
+        // eor x8, x8, x26, ror #2
+        // bic x26, x1, x14, ror #51
+        // bic x27, x6, x1, ror #19
+        // bic x28, x9, x11, ror #55
+        // bic x30, x14, x9, ror #37
+        // eor x9, x9, x26, ror #40
+        // bic x26, x11, x6, ror #30
+        // eor x14, x14, x27, ror #58
+        // eor x6, x6, x28, ror #43
+        // eor x11, x11, x30, ror #36
+        // eor x1, x1, x26, ror #15
+        // bic x26, x22, x25, ror #38
+        // bic x27, x7, x22, ror #1
+        // bic x28, x3, x2, ror #3
+        // bic x30, x25, x3, ror #13
+        // eor x3, x3, x26, ror #13
+        // bic x26, x2, x7, ror #9
+        // eor x25, x25, x27, ror #25
+        // eor x7, x7, x28, ror #52
+        // eor x2, x2, x30, ror #48
+        // eor x22, x22, x26, ror #54
+        // bic x26, x17, x12, ror #28
+        // bic x27, x5, x17, ror #22
+        // bic x28, x4, x16, ror #28
+        // bic x30, x12, x4, ror #13
+        // eor x4, x4, x26, ror #23
+        // bic x26, x16, x5, ror #37
+        // eor x12, x12, x27, ror #14
+        // eor x5, x5, x28, ror #63
+        // eor x16, x16, x30, ror #23
+        // eor x17, x17, x26, ror #5
+        // movz x26, #32770, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x23, ror #52
+        // dup v24.2d, x20
+        // dup v25.2d, x19
+        // eor x27, x24, x21, ror #16
+        // eor x28, x10, x8, ror #44
+        // eor x30, x15, x13, ror #60
+        // eor x20, x20, x19, ror #29
+        // eor x26, x26, x9, ror #15
+        // eor x27, x27, x14, ror #62
+        // eor x28, x28, x1, ror #42
+        // eor x30, x30, x6, ror #61
+        // eor x20, x20, x11, ror #40
+        // eor x26, x26, x3, ror #21
+        // eor x27, x27, x25, ror #28
+        // eor x28, x28, x22, ror #21
+        // eor x30, x30, x7, ror #58
+        // eor x20, x20, x2, ror #58
+        // eor x26, x26, x4, ror #18
+        // eor x27, x27, x12, ror #25
+        // eor x28, x28, x17, ror #28
+        // eor x30, x30, x5, ror #44
+        // eor x20, x20, x16, ror #16
+        // eor x19, x26, x28, ror #12
+        // eor x24, x24, x19, ror #20
+        // eor x21, x21, x19, ror #4
+        // eor x14, x14, x19, ror #22
+        // eor x25, x25, x19, ror #56
+        // eor x12, x12, x19, ror #59
+        // eor x19, x27, x30, ror #58
+        // eor x28, x28, x20, ror #16
+        // eor x30, x30, x26, ror #24
+        // eor x20, x20, x27, ror #13
+        // eor x10, x10, x19, ror #31
+        // eor x8, x8, x19, ror #51
+        // eor x1, x1, x19, ror #53
+        // eor x22, x22, x19, ror #10
+        // eor x17, x17, x19, ror #3
+        // eor x0, x0, x20, ror #30
+        // eor x23, x23, x20, ror #42
+        // eor x9, x9, x20, ror #15
+        // eor x3, x3, x20, ror #9
+        // eor x4, x4, x20, ror #12
+        // umov x19, v24.d[0]
+        // umov x20, v25.d[0]
+        // eor x15, x15, x28, ror #38
+        // eor x13, x13, x28, ror #42
+        // eor x6, x6, x28, ror #41
+        // eor x7, x7, x28, ror #44
+        // eor x5, x5, x28, ror #58
+        // eor x19, x19, x30, ror #9
+        // eor x20, x20, x30, ror #44
+        // eor x11, x11, x30, ror #33
+        // eor x2, x2, x30, ror #15
+        // eor x16, x16, x30, ror #57
+        // bic x26, x1, x21, ror #4
+        // bic x27, x7, x1, ror #0
+        // bic x28, x0, x16, ror #32
+        // bic x30, x21, x0, ror #48
+        // eor x0, x0, x26, ror #12
+        // bic x26, x16, x7, ror #44
+        // eor x21, x21, x27, ror #60
+        // eor x7, x7, x28, ror #52
+        // eor x16, x16, x30, ror #48
+        // eor x1, x1, x26, ror #20
+        // bic x26, x9, x20, ror #27
+        // bic x27, x25, x9, ror #49
+        // bic x28, x15, x17, ror #33
+        // bic x30, x20, x15, ror #36
+        // eor x15, x15, x26, ror #1
+        // bic x26, x17, x25, ror #47
+        // eor x20, x20, x27, ror #52
+        // eor x25, x25, x28, ror #48
+        // eor x17, x17, x30, ror #59
+        // eor x9, x9, x26, ror #32
+        // bic x26, x6, x8, ror #40
+        // bic x27, x2, x6, ror #59
+        // bic x28, x24, x4, ror #21
+        // bic x30, x8, x24, ror #56
+        // eor x24, x24, x26, ror #32
+        // bic x26, x4, x2, ror #16
+        // eor x8, x8, x27, ror #29
+        // eor x2, x2, x28, ror #27
+        // eor x4, x4, x30, ror #51
+        // eor x6, x6, x26, ror #53
+        // bic x26, x14, x23, ror #48
+        // bic x27, x22, x14, ror #13
+        // bic x28, x19, x5, ror #24
+        // bic x30, x23, x19, ror #51
+        // eor x19, x19, x26, ror #29
+        // bic x26, x5, x22, ror #56
+        // eor x23, x23, x27, ror #3
+        // eor x22, x22, x28, ror #48
+        // eor x5, x5, x30, ror #53
+        // eor x14, x14, x26, ror #59
+        // bic x26, x11, x13, ror #13
+        // bic x27, x3, x11, ror #51
+        // bic x28, x10, x12, ror #52
+        // bic x30, x13, x10, ror #35
+        // eor x10, x10, x26, ror #16
+        // bic x26, x12, x3, ror #41
+        // eor x13, x13, x27, ror #0
+        // eor x3, x3, x28, ror #35
+        // eor x12, x12, x30, ror #41
+        // eor x11, x11, x26, ror #36
+        // movz x26, #128, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x15, ror #11
+        // dup v24.2d, x16
+        // dup v25.2d, x17
+        // eor x27, x21, x20, ror #23
+        // eor x28, x1, x9, ror #0
+        // eor x30, x7, x25, ror #15
+        // eor x16, x16, x17, ror #12
+        // eor x26, x26, x24, ror #43
+        // eor x27, x27, x8, ror #35
+        // eor x28, x28, x6, ror #63
+        // eor x30, x30, x2, ror #4
+        // eor x16, x16, x4, ror #32
+        // eor x26, x26, x19, ror #3
+        // eor x27, x27, x23, ror #0
+        // eor x28, x28, x14, ror #20
+        // eor x30, x30, x22, ror #7
+        // eor x16, x16, x5, ror #59
+        // eor x26, x26, x10, ror #15
+        // eor x27, x27, x13, ror #28
+        // eor x28, x28, x11, ror #19
+        // eor x30, x30, x3, ror #32
+        // eor x16, x16, x12, ror #35
+        // eor x17, x26, x28, ror #11
+        // eor x21, x21, x17, ror #48
+        // eor x20, x20, x17, ror #25
+        // eor x8, x8, x17, ror #13
+        // eor x23, x23, x17, ror #48
+        // eor x13, x13, x17, ror #20
+        // eor x17, x27, x30, ror #59
+        // eor x28, x28, x16, ror #19
+        // eor x30, x30, x26, ror #51
+        // eor x16, x16, x27, ror #47
+        // eor x1, x1, x17, ror #4
+        // eor x9, x9, x17, ror #4
+        // eor x6, x6, x17, ror #5
+        // eor x14, x14, x17, ror #48
+        // eor x11, x11, x17, ror #49
+        // eor x0, x0, x16, ror #32
+        // eor x15, x15, x16, ror #21
+        // eor x24, x24, x16, ror #53
+        // eor x19, x19, x16, ror #29
+        // eor x10, x10, x16, ror #17
+        // umov x16, v24.d[0]
+        // umov x17, v25.d[0]
+        // eor x7, x7, x28, ror #0
+        // eor x25, x25, x28, ror #49
+        // eor x2, x2, x28, ror #60
+        // eor x22, x22, x28, ror #57
+        // eor x3, x3, x28, ror #32
+        // eor x16, x16, x30, ror #44
+        // eor x17, x17, x30, ror #32
+        // eor x4, x4, x30, ror #12
+        // eor x5, x5, x30, ror #49
+        // eor x12, x12, x30, ror #9
+        // bic x26, x6, x20, ror #27
+        // bic x27, x22, x6, ror #34
+        // bic x28, x0, x12, ror #53
+        // bic x30, x20, x0, ror #5
+        // eor x0, x0, x26, ror #32
+        // bic x26, x12, x22, ror #9
+        // eor x20, x20, x27, ror #3
+        // eor x22, x22, x28, ror #2
+        // eor x12, x12, x30, ror #6
+        // eor x6, x6, x26, ror #21
+        // bic x26, x24, x17, ror #48
+        // bic x27, x23, x24, ror #5
+        // bic x28, x7, x11, ror #50
+        // bic x30, x17, x7, ror #24
+        // eor x7, x7, x26, ror #56
+        // bic x26, x11, x23, ror #1
+        // eor x17, x17, x27, ror #11
+        // eor x23, x23, x28, ror #13
+        // eor x11, x11, x30, ror #54
+        // eor x24, x24, x26, ror #58
+        // bic x26, x2, x9, ror #15
+        // bic x27, x5, x2, ror #36
+        // bic x28, x21, x10, ror #46
+        // bic x30, x9, x21, ror #9
+        // eor x21, x21, x26, ror #40
+        // bic x26, x10, x5, ror #22
+        // eor x9, x9, x27, ror #13
+        // eor x5, x5, x28, ror #60
+        // eor x10, x10, x30, ror #9
+        // eor x2, x2, x26, ror #6
+        // bic x26, x8, x15, ror #62
+        // bic x27, x14, x8, ror #24
+        // bic x28, x16, x3, ror #47
+        // bic x30, x15, x16, ror #30
+        // eor x16, x16, x26, ror #36
+        // bic x26, x3, x14, ror #29
+        // eor x15, x15, x27, ror #42
+        // eor x14, x14, x28, ror #52
+        // eor x3, x3, x30, ror #51
+        // eor x8, x8, x26, ror #11
+        // bic x26, x4, x25, ror #11
+        // bic x27, x19, x4, ror #63
+        // bic x28, x1, x13, ror #28
+        // bic x30, x25, x1, ror #42
+        // eor x1, x1, x26, ror #11
+        // bic x26, x13, x19, ror #48
+        // eor x25, x25, x27, ror #54
+        // eor x19, x19, x28, ror #52
+        // eor x13, x13, x30, ror #58
+        // eor x4, x4, x26, ror #17
+        // movz x26, #32778, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x7, ror #48
+        // dup v24.2d, x12
+        // dup v25.2d, x11
+        // eor x27, x20, x17, ror #29
+        // eor x28, x6, x24, ror #8
+        // eor x30, x22, x23, ror #37
+        // eor x12, x12, x11, ror #45
+        // eor x26, x26, x21, ror #15
+        // eor x27, x27, x9, ror #11
+        // eor x28, x28, x2, ror #23
+        // eor x30, x30, x5, ror #21
+        // eor x12, x12, x10, ror #8
+        // eor x26, x26, x16, ror #5
+        // eor x27, x27, x15, ror #44
+        // eor x28, x28, x8, ror #9
+        // eor x30, x30, x14, ror #19
+        // eor x12, x12, x3, ror #63
+        // eor x26, x26, x1, ror #14
+        // eor x27, x27, x25, ror #41
+        // eor x28, x28, x4, ror #57
+        // eor x30, x30, x19, ror #28
+        // eor x12, x12, x13, ror #53
+        // eor x11, x26, x28, ror #31
+        // eor x20, x20, x11, ror #5
+        // eor x17, x17, x11, ror #40
+        // eor x9, x9, x11, ror #58
+        // eor x15, x15, x11, ror #25
+        // eor x25, x25, x11, ror #28
+        // eor x11, x27, x30, ror #2
+        // eor x28, x28, x12, ror #20
+        // eor x30, x30, x26, ror #1
+        // eor x12, x12, x27, ror #5
+        // eor x6, x6, x11, ror #27
+        // eor x24, x24, x11, ror #19
+        // eor x2, x2, x11, ror #4
+        // eor x8, x8, x11, ror #18
+        // eor x4, x4, x11, ror #34
+        // eor x0, x0, x12, ror #53
+        // eor x7, x7, x12, ror #5
+        // eor x21, x21, x12, ror #38
+        // eor x16, x16, x12, ror #48
+        // eor x1, x1, x12, ror #39
+        // umov x11, v24.d[0]
+        // umov x12, v25.d[0]
+        // eor x22, x22, x28, ror #34
+        // eor x23, x23, x28, ror #61
+        // eor x5, x5, x28, ror #13
+        // eor x14, x14, x28, ror #15
+        // eor x19, x19, x28, ror #6
+        // eor x11, x11, x30, ror #9
+        // eor x12, x12, x30, ror #28
+        // eor x10, x10, x30, ror #1
+        // eor x3, x3, x30, ror #10
+        // eor x13, x13, x30, ror #20
+        // bic x26, x2, x17, ror #32
+        // bic x27, x14, x2, ror #16
+        // bic x28, x0, x13, ror #28
+        // bic x30, x17, x0, ror #20
+        // eor x0, x0, x26, ror #12
+        // bic x26, x13, x14, ror #32
+        // eor x17, x17, x27, ror #16
+        // eor x14, x14, x28, ror #4
+        // eor x13, x13, x30, ror #16
+        // eor x2, x2, x26, ror #16
+        // bic x26, x21, x12, ror #2
+        // bic x27, x15, x21, ror #18
+        // bic x28, x22, x4, ror #58
+        // bic x30, x12, x22, ror #20
+        // eor x22, x22, x26, ror #42
+        // bic x26, x4, x15, ror #30
+        // eor x12, x12, x27, ror #44
+        // eor x15, x15, x28, ror #40
+        // eor x4, x4, x30, ror #50
+        // eor x21, x21, x26, ror #16
+        // bic x26, x5, x24, ror #40
+        // bic x27, x3, x5, ror #14
+        // bic x28, x20, x1, ror #2
+        // bic x30, x24, x20, ror #24
+        // eor x20, x20, x26, ror #0
+        // bic x26, x1, x3, ror #48
+        // eor x24, x24, x27, ror #10
+        // eor x3, x3, x28, ror #14
+        // eor x1, x1, x30, ror #38
+        // eor x5, x5, x26, ror #2
+        // bic x26, x9, x7, ror #16
+        // bic x27, x8, x9, ror #34
+        // bic x28, x11, x19, ror #8
+        // bic x30, x7, x11, ror #14
+        // eor x11, x11, x26, ror #34
+        // bic x26, x19, x8, ror #56
+        // eor x7, x7, x27, ror #14
+        // eor x8, x8, x28, ror #0
+        // eor x19, x19, x30, ror #42
+        // eor x9, x9, x26, ror #38
+        // bic x26, x10, x23, ror #22
+        // bic x27, x16, x10, ror #58
+        // bic x28, x6, x25, ror #0
+        // bic x30, x23, x6, ror #54
+        // eor x6, x6, x26, ror #52
+        // bic x26, x25, x16, ror #58
+        // eor x23, x23, x27, ror #48
+        // eor x16, x16, x28, ror #6
+        // eor x25, x25, x30, ror #10
+        // eor x10, x10, x26, ror #12
+        // movz x26, #10, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x22, ror #34
+        // dup v24.2d, x13
+        // dup v25.2d, x4
+        // eor x27, x17, x12, ror #34
+        // eor x28, x2, x21, ror #0
+        // eor x30, x14, x15, ror #62
+        // eor x13, x13, x4, ror #0
+        // eor x26, x26, x20, ror #58
+        // eor x27, x27, x24, ror #54
+        // eor x28, x28, x5, ror #46
+        // eor x30, x30, x3, ror #48
+        // eor x13, x13, x1, ror #32
+        // eor x26, x26, x11, ror #26
+        // eor x27, x27, x7, ror #32
+        // eor x28, x28, x9, ror #48
+        // eor x30, x30, x8, ror #30
+        // eor x13, x13, x19, ror #6
+        // eor x26, x26, x6, ror #34
+        // eor x27, x27, x23, ror #0
+        // eor x28, x28, x10, ror #10
+        // eor x30, x30, x16, ror #32
+        // eor x13, x13, x25, ror #6
+        // eor x4, x26, x28, ror #11
+        // eor x17, x17, x4, ror #20
+        // eor x12, x12, x4, ror #50
+        // eor x24, x24, x4, ror #30
+        // eor x7, x7, x4, ror #52
+        // eor x23, x23, x4, ror #20
+        // eor x4, x27, x30, ror #15
+        // eor x28, x28, x13, ror #15
+        // eor x30, x30, x26, ror #3
+        // eor x13, x13, x27, ror #15
+        // eor x2, x2, x4, ror #32
+        // eor x21, x21, x4, ror #32
+        // eor x5, x5, x4, ror #50
+        // eor x9, x9, x4, ror #48
+        // eor x10, x10, x4, ror #22
+        // eor x0, x0, x13, ror #28
+        // eor x22, x22, x13, ror #58
+        // eor x20, x20, x13, ror #34
+        // eor x11, x11, x13, ror #2
+        // eor x6, x6, x13, ror #58
+        // umov x4, v24.d[0]
+        // umov x13, v25.d[0]
+        // eor x14, x14, x28, ror #16
+        // eor x15, x15, x28, ror #18
+        // eor x3, x3, x28, ror #32
+        // eor x8, x8, x28, ror #50
+        // eor x16, x16, x28, ror #48
+        // eor x4, x4, x30, ror #32
+        // eor x13, x13, x30, ror #32
+        // eor x1, x1, x30, ror #0
+        // eor x19, x19, x30, ror #26
+        // eor x25, x25, x30, ror #26
+        // bic x26, x5, x12, ror #19
+        // bic x27, x8, x5, ror #10
+        // bic x28, x0, x25, ror #20
+        // bic x30, x12, x0, ror #30
+        // eor x0, x0, x26, ror #15
+        // bic x26, x25, x8, ror #49
+        // eor x12, x12, x27, ror #35
+        // eor x8, x8, x28, ror #59
+        // eor x25, x25, x30, ror #14
+        // eor x5, x5, x26, ror #5
+        // bic x26, x20, x13, ror #17
+        // bic x27, x7, x20, ror #24
+        // bic x28, x14, x10, ror #57
+        // bic x30, x13, x14, ror #24
+        // eor x14, x14, x26, ror #23
+        // bic x26, x10, x7, ror #6
+        // eor x13, x13, x27, ror #23
+        // eor x7, x7, x28, ror #1
+        // eor x10, x10, x30, ror #47
+        // eor x20, x20, x26, ror #34
+        // bic x26, x3, x21, ror #51
+        // bic x27, x19, x3, ror #57
+        // bic x28, x17, x6, ror #37
+        // bic x30, x21, x17, ror #37
+        // eor x17, x17, x26, ror #40
+        // bic x26, x6, x19, ror #10
+        // eor x21, x21, x27, ror #20
+        // eor x19, x19, x28, ror #17
+        // eor x6, x6, x30, ror #54
+        // eor x3, x3, x26, ror #61
+        // bic x26, x24, x22, ror #38
+        // bic x27, x9, x24, ror #43
+        // bic x28, x4, x16, ror #35
+        // bic x30, x22, x4, ror #3
+        // eor x4, x4, x26, ror #23
+        // bic x26, x16, x9, ror #9
+        // eor x22, x22, x27, ror #47
+        // eor x9, x9, x28, ror #20
+        // eor x16, x16, x30, ror #26
+        // eor x24, x24, x26, ror #12
+        // bic x26, x1, x15, ror #46
+        // bic x27, x11, x1, ror #36
+        // bic x28, x2, x23, ror #28
+        // bic x30, x15, x2, ror #11
+        // eor x2, x2, x26, ror #7
+        // bic x26, x23, x11, ror #7
+        // eor x15, x15, x27, ror #46
+        // eor x11, x11, x28, ror #29
+        // eor x23, x23, x30, ror #25
+        // eor x1, x1, x26, ror #21
+        // movz x26, #32897, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x14, ror #32
+        // dup v24.2d, x25
+        // dup v25.2d, x10
+        // eor x27, x12, x13, ror #38
+        // eor x28, x5, x20, ror #40
+        // eor x30, x8, x7, ror #26
+        // eor x25, x25, x10, ror #5
+        // eor x26, x26, x17, ror #43
+        // eor x27, x27, x21, ror #36
+        // eor x28, x28, x3, ror #4
+        // eor x30, x30, x19, ror #21
+        // eor x25, x25, x6, ror #60
+        // eor x26, x26, x4, ror #1
+        // eor x27, x27, x22, ror #28
+        // eor x28, x28, x24, ror #9
+        // eor x30, x30, x9, ror #40
+        // eor x25, x25, x16, ror #16
+        // eor x26, x26, x2, ror #14
+        // eor x27, x27, x15, ror #33
+        // eor x28, x28, x1, ror #6
+        // eor x30, x30, x11, ror #44
+        // eor x25, x25, x23, ror #22
+        // eor x10, x26, x28, ror #14
+        // eor x12, x12, x10, ror #30
+        // eor x13, x13, x10, ror #56
+        // eor x21, x21, x10, ror #58
+        // eor x22, x22, x10, ror #2
+        // eor x15, x15, x10, ror #61
+        // eor x10, x27, x30, ror #34
+        // eor x28, x28, x25, ror #4
+        // eor x30, x30, x26, ror #58
+        // eor x25, x25, x27, ror #13
+        // eor x5, x5, x10, ror #19
+        // eor x20, x20, x10, ror #43
+        // eor x3, x3, x10, ror #15
+        // eor x24, x24, x10, ror #10
+        // eor x1, x1, x10, ror #13
+        // eor x0, x0, x25, ror #20
+        // eor x14, x14, x25, ror #52
+        // eor x17, x17, x25, ror #41
+        // eor x4, x4, x25, ror #19
+        // eor x2, x2, x25, ror #6
+        // umov x10, v24.d[0]
+        // umov x25, v25.d[0]
+        // eor x8, x8, x28, ror #10
+        // eor x7, x7, x28, ror #48
+        // eor x19, x19, x28, ror #53
+        // eor x9, x9, x28, ror #34
+        // eor x11, x11, x28, ror #30
+        // eor x10, x10, x30, ror #49
+        // eor x25, x25, x30, ror #44
+        // eor x6, x6, x30, ror #53
+        // eor x16, x16, x30, ror #33
+        // eor x23, x23, x30, ror #27
+        // bic x26, x3, x13, ror #52
+        // bic x27, x9, x3, ror #16
+        // bic x28, x0, x23, ror #28
+        // bic x30, x13, x0, ror #36
+        // eor x0, x0, x26, ror #40
+        // bic x26, x23, x9, ror #60
+        // eor x13, x13, x27, ror #60
+        // eor x9, x9, x28, ror #40
+        // eor x23, x23, x30, ror #0
+        // eor x3, x3, x26, ror #52
+        // bic x26, x17, x25, ror #29
+        // bic x27, x22, x17, ror #23
+        // bic x28, x8, x1, ror #47
+        // bic x30, x25, x8, ror #36
+        // eor x8, x8, x26, ror #63
+        // bic x26, x1, x22, ror #57
+        // eor x25, x25, x27, ror #12
+        // eor x22, x22, x28, ror #24
+        // eor x1, x1, x30, ror #45
+        // eor x17, x17, x26, ror #48
+        // bic x26, x19, x20, ror #48
+        // bic x27, x16, x19, ror #37
+        // bic x28, x12, x2, ror #27
+        // bic x30, x20, x12, ror #48
+        // eor x12, x12, x26, ror #32
+        // bic x26, x2, x16, ror #32
+        // eor x20, x20, x27, ror #43
+        // eor x16, x16, x28, ror #5
+        // eor x2, x2, x30, ror #53
+        // eor x19, x19, x26, ror #59
+        // bic x26, x21, x14, ror #0
+        // bic x27, x24, x21, ror #51
+        // bic x28, x10, x11, ror #0
+        // bic x30, x14, x10, ror #61
+        // eor x10, x10, x26, ror #3
+        // bic x26, x11, x24, ror #16
+        // eor x14, x14, x27, ror #13
+        // eor x24, x24, x28, ror #48
+        // eor x11, x11, x30, ror #3
+        // eor x21, x21, x26, ror #61
+        // bic x26, x6, x7, ror #63
+        // bic x27, x4, x6, ror #17
+        // bic x28, x5, x15, ror #48
+        // bic x30, x7, x5, ror #41
+        // eor x5, x5, x26, ror #24
+        // bic x26, x15, x4, ror #23
+        // eor x7, x7, x27, ror #48
+        // eor x4, x4, x28, ror #57
+        // eor x15, x15, x30, ror #39
+        // eor x6, x6, x26, ror #24
+        // movz x26, #32896, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x8, ror #41
+        // dup v24.2d, x23
+        // dup v25.2d, x1
+        // eor x27, x13, x25, ror #41
+        // eor x28, x3, x17, ror #0
+        // eor x30, x9, x22, ror #57
+        // eor x23, x23, x1, ror #60
+        // eor x26, x26, x12, ror #33
+        // eor x27, x27, x20, ror #21
+        // eor x28, x28, x19, ror #25
+        // eor x30, x30, x16, ror #4
+        // eor x23, x23, x2, ror #32
+        // eor x26, x26, x10, ror #57
+        // eor x27, x27, x14, ror #32
+        // eor x28, x28, x21, ror #20
+        // eor x30, x30, x24, ror #49
+        // eor x23, x23, x11, ror #29
+        // eor x26, x26, x5, ror #17
+        // eor x27, x27, x7, ror #12
+        // eor x28, x28, x6, ror #1
+        // eor x30, x30, x4, ror #0
+        // eor x23, x23, x15, ror #37
+        // eor x1, x26, x28, ror #39
+        // eor x13, x13, x1, ror #36
+        // eor x25, x25, x1, ror #59
+        // eor x20, x20, x1, ror #15
+        // eor x14, x14, x1, ror #4
+        // eor x7, x7, x1, ror #24
+        // eor x1, x27, x30, ror #59
+        // eor x28, x28, x23, ror #51
+        // eor x30, x30, x26, ror #39
+        // eor x23, x23, x27, ror #63
+        // eor x3, x3, x1, ror #52
+        // eor x17, x17, x1, ror #52
+        // eor x19, x19, x1, ror #27
+        // eor x21, x21, x1, ror #32
+        // eor x6, x6, x1, ror #51
+        // eor x0, x0, x23, ror #28
+        // eor x8, x8, x23, ror #51
+        // eor x12, x12, x23, ror #59
+        // eor x10, x10, x23, ror #35
+        // eor x5, x5, x23, ror #11
+        // umov x1, v24.d[0]
+        // umov x23, v25.d[0]
+        // eor x9, x9, x28, ror #16
+        // eor x22, x22, x28, ror #23
+        // eor x16, x16, x28, ror #12
+        // eor x24, x24, x28, ror #31
+        // eor x4, x4, x28, ror #16
+        // eor x1, x1, x30, ror #60
+        // eor x23, x23, x30, ror #0
+        // eor x2, x2, x30, ror #28
+        // eor x11, x11, x30, ror #31
+        // eor x15, x15, x30, ror #23
+        // bic x26, x19, x25, ror #3
+        // bic x27, x24, x19, ror #34
+        // bic x28, x0, x15, ror #51
+        // bic x30, x25, x0, ror #39
+        // eor x0, x0, x26, ror #22
+        // bic x26, x15, x24, ror #1
+        // eor x25, x25, x27, ror #27
+        // eor x24, x24, x28, ror #12
+        // eor x15, x15, x30, ror #38
+        // eor x19, x19, x26, ror #29
+        // bic x26, x12, x23, ror #38
+        // bic x27, x14, x12, ror #15
+        // bic x28, x9, x6, ror #48
+        // bic x30, x23, x9, ror #56
+        // eor x9, x9, x26, ror #34
+        // bic x26, x6, x14, ror #35
+        // eor x23, x23, x27, ror #11
+        // eor x14, x14, x28, ror #45
+        // eor x6, x6, x30, ror #24
+        // eor x12, x12, x26, ror #14
+        // bic x26, x16, x17, ror #31
+        // bic x27, x11, x16, ror #18
+        // bic x28, x13, x5, ror #36
+        // bic x30, x17, x13, ror #57
+        // eor x13, x13, x26, ror #40
+        // bic x26, x5, x11, ror #50
+        // eor x17, x17, x27, ror #15
+        // eor x11, x11, x28, ror #42
+        // eor x5, x5, x30, ror #35
+        // eor x16, x16, x26, ror #60
+        // bic x26, x20, x8, ror #30
+        // bic x27, x21, x20, ror #58
+        // bic x28, x1, x4, ror #31
+        // bic x30, x8, x1, ror #60
+        // eor x1, x1, x26, ror #38
+        // bic x26, x4, x21, ror #13
+        // eor x8, x8, x27, ror #40
+        // eor x21, x21, x28, ror #20
+        // eor x4, x4, x30, ror #37
+        // eor x20, x20, x26, ror #57
+        // bic x26, x2, x22, ror #5
+        // bic x27, x10, x2, ror #5
+        // bic x28, x3, x7, ror #60
+        // bic x30, x22, x3, ror #16
+        // eor x3, x3, x26, ror #43
+        // bic x26, x7, x10, ror #42
+        // eor x22, x22, x27, ror #54
+        // eor x10, x10, x28, ror #26
+        // eor x7, x7, x30, ror #52
+        // eor x2, x2, x26, ror #17
+        // movz x26, #1, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x9, ror #60
+        // dup v24.2d, x15
+        // dup v25.2d, x6
+        // eor x27, x25, x23, ror #43
+        // eor x28, x19, x12, ror #8
+        // eor x30, x24, x14, ror #27
+        // eor x15, x15, x6, ror #57
+        // eor x26, x26, x13, ror #27
+        // eor x27, x27, x17, ror #9
+        // eor x28, x28, x16, ror #45
+        // eor x30, x30, x11, ror #61
+        // eor x15, x15, x5, ror #12
+        // eor x26, x26, x1, ror #1
+        // eor x27, x27, x8, ror #44
+        // eor x28, x28, x20, ror #17
+        // eor x30, x30, x21, ror #57
+        // eor x15, x15, x4, ror #45
+        // eor x26, x26, x3, ror #42
+        // eor x27, x27, x22, ror #1
+        // eor x28, x28, x2, ror #63
+        // eor x30, x30, x10, ror #28
+        // eor x15, x15, x7, ror #51
+        // eor x6, x26, x28, ror #21
+        // eor x25, x25, x6, ror #39
+        // eor x23, x23, x6, ror #60
+        // eor x17, x17, x6, ror #30
+        // eor x8, x8, x6, ror #59
+        // eor x22, x22, x6, ror #38
+        // eor x6, x27, x30, ror #26
+        // eor x28, x28, x15, ror #28
+        // eor x30, x30, x26, ror #11
+        // eor x15, x15, x27, ror #37
+        // eor x19, x19, x6, ror #3
+        // eor x12, x12, x6, ror #59
+        // eor x16, x16, x6, ror #22
+        // eor x20, x20, x6, ror #50
+        // eor x2, x2, x6, ror #4
+        // eor x0, x0, x15, ror #51
+        // eor x9, x9, x15, ror #55
+        // eor x13, x13, x15, ror #24
+        // eor x1, x1, x15, ror #50
+        // eor x3, x3, x15, ror #9
+        // umov x6, v24.d[0]
+        // umov x15, v25.d[0]
+        // eor x24, x24, x28, ror #34
+        // eor x14, x14, x28, ror #7
+        // eor x11, x11, x28, ror #37
+        // eor x21, x21, x28, ror #41
+        // eor x10, x10, x28, ror #6
+        // eor x6, x6, x30, ror #1
+        // eor x15, x15, x30, ror #8
+        // eor x5, x5, x30, ror #53
+        // eor x4, x4, x30, ror #20
+        // eor x7, x7, x30, ror #14
+        // bic x26, x16, x23, ror #0
+        // bic x27, x21, x16, ror #0
+        // bic x28, x0, x7, ror #24
+        // bic x30, x23, x0, ror #40
+        // eor x0, x0, x26, ror #24
+        // bic x26, x7, x21, ror #0
+        // eor x23, x23, x27, ror #0
+        // eor x21, x21, x28, ror #40
+        // eor x7, x7, x30, ror #0
+        // eor x16, x16, x26, ror #0
+        // bic x26, x13, x15, ror #0
+        // bic x27, x8, x13, ror #0
+        // bic x28, x24, x2, ror #0
+        // bic x30, x15, x24, ror #0
+        // eor x24, x24, x26, ror #0
+        // bic x26, x2, x8, ror #0
+        // eor x15, x15, x27, ror #0
+        // eor x8, x8, x28, ror #0
+        // eor x2, x2, x30, ror #0
+        // eor x13, x13, x26, ror #0
+        // bic x26, x11, x12, ror #0
+        // bic x27, x4, x11, ror #0
+        // bic x28, x25, x3, ror #0
+        // bic x30, x12, x25, ror #0
+        // eor x25, x25, x26, ror #0
+        // bic x26, x3, x4, ror #0
+        // eor x12, x12, x27, ror #0
+        // eor x4, x4, x28, ror #0
+        // eor x3, x3, x30, ror #0
+        // eor x11, x11, x26, ror #0
+        // bic x26, x17, x9, ror #0
+        // bic x27, x20, x17, ror #0
+        // bic x28, x6, x10, ror #0
+        // bic x30, x9, x6, ror #0
+        // eor x6, x6, x26, ror #0
+        // bic x26, x10, x20, ror #0
+        // eor x9, x9, x27, ror #0
+        // eor x20, x20, x28, ror #0
+        // eor x10, x10, x30, ror #0
+        // eor x17, x17, x26, ror #0
+        // bic x26, x5, x14, ror #0
+        // bic x27, x1, x5, ror #0
+        // bic x28, x19, x22, ror #0
+        // bic x30, x14, x19, ror #0
+        // eor x19, x19, x26, ror #0
+        // bic x26, x22, x1, ror #0
+        // eor x14, x14, x27, ror #0
+        // eor x1, x1, x28, ror #0
+        // eor x22, x22, x30, ror #0
+        // eor x5, x5, x26, ror #0
+        // movz x26, #32776, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // ror x8, x8, #24
+        // ror x17, x17, #24
+        // add x26, x23, #0
+        // ror x23, x1, #24
+        // ror x1, x26, #24
+        // add x26, x16, #0
+        // ror x16, x9, #24
+        // ror x9, x2, #24
+        // ror x2, x26, #24
+        // add x26, x21, #0
+        // ror x21, x14, #24
+        // ror x14, x3, #24
+        // ror x3, x26, #24
+        // add x26, x7, #0
+        // ror x7, x13, #24
+        // ror x13, x4, #24
+        // ror x4, x26, #24
+        // add x26, x24, #0
+        // ror x24, x22, #24
+        // ror x22, x5, #24
+        // ror x5, x26, #24
+        // add x26, x15, #0
+        // ror x15, x6, #24
+        // ror x6, x26, #24
+        // add x26, x25, #0
+        // ror x25, x20, #24
+        // ror x20, x19, #24
+        // ror x19, x10, #24
+        // ror x10, x26, #24
+        // add x26, x12, #0
+        // ror x12, x11, #24
+        // ror x11, x26, #24
+        // umov x30, v30.d[0]
+        // str x0, [x30, #0]
+        // str x1, [x30, #8]
+        // str x2, [x30, #16]
+        // str x3, [x30, #24]
+        // str x4, [x30, #32]
+        // str x5, [x30, #40]
+        // str x6, [x30, #48]
+        // str x7, [x30, #56]
+        // str x8, [x30, #64]
+        // str x9, [x30, #72]
+        // str x10, [x30, #80]
+        // str x11, [x30, #88]
+        // str x12, [x30, #96]
+        // str x13, [x30, #104]
+        // str x14, [x30, #112]
+        // str x15, [x30, #120]
+        // str x16, [x30, #128]
+        // str x17, [x30, #136]
+        // str x25, [x30, #144]
+        // str x19, [x30, #152]
+        // str x20, [x30, #160]
+        // str x21, [x30, #168]
+        // str x22, [x30, #176]
+        // str x23, [x30, #184]
+        // str x24, [x30, #192]
+        // umov x19, v0.d[0]
+        // umov x20, v1.d[0]
+        // umov x21, v2.d[0]
+        // umov x22, v3.d[0]
+        // umov x23, v4.d[0]
+        // umov x24, v5.d[0]
+        // umov x25, v6.d[0]
+        // umov x26, v7.d[0]
+        // umov x27, v16.d[0]
+        // umov x28, v17.d[0]
+        // umov x30, v18.d[0]
+        // ret
         r".inst 0x4e080e60,0x4e080e81,0x4e080ea2,0x4e080ec3,0x4e080ee4,0x4e080f05,0x4e080f26,0x4e080f47
 .inst 0x4e080f70,0x4e080f91,0x4e080fd2,0x4e080c1e,0x4e080c3f,0x9100001e,0xf94003c0,0xf94007c1
 .inst 0xf9400bc2,0xf9400fc3,0xf94013c4,0xf94017c5,0xf9401bc6,0xf9401fc7,0xf94023c8,0xf94027c9
@@ -588,8 +4990,8 @@ pub unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u
 .inst 0xf90027c9,0xf9002bca,0xf9002fcb,0xf90033cc,0xf90037cd,0xf9003bce,0xf9003fcf,0xf90043d0
 .inst 0xf90047d1,0xf9004bd9,0xf9004fd3,0xf90053d4,0xf90057d5,0xf9005bd6,0xf9005fd7,0xf90063d8
 .inst 0x4e083c13,0x4e083c34,0x4e083c55,0x4e083c76,0x4e083c97,0x4e083cb8,0x4e083cd9,0x4e083cfa
-.inst 0x4e083e1b,0x4e083e3c,0x4e083e5e,0xd65f03c0",
-        r".p2align 6",
+.inst 0x4e083e1b,0x4e083e3c,0x4e083e5e,0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -607,6 +5009,5736 @@ pub unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_f1600_x2(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
+        // str q8, [x1, #0]
+        // str q9, [x1, #16]
+        // str q10, [x1, #32]
+        // str q11, [x1, #48]
+        // str q12, [x1, #64]
+        // str q13, [x1, #80]
+        // str q14, [x1, #96]
+        // str q15, [x1, #112]
+        // ldr q0, [x0, #0]
+        // ldr q1, [x0, #16]
+        // ldr q2, [x0, #32]
+        // ldr q3, [x0, #48]
+        // ldr q4, [x0, #64]
+        // ldr q5, [x0, #80]
+        // ldr q6, [x0, #96]
+        // ldr q7, [x0, #112]
+        // ldr q8, [x0, #128]
+        // ldr q9, [x0, #144]
+        // ldr q10, [x0, #160]
+        // ldr q11, [x0, #176]
+        // ldr q12, [x0, #192]
+        // ldr q13, [x0, #208]
+        // ldr q14, [x0, #224]
+        // ldr q15, [x0, #240]
+        // ldr q16, [x0, #256]
+        // ldr q17, [x0, #272]
+        // ldr q18, [x0, #288]
+        // ldr q19, [x0, #304]
+        // ldr q20, [x0, #320]
+        // ldr q21, [x0, #336]
+        // ldr q22, [x0, #352]
+        // ldr q23, [x0, #368]
+        // ldr q24, [x0, #384]
+        // movz x16, #1, lsl #0
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32898, lsl #0
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32906, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32768, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32907, lsl #0
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #138, lsl #0
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #136, lsl #0
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32907, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #139, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32905, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32771, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32770, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #128, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32778, lsl #0
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32896, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // movz x16, #32776, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor v25.16b, v0.16b, v5.16b
+        // eor v25.16b, v25.16b, v10.16b
+        // eor v25.16b, v25.16b, v15.16b
+        // eor v25.16b, v25.16b, v20.16b
+        // eor v26.16b, v1.16b, v6.16b
+        // eor v26.16b, v26.16b, v11.16b
+        // eor v26.16b, v26.16b, v16.16b
+        // eor v26.16b, v26.16b, v21.16b
+        // eor v27.16b, v2.16b, v7.16b
+        // eor v27.16b, v27.16b, v12.16b
+        // eor v27.16b, v27.16b, v17.16b
+        // eor v27.16b, v27.16b, v22.16b
+        // eor v28.16b, v3.16b, v8.16b
+        // eor v28.16b, v28.16b, v13.16b
+        // eor v28.16b, v28.16b, v18.16b
+        // eor v28.16b, v28.16b, v23.16b
+        // eor v29.16b, v4.16b, v9.16b
+        // eor v29.16b, v29.16b, v14.16b
+        // eor v29.16b, v29.16b, v19.16b
+        // eor v29.16b, v29.16b, v24.16b
+        // ushr v30.2d, v26.2d, #63
+        // sli v30.2d, v26.2d, #1
+        // eor v30.16b, v29.16b, v30.16b
+        // eor v0.16b, v0.16b, v30.16b
+        // eor v5.16b, v5.16b, v30.16b
+        // eor v10.16b, v10.16b, v30.16b
+        // eor v15.16b, v15.16b, v30.16b
+        // eor v20.16b, v20.16b, v30.16b
+        // ushr v30.2d, v27.2d, #63
+        // sli v30.2d, v27.2d, #1
+        // eor v30.16b, v25.16b, v30.16b
+        // eor v1.16b, v1.16b, v30.16b
+        // eor v6.16b, v6.16b, v30.16b
+        // eor v11.16b, v11.16b, v30.16b
+        // eor v16.16b, v16.16b, v30.16b
+        // eor v21.16b, v21.16b, v30.16b
+        // ushr v30.2d, v28.2d, #63
+        // sli v30.2d, v28.2d, #1
+        // eor v30.16b, v26.16b, v30.16b
+        // eor v2.16b, v2.16b, v30.16b
+        // eor v7.16b, v7.16b, v30.16b
+        // eor v12.16b, v12.16b, v30.16b
+        // eor v17.16b, v17.16b, v30.16b
+        // eor v22.16b, v22.16b, v30.16b
+        // ushr v30.2d, v29.2d, #63
+        // sli v30.2d, v29.2d, #1
+        // eor v30.16b, v27.16b, v30.16b
+        // eor v3.16b, v3.16b, v30.16b
+        // eor v8.16b, v8.16b, v30.16b
+        // eor v13.16b, v13.16b, v30.16b
+        // eor v18.16b, v18.16b, v30.16b
+        // eor v23.16b, v23.16b, v30.16b
+        // ushr v30.2d, v25.2d, #63
+        // sli v30.2d, v25.2d, #1
+        // eor v30.16b, v28.16b, v30.16b
+        // eor v4.16b, v4.16b, v30.16b
+        // eor v9.16b, v9.16b, v30.16b
+        // eor v14.16b, v14.16b, v30.16b
+        // eor v19.16b, v19.16b, v30.16b
+        // eor v24.16b, v24.16b, v30.16b
+        // mov v25.16b, v1.16b
+        // mov v26.16b, v10.16b
+        // ushr v10.2d, v25.2d, #63
+        // sli v10.2d, v25.2d, #1
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v7.16b
+        // ushr v7.2d, v25.2d, #61
+        // sli v7.2d, v25.2d, #3
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v11.16b
+        // ushr v11.2d, v25.2d, #58
+        // sli v11.2d, v25.2d, #6
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v17.16b
+        // ushr v17.2d, v25.2d, #54
+        // sli v17.2d, v25.2d, #10
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v18.16b
+        // ushr v18.2d, v25.2d, #49
+        // sli v18.2d, v25.2d, #15
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v3.16b
+        // ushr v3.2d, v25.2d, #43
+        // sli v3.2d, v25.2d, #21
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v5.16b
+        // ushr v5.2d, v25.2d, #36
+        // sli v5.2d, v25.2d, #28
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v16.16b
+        // ushr v16.2d, v25.2d, #28
+        // sli v16.2d, v25.2d, #36
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v8.16b
+        // ushr v8.2d, v25.2d, #19
+        // sli v8.2d, v25.2d, #45
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v21.16b
+        // ushr v21.2d, v25.2d, #9
+        // sli v21.2d, v25.2d, #55
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v24.16b
+        // ushr v24.2d, v25.2d, #62
+        // sli v24.2d, v25.2d, #2
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v4.16b
+        // ushr v4.2d, v25.2d, #50
+        // sli v4.2d, v25.2d, #14
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v15.16b
+        // ushr v15.2d, v25.2d, #37
+        // sli v15.2d, v25.2d, #27
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v23.16b
+        // ushr v23.2d, v25.2d, #23
+        // sli v23.2d, v25.2d, #41
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v19.16b
+        // ushr v19.2d, v25.2d, #8
+        // sli v19.2d, v25.2d, #56
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v13.16b
+        // ushr v13.2d, v25.2d, #56
+        // sli v13.2d, v25.2d, #8
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v12.16b
+        // ushr v12.2d, v25.2d, #39
+        // sli v12.2d, v25.2d, #25
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v2.16b
+        // ushr v2.2d, v25.2d, #21
+        // sli v2.2d, v25.2d, #43
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v20.16b
+        // ushr v20.2d, v25.2d, #2
+        // sli v20.2d, v25.2d, #62
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v14.16b
+        // ushr v14.2d, v25.2d, #46
+        // sli v14.2d, v25.2d, #18
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v22.16b
+        // ushr v22.2d, v25.2d, #25
+        // sli v22.2d, v25.2d, #39
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v9.16b
+        // ushr v9.2d, v25.2d, #3
+        // sli v9.2d, v25.2d, #61
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v6.16b
+        // ushr v6.2d, v25.2d, #44
+        // sli v6.2d, v25.2d, #20
+        // mov v25.16b, v26.16b
+        // mov v26.16b, v1.16b
+        // ushr v1.2d, v25.2d, #20
+        // sli v1.2d, v25.2d, #44
+        // mov v25.16b, v26.16b
+        // mov v25.16b, v0.16b
+        // mov v26.16b, v1.16b
+        // mov v27.16b, v2.16b
+        // mov v28.16b, v3.16b
+        // mov v29.16b, v4.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v0.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v1.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v2.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v3.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v4.16b, v29.16b, v30.16b
+        // mov v25.16b, v5.16b
+        // mov v26.16b, v6.16b
+        // mov v27.16b, v7.16b
+        // mov v28.16b, v8.16b
+        // mov v29.16b, v9.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v5.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v6.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v7.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v8.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v9.16b, v29.16b, v30.16b
+        // mov v25.16b, v10.16b
+        // mov v26.16b, v11.16b
+        // mov v27.16b, v12.16b
+        // mov v28.16b, v13.16b
+        // mov v29.16b, v14.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v10.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v11.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v12.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v13.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v14.16b, v29.16b, v30.16b
+        // mov v25.16b, v15.16b
+        // mov v26.16b, v16.16b
+        // mov v27.16b, v17.16b
+        // mov v28.16b, v18.16b
+        // mov v29.16b, v19.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v15.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v16.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v17.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v18.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v19.16b, v29.16b, v30.16b
+        // mov v25.16b, v20.16b
+        // mov v26.16b, v21.16b
+        // mov v27.16b, v22.16b
+        // mov v28.16b, v23.16b
+        // mov v29.16b, v24.16b
+        // bic v30.16b, v27.16b, v26.16b
+        // eor v20.16b, v25.16b, v30.16b
+        // bic v30.16b, v28.16b, v27.16b
+        // eor v21.16b, v26.16b, v30.16b
+        // bic v30.16b, v29.16b, v28.16b
+        // eor v22.16b, v27.16b, v30.16b
+        // bic v30.16b, v25.16b, v29.16b
+        // eor v23.16b, v28.16b, v30.16b
+        // bic v30.16b, v26.16b, v25.16b
+        // eor v24.16b, v29.16b, v30.16b
+        // dup v25.2d, x16
+        // eor v0.16b, v0.16b, v25.16b
+        // str q0, [x0, #0]
+        // str q1, [x0, #16]
+        // str q2, [x0, #32]
+        // str q3, [x0, #48]
+        // str q4, [x0, #64]
+        // str q5, [x0, #80]
+        // str q6, [x0, #96]
+        // str q7, [x0, #112]
+        // str q8, [x0, #128]
+        // str q9, [x0, #144]
+        // str q10, [x0, #160]
+        // str q11, [x0, #176]
+        // str q12, [x0, #192]
+        // str q13, [x0, #208]
+        // str q14, [x0, #224]
+        // str q15, [x0, #240]
+        // str q16, [x0, #256]
+        // str q17, [x0, #272]
+        // str q18, [x0, #288]
+        // str q19, [x0, #304]
+        // str q20, [x0, #320]
+        // str q21, [x0, #336]
+        // str q22, [x0, #352]
+        // str q23, [x0, #368]
+        // str q24, [x0, #384]
+        // ldr q8, [x1, #0]
+        // ldr q9, [x1, #16]
+        // ldr q10, [x1, #32]
+        // ldr q11, [x1, #48]
+        // ldr q12, [x1, #64]
+        // ldr q13, [x1, #80]
+        // ldr q14, [x1, #96]
+        // ldr q15, [x1, #112]
+        // ret
         r".inst 0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e,0x3d801c2f
 .inst 0x3dc00000,0x3dc00401,0x3dc00802,0x3dc00c03,0x3dc01004,0x3dc01405,0x3dc01806,0x3dc01c07
 .inst 0x3dc02008,0x3dc02409,0x3dc0280a,0x3dc02c0b,0x3dc0300c,0x3dc0340d,0x3dc0380e,0x3dc03c0f
@@ -1323,8 +11455,8 @@ pub unsafe extern "C" fn vg_keccak_f1600_x2(states: *mut [u64; 50], scratch: *mu
 .inst 0x3d802008,0x3d802409,0x3d80280a,0x3d802c0b,0x3d80300c,0x3d80340d,0x3d80380e,0x3d803c0f
 .inst 0x3d804010,0x3d804411,0x3d804812,0x3d804c13,0x3d805014,0x3d805415,0x3d805816,0x3d805c17
 .inst 0x3d806018,0x3dc00028,0x3dc00429,0x3dc0082a,0x3dc00c2b,0x3dc0102c,0x3dc0142d,0x3dc0182e
-.inst 0x3dc01c2f,0xd65f03c0",
-        r".p2align 6",
+.inst 0x3dc01c2f,0xd65f03c0
+.p2align 6",
     )
 }
 
@@ -1346,6 +11478,1729 @@ pub const VG_KECCAK_F1600_X2_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_f1600_x2_sha3(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // str q8, [x1, #0]
+        // str q9, [x1, #16]
+        // str q10, [x1, #32]
+        // str q11, [x1, #48]
+        // str q12, [x1, #64]
+        // str q13, [x1, #80]
+        // str q14, [x1, #96]
+        // str q15, [x1, #112]
+        // ldr q0, [x0, #0]
+        // ldr q1, [x0, #16]
+        // ldr q2, [x0, #32]
+        // ldr q3, [x0, #48]
+        // ldr q4, [x0, #64]
+        // ldr q5, [x0, #80]
+        // ldr q6, [x0, #96]
+        // ldr q7, [x0, #112]
+        // ldr q8, [x0, #128]
+        // ldr q9, [x0, #144]
+        // ldr q10, [x0, #160]
+        // ldr q11, [x0, #176]
+        // ldr q12, [x0, #192]
+        // ldr q13, [x0, #208]
+        // ldr q14, [x0, #224]
+        // ldr q15, [x0, #240]
+        // ldr q16, [x0, #256]
+        // ldr q17, [x0, #272]
+        // ldr q18, [x0, #288]
+        // ldr q19, [x0, #304]
+        // ldr q20, [x0, #320]
+        // ldr q21, [x0, #336]
+        // ldr q22, [x0, #352]
+        // ldr q23, [x0, #368]
+        // ldr q24, [x0, #384]
+        // movz x16, #1, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32898, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32906, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32768, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32907, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #138, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #136, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32907, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #139, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32905, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32771, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32770, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #128, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32778, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32896, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32776, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // str q0, [x0, #0]
+        // str q1, [x0, #16]
+        // str q2, [x0, #32]
+        // str q3, [x0, #48]
+        // str q4, [x0, #64]
+        // str q5, [x0, #80]
+        // str q6, [x0, #96]
+        // str q7, [x0, #112]
+        // str q8, [x0, #128]
+        // str q9, [x0, #144]
+        // str q10, [x0, #160]
+        // str q11, [x0, #176]
+        // str q12, [x0, #192]
+        // str q13, [x0, #208]
+        // str q14, [x0, #224]
+        // str q15, [x0, #240]
+        // str q16, [x0, #256]
+        // str q17, [x0, #272]
+        // str q18, [x0, #288]
+        // str q19, [x0, #304]
+        // str q20, [x0, #320]
+        // str q21, [x0, #336]
+        // str q22, [x0, #352]
+        // str q23, [x0, #368]
+        // str q24, [x0, #384]
+        // ldr q8, [x1, #0]
+        // ldr q9, [x1, #16]
+        // ldr q10, [x1, #32]
+        // ldr q11, [x1, #48]
+        // ldr q12, [x1, #64]
+        // ldr q13, [x1, #80]
+        // ldr q14, [x1, #96]
+        // ldr q15, [x1, #112]
+        // ret
         r".inst 0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e,0x3d801c2f
 .inst 0x3dc00000,0x3dc00401,0x3dc00802,0x3dc00c03,0x3dc01004,0x3dc01405,0x3dc01806,0x3dc01c07
 .inst 0x3dc02008,0x3dc02409,0x3dc0280a,0x3dc02c0b,0x3dc0300c,0x3dc0340d,0x3dc0380e,0x3dc03c0f
@@ -1561,8 +13416,9 @@ pub unsafe extern "C" fn vg_keccak_f1600_x2_sha3(states: *mut [u64; 50], scratch
 .inst 0x3d802008,0x3d802409,0x3d80280a,0x3d802c0b,0x3d80300c,0x3d80340d,0x3d80380e,0x3d803c0f
 .inst 0x3d804010,0x3d804411,0x3d804812,0x3d804c13,0x3d805014,0x3d805415,0x3d805816,0x3d805c17
 .inst 0x3d806018,0x3dc00028,0x3dc00429,0x3dc0082a,0x3dc00c2b,0x3dc0102c,0x3dc0142d,0x3dc0182e
-.inst 0x3dc01c2f,0xd65f03c0",
-        r".p2align 6",
+.inst 0x3dc01c2f,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
     )
 }
 
@@ -1585,6 +13441,4930 @@ pub const VG_KECCAK_F1600_X3_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_f1600_x3_sha3(states: *mut [u64; 50], state: *mut [u64; 25], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // sub sp, sp, #128
+        // str x19, [sp, #16]
+        // str x20, [sp, #24]
+        // str x21, [sp, #32]
+        // str x22, [sp, #40]
+        // str x23, [sp, #48]
+        // str x24, [sp, #56]
+        // str x25, [sp, #64]
+        // str x26, [sp, #72]
+        // str x27, [sp, #80]
+        // str x28, [sp, #88]
+        // str x30, [sp, #96]
+        // str x0, [sp, #104]
+        // str x1, [sp, #112]
+        // str x2, [sp, #120]
+        // str q8, [x2, #0]
+        // str q9, [x2, #16]
+        // str q10, [x2, #32]
+        // str q11, [x2, #48]
+        // str q12, [x2, #64]
+        // str q13, [x2, #80]
+        // str q14, [x2, #96]
+        // str q15, [x2, #112]
+        // ldr q0, [x0, #0]
+        // ldr q1, [x0, #16]
+        // ldr q2, [x0, #32]
+        // ldr q3, [x0, #48]
+        // ldr q4, [x0, #64]
+        // ldr q5, [x0, #80]
+        // ldr q6, [x0, #96]
+        // ldr q7, [x0, #112]
+        // ldr q8, [x0, #128]
+        // ldr q9, [x0, #144]
+        // ldr q10, [x0, #160]
+        // ldr q11, [x0, #176]
+        // ldr q12, [x0, #192]
+        // ldr q13, [x0, #208]
+        // ldr q14, [x0, #224]
+        // ldr q15, [x0, #240]
+        // ldr q16, [x0, #256]
+        // ldr q17, [x0, #272]
+        // ldr q18, [x0, #288]
+        // ldr q19, [x0, #304]
+        // ldr q20, [x0, #320]
+        // ldr q21, [x0, #336]
+        // ldr q22, [x0, #352]
+        // ldr q23, [x0, #368]
+        // ldr q24, [x0, #384]
+        // add x30, x1, #0
+        // ldr x0, [x30, #0]
+        // ldr x1, [x30, #8]
+        // ldr x2, [x30, #16]
+        // ldr x3, [x30, #24]
+        // ldr x4, [x30, #32]
+        // ldr x5, [x30, #40]
+        // ldr x6, [x30, #48]
+        // ldr x7, [x30, #56]
+        // ldr x8, [x30, #64]
+        // ldr x9, [x30, #72]
+        // ldr x10, [x30, #80]
+        // ldr x11, [x30, #88]
+        // ldr x12, [x30, #96]
+        // ldr x13, [x30, #104]
+        // ldr x14, [x30, #112]
+        // ldr x15, [x30, #120]
+        // ldr x16, [x30, #128]
+        // ldr x17, [x30, #136]
+        // ldr x25, [x30, #144]
+        // ldr x19, [x30, #152]
+        // ldr x20, [x30, #160]
+        // ldr x21, [x30, #168]
+        // ldr x22, [x30, #176]
+        // ldr x23, [x30, #184]
+        // ldr x24, [x30, #192]
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #1, lsl #0
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32898, lsl #0
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32906, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32768, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32907, lsl #0
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #1, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32897, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32777, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #138, lsl #0
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #136, lsl #0
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32777, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #10, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32907, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #139, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32905, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32771, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32770, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #128, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32778, lsl #0
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #10, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32897, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32896, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #1, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor x26, x0, x5
+        // str x4, [sp, #0]
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // str x9, [sp, #8]
+        // eor x27, x1, x6
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor x28, x2, x7
+        // eor x30, x3, x8
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor x4, x4, x9
+        // eor x26, x26, x10
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor x27, x27, x11
+        // eor x28, x28, x12
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor x30, x30, x13
+        // eor x4, x4, x14
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor x26, x26, x15
+        // eor x27, x27, x16
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor x28, x28, x17
+        // eor x30, x30, x25
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor x4, x4, x19
+        // eor x26, x26, x20
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // eor x27, x27, x21
+        // eor x28, x28, x22
+        // rax1 v30.2d, v25.2d, v27.2d
+        // eor x30, x30, x23
+        // eor x4, x4, x24
+        // rax1 v31.2d, v26.2d, v28.2d
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9
+        // rax1 v27.2d, v27.2d, v29.2d
+        // eor x6, x6, x9
+        // eor x11, x11, x9
+        // rax1 v28.2d, v28.2d, v25.2d
+        // eor x16, x16, x9
+        // eor x21, x21, x9
+        // rax1 v29.2d, v29.2d, v26.2d
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // eor x27, x2, x9
+        // eor x7, x7, x9
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // eor x12, x12, x9
+        // eor x17, x17, x9
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // eor x22, x22, x9
+        // eor x0, x0, x4
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // eor x5, x5, x4
+        // eor x10, x10, x4
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // eor x15, x15, x4
+        // eor x20, x20, x4
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // ldr x4, [sp, #0]
+        // ldr x9, [sp, #8]
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // eor x26, x3, x28
+        // eor x8, x8, x28
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // eor x13, x13, x28
+        // eor x25, x25, x28
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // eor x23, x23, x28
+        // eor x28, x4, x30
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // eor x9, x9, x30
+        // eor x14, x14, x30
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // eor x19, x19, x30
+        // eor x24, x24, x30
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // add x30, x1, #0
+        // ror x1, x6, #20
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // ror x2, x12, #21
+        // ror x3, x25, #43
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // ror x4, x24, #50
+        // ror x6, x9, #44
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // ror x12, x13, #39
+        // ror x25, x17, #49
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // ror x24, x21, #62
+        // ror x9, x22, #3
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // ror x13, x19, #56
+        // ror x17, x11, #54
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // ror x21, x8, #9
+        // ror x22, x14, #25
+        // eor v0.16b, v0.16b, v29.16b
+        // ror x19, x23, #8
+        // ror x11, x7, #58
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // ror x8, x16, #19
+        // ror x14, x20, #46
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // ror x23, x15, #23
+        // ror x7, x10, #61
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // ror x16, x5, #28
+        // ror x5, x26, #36
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // ror x10, x30, #63
+        // ror x15, x28, #37
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // ror x20, x27, #2
+        // bic x26, x2, x1, ror #0
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bic x27, x3, x2, ror #0
+        // bic x28, x0, x4, ror #0
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bic x30, x1, x0, ror #0
+        // eor x0, x0, x26
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bic x26, x4, x3, ror #0
+        // eor x1, x1, x27
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // eor x3, x3, x28
+        // eor x4, x4, x30
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // eor x2, x2, x26
+        // bic x26, x7, x6, ror #0
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bic x27, x8, x7, ror #0
+        // bic x28, x5, x9, ror #0
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bic x30, x6, x5, ror #0
+        // eor x5, x5, x26
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bic x26, x9, x8, ror #0
+        // eor x6, x6, x27
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // eor x8, x8, x28
+        // eor x9, x9, x30
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // eor x7, x7, x26
+        // bic x26, x12, x11, ror #0
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bic x27, x13, x12, ror #0
+        // bic x28, x10, x14, ror #0
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bic x30, x11, x10, ror #0
+        // eor x10, x10, x26
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bic x26, x14, x13, ror #0
+        // eor x11, x11, x27
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // eor x13, x13, x28
+        // eor x14, x14, x30
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // eor x12, x12, x26
+        // bic x26, x17, x16, ror #0
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bic x27, x25, x17, ror #0
+        // bic x28, x15, x19, ror #0
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bic x30, x16, x15, ror #0
+        // eor x15, x15, x26
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bic x26, x19, x25, ror #0
+        // eor x16, x16, x27
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // eor x25, x25, x28
+        // eor x19, x19, x30
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // eor x17, x17, x26
+        // bic x26, x22, x21, ror #0
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bic x27, x23, x22, ror #0
+        // bic x28, x20, x24, ror #0
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bic x30, x21, x20, ror #0
+        // eor x20, x20, x26
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bic x26, x24, x23, ror #0
+        // eor x21, x21, x27
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // eor x23, x23, x28
+        // eor x24, x24, x30
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // eor x22, x22, x26
+        // movz x26, #32776, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26
+        // dup v26.2d, x26
+        // eor v0.16b, v0.16b, v26.16b
+        // ldr x30, [sp, #112]
+        // str x0, [x30, #0]
+        // str x1, [x30, #8]
+        // str x2, [x30, #16]
+        // str x3, [x30, #24]
+        // str x4, [x30, #32]
+        // str x5, [x30, #40]
+        // str x6, [x30, #48]
+        // str x7, [x30, #56]
+        // str x8, [x30, #64]
+        // str x9, [x30, #72]
+        // str x10, [x30, #80]
+        // str x11, [x30, #88]
+        // str x12, [x30, #96]
+        // str x13, [x30, #104]
+        // str x14, [x30, #112]
+        // str x15, [x30, #120]
+        // str x16, [x30, #128]
+        // str x17, [x30, #136]
+        // str x25, [x30, #144]
+        // str x19, [x30, #152]
+        // str x20, [x30, #160]
+        // str x21, [x30, #168]
+        // str x22, [x30, #176]
+        // str x23, [x30, #184]
+        // str x24, [x30, #192]
+        // ldr x0, [sp, #104]
+        // str q0, [x0, #0]
+        // str q1, [x0, #16]
+        // str q2, [x0, #32]
+        // str q3, [x0, #48]
+        // str q4, [x0, #64]
+        // str q5, [x0, #80]
+        // str q6, [x0, #96]
+        // str q7, [x0, #112]
+        // str q8, [x0, #128]
+        // str q9, [x0, #144]
+        // str q10, [x0, #160]
+        // str q11, [x0, #176]
+        // str q12, [x0, #192]
+        // str q13, [x0, #208]
+        // str q14, [x0, #224]
+        // str q15, [x0, #240]
+        // str q16, [x0, #256]
+        // str q17, [x0, #272]
+        // str q18, [x0, #288]
+        // str q19, [x0, #304]
+        // str q20, [x0, #320]
+        // str q21, [x0, #336]
+        // str q22, [x0, #352]
+        // str q23, [x0, #368]
+        // str q24, [x0, #384]
+        // ldr x2, [sp, #120]
+        // ldr q8, [x2, #0]
+        // ldr q9, [x2, #16]
+        // ldr q10, [x2, #32]
+        // ldr q11, [x2, #48]
+        // ldr q12, [x2, #64]
+        // ldr q13, [x2, #80]
+        // ldr q14, [x2, #96]
+        // ldr q15, [x2, #112]
+        // ldr x19, [sp, #16]
+        // ldr x20, [sp, #24]
+        // ldr x21, [sp, #32]
+        // ldr x22, [sp, #40]
+        // ldr x23, [sp, #48]
+        // ldr x24, [sp, #56]
+        // ldr x25, [sp, #64]
+        // ldr x26, [sp, #72]
+        // ldr x27, [sp, #80]
+        // ldr x28, [sp, #88]
+        // ldr x30, [sp, #96]
+        // add sp, sp, #128
+        // ret
         r".inst 0xd10203ff,0xf9000bf3,0xf9000ff4,0xf90013f5,0xf90017f6,0xf9001bf7,0xf9001ff8,0xf90023f9
 .inst 0xf90027fa,0xf9002bfb,0xf9002ffc,0xf90033fe,0xf90037e0,0xf9003be1,0xf9003fe2,0x3d800048
 .inst 0x3d800449,0x3d80084a,0x3d800c4b,0x3d80104c,0x3d80144d,0x3d80184e,0x3d801c4f,0x3dc00000
@@ -2200,8 +18980,9 @@ pub unsafe extern "C" fn vg_keccak_f1600_x3_sha3(states: *mut [u64; 50], state: 
 .inst 0x3d805014,0x3d805415,0x3d805816,0x3d805c17,0x3d806018,0xf9403fe2,0x3dc00048,0x3dc00449
 .inst 0x3dc0084a,0x3dc00c4b,0x3dc0104c,0x3dc0144d,0x3dc0184e,0x3dc01c4f,0xf9400bf3,0xf9400ff4
 .inst 0xf94013f5,0xf94017f6,0xf9401bf7,0xf9401ff8,0xf94023f9,0xf94027fa,0xf9402bfb,0xf9402ffc
-.inst 0xf94033fe,0x910203ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf94033fe,0x910203ff,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
     )
 }
 
@@ -2221,375 +19002,3330 @@ pub unsafe extern "C" fn vg_keccak_f1600_x3_sha3(states: *mut [u64; 50], state: 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".inst 0xb4000042,0x14000b36,0x91000026,0xcb060087,0xd37ffce7,0xb4000047,0x14000b31,0x910000a1
-.inst 0x4e080e60,0x4e080e81,0x4e080ea2,0x4e080ec3,0x4e080ee4,0x4e080f05,0x4e080f26,0x4e080f47
-.inst 0x4e080f70,0x4e080f91,0x4e080fd2,0x4e080c1e,0x4e080c3f,0x4e080c73,0x4e080c94,0x4e080cd5
-.inst 0x9100001e,0xf94003c0,0xf94007c1,0xf9400bc2,0xf9400fc3,0xf94013c4,0xf94017c5,0xf9401bc6
-.inst 0xf9401fc7,0xf94023c8,0xf94027c9,0xf9402bca,0xf9402fcb,0xf94033cc,0xf94037cd,0xf9403bce
-.inst 0xf9403fcf,0xf94043d0,0xf94047d1,0xf9404bd9,0xf9404fd3,0xf94053d4,0xf94057d5,0xf9405bd6
-.inst 0xf9405fd7,0xf94063d8,0x4e083e7b,0x4e083ebc,0xd101239a,0xb40012ba,0xd101a39a,0xb4000f1a
-.inst 0xd102239a,0xb4000a7a,0xd102439a,0xb400059a,0xf940037a,0xca1a0000,0xf940077a,0xca1a0021
-.inst 0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063,0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5
-.inst 0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7,0xf940237a,0xca1a0108,0xf940277a,0xca1a0129
-.inst 0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b,0xf940337a,0xca1a018c,0xf940377a,0xca1a01ad
-.inst 0xf9403b7a,0xca1a01ce,0xf9403f7a,0xca1a01ef,0xf940437a,0xca1a0210,0xf940477a,0xca1a0231
-.inst 0xf9404b7a,0xca1a0339,0xf9404f7a,0xca1a0273,0xf940537a,0xca1a0294,0x14000025,0xf940037a
-.inst 0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063,0xf940137a
-.inst 0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7,0xf940237a
-.inst 0xca1a0108,0xf940277a,0xca1a0129,0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b,0xf940337a
-.inst 0xca1a018c,0xf940377a,0xca1a01ad,0xf9403b7a,0xca1a01ce,0xf9403f7a,0xca1a01ef,0xf940437a
-.inst 0xca1a0210,0xf940477a,0xca1a0231,0x14000023,0xf940037a,0xca1a0000,0xf940077a,0xca1a0021
-.inst 0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063,0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5
-.inst 0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7,0xf940237a,0xca1a0108,0xf940277a,0xca1a0129
-.inst 0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b,0xf940337a,0xca1a018c,0xf940377a,0xca1a01ad
-.inst 0xf9403b7a,0xca1a01ce,0xf9403f7a,0xca1a01ef,0xf940437a,0xca1a0210,0x1400001b,0xf940037a
-.inst 0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063,0xf940137a
-.inst 0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7,0xf940237a
-.inst 0xca1a0108,0xf940277a,0xca1a0129,0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b,0xf940337a
-.inst 0xca1a018c,0x14000013,0xf940037a,0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042
-.inst 0xf9400f7a,0xca1a0063,0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6
-.inst 0xf9401f7a,0xca1a00e7,0xf940237a,0xca1a0108,0xcac5001a,0x4e080c98,0x4e080d39,0xcac6003b
-.inst 0xcac7005c,0xcac8007e,0xcac90084,0xcaca035a,0xcacb037b,0xcacc039c,0xcacd03de,0xcace0084
-.inst 0xcacf035a,0xcad0037b,0xcad1039c,0xcad903de,0xcad30084,0xcad4035a,0xcad5037b,0xcad6039c
-.inst 0xcad703de,0xcad80084,0xcadcff49,0xcac90021,0xcac900c6,0xcac9016b,0xcac90210,0xcac902b5
-.inst 0xcadeff69,0xcac4ff9c,0xcadaffde,0xcadbfc84,0xcac90042,0xcac900e7,0xcac9018c,0xcac90231
-.inst 0xcac902d6,0xcac40000,0xcac400a5,0xcac4014a,0xcac401ef,0xcac40294,0x4e083f04,0x4e083f29
-.inst 0xcadc0063,0xcadc0108,0xcadc01ad,0xcadc0339,0xcadc02f7,0xcade0084,0xcade0129,0xcade01ce
-.inst 0xcade0273,0xcade0318,0x8ae6fd9a,0x8aecab3b,0x8af8c81c,0x8ae0b0de,0xcada5400,0x8af9e71a
-.inst 0xcadb5cc6,0xcadc5739,0xcade8b18,0xcada758c,0x8ae9bd5a,0x8aeaaa1b,0x8af67c7c,0x8ae3e13e
-.inst 0xcada6463,0x8af042da,0xcadb9d29,0xcadc4610,0xcadea6d6,0xcada194a,0x8ae74dba,0x8aedbe7b
-.inst 0x8af4bc3c,0x8ae114fe,0xcadaa021,0x8af32a9a,0xcadbf8e7,0xcadc1e73,0xcade3294,0xcada1dad
-.inst 0x8ae5997a,0x8aeb163b,0x8af78c9c,0x8ae424be,0xcada4484,0x8af1a6fa,0xcadb54a5,0xcadcd231
-.inst 0xcade52f7,0xcada496b,0x8ae8c1da,0x8aee09fb,0x8af5f05c,0x8ae2e51e,0xcada5c42,0x8aef66ba
-.inst 0xcadb3908,0xcadcadef,0xcade2eb5,0xcada95ce,0xd280003a,0xcada0000,0xcac3901a,0x4e080f18
-.inst 0x4e080ed9,0xcac960db,0xcacaa19c,0xcad0a33e,0xcad64718,0xcac1ff5a,0xcac79b7b,0xcacd4b9c
-.inst 0xcad337de,0xcad4f318,0xcac4975a,0xcac5237b,0xcacb879c,0xcad11bde,0xcad75b18,0xcac20b5a
-.inst 0xcac8d77b,0xcace139c,0xcacfb3de,0xcad53318,0xcadc5356,0xcad6b0c6,0xcad65129,0xcad618e7
-.inst 0xcad690a5,0xcad6dd08,0xcade5b76,0xcad8739c,0xcada53de,0xcadb8718,0xcad6fd8c,0xcad65d4a
-.inst 0xcad6b5ad,0xcad6796b,0xcad6edce,0xcad8c800,0xcad83863,0xcad8cc21,0xcad83484,0xcad8c042
-.inst 0x4e083f16,0x4e083f38,0xcadcab39,0xcadc0a10,0xcadc7673,0xcadc9231,0xcadcf9ef,0xcadee6d6
-.inst 0xcadea318,0xcadef694,0xcade8ef7,0xcadeb6b5,0x8ae911ba,0x8aed823b,0x8af5c01c,0x8ae0013e
-.inst 0xcadaf000,0x8af1b2ba,0xcadb7129,0xcadc9231,0xcade42b5,0xcadad1ad,0x8af8cc3a,0x8ae134bb
-.inst 0x8aee373c,0x8af9831e,0xcadab739,0x8ae54dda,0xcadb0318,0xcadc80a5,0xcade4dce,0xcada8021
-.inst 0x8aea627a,0x8af37efb,0x8ae274dc,0x8ae6715e,0xcada30c6,0x8af7405a,0xcadb254a,0xcadc4ef7
-.inst 0xcade1c42,0xcada4673,0x8ae340fa,0x8ae7257b,0x8aef22dc,0x8af65c7e,0xcada66d6,0x8aeb21fa
-.inst 0xcadb9c63,0xcadcc16b,0xcade85ef,0xcadabce7,0x8af0569a,0x8af42c9b,0x8ae8c19c,0x8aecee1e
-.inst 0xcadac18c,0x8ae4d51a,0xcadb8210,0xcadc6c84,0xcade5508,0xcada0294,0xd290105a,0xcada0000
-.inst 0xcad93c1a,0x4e080eb8,0x4e080dd9,0xcad8bd3b,0xcac101bc,0xcac54e3e,0xcaceb2b5,0xcac64f5a
-.inst 0xcacadf7b,0xcad38f9c,0xcad793de,0xcac202b5,0xcad65f5a,0xcac3037b,0xcac7d39c,0xcacb2fde
-.inst 0xcacfbeb5,0xcacc5f5a,0xcad0737b,0xcad42f9c,0xcac483de,0xcac85eb5,0xcadcef4e,0xcace0129
-.inst 0xcace4718,0xcace254a,0xcace0063,0xcace9210,0xcade6f6e,0xcad5cf9c,0xcada8fde,0xcadb3eb5
-.inst 0xcace11ad,0xcace1021,0xcace8673,0xcace40e7,0xcacee694,0xcad5c000,0xcad58739,0xcad574c6
-.inst 0xcad566d6,0xcad5658c,0x4e083f0e,0x4e083f35,0xcadc8231,0xcadc34a5,0xcadcf2f7,0xcadc556b
-.inst 0xcadc0084,0xcadeb1ce,0xcade02b5,0xcadeb042,0xcadef5ef,0xcade5508,0x8af83e7a,0x8af3897b
-.inst 0x8ae8e41c,0x8ae0f71e,0xcadad000,0x8aeb651a,0xcadb3f18,0xcadcb96b,0xcade2908,0xcada1673
-.inst 0x8af5e0da,0x8ae6f47b,0x8af42a3c,0x8af1e2be,0xcada4231,0x8ae3269a,0xcadb2eb5,0xcadcb463
-.inst 0xcadefa94,0xcadae8c6,0x8ae13efa,0x8af741fb,0x8aec193c,0x8ae9243e,0xcadaa129,0x8aef499a
-.inst 0xcadb8421,0xcadca1ef,0xcadec58c,0xcada7af7,0x8af9f95a,0x8aea30fb,0x8ae4bddc,0x8aeeab3e
-.inst 0xcada61ce,0x8ae7749a,0xcadbdb39,0xcadcd0e7,0xcade9c84,0xcada5d4a,0x8ae5bc5a,0x8ae26edb
-.inst 0x8af071bc,0x8aed18be,0xcada2dad,0x8af6521a,0xcadbd8a5,0xcadc42d6,0xcade7a10,0xcada4442
-.inst 0xd290115a,0xf2f0001a,0xcada0000,0xcad1001a,0x4e080d18,0x4e080e99,0xcad5171b,0xcac6727c
-.inst 0xcac3057e,0xcad44508,0xcac9ff5a,0xcac1cf7b,0xcad7cf9c,0xcacf17de,0xcacc3108,0xcace575a
-.inst 0xcad9a37b,0xcacae79c,0xcac73fde,0xcac42d08,0xcacdfb5a,0xcac5d77b,0xcac2579c,0xcad673de
-.inst 0xcad08508,0xcadccf54,0xcad4f718,0xcad4e2b5,0xcad42821,0xcad45739,0xcad420a5,0xcade3b74
-.inst 0xcac8139c,0xcadab7de,0xcadb2508,0xcad43e73,0xcad4ccc6,0xcad472f7,0xcad4594a,0xcad4e842
-.inst 0xcac8e400,0xcac8e631,0xcac8e929,0xcac891ce,0xcac8edad,0x4e083f08,0x4e083f34,0xcadc896b
-.inst 0xcadc8463,0xcadc75ef,0xcadc4ce7,0xcadc1ad6,0xcade6508,0xcade2294,0xcade358c,0xcade3884
-.inst 0xcadee210,0x8af582fa,0x8af7c0fb,0x8af0301c,0x8ae092be,0xcadaf000,0x8ae7021a,0xcadbc2b5
-.inst 0xcadcd0e7,0xcade4210,0xcada42f7,0x8af4e93a,0x8ae9fb3b,0x8ae2597c,0x8aeb029e,0xcada196b
-.inst 0x8af9c85a,0xcadb2294,0xcadce339,0xcadea842,0xcada4129,0x8ae631fa,0x8aef089b,0x8aedab1c
-.inst 0x8af8e0de,0xcadaf318,0x8ae441ba,0xcadbc8c6,0xcadc1884,0xcade79ad,0xcadab9ef,0x8af1c03a
-.inst 0x8ae1395b,0x8af6611c,0x8ae80a3e,0xcada3908,0x8aeaa2da,0xcadb0a31,0xcadc014a,0xcade9ad6
-.inst 0xcada2821,0x8ae3f99a,0x8aecc9db,0x8ae5027c,0x8af3687e,0xcadaa273,0x8aeed8ba,0xcadb4063
-.inst 0xcadc29ce,0xcade98a5,0xcada618c,0xd290001a,0xf2b0001a,0xf2f0001a,0xcada0000,0xcacbd81a
-.inst 0x4e080e18,0x4e080c59,0xcad46abb,0xcac902fc,0xcad9c8fe,0xcac20210,0xcad80b5a,0xcac6bb7b
-.inst 0xcacf0b9c,0xcac4c3de,0xcacd8210,0xcac87b5a,0xcad1037b,0xcac1c39c,0xcaca4bde,0xcad6aa10
-.inst 0xcad3db5a,0xcac3037b,0xcacc8b9c,0xcace83de,0xcac5aa10,0xcadcef42,0xcac292b5,0xcac22a94
-.inst 0xcac2d8c6,0xcac29231,0xcac29063,0xcadebf62,0xcad03f9c,0xcadacfde,0xcadb3e10,0xcac282f7
-.inst 0xcac28129,0xcac279ef,0xcac2c021,0xcac2f98c,0xcad03000,0xcad0596b,0xcad02b18,0xcad0b908
-.inst 0xcad05a73,0x4e083f02,0x4e083f30,0xcadcc0e7,0xcadcfb39,0xcadc0084,0xcadc794a,0xcadc41ce
-.inst 0xcade0042,0xcade0210,0xcade81ad,0xcade5ad6,0xcade58a5,0x8af4ddfa,0x8aef295b,0x8ae5a01c
-.inst 0x8ae0da9e,0xcada4c00,0x8aea84ba,0xcadbfe94,0xcadcdd4a,0xcade88a5,0xcada55ef,0x8af0e71a
-.inst 0x8af8423b,0x8aecc4fc,0x8ae7e21e,0xcada3ce7,0x8af1399a,0xcadbde10,0xcadc0631,0xcade5d8c
-.inst 0xcada8b18,0x8ae94c9a,0x8ae4d6db,0x8af326bc,0x8af5953e,0xcada22b5,0x8af62a7a,0xcadbe129
-.inst 0xcadcb6d6,0xcade4a73,0xcada0484,0x8aeb48da,0x8ae68c3b,0x8aee0c5c,0x8ae27d7e,0xcada3c42
-.inst 0x8ae1a5da,0xcadb2d6b,0xcadc5021,0xcade79ce,0xcadad0c6,0x8af909ba,0x8aed411b,0x8ae372fc
-.inst 0x8af7df3e,0xcada1ef7,0x8ae86c7a,0xcadbbb39,0xcadc2508,0xcadeb463,0xcada55ad,0xd290117a
-.inst 0xcada0000,0xcac7c01a,0x4e080cb8,0x4e080d99,0xcad0ba9b,0xcad8b1fc,0xcad1995e,0xcacce4a5
-.inst 0xcad56f5a,0xcac9b37b,0xcac4439c,0xcad697de,0xcad3f0a5,0xcac2c75a,0xcacb237b,0xcac6b79c
-.inst 0xcac153de,0xcace30a5,0xcad7fb5a,0xcad9f77b,0xcacdcb9c,0xcac8b3de,0xcac3c8a5,0xcadc4b4c
-.inst 0xcaccda94,0xcacc2210,0xcacc2929,0xcaccb96b,0xcacce739,0xcadefb6c,0xcac5539c,0xcadadbde
-.inst 0xcadb84a5,0xcaccddef,0xcacc2f18,0xcacc9c84,0xcacc28c6,0xcacc15ad,0xcac5a000,0xcac5e0e7
-.inst 0xcac536b5,0xcac5dc42,0xcac5aaf7,0x4e083f05,0x4e083f2c,0xcadc294a,0xcadc9231,0xcadc96d6
-.inst 0xcadcd821,0xcadc7908,0xcade84a5,0xcadea18c,0xcade9673,0xcade55ce,0xcadebc63,0x8af0509a
-.inst 0x8ae4c03b,0x8ae3301c,0x8ae0d21e,0xcadae000,0x8ae1f07a,0xcadbf210,0xcadce021,0xcade0063
-.inst 0xcada5084,0x8aecd6ba,0x8af5cd7b,0x8aed6d5c,0x8aea819e,0xcadaad4a,0x8aeb75ba,0xcadb618c
-.inst 0xcadc216b,0xcade15ad,0xcadac2b5,0x8af892da,0x8af6a5db,0x8af78e9c,0x8af4431e,0xcada3294
-.inst 0x8aee02fa,0xcadbcf18,0xcadc75ce,0xcade36f7,0xcada5ed6,0x8ae7813a,0x8ae9ecdb,0x8ae8c0bc
-.inst 0x8ae504fe,0xcada7ca5,0x8ae6d11a,0xcadb94e7,0xcadc70c6,0xcade3d08,0xcada4529,0x8af1ee7a
-.inst 0x8af3d45b,0x8af9c1fc,0x8aef763e,0xcadaa1ef,0x8ae20f3a,0xcadb4231,0xcadc3442,0xcadecf39
-.inst 0xcada2273,0xd280003a,0xf2b0001a,0xcada0000,0xcacab41a,0x4e080c78,0x4e080db9,0xcacc061b
-.inst 0xcad5809c,0xcacb743e,0xcacdf063,0xcad4275a,0xcad8b77b,0xcad6779c,0xcace93de,0xcad78063
-.inst 0xcac5375a,0xcac7037b,0xcac9d39c,0xcac6a7de,0xcac8c463,0xcacf575a,0xcad1b37b,0xcad3179c
-.inst 0xcac203de,0xcad9e463,0xcadcdf4d,0xcacdd210,0xcacdcd8c,0xcacd1f18,0xcacdd0e7,0xcacd2231
-.inst 0xcadeef6d,0xcac34f9c,0xcadadfde,0xcadbfc63,0xcacd5084,0xcacdd2b5,0xcacdded6,0xcacd8129
-.inst 0xcacd3e73,0xcac33000,0xcac37d4a,0xcac30e94,0xcac3fca5,0xcac3ddef,0x4e083f03,0x4e083f2d
-.inst 0xcadcc021,0xcadc4d6b,0xcadc31ce,0xcadc1cc6,0xcadcc042,0xcadef063,0xcade01ad,0xcade72f7
-.inst 0xcade2d08,0xcade0f39,0x8aecdeda,0x8af638db,0x8af9dc1c,0x8ae07d9e,0xcadaa800,0x8ae6973a
-.inst 0xcadbed8c,0xcadc90c6,0xcadeab39,0xcada36d6,0x8aedba9a,0x8af49cfb,0x8af3503c,0x8ae1e1be
-.inst 0xcada6821,0x8ae77e7a,0xcadbadad,0xcadc34e7,0xcaded273,0xcadaea94,0x8af5fdda,0x8aee791b
-.inst 0x8aefe21c,0x8af0e6be,0xcada2210,0x8ae8c9fa,0xcadb8eb5,0xcadc5908,0xcade3def,0xcadac1ce
-.inst 0x8aea6b1a,0x8af8493b,0x8ae27c7c,0x8ae3a15e,0xcadaf863,0x8ae9345a,0xcadb514a,0xcadc5129
-.inst 0xcadee442,0xcada8718,0x8aeba6fa,0x8af784bb,0x8af1f09c,0x8ae4317e,0xcada2c84,0x8ae5ba3a
-.inst 0xcadbd96b,0xcadc58a5,0xcadee231,0xcadac6f7,0xd290103a,0xf2b0001a,0xf2f0001a,0xcada0000
-.inst 0xcac1b01a,0x4e080f38,0x4e080e79,0xcacd4d9b,0xcad472dc,0xcac70cde,0xcad32739,0xcad02f5a
-.inst 0xcad5c77b,0xcacea79c,0xcac867de,0xcacf3339,0xcac3c75a,0xcacaa37b,0xcad8179c,0xcac907de
-.inst 0xcac26739,0xcac4eb5a,0xcacb377b,0xcad76f9c,0xcac523de,0xcad1ff39,0xcadca753,0xcad37d8c
-.inst 0xcad331ad,0xcad3bab5,0xcad3dd4a,0xcad3496b,0xcadeeb73,0xcad9339c,0xcada8fde,0xcadba739
-.inst 0xcad3ded6,0xcad36e94,0xcad339ce,0xcad3cb18,0xcad372f7,0xcad9dc00,0xcad92c21,0xcad9b210
-.inst 0xcad91863,0xcad9f484,0x4e083f13,0x4e083f39,0xcadc38c6,0xcadc2ce7,0xcadcd508,0xcadc3529
-.inst 0xcadc18a5,0xcade9673,0xcade7339,0xcade65ef,0xcade3042,0xcade9a31,0x8aed81da,0x8aee813b
-.inst 0x8af1a01c,0x8ae0e1be,0xcadaa000,0x8ae9823a,0xcadb01ad,0xcadce129,0xcade8231,0xcada01ce
-.inst 0x8af9921a,0x8af0b15b,0x8af720dc,0x8ae6533e,0xcada20c6,0x8aea52fa,0xcadbc339,0xcadc914a
-.inst 0xcade92f7,0xcada0210,0x8af4911a,0x8ae8505b,0x8ae4219c,0x8aec829e,0xcadaf18c,0x8ae2809a
-.inst 0xcadb2294,0xcadc6042,0xcade6084,0xcada3108,0x8ae102ba,0x8af5a31b,0x8ae5427c,0x8af3503e
-.inst 0xcadab273,0x8af8d0ba,0xcadb6021,0xcadcf318,0xcade70a5,0xcada92b5,0x8ae731fa,0x8aef507b
-.inst 0x8aeb02dc,0x8af610fe,0xcadac2d6,0x8ae3717a,0xcadb80e7,0xcadc9063,0xcadef16b,0xcada41ef
-.inst 0xd290013a,0xf2f0001a,0xcada0000,0xcac6001a,0x4e080e38,0x4e080ef9,0xcad991bb,0xcad081dc
-.inst 0xcaca513e,0xcad78231,0xcacc835a,0xcad4e37b,0xcac8d39c,0xcac203de,0xcac40231,0xcad3735a
-.inst 0xcac1037b,0xcad5839c,0xcad863de,0xcac51231,0xcad6b35a,0xcac7837b,0xcacfd39c,0xcac303de
-.inst 0xcacb1231,0xcadc9f57,0xcad7e1ad,0xcad75339,0xcad70294,0xcad7e021,0xcad760e7,0xcadeff77
-.inst 0xcad1ff9c,0xcadadfde,0xcadb7e31,0xcad781ce,0xcad70210,0xcad7b108,0xcad702b5,0xcad7b1ef
-.inst 0xcad1a000,0xcad1a0c6,0xcad1218c,0xcad13273,0xcad1f2d6,0x4e083f11,0x4e083f37,0xcadc8129
-.inst 0xcadc314a,0xcadc8042,0xcadc2318,0xcadc8063,0xcade8231,0xcade02f7,0xcade8084,0xcade70a5
-.inst 0xcade716b,0x8af93d1a,0x8ae89b1b,0x8aeb781c,0x8ae0033e,0xcadac400,0x8af8b57a,0xcadb2f39
-.inst 0xcadcd718,0xcade896b,0xcadab508,0x8af75d9a,0x8aec083b,0x8aefcd3c,0x8ae9e2fe,0xcadac529
-.inst 0x8ae1f1fa,0xcadb9ef7,0xcadc4421,0xcade55ef,0xcada098c,0x8af04c5a,0x8ae22cbb,0x8af64dbc
-.inst 0x8aed161e,0xcadaa1ad,0x8ae52ada,0xcadb8a10,0xcadc8ca5,0xcadea2d6,0xcadaac42,0x8ae69a9a
-.inst 0x8af4f6bb,0x8ae30e3c,0x8af1c4de,0xcadaa631,0x8af5a47a,0xcadb74c6,0xcadc52b5,0xcade3063
-.inst 0xcada6a94,0x8aea909a,0x8ae43a7b,0x8ae7f1dc,0x8aee155e,0xcada5dce,0x8af334fa,0xcadb394a
-.inst 0xcadcde73,0xcadefce7,0xcada9484,0xd280115a,0xcada0000,0xcac9b01a,0x4e080d78,0x4e080df9
-.inst 0xcad7d33b,0xcaccb11c,0xcac1431e,0xcacf056b,0xcacd1f5a,0xcad00b7b,0xcac2fb9c,0xcac567de
-.inst 0xcad6f16b,0xcad1375a,0xcac6737b,0xcad4179c,0xcad5bbde,0xcac3c96b,0xcaceab5a,0xcaca977b
-.inst 0xcac4439c,0xcad3a3de,0xcac7216b,0xcadcc34f,0xcacf0339,0xcacf32f7,0xcacffa10,0xcacf90c6
-.inst 0xcacf6d4a,0xcade2b6f,0xcacbb39c,0xcadad3de,0xcadb856b,0xcacf3d08,0xcacf8d8c,0xcacf4442
-.inst 0xcacf2a94,0xcacffc84,0xcacb7800,0xcacbc929,0xcacb5dad,0xcacb4631,0xcacbd1ce,0x4e083f0b
-.inst 0x4e083f2f,0xcadc9b18,0xcadc5821,0xcadc34a5,0xcadce2b5,0xcadcfa73,0xcadeb56b,0xcadeb1ef
-.inst 0xcadec6d6,0xcadeec63,0xcade94e7,0x8af7105a,0x8ae282bb,0x8ae7601c,0x8ae0e2fe,0xcada1000
-.inst 0x8af530fa,0xcadb72f7,0xcadc72b5,0xcadec0e7,0xcada5042,0x8aef1dba,0x8aed54db,0x8ae4571c
-.inst 0x8af891fe,0xcada5718,0x8ae6ac9a,0xcadb91ef,0xcadc00c6,0xcade1c84,0xcada01ad,0x8aec30ba
-.inst 0x8ae50c7b,0x8aee673c,0x8af9a19e,0xcada3339,0x8ae3c1da,0xcadbc58c,0xcadcdc63,0xcadefdce
-.inst 0xcada34a5,0x8ae9421a,0x8af0469b,0x8af3e17c,0x8aebed3e,0xcadad56b,0x8af4b27a,0xcadb7d29
-.inst 0xcadc7294,0xcade3673,0xcada0e10,0x8ae1c6da,0x8af63e3b,0x8aeac11c,0x8ae83c3e,0xcada0108
-.inst 0x8af1055a,0xcadb0021,0xcadc3e31,0xcade054a,0xcadac2d6,0xd280111a,0xcada0000,0xcad8bc1a
-.inst 0x4e080cf8,0x4e080c99,0xcacf0efb,0xcacd005c,0xcac62ebe,0xcac4b0e7,0xcad9ff5a,0xcacc3f7b
-.inst 0xcac51f9c,0xcac393de,0xcace00e7,0xcacb0f5a,0xcac9037b,0xcad0d39c,0xcad40fde,0xcad38ce7
-.inst 0xcac8cf5a,0xcac1737b,0xcad6bf9c,0xcad103de,0xcaca2ce7,0xcadc0f44,0xcac4e2f7,0xcac4d5ef
-.inst 0xcac4a58c,0xcac4e129,0xcac47021,0xcade6f64,0xcac74f9c,0xcada6fde,0xcadbbce7,0xcac41042
-.inst 0xcac411ad,0xcac4f4a5,0xcac44210,0xcac456d6,0xcac76000,0xcac7a718,0xcac76739,0xcac7556b
-.inst 0xcac79508,0x4e083f04,0x4e083f27,0xcadc82b5,0xcadc54c6,0xcadcf063,0xcadc7694,0xcadc8231
-.inst 0xcade3084,0xcade80e7,0xcade31ce,0xcadea673,0xcade054a,0x8aeffcba,0x8ae53a9b,0x8aea541c
-.inst 0x8ae085fe,0xcada8000,0x8af4f55a,0xcadbcdef,0xcadcba94,0xcade294a,0xcadad4a5,0x8ae7d33a
-.inst 0x8af9853b,0x8af6babc,0x8af560fe,0xcadad2b5,0x8ae996da,0xcadbace7,0xcadcb529,0xcadeead6
-.inst 0xcadaeb39,0x8aed3c7a,0x8ae3f27b,0x8ae86afc,0x8af725be,0xcadaa2f7,0x8af3491a,0xcadbd5ad
-.inst 0xcadc5273,0xcade7508,0xcadac863,0x8af8f99a,0x8aec921b,0x8af1bc9c,0x8ae4cb1e,0xcada4084
-.inst 0x8af0f63a,0xcadb7b18,0xcadc5210,0xcade7e31,0xcada7d8c,0x8ae61dda,0x8aee5d7b,0x8ae1705c
-.inst 0x8ae238de,0xcadaac42,0x8aebe03a,0xcadb88c6,0xcadcb16b,0xcade5821,0xcadac5ce,0xd290013a
-.inst 0xf2b0001a,0xcada0000,0xcad5201a,0x4e080d58,0x4e080ed9,0xcac745fb,0xcad970bc,0xcac9269e
-.inst 0xcad6854a,0xcad71f5a,0xcacd7f7b,0xcac33f9c,0xcad387de,0xcac8314a,0xcac4f75a,0xcad8b37b
-.inst 0xcaccb79c,0xcad05fde,0xcad15d4a,0xcac21b5a,0xcac6677b,0xcace479c,0xcacb23de,0xcac1354a
-.inst 0xcadc7f56,0xcad685ef,0xcad640e7,0xcad609ad,0xcad6d718,0xcad620c6,0xcadecb76,0xcacad39c
-.inst 0xcadab7de,0xcadb254a,0xcad6fca5,0xcad68f39,0xcad6c063,0xcad6498c,0xcad6b9ce,0xcaca5400
-.inst 0xcaca36b5,0xcaca3af7,0xcaca6084,0xcaca3c42,0x4e083f0a,0x4e083f36,0xcadc3a94,0xcadc1529
-.inst 0xcadcb673,0xcadcde10,0xcadc196b,0xcadef54a,0xcade72d6,0xcadec508,0xcade9a31,0xcadec021
-.inst 0x8ae7007a,0x8ae3c21b,0x8ae1501c,0x8ae0f0fe,0xcada1000,0x8af0003a,0xcadb40e7,0xcadcb210
-.inst 0xcadec021,0xcada4063,0x8af67afa,0x8af79b1b,0x8aeefa9c,0x8af452de,0xcada3a94,0x8af8a9da
-.inst 0xcadbf2d6,0xcadc6318,0xcadeb9ce,0xcadac2f7,0x8af9727a,0x8af3da3b,0x8ae259fc,0x8aefa33e
-.inst 0xcadaf1ef,0x8af1c05a,0xcadbbb39,0xcadcea31,0xcade0842,0xcada6a73,0x8af5c1ba,0x8aedd99b
-.inst 0x8aeba15c,0x8aea5abe,0xcadae94a,0x8aec717a,0xcadb6ab5,0xcadcf18c,0xcade096b,0xcadab9ad
-.inst 0x8ae9a91a,0x8ae8989b,0x8ae650bc,0x8ae5f93e,0xcada60a5,0x8ae478da,0xcadbc129,0xcadc3884
-.inst 0xcadeb8c6,0xcadaf108,0xd280015a,0xf2b0001a,0xcada0000,0xcad4d81a,0x4e080c38,0x4e080dd9
-.inst 0xcad678fb,0xcad7007c,0xcad82a1e,0xcace8021,0xcacf7b5a,0xcad9cb7b,0xcad35b9c,0xcad143de
-.inst 0xcac28021,0xcacaeb5a,0xcad5837b,0xcacdc39c,0xcaccabde,0xcacb3821,0xcac58b5a,0xcac9837b
-.inst 0xcac8db9c,0xcac403de,0xcac68821,0xcadc0f4e,0xcacef0e7,0xcace7ad6,0xcace2b39,0xcace72b5
-.inst 0xcace7129,0xcade3f6e,0xcac13f9c,0xcadaafde,0xcadbbc21,0xcace0063,0xcace02f7,0xcaceaa73
-.inst 0xcace41ad,0xcace2908,0xcac15000,0xcac17a94,0xcac1d9ef,0xcac1694a,0xcac1c8a5,0x4e083f01
-.inst 0x4e083f2e,0xcadcc210,0xcadc9b18,0xcadc8231,0xcadc198c,0xcadcc084,0xcade0021,0xcade81ce
-.inst 0xcade8042,0xcadec96b,0xcade78c6,0x8af61e7a,0x8af3199b,0x8ae6a01c,0x8ae02ade,0xcadabc00
-.inst 0x8aec04da,0xcadbced6,0xcadc5d8c,0xcade38c6,0xcadae673,0x8aee15fa,0x8aef92bb,0x8ae8161c
-.inst 0x8af061de,0xcada8e10,0x8af5e91a,0xcadb5dce,0xcadc06b5,0xcade8d08,0xcada89ef,0x8af7ce3a
-.inst 0x8af1c57b,0x8ae534fc,0x8ae716fe,0xcada20e7,0x8aeb28ba,0xcadb72f7,0xcadca56b,0xcadeb8a5
-.inst 0xcada1631,0x8af49b3a,0x8af91dbb,0x8ae48c3c,0x8ae19e9e,0xcadacc21,0x8aed249a,0xcadb4e94
-.inst 0xcadc51ad,0xcaded884,0xcadac339,0x8af8685a,0x8ae2f15b,0x8ae9707c,0x8ae37f1e,0xcada1c63
-.inst 0x8aeabd3a,0xcadbab18,0xcadcd54a,0xcade1529,0xcada5442,0xd290117a,0xf2b0001a,0xcada0000
-.inst 0xcad0e01a,0x4e080cd8,0x4e080d19,0xcaceaadb,0xcacfb27c,0xcad5399e,0xcac854c6,0xcac70f5a
-.inst 0xcad7237b,0xcad1739c,0xcacbc7de,0xcac5a0c6,0xcac1e75a,0xcad4737b,0xcad9f79c,0xcacdf3de
-.inst 0xcac4d0c6,0xcac31b5a,0xcad8c77b,0xcac27b9c,0xcacaa3de,0xcac9e8c6,0xcadcbb48,0xcac82ad6
-.inst 0xcac881ce,0xcac80af7,0xcac8ba94,0xcac86718,0xcadecb68,0xcac6e39c,0xcada5bde,0xcadb34c6
-.inst 0xcac81e73,0xcac86def,0xcac8ae31,0xcac82b39,0xcac8a442,0xcac6a000,0xcac6c210,0xcac694e7
-.inst 0xcac6bc21,0xcac68863,0x4e083f06,0x4e083f28,0xcadc198c,0xcadce2b5,0xcadc556b,0xcadc29ad
-.inst 0xcadc794a,0xcade04c6,0xcadeb108,0xcade64a5,0xcade3484,0xcade1d29,0x8aee523a,0x8af141bb
-.inst 0x8ae9501c,0x8ae031de,0xcada8000,0x8aedf13a,0xcadb71ce,0xcadcc1ad,0xcade8129,0xcadad231
-.inst 0x8ae8a4fa,0x8ae76e9b,0x8ae20d9c,0x8aec911e,0xcadacd8c,0x8af4545a,0xcadbf108,0xcadca294
-.inst 0xcade6442,0xcada40e7,0x8aef517a,0x8aebb49b,0x8ae3fedc,0x8af681fe,0xcada32d6,0x8ae4807a
-.inst 0xcadbfdef,0xcadc8484,0xcade8463,0xcadacd6b,0x8af082fa,0x8af75f3b,0x8aea30dc,0x8ae6e61e
-.inst 0xcada9cc6,0x8af9115a,0xcadb2610,0xcadcc339,0xcadeed4a,0xcada96f7,0x8af55cba,0x8ae5643b
-.inst 0x8af8d27c,0x8af3c6be,0xcadae273,0x8ae1af1a,0xcadb42b5,0xcadc8421,0xcade6f18,0xcadaf0a5
-.inst 0xd280117a,0xf2f0001a,0xcada0000,0xcacc341a,0x4e080d38,0x4e080c59,0xcac8d5db,0xcac7823c
-.inst 0xcad455be,0xcac2f129,0xcad6d75a,0xcacf877b,0xcacb879c,0xcac413de,0xcac38129,0xcac6375a
-.inst 0xcad0837b,0xcad7539c,0xcad937de,0xcaca1529,0xcad3c75a,0xcad5337b,0xcac5279c,0xcac103de
-.inst 0xcad84529,0xcadc7f42,0xcac231ce,0xcac25d08,0xcac2adef,0xcac2b210,0xcac202b5,0xcade6f62
-.inst 0xcac9cf9c,0xcadabfde,0xcadb7d29,0xcac25231,0xcac2d0e7,0xcac2cd6b,0xcac202f7,0xcac22ca5
-.inst 0xcac95000,0xcac91d8c,0xcac97ed6,0xcac91cc6,0xcac98e73,0x4e083f02,0x4e083f29,0xcadc41ad
-.inst 0xcadcee94,0xcadc3084,0xcadc0f39,0xcadc4021,0xcadef042,0xcade0129,0xcade7063,0xcadedd4a
-.inst 0xcadeaf18,0x8ae89d7a,0x8aeb3b3b,0x8af85c1c,0x8ae00d1e,0xcada5800,0x8af9c71a,0xcadb2d08
-.inst 0xcadce339,0xcade9b18,0xcada056b,0x8ae92ada,0x8af62e1b,0x8ae5e1bc,0x8aede13e,0xcadaf9ad
-.inst 0x8af0ecba,0xcadbad29,0xcadc3610,0xcade40a5,0xcadaead6,0x8ae7fc9a,0x8ae4a95b,0x8af3b1dc
-.inst 0x8aeee4fe,0xcada21ce,0x8aeaca7a,0xcadb5ce7,0xcadc894a,0xcade6e73,0xcada9084,0x8aec79fa
-.inst 0x8aef9afb,0x8ae17c5c,0x8ae2419e,0xcada4842,0x8af7343a,0xcadbf18c,0xcadc52f7,0xcade4421
-.inst 0xcada35ef,0x8af4847a,0x8ae3a4db,0x8af5723c,0x8af1d29e,0xcadaae31,0x8ae69aba,0xcadbda94
-.inst 0xcadcf8c6,0xcadec2b5,0xcadac463,0xd290113a,0xf2f0001a,0xcada0000,0xcacdd01a,0x4e080f18
-.inst 0x4e080cb9,0xcac9fd1b,0xcad6717c,0xcad07f3e,0xcac55718,0xcacecf5a,0xcac7f77b,0xcac4979c
-.inst 0xcaca27de,0xcad32318,0xcac2e75a,0xcaccb37b,0xcacfd79c,0xcad777de,0xcac10718,0xcad18b5a
-.inst 0xcad4c77b,0xcac3df9c,0xcac673de,0xcad59f18,0xcadc5745,0xcac50d08,0xcac51129,0xcac518e7
-.inst 0xcac55d8c,0xcac54a94,0xcade2b65,0xcad8039c,0xcadadfde,0xcadb9718,0xcac59d6b,0xcac52ed6
-.inst 0xcac50884,0xcac5c9ef,0xcac5c063,0xcad85c00,0xcad88dad,0xcad891ce,0xcad87842,0xcad8d631
-.inst 0x4e083f05,0x4e083f38,0xcadc3b39,0xcadcbe10,0xcadc154a,0xcadcc6f7,0xcadcc8c6,0xcadec4a5
-.inst 0xcade7318,0xcadea673,0xcadec021,0xcade2ab5,0x8ae9009a,0x8ae402fb,0x8af5c01c,0x8ae0c13e
-.inst 0xcada4000,0x8af782ba,0xcadb0129,0xcadcc2f7,0xcade82b5,0xcada8084,0x8af8a1da,0x8aeed19b
-.inst 0x8ae3933c,0x8af9531e,0xcada1339,0x8aecb07a,0xcadb9318,0xcadcc18c,0xcade2063,0xcada81ce
-.inst 0x8af6d15a,0x8aeaa03b,0x8af1511c,0x8ae842de,0xcadaf108,0x8ae1023a,0xcadb92d6,0xcadcb021
-.inst 0xcade7231,0xcada614a,0x8aed80fa,0x8ae7d1fb,0x8ae6c0bc,0x8ae5b1be,0xcadad0a5,0x8aef40da
-.inst 0xcadbb1ad,0xcadc01ef,0xcade90c6,0xcadaf0e7,0x8af0e27a,0x8af3a05b,0x8af4517c,0x8aeba21e
-.inst 0xcada816b,0x8ae2929a,0xcadb8210,0xcadc2042,0xcade1294,0xcadad273,0xd290007a,0xf2f0001a
-.inst 0xcada0000,0xcad9b01a,0x4e080eb8,0x4e080c79,0xcad8213b,0xcace809c,0xcaccb2fe,0xcac382b5
-.inst 0xcac8f35a,0xcad6737b,0xcacaa39c,0xcac103de,0xcad182b5,0xcac5f35a,0xcacd037b,0xcac7839c
-.inst 0xcacfb3de,0xcac6f2b5,0xcacb635a,0xcad0837b,0xcad3a39c,0xcac203de,0xcad4f2b5,0xcadc3f43
-.inst 0xcac3c129,0xcac3a318,0xcac352d6,0xcac3c1ad,0xcac34210,0xcadeff63,0xcad57f9c,0xcadabfde
-.inst 0xcadb7eb5,0xcac30084,0xcac381ce,0xcac3614a,0xcac380e7,0xcac36273,0xcad5c000,0xcad51339
-.inst 0xcad5d108,0xcad5d0a5,0xcad5616b,0x4e083f03,0x4e083f35,0xcadc02f7,0xcadc518c,0xcadc0021
-.inst 0xcadc51ef,0xcadc0042,0xcade8063,0xcade02b5,0xcade0231,0xcade90c6,0xcade9294,0x8af87d5a
-.inst 0x8aea99fb,0x8af4781c,0x8ae0531e,0xcada3400,0x8aef269a,0xcadbef18,0xcadc65ef,0xcade3a94
-.inst 0xcada454a,0x8af50d1a,0x8ae859bb,0x8af31efc,0x8af7e2be,0xcada16f7,0x8aeda27a,0xcadb9eb5
-.inst 0xcadc45ad,0xcade0673,0xcada0908,0x8aeecc3a,0x8ae14cdb,0x8aebdd3c,0x8ae995de,0xcadaa129
-.inst 0x8ae6797a,0xcadbe9ce,0xcadcacc6,0xcade916b,0xcada3c21,0x8af99ada,0x8af604fb,0x8ae20c7c
-.inst 0x8ae3373e,0xcada3463,0x8ae7245a,0xcadb6739,0xcadcd0e7,0xcadec042,0xcadadad6,0x8aec723a
-.inst 0x8af158bb,0x8af0709c,0x8ae4359e,0xcada5c84,0x8ae5961a,0xcadb398c,0xcadcfca5,0xcade5e10
-.inst 0xcada1631,0xd290005a,0xf2f0001a,0xcada0000,0xcad7d01a,0x4e080e98,0x4e080e79,0xcad5431b
-.inst 0xcac8b15c,0xcacdf1fe,0xcad37694,0xcac93f5a,0xcacefb7b,0xcac1ab9c,0xcac6f7de,0xcacba294
-.inst 0xcac3575a,0xcad9737b,0xcad6579c,0xcac7ebde,0xcac2ea94,0xcac44b5a,0xcacc677b,0xcad1739c
-.inst 0xcac5b3de,0xcad04294,0xcadc3353,0xcad35318,0xcad312b5,0xcad359ce,0xcad3e339,0xcad3ed8c
-.inst 0xcadeeb73,0xcad4439c,0xcada63de,0xcadb3694,0xcad37d4a,0xcad3cd08,0xcad3d421,0xcad32ad6
-.inst 0xcad30e31,0xcad47800,0xcad4aaf7,0xcad43d29,0xcad42463,0xcad43084,0x4e083f13,0x4e083f34
-.inst 0xcadc99ef,0xcadca9ad,0xcadca4c6,0xcadcb0e7,0xcadce8a5,0xcade2673,0xcadeb294,0xcade856b
-.inst 0xcade3c42,0xcadee610,0x8af5103a,0x8ae100fb,0x8af0801c,0x8ae0c2be,0xcada3000,0x8ae7b21a
-.inst 0xcadbf2b5,0xcadcd0e7,0xcadec210,0xcada5021,0x8af46d3a,0x8ae9c73b,0x8af185fc,0x8aef929e
-.inst 0xcada05ef,0x8af9be3a,0xcadbd294,0xcadcc339,0xcadeee31,0xcada8129,0x8ae8a0da,0x8ae6ec5b
-.inst 0x8ae4571c,0x8af8e11e,0xcada8318,0x8ae2409a,0xcadb7508,0xcadc6c42,0xcadecc84,0xcadad4c6
-.inst 0x8af7c1da,0x8aee36db,0x8ae5627c,0x8af3cefe,0xcada7673,0x8af6e0ba,0xcadb0ef7,0xcadcc2d6
-.inst 0xcaded4a5,0xcadaedce,0x8aed357a,0x8aebcc7b,0x8aecd15c,0x8aea8dbe,0xcada414a,0x8ae3a59a
-.inst 0xcadb01ad,0xcadc8c63,0xcadea58c,0xcada916b,0xd280101a,0xf2f0001a,0xcada0000,0xcacf2c1a
-.inst 0x4e080e18,0x4e080e39,0xcad45ebb,0xcac9003c,0xcad93cfe,0xcad13210,0xcad8af5a,0xcac88f7b
-.inst 0xcac6ff9c,0xcac213de,0xcac48210,0xcad30f5a,0xcad7037b,0xcace539c,0xcad61fde,0xcac5ee10
-.inst 0xcaca3f5a,0xcacd737b,0xcacb4f9c,0xcac383de,0xcacc8e10,0xcadc2f51,0xcad1c2b5,0xcad16694
-.inst 0xcad13508,0xcad1c2f7,0xcad151ad,0xcadeef71,0xcad04f9c,0xcadacfde,0xcadbbe10,0xcad11021
-.inst 0xcad11129,0xcad114c6,0xcad1c1ce,0xcad1c56b,0xcad08000,0xcad055ef,0xcad0d718,0xcad07673
-.inst 0xcad0454a,0x4e083f10,0x4e083f31,0xcadc00e7,0xcadcc739,0xcadcf042,0xcadce6d6,0xcadc8063
-.inst 0xcadeb210,0xcade8231,0xcade3084,0xcadec4a5,0xcade258c,0x8af46cda,0x8ae68adb,0x8aecd41c
-.inst 0x8ae0169e,0xcada8000,0x8af6259a,0xcadb0e94,0xcadc0ad6,0xcade198c,0xcada54c6,0x8af1c31a
-.inst 0x8af816fb,0x8aebc8fc,0x8ae7623e,0xcadae0e7,0x8af7057a,0xcadb2e31,0xcadc36f7,0xcaded96b
-.inst 0xcadaeb18,0x8ae93c5a,0x8ae290bb,0x8aeababc,0x8af5253e,0xcadaa2b5,0x8ae5595a,0xcadb3529
-.inst 0xcadcf0a5,0xcade254a,0xcada1842,0x8aeff91a,0x8ae861db,0x8ae3be1c,0x8af079fe,0xcada9210
-.inst 0x8aee747a,0xcadba9ef,0xcadcd1ce,0xcadecc63,0xcada2d08,0x8af92c9a,0x8ae4fe7b,0x8aed703c
-.inst 0x8ae1ab3e,0xcada2c21,0x8af3c1ba,0xcadbdb39,0xcadcd273,0xcadee9ad,0xcada4484,0xd290015a
-.inst 0xcada0000,0xcac7c01a,0x4e080d98,0x4e080d79,0xcad1769b,0xcad820dc,0xcad796de,0xcacbb58c
-.inst 0xcad53f5a,0xcac92f7b,0xcac25f9c,0xcac557de,0xcaca218c,0xcad0175a,0xcacfb37b,0xcac8279c
-.inst 0xcace4fde,0xcac3fd8c,0xcac13b5a,0xcad9a77b,0xcac4e79c,0xcad373de,0xcacdd58c,0xcadc7f4b
-.inst 0xcacb1694,0xcacba231,0xcacbe929,0xcacb65ef,0xcacb7339,0xcade0b6b,0xcacc539c,0xcada07de
-.inst 0xcadb158c,0xcacb6cc6,0xcacb4f18,0xcacb1042,0xcacb4908,0xcacb8884,0xcaccd400,0xcacc14e7
-.inst 0xcacc9ab5,0xcaccc210,0xcacc9c21,0x4e083f0b,0x4e083f2c,0xcadc8ad6,0xcadcf6f7,0xcadc34a5
-.inst 0xcadc3dce,0xcadc1a73,0xcade256b,0xcade718c,0xcade054a,0xcade2863,0xcade51ad,0x8af1805a
-.inst 0x8ae241db,0x8aed701c,0x8ae0523e,0xcada3000,0x8aee81ba,0xcadb4231,0xcadc11ce,0xcade41ad
-.inst 0xcada4042,0x8aec0aba,0x8af549fb,0x8ae4eadc,0x8af6519e,0xcadaaad6,0x8aef789a,0xcadbb18c
-.inst 0xcadca1ef,0xcadec884,0xcada42b5,0x8af8a0ba,0x8ae5387b,0x8ae10a9c,0x8af4631e,0xcada0294
-.inst 0x8ae3c03a,0xcadb2b18,0xcadc3863,0xcade9821,0xcada08a5,0x8ae7413a,0x8ae9891b,0x8af3217c
-.inst 0x8aeb38fe,0xcada896b,0x8ae8e27a,0xcadb38e7,0xcadc0108,0xcadeaa73,0xcada9929,0x8af7595a
-.inst 0x8aeaea1b,0x8af900dc,0x8ae6dafe,0xcadad0c6,0x8af0eb3a,0xcadbc2f7,0xcadc1a10,0xcade2b39
-.inst 0xcada314a,0xd280015a,0xf2b0001a,0xf2f0001a,0xcada0000,0xcad6881a,0x4e080db8,0x4e080c99
-.inst 0xcacc8a3b,0xcad5005c,0xcacff9de,0xcac401ad,0xcad4eb5a,0xcad8db7b,0xcac5bb9c,0xcac3c3de
-.inst 0xcac181ad,0xcacb6b5a,0xcac7837b,0xcac9c39c,0xcac87bde,0xcad319ad,0xcac68b5a,0xcad7037b
-.inst 0xcaca2b9c,0xcad083de,0xcad919ad,0xcadc2f44,0xcac45231,0xcac4c98c,0xcac47b18,0xcac4d0e7
-.inst 0xcac452f7,0xcade3f64,0xcacd3f9c,0xcada0fde,0xcadb3dad,0xcac48042,0xcac482b5,0xcac4c8a5
-.inst 0xcac4c129,0xcac4594a,0xcacd7000,0xcacdead6,0xcacd8a94,0xcacd096b,0xcacde8c6,0x4e083f04
-.inst 0x4e083f2d,0xcadc41ce,0xcadc49ef,0xcadc8063,0xcadcc908,0xcadcc210,0xcade8084,0xcade81ad
-.inst 0xcade0021,0xcade6a73,0xcade6b39,0x8aec4cba,0x8ae5291b,0x8af9501c,0x8ae0799e,0xcada3c00
-.inst 0x8ae8c73a,0xcadb8d8c,0xcadced08,0xcade3b39,0xcada14a5,0x8aed469a,0x8af460fb,0x8aeae5dc
-.inst 0x8aee61be,0xcada5dce,0x8ae7195a,0xcadb5dad,0xcadc04e7,0xcadebd4a,0xcada8a94,0x8af5cc7a
-.inst 0x8ae3e67b,0x8ae6963c,0x8af196be,0xcadaa231,0x8af328da,0xcadb52b5,0xcadc4673,0xcaded8c6
-.inst 0xcadaf463,0x8af69b1a,0x8af8ad3b,0x8af08c9c,0x8ae40ede,0xcada5c84,0x8ae9261a,0xcadbbed6
-.inst 0xcadc5129,0xcade6a10,0xcada3318,0x8aefb83a,0x8ae1917b,0x8af7705c,0x8ae22dfe,0xcada1c42
-.inst 0x8aeb1efa,0xcadbb9ef,0xcadc756b,0xcade66f7,0xcada5421,0xd290103a,0xf2b0001a,0xf2f0001a
-.inst 0xcada0000,0xcace801a,0x4e080f38,0x4e080d59,0xcacd999b,0xcad4a0bc,0xcac7691e,0xcaca1739
-.inst 0xcad1af5a,0xcad5937b,0xcac3139c,0xcad357de,0xcac6f339,0xcac4075a,0xcad6737b,0xcad8279c
-.inst 0xcac9a3de,0xcad04339,0xcac23b5a,0xcacf877b,0xcac11b9c,0xcacbb3de,0xcad75b39,0xcadc3b4a
-.inst 0xcaca798c,0xcacae1ad,0xcacaeab5,0xcaca0ad6,0xcacaf5ef,0xcade8b6a,0xcad9139c,0xcadaebde
-.inst 0xcadb3739,0xcaca4ca5,0xcacaae94,0xcaca3c63,0xcaca2b18,0xcaca3421,0xcad95000,0xcad9d1ce
-.inst 0xcad9a631,0xcad94c84,0xcad91842,0x4e083f0a,0x4e083f39,0xcadc2908,0xcadcc0e7,0xcadcd673
-.inst 0xcadc8929,0xcadc796b,0xcadec54a,0xcadeb339,0xcaded4c6,0xcade8610,0xcade6ef7,0x8aedd07a
-.inst 0x8ae3413b,0x8af7701c,0x8ae091be,0xcadaa000,0x8ae9f2fa,0xcadbf1ad,0xcadca129,0xcade02f7
-.inst 0xcadad063,0x8af9763a,0x8af15edb,0x8ae1bd1c,0x8ae8933e,0xcadafd08,0x8af6e43a,0xcadb3339
-.inst 0xcadc62d6,0xcadeb421,0xcadac231,0x8af4c27a,0x8af3961b,0x8ae26d9c,0x8aecc29e,0xcada818c
-.inst 0x8af0805a,0xcadbae94,0xcadc1610,0xcaded442,0xcadaee73,0x8aee02ba,0x8af5cf1b,0x8aeb015c
-.inst 0x8aeaf5de,0xcada0d4a,0x8af8417a,0xcadb35ce,0xcadcc318,0xcade0d6b,0xcadaf6b5,0x8ae7fcda
-.inst 0x8ae6449b,0x8aefc0bc,0x8ae5a4fe,0xcada60a5,0x8ae45dfa,0xcadbc0e7,0xcadce484,0xcade9def
-.inst 0xcada60c6,0xd290101a,0xf2f0001a,0xcada0000,0xcac8a41a,0x4e080ef8,0x4e080c39,0xcad9a5bb
-.inst 0xcad1007c,0xcad6e53e,0xcac1f2f7,0xcacc875a,0xcad4577b,0xcad3679c,0xcad013de,0xcac282f7
-.inst 0xcacae75a,0xcace837b,0xcad5539c,0xcad8c7de,0xcacb76f7,0xcac5475a,0xcac7337b,0xcac6079c
-.inst 0xcac403de,0xcacf96f7,0xcadc9f41,0xcac191ad,0xcac1ef39,0xcac13e94,0xcac111ce,0xcac160e7
-.inst 0xcadeef61,0xcad7cf9c,0xcada9fde,0xcadbfef7,0xcac1d063,0xcac1d231,0xcac16e73,0xcac182b5
-.inst 0xcac1ccc6,0xcad77000,0xcad7cd08,0xcad7ed8c,0xcad78d4a,0xcad72ca5,0x4e083f01,0x4e083f37
-.inst 0xcadc4129,0xcadc5ed6,0xcadc3210,0xcadc7f18,0xcadc4084,0xcadef021,0xcade02f7,0xcade7042
-.inst 0xcade7d6b,0xcade5def,0x8af90e7a,0x8af38b1b,0x8aefcc1c,0x8ae09f3e,0xcada5800,0x8af805fa
-.inst 0xcadb6f39,0xcadc3318,0xcade99ef,0xcada7673,0x8af7999a,0x8aec3ddb,0x8ae6c13c,0x8ae9e2fe
-.inst 0xcada8929,0x8aee8cda,0xcadb2ef7,0xcadcb5ce,0xcade60c6,0xcada398c,0x8af17e1a,0x8af0497b
-.inst 0x8ae591bc,0x8aede63e,0xcadaa1ad,0x8aebc8ba,0xcadb3e31,0xcadca96b,0xcade8ca5,0xcadaf210
-.inst 0x8ae87a9a,0x8af4eabb,0x8ae47c3c,0x8ae1f11e,0xcada9821,0x8af5349a,0xcadba108,0xcadc52b5
-.inst 0xcade9484,0xcadae694,0x8af6145a,0x8ae2155b,0x8ae7f07c,0x8ae342de,0xcadaac63,0x8aeaa8fa
-.inst 0xcadbdad6,0xcadc694a,0xcaded0e7,0xcada4442,0xd280003a,0xf2b0001a,0xcada0000,0xcac9f01a
-.inst 0x4e080df8,0x4e080cd9,0xcad7af3b,0xcacc227c,0xcace6f1e,0xcac6e5ef,0xcacd6f5a,0xcad1277b
-.inst 0xcad0b79c,0xcacbf7de,0xcac531ef,0xcac1075a,0xcac8b37b,0xcad4479c,0xcad5e7de,0xcac4b5ef
-.inst 0xcac3ab5a,0xcad6077b,0xcac2ff9c,0xcaca73de,0xcac7cdef,0xcadc5746,0xcac69f39,0xcac6f2f7
-.inst 0xcac67a31,0xcac6ed08,0xcac69ad6,0xcade6b66,0xcacf739c,0xcada2fde,0xcadb95ef,0xcac60e73
-.inst 0xcac6ed8c,0xcac65a10,0xcac6ca94,0xcac61042,0xcacfcc00,0xcacfdd29,0xcacf61ad,0xcacfc821
-.inst 0xcacf2463,0x4e083f06,0x4e083f2f,0xcadc8b18,0xcadc1dce,0xcadc956b,0xcadca6b5,0xcadc194a
-.inst 0xcade04c6,0xcade21ef,0xcaded4a5,0xcade5084,0xcade38e7,0x8af7021a,0x8af002bb,0x8ae7601c
-.inst 0x8ae0a2fe,0xcada6000,0x8af500fa,0xcadb02f7,0xcadca2b5,0xcade00e7,0xcada0210,0x8aef01ba
-.inst 0x8aed011b,0x8ae2031c,0x8af801fe,0xcada0318,0x8ae8005a,0xcadb01ef,0xcadc0108,0xcade0042
-.inst 0xcada01ad,0x8aec017a,0x8aeb009b,0x8ae3033c,0x8af9019e,0xcada0339,0x8ae4007a,0xcadb018c
-.inst 0xcadc0084,0xcade0063,0xcada016b,0x8ae9023a,0x8af1029b,0x8aea00dc,0x8ae6013e,0xcada00c6
-.inst 0x8af4015a,0xcadb0129,0xcadc0294,0xcade014a,0xcada0231,0x8aee00ba,0x8ae5003b,0x8af6027c
-.inst 0x8af301de,0xcada0273,0x8ae102da,0xcadb01ce,0xcadc0021,0xcade02d6,0xcada00a5,0xd290011a
-.inst 0xf2b0001a,0xf2f0001a,0xcada0000,0x93c86108,0x93d16231,0x910002fa,0x93c16037,0x93da6341
-.inst 0x9100021a,0x93c96130,0x93c26049,0x93da6342,0x910002ba,0x93ce61d5,0x93c3606e,0x93da6343
-.inst 0x910000fa,0x93cd61a7,0x93c4608d,0x93da6344,0x9100031a,0x93d662d8,0x93c560b6,0x93da6345
-.inst 0x910001fa,0x93c660cf,0x93da6346,0x9100033a,0x93d46299,0x93d36274,0x93ca6153,0x93da634a
-.inst 0x9100019a,0x93cb616c,0x93da634b,0x4ef58673,0x6ef58694,0x4e083e9b,0x4e083ebc,0xcb1c037a
-.inst 0xd37fff5a,0xb4fea53a,0x4e083fde,0xf90003c0,0xf90007c1,0xf9000bc2,0xf9000fc3,0xf90013c4
-.inst 0xf90017c5,0xf9001bc6,0xf9001fc7,0xf90023c8,0xf90027c9,0xf9002bca,0xf9002fcb,0xf90033cc
-.inst 0xf90037cd,0xf9003bce,0xf9003fcf,0xf90043d0,0xf90047d1,0xf9004bd9,0xf9004fd3,0xf90053d4
-.inst 0xf90057d5,0xf9005bd6,0xf9005fd7,0xf90063d8,0x4e083c13,0x4e083c34,0x4e083c55,0x4e083c76
-.inst 0x4e083c97,0x4e083cb8,0x4e083cd9,0x4e083cfa,0x4e083e1b,0x4e083e3c,0x4e083e5e,0x4e083fc0
-.inst 0x4e083fe1,0x4e083e63,0x4e083e84,0x4e083ea6,0x91000025,0xd2800002,0x910000c1,0xf81f0ffe
-.inst 0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013,0x910000b4
-.inst 0x91000035,0x91000056,0x91000077,0x91000098,0xb4000458,0xd28000ea,0x8a0a02ca,0xd100230b
-.inst 0xd37ffd6b,0xaa0b014a,0xb400016a,0x394002e9,0x8b16026a,0x3940014b,0xca0b0129,0x39000149
-.inst 0x910006f7,0x910006d6,0xd1000718,0xcb1502c9,0x1400000a,0xf94002e9,0x8b16026a,0xf940014b
-.inst 0xca0b0129,0xf9000149,0x910022f7,0x910022d6,0xd1002318,0xcb1502c9,0xb4000049,0x14000005
-.inst 0xd2800016,0x91000260,0x91000281",
-        r"bl {vg_keccak_f1600}",
-        r".inst 0xb5fffc38,0x14000001,0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698
-.inst 0xf9410694,0xf84107fe,0xd65f03c0",
-        r".p2align 6",
+        r"cbz x2, 20f
+b 21f
+20:",
+        // add x6, x1, #0
+        // sub x7, x4, x6
+        // lsr x7, x7, #63
+        r".inst 0x91000026,0xcb060087,0xd37ffce7
+cbz x7, 22f
+b 23f
+22:",
+        // add x1, x5, #0
+        // dup v0.2d, x19
+        // dup v1.2d, x20
+        // dup v2.2d, x21
+        // dup v3.2d, x22
+        // dup v4.2d, x23
+        // dup v5.2d, x24
+        // dup v6.2d, x25
+        // dup v7.2d, x26
+        // dup v16.2d, x27
+        // dup v17.2d, x28
+        // dup v18.2d, x30
+        // dup v30.2d, x0
+        // dup v31.2d, x1
+        // dup v19.2d, x3
+        // dup v20.2d, x4
+        // dup v21.2d, x6
+        // add x30, x0, #0
+        // ldr x0, [x30, #0]
+        // ldr x1, [x30, #8]
+        // ldr x2, [x30, #16]
+        // ldr x3, [x30, #24]
+        // ldr x4, [x30, #32]
+        // ldr x5, [x30, #40]
+        // ldr x6, [x30, #48]
+        // ldr x7, [x30, #56]
+        // ldr x8, [x30, #64]
+        // ldr x9, [x30, #72]
+        // ldr x10, [x30, #80]
+        // ldr x11, [x30, #88]
+        // ldr x12, [x30, #96]
+        // ldr x13, [x30, #104]
+        // ldr x14, [x30, #112]
+        // ldr x15, [x30, #120]
+        // ldr x16, [x30, #128]
+        // ldr x17, [x30, #136]
+        // ldr x25, [x30, #144]
+        // ldr x19, [x30, #152]
+        // ldr x20, [x30, #160]
+        // ldr x21, [x30, #168]
+        // ldr x22, [x30, #176]
+        // ldr x23, [x30, #184]
+        // ldr x24, [x30, #192]
+        r".inst 0x910000a1,0x4e080e60,0x4e080e81,0x4e080ea2,0x4e080ec3,0x4e080ee4,0x4e080f05,0x4e080f26
+.inst 0x4e080f47,0x4e080f70,0x4e080f91,0x4e080fd2,0x4e080c1e,0x4e080c3f,0x4e080c73,0x4e080c94
+.inst 0x4e080cd5,0x9100001e,0xf94003c0,0xf94007c1,0xf9400bc2,0xf9400fc3,0xf94013c4,0xf94017c5
+.inst 0xf9401bc6,0xf9401fc7,0xf94023c8,0xf94027c9,0xf9402bca,0xf9402fcb,0xf94033cc,0xf94037cd
+.inst 0xf9403bce,0xf9403fcf,0xf94043d0,0xf94047d1,0xf9404bd9,0xf9404fd3,0xf94053d4,0xf94057d5
+.inst 0xf9405bd6,0xf9405fd7,0xf94063d8
+24:",
+        // umov x27, v19.d[0]
+        // umov x28, v21.d[0]
+        // sub x26, x28, #72
+        r".inst 0x4e083e7b,0x4e083ebc,0xd101239a
+cbz x26, 25f",
+        // sub x26, x28, #104
+        r".inst 0xd101a39a
+cbz x26, 27f",
+        // sub x26, x28, #136
+        r".inst 0xd102239a
+cbz x26, 29f",
+        // sub x26, x28, #144
+        r".inst 0xd102439a
+cbz x26, 211f",
+        // ldr x26, [x27, #0]
+        // eor x0, x0, x26
+        // ldr x26, [x27, #8]
+        // eor x1, x1, x26
+        // ldr x26, [x27, #16]
+        // eor x2, x2, x26
+        // ldr x26, [x27, #24]
+        // eor x3, x3, x26
+        // ldr x26, [x27, #32]
+        // eor x4, x4, x26
+        // ldr x26, [x27, #40]
+        // eor x5, x5, x26
+        // ldr x26, [x27, #48]
+        // eor x6, x6, x26
+        // ldr x26, [x27, #56]
+        // eor x7, x7, x26
+        // ldr x26, [x27, #64]
+        // eor x8, x8, x26
+        // ldr x26, [x27, #72]
+        // eor x9, x9, x26
+        // ldr x26, [x27, #80]
+        // eor x10, x10, x26
+        // ldr x26, [x27, #88]
+        // eor x11, x11, x26
+        // ldr x26, [x27, #96]
+        // eor x12, x12, x26
+        // ldr x26, [x27, #104]
+        // eor x13, x13, x26
+        // ldr x26, [x27, #112]
+        // eor x14, x14, x26
+        // ldr x26, [x27, #120]
+        // eor x15, x15, x26
+        // ldr x26, [x27, #128]
+        // eor x16, x16, x26
+        // ldr x26, [x27, #136]
+        // eor x17, x17, x26
+        // ldr x26, [x27, #144]
+        // eor x25, x25, x26
+        // ldr x26, [x27, #152]
+        // eor x19, x19, x26
+        // ldr x26, [x27, #160]
+        // eor x20, x20, x26
+        r".inst 0xf940037a,0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063
+.inst 0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7
+.inst 0xf940237a,0xca1a0108,0xf940277a,0xca1a0129,0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b
+.inst 0xf940337a,0xca1a018c,0xf940377a,0xca1a01ad,0xf9403b7a,0xca1a01ce,0xf9403f7a,0xca1a01ef
+.inst 0xf940437a,0xca1a0210,0xf940477a,0xca1a0231,0xf9404b7a,0xca1a0339,0xf9404f7a,0xca1a0273
+.inst 0xf940537a,0xca1a0294
+b 212f
+211:",
+        // ldr x26, [x27, #0]
+        // eor x0, x0, x26
+        // ldr x26, [x27, #8]
+        // eor x1, x1, x26
+        // ldr x26, [x27, #16]
+        // eor x2, x2, x26
+        // ldr x26, [x27, #24]
+        // eor x3, x3, x26
+        // ldr x26, [x27, #32]
+        // eor x4, x4, x26
+        // ldr x26, [x27, #40]
+        // eor x5, x5, x26
+        // ldr x26, [x27, #48]
+        // eor x6, x6, x26
+        // ldr x26, [x27, #56]
+        // eor x7, x7, x26
+        // ldr x26, [x27, #64]
+        // eor x8, x8, x26
+        // ldr x26, [x27, #72]
+        // eor x9, x9, x26
+        // ldr x26, [x27, #80]
+        // eor x10, x10, x26
+        // ldr x26, [x27, #88]
+        // eor x11, x11, x26
+        // ldr x26, [x27, #96]
+        // eor x12, x12, x26
+        // ldr x26, [x27, #104]
+        // eor x13, x13, x26
+        // ldr x26, [x27, #112]
+        // eor x14, x14, x26
+        // ldr x26, [x27, #120]
+        // eor x15, x15, x26
+        // ldr x26, [x27, #128]
+        // eor x16, x16, x26
+        // ldr x26, [x27, #136]
+        // eor x17, x17, x26
+        r".inst 0xf940037a,0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063
+.inst 0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7
+.inst 0xf940237a,0xca1a0108,0xf940277a,0xca1a0129,0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b
+.inst 0xf940337a,0xca1a018c,0xf940377a,0xca1a01ad,0xf9403b7a,0xca1a01ce,0xf9403f7a,0xca1a01ef
+.inst 0xf940437a,0xca1a0210,0xf940477a,0xca1a0231
+212:
+b 210f
+29:",
+        // ldr x26, [x27, #0]
+        // eor x0, x0, x26
+        // ldr x26, [x27, #8]
+        // eor x1, x1, x26
+        // ldr x26, [x27, #16]
+        // eor x2, x2, x26
+        // ldr x26, [x27, #24]
+        // eor x3, x3, x26
+        // ldr x26, [x27, #32]
+        // eor x4, x4, x26
+        // ldr x26, [x27, #40]
+        // eor x5, x5, x26
+        // ldr x26, [x27, #48]
+        // eor x6, x6, x26
+        // ldr x26, [x27, #56]
+        // eor x7, x7, x26
+        // ldr x26, [x27, #64]
+        // eor x8, x8, x26
+        // ldr x26, [x27, #72]
+        // eor x9, x9, x26
+        // ldr x26, [x27, #80]
+        // eor x10, x10, x26
+        // ldr x26, [x27, #88]
+        // eor x11, x11, x26
+        // ldr x26, [x27, #96]
+        // eor x12, x12, x26
+        // ldr x26, [x27, #104]
+        // eor x13, x13, x26
+        // ldr x26, [x27, #112]
+        // eor x14, x14, x26
+        // ldr x26, [x27, #120]
+        // eor x15, x15, x26
+        // ldr x26, [x27, #128]
+        // eor x16, x16, x26
+        r".inst 0xf940037a,0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063
+.inst 0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7
+.inst 0xf940237a,0xca1a0108,0xf940277a,0xca1a0129,0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b
+.inst 0xf940337a,0xca1a018c,0xf940377a,0xca1a01ad,0xf9403b7a,0xca1a01ce,0xf9403f7a,0xca1a01ef
+.inst 0xf940437a,0xca1a0210
+210:
+b 28f
+27:",
+        // ldr x26, [x27, #0]
+        // eor x0, x0, x26
+        // ldr x26, [x27, #8]
+        // eor x1, x1, x26
+        // ldr x26, [x27, #16]
+        // eor x2, x2, x26
+        // ldr x26, [x27, #24]
+        // eor x3, x3, x26
+        // ldr x26, [x27, #32]
+        // eor x4, x4, x26
+        // ldr x26, [x27, #40]
+        // eor x5, x5, x26
+        // ldr x26, [x27, #48]
+        // eor x6, x6, x26
+        // ldr x26, [x27, #56]
+        // eor x7, x7, x26
+        // ldr x26, [x27, #64]
+        // eor x8, x8, x26
+        // ldr x26, [x27, #72]
+        // eor x9, x9, x26
+        // ldr x26, [x27, #80]
+        // eor x10, x10, x26
+        // ldr x26, [x27, #88]
+        // eor x11, x11, x26
+        // ldr x26, [x27, #96]
+        // eor x12, x12, x26
+        r".inst 0xf940037a,0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063
+.inst 0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7
+.inst 0xf940237a,0xca1a0108,0xf940277a,0xca1a0129,0xf9402b7a,0xca1a014a,0xf9402f7a,0xca1a016b
+.inst 0xf940337a,0xca1a018c
+28:
+b 26f
+25:",
+        // ldr x26, [x27, #0]
+        // eor x0, x0, x26
+        // ldr x26, [x27, #8]
+        // eor x1, x1, x26
+        // ldr x26, [x27, #16]
+        // eor x2, x2, x26
+        // ldr x26, [x27, #24]
+        // eor x3, x3, x26
+        // ldr x26, [x27, #32]
+        // eor x4, x4, x26
+        // ldr x26, [x27, #40]
+        // eor x5, x5, x26
+        // ldr x26, [x27, #48]
+        // eor x6, x6, x26
+        // ldr x26, [x27, #56]
+        // eor x7, x7, x26
+        // ldr x26, [x27, #64]
+        // eor x8, x8, x26
+        r".inst 0xf940037a,0xca1a0000,0xf940077a,0xca1a0021,0xf9400b7a,0xca1a0042,0xf9400f7a,0xca1a0063
+.inst 0xf940137a,0xca1a0084,0xf940177a,0xca1a00a5,0xf9401b7a,0xca1a00c6,0xf9401f7a,0xca1a00e7
+.inst 0xf940237a,0xca1a0108
+26:",
+        // eor x26, x0, x5, ror #0
+        // dup v24.2d, x4
+        // dup v25.2d, x9
+        // eor x27, x1, x6, ror #0
+        // eor x28, x2, x7, ror #0
+        // eor x30, x3, x8, ror #0
+        // eor x4, x4, x9, ror #0
+        // eor x26, x26, x10, ror #0
+        // eor x27, x27, x11, ror #0
+        // eor x28, x28, x12, ror #0
+        // eor x30, x30, x13, ror #0
+        // eor x4, x4, x14, ror #0
+        // eor x26, x26, x15, ror #0
+        // eor x27, x27, x16, ror #0
+        // eor x28, x28, x17, ror #0
+        // eor x30, x30, x25, ror #0
+        // eor x4, x4, x19, ror #0
+        // eor x26, x26, x20, ror #0
+        // eor x27, x27, x21, ror #0
+        // eor x28, x28, x22, ror #0
+        // eor x30, x30, x23, ror #0
+        // eor x4, x4, x24, ror #0
+        // eor x9, x26, x28, ror #63
+        // eor x1, x1, x9, ror #0
+        // eor x6, x6, x9, ror #0
+        // eor x11, x11, x9, ror #0
+        // eor x16, x16, x9, ror #0
+        // eor x21, x21, x9, ror #0
+        // eor x9, x27, x30, ror #63
+        // eor x28, x28, x4, ror #63
+        // eor x30, x30, x26, ror #63
+        // eor x4, x4, x27, ror #63
+        // eor x2, x2, x9, ror #0
+        // eor x7, x7, x9, ror #0
+        // eor x12, x12, x9, ror #0
+        // eor x17, x17, x9, ror #0
+        // eor x22, x22, x9, ror #0
+        // eor x0, x0, x4, ror #0
+        // eor x5, x5, x4, ror #0
+        // eor x10, x10, x4, ror #0
+        // eor x15, x15, x4, ror #0
+        // eor x20, x20, x4, ror #0
+        // umov x4, v24.d[0]
+        // umov x9, v25.d[0]
+        // eor x3, x3, x28, ror #0
+        // eor x8, x8, x28, ror #0
+        // eor x13, x13, x28, ror #0
+        // eor x25, x25, x28, ror #0
+        // eor x23, x23, x28, ror #0
+        // eor x4, x4, x30, ror #0
+        // eor x9, x9, x30, ror #0
+        // eor x14, x14, x30, ror #0
+        // eor x19, x19, x30, ror #0
+        // eor x24, x24, x30, ror #0
+        // bic x26, x12, x6, ror #63
+        // bic x27, x25, x12, ror #42
+        // bic x28, x0, x24, ror #50
+        // bic x30, x6, x0, ror #44
+        // eor x0, x0, x26, ror #21
+        // bic x26, x24, x25, ror #57
+        // eor x6, x6, x27, ror #23
+        // eor x25, x25, x28, ror #21
+        // eor x24, x24, x30, ror #34
+        // eor x12, x12, x26, ror #29
+        // bic x26, x10, x9, ror #47
+        // bic x27, x16, x10, ror #42
+        // bic x28, x3, x22, ror #31
+        // bic x30, x9, x3, ror #56
+        // eor x3, x3, x26, ror #25
+        // bic x26, x22, x16, ror #16
+        // eor x9, x9, x27, ror #39
+        // eor x16, x16, x28, ror #17
+        // eor x22, x22, x30, ror #41
+        // eor x10, x10, x26, ror #6
+        // bic x26, x13, x7, ror #19
+        // bic x27, x19, x13, ror #47
+        // bic x28, x1, x20, ror #47
+        // bic x30, x7, x1, ror #5
+        // eor x1, x1, x26, ror #40
+        // bic x26, x20, x19, ror #10
+        // eor x7, x7, x27, ror #62
+        // eor x19, x19, x28, ror #7
+        // eor x20, x20, x30, ror #12
+        // eor x13, x13, x26, ror #7
+        // bic x26, x11, x5, ror #38
+        // bic x27, x17, x11, ror #5
+        // bic x28, x4, x23, ror #35
+        // bic x30, x5, x4, ror #9
+        // eor x4, x4, x26, ror #17
+        // bic x26, x23, x17, ror #41
+        // eor x5, x5, x27, ror #21
+        // eor x17, x17, x28, ror #52
+        // eor x23, x23, x30, ror #20
+        // eor x11, x11, x26, ror #18
+        // bic x26, x14, x8, ror #48
+        // bic x27, x15, x14, ror #2
+        // bic x28, x2, x21, ror #60
+        // bic x30, x8, x2, ror #57
+        // eor x2, x2, x26, ror #23
+        // bic x26, x21, x15, ror #25
+        // eor x8, x8, x27, ror #14
+        // eor x15, x15, x28, ror #43
+        // eor x21, x21, x30, ror #11
+        // eor x14, x14, x26, ror #37
+        // movz x26, #1, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x3, ror #36
+        // dup v24.2d, x24
+        // dup v25.2d, x22
+        // eor x27, x6, x9, ror #24
+        // eor x28, x12, x10, ror #40
+        // eor x30, x25, x16, ror #40
+        // eor x24, x24, x22, ror #17
+        // eor x26, x26, x1, ror #63
+        // eor x27, x27, x7, ror #38
+        // eor x28, x28, x13, ror #18
+        // eor x30, x30, x19, ror #13
+        // eor x24, x24, x20, ror #60
+        // eor x26, x26, x4, ror #37
+        // eor x27, x27, x5, ror #8
+        // eor x28, x28, x11, ror #33
+        // eor x30, x30, x17, ror #6
+        // eor x24, x24, x23, ror #22
+        // eor x26, x26, x2, ror #2
+        // eor x27, x27, x8, ror #53
+        // eor x28, x28, x14, ror #4
+        // eor x30, x30, x15, ror #44
+        // eor x24, x24, x21, ror #12
+        // eor x22, x26, x28, ror #20
+        // eor x6, x6, x22, ror #44
+        // eor x9, x9, x22, ror #20
+        // eor x7, x7, x22, ror #6
+        // eor x5, x5, x22, ror #36
+        // eor x8, x8, x22, ror #55
+        // eor x22, x27, x30, ror #22
+        // eor x28, x28, x24, ror #28
+        // eor x30, x30, x26, ror #20
+        // eor x24, x24, x27, ror #33
+        // eor x12, x12, x22, ror #63
+        // eor x10, x10, x22, ror #23
+        // eor x13, x13, x22, ror #45
+        // eor x11, x11, x22, ror #30
+        // eor x14, x14, x22, ror #59
+        // eor x0, x0, x24, ror #50
+        // eor x3, x3, x24, ror #14
+        // eor x1, x1, x24, ror #51
+        // eor x4, x4, x24, ror #13
+        // eor x2, x2, x24, ror #48
+        // umov x22, v24.d[0]
+        // umov x24, v25.d[0]
+        // eor x25, x25, x28, ror #42
+        // eor x16, x16, x28, ror #2
+        // eor x19, x19, x28, ror #29
+        // eor x17, x17, x28, ror #36
+        // eor x15, x15, x28, ror #62
+        // eor x22, x22, x30, ror #57
+        // eor x24, x24, x30, ror #40
+        // eor x20, x20, x30, ror #61
+        // eor x23, x23, x30, ror #35
+        // eor x21, x21, x30, ror #45
+        // bic x26, x13, x9, ror #4
+        // bic x27, x17, x13, ror #32
+        // bic x28, x0, x21, ror #48
+        // bic x30, x9, x0, ror #0
+        // eor x0, x0, x26, ror #60
+        // bic x26, x21, x17, ror #44
+        // eor x9, x9, x27, ror #28
+        // eor x17, x17, x28, ror #36
+        // eor x21, x21, x30, ror #16
+        // eor x13, x13, x26, ror #52
+        // bic x26, x1, x24, ror #51
+        // bic x27, x5, x1, ror #13
+        // bic x28, x25, x14, ror #13
+        // bic x30, x24, x25, ror #32
+        // eor x25, x25, x26, ror #45
+        // bic x26, x14, x5, ror #19
+        // eor x24, x24, x27, ror #0
+        // eor x5, x5, x28, ror #32
+        // eor x14, x14, x30, ror #19
+        // eor x1, x1, x26, ror #32
+        // bic x26, x19, x10, ror #24
+        // bic x27, x23, x19, ror #31
+        // bic x28, x6, x2, ror #29
+        // bic x30, x10, x6, ror #28
+        // eor x6, x6, x26, ror #12
+        // bic x26, x2, x23, ror #16
+        // eor x10, x10, x27, ror #9
+        // eor x23, x23, x28, ror #19
+        // eor x2, x2, x30, ror #7
+        // eor x19, x19, x26, ror #17
+        // bic x26, x7, x3, ror #16
+        // bic x27, x11, x7, ror #9
+        // bic x28, x22, x15, ror #8
+        // bic x30, x3, x22, ror #23
+        // eor x22, x22, x26, ror #25
+        // bic x26, x15, x11, ror #8
+        // eor x3, x3, x27, ror #39
+        // eor x11, x11, x28, ror #48
+        // eor x15, x15, x30, ror #33
+        // eor x7, x7, x26, ror #47
+        // bic x26, x20, x16, ror #21
+        // bic x27, x4, x20, ror #11
+        // bic x28, x12, x8, ror #48
+        // bic x30, x16, x12, ror #59
+        // eor x12, x12, x26, ror #48
+        // bic x26, x8, x4, ror #53
+        // eor x16, x16, x27, ror #32
+        // eor x4, x4, x28, ror #27
+        // eor x8, x8, x30, ror #21
+        // eor x20, x20, x26, ror #0
+        // movz x26, #32898, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x25, ror #15
+        // dup v24.2d, x21
+        // dup v25.2d, x14
+        // eor x27, x9, x24, ror #47
+        // eor x28, x13, x1, ror #0
+        // eor x30, x17, x5, ror #19
+        // eor x21, x21, x14, ror #44
+        // eor x26, x26, x6, ror #19
+        // eor x27, x27, x10, ror #55
+        // eor x28, x28, x19, ror #35
+        // eor x30, x30, x23, ror #36
+        // eor x21, x21, x2, ror #0
+        // eor x26, x26, x22, ror #23
+        // eor x27, x27, x3, ror #0
+        // eor x28, x28, x7, ror #52
+        // eor x30, x30, x11, ror #11
+        // eor x21, x21, x15, ror #47
+        // eor x26, x26, x12, ror #23
+        // eor x27, x27, x16, ror #28
+        // eor x28, x28, x20, ror #11
+        // eor x30, x30, x4, ror #32
+        // eor x21, x21, x8, ror #23
+        // eor x14, x26, x28, ror #59
+        // eor x9, x9, x14, ror #0
+        // eor x24, x24, x14, ror #17
+        // eor x10, x10, x14, ror #9
+        // eor x3, x3, x14, ror #0
+        // eor x16, x16, x14, ror #36
+        // eor x14, x27, x30, ror #27
+        // eor x28, x28, x21, ror #51
+        // eor x30, x30, x26, ror #35
+        // eor x21, x21, x27, ror #15
+        // eor x13, x13, x14, ror #4
+        // eor x1, x1, x14, ror #4
+        // eor x19, x19, x14, ror #33
+        // eor x7, x7, x14, ror #16
+        // eor x20, x20, x14, ror #57
+        // eor x0, x0, x21, ror #48
+        // eor x25, x25, x21, ror #33
+        // eor x6, x6, x21, ror #29
+        // eor x22, x22, x21, ror #25
+        // eor x12, x12, x21, ror #25
+        // umov x14, v24.d[0]
+        // umov x21, v25.d[0]
+        // eor x17, x17, x28, ror #32
+        // eor x5, x5, x28, ror #13
+        // eor x23, x23, x28, ror #60
+        // eor x11, x11, x28, ror #21
+        // eor x4, x4, x28, ror #0
+        // eor x14, x14, x30, ror #44
+        // eor x21, x21, x30, ror #0
+        // eor x2, x2, x30, ror #44
+        // eor x15, x15, x30, ror #61
+        // eor x8, x8, x30, ror #21
+        // bic x26, x19, x24, ror #15
+        // bic x27, x11, x19, ror #34
+        // bic x28, x0, x8, ror #57
+        // bic x30, x24, x0, ror #61
+        // eor x0, x0, x26, ror #52
+        // bic x26, x8, x11, ror #25
+        // eor x24, x24, x27, ror #15
+        // eor x11, x11, x28, ror #46
+        // eor x8, x8, x30, ror #10
+        // eor x19, x19, x26, ror #5
+        // bic x26, x6, x21, ror #56
+        // bic x27, x3, x6, ror #61
+        // bic x28, x17, x20, ror #10
+        // bic x30, x21, x17, ror #56
+        // eor x17, x17, x26, ror #16
+        // bic x26, x20, x3, ror #9
+        // eor x21, x21, x27, ror #11
+        // eor x3, x3, x28, ror #45
+        // eor x20, x20, x30, ror #62
+        // eor x6, x6, x26, ror #58
+        // bic x26, x23, x1, ror #15
+        // bic x27, x15, x23, ror #16
+        // bic x28, x9, x12, ror #6
+        // bic x30, x1, x9, ror #9
+        // eor x9, x9, x26, ror #40
+        // bic x26, x12, x15, ror #18
+        // eor x1, x1, x27, ror #33
+        // eor x15, x15, x28, ror #40
+        // eor x12, x12, x30, ror #49
+        // eor x23, x23, x26, ror #30
+        // bic x26, x10, x25, ror #62
+        // bic x27, x7, x10, ror #12
+        // bic x28, x14, x4, ror #47
+        // bic x30, x25, x14, ror #42
+        // eor x14, x14, x26, ror #24
+        // bic x26, x4, x7, ror #29
+        // eor x25, x25, x27, ror #54
+        // eor x7, x7, x28, ror #52
+        // eor x4, x4, x30, ror #39
+        // eor x10, x10, x26, ror #23
+        // bic x26, x2, x5, ror #47
+        // bic x27, x22, x2, ror #27
+        // bic x28, x13, x16, ror #28
+        // bic x30, x5, x13, ror #6
+        // eor x13, x13, x26, ror #11
+        // bic x26, x16, x22, ror #20
+        // eor x5, x5, x27, ror #54
+        // eor x22, x22, x28, ror #16
+        // eor x16, x16, x30, ror #30
+        // eor x2, x2, x26, ror #17
+        // movz x26, #32906, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x17, ror #0
+        // dup v24.2d, x8
+        // dup v25.2d, x20
+        // eor x27, x24, x21, ror #5
+        // eor x28, x19, x6, ror #28
+        // eor x30, x11, x3, ror #1
+        // eor x8, x8, x20, ror #17
+        // eor x26, x26, x9, ror #63
+        // eor x27, x27, x1, ror #51
+        // eor x28, x28, x23, ror #51
+        // eor x30, x30, x15, ror #5
+        // eor x8, x8, x12, ror #12
+        // eor x26, x26, x14, ror #21
+        // eor x27, x27, x25, ror #40
+        // eor x28, x28, x10, ror #57
+        // eor x30, x30, x7, ror #15
+        // eor x8, x8, x4, ror #11
+        // eor x26, x26, x13, ror #62
+        // eor x27, x27, x5, ror #53
+        // eor x28, x28, x2, ror #21
+        // eor x30, x30, x22, ror #28
+        // eor x8, x8, x16, ror #33
+        // eor x20, x26, x28, ror #51
+        // eor x24, x24, x20, ror #61
+        // eor x21, x21, x20, ror #56
+        // eor x1, x1, x20, ror #10
+        // eor x25, x25, x20, ror #21
+        // eor x5, x5, x20, ror #8
+        // eor x20, x27, x30, ror #14
+        // eor x28, x28, x8, ror #4
+        // eor x30, x30, x26, ror #45
+        // eor x8, x8, x27, ror #9
+        // eor x19, x19, x20, ror #15
+        // eor x6, x6, x20, ror #51
+        // eor x23, x23, x20, ror #28
+        // eor x10, x10, x20, ror #22
+        // eor x2, x2, x20, ror #58
+        // eor x0, x0, x8, ror #57
+        // eor x17, x17, x8, ror #57
+        // eor x9, x9, x8, ror #58
+        // eor x14, x14, x8, ror #36
+        // eor x13, x13, x8, ror #59
+        // umov x8, v24.d[0]
+        // umov x20, v25.d[0]
+        // eor x11, x11, x28, ror #34
+        // eor x3, x3, x28, ror #33
+        // eor x15, x15, x28, ror #29
+        // eor x7, x7, x28, ror #19
+        // eor x22, x22, x28, ror #6
+        // eor x8, x8, x30, ror #25
+        // eor x20, x20, x30, ror #8
+        // eor x12, x12, x30, ror #13
+        // eor x4, x4, x30, ror #14
+        // eor x16, x16, x30, ror #56
+        // bic x26, x23, x21, ror #32
+        // bic x27, x7, x23, ror #48
+        // bic x28, x0, x16, ror #12
+        // bic x30, x21, x0, ror #36
+        // eor x0, x0, x26, ror #60
+        // bic x26, x16, x7, ror #0
+        // eor x21, x21, x27, ror #48
+        // eor x7, x7, x28, ror #52
+        // eor x16, x16, x30, ror #16
+        // eor x23, x23, x26, ror #16
+        // bic x26, x9, x20, ror #58
+        // bic x27, x25, x9, ror #62
+        // bic x28, x11, x2, ror #22
+        // bic x30, x20, x11, ror #0
+        // eor x11, x11, x26, ror #6
+        // bic x26, x2, x25, ror #50
+        // eor x20, x20, x27, ror #8
+        // eor x25, x25, x28, ror #56
+        // eor x2, x2, x30, ror #42
+        // eor x9, x9, x26, ror #16
+        // bic x26, x15, x6, ror #12
+        // bic x27, x4, x15, ror #2
+        // bic x28, x24, x13, ror #42
+        // bic x30, x6, x24, ror #56
+        // eor x24, x24, x26, ror #60
+        // bic x26, x13, x4, ror #16
+        // eor x6, x6, x27, ror #50
+        // eor x4, x4, x28, ror #6
+        // eor x13, x13, x30, ror #30
+        // eor x15, x15, x26, ror #46
+        // bic x26, x1, x17, ror #48
+        // bic x27, x10, x1, ror #14
+        // bic x28, x8, x22, ror #24
+        // bic x30, x17, x8, ror #2
+        // eor x8, x8, x26, ror #14
+        // bic x26, x22, x10, ror #40
+        // eor x17, x17, x27, ror #2
+        // eor x10, x10, x28, ror #0
+        // eor x22, x22, x30, ror #38
+        // eor x1, x1, x26, ror #10
+        // bic x26, x12, x3, ror #62
+        // bic x27, x14, x12, ror #50
+        // bic x28, x19, x5, ror #0
+        // bic x30, x3, x19, ror #26
+        // eor x19, x19, x26, ror #40
+        // bic x26, x5, x14, ror #54
+        // eor x3, x3, x27, ror #16
+        // eor x14, x14, x28, ror #10
+        // eor x5, x5, x30, ror #38
+        // eor x12, x12, x26, ror #24
+        // movz x26, #32768, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x11, ror #54
+        // dup v24.2d, x16
+        // dup v25.2d, x2
+        // eor x27, x21, x20, ror #26
+        // eor x28, x23, x9, ror #0
+        // eor x30, x7, x25, ror #50
+        // eor x16, x16, x2, ror #0
+        // eor x26, x26, x24, ror #2
+        // eor x27, x27, x6, ror #46
+        // eor x28, x28, x15, ror #2
+        // eor x30, x30, x4, ror #48
+        // eor x16, x16, x13, ror #32
+        // eor x26, x26, x8, ror #30
+        // eor x27, x27, x17, ror #0
+        // eor x28, x28, x1, ror #48
+        // eor x30, x30, x10, ror #18
+        // eor x16, x16, x22, ror #42
+        // eor x26, x26, x19, ror #54
+        // eor x27, x27, x3, ror #0
+        // eor x28, x28, x12, ror #34
+        // eor x30, x30, x14, ror #32
+        // eor x16, x16, x5, ror #42
+        // eor x2, x26, x28, ror #59
+        // eor x21, x21, x2, ror #36
+        // eor x20, x20, x2, ror #10
+        // eor x6, x6, x2, ror #54
+        // eor x17, x17, x2, ror #36
+        // eor x3, x3, x2, ror #36
+        // eor x2, x27, x30, ror #47
+        // eor x28, x28, x16, ror #15
+        // eor x30, x30, x26, ror #51
+        // eor x16, x16, x27, ror #15
+        // eor x23, x23, x2, ror #32
+        // eor x9, x9, x2, ror #32
+        // eor x15, x15, x2, ror #30
+        // eor x1, x1, x2, ror #48
+        // eor x12, x12, x2, ror #62
+        // eor x0, x0, x16, ror #12
+        // eor x11, x11, x16, ror #22
+        // eor x24, x24, x16, ror #10
+        // eor x8, x8, x16, ror #46
+        // eor x19, x19, x16, ror #22
+        // umov x2, v24.d[0]
+        // umov x16, v25.d[0]
+        // eor x7, x7, x28, ror #48
+        // eor x25, x25, x28, ror #62
+        // eor x4, x4, x28, ror #0
+        // eor x10, x10, x28, ror #30
+        // eor x14, x14, x28, ror #16
+        // eor x2, x2, x30, ror #0
+        // eor x16, x16, x30, ror #0
+        // eor x13, x13, x30, ror #32
+        // eor x22, x22, x30, ror #22
+        // eor x5, x5, x30, ror #22
+        // bic x26, x15, x20, ror #55
+        // bic x27, x10, x15, ror #10
+        // bic x28, x0, x5, ror #40
+        // bic x30, x20, x0, ror #54
+        // eor x0, x0, x26, ror #19
+        // bic x26, x5, x10, ror #33
+        // eor x20, x20, x27, ror #63
+        // eor x10, x10, x28, ror #55
+        // eor x5, x5, x30, ror #34
+        // eor x15, x15, x26, ror #21
+        // bic x26, x24, x16, ror #57
+        // bic x27, x17, x24, ror #16
+        // bic x28, x7, x12, ror #49
+        // bic x30, x16, x7, ror #56
+        // eor x7, x7, x26, ror #15
+        // bic x26, x12, x17, ror #14
+        // eor x16, x16, x27, ror #55
+        // eor x17, x17, x28, ror #1
+        // eor x12, x12, x30, ror #23
+        // eor x24, x24, x26, ror #34
+        // bic x26, x4, x9, ror #19
+        // bic x27, x22, x4, ror #53
+        // bic x28, x21, x19, ror #9
+        // bic x30, x9, x21, ror #37
+        // eor x21, x21, x26, ror #8
+        // bic x26, x19, x22, ror #10
+        // eor x9, x9, x27, ror #56
+        // eor x22, x22, x28, ror #45
+        // eor x19, x19, x30, ror #18
+        // eor x4, x4, x26, ror #1
+        // bic x26, x6, x11, ror #18
+        // bic x27, x1, x6, ror #35
+        // bic x28, x2, x14, ror #3
+        // bic x30, x11, x2, ror #31
+        // eor x2, x2, x26, ror #15
+        // bic x26, x14, x1, ror #41
+        // eor x11, x11, x27, ror #11
+        // eor x1, x1, x28, ror #20
+        // eor x14, x14, x30, ror #30
+        // eor x6, x6, x26, ror #52
+        // bic x26, x13, x25, ror #2
+        // bic x27, x8, x13, ror #16
+        // bic x28, x23, x3, ror #28
+        // bic x30, x25, x23, ror #55
+        // eor x23, x23, x26, ror #7
+        // bic x26, x3, x8, ror #27
+        // eor x25, x25, x27, ror #46
+        // eor x8, x8, x28, ror #9
+        // eor x3, x3, x30, ror #45
+        // eor x13, x13, x26, ror #21
+        // movz x26, #32907, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x7, ror #48
+        // dup v24.2d, x5
+        // dup v25.2d, x12
+        // eor x27, x20, x16, ror #46
+        // eor x28, x15, x24, ror #44
+        // eor x30, x10, x17, ror #38
+        // eor x5, x5, x12, ror #57
+        // eor x26, x26, x21, ror #27
+        // eor x27, x27, x9, ror #44
+        // eor x28, x28, x4, ror #16
+        // eor x30, x30, x22, ror #37
+        // eor x5, x5, x19, ror #60
+        // eor x26, x26, x2, ror #49
+        // eor x27, x27, x11, ror #8
+        // eor x28, x28, x6, ror #45
+        // eor x30, x30, x1, ror #20
+        // eor x5, x5, x14, ror #12
+        // eor x26, x26, x23, ror #62
+        // eor x27, x27, x25, ror #61
+        // eor x28, x28, x13, ror #50
+        // eor x30, x30, x8, ror #44
+        // eor x5, x5, x3, ror #50
+        // eor x12, x26, x28, ror #18
+        // eor x20, x20, x12, ror #54
+        // eor x16, x16, x12, ror #8
+        // eor x9, x9, x12, ror #10
+        // eor x11, x11, x12, ror #46
+        // eor x25, x25, x12, ror #57
+        // eor x12, x27, x30, ror #62
+        // eor x28, x28, x5, ror #20
+        // eor x30, x30, x26, ror #54
+        // eor x5, x5, x27, ror #33
+        // eor x15, x15, x12, ror #55
+        // eor x24, x24, x12, ror #11
+        // eor x4, x4, x12, ror #39
+        // eor x6, x6, x12, ror #10
+        // eor x13, x13, x12, ror #5
+        // eor x0, x0, x5, ror #40
+        // eor x7, x7, x5, ror #56
+        // eor x21, x21, x5, ror #13
+        // eor x2, x2, x5, ror #55
+        // eor x23, x23, x5, ror #42
+        // umov x5, v24.d[0]
+        // umov x12, v25.d[0]
+        // eor x10, x10, x28, ror #10
+        // eor x17, x17, x28, ror #36
+        // eor x22, x22, x28, ror #37
+        // eor x1, x1, x28, ror #54
+        // eor x8, x8, x28, ror #30
+        // eor x5, x5, x30, ror #33
+        // eor x12, x12, x30, ror #40
+        // eor x19, x19, x30, ror #37
+        // eor x14, x14, x30, ror #21
+        // eor x3, x3, x30, ror #47
+        // bic x26, x4, x16, ror #20
+        // bic x27, x1, x4, ror #48
+        // bic x28, x0, x3, ror #12
+        // bic x30, x16, x0, ror #52
+        // eor x0, x0, x26, ror #56
+        // bic x26, x3, x1, ror #60
+        // eor x16, x16, x27, ror #60
+        // eor x1, x1, x28, ror #56
+        // eor x3, x3, x30, ror #0
+        // eor x4, x4, x26, ror #20
+        // bic x26, x21, x12, ror #53
+        // bic x27, x11, x21, ror #51
+        // bic x28, x10, x13, ror #27
+        // bic x30, x12, x10, ror #32
+        // eor x10, x10, x26, ror #43
+        // bic x26, x13, x11, ror #29
+        // eor x12, x12, x27, ror #24
+        // eor x11, x11, x28, ror #8
+        // eor x13, x13, x30, ror #5
+        // eor x21, x21, x26, ror #48
+        // bic x26, x22, x24, ror #36
+        // bic x27, x14, x22, ror #41
+        // bic x28, x20, x23, ror #35
+        // bic x30, x24, x20, ror #16
+        // eor x20, x20, x26, ror #12
+        // bic x26, x23, x14, ror #0
+        // eor x24, x24, x27, ror #51
+        // eor x14, x14, x28, ror #29
+        // eor x23, x23, x30, ror #13
+        // eor x22, x22, x26, ror #23
+        // bic x26, x9, x7, ror #32
+        // bic x27, x6, x9, ror #59
+        // bic x28, x5, x8, ror #48
+        // bic x30, x7, x5, ror #1
+        // eor x5, x5, x26, ror #31
+        // bic x26, x8, x6, ror #52
+        // eor x7, x7, x27, ror #37
+        // eor x6, x6, x28, ror #28
+        // eor x8, x8, x30, ror #15
+        // eor x9, x9, x26, ror #17
+        // bic x26, x19, x17, ror #59
+        // bic x27, x2, x19, ror #53
+        // bic x28, x15, x25, ror #48
+        // bic x30, x17, x15, ror #29
+        // eor x15, x15, x26, ror #40
+        // bic x26, x25, x2, ror #3
+        // eor x17, x17, x27, ror #16
+        // eor x2, x2, x28, ror #13
+        // eor x25, x25, x30, ror #51
+        // eor x19, x19, x26, ror #8
+        // movz x26, #1, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x10, ror #45
+        // dup v24.2d, x3
+        // dup v25.2d, x13
+        // eor x27, x16, x12, ror #1
+        // eor x28, x4, x21, ror #32
+        // eor x30, x1, x11, ror #29
+        // eor x3, x3, x13, ror #60
+        // eor x26, x26, x20, ror #9
+        // eor x27, x27, x24, ror #45
+        // eor x28, x28, x22, ror #29
+        // eor x30, x30, x14, ror #36
+        // eor x3, x3, x23, ror #32
+        // eor x26, x26, x5, ror #13
+        // eor x27, x27, x7, ror #0
+        // eor x28, x28, x9, ror #52
+        // eor x30, x30, x6, ror #41
+        // eor x3, x3, x8, ror #49
+        // eor x26, x26, x15, ror #21
+        // eor x27, x27, x17, ror #44
+        // eor x28, x28, x19, ror #5
+        // eor x30, x30, x2, ror #0
+        // eor x3, x3, x25, ror #57
+        // eor x13, x26, x28, ror #55
+        // eor x16, x16, x13, ror #52
+        // eor x12, x12, x13, ror #51
+        // eor x24, x24, x13, ror #7
+        // eor x7, x7, x13, ror #52
+        // eor x17, x17, x13, ror #8
+        // eor x13, x27, x30, ror #59
+        // eor x28, x28, x3, ror #19
+        // eor x30, x30, x26, ror #55
+        // eor x3, x3, x27, ror #63
+        // eor x4, x4, x13, ror #20
+        // eor x21, x21, x13, ror #52
+        // eor x22, x22, x13, ror #55
+        // eor x9, x9, x13, ror #32
+        // eor x19, x19, x13, ror #15
+        // eor x0, x0, x3, ror #12
+        // eor x10, x10, x3, ror #31
+        // eor x20, x20, x3, ror #3
+        // eor x5, x5, x3, ror #63
+        // eor x15, x15, x3, ror #55
+        // umov x3, v24.d[0]
+        // umov x13, v25.d[0]
+        // eor x1, x1, x28, ror #48
+        // eor x11, x11, x28, ror #19
+        // eor x14, x14, x28, ror #12
+        // eor x6, x6, x28, ror #7
+        // eor x2, x2, x28, ror #48
+        // eor x3, x3, x30, ror #60
+        // eor x13, x13, x30, ror #0
+        // eor x23, x23, x30, ror #28
+        // eor x8, x8, x30, ror #11
+        // eor x25, x25, x30, ror #3
+        // bic x26, x22, x12, ror #55
+        // bic x27, x6, x22, ror #14
+        // bic x28, x0, x25, ror #55
+        // bic x30, x12, x0, ror #31
+        // eor x0, x0, x26, ror #42
+        // bic x26, x25, x6, ror #37
+        // eor x12, x12, x27, ror #59
+        // eor x6, x6, x28, ror #36
+        // eor x25, x25, x30, ror #42
+        // eor x22, x22, x26, ror #13
+        // bic x26, x20, x13, ror #46
+        // bic x27, x7, x20, ror #39
+        // bic x28, x1, x19, ror #20
+        // bic x30, x13, x1, ror #56
+        // eor x1, x1, x26, ror #26
+        // bic x26, x19, x7, ror #31
+        // eor x13, x13, x27, ror #43
+        // eor x7, x7, x28, ror #13
+        // eor x19, x19, x30, ror #52
+        // eor x20, x20, x26, ror #58
+        // bic x26, x14, x21, ror #63
+        // bic x27, x8, x14, ror #30
+        // bic x28, x16, x15, ror #56
+        // bic x30, x21, x16, ror #57
+        // eor x16, x16, x26, ror #8
+        // bic x26, x15, x8, ror #50
+        // eor x21, x21, x27, ror #35
+        // eor x8, x8, x28, ror #22
+        // eor x15, x15, x30, ror #15
+        // eor x14, x14, x26, ror #48
+        // bic x26, x24, x10, ror #26
+        // bic x27, x9, x24, ror #18
+        // bic x28, x3, x2, ror #31
+        // bic x30, x10, x3, ror #40
+        // eor x3, x3, x26, ror #62
+        // bic x26, x2, x9, ror #13
+        // eor x10, x10, x27, ror #20
+        // eor x9, x9, x28, ror #20
+        // eor x2, x2, x30, ror #57
+        // eor x24, x24, x26, ror #33
+        // bic x26, x23, x11, ror #41
+        // bic x27, x5, x23, ror #33
+        // bic x28, x4, x17, ror #60
+        // bic x30, x11, x4, ror #12
+        // eor x4, x4, x26, ror #11
+        // bic x26, x17, x5, ror #46
+        // eor x11, x11, x27, ror #54
+        // eor x5, x5, x28, ror #22
+        // eor x17, x17, x30, ror #56
+        // eor x23, x23, x26, ror #49
+        // movz x26, #32897, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x1, ror #44
+        // dup v24.2d, x25
+        // dup v25.2d, x19
+        // eor x27, x12, x13, ror #19
+        // eor x28, x22, x20, ror #28
+        // eor x30, x6, x7, ror #3
+        // eor x25, x25, x19, ror #9
+        // eor x26, x26, x16, ror #11
+        // eor x27, x27, x21, ror #49
+        // eor x28, x28, x14, ror #41
+        // eor x30, x30, x8, ror #25
+        // eor x25, x25, x15, ror #12
+        // eor x26, x26, x3, ror #49
+        // eor x27, x27, x10, ror #40
+        // eor x28, x28, x24, ror #5
+        // eor x30, x30, x9, ror #1
+        // eor x25, x25, x2, ror #25
+        // eor x26, x26, x4, ror #58
+        // eor x27, x27, x11, ror #13
+        // eor x28, x28, x23, ror #27
+        // eor x30, x30, x5, ror #8
+        // eor x25, x25, x17, ror #63
+        // eor x19, x26, x28, ror #41
+        // eor x12, x12, x19, ror #31
+        // eor x13, x13, x19, ror #12
+        // eor x21, x21, x19, ror #46
+        // eor x10, x10, x19, ror #55
+        // eor x11, x11, x19, ror #18
+        // eor x19, x27, x30, ror #58
+        // eor x28, x28, x25, ror #12
+        // eor x30, x30, x26, ror #35
+        // eor x25, x25, x27, ror #41
+        // eor x22, x22, x19, ror #55
+        // eor x20, x20, x19, ror #27
+        // eor x14, x14, x19, ror #14
+        // eor x24, x24, x19, ror #50
+        // eor x23, x23, x19, ror #28
+        // eor x0, x0, x25, ror #55
+        // eor x1, x1, x25, ror #11
+        // eor x16, x16, x25, ror #44
+        // eor x3, x3, x25, ror #6
+        // eor x4, x4, x25, ror #61
+        // umov x19, v24.d[0]
+        // umov x25, v25.d[0]
+        // eor x6, x6, x28, ror #14
+        // eor x7, x7, x28, ror #11
+        // eor x8, x8, x28, ror #53
+        // eor x9, x9, x28, ror #13
+        // eor x5, x5, x28, ror #6
+        // eor x19, x19, x30, ror #37
+        // eor x25, x25, x30, ror #28
+        // eor x15, x15, x30, ror #25
+        // eor x2, x2, x30, ror #12
+        // eor x17, x17, x30, ror #38
+        // bic x26, x14, x13, ror #32
+        // bic x27, x9, x14, ror #32
+        // bic x28, x0, x17, ror #40
+        // bic x30, x13, x0, ror #56
+        // eor x0, x0, x26, ror #40
+        // bic x26, x17, x9, ror #32
+        // eor x13, x13, x27, ror #0
+        // eor x9, x9, x28, ror #56
+        // eor x17, x17, x30, ror #32
+        // eor x14, x14, x26, ror #0
+        // bic x26, x16, x25, ror #36
+        // bic x27, x10, x16, ror #44
+        // bic x28, x6, x23, ror #8
+        // bic x30, x25, x6, ror #20
+        // eor x6, x6, x26, ror #8
+        // bic x26, x23, x10, ror #20
+        // eor x25, x25, x27, ror #48
+        // eor x10, x10, x28, ror #36
+        // eor x23, x23, x30, ror #36
+        // eor x16, x16, x26, ror #0
+        // bic x26, x8, x20, ror #36
+        // bic x27, x2, x8, ror #20
+        // bic x28, x12, x4, ror #8
+        // bic x30, x20, x12, ror #32
+        // eor x12, x12, x26, ror #60
+        // bic x26, x4, x2, ror #32
+        // eor x20, x20, x27, ror #8
+        // eor x2, x2, x28, ror #24
+        // eor x4, x4, x30, ror #24
+        // eor x8, x8, x26, ror #12
+        // bic x26, x21, x1, ror #0
+        // bic x27, x24, x21, ror #40
+        // bic x28, x19, x5, ror #16
+        // bic x30, x1, x19, ror #20
+        // eor x19, x19, x26, ror #44
+        // bic x26, x5, x24, ror #52
+        // eor x1, x1, x27, ror #24
+        // eor x24, x24, x28, ror #60
+        // eor x5, x5, x30, ror #28
+        // eor x21, x21, x26, ror #36
+        // bic x26, x15, x7, ror #12
+        // bic x27, x3, x15, ror #20
+        // bic x28, x22, x11, ror #0
+        // bic x30, x7, x22, ror #4
+        // eor x22, x22, x26, ror #48
+        // bic x26, x11, x3, ror #28
+        // eor x7, x7, x27, ror #32
+        // eor x3, x3, x28, ror #36
+        // eor x11, x11, x30, ror #60
+        // eor x15, x15, x26, ror #16
+        // movz x26, #32777, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x6, ror #0
+        // dup v24.2d, x17
+        // dup v25.2d, x23
+        // eor x27, x13, x25, ror #36
+        // eor x28, x14, x16, ror #32
+        // eor x30, x9, x10, ror #20
+        // eor x17, x17, x23, ror #32
+        // eor x26, x26, x12, ror #32
+        // eor x27, x27, x20, ror #56
+        // eor x28, x28, x8, ror #52
+        // eor x30, x30, x2, ror #0
+        // eor x17, x17, x4, ror #0
+        // eor x26, x26, x19, ror #28
+        // eor x27, x27, x1, ror #0
+        // eor x28, x28, x21, ror #32
+        // eor x30, x30, x24, ror #24
+        // eor x17, x17, x5, ror #4
+        // eor x26, x26, x22, ror #44
+        // eor x27, x27, x7, ror #32
+        // eor x28, x28, x15, ror #52
+        // eor x30, x30, x3, ror #0
+        // eor x17, x17, x11, ror #4
+        // eor x23, x26, x28, ror #39
+        // eor x13, x13, x23, ror #56
+        // eor x25, x25, x23, ror #20
+        // eor x20, x20, x23, ror #0
+        // eor x1, x1, x23, ror #56
+        // eor x7, x7, x23, ror #24
+        // eor x23, x27, x30, ror #63
+        // eor x28, x28, x17, ror #63
+        // eor x30, x30, x26, ror #55
+        // eor x17, x17, x27, ror #31
+        // eor x14, x14, x23, ror #32
+        // eor x16, x16, x23, ror #0
+        // eor x8, x8, x23, ror #44
+        // eor x21, x21, x23, ror #0
+        // eor x15, x15, x23, ror #44
+        // eor x0, x0, x17, ror #40
+        // eor x6, x6, x17, ror #40
+        // eor x12, x12, x17, ror #8
+        // eor x19, x19, x17, ror #12
+        // eor x22, x22, x17, ror #60
+        // umov x17, v24.d[0]
+        // umov x23, v25.d[0]
+        // eor x9, x9, x28, ror #32
+        // eor x10, x10, x28, ror #12
+        // eor x2, x2, x28, ror #32
+        // eor x24, x24, x28, ror #8
+        // eor x3, x3, x28, ror #32
+        // eor x17, x17, x30, ror #32
+        // eor x23, x23, x30, ror #0
+        // eor x4, x4, x30, ror #32
+        // eor x5, x5, x30, ror #28
+        // eor x11, x11, x30, ror #28
+        // bic x26, x8, x25, ror #15
+        // bic x27, x24, x8, ror #38
+        // bic x28, x0, x11, ror #30
+        // bic x30, x25, x0, ror #0
+        // eor x0, x0, x26, ror #49
+        // bic x26, x11, x24, ror #45
+        // eor x25, x25, x27, ror #11
+        // eor x24, x24, x28, ror #53
+        // eor x11, x11, x30, ror #34
+        // eor x8, x8, x26, ror #45
+        // bic x26, x12, x23, ror #23
+        // bic x27, x1, x12, ror #2
+        // bic x28, x9, x15, ror #51
+        // bic x30, x23, x9, ror #56
+        // eor x9, x9, x26, ror #49
+        // bic x26, x15, x1, ror #60
+        // eor x23, x23, x27, ror #39
+        // eor x1, x1, x28, ror #17
+        // eor x15, x15, x30, ror #21
+        // eor x12, x12, x26, ror #2
+        // bic x26, x2, x16, ror #19
+        // bic x27, x5, x2, ror #11
+        // bic x28, x13, x22, ror #19
+        // bic x30, x16, x13, ror #5
+        // eor x13, x13, x26, ror #40
+        // bic x26, x22, x5, ror #10
+        // eor x16, x16, x27, ror #34
+        // eor x5, x5, x28, ror #35
+        // eor x22, x22, x30, ror #40
+        // eor x2, x2, x26, ror #43
+        // bic x26, x20, x6, ror #38
+        // bic x27, x21, x20, ror #61
+        // bic x28, x17, x3, ror #3
+        // bic x30, x6, x17, ror #49
+        // eor x17, x17, x26, ror #41
+        // bic x26, x3, x21, ror #41
+        // eor x6, x6, x27, ror #29
+        // eor x21, x21, x28, ror #20
+        // eor x3, x3, x30, ror #12
+        // eor x20, x20, x26, ror #26
+        // bic x26, x4, x10, ror #36
+        // bic x27, x19, x4, ror #14
+        // bic x28, x14, x7, ror #60
+        // bic x30, x10, x14, ror #5
+        // eor x14, x14, x26, ror #23
+        // bic x26, x7, x19, ror #13
+        // eor x10, x10, x27, ror #14
+        // eor x19, x19, x28, ror #55
+        // eor x7, x7, x30, ror #63
+        // eor x4, x4, x26, ror #37
+        // movz x26, #138, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x9, ror #44
+        // dup v24.2d, x11
+        // dup v25.2d, x15
+        // eor x27, x25, x23, ror #52
+        // eor x28, x8, x12, ror #44
+        // eor x30, x24, x1, ror #16
+        // eor x11, x11, x15, ror #1
+        // eor x26, x26, x13, ror #7
+        // eor x27, x27, x16, ror #2
+        // eor x28, x28, x2, ror #62
+        // eor x30, x30, x5, ror #25
+        // eor x11, x11, x22, ror #60
+        // eor x26, x26, x17, ror #13
+        // eor x27, x27, x6, ror #28
+        // eor x28, x28, x20, ror #5
+        // eor x30, x30, x21, ror #46
+        // eor x11, x11, x3, ror #50
+        // eor x26, x26, x14, ror #42
+        // eor x27, x27, x10, ror #37
+        // eor x28, x28, x4, ror #16
+        // eor x30, x30, x19, ror #40
+        // eor x11, x11, x7, ror #8
+        // eor x15, x26, x28, ror #48
+        // eor x25, x25, x15, ror #0
+        // eor x23, x23, x15, ror #12
+        // eor x16, x16, x15, ror #62
+        // eor x6, x6, x15, ror #36
+        // eor x10, x10, x15, ror #27
+        // eor x15, x27, x30, ror #10
+        // eor x28, x28, x11, ror #44
+        // eor x30, x30, x26, ror #52
+        // eor x11, x11, x27, ror #33
+        // eor x8, x8, x15, ror #15
+        // eor x12, x12, x15, ror #35
+        // eor x2, x2, x15, ror #17
+        // eor x20, x20, x15, ror #10
+        // eor x4, x4, x15, ror #63
+        // eor x0, x0, x11, ror #30
+        // eor x9, x9, x11, ror #50
+        // eor x13, x13, x11, ror #23
+        // eor x17, x17, x11, ror #17
+        // eor x14, x14, x11, ror #52
+        // umov x11, v24.d[0]
+        // umov x15, v25.d[0]
+        // eor x24, x24, x28, ror #38
+        // eor x1, x1, x28, ror #22
+        // eor x5, x5, x28, ror #13
+        // eor x21, x21, x28, ror #56
+        // eor x19, x19, x28, ror #62
+        // eor x11, x11, x30, ror #45
+        // eor x15, x15, x30, ror #44
+        // eor x22, x22, x30, ror #49
+        // eor x3, x3, x30, ror #59
+        // eor x7, x7, x30, ror #37
+        // bic x26, x2, x23, ror #4
+        // bic x27, x21, x2, ror #32
+        // bic x28, x0, x7, ror #24
+        // bic x30, x23, x0, ror #56
+        // eor x0, x0, x26, ror #4
+        // bic x26, x7, x21, ror #12
+        // eor x23, x23, x27, ror #28
+        // eor x21, x21, x28, ror #28
+        // eor x7, x7, x30, ror #48
+        // eor x2, x2, x26, ror #20
+        // bic x26, x13, x15, ror #7
+        // bic x27, x6, x13, ror #21
+        // bic x28, x24, x4, ror #21
+        // bic x30, x15, x24, ror #36
+        // eor x24, x24, x26, ror #21
+        // bic x26, x4, x6, ror #43
+        // eor x15, x15, x27, ror #36
+        // eor x6, x6, x28, ror #0
+        // eor x4, x4, x30, ror #7
+        // eor x13, x13, x26, ror #0
+        // bic x26, x5, x12, ror #12
+        // bic x27, x3, x5, ror #3
+        // bic x28, x25, x14, ror #25
+        // bic x30, x12, x25, ror #40
+        // eor x25, x25, x26, ror #12
+        // bic x26, x14, x3, ror #48
+        // eor x12, x12, x27, ror #49
+        // eor x3, x3, x28, ror #55
+        // eor x14, x14, x30, ror #63
+        // eor x5, x5, x26, ror #13
+        // bic x26, x16, x9, ror #16
+        // bic x27, x20, x16, ror #17
+        // bic x28, x11, x19, ror #56
+        // bic x30, x9, x11, ror #59
+        // eor x11, x11, x26, ror #53
+        // bic x26, x19, x20, ror #44
+        // eor x9, x9, x27, ror #31
+        // eor x20, x20, x28, ror #28
+        // eor x19, x19, x30, ror #13
+        // eor x16, x16, x26, ror #3
+        // bic x26, x22, x1, ror #49
+        // bic x27, x17, x22, ror #15
+        // bic x28, x8, x10, ror #48
+        // bic x30, x1, x8, ror #15
+        // eor x8, x8, x26, ror #0
+        // bic x26, x10, x17, ror #1
+        // eor x1, x1, x27, ror #0
+        // eor x17, x17, x28, ror #15
+        // eor x10, x10, x30, ror #1
+        // eor x22, x22, x26, ror #48
+        // movz x26, #136, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x24, ror #47
+        // dup v24.2d, x7
+        // dup v25.2d, x4
+        // eor x27, x23, x15, ror #3
+        // eor x28, x2, x13, ror #0
+        // eor x30, x21, x6, ror #11
+        // eor x7, x7, x4, ror #44
+        // eor x26, x26, x25, ror #63
+        // eor x27, x27, x12, ror #15
+        // eor x28, x28, x5, ror #7
+        // eor x30, x30, x3, ror #36
+        // eor x7, x7, x14, ror #0
+        // eor x26, x26, x11, ror #3
+        // eor x27, x27, x9, ror #0
+        // eor x28, x28, x16, ror #52
+        // eor x30, x30, x20, ror #3
+        // eor x7, x7, x19, ror #35
+        // eor x26, x26, x8, ror #51
+        // eor x27, x27, x1, ror #28
+        // eor x28, x28, x22, ror #47
+        // eor x30, x30, x17, ror #0
+        // eor x7, x7, x10, ror #11
+        // eor x4, x26, x28, ror #3
+        // eor x23, x23, x4, ror #56
+        // eor x15, x15, x4, ror #53
+        // eor x12, x12, x4, ror #41
+        // eor x9, x9, x4, ror #56
+        // eor x1, x1, x4, ror #28
+        // eor x4, x27, x30, ror #27
+        // eor x28, x28, x7, ror #19
+        // eor x30, x30, x26, ror #27
+        // eor x7, x7, x27, ror #47
+        // eor x2, x2, x4, ror #4
+        // eor x13, x13, x4, ror #4
+        // eor x5, x5, x4, ror #61
+        // eor x16, x16, x4, ror #16
+        // eor x22, x22, x4, ror #21
+        // eor x0, x0, x7, ror #24
+        // eor x24, x24, x7, ror #41
+        // eor x25, x25, x7, ror #25
+        // eor x11, x11, x7, ror #21
+        // eor x8, x8, x7, ror #37
+        // umov x4, v24.d[0]
+        // umov x7, v25.d[0]
+        // eor x21, x21, x28, ror #32
+        // eor x6, x6, x28, ror #21
+        // eor x3, x3, x28, ror #60
+        // eor x20, x20, x28, ror #29
+        // eor x17, x17, x28, ror #32
+        // eor x4, x4, x30, ror #12
+        // eor x7, x7, x30, ror #32
+        // eor x14, x14, x30, ror #12
+        // eor x19, x19, x30, ror #41
+        // eor x10, x10, x30, ror #1
+        // bic x26, x5, x15, ror #63
+        // bic x27, x20, x5, ror #14
+        // bic x28, x0, x10, ror #21
+        // bic x30, x15, x0, ror #33
+        // eor x0, x0, x26, ror #32
+        // bic x26, x10, x20, ror #61
+        // eor x15, x15, x27, ror #51
+        // eor x20, x20, x28, ror #46
+        // eor x10, x10, x30, ror #10
+        // eor x5, x5, x26, ror #53
+        // bic x26, x25, x7, ror #52
+        // bic x27, x9, x25, ror #33
+        // bic x28, x21, x22, ror #46
+        // bic x30, x7, x21, ror #24
+        // eor x21, x21, x26, ror #52
+        // bic x26, x22, x9, ror #37
+        // eor x7, x7, x27, ror #43
+        // eor x9, x9, x28, ror #45
+        // eor x22, x22, x30, ror #58
+        // eor x25, x25, x26, ror #58
+        // bic x26, x3, x13, ror #15
+        // bic x27, x19, x3, ror #60
+        // bic x28, x23, x8, ror #26
+        // bic x30, x13, x23, ror #9
+        // eor x23, x23, x26, ror #40
+        // bic x26, x8, x19, ror #18
+        // eor x13, x13, x27, ror #53
+        // eor x19, x19, x28, ror #20
+        // eor x8, x8, x30, ror #29
+        // eor x3, x3, x26, ror #50
+        // bic x26, x12, x24, ror #62
+        // bic x27, x16, x12, ror #36
+        // bic x28, x4, x17, ror #47
+        // bic x30, x24, x4, ror #50
+        // eor x4, x4, x26, ror #16
+        // bic x26, x17, x16, ror #61
+        // eor x24, x24, x27, ror #30
+        // eor x16, x16, x28, ror #20
+        // eor x17, x17, x30, ror #31
+        // eor x12, x12, x26, ror #31
+        // bic x26, x14, x6, ror #7
+        // bic x27, x11, x14, ror #23
+        // bic x28, x2, x1, ror #28
+        // bic x30, x6, x2, ror #14
+        // eor x2, x2, x26, ror #43
+        // bic x26, x1, x11, ror #56
+        // eor x6, x6, x27, ror #34
+        // eor x11, x11, x28, ror #44
+        // eor x1, x1, x30, ror #22
+        // eor x14, x14, x26, ror #49
+        // movz x26, #32777, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x21, ror #8
+        // dup v24.2d, x10
+        // dup v25.2d, x22
+        // eor x27, x15, x7, ror #17
+        // eor x28, x5, x25, ror #28
+        // eor x30, x20, x9, ror #9
+        // eor x10, x10, x22, ror #33
+        // eor x26, x26, x23, ror #7
+        // eor x27, x27, x13, ror #31
+        // eor x28, x28, x3, ror #15
+        // eor x30, x30, x19, ror #33
+        // eor x10, x10, x8, ror #12
+        // eor x26, x26, x4, ror #61
+        // eor x27, x27, x24, ror #44
+        // eor x28, x28, x12, ror #45
+        // eor x30, x30, x16, ror #23
+        // eor x10, x10, x17, ror #23
+        // eor x26, x26, x2, ror #6
+        // eor x27, x27, x6, ror #25
+        // eor x28, x28, x14, ror #17
+        // eor x30, x30, x11, ror #8
+        // eor x10, x10, x1, ror #13
+        // eor x22, x26, x28, ror #31
+        // eor x15, x15, x22, ror #33
+        // eor x7, x7, x22, ror #16
+        // eor x13, x13, x22, ror #2
+        // eor x24, x24, x22, ror #53
+        // eor x6, x6, x22, ror #8
+        // eor x22, x27, x30, ror #50
+        // eor x28, x28, x10, ror #52
+        // eor x30, x30, x26, ror #45
+        // eor x10, x10, x27, ror #9
+        // eor x5, x5, x22, ror #63
+        // eor x25, x25, x22, ror #35
+        // eor x3, x3, x22, ror #48
+        // eor x12, x12, x22, ror #18
+        // eor x14, x14, x22, ror #46
+        // eor x0, x0, x10, ror #21
+        // eor x21, x21, x10, ror #13
+        // eor x23, x23, x10, ror #14
+        // eor x4, x4, x10, ror #24
+        // eor x2, x2, x10, ror #15
+        // umov x10, v24.d[0]
+        // umov x22, v25.d[0]
+        // eor x20, x20, x28, ror #14
+        // eor x9, x9, x28, ror #5
+        // eor x19, x19, x28, ror #45
+        // eor x16, x16, x28, ror #55
+        // eor x11, x11, x28, ror #6
+        // eor x10, x10, x30, ror #61
+        // eor x22, x22, x30, ror #28
+        // eor x8, x8, x30, ror #49
+        // eor x17, x17, x30, ror #38
+        // eor x1, x1, x30, ror #48
+        // bic x26, x3, x7, ror #0
+        // bic x27, x16, x3, ror #48
+        // bic x28, x0, x1, ror #20
+        // bic x30, x7, x0, ror #60
+        // eor x0, x0, x26, ror #4
+        // bic x26, x1, x16, ror #0
+        // eor x7, x7, x27, ror #16
+        // eor x16, x16, x28, ror #44
+        // eor x1, x1, x30, ror #48
+        // eor x3, x3, x26, ror #16
+        // bic x26, x23, x22, ror #30
+        // bic x27, x24, x23, ror #38
+        // bic x28, x20, x14, ror #62
+        // bic x30, x22, x20, ror #20
+        // eor x20, x20, x26, ror #14
+        // bic x26, x14, x24, ror #42
+        // eor x22, x22, x27, ror #60
+        // eor x24, x24, x28, ror #24
+        // eor x14, x14, x30, ror #46
+        // eor x23, x23, x26, ror #48
+        // bic x26, x19, x25, ror #28
+        // bic x27, x17, x19, ror #54
+        // bic x28, x15, x2, ror #22
+        // bic x30, x25, x15, ror #40
+        // eor x15, x15, x26, ror #60
+        // bic x26, x2, x17, ror #48
+        // eor x25, x25, x27, ror #46
+        // eor x17, x17, x28, ror #58
+        // eor x2, x2, x30, ror #2
+        // eor x19, x19, x26, ror #26
+        // bic x26, x13, x21, ror #48
+        // bic x27, x12, x13, ror #54
+        // bic x28, x10, x11, ror #40
+        // bic x30, x21, x10, ror #22
+        // eor x10, x10, x26, ror #58
+        // bic x26, x11, x12, ror #28
+        // eor x21, x21, x27, ror #26
+        // eor x12, x12, x28, ror #60
+        // eor x11, x11, x30, ror #2
+        // eor x13, x13, x26, ror #46
+        // bic x26, x8, x9, ror #42
+        // bic x27, x4, x8, ror #38
+        // bic x28, x5, x6, ror #20
+        // bic x30, x9, x5, ror #62
+        // eor x5, x5, x26, ror #24
+        // bic x26, x6, x4, ror #30
+        // eor x9, x9, x27, ror #48
+        // eor x4, x4, x28, ror #14
+        // eor x6, x6, x30, ror #46
+        // eor x8, x8, x26, ror #60
+        // movz x26, #10, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x20, ror #54
+        // dup v24.2d, x1
+        // dup v25.2d, x14
+        // eor x27, x7, x22, ror #30
+        // eor x28, x3, x23, ror #0
+        // eor x30, x16, x24, ror #10
+        // eor x1, x1, x14, ror #32
+        // eor x26, x26, x15, ror #30
+        // eor x27, x27, x25, ror #50
+        // eor x28, x28, x19, ror #22
+        // eor x30, x30, x17, ror #16
+        // eor x1, x1, x2, ror #32
+        // eor x26, x26, x10, ror #58
+        // eor x27, x27, x21, ror #32
+        // eor x28, x28, x13, ror #48
+        // eor x30, x30, x12, ror #42
+        // eor x1, x1, x11, ror #14
+        // eor x26, x26, x5, ror #34
+        // eor x27, x27, x9, ror #32
+        // eor x28, x28, x8, ror #54
+        // eor x30, x30, x4, ror #0
+        // eor x1, x1, x6, ror #34
+        // eor x14, x26, x28, ror #3
+        // eor x7, x7, x14, ror #60
+        // eor x22, x22, x14, ror #30
+        // eor x25, x25, x14, ror #10
+        // eor x21, x21, x14, ror #28
+        // eor x9, x9, x14, ror #28
+        // eor x14, x27, x30, ror #15
+        // eor x28, x28, x1, ror #15
+        // eor x30, x30, x26, ror #43
+        // eor x1, x1, x27, ror #47
+        // eor x3, x3, x14, ror #0
+        // eor x23, x23, x14, ror #0
+        // eor x19, x19, x14, ror #42
+        // eor x13, x13, x14, ror #16
+        // eor x8, x8, x14, ror #10
+        // eor x0, x0, x1, ror #20
+        // eor x20, x20, x1, ror #30
+        // eor x15, x15, x1, ror #54
+        // eor x10, x10, x1, ror #26
+        // eor x5, x5, x1, ror #50
+        // umov x1, v24.d[0]
+        // umov x14, v25.d[0]
+        // eor x16, x16, x28, ror #48
+        // eor x24, x24, x28, ror #38
+        // eor x17, x17, x28, ror #32
+        // eor x12, x12, x28, ror #6
+        // eor x4, x4, x28, ror #48
+        // eor x1, x1, x30, ror #0
+        // eor x14, x14, x30, ror #32
+        // eor x2, x2, x30, ror #32
+        // eor x11, x11, x30, ror #50
+        // eor x6, x6, x30, ror #30
+        // bic x26, x19, x22, ror #7
+        // bic x27, x12, x19, ror #6
+        // bic x28, x0, x6, ror #40
+        // bic x30, x22, x0, ror #10
+        // eor x0, x0, x26, ror #47
+        // bic x26, x6, x12, ror #1
+        // eor x22, x22, x27, ror #51
+        // eor x12, x12, x28, ror #23
+        // eor x6, x6, x30, ror #14
+        // eor x19, x19, x26, ror #57
+        // bic x26, x15, x14, ror #5
+        // bic x27, x21, x15, ror #36
+        // bic x28, x16, x8, ror #5
+        // bic x30, x14, x16, ror #24
+        // eor x16, x16, x26, ror #35
+        // bic x26, x8, x21, ror #58
+        // eor x14, x14, x27, ror #23
+        // eor x21, x21, x28, ror #1
+        // eor x8, x8, x30, ror #35
+        // eor x15, x15, x26, ror #34
+        // bic x26, x17, x23, ror #51
+        // bic x27, x11, x17, ror #49
+        // bic x28, x7, x5, ror #13
+        // bic x30, x23, x7, ror #5
+        // eor x7, x7, x26, ror #8
+        // bic x26, x5, x11, ror #10
+        // eor x23, x23, x27, ror #28
+        // eor x11, x11, x28, ror #41
+        // eor x5, x5, x30, ror #46
+        // eor x17, x17, x26, ror #5
+        // bic x26, x25, x20, ror #38
+        // bic x27, x13, x25, ror #7
+        // bic x28, x1, x4, ror #35
+        // bic x30, x20, x1, ror #39
+        // eor x1, x1, x26, ror #51
+        // bic x26, x4, x13, ror #9
+        // eor x20, x20, x27, ror #19
+        // eor x13, x13, x28, ror #20
+        // eor x4, x4, x30, ror #54
+        // eor x25, x25, x26, ror #48
+        // bic x26, x2, x24, ror #26
+        // bic x27, x10, x2, ror #60
+        // bic x28, x3, x9, ror #28
+        // bic x30, x24, x3, ror #31
+        // eor x3, x3, x26, ror #7
+        // bic x26, x9, x10, ror #47
+        // eor x24, x24, x27, ror #42
+        // eor x10, x10, x28, ror #53
+        // eor x9, x9, x30, ror #5
+        // eor x2, x2, x26, ror #21
+        // movz x26, #32907, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x16, ror #56
+        // dup v24.2d, x6
+        // dup v25.2d, x8
+        // eor x27, x22, x14, ror #42
+        // eor x28, x19, x15, ror #44
+        // eor x30, x12, x21, ror #14
+        // eor x6, x6, x8, ror #21
+        // eor x26, x26, x7, ror #3
+        // eor x27, x27, x23, ror #8
+        // eor x28, x28, x17, ror #28
+        // eor x30, x30, x11, ror #49
+        // eor x6, x6, x5, ror #40
+        // eor x26, x26, x1, ror #57
+        // eor x27, x27, x20, ror #28
+        // eor x28, x28, x25, ror #61
+        // eor x30, x30, x13, ror #60
+        // eor x6, x6, x4, ror #52
+        // eor x26, x26, x3, ror #6
+        // eor x27, x27, x24, ror #49
+        // eor x28, x28, x2, ror #30
+        // eor x30, x30, x10, ror #40
+        // eor x6, x6, x9, ror #58
+        // eor x8, x26, x28, ror #46
+        // eor x22, x22, x8, ror #10
+        // eor x14, x14, x8, ror #32
+        // eor x23, x23, x8, ror #2
+        // eor x20, x20, x8, ror #46
+        // eor x24, x24, x8, ror #25
+        // eor x8, x27, x30, ror #50
+        // eor x28, x28, x6, ror #56
+        // eor x30, x30, x26, ror #22
+        // eor x6, x6, x27, ror #13
+        // eor x19, x19, x8, ror #7
+        // eor x15, x15, x8, ror #27
+        // eor x17, x17, x8, ror #43
+        // eor x25, x25, x8, ror #10
+        // eor x2, x2, x8, ror #41
+        // eor x0, x0, x6, ror #40
+        // eor x16, x16, x6, ror #48
+        // eor x7, x7, x6, ror #37
+        // eor x1, x1, x6, ror #47
+        // eor x3, x3, x6, ror #34
+        // umov x6, v24.d[0]
+        // umov x8, v25.d[0]
+        // eor x12, x12, x28, ror #6
+        // eor x21, x21, x28, ror #56
+        // eor x11, x11, x28, ror #21
+        // eor x13, x13, x28, ror #10
+        // eor x10, x10, x28, ror #30
+        // eor x6, x6, x30, ror #1
+        // eor x8, x8, x30, ror #44
+        // eor x5, x5, x30, ror #25
+        // eor x4, x4, x30, ror #13
+        // eor x9, x9, x30, ror #7
+        // bic x26, x17, x14, ror #20
+        // bic x27, x13, x17, ror #16
+        // bic x28, x0, x9, ror #20
+        // bic x30, x14, x0, ror #12
+        // eor x0, x0, x26, ror #32
+        // bic x26, x9, x13, ror #60
+        // eor x14, x14, x27, ror #28
+        // eor x13, x13, x28, ror #48
+        // eor x9, x9, x30, ror #32
+        // eor x17, x17, x26, ror #52
+        // bic x26, x7, x8, ror #41
+        // bic x27, x20, x7, ror #27
+        // bic x28, x12, x2, ror #3
+        // bic x30, x8, x12, ror #36
+        // eor x12, x12, x26, ror #51
+        // bic x26, x2, x20, ror #21
+        // eor x8, x8, x27, ror #60
+        // eor x20, x20, x28, ror #40
+        // eor x2, x2, x30, ror #25
+        // eor x7, x7, x26, ror #16
+        // bic x26, x11, x15, ror #20
+        // bic x27, x4, x11, ror #45
+        // bic x28, x22, x3, ror #63
+        // bic x30, x15, x22, ror #32
+        // eor x22, x22, x26, ror #12
+        // bic x26, x3, x4, ror #32
+        // eor x15, x15, x27, ror #63
+        // eor x4, x4, x28, ror #33
+        // eor x3, x3, x30, ror #33
+        // eor x11, x11, x26, ror #51
+        // bic x26, x23, x16, ror #32
+        // bic x27, x25, x23, ror #23
+        // bic x28, x6, x10, ror #12
+        // bic x30, x16, x6, ror #57
+        // eor x6, x6, x26, ror #39
+        // bic x26, x10, x25, ror #4
+        // eor x16, x16, x27, ror #9
+        // eor x25, x25, x28, ror #48
+        // eor x10, x10, x30, ror #59
+        // eor x23, x23, x26, ror #37
+        // bic x26, x5, x21, ror #23
+        // bic x27, x1, x5, ror #25
+        // bic x28, x19, x24, ror #52
+        // bic x30, x21, x19, ror #49
+        // eor x19, x19, x26, ror #56
+        // bic x26, x24, x1, ror #43
+        // eor x21, x21, x27, ror #16
+        // eor x1, x1, x28, ror #33
+        // eor x24, x24, x30, ror #27
+        // eor x5, x5, x26, ror #60
+        // movz x26, #139, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x12, ror #13
+        // dup v24.2d, x9
+        // dup v25.2d, x2
+        // eor x27, x14, x8, ror #53
+        // eor x28, x17, x7, ror #32
+        // eor x30, x13, x20, ror #21
+        // eor x9, x9, x2, ror #60
+        // eor x26, x26, x22, ror #53
+        // eor x27, x27, x15, ror #33
+        // eor x28, x28, x11, ror #33
+        // eor x30, x30, x4, ror #4
+        // eor x9, x9, x3, ror #32
+        // eor x26, x26, x6, ror #13
+        // eor x27, x27, x16, ror #32
+        // eor x28, x28, x23, ror #20
+        // eor x30, x30, x25, ror #13
+        // eor x9, x9, x10, ror #5
+        // eor x26, x26, x19, ror #49
+        // eor x27, x27, x21, ror #12
+        // eor x28, x28, x5, ror #9
+        // eor x30, x30, x1, ror #0
+        // eor x9, x9, x24, ror #17
+        // eor x2, x26, x28, ror #31
+        // eor x14, x14, x2, ror #12
+        // eor x8, x8, x2, ror #23
+        // eor x15, x15, x2, ror #43
+        // eor x16, x16, x2, ror #44
+        // eor x21, x21, x2, ror #0
+        // eor x2, x27, x30, ror #27
+        // eor x28, x28, x9, ror #51
+        // eor x30, x30, x26, ror #47
+        // eor x9, x9, x27, ror #31
+        // eor x17, x17, x2, ror #20
+        // eor x7, x7, x2, ror #52
+        // eor x11, x11, x2, ror #51
+        // eor x23, x23, x2, ror #0
+        // eor x5, x5, x2, ror #11
+        // eor x0, x0, x9, ror #20
+        // eor x12, x12, x9, ror #7
+        // eor x22, x22, x9, ror #31
+        // eor x6, x6, x9, ror #7
+        // eor x19, x19, x9, ror #35
+        // umov x2, v24.d[0]
+        // umov x9, v25.d[0]
+        // eor x13, x13, x28, ror #16
+        // eor x20, x20, x28, ror #59
+        // eor x4, x4, x28, ror #12
+        // eor x25, x25, x28, ror #3
+        // eor x1, x1, x28, ror #16
+        // eor x2, x2, x30, ror #60
+        // eor x9, x9, x30, ror #0
+        // eor x3, x3, x30, ror #28
+        // eor x10, x10, x30, ror #55
+        // eor x24, x24, x30, ror #43
+        // bic x26, x11, x8, ror #39
+        // bic x27, x25, x11, ror #14
+        // bic x28, x0, x24, ror #23
+        // bic x30, x8, x0, ror #3
+        // eor x0, x0, x26, ror #22
+        // bic x26, x24, x25, ror #49
+        // eor x8, x8, x27, ror #11
+        // eor x25, x25, x28, ror #56
+        // eor x24, x24, x30, ror #38
+        // eor x11, x11, x26, ror #1
+        // bic x26, x22, x9, ror #10
+        // bic x27, x16, x22, ror #11
+        // bic x28, x13, x5, ror #56
+        // bic x30, x9, x13, ror #56
+        // eor x13, x13, x26, ror #62
+        // bic x26, x5, x16, ror #59
+        // eor x9, x9, x27, ror #43
+        // eor x16, x16, x28, ror #13
+        // eor x5, x5, x30, ror #16
+        // eor x22, x22, x26, ror #58
+        // bic x26, x4, x7, ror #63
+        // bic x27, x10, x4, ror #42
+        // bic x28, x14, x19, ror #44
+        // bic x30, x7, x14, ror #57
+        // eor x14, x14, x26, ror #8
+        // bic x26, x19, x10, ror #50
+        // eor x7, x7, x27, ror #23
+        // eor x10, x10, x28, ror #34
+        // eor x19, x19, x30, ror #27
+        // eor x4, x4, x26, ror #36
+        // bic x26, x15, x12, ror #30
+        // bic x27, x23, x15, ror #38
+        // bic x28, x2, x1, ror #31
+        // bic x30, x12, x2, ror #16
+        // eor x2, x2, x26, ror #18
+        // bic x26, x1, x23, ror #13
+        // eor x12, x12, x27, ror #60
+        // eor x23, x23, x28, ror #20
+        // eor x1, x1, x30, ror #17
+        // eor x15, x15, x26, ror #13
+        // bic x26, x3, x20, ror #33
+        // bic x27, x6, x3, ror #41
+        // bic x28, x17, x21, ror #28
+        // bic x30, x20, x17, ror #52
+        // eor x17, x17, x26, ror #43
+        // bic x26, x21, x6, ror #38
+        // eor x20, x20, x27, ror #54
+        // eor x6, x6, x28, ror #62
+        // eor x21, x21, x30, ror #48
+        // eor x3, x3, x26, ror #49
+        // movz x26, #32905, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x13, ror #52
+        // dup v24.2d, x24
+        // dup v25.2d, x5
+        // eor x27, x8, x9, ror #63
+        // eor x28, x11, x22, ror #28
+        // eor x30, x25, x16, ror #31
+        // eor x24, x24, x5, ror #21
+        // eor x26, x26, x14, ror #51
+        // eor x27, x27, x7, ror #61
+        // eor x28, x28, x4, ror #37
+        // eor x30, x30, x10, ror #9
+        // eor x24, x24, x19, ror #8
+        // eor x26, x26, x2, ror #57
+        // eor x27, x27, x12, ror #44
+        // eor x28, x28, x15, ror #53
+        // eor x30, x30, x23, ror #29
+        // eor x24, x24, x1, ror #1
+        // eor x26, x26, x17, ror #34
+        // eor x27, x27, x20, ror #49
+        // eor x28, x28, x3, ror #55
+        // eor x30, x30, x6, ror #28
+        // eor x24, x24, x21, ror #39
+        // eor x5, x26, x28, ror #21
+        // eor x8, x8, x5, ror #3
+        // eor x9, x9, x5, ror #4
+        // eor x7, x7, x5, ror #6
+        // eor x12, x12, x5, ror #23
+        // eor x20, x20, x5, ror #18
+        // eor x5, x27, x30, ror #10
+        // eor x28, x28, x24, ror #0
+        // eor x30, x30, x26, ror #55
+        // eor x24, x24, x27, ror #37
+        // eor x11, x11, x5, ror #39
+        // eor x22, x22, x5, ror #11
+        // eor x4, x4, x5, ror #2
+        // eor x15, x15, x5, ror #50
+        // eor x3, x3, x5, ror #48
+        // eor x0, x0, x24, ror #23
+        // eor x13, x13, x24, ror #35
+        // eor x14, x14, x24, ror #36
+        // eor x2, x2, x24, ror #30
+        // eor x17, x17, x24, ror #53
+        // umov x5, v24.d[0]
+        // umov x24, v25.d[0]
+        // eor x25, x25, x28, ror #14
+        // eor x16, x16, x28, ror #47
+        // eor x10, x10, x28, ror #5
+        // eor x23, x23, x28, ror #49
+        // eor x6, x6, x28, ror #50
+        // eor x5, x5, x30, ror #49
+        // eor x24, x24, x30, ror #28
+        // eor x19, x19, x30, ror #41
+        // eor x1, x1, x30, ror #48
+        // eor x21, x21, x30, ror #10
+        // bic x26, x4, x9, ror #0
+        // bic x27, x23, x4, ror #0
+        // bic x28, x0, x21, ror #48
+        // bic x30, x9, x0, ror #48
+        // eor x0, x0, x26, ror #16
+        // bic x26, x21, x23, ror #32
+        // eor x9, x9, x27, ror #0
+        // eor x23, x23, x28, ror #48
+        // eor x21, x21, x30, ror #32
+        // eor x4, x4, x26, ror #32
+        // bic x26, x14, x24, ror #40
+        // bic x27, x12, x14, ror #52
+        // bic x28, x25, x3, ror #36
+        // bic x30, x24, x25, ror #20
+        // eor x25, x25, x26, ror #4
+        // bic x26, x3, x12, ror #44
+        // eor x24, x24, x27, ror #36
+        // eor x12, x12, x28, ror #48
+        // eor x3, x3, x30, ror #8
+        // eor x14, x14, x26, ror #32
+        // bic x26, x10, x22, ror #52
+        // bic x27, x1, x10, ror #40
+        // bic x28, x8, x17, ror #20
+        // bic x30, x22, x8, ror #16
+        // eor x8, x8, x26, ror #60
+        // bic x26, x17, x1, ror #0
+        // eor x22, x22, x27, ror #36
+        // eor x1, x1, x28, ror #44
+        // eor x17, x17, x30, ror #28
+        // eor x10, x10, x26, ror #24
+        // bic x26, x7, x13, ror #32
+        // bic x27, x15, x7, ror #52
+        // bic x28, x5, x6, ror #48
+        // bic x30, x13, x5, ror #44
+        // eor x5, x5, x26, ror #52
+        // bic x26, x6, x15, ror #16
+        // eor x13, x13, x27, ror #44
+        // eor x15, x15, x28, ror #0
+        // eor x6, x6, x30, ror #36
+        // eor x7, x7, x26, ror #60
+        // bic x26, x19, x16, ror #56
+        // bic x27, x2, x19, ror #40
+        // bic x28, x11, x20, ror #20
+        // bic x30, x16, x11, ror #40
+        // eor x11, x11, x26, ror #32
+        // bic x26, x20, x2, ror #36
+        // eor x16, x16, x27, ror #32
+        // eor x2, x2, x28, ror #8
+        // eor x20, x20, x30, ror #4
+        // eor x19, x19, x26, ror #52
+        // movz x26, #32771, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x25, ror #44
+        // dup v24.2d, x21
+        // dup v25.2d, x3
+        // eor x27, x9, x24, ror #8
+        // eor x28, x4, x14, ror #32
+        // eor x30, x23, x12, ror #44
+        // eor x21, x21, x3, ror #32
+        // eor x26, x26, x8, ror #60
+        // eor x27, x27, x22, ror #28
+        // eor x28, x28, x10, ror #40
+        // eor x30, x30, x1, ror #0
+        // eor x21, x21, x17, ror #32
+        // eor x26, x26, x5, ror #60
+        // eor x27, x27, x13, ror #0
+        // eor x28, x28, x7, ror #32
+        // eor x30, x30, x15, ror #44
+        // eor x21, x21, x6, ror #60
+        // eor x26, x26, x11, ror #24
+        // eor x27, x27, x16, ror #32
+        // eor x28, x28, x19, ror #40
+        // eor x30, x30, x2, ror #0
+        // eor x21, x21, x20, ror #60
+        // eor x3, x26, x28, ror #15
+        // eor x9, x9, x3, ror #48
+        // eor x24, x24, x3, ror #40
+        // eor x22, x22, x3, ror #20
+        // eor x13, x13, x3, ror #48
+        // eor x16, x16, x3, ror #16
+        // eor x3, x27, x30, ror #63
+        // eor x28, x28, x21, ror #31
+        // eor x30, x30, x26, ror #47
+        // eor x21, x21, x27, ror #31
+        // eor x4, x4, x3, ror #0
+        // eor x14, x14, x3, ror #32
+        // eor x10, x10, x3, ror #24
+        // eor x7, x7, x3, ror #32
+        // eor x19, x19, x3, ror #24
+        // eor x0, x0, x21, ror #48
+        // eor x25, x25, x21, ror #4
+        // eor x8, x8, x21, ror #52
+        // eor x5, x5, x21, ror #52
+        // eor x11, x11, x21, ror #24
+        // umov x3, v24.d[0]
+        // umov x21, v25.d[0]
+        // eor x23, x23, x28, ror #0
+        // eor x12, x12, x28, ror #20
+        // eor x1, x1, x28, ror #0
+        // eor x15, x15, x28, ror #20
+        // eor x2, x2, x28, ror #0
+        // eor x3, x3, x30, ror #32
+        // eor x21, x21, x30, ror #0
+        // eor x17, x17, x30, ror #0
+        // eor x6, x6, x30, ror #36
+        // eor x20, x20, x30, ror #36
+        // bic x26, x10, x24, ror #31
+        // bic x27, x15, x10, ror #38
+        // bic x28, x0, x20, ror #30
+        // bic x30, x24, x0, ror #20
+        // eor x0, x0, x26, ror #13
+        // bic x26, x20, x15, ror #9
+        // eor x24, x24, x27, ror #59
+        // eor x15, x15, x28, ror #25
+        // eor x20, x20, x30, ror #14
+        // eor x10, x10, x26, ror #17
+        // bic x26, x8, x21, ror #3
+        // bic x27, x13, x8, ror #22
+        // bic x28, x23, x19, ror #7
+        // bic x30, x21, x23, ror #56
+        // eor x23, x23, x26, ror #5
+        // bic x26, x19, x13, ror #40
+        // eor x21, x21, x27, ror #39
+        // eor x13, x13, x28, ror #17
+        // eor x19, x19, x30, ror #1
+        // eor x8, x8, x26, ror #2
+        // bic x26, x1, x14, ror #51
+        // bic x27, x6, x1, ror #19
+        // bic x28, x9, x11, ror #55
+        // bic x30, x14, x9, ror #37
+        // eor x9, x9, x26, ror #40
+        // bic x26, x11, x6, ror #30
+        // eor x14, x14, x27, ror #58
+        // eor x6, x6, x28, ror #43
+        // eor x11, x11, x30, ror #36
+        // eor x1, x1, x26, ror #15
+        // bic x26, x22, x25, ror #38
+        // bic x27, x7, x22, ror #1
+        // bic x28, x3, x2, ror #3
+        // bic x30, x25, x3, ror #13
+        // eor x3, x3, x26, ror #13
+        // bic x26, x2, x7, ror #9
+        // eor x25, x25, x27, ror #25
+        // eor x7, x7, x28, ror #52
+        // eor x2, x2, x30, ror #48
+        // eor x22, x22, x26, ror #54
+        // bic x26, x17, x12, ror #28
+        // bic x27, x5, x17, ror #22
+        // bic x28, x4, x16, ror #28
+        // bic x30, x12, x4, ror #13
+        // eor x4, x4, x26, ror #23
+        // bic x26, x16, x5, ror #37
+        // eor x12, x12, x27, ror #14
+        // eor x5, x5, x28, ror #63
+        // eor x16, x16, x30, ror #23
+        // eor x17, x17, x26, ror #5
+        // movz x26, #32770, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x23, ror #52
+        // dup v24.2d, x20
+        // dup v25.2d, x19
+        // eor x27, x24, x21, ror #16
+        // eor x28, x10, x8, ror #44
+        // eor x30, x15, x13, ror #60
+        // eor x20, x20, x19, ror #29
+        // eor x26, x26, x9, ror #15
+        // eor x27, x27, x14, ror #62
+        // eor x28, x28, x1, ror #42
+        // eor x30, x30, x6, ror #61
+        // eor x20, x20, x11, ror #40
+        // eor x26, x26, x3, ror #21
+        // eor x27, x27, x25, ror #28
+        // eor x28, x28, x22, ror #21
+        // eor x30, x30, x7, ror #58
+        // eor x20, x20, x2, ror #58
+        // eor x26, x26, x4, ror #18
+        // eor x27, x27, x12, ror #25
+        // eor x28, x28, x17, ror #28
+        // eor x30, x30, x5, ror #44
+        // eor x20, x20, x16, ror #16
+        // eor x19, x26, x28, ror #12
+        // eor x24, x24, x19, ror #20
+        // eor x21, x21, x19, ror #4
+        // eor x14, x14, x19, ror #22
+        // eor x25, x25, x19, ror #56
+        // eor x12, x12, x19, ror #59
+        // eor x19, x27, x30, ror #58
+        // eor x28, x28, x20, ror #16
+        // eor x30, x30, x26, ror #24
+        // eor x20, x20, x27, ror #13
+        // eor x10, x10, x19, ror #31
+        // eor x8, x8, x19, ror #51
+        // eor x1, x1, x19, ror #53
+        // eor x22, x22, x19, ror #10
+        // eor x17, x17, x19, ror #3
+        // eor x0, x0, x20, ror #30
+        // eor x23, x23, x20, ror #42
+        // eor x9, x9, x20, ror #15
+        // eor x3, x3, x20, ror #9
+        // eor x4, x4, x20, ror #12
+        // umov x19, v24.d[0]
+        // umov x20, v25.d[0]
+        // eor x15, x15, x28, ror #38
+        // eor x13, x13, x28, ror #42
+        // eor x6, x6, x28, ror #41
+        // eor x7, x7, x28, ror #44
+        // eor x5, x5, x28, ror #58
+        // eor x19, x19, x30, ror #9
+        // eor x20, x20, x30, ror #44
+        // eor x11, x11, x30, ror #33
+        // eor x2, x2, x30, ror #15
+        // eor x16, x16, x30, ror #57
+        // bic x26, x1, x21, ror #4
+        // bic x27, x7, x1, ror #0
+        // bic x28, x0, x16, ror #32
+        // bic x30, x21, x0, ror #48
+        // eor x0, x0, x26, ror #12
+        // bic x26, x16, x7, ror #44
+        // eor x21, x21, x27, ror #60
+        // eor x7, x7, x28, ror #52
+        // eor x16, x16, x30, ror #48
+        // eor x1, x1, x26, ror #20
+        // bic x26, x9, x20, ror #27
+        // bic x27, x25, x9, ror #49
+        // bic x28, x15, x17, ror #33
+        // bic x30, x20, x15, ror #36
+        // eor x15, x15, x26, ror #1
+        // bic x26, x17, x25, ror #47
+        // eor x20, x20, x27, ror #52
+        // eor x25, x25, x28, ror #48
+        // eor x17, x17, x30, ror #59
+        // eor x9, x9, x26, ror #32
+        // bic x26, x6, x8, ror #40
+        // bic x27, x2, x6, ror #59
+        // bic x28, x24, x4, ror #21
+        // bic x30, x8, x24, ror #56
+        // eor x24, x24, x26, ror #32
+        // bic x26, x4, x2, ror #16
+        // eor x8, x8, x27, ror #29
+        // eor x2, x2, x28, ror #27
+        // eor x4, x4, x30, ror #51
+        // eor x6, x6, x26, ror #53
+        // bic x26, x14, x23, ror #48
+        // bic x27, x22, x14, ror #13
+        // bic x28, x19, x5, ror #24
+        // bic x30, x23, x19, ror #51
+        // eor x19, x19, x26, ror #29
+        // bic x26, x5, x22, ror #56
+        // eor x23, x23, x27, ror #3
+        // eor x22, x22, x28, ror #48
+        // eor x5, x5, x30, ror #53
+        // eor x14, x14, x26, ror #59
+        // bic x26, x11, x13, ror #13
+        // bic x27, x3, x11, ror #51
+        // bic x28, x10, x12, ror #52
+        // bic x30, x13, x10, ror #35
+        // eor x10, x10, x26, ror #16
+        // bic x26, x12, x3, ror #41
+        // eor x13, x13, x27, ror #0
+        // eor x3, x3, x28, ror #35
+        // eor x12, x12, x30, ror #41
+        // eor x11, x11, x26, ror #36
+        // movz x26, #128, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x15, ror #11
+        // dup v24.2d, x16
+        // dup v25.2d, x17
+        // eor x27, x21, x20, ror #23
+        // eor x28, x1, x9, ror #0
+        // eor x30, x7, x25, ror #15
+        // eor x16, x16, x17, ror #12
+        // eor x26, x26, x24, ror #43
+        // eor x27, x27, x8, ror #35
+        // eor x28, x28, x6, ror #63
+        // eor x30, x30, x2, ror #4
+        // eor x16, x16, x4, ror #32
+        // eor x26, x26, x19, ror #3
+        // eor x27, x27, x23, ror #0
+        // eor x28, x28, x14, ror #20
+        // eor x30, x30, x22, ror #7
+        // eor x16, x16, x5, ror #59
+        // eor x26, x26, x10, ror #15
+        // eor x27, x27, x13, ror #28
+        // eor x28, x28, x11, ror #19
+        // eor x30, x30, x3, ror #32
+        // eor x16, x16, x12, ror #35
+        // eor x17, x26, x28, ror #11
+        // eor x21, x21, x17, ror #48
+        // eor x20, x20, x17, ror #25
+        // eor x8, x8, x17, ror #13
+        // eor x23, x23, x17, ror #48
+        // eor x13, x13, x17, ror #20
+        // eor x17, x27, x30, ror #59
+        // eor x28, x28, x16, ror #19
+        // eor x30, x30, x26, ror #51
+        // eor x16, x16, x27, ror #47
+        // eor x1, x1, x17, ror #4
+        // eor x9, x9, x17, ror #4
+        // eor x6, x6, x17, ror #5
+        // eor x14, x14, x17, ror #48
+        // eor x11, x11, x17, ror #49
+        // eor x0, x0, x16, ror #32
+        // eor x15, x15, x16, ror #21
+        // eor x24, x24, x16, ror #53
+        // eor x19, x19, x16, ror #29
+        // eor x10, x10, x16, ror #17
+        // umov x16, v24.d[0]
+        // umov x17, v25.d[0]
+        // eor x7, x7, x28, ror #0
+        // eor x25, x25, x28, ror #49
+        // eor x2, x2, x28, ror #60
+        // eor x22, x22, x28, ror #57
+        // eor x3, x3, x28, ror #32
+        // eor x16, x16, x30, ror #44
+        // eor x17, x17, x30, ror #32
+        // eor x4, x4, x30, ror #12
+        // eor x5, x5, x30, ror #49
+        // eor x12, x12, x30, ror #9
+        // bic x26, x6, x20, ror #27
+        // bic x27, x22, x6, ror #34
+        // bic x28, x0, x12, ror #53
+        // bic x30, x20, x0, ror #5
+        // eor x0, x0, x26, ror #32
+        // bic x26, x12, x22, ror #9
+        // eor x20, x20, x27, ror #3
+        // eor x22, x22, x28, ror #2
+        // eor x12, x12, x30, ror #6
+        // eor x6, x6, x26, ror #21
+        // bic x26, x24, x17, ror #48
+        // bic x27, x23, x24, ror #5
+        // bic x28, x7, x11, ror #50
+        // bic x30, x17, x7, ror #24
+        // eor x7, x7, x26, ror #56
+        // bic x26, x11, x23, ror #1
+        // eor x17, x17, x27, ror #11
+        // eor x23, x23, x28, ror #13
+        // eor x11, x11, x30, ror #54
+        // eor x24, x24, x26, ror #58
+        // bic x26, x2, x9, ror #15
+        // bic x27, x5, x2, ror #36
+        // bic x28, x21, x10, ror #46
+        // bic x30, x9, x21, ror #9
+        // eor x21, x21, x26, ror #40
+        // bic x26, x10, x5, ror #22
+        // eor x9, x9, x27, ror #13
+        // eor x5, x5, x28, ror #60
+        // eor x10, x10, x30, ror #9
+        // eor x2, x2, x26, ror #6
+        // bic x26, x8, x15, ror #62
+        // bic x27, x14, x8, ror #24
+        // bic x28, x16, x3, ror #47
+        // bic x30, x15, x16, ror #30
+        // eor x16, x16, x26, ror #36
+        // bic x26, x3, x14, ror #29
+        // eor x15, x15, x27, ror #42
+        // eor x14, x14, x28, ror #52
+        // eor x3, x3, x30, ror #51
+        // eor x8, x8, x26, ror #11
+        // bic x26, x4, x25, ror #11
+        // bic x27, x19, x4, ror #63
+        // bic x28, x1, x13, ror #28
+        // bic x30, x25, x1, ror #42
+        // eor x1, x1, x26, ror #11
+        // bic x26, x13, x19, ror #48
+        // eor x25, x25, x27, ror #54
+        // eor x19, x19, x28, ror #52
+        // eor x13, x13, x30, ror #58
+        // eor x4, x4, x26, ror #17
+        // movz x26, #32778, lsl #0
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x7, ror #48
+        // dup v24.2d, x12
+        // dup v25.2d, x11
+        // eor x27, x20, x17, ror #29
+        // eor x28, x6, x24, ror #8
+        // eor x30, x22, x23, ror #37
+        // eor x12, x12, x11, ror #45
+        // eor x26, x26, x21, ror #15
+        // eor x27, x27, x9, ror #11
+        // eor x28, x28, x2, ror #23
+        // eor x30, x30, x5, ror #21
+        // eor x12, x12, x10, ror #8
+        // eor x26, x26, x16, ror #5
+        // eor x27, x27, x15, ror #44
+        // eor x28, x28, x8, ror #9
+        // eor x30, x30, x14, ror #19
+        // eor x12, x12, x3, ror #63
+        // eor x26, x26, x1, ror #14
+        // eor x27, x27, x25, ror #41
+        // eor x28, x28, x4, ror #57
+        // eor x30, x30, x19, ror #28
+        // eor x12, x12, x13, ror #53
+        // eor x11, x26, x28, ror #31
+        // eor x20, x20, x11, ror #5
+        // eor x17, x17, x11, ror #40
+        // eor x9, x9, x11, ror #58
+        // eor x15, x15, x11, ror #25
+        // eor x25, x25, x11, ror #28
+        // eor x11, x27, x30, ror #2
+        // eor x28, x28, x12, ror #20
+        // eor x30, x30, x26, ror #1
+        // eor x12, x12, x27, ror #5
+        // eor x6, x6, x11, ror #27
+        // eor x24, x24, x11, ror #19
+        // eor x2, x2, x11, ror #4
+        // eor x8, x8, x11, ror #18
+        // eor x4, x4, x11, ror #34
+        // eor x0, x0, x12, ror #53
+        // eor x7, x7, x12, ror #5
+        // eor x21, x21, x12, ror #38
+        // eor x16, x16, x12, ror #48
+        // eor x1, x1, x12, ror #39
+        // umov x11, v24.d[0]
+        // umov x12, v25.d[0]
+        // eor x22, x22, x28, ror #34
+        // eor x23, x23, x28, ror #61
+        // eor x5, x5, x28, ror #13
+        // eor x14, x14, x28, ror #15
+        // eor x19, x19, x28, ror #6
+        // eor x11, x11, x30, ror #9
+        // eor x12, x12, x30, ror #28
+        // eor x10, x10, x30, ror #1
+        // eor x3, x3, x30, ror #10
+        // eor x13, x13, x30, ror #20
+        // bic x26, x2, x17, ror #32
+        // bic x27, x14, x2, ror #16
+        // bic x28, x0, x13, ror #28
+        // bic x30, x17, x0, ror #20
+        // eor x0, x0, x26, ror #12
+        // bic x26, x13, x14, ror #32
+        // eor x17, x17, x27, ror #16
+        // eor x14, x14, x28, ror #4
+        // eor x13, x13, x30, ror #16
+        // eor x2, x2, x26, ror #16
+        // bic x26, x21, x12, ror #2
+        // bic x27, x15, x21, ror #18
+        // bic x28, x22, x4, ror #58
+        // bic x30, x12, x22, ror #20
+        // eor x22, x22, x26, ror #42
+        // bic x26, x4, x15, ror #30
+        // eor x12, x12, x27, ror #44
+        // eor x15, x15, x28, ror #40
+        // eor x4, x4, x30, ror #50
+        // eor x21, x21, x26, ror #16
+        // bic x26, x5, x24, ror #40
+        // bic x27, x3, x5, ror #14
+        // bic x28, x20, x1, ror #2
+        // bic x30, x24, x20, ror #24
+        // eor x20, x20, x26, ror #0
+        // bic x26, x1, x3, ror #48
+        // eor x24, x24, x27, ror #10
+        // eor x3, x3, x28, ror #14
+        // eor x1, x1, x30, ror #38
+        // eor x5, x5, x26, ror #2
+        // bic x26, x9, x7, ror #16
+        // bic x27, x8, x9, ror #34
+        // bic x28, x11, x19, ror #8
+        // bic x30, x7, x11, ror #14
+        // eor x11, x11, x26, ror #34
+        // bic x26, x19, x8, ror #56
+        // eor x7, x7, x27, ror #14
+        // eor x8, x8, x28, ror #0
+        // eor x19, x19, x30, ror #42
+        // eor x9, x9, x26, ror #38
+        // bic x26, x10, x23, ror #22
+        // bic x27, x16, x10, ror #58
+        // bic x28, x6, x25, ror #0
+        // bic x30, x23, x6, ror #54
+        // eor x6, x6, x26, ror #52
+        // bic x26, x25, x16, ror #58
+        // eor x23, x23, x27, ror #48
+        // eor x16, x16, x28, ror #6
+        // eor x25, x25, x30, ror #10
+        // eor x10, x10, x26, ror #12
+        // movz x26, #10, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x22, ror #34
+        // dup v24.2d, x13
+        // dup v25.2d, x4
+        // eor x27, x17, x12, ror #34
+        // eor x28, x2, x21, ror #0
+        // eor x30, x14, x15, ror #62
+        // eor x13, x13, x4, ror #0
+        // eor x26, x26, x20, ror #58
+        // eor x27, x27, x24, ror #54
+        // eor x28, x28, x5, ror #46
+        // eor x30, x30, x3, ror #48
+        // eor x13, x13, x1, ror #32
+        // eor x26, x26, x11, ror #26
+        // eor x27, x27, x7, ror #32
+        // eor x28, x28, x9, ror #48
+        // eor x30, x30, x8, ror #30
+        // eor x13, x13, x19, ror #6
+        // eor x26, x26, x6, ror #34
+        // eor x27, x27, x23, ror #0
+        // eor x28, x28, x10, ror #10
+        // eor x30, x30, x16, ror #32
+        // eor x13, x13, x25, ror #6
+        // eor x4, x26, x28, ror #11
+        // eor x17, x17, x4, ror #20
+        // eor x12, x12, x4, ror #50
+        // eor x24, x24, x4, ror #30
+        // eor x7, x7, x4, ror #52
+        // eor x23, x23, x4, ror #20
+        // eor x4, x27, x30, ror #15
+        // eor x28, x28, x13, ror #15
+        // eor x30, x30, x26, ror #3
+        // eor x13, x13, x27, ror #15
+        // eor x2, x2, x4, ror #32
+        // eor x21, x21, x4, ror #32
+        // eor x5, x5, x4, ror #50
+        // eor x9, x9, x4, ror #48
+        // eor x10, x10, x4, ror #22
+        // eor x0, x0, x13, ror #28
+        // eor x22, x22, x13, ror #58
+        // eor x20, x20, x13, ror #34
+        // eor x11, x11, x13, ror #2
+        // eor x6, x6, x13, ror #58
+        // umov x4, v24.d[0]
+        // umov x13, v25.d[0]
+        // eor x14, x14, x28, ror #16
+        // eor x15, x15, x28, ror #18
+        // eor x3, x3, x28, ror #32
+        // eor x8, x8, x28, ror #50
+        // eor x16, x16, x28, ror #48
+        // eor x4, x4, x30, ror #32
+        // eor x13, x13, x30, ror #32
+        // eor x1, x1, x30, ror #0
+        // eor x19, x19, x30, ror #26
+        // eor x25, x25, x30, ror #26
+        // bic x26, x5, x12, ror #19
+        // bic x27, x8, x5, ror #10
+        // bic x28, x0, x25, ror #20
+        // bic x30, x12, x0, ror #30
+        // eor x0, x0, x26, ror #15
+        // bic x26, x25, x8, ror #49
+        // eor x12, x12, x27, ror #35
+        // eor x8, x8, x28, ror #59
+        // eor x25, x25, x30, ror #14
+        // eor x5, x5, x26, ror #5
+        // bic x26, x20, x13, ror #17
+        // bic x27, x7, x20, ror #24
+        // bic x28, x14, x10, ror #57
+        // bic x30, x13, x14, ror #24
+        // eor x14, x14, x26, ror #23
+        // bic x26, x10, x7, ror #6
+        // eor x13, x13, x27, ror #23
+        // eor x7, x7, x28, ror #1
+        // eor x10, x10, x30, ror #47
+        // eor x20, x20, x26, ror #34
+        // bic x26, x3, x21, ror #51
+        // bic x27, x19, x3, ror #57
+        // bic x28, x17, x6, ror #37
+        // bic x30, x21, x17, ror #37
+        // eor x17, x17, x26, ror #40
+        // bic x26, x6, x19, ror #10
+        // eor x21, x21, x27, ror #20
+        // eor x19, x19, x28, ror #17
+        // eor x6, x6, x30, ror #54
+        // eor x3, x3, x26, ror #61
+        // bic x26, x24, x22, ror #38
+        // bic x27, x9, x24, ror #43
+        // bic x28, x4, x16, ror #35
+        // bic x30, x22, x4, ror #3
+        // eor x4, x4, x26, ror #23
+        // bic x26, x16, x9, ror #9
+        // eor x22, x22, x27, ror #47
+        // eor x9, x9, x28, ror #20
+        // eor x16, x16, x30, ror #26
+        // eor x24, x24, x26, ror #12
+        // bic x26, x1, x15, ror #46
+        // bic x27, x11, x1, ror #36
+        // bic x28, x2, x23, ror #28
+        // bic x30, x15, x2, ror #11
+        // eor x2, x2, x26, ror #7
+        // bic x26, x23, x11, ror #7
+        // eor x15, x15, x27, ror #46
+        // eor x11, x11, x28, ror #29
+        // eor x23, x23, x30, ror #25
+        // eor x1, x1, x26, ror #21
+        // movz x26, #32897, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x14, ror #32
+        // dup v24.2d, x25
+        // dup v25.2d, x10
+        // eor x27, x12, x13, ror #38
+        // eor x28, x5, x20, ror #40
+        // eor x30, x8, x7, ror #26
+        // eor x25, x25, x10, ror #5
+        // eor x26, x26, x17, ror #43
+        // eor x27, x27, x21, ror #36
+        // eor x28, x28, x3, ror #4
+        // eor x30, x30, x19, ror #21
+        // eor x25, x25, x6, ror #60
+        // eor x26, x26, x4, ror #1
+        // eor x27, x27, x22, ror #28
+        // eor x28, x28, x24, ror #9
+        // eor x30, x30, x9, ror #40
+        // eor x25, x25, x16, ror #16
+        // eor x26, x26, x2, ror #14
+        // eor x27, x27, x15, ror #33
+        // eor x28, x28, x1, ror #6
+        // eor x30, x30, x11, ror #44
+        // eor x25, x25, x23, ror #22
+        // eor x10, x26, x28, ror #14
+        // eor x12, x12, x10, ror #30
+        // eor x13, x13, x10, ror #56
+        // eor x21, x21, x10, ror #58
+        // eor x22, x22, x10, ror #2
+        // eor x15, x15, x10, ror #61
+        // eor x10, x27, x30, ror #34
+        // eor x28, x28, x25, ror #4
+        // eor x30, x30, x26, ror #58
+        // eor x25, x25, x27, ror #13
+        // eor x5, x5, x10, ror #19
+        // eor x20, x20, x10, ror #43
+        // eor x3, x3, x10, ror #15
+        // eor x24, x24, x10, ror #10
+        // eor x1, x1, x10, ror #13
+        // eor x0, x0, x25, ror #20
+        // eor x14, x14, x25, ror #52
+        // eor x17, x17, x25, ror #41
+        // eor x4, x4, x25, ror #19
+        // eor x2, x2, x25, ror #6
+        // umov x10, v24.d[0]
+        // umov x25, v25.d[0]
+        // eor x8, x8, x28, ror #10
+        // eor x7, x7, x28, ror #48
+        // eor x19, x19, x28, ror #53
+        // eor x9, x9, x28, ror #34
+        // eor x11, x11, x28, ror #30
+        // eor x10, x10, x30, ror #49
+        // eor x25, x25, x30, ror #44
+        // eor x6, x6, x30, ror #53
+        // eor x16, x16, x30, ror #33
+        // eor x23, x23, x30, ror #27
+        // bic x26, x3, x13, ror #52
+        // bic x27, x9, x3, ror #16
+        // bic x28, x0, x23, ror #28
+        // bic x30, x13, x0, ror #36
+        // eor x0, x0, x26, ror #40
+        // bic x26, x23, x9, ror #60
+        // eor x13, x13, x27, ror #60
+        // eor x9, x9, x28, ror #40
+        // eor x23, x23, x30, ror #0
+        // eor x3, x3, x26, ror #52
+        // bic x26, x17, x25, ror #29
+        // bic x27, x22, x17, ror #23
+        // bic x28, x8, x1, ror #47
+        // bic x30, x25, x8, ror #36
+        // eor x8, x8, x26, ror #63
+        // bic x26, x1, x22, ror #57
+        // eor x25, x25, x27, ror #12
+        // eor x22, x22, x28, ror #24
+        // eor x1, x1, x30, ror #45
+        // eor x17, x17, x26, ror #48
+        // bic x26, x19, x20, ror #48
+        // bic x27, x16, x19, ror #37
+        // bic x28, x12, x2, ror #27
+        // bic x30, x20, x12, ror #48
+        // eor x12, x12, x26, ror #32
+        // bic x26, x2, x16, ror #32
+        // eor x20, x20, x27, ror #43
+        // eor x16, x16, x28, ror #5
+        // eor x2, x2, x30, ror #53
+        // eor x19, x19, x26, ror #59
+        // bic x26, x21, x14, ror #0
+        // bic x27, x24, x21, ror #51
+        // bic x28, x10, x11, ror #0
+        // bic x30, x14, x10, ror #61
+        // eor x10, x10, x26, ror #3
+        // bic x26, x11, x24, ror #16
+        // eor x14, x14, x27, ror #13
+        // eor x24, x24, x28, ror #48
+        // eor x11, x11, x30, ror #3
+        // eor x21, x21, x26, ror #61
+        // bic x26, x6, x7, ror #63
+        // bic x27, x4, x6, ror #17
+        // bic x28, x5, x15, ror #48
+        // bic x30, x7, x5, ror #41
+        // eor x5, x5, x26, ror #24
+        // bic x26, x15, x4, ror #23
+        // eor x7, x7, x27, ror #48
+        // eor x4, x4, x28, ror #57
+        // eor x15, x15, x30, ror #39
+        // eor x6, x6, x26, ror #24
+        // movz x26, #32896, lsl #0
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x8, ror #41
+        // dup v24.2d, x23
+        // dup v25.2d, x1
+        // eor x27, x13, x25, ror #41
+        // eor x28, x3, x17, ror #0
+        // eor x30, x9, x22, ror #57
+        // eor x23, x23, x1, ror #60
+        // eor x26, x26, x12, ror #33
+        // eor x27, x27, x20, ror #21
+        // eor x28, x28, x19, ror #25
+        // eor x30, x30, x16, ror #4
+        // eor x23, x23, x2, ror #32
+        // eor x26, x26, x10, ror #57
+        // eor x27, x27, x14, ror #32
+        // eor x28, x28, x21, ror #20
+        // eor x30, x30, x24, ror #49
+        // eor x23, x23, x11, ror #29
+        // eor x26, x26, x5, ror #17
+        // eor x27, x27, x7, ror #12
+        // eor x28, x28, x6, ror #1
+        // eor x30, x30, x4, ror #0
+        // eor x23, x23, x15, ror #37
+        // eor x1, x26, x28, ror #39
+        // eor x13, x13, x1, ror #36
+        // eor x25, x25, x1, ror #59
+        // eor x20, x20, x1, ror #15
+        // eor x14, x14, x1, ror #4
+        // eor x7, x7, x1, ror #24
+        // eor x1, x27, x30, ror #59
+        // eor x28, x28, x23, ror #51
+        // eor x30, x30, x26, ror #39
+        // eor x23, x23, x27, ror #63
+        // eor x3, x3, x1, ror #52
+        // eor x17, x17, x1, ror #52
+        // eor x19, x19, x1, ror #27
+        // eor x21, x21, x1, ror #32
+        // eor x6, x6, x1, ror #51
+        // eor x0, x0, x23, ror #28
+        // eor x8, x8, x23, ror #51
+        // eor x12, x12, x23, ror #59
+        // eor x10, x10, x23, ror #35
+        // eor x5, x5, x23, ror #11
+        // umov x1, v24.d[0]
+        // umov x23, v25.d[0]
+        // eor x9, x9, x28, ror #16
+        // eor x22, x22, x28, ror #23
+        // eor x16, x16, x28, ror #12
+        // eor x24, x24, x28, ror #31
+        // eor x4, x4, x28, ror #16
+        // eor x1, x1, x30, ror #60
+        // eor x23, x23, x30, ror #0
+        // eor x2, x2, x30, ror #28
+        // eor x11, x11, x30, ror #31
+        // eor x15, x15, x30, ror #23
+        // bic x26, x19, x25, ror #3
+        // bic x27, x24, x19, ror #34
+        // bic x28, x0, x15, ror #51
+        // bic x30, x25, x0, ror #39
+        // eor x0, x0, x26, ror #22
+        // bic x26, x15, x24, ror #1
+        // eor x25, x25, x27, ror #27
+        // eor x24, x24, x28, ror #12
+        // eor x15, x15, x30, ror #38
+        // eor x19, x19, x26, ror #29
+        // bic x26, x12, x23, ror #38
+        // bic x27, x14, x12, ror #15
+        // bic x28, x9, x6, ror #48
+        // bic x30, x23, x9, ror #56
+        // eor x9, x9, x26, ror #34
+        // bic x26, x6, x14, ror #35
+        // eor x23, x23, x27, ror #11
+        // eor x14, x14, x28, ror #45
+        // eor x6, x6, x30, ror #24
+        // eor x12, x12, x26, ror #14
+        // bic x26, x16, x17, ror #31
+        // bic x27, x11, x16, ror #18
+        // bic x28, x13, x5, ror #36
+        // bic x30, x17, x13, ror #57
+        // eor x13, x13, x26, ror #40
+        // bic x26, x5, x11, ror #50
+        // eor x17, x17, x27, ror #15
+        // eor x11, x11, x28, ror #42
+        // eor x5, x5, x30, ror #35
+        // eor x16, x16, x26, ror #60
+        // bic x26, x20, x8, ror #30
+        // bic x27, x21, x20, ror #58
+        // bic x28, x1, x4, ror #31
+        // bic x30, x8, x1, ror #60
+        // eor x1, x1, x26, ror #38
+        // bic x26, x4, x21, ror #13
+        // eor x8, x8, x27, ror #40
+        // eor x21, x21, x28, ror #20
+        // eor x4, x4, x30, ror #37
+        // eor x20, x20, x26, ror #57
+        // bic x26, x2, x22, ror #5
+        // bic x27, x10, x2, ror #5
+        // bic x28, x3, x7, ror #60
+        // bic x30, x22, x3, ror #16
+        // eor x3, x3, x26, ror #43
+        // bic x26, x7, x10, ror #42
+        // eor x22, x22, x27, ror #54
+        // eor x10, x10, x28, ror #26
+        // eor x7, x7, x30, ror #52
+        // eor x2, x2, x26, ror #17
+        // movz x26, #1, lsl #0
+        // movk x26, #32768, lsl #16
+        // eor x0, x0, x26, ror #0
+        // eor x26, x0, x9, ror #60
+        // dup v24.2d, x15
+        // dup v25.2d, x6
+        // eor x27, x25, x23, ror #43
+        // eor x28, x19, x12, ror #8
+        // eor x30, x24, x14, ror #27
+        // eor x15, x15, x6, ror #57
+        // eor x26, x26, x13, ror #27
+        // eor x27, x27, x17, ror #9
+        // eor x28, x28, x16, ror #45
+        // eor x30, x30, x11, ror #61
+        // eor x15, x15, x5, ror #12
+        // eor x26, x26, x1, ror #1
+        // eor x27, x27, x8, ror #44
+        // eor x28, x28, x20, ror #17
+        // eor x30, x30, x21, ror #57
+        // eor x15, x15, x4, ror #45
+        // eor x26, x26, x3, ror #42
+        // eor x27, x27, x22, ror #1
+        // eor x28, x28, x2, ror #63
+        // eor x30, x30, x10, ror #28
+        // eor x15, x15, x7, ror #51
+        // eor x6, x26, x28, ror #21
+        // eor x25, x25, x6, ror #39
+        // eor x23, x23, x6, ror #60
+        // eor x17, x17, x6, ror #30
+        // eor x8, x8, x6, ror #59
+        // eor x22, x22, x6, ror #38
+        // eor x6, x27, x30, ror #26
+        // eor x28, x28, x15, ror #28
+        // eor x30, x30, x26, ror #11
+        // eor x15, x15, x27, ror #37
+        // eor x19, x19, x6, ror #3
+        // eor x12, x12, x6, ror #59
+        // eor x16, x16, x6, ror #22
+        // eor x20, x20, x6, ror #50
+        // eor x2, x2, x6, ror #4
+        // eor x0, x0, x15, ror #51
+        // eor x9, x9, x15, ror #55
+        // eor x13, x13, x15, ror #24
+        // eor x1, x1, x15, ror #50
+        // eor x3, x3, x15, ror #9
+        // umov x6, v24.d[0]
+        // umov x15, v25.d[0]
+        // eor x24, x24, x28, ror #34
+        // eor x14, x14, x28, ror #7
+        // eor x11, x11, x28, ror #37
+        // eor x21, x21, x28, ror #41
+        // eor x10, x10, x28, ror #6
+        // eor x6, x6, x30, ror #1
+        // eor x15, x15, x30, ror #8
+        // eor x5, x5, x30, ror #53
+        // eor x4, x4, x30, ror #20
+        // eor x7, x7, x30, ror #14
+        // bic x26, x16, x23, ror #0
+        // bic x27, x21, x16, ror #0
+        // bic x28, x0, x7, ror #24
+        // bic x30, x23, x0, ror #40
+        // eor x0, x0, x26, ror #24
+        // bic x26, x7, x21, ror #0
+        // eor x23, x23, x27, ror #0
+        // eor x21, x21, x28, ror #40
+        // eor x7, x7, x30, ror #0
+        // eor x16, x16, x26, ror #0
+        // bic x26, x13, x15, ror #0
+        // bic x27, x8, x13, ror #0
+        // bic x28, x24, x2, ror #0
+        // bic x30, x15, x24, ror #0
+        // eor x24, x24, x26, ror #0
+        // bic x26, x2, x8, ror #0
+        // eor x15, x15, x27, ror #0
+        // eor x8, x8, x28, ror #0
+        // eor x2, x2, x30, ror #0
+        // eor x13, x13, x26, ror #0
+        // bic x26, x11, x12, ror #0
+        // bic x27, x4, x11, ror #0
+        // bic x28, x25, x3, ror #0
+        // bic x30, x12, x25, ror #0
+        // eor x25, x25, x26, ror #0
+        // bic x26, x3, x4, ror #0
+        // eor x12, x12, x27, ror #0
+        // eor x4, x4, x28, ror #0
+        // eor x3, x3, x30, ror #0
+        // eor x11, x11, x26, ror #0
+        // bic x26, x17, x9, ror #0
+        // bic x27, x20, x17, ror #0
+        // bic x28, x6, x10, ror #0
+        // bic x30, x9, x6, ror #0
+        // eor x6, x6, x26, ror #0
+        // bic x26, x10, x20, ror #0
+        // eor x9, x9, x27, ror #0
+        // eor x20, x20, x28, ror #0
+        // eor x10, x10, x30, ror #0
+        // eor x17, x17, x26, ror #0
+        // bic x26, x5, x14, ror #0
+        // bic x27, x1, x5, ror #0
+        // bic x28, x19, x22, ror #0
+        // bic x30, x14, x19, ror #0
+        // eor x19, x19, x26, ror #0
+        // bic x26, x22, x1, ror #0
+        // eor x14, x14, x27, ror #0
+        // eor x1, x1, x28, ror #0
+        // eor x22, x22, x30, ror #0
+        // eor x5, x5, x26, ror #0
+        // movz x26, #32776, lsl #0
+        // movk x26, #32768, lsl #16
+        // movk x26, #32768, lsl #48
+        // eor x0, x0, x26, ror #0
+        // ror x8, x8, #24
+        // ror x17, x17, #24
+        // add x26, x23, #0
+        // ror x23, x1, #24
+        // ror x1, x26, #24
+        // add x26, x16, #0
+        // ror x16, x9, #24
+        // ror x9, x2, #24
+        // ror x2, x26, #24
+        // add x26, x21, #0
+        // ror x21, x14, #24
+        // ror x14, x3, #24
+        // ror x3, x26, #24
+        // add x26, x7, #0
+        // ror x7, x13, #24
+        // ror x13, x4, #24
+        // ror x4, x26, #24
+        // add x26, x24, #0
+        // ror x24, x22, #24
+        // ror x22, x5, #24
+        // ror x5, x26, #24
+        // add x26, x15, #0
+        // ror x15, x6, #24
+        // ror x6, x26, #24
+        // add x26, x25, #0
+        // ror x25, x20, #24
+        // ror x20, x19, #24
+        // ror x19, x10, #24
+        // ror x10, x26, #24
+        // add x26, x12, #0
+        // ror x12, x11, #24
+        // ror x11, x26, #24
+        // add v19.2d, v19.2d, v21.2d
+        // sub v20.2d, v20.2d, v21.2d
+        // umov x27, v20.d[0]
+        // umov x28, v21.d[0]
+        // sub x26, x27, x28
+        // lsr x26, x26, #63
+        r".inst 0xcac5001a,0x4e080c98,0x4e080d39,0xcac6003b,0xcac7005c,0xcac8007e,0xcac90084,0xcaca035a
+.inst 0xcacb037b,0xcacc039c,0xcacd03de,0xcace0084,0xcacf035a,0xcad0037b,0xcad1039c,0xcad903de
+.inst 0xcad30084,0xcad4035a,0xcad5037b,0xcad6039c,0xcad703de,0xcad80084,0xcadcff49,0xcac90021
+.inst 0xcac900c6,0xcac9016b,0xcac90210,0xcac902b5,0xcadeff69,0xcac4ff9c,0xcadaffde,0xcadbfc84
+.inst 0xcac90042,0xcac900e7,0xcac9018c,0xcac90231,0xcac902d6,0xcac40000,0xcac400a5,0xcac4014a
+.inst 0xcac401ef,0xcac40294,0x4e083f04,0x4e083f29,0xcadc0063,0xcadc0108,0xcadc01ad,0xcadc0339
+.inst 0xcadc02f7,0xcade0084,0xcade0129,0xcade01ce,0xcade0273,0xcade0318,0x8ae6fd9a,0x8aecab3b
+.inst 0x8af8c81c,0x8ae0b0de,0xcada5400,0x8af9e71a,0xcadb5cc6,0xcadc5739,0xcade8b18,0xcada758c
+.inst 0x8ae9bd5a,0x8aeaaa1b,0x8af67c7c,0x8ae3e13e,0xcada6463,0x8af042da,0xcadb9d29,0xcadc4610
+.inst 0xcadea6d6,0xcada194a,0x8ae74dba,0x8aedbe7b,0x8af4bc3c,0x8ae114fe,0xcadaa021,0x8af32a9a
+.inst 0xcadbf8e7,0xcadc1e73,0xcade3294,0xcada1dad,0x8ae5997a,0x8aeb163b,0x8af78c9c,0x8ae424be
+.inst 0xcada4484,0x8af1a6fa,0xcadb54a5,0xcadcd231,0xcade52f7,0xcada496b,0x8ae8c1da,0x8aee09fb
+.inst 0x8af5f05c,0x8ae2e51e,0xcada5c42,0x8aef66ba,0xcadb3908,0xcadcadef,0xcade2eb5,0xcada95ce
+.inst 0xd280003a,0xcada0000,0xcac3901a,0x4e080f18,0x4e080ed9,0xcac960db,0xcacaa19c,0xcad0a33e
+.inst 0xcad64718,0xcac1ff5a,0xcac79b7b,0xcacd4b9c,0xcad337de,0xcad4f318,0xcac4975a,0xcac5237b
+.inst 0xcacb879c,0xcad11bde,0xcad75b18,0xcac20b5a,0xcac8d77b,0xcace139c,0xcacfb3de,0xcad53318
+.inst 0xcadc5356,0xcad6b0c6,0xcad65129,0xcad618e7,0xcad690a5,0xcad6dd08,0xcade5b76,0xcad8739c
+.inst 0xcada53de,0xcadb8718,0xcad6fd8c,0xcad65d4a,0xcad6b5ad,0xcad6796b,0xcad6edce,0xcad8c800
+.inst 0xcad83863,0xcad8cc21,0xcad83484,0xcad8c042,0x4e083f16,0x4e083f38,0xcadcab39,0xcadc0a10
+.inst 0xcadc7673,0xcadc9231,0xcadcf9ef,0xcadee6d6,0xcadea318,0xcadef694,0xcade8ef7,0xcadeb6b5
+.inst 0x8ae911ba,0x8aed823b,0x8af5c01c,0x8ae0013e,0xcadaf000,0x8af1b2ba,0xcadb7129,0xcadc9231
+.inst 0xcade42b5,0xcadad1ad,0x8af8cc3a,0x8ae134bb,0x8aee373c,0x8af9831e,0xcadab739,0x8ae54dda
+.inst 0xcadb0318,0xcadc80a5,0xcade4dce,0xcada8021,0x8aea627a,0x8af37efb,0x8ae274dc,0x8ae6715e
+.inst 0xcada30c6,0x8af7405a,0xcadb254a,0xcadc4ef7,0xcade1c42,0xcada4673,0x8ae340fa,0x8ae7257b
+.inst 0x8aef22dc,0x8af65c7e,0xcada66d6,0x8aeb21fa,0xcadb9c63,0xcadcc16b,0xcade85ef,0xcadabce7
+.inst 0x8af0569a,0x8af42c9b,0x8ae8c19c,0x8aecee1e,0xcadac18c,0x8ae4d51a,0xcadb8210,0xcadc6c84
+.inst 0xcade5508,0xcada0294,0xd290105a,0xcada0000,0xcad93c1a,0x4e080eb8,0x4e080dd9,0xcad8bd3b
+.inst 0xcac101bc,0xcac54e3e,0xcaceb2b5,0xcac64f5a,0xcacadf7b,0xcad38f9c,0xcad793de,0xcac202b5
+.inst 0xcad65f5a,0xcac3037b,0xcac7d39c,0xcacb2fde,0xcacfbeb5,0xcacc5f5a,0xcad0737b,0xcad42f9c
+.inst 0xcac483de,0xcac85eb5,0xcadcef4e,0xcace0129,0xcace4718,0xcace254a,0xcace0063,0xcace9210
+.inst 0xcade6f6e,0xcad5cf9c,0xcada8fde,0xcadb3eb5,0xcace11ad,0xcace1021,0xcace8673,0xcace40e7
+.inst 0xcacee694,0xcad5c000,0xcad58739,0xcad574c6,0xcad566d6,0xcad5658c,0x4e083f0e,0x4e083f35
+.inst 0xcadc8231,0xcadc34a5,0xcadcf2f7,0xcadc556b,0xcadc0084,0xcadeb1ce,0xcade02b5,0xcadeb042
+.inst 0xcadef5ef,0xcade5508,0x8af83e7a,0x8af3897b,0x8ae8e41c,0x8ae0f71e,0xcadad000,0x8aeb651a
+.inst 0xcadb3f18,0xcadcb96b,0xcade2908,0xcada1673,0x8af5e0da,0x8ae6f47b,0x8af42a3c,0x8af1e2be
+.inst 0xcada4231,0x8ae3269a,0xcadb2eb5,0xcadcb463,0xcadefa94,0xcadae8c6,0x8ae13efa,0x8af741fb
+.inst 0x8aec193c,0x8ae9243e,0xcadaa129,0x8aef499a,0xcadb8421,0xcadca1ef,0xcadec58c,0xcada7af7
+.inst 0x8af9f95a,0x8aea30fb,0x8ae4bddc,0x8aeeab3e,0xcada61ce,0x8ae7749a,0xcadbdb39,0xcadcd0e7
+.inst 0xcade9c84,0xcada5d4a,0x8ae5bc5a,0x8ae26edb,0x8af071bc,0x8aed18be,0xcada2dad,0x8af6521a
+.inst 0xcadbd8a5,0xcadc42d6,0xcade7a10,0xcada4442,0xd290115a,0xf2f0001a,0xcada0000,0xcad1001a
+.inst 0x4e080d18,0x4e080e99,0xcad5171b,0xcac6727c,0xcac3057e,0xcad44508,0xcac9ff5a,0xcac1cf7b
+.inst 0xcad7cf9c,0xcacf17de,0xcacc3108,0xcace575a,0xcad9a37b,0xcacae79c,0xcac73fde,0xcac42d08
+.inst 0xcacdfb5a,0xcac5d77b,0xcac2579c,0xcad673de,0xcad08508,0xcadccf54,0xcad4f718,0xcad4e2b5
+.inst 0xcad42821,0xcad45739,0xcad420a5,0xcade3b74,0xcac8139c,0xcadab7de,0xcadb2508,0xcad43e73
+.inst 0xcad4ccc6,0xcad472f7,0xcad4594a,0xcad4e842,0xcac8e400,0xcac8e631,0xcac8e929,0xcac891ce
+.inst 0xcac8edad,0x4e083f08,0x4e083f34,0xcadc896b,0xcadc8463,0xcadc75ef,0xcadc4ce7,0xcadc1ad6
+.inst 0xcade6508,0xcade2294,0xcade358c,0xcade3884,0xcadee210,0x8af582fa,0x8af7c0fb,0x8af0301c
+.inst 0x8ae092be,0xcadaf000,0x8ae7021a,0xcadbc2b5,0xcadcd0e7,0xcade4210,0xcada42f7,0x8af4e93a
+.inst 0x8ae9fb3b,0x8ae2597c,0x8aeb029e,0xcada196b,0x8af9c85a,0xcadb2294,0xcadce339,0xcadea842
+.inst 0xcada4129,0x8ae631fa,0x8aef089b,0x8aedab1c,0x8af8e0de,0xcadaf318,0x8ae441ba,0xcadbc8c6
+.inst 0xcadc1884,0xcade79ad,0xcadab9ef,0x8af1c03a,0x8ae1395b,0x8af6611c,0x8ae80a3e,0xcada3908
+.inst 0x8aeaa2da,0xcadb0a31,0xcadc014a,0xcade9ad6,0xcada2821,0x8ae3f99a,0x8aecc9db,0x8ae5027c
+.inst 0x8af3687e,0xcadaa273,0x8aeed8ba,0xcadb4063,0xcadc29ce,0xcade98a5,0xcada618c,0xd290001a
+.inst 0xf2b0001a,0xf2f0001a,0xcada0000,0xcacbd81a,0x4e080e18,0x4e080c59,0xcad46abb,0xcac902fc
+.inst 0xcad9c8fe,0xcac20210,0xcad80b5a,0xcac6bb7b,0xcacf0b9c,0xcac4c3de,0xcacd8210,0xcac87b5a
+.inst 0xcad1037b,0xcac1c39c,0xcaca4bde,0xcad6aa10,0xcad3db5a,0xcac3037b,0xcacc8b9c,0xcace83de
+.inst 0xcac5aa10,0xcadcef42,0xcac292b5,0xcac22a94,0xcac2d8c6,0xcac29231,0xcac29063,0xcadebf62
+.inst 0xcad03f9c,0xcadacfde,0xcadb3e10,0xcac282f7,0xcac28129,0xcac279ef,0xcac2c021,0xcac2f98c
+.inst 0xcad03000,0xcad0596b,0xcad02b18,0xcad0b908,0xcad05a73,0x4e083f02,0x4e083f30,0xcadcc0e7
+.inst 0xcadcfb39,0xcadc0084,0xcadc794a,0xcadc41ce,0xcade0042,0xcade0210,0xcade81ad,0xcade5ad6
+.inst 0xcade58a5,0x8af4ddfa,0x8aef295b,0x8ae5a01c,0x8ae0da9e,0xcada4c00,0x8aea84ba,0xcadbfe94
+.inst 0xcadcdd4a,0xcade88a5,0xcada55ef,0x8af0e71a,0x8af8423b,0x8aecc4fc,0x8ae7e21e,0xcada3ce7
+.inst 0x8af1399a,0xcadbde10,0xcadc0631,0xcade5d8c,0xcada8b18,0x8ae94c9a,0x8ae4d6db,0x8af326bc
+.inst 0x8af5953e,0xcada22b5,0x8af62a7a,0xcadbe129,0xcadcb6d6,0xcade4a73,0xcada0484,0x8aeb48da
+.inst 0x8ae68c3b,0x8aee0c5c,0x8ae27d7e,0xcada3c42,0x8ae1a5da,0xcadb2d6b,0xcadc5021,0xcade79ce
+.inst 0xcadad0c6,0x8af909ba,0x8aed411b,0x8ae372fc,0x8af7df3e,0xcada1ef7,0x8ae86c7a,0xcadbbb39
+.inst 0xcadc2508,0xcadeb463,0xcada55ad,0xd290117a,0xcada0000,0xcac7c01a,0x4e080cb8,0x4e080d99
+.inst 0xcad0ba9b,0xcad8b1fc,0xcad1995e,0xcacce4a5,0xcad56f5a,0xcac9b37b,0xcac4439c,0xcad697de
+.inst 0xcad3f0a5,0xcac2c75a,0xcacb237b,0xcac6b79c,0xcac153de,0xcace30a5,0xcad7fb5a,0xcad9f77b
+.inst 0xcacdcb9c,0xcac8b3de,0xcac3c8a5,0xcadc4b4c,0xcaccda94,0xcacc2210,0xcacc2929,0xcaccb96b
+.inst 0xcacce739,0xcadefb6c,0xcac5539c,0xcadadbde,0xcadb84a5,0xcaccddef,0xcacc2f18,0xcacc9c84
+.inst 0xcacc28c6,0xcacc15ad,0xcac5a000,0xcac5e0e7,0xcac536b5,0xcac5dc42,0xcac5aaf7,0x4e083f05
+.inst 0x4e083f2c,0xcadc294a,0xcadc9231,0xcadc96d6,0xcadcd821,0xcadc7908,0xcade84a5,0xcadea18c
+.inst 0xcade9673,0xcade55ce,0xcadebc63,0x8af0509a,0x8ae4c03b,0x8ae3301c,0x8ae0d21e,0xcadae000
+.inst 0x8ae1f07a,0xcadbf210,0xcadce021,0xcade0063,0xcada5084,0x8aecd6ba,0x8af5cd7b,0x8aed6d5c
+.inst 0x8aea819e,0xcadaad4a,0x8aeb75ba,0xcadb618c,0xcadc216b,0xcade15ad,0xcadac2b5,0x8af892da
+.inst 0x8af6a5db,0x8af78e9c,0x8af4431e,0xcada3294,0x8aee02fa,0xcadbcf18,0xcadc75ce,0xcade36f7
+.inst 0xcada5ed6,0x8ae7813a,0x8ae9ecdb,0x8ae8c0bc,0x8ae504fe,0xcada7ca5,0x8ae6d11a,0xcadb94e7
+.inst 0xcadc70c6,0xcade3d08,0xcada4529,0x8af1ee7a,0x8af3d45b,0x8af9c1fc,0x8aef763e,0xcadaa1ef
+.inst 0x8ae20f3a,0xcadb4231,0xcadc3442,0xcadecf39,0xcada2273,0xd280003a,0xf2b0001a,0xcada0000
+.inst 0xcacab41a,0x4e080c78,0x4e080db9,0xcacc061b,0xcad5809c,0xcacb743e,0xcacdf063,0xcad4275a
+.inst 0xcad8b77b,0xcad6779c,0xcace93de,0xcad78063,0xcac5375a,0xcac7037b,0xcac9d39c,0xcac6a7de
+.inst 0xcac8c463,0xcacf575a,0xcad1b37b,0xcad3179c,0xcac203de,0xcad9e463,0xcadcdf4d,0xcacdd210
+.inst 0xcacdcd8c,0xcacd1f18,0xcacdd0e7,0xcacd2231,0xcadeef6d,0xcac34f9c,0xcadadfde,0xcadbfc63
+.inst 0xcacd5084,0xcacdd2b5,0xcacdded6,0xcacd8129,0xcacd3e73,0xcac33000,0xcac37d4a,0xcac30e94
+.inst 0xcac3fca5,0xcac3ddef,0x4e083f03,0x4e083f2d,0xcadcc021,0xcadc4d6b,0xcadc31ce,0xcadc1cc6
+.inst 0xcadcc042,0xcadef063,0xcade01ad,0xcade72f7,0xcade2d08,0xcade0f39,0x8aecdeda,0x8af638db
+.inst 0x8af9dc1c,0x8ae07d9e,0xcadaa800,0x8ae6973a,0xcadbed8c,0xcadc90c6,0xcadeab39,0xcada36d6
+.inst 0x8aedba9a,0x8af49cfb,0x8af3503c,0x8ae1e1be,0xcada6821,0x8ae77e7a,0xcadbadad,0xcadc34e7
+.inst 0xcaded273,0xcadaea94,0x8af5fdda,0x8aee791b,0x8aefe21c,0x8af0e6be,0xcada2210,0x8ae8c9fa
+.inst 0xcadb8eb5,0xcadc5908,0xcade3def,0xcadac1ce,0x8aea6b1a,0x8af8493b,0x8ae27c7c,0x8ae3a15e
+.inst 0xcadaf863,0x8ae9345a,0xcadb514a,0xcadc5129,0xcadee442,0xcada8718,0x8aeba6fa,0x8af784bb
+.inst 0x8af1f09c,0x8ae4317e,0xcada2c84,0x8ae5ba3a,0xcadbd96b,0xcadc58a5,0xcadee231,0xcadac6f7
+.inst 0xd290103a,0xf2b0001a,0xf2f0001a,0xcada0000,0xcac1b01a,0x4e080f38,0x4e080e79,0xcacd4d9b
+.inst 0xcad472dc,0xcac70cde,0xcad32739,0xcad02f5a,0xcad5c77b,0xcacea79c,0xcac867de,0xcacf3339
+.inst 0xcac3c75a,0xcacaa37b,0xcad8179c,0xcac907de,0xcac26739,0xcac4eb5a,0xcacb377b,0xcad76f9c
+.inst 0xcac523de,0xcad1ff39,0xcadca753,0xcad37d8c,0xcad331ad,0xcad3bab5,0xcad3dd4a,0xcad3496b
+.inst 0xcadeeb73,0xcad9339c,0xcada8fde,0xcadba739,0xcad3ded6,0xcad36e94,0xcad339ce,0xcad3cb18
+.inst 0xcad372f7,0xcad9dc00,0xcad92c21,0xcad9b210,0xcad91863,0xcad9f484,0x4e083f13,0x4e083f39
+.inst 0xcadc38c6,0xcadc2ce7,0xcadcd508,0xcadc3529,0xcadc18a5,0xcade9673,0xcade7339,0xcade65ef
+.inst 0xcade3042,0xcade9a31,0x8aed81da,0x8aee813b,0x8af1a01c,0x8ae0e1be,0xcadaa000,0x8ae9823a
+.inst 0xcadb01ad,0xcadce129,0xcade8231,0xcada01ce,0x8af9921a,0x8af0b15b,0x8af720dc,0x8ae6533e
+.inst 0xcada20c6,0x8aea52fa,0xcadbc339,0xcadc914a,0xcade92f7,0xcada0210,0x8af4911a,0x8ae8505b
+.inst 0x8ae4219c,0x8aec829e,0xcadaf18c,0x8ae2809a,0xcadb2294,0xcadc6042,0xcade6084,0xcada3108
+.inst 0x8ae102ba,0x8af5a31b,0x8ae5427c,0x8af3503e,0xcadab273,0x8af8d0ba,0xcadb6021,0xcadcf318
+.inst 0xcade70a5,0xcada92b5,0x8ae731fa,0x8aef507b,0x8aeb02dc,0x8af610fe,0xcadac2d6,0x8ae3717a
+.inst 0xcadb80e7,0xcadc9063,0xcadef16b,0xcada41ef,0xd290013a,0xf2f0001a,0xcada0000,0xcac6001a
+.inst 0x4e080e38,0x4e080ef9,0xcad991bb,0xcad081dc,0xcaca513e,0xcad78231,0xcacc835a,0xcad4e37b
+.inst 0xcac8d39c,0xcac203de,0xcac40231,0xcad3735a,0xcac1037b,0xcad5839c,0xcad863de,0xcac51231
+.inst 0xcad6b35a,0xcac7837b,0xcacfd39c,0xcac303de,0xcacb1231,0xcadc9f57,0xcad7e1ad,0xcad75339
+.inst 0xcad70294,0xcad7e021,0xcad760e7,0xcadeff77,0xcad1ff9c,0xcadadfde,0xcadb7e31,0xcad781ce
+.inst 0xcad70210,0xcad7b108,0xcad702b5,0xcad7b1ef,0xcad1a000,0xcad1a0c6,0xcad1218c,0xcad13273
+.inst 0xcad1f2d6,0x4e083f11,0x4e083f37,0xcadc8129,0xcadc314a,0xcadc8042,0xcadc2318,0xcadc8063
+.inst 0xcade8231,0xcade02f7,0xcade8084,0xcade70a5,0xcade716b,0x8af93d1a,0x8ae89b1b,0x8aeb781c
+.inst 0x8ae0033e,0xcadac400,0x8af8b57a,0xcadb2f39,0xcadcd718,0xcade896b,0xcadab508,0x8af75d9a
+.inst 0x8aec083b,0x8aefcd3c,0x8ae9e2fe,0xcadac529,0x8ae1f1fa,0xcadb9ef7,0xcadc4421,0xcade55ef
+.inst 0xcada098c,0x8af04c5a,0x8ae22cbb,0x8af64dbc,0x8aed161e,0xcadaa1ad,0x8ae52ada,0xcadb8a10
+.inst 0xcadc8ca5,0xcadea2d6,0xcadaac42,0x8ae69a9a,0x8af4f6bb,0x8ae30e3c,0x8af1c4de,0xcadaa631
+.inst 0x8af5a47a,0xcadb74c6,0xcadc52b5,0xcade3063,0xcada6a94,0x8aea909a,0x8ae43a7b,0x8ae7f1dc
+.inst 0x8aee155e,0xcada5dce,0x8af334fa,0xcadb394a,0xcadcde73,0xcadefce7,0xcada9484,0xd280115a
+.inst 0xcada0000,0xcac9b01a,0x4e080d78,0x4e080df9,0xcad7d33b,0xcaccb11c,0xcac1431e,0xcacf056b
+.inst 0xcacd1f5a,0xcad00b7b,0xcac2fb9c,0xcac567de,0xcad6f16b,0xcad1375a,0xcac6737b,0xcad4179c
+.inst 0xcad5bbde,0xcac3c96b,0xcaceab5a,0xcaca977b,0xcac4439c,0xcad3a3de,0xcac7216b,0xcadcc34f
+.inst 0xcacf0339,0xcacf32f7,0xcacffa10,0xcacf90c6,0xcacf6d4a,0xcade2b6f,0xcacbb39c,0xcadad3de
+.inst 0xcadb856b,0xcacf3d08,0xcacf8d8c,0xcacf4442,0xcacf2a94,0xcacffc84,0xcacb7800,0xcacbc929
+.inst 0xcacb5dad,0xcacb4631,0xcacbd1ce,0x4e083f0b,0x4e083f2f,0xcadc9b18,0xcadc5821,0xcadc34a5
+.inst 0xcadce2b5,0xcadcfa73,0xcadeb56b,0xcadeb1ef,0xcadec6d6,0xcadeec63,0xcade94e7,0x8af7105a
+.inst 0x8ae282bb,0x8ae7601c,0x8ae0e2fe,0xcada1000,0x8af530fa,0xcadb72f7,0xcadc72b5,0xcadec0e7
+.inst 0xcada5042,0x8aef1dba,0x8aed54db,0x8ae4571c,0x8af891fe,0xcada5718,0x8ae6ac9a,0xcadb91ef
+.inst 0xcadc00c6,0xcade1c84,0xcada01ad,0x8aec30ba,0x8ae50c7b,0x8aee673c,0x8af9a19e,0xcada3339
+.inst 0x8ae3c1da,0xcadbc58c,0xcadcdc63,0xcadefdce,0xcada34a5,0x8ae9421a,0x8af0469b,0x8af3e17c
+.inst 0x8aebed3e,0xcadad56b,0x8af4b27a,0xcadb7d29,0xcadc7294,0xcade3673,0xcada0e10,0x8ae1c6da
+.inst 0x8af63e3b,0x8aeac11c,0x8ae83c3e,0xcada0108,0x8af1055a,0xcadb0021,0xcadc3e31,0xcade054a
+.inst 0xcadac2d6,0xd280111a,0xcada0000,0xcad8bc1a,0x4e080cf8,0x4e080c99,0xcacf0efb,0xcacd005c
+.inst 0xcac62ebe,0xcac4b0e7,0xcad9ff5a,0xcacc3f7b,0xcac51f9c,0xcac393de,0xcace00e7,0xcacb0f5a
+.inst 0xcac9037b,0xcad0d39c,0xcad40fde,0xcad38ce7,0xcac8cf5a,0xcac1737b,0xcad6bf9c,0xcad103de
+.inst 0xcaca2ce7,0xcadc0f44,0xcac4e2f7,0xcac4d5ef,0xcac4a58c,0xcac4e129,0xcac47021,0xcade6f64
+.inst 0xcac74f9c,0xcada6fde,0xcadbbce7,0xcac41042,0xcac411ad,0xcac4f4a5,0xcac44210,0xcac456d6
+.inst 0xcac76000,0xcac7a718,0xcac76739,0xcac7556b,0xcac79508,0x4e083f04,0x4e083f27,0xcadc82b5
+.inst 0xcadc54c6,0xcadcf063,0xcadc7694,0xcadc8231,0xcade3084,0xcade80e7,0xcade31ce,0xcadea673
+.inst 0xcade054a,0x8aeffcba,0x8ae53a9b,0x8aea541c,0x8ae085fe,0xcada8000,0x8af4f55a,0xcadbcdef
+.inst 0xcadcba94,0xcade294a,0xcadad4a5,0x8ae7d33a,0x8af9853b,0x8af6babc,0x8af560fe,0xcadad2b5
+.inst 0x8ae996da,0xcadbace7,0xcadcb529,0xcadeead6,0xcadaeb39,0x8aed3c7a,0x8ae3f27b,0x8ae86afc
+.inst 0x8af725be,0xcadaa2f7,0x8af3491a,0xcadbd5ad,0xcadc5273,0xcade7508,0xcadac863,0x8af8f99a
+.inst 0x8aec921b,0x8af1bc9c,0x8ae4cb1e,0xcada4084,0x8af0f63a,0xcadb7b18,0xcadc5210,0xcade7e31
+.inst 0xcada7d8c,0x8ae61dda,0x8aee5d7b,0x8ae1705c,0x8ae238de,0xcadaac42,0x8aebe03a,0xcadb88c6
+.inst 0xcadcb16b,0xcade5821,0xcadac5ce,0xd290013a,0xf2b0001a,0xcada0000,0xcad5201a,0x4e080d58
+.inst 0x4e080ed9,0xcac745fb,0xcad970bc,0xcac9269e,0xcad6854a,0xcad71f5a,0xcacd7f7b,0xcac33f9c
+.inst 0xcad387de,0xcac8314a,0xcac4f75a,0xcad8b37b,0xcaccb79c,0xcad05fde,0xcad15d4a,0xcac21b5a
+.inst 0xcac6677b,0xcace479c,0xcacb23de,0xcac1354a,0xcadc7f56,0xcad685ef,0xcad640e7,0xcad609ad
+.inst 0xcad6d718,0xcad620c6,0xcadecb76,0xcacad39c,0xcadab7de,0xcadb254a,0xcad6fca5,0xcad68f39
+.inst 0xcad6c063,0xcad6498c,0xcad6b9ce,0xcaca5400,0xcaca36b5,0xcaca3af7,0xcaca6084,0xcaca3c42
+.inst 0x4e083f0a,0x4e083f36,0xcadc3a94,0xcadc1529,0xcadcb673,0xcadcde10,0xcadc196b,0xcadef54a
+.inst 0xcade72d6,0xcadec508,0xcade9a31,0xcadec021,0x8ae7007a,0x8ae3c21b,0x8ae1501c,0x8ae0f0fe
+.inst 0xcada1000,0x8af0003a,0xcadb40e7,0xcadcb210,0xcadec021,0xcada4063,0x8af67afa,0x8af79b1b
+.inst 0x8aeefa9c,0x8af452de,0xcada3a94,0x8af8a9da,0xcadbf2d6,0xcadc6318,0xcadeb9ce,0xcadac2f7
+.inst 0x8af9727a,0x8af3da3b,0x8ae259fc,0x8aefa33e,0xcadaf1ef,0x8af1c05a,0xcadbbb39,0xcadcea31
+.inst 0xcade0842,0xcada6a73,0x8af5c1ba,0x8aedd99b,0x8aeba15c,0x8aea5abe,0xcadae94a,0x8aec717a
+.inst 0xcadb6ab5,0xcadcf18c,0xcade096b,0xcadab9ad,0x8ae9a91a,0x8ae8989b,0x8ae650bc,0x8ae5f93e
+.inst 0xcada60a5,0x8ae478da,0xcadbc129,0xcadc3884,0xcadeb8c6,0xcadaf108,0xd280015a,0xf2b0001a
+.inst 0xcada0000,0xcad4d81a,0x4e080c38,0x4e080dd9,0xcad678fb,0xcad7007c,0xcad82a1e,0xcace8021
+.inst 0xcacf7b5a,0xcad9cb7b,0xcad35b9c,0xcad143de,0xcac28021,0xcacaeb5a,0xcad5837b,0xcacdc39c
+.inst 0xcaccabde,0xcacb3821,0xcac58b5a,0xcac9837b,0xcac8db9c,0xcac403de,0xcac68821,0xcadc0f4e
+.inst 0xcacef0e7,0xcace7ad6,0xcace2b39,0xcace72b5,0xcace7129,0xcade3f6e,0xcac13f9c,0xcadaafde
+.inst 0xcadbbc21,0xcace0063,0xcace02f7,0xcaceaa73,0xcace41ad,0xcace2908,0xcac15000,0xcac17a94
+.inst 0xcac1d9ef,0xcac1694a,0xcac1c8a5,0x4e083f01,0x4e083f2e,0xcadcc210,0xcadc9b18,0xcadc8231
+.inst 0xcadc198c,0xcadcc084,0xcade0021,0xcade81ce,0xcade8042,0xcadec96b,0xcade78c6,0x8af61e7a
+.inst 0x8af3199b,0x8ae6a01c,0x8ae02ade,0xcadabc00,0x8aec04da,0xcadbced6,0xcadc5d8c,0xcade38c6
+.inst 0xcadae673,0x8aee15fa,0x8aef92bb,0x8ae8161c,0x8af061de,0xcada8e10,0x8af5e91a,0xcadb5dce
+.inst 0xcadc06b5,0xcade8d08,0xcada89ef,0x8af7ce3a,0x8af1c57b,0x8ae534fc,0x8ae716fe,0xcada20e7
+.inst 0x8aeb28ba,0xcadb72f7,0xcadca56b,0xcadeb8a5,0xcada1631,0x8af49b3a,0x8af91dbb,0x8ae48c3c
+.inst 0x8ae19e9e,0xcadacc21,0x8aed249a,0xcadb4e94,0xcadc51ad,0xcaded884,0xcadac339,0x8af8685a
+.inst 0x8ae2f15b,0x8ae9707c,0x8ae37f1e,0xcada1c63,0x8aeabd3a,0xcadbab18,0xcadcd54a,0xcade1529
+.inst 0xcada5442,0xd290117a,0xf2b0001a,0xcada0000,0xcad0e01a,0x4e080cd8,0x4e080d19,0xcaceaadb
+.inst 0xcacfb27c,0xcad5399e,0xcac854c6,0xcac70f5a,0xcad7237b,0xcad1739c,0xcacbc7de,0xcac5a0c6
+.inst 0xcac1e75a,0xcad4737b,0xcad9f79c,0xcacdf3de,0xcac4d0c6,0xcac31b5a,0xcad8c77b,0xcac27b9c
+.inst 0xcacaa3de,0xcac9e8c6,0xcadcbb48,0xcac82ad6,0xcac881ce,0xcac80af7,0xcac8ba94,0xcac86718
+.inst 0xcadecb68,0xcac6e39c,0xcada5bde,0xcadb34c6,0xcac81e73,0xcac86def,0xcac8ae31,0xcac82b39
+.inst 0xcac8a442,0xcac6a000,0xcac6c210,0xcac694e7,0xcac6bc21,0xcac68863,0x4e083f06,0x4e083f28
+.inst 0xcadc198c,0xcadce2b5,0xcadc556b,0xcadc29ad,0xcadc794a,0xcade04c6,0xcadeb108,0xcade64a5
+.inst 0xcade3484,0xcade1d29,0x8aee523a,0x8af141bb,0x8ae9501c,0x8ae031de,0xcada8000,0x8aedf13a
+.inst 0xcadb71ce,0xcadcc1ad,0xcade8129,0xcadad231,0x8ae8a4fa,0x8ae76e9b,0x8ae20d9c,0x8aec911e
+.inst 0xcadacd8c,0x8af4545a,0xcadbf108,0xcadca294,0xcade6442,0xcada40e7,0x8aef517a,0x8aebb49b
+.inst 0x8ae3fedc,0x8af681fe,0xcada32d6,0x8ae4807a,0xcadbfdef,0xcadc8484,0xcade8463,0xcadacd6b
+.inst 0x8af082fa,0x8af75f3b,0x8aea30dc,0x8ae6e61e,0xcada9cc6,0x8af9115a,0xcadb2610,0xcadcc339
+.inst 0xcadeed4a,0xcada96f7,0x8af55cba,0x8ae5643b,0x8af8d27c,0x8af3c6be,0xcadae273,0x8ae1af1a
+.inst 0xcadb42b5,0xcadc8421,0xcade6f18,0xcadaf0a5,0xd280117a,0xf2f0001a,0xcada0000,0xcacc341a
+.inst 0x4e080d38,0x4e080c59,0xcac8d5db,0xcac7823c,0xcad455be,0xcac2f129,0xcad6d75a,0xcacf877b
+.inst 0xcacb879c,0xcac413de,0xcac38129,0xcac6375a,0xcad0837b,0xcad7539c,0xcad937de,0xcaca1529
+.inst 0xcad3c75a,0xcad5337b,0xcac5279c,0xcac103de,0xcad84529,0xcadc7f42,0xcac231ce,0xcac25d08
+.inst 0xcac2adef,0xcac2b210,0xcac202b5,0xcade6f62,0xcac9cf9c,0xcadabfde,0xcadb7d29,0xcac25231
+.inst 0xcac2d0e7,0xcac2cd6b,0xcac202f7,0xcac22ca5,0xcac95000,0xcac91d8c,0xcac97ed6,0xcac91cc6
+.inst 0xcac98e73,0x4e083f02,0x4e083f29,0xcadc41ad,0xcadcee94,0xcadc3084,0xcadc0f39,0xcadc4021
+.inst 0xcadef042,0xcade0129,0xcade7063,0xcadedd4a,0xcadeaf18,0x8ae89d7a,0x8aeb3b3b,0x8af85c1c
+.inst 0x8ae00d1e,0xcada5800,0x8af9c71a,0xcadb2d08,0xcadce339,0xcade9b18,0xcada056b,0x8ae92ada
+.inst 0x8af62e1b,0x8ae5e1bc,0x8aede13e,0xcadaf9ad,0x8af0ecba,0xcadbad29,0xcadc3610,0xcade40a5
+.inst 0xcadaead6,0x8ae7fc9a,0x8ae4a95b,0x8af3b1dc,0x8aeee4fe,0xcada21ce,0x8aeaca7a,0xcadb5ce7
+.inst 0xcadc894a,0xcade6e73,0xcada9084,0x8aec79fa,0x8aef9afb,0x8ae17c5c,0x8ae2419e,0xcada4842
+.inst 0x8af7343a,0xcadbf18c,0xcadc52f7,0xcade4421,0xcada35ef,0x8af4847a,0x8ae3a4db,0x8af5723c
+.inst 0x8af1d29e,0xcadaae31,0x8ae69aba,0xcadbda94,0xcadcf8c6,0xcadec2b5,0xcadac463,0xd290113a
+.inst 0xf2f0001a,0xcada0000,0xcacdd01a,0x4e080f18,0x4e080cb9,0xcac9fd1b,0xcad6717c,0xcad07f3e
+.inst 0xcac55718,0xcacecf5a,0xcac7f77b,0xcac4979c,0xcaca27de,0xcad32318,0xcac2e75a,0xcaccb37b
+.inst 0xcacfd79c,0xcad777de,0xcac10718,0xcad18b5a,0xcad4c77b,0xcac3df9c,0xcac673de,0xcad59f18
+.inst 0xcadc5745,0xcac50d08,0xcac51129,0xcac518e7,0xcac55d8c,0xcac54a94,0xcade2b65,0xcad8039c
+.inst 0xcadadfde,0xcadb9718,0xcac59d6b,0xcac52ed6,0xcac50884,0xcac5c9ef,0xcac5c063,0xcad85c00
+.inst 0xcad88dad,0xcad891ce,0xcad87842,0xcad8d631,0x4e083f05,0x4e083f38,0xcadc3b39,0xcadcbe10
+.inst 0xcadc154a,0xcadcc6f7,0xcadcc8c6,0xcadec4a5,0xcade7318,0xcadea673,0xcadec021,0xcade2ab5
+.inst 0x8ae9009a,0x8ae402fb,0x8af5c01c,0x8ae0c13e,0xcada4000,0x8af782ba,0xcadb0129,0xcadcc2f7
+.inst 0xcade82b5,0xcada8084,0x8af8a1da,0x8aeed19b,0x8ae3933c,0x8af9531e,0xcada1339,0x8aecb07a
+.inst 0xcadb9318,0xcadcc18c,0xcade2063,0xcada81ce,0x8af6d15a,0x8aeaa03b,0x8af1511c,0x8ae842de
+.inst 0xcadaf108,0x8ae1023a,0xcadb92d6,0xcadcb021,0xcade7231,0xcada614a,0x8aed80fa,0x8ae7d1fb
+.inst 0x8ae6c0bc,0x8ae5b1be,0xcadad0a5,0x8aef40da,0xcadbb1ad,0xcadc01ef,0xcade90c6,0xcadaf0e7
+.inst 0x8af0e27a,0x8af3a05b,0x8af4517c,0x8aeba21e,0xcada816b,0x8ae2929a,0xcadb8210,0xcadc2042
+.inst 0xcade1294,0xcadad273,0xd290007a,0xf2f0001a,0xcada0000,0xcad9b01a,0x4e080eb8,0x4e080c79
+.inst 0xcad8213b,0xcace809c,0xcaccb2fe,0xcac382b5,0xcac8f35a,0xcad6737b,0xcacaa39c,0xcac103de
+.inst 0xcad182b5,0xcac5f35a,0xcacd037b,0xcac7839c,0xcacfb3de,0xcac6f2b5,0xcacb635a,0xcad0837b
+.inst 0xcad3a39c,0xcac203de,0xcad4f2b5,0xcadc3f43,0xcac3c129,0xcac3a318,0xcac352d6,0xcac3c1ad
+.inst 0xcac34210,0xcadeff63,0xcad57f9c,0xcadabfde,0xcadb7eb5,0xcac30084,0xcac381ce,0xcac3614a
+.inst 0xcac380e7,0xcac36273,0xcad5c000,0xcad51339,0xcad5d108,0xcad5d0a5,0xcad5616b,0x4e083f03
+.inst 0x4e083f35,0xcadc02f7,0xcadc518c,0xcadc0021,0xcadc51ef,0xcadc0042,0xcade8063,0xcade02b5
+.inst 0xcade0231,0xcade90c6,0xcade9294,0x8af87d5a,0x8aea99fb,0x8af4781c,0x8ae0531e,0xcada3400
+.inst 0x8aef269a,0xcadbef18,0xcadc65ef,0xcade3a94,0xcada454a,0x8af50d1a,0x8ae859bb,0x8af31efc
+.inst 0x8af7e2be,0xcada16f7,0x8aeda27a,0xcadb9eb5,0xcadc45ad,0xcade0673,0xcada0908,0x8aeecc3a
+.inst 0x8ae14cdb,0x8aebdd3c,0x8ae995de,0xcadaa129,0x8ae6797a,0xcadbe9ce,0xcadcacc6,0xcade916b
+.inst 0xcada3c21,0x8af99ada,0x8af604fb,0x8ae20c7c,0x8ae3373e,0xcada3463,0x8ae7245a,0xcadb6739
+.inst 0xcadcd0e7,0xcadec042,0xcadadad6,0x8aec723a,0x8af158bb,0x8af0709c,0x8ae4359e,0xcada5c84
+.inst 0x8ae5961a,0xcadb398c,0xcadcfca5,0xcade5e10,0xcada1631,0xd290005a,0xf2f0001a,0xcada0000
+.inst 0xcad7d01a,0x4e080e98,0x4e080e79,0xcad5431b,0xcac8b15c,0xcacdf1fe,0xcad37694,0xcac93f5a
+.inst 0xcacefb7b,0xcac1ab9c,0xcac6f7de,0xcacba294,0xcac3575a,0xcad9737b,0xcad6579c,0xcac7ebde
+.inst 0xcac2ea94,0xcac44b5a,0xcacc677b,0xcad1739c,0xcac5b3de,0xcad04294,0xcadc3353,0xcad35318
+.inst 0xcad312b5,0xcad359ce,0xcad3e339,0xcad3ed8c,0xcadeeb73,0xcad4439c,0xcada63de,0xcadb3694
+.inst 0xcad37d4a,0xcad3cd08,0xcad3d421,0xcad32ad6,0xcad30e31,0xcad47800,0xcad4aaf7,0xcad43d29
+.inst 0xcad42463,0xcad43084,0x4e083f13,0x4e083f34,0xcadc99ef,0xcadca9ad,0xcadca4c6,0xcadcb0e7
+.inst 0xcadce8a5,0xcade2673,0xcadeb294,0xcade856b,0xcade3c42,0xcadee610,0x8af5103a,0x8ae100fb
+.inst 0x8af0801c,0x8ae0c2be,0xcada3000,0x8ae7b21a,0xcadbf2b5,0xcadcd0e7,0xcadec210,0xcada5021
+.inst 0x8af46d3a,0x8ae9c73b,0x8af185fc,0x8aef929e,0xcada05ef,0x8af9be3a,0xcadbd294,0xcadcc339
+.inst 0xcadeee31,0xcada8129,0x8ae8a0da,0x8ae6ec5b,0x8ae4571c,0x8af8e11e,0xcada8318,0x8ae2409a
+.inst 0xcadb7508,0xcadc6c42,0xcadecc84,0xcadad4c6,0x8af7c1da,0x8aee36db,0x8ae5627c,0x8af3cefe
+.inst 0xcada7673,0x8af6e0ba,0xcadb0ef7,0xcadcc2d6,0xcaded4a5,0xcadaedce,0x8aed357a,0x8aebcc7b
+.inst 0x8aecd15c,0x8aea8dbe,0xcada414a,0x8ae3a59a,0xcadb01ad,0xcadc8c63,0xcadea58c,0xcada916b
+.inst 0xd280101a,0xf2f0001a,0xcada0000,0xcacf2c1a,0x4e080e18,0x4e080e39,0xcad45ebb,0xcac9003c
+.inst 0xcad93cfe,0xcad13210,0xcad8af5a,0xcac88f7b,0xcac6ff9c,0xcac213de,0xcac48210,0xcad30f5a
+.inst 0xcad7037b,0xcace539c,0xcad61fde,0xcac5ee10,0xcaca3f5a,0xcacd737b,0xcacb4f9c,0xcac383de
+.inst 0xcacc8e10,0xcadc2f51,0xcad1c2b5,0xcad16694,0xcad13508,0xcad1c2f7,0xcad151ad,0xcadeef71
+.inst 0xcad04f9c,0xcadacfde,0xcadbbe10,0xcad11021,0xcad11129,0xcad114c6,0xcad1c1ce,0xcad1c56b
+.inst 0xcad08000,0xcad055ef,0xcad0d718,0xcad07673,0xcad0454a,0x4e083f10,0x4e083f31,0xcadc00e7
+.inst 0xcadcc739,0xcadcf042,0xcadce6d6,0xcadc8063,0xcadeb210,0xcade8231,0xcade3084,0xcadec4a5
+.inst 0xcade258c,0x8af46cda,0x8ae68adb,0x8aecd41c,0x8ae0169e,0xcada8000,0x8af6259a,0xcadb0e94
+.inst 0xcadc0ad6,0xcade198c,0xcada54c6,0x8af1c31a,0x8af816fb,0x8aebc8fc,0x8ae7623e,0xcadae0e7
+.inst 0x8af7057a,0xcadb2e31,0xcadc36f7,0xcaded96b,0xcadaeb18,0x8ae93c5a,0x8ae290bb,0x8aeababc
+.inst 0x8af5253e,0xcadaa2b5,0x8ae5595a,0xcadb3529,0xcadcf0a5,0xcade254a,0xcada1842,0x8aeff91a
+.inst 0x8ae861db,0x8ae3be1c,0x8af079fe,0xcada9210,0x8aee747a,0xcadba9ef,0xcadcd1ce,0xcadecc63
+.inst 0xcada2d08,0x8af92c9a,0x8ae4fe7b,0x8aed703c,0x8ae1ab3e,0xcada2c21,0x8af3c1ba,0xcadbdb39
+.inst 0xcadcd273,0xcadee9ad,0xcada4484,0xd290015a,0xcada0000,0xcac7c01a,0x4e080d98,0x4e080d79
+.inst 0xcad1769b,0xcad820dc,0xcad796de,0xcacbb58c,0xcad53f5a,0xcac92f7b,0xcac25f9c,0xcac557de
+.inst 0xcaca218c,0xcad0175a,0xcacfb37b,0xcac8279c,0xcace4fde,0xcac3fd8c,0xcac13b5a,0xcad9a77b
+.inst 0xcac4e79c,0xcad373de,0xcacdd58c,0xcadc7f4b,0xcacb1694,0xcacba231,0xcacbe929,0xcacb65ef
+.inst 0xcacb7339,0xcade0b6b,0xcacc539c,0xcada07de,0xcadb158c,0xcacb6cc6,0xcacb4f18,0xcacb1042
+.inst 0xcacb4908,0xcacb8884,0xcaccd400,0xcacc14e7,0xcacc9ab5,0xcaccc210,0xcacc9c21,0x4e083f0b
+.inst 0x4e083f2c,0xcadc8ad6,0xcadcf6f7,0xcadc34a5,0xcadc3dce,0xcadc1a73,0xcade256b,0xcade718c
+.inst 0xcade054a,0xcade2863,0xcade51ad,0x8af1805a,0x8ae241db,0x8aed701c,0x8ae0523e,0xcada3000
+.inst 0x8aee81ba,0xcadb4231,0xcadc11ce,0xcade41ad,0xcada4042,0x8aec0aba,0x8af549fb,0x8ae4eadc
+.inst 0x8af6519e,0xcadaaad6,0x8aef789a,0xcadbb18c,0xcadca1ef,0xcadec884,0xcada42b5,0x8af8a0ba
+.inst 0x8ae5387b,0x8ae10a9c,0x8af4631e,0xcada0294,0x8ae3c03a,0xcadb2b18,0xcadc3863,0xcade9821
+.inst 0xcada08a5,0x8ae7413a,0x8ae9891b,0x8af3217c,0x8aeb38fe,0xcada896b,0x8ae8e27a,0xcadb38e7
+.inst 0xcadc0108,0xcadeaa73,0xcada9929,0x8af7595a,0x8aeaea1b,0x8af900dc,0x8ae6dafe,0xcadad0c6
+.inst 0x8af0eb3a,0xcadbc2f7,0xcadc1a10,0xcade2b39,0xcada314a,0xd280015a,0xf2b0001a,0xf2f0001a
+.inst 0xcada0000,0xcad6881a,0x4e080db8,0x4e080c99,0xcacc8a3b,0xcad5005c,0xcacff9de,0xcac401ad
+.inst 0xcad4eb5a,0xcad8db7b,0xcac5bb9c,0xcac3c3de,0xcac181ad,0xcacb6b5a,0xcac7837b,0xcac9c39c
+.inst 0xcac87bde,0xcad319ad,0xcac68b5a,0xcad7037b,0xcaca2b9c,0xcad083de,0xcad919ad,0xcadc2f44
+.inst 0xcac45231,0xcac4c98c,0xcac47b18,0xcac4d0e7,0xcac452f7,0xcade3f64,0xcacd3f9c,0xcada0fde
+.inst 0xcadb3dad,0xcac48042,0xcac482b5,0xcac4c8a5,0xcac4c129,0xcac4594a,0xcacd7000,0xcacdead6
+.inst 0xcacd8a94,0xcacd096b,0xcacde8c6,0x4e083f04,0x4e083f2d,0xcadc41ce,0xcadc49ef,0xcadc8063
+.inst 0xcadcc908,0xcadcc210,0xcade8084,0xcade81ad,0xcade0021,0xcade6a73,0xcade6b39,0x8aec4cba
+.inst 0x8ae5291b,0x8af9501c,0x8ae0799e,0xcada3c00,0x8ae8c73a,0xcadb8d8c,0xcadced08,0xcade3b39
+.inst 0xcada14a5,0x8aed469a,0x8af460fb,0x8aeae5dc,0x8aee61be,0xcada5dce,0x8ae7195a,0xcadb5dad
+.inst 0xcadc04e7,0xcadebd4a,0xcada8a94,0x8af5cc7a,0x8ae3e67b,0x8ae6963c,0x8af196be,0xcadaa231
+.inst 0x8af328da,0xcadb52b5,0xcadc4673,0xcaded8c6,0xcadaf463,0x8af69b1a,0x8af8ad3b,0x8af08c9c
+.inst 0x8ae40ede,0xcada5c84,0x8ae9261a,0xcadbbed6,0xcadc5129,0xcade6a10,0xcada3318,0x8aefb83a
+.inst 0x8ae1917b,0x8af7705c,0x8ae22dfe,0xcada1c42,0x8aeb1efa,0xcadbb9ef,0xcadc756b,0xcade66f7
+.inst 0xcada5421,0xd290103a,0xf2b0001a,0xf2f0001a,0xcada0000,0xcace801a,0x4e080f38,0x4e080d59
+.inst 0xcacd999b,0xcad4a0bc,0xcac7691e,0xcaca1739,0xcad1af5a,0xcad5937b,0xcac3139c,0xcad357de
+.inst 0xcac6f339,0xcac4075a,0xcad6737b,0xcad8279c,0xcac9a3de,0xcad04339,0xcac23b5a,0xcacf877b
+.inst 0xcac11b9c,0xcacbb3de,0xcad75b39,0xcadc3b4a,0xcaca798c,0xcacae1ad,0xcacaeab5,0xcaca0ad6
+.inst 0xcacaf5ef,0xcade8b6a,0xcad9139c,0xcadaebde,0xcadb3739,0xcaca4ca5,0xcacaae94,0xcaca3c63
+.inst 0xcaca2b18,0xcaca3421,0xcad95000,0xcad9d1ce,0xcad9a631,0xcad94c84,0xcad91842,0x4e083f0a
+.inst 0x4e083f39,0xcadc2908,0xcadcc0e7,0xcadcd673,0xcadc8929,0xcadc796b,0xcadec54a,0xcadeb339
+.inst 0xcaded4c6,0xcade8610,0xcade6ef7,0x8aedd07a,0x8ae3413b,0x8af7701c,0x8ae091be,0xcadaa000
+.inst 0x8ae9f2fa,0xcadbf1ad,0xcadca129,0xcade02f7,0xcadad063,0x8af9763a,0x8af15edb,0x8ae1bd1c
+.inst 0x8ae8933e,0xcadafd08,0x8af6e43a,0xcadb3339,0xcadc62d6,0xcadeb421,0xcadac231,0x8af4c27a
+.inst 0x8af3961b,0x8ae26d9c,0x8aecc29e,0xcada818c,0x8af0805a,0xcadbae94,0xcadc1610,0xcaded442
+.inst 0xcadaee73,0x8aee02ba,0x8af5cf1b,0x8aeb015c,0x8aeaf5de,0xcada0d4a,0x8af8417a,0xcadb35ce
+.inst 0xcadcc318,0xcade0d6b,0xcadaf6b5,0x8ae7fcda,0x8ae6449b,0x8aefc0bc,0x8ae5a4fe,0xcada60a5
+.inst 0x8ae45dfa,0xcadbc0e7,0xcadce484,0xcade9def,0xcada60c6,0xd290101a,0xf2f0001a,0xcada0000
+.inst 0xcac8a41a,0x4e080ef8,0x4e080c39,0xcad9a5bb,0xcad1007c,0xcad6e53e,0xcac1f2f7,0xcacc875a
+.inst 0xcad4577b,0xcad3679c,0xcad013de,0xcac282f7,0xcacae75a,0xcace837b,0xcad5539c,0xcad8c7de
+.inst 0xcacb76f7,0xcac5475a,0xcac7337b,0xcac6079c,0xcac403de,0xcacf96f7,0xcadc9f41,0xcac191ad
+.inst 0xcac1ef39,0xcac13e94,0xcac111ce,0xcac160e7,0xcadeef61,0xcad7cf9c,0xcada9fde,0xcadbfef7
+.inst 0xcac1d063,0xcac1d231,0xcac16e73,0xcac182b5,0xcac1ccc6,0xcad77000,0xcad7cd08,0xcad7ed8c
+.inst 0xcad78d4a,0xcad72ca5,0x4e083f01,0x4e083f37,0xcadc4129,0xcadc5ed6,0xcadc3210,0xcadc7f18
+.inst 0xcadc4084,0xcadef021,0xcade02f7,0xcade7042,0xcade7d6b,0xcade5def,0x8af90e7a,0x8af38b1b
+.inst 0x8aefcc1c,0x8ae09f3e,0xcada5800,0x8af805fa,0xcadb6f39,0xcadc3318,0xcade99ef,0xcada7673
+.inst 0x8af7999a,0x8aec3ddb,0x8ae6c13c,0x8ae9e2fe,0xcada8929,0x8aee8cda,0xcadb2ef7,0xcadcb5ce
+.inst 0xcade60c6,0xcada398c,0x8af17e1a,0x8af0497b,0x8ae591bc,0x8aede63e,0xcadaa1ad,0x8aebc8ba
+.inst 0xcadb3e31,0xcadca96b,0xcade8ca5,0xcadaf210,0x8ae87a9a,0x8af4eabb,0x8ae47c3c,0x8ae1f11e
+.inst 0xcada9821,0x8af5349a,0xcadba108,0xcadc52b5,0xcade9484,0xcadae694,0x8af6145a,0x8ae2155b
+.inst 0x8ae7f07c,0x8ae342de,0xcadaac63,0x8aeaa8fa,0xcadbdad6,0xcadc694a,0xcaded0e7,0xcada4442
+.inst 0xd280003a,0xf2b0001a,0xcada0000,0xcac9f01a,0x4e080df8,0x4e080cd9,0xcad7af3b,0xcacc227c
+.inst 0xcace6f1e,0xcac6e5ef,0xcacd6f5a,0xcad1277b,0xcad0b79c,0xcacbf7de,0xcac531ef,0xcac1075a
+.inst 0xcac8b37b,0xcad4479c,0xcad5e7de,0xcac4b5ef,0xcac3ab5a,0xcad6077b,0xcac2ff9c,0xcaca73de
+.inst 0xcac7cdef,0xcadc5746,0xcac69f39,0xcac6f2f7,0xcac67a31,0xcac6ed08,0xcac69ad6,0xcade6b66
+.inst 0xcacf739c,0xcada2fde,0xcadb95ef,0xcac60e73,0xcac6ed8c,0xcac65a10,0xcac6ca94,0xcac61042
+.inst 0xcacfcc00,0xcacfdd29,0xcacf61ad,0xcacfc821,0xcacf2463,0x4e083f06,0x4e083f2f,0xcadc8b18
+.inst 0xcadc1dce,0xcadc956b,0xcadca6b5,0xcadc194a,0xcade04c6,0xcade21ef,0xcaded4a5,0xcade5084
+.inst 0xcade38e7,0x8af7021a,0x8af002bb,0x8ae7601c,0x8ae0a2fe,0xcada6000,0x8af500fa,0xcadb02f7
+.inst 0xcadca2b5,0xcade00e7,0xcada0210,0x8aef01ba,0x8aed011b,0x8ae2031c,0x8af801fe,0xcada0318
+.inst 0x8ae8005a,0xcadb01ef,0xcadc0108,0xcade0042,0xcada01ad,0x8aec017a,0x8aeb009b,0x8ae3033c
+.inst 0x8af9019e,0xcada0339,0x8ae4007a,0xcadb018c,0xcadc0084,0xcade0063,0xcada016b,0x8ae9023a
+.inst 0x8af1029b,0x8aea00dc,0x8ae6013e,0xcada00c6,0x8af4015a,0xcadb0129,0xcadc0294,0xcade014a
+.inst 0xcada0231,0x8aee00ba,0x8ae5003b,0x8af6027c,0x8af301de,0xcada0273,0x8ae102da,0xcadb01ce
+.inst 0xcadc0021,0xcade02d6,0xcada00a5,0xd290011a,0xf2b0001a,0xf2f0001a,0xcada0000,0x93c86108
+.inst 0x93d16231,0x910002fa,0x93c16037,0x93da6341,0x9100021a,0x93c96130,0x93c26049,0x93da6342
+.inst 0x910002ba,0x93ce61d5,0x93c3606e,0x93da6343,0x910000fa,0x93cd61a7,0x93c4608d,0x93da6344
+.inst 0x9100031a,0x93d662d8,0x93c560b6,0x93da6345,0x910001fa,0x93c660cf,0x93da6346,0x9100033a
+.inst 0x93d46299,0x93d36274,0x93ca6153,0x93da634a,0x9100019a,0x93cb616c,0x93da634b,0x4ef58673
+.inst 0x6ef58694,0x4e083e9b,0x4e083ebc,0xcb1c037a,0xd37fff5a
+cbz x26, 24b",
+        // umov x30, v30.d[0]
+        // str x0, [x30, #0]
+        // str x1, [x30, #8]
+        // str x2, [x30, #16]
+        // str x3, [x30, #24]
+        // str x4, [x30, #32]
+        // str x5, [x30, #40]
+        // str x6, [x30, #48]
+        // str x7, [x30, #56]
+        // str x8, [x30, #64]
+        // str x9, [x30, #72]
+        // str x10, [x30, #80]
+        // str x11, [x30, #88]
+        // str x12, [x30, #96]
+        // str x13, [x30, #104]
+        // str x14, [x30, #112]
+        // str x15, [x30, #120]
+        // str x16, [x30, #128]
+        // str x17, [x30, #136]
+        // str x25, [x30, #144]
+        // str x19, [x30, #152]
+        // str x20, [x30, #160]
+        // str x21, [x30, #168]
+        // str x22, [x30, #176]
+        // str x23, [x30, #184]
+        // str x24, [x30, #192]
+        // umov x19, v0.d[0]
+        // umov x20, v1.d[0]
+        // umov x21, v2.d[0]
+        // umov x22, v3.d[0]
+        // umov x23, v4.d[0]
+        // umov x24, v5.d[0]
+        // umov x25, v6.d[0]
+        // umov x26, v7.d[0]
+        // umov x27, v16.d[0]
+        // umov x28, v17.d[0]
+        // umov x30, v18.d[0]
+        // umov x0, v30.d[0]
+        // umov x1, v31.d[0]
+        // umov x3, v19.d[0]
+        // umov x4, v20.d[0]
+        // umov x6, v21.d[0]
+        // add x5, x1, #0
+        // movz x2, #0, lsl #0
+        // add x1, x6, #0
+        r".inst 0x4e083fde,0xf90003c0,0xf90007c1,0xf9000bc2,0xf9000fc3,0xf90013c4,0xf90017c5,0xf9001bc6
+.inst 0xf9001fc7,0xf90023c8,0xf90027c9,0xf9002bca,0xf9002fcb,0xf90033cc,0xf90037cd,0xf9003bce
+.inst 0xf9003fcf,0xf90043d0,0xf90047d1,0xf9004bd9,0xf9004fd3,0xf90053d4,0xf90057d5,0xf9005bd6
+.inst 0xf9005fd7,0xf90063d8,0x4e083c13,0x4e083c34,0x4e083c55,0x4e083c76,0x4e083c97,0x4e083cb8
+.inst 0x4e083cd9,0x4e083cfa,0x4e083e1b,0x4e083e3c,0x4e083e5e,0x4e083fc0,0x4e083fe1,0x4e083e63
+.inst 0x4e083e84,0x4e083ea6,0x91000025,0xd2800002,0x910000c1
+23:
+21:",
+        // str x30, [sp, #-16]!
+        // str x19, [x5, #512]
+        // str x20, [x5, #520]
+        // str x21, [x5, #528]
+        // str x22, [x5, #536]
+        // str x23, [x5, #544]
+        // str x24, [x5, #552]
+        // add x19, x0, #0
+        // add x20, x5, #0
+        // add x21, x1, #0
+        // add x22, x2, #0
+        // add x23, x3, #0
+        // add x24, x4, #0
+        r".inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
+.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbz x24, 213f
+215:",
+        // movz x10, #7, lsl #0
+        // and x10, x22, x10
+        // sub x11, x24, #8
+        // lsr x11, x11, #63
+        // orr x10, x10, x11
+        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
+cbz x10, 216f",
+        // ldrb w9, [x23, #0]
+        // add x10, x19, x22
+        // ldrb w11, [x10, #0]
+        // eor x9, x9, x11
+        // strb w9, [x10, #0]
+        // add x23, x23, #1
+        // add x22, x22, #1
+        // sub x24, x24, #1
+        // sub x9, x22, x21
+        r".inst 0x394002e9,0x8b16026a,0x3940014b,0xca0b0129,0x39000149,0x910006f7,0x910006d6,0xd1000718
+.inst 0xcb1502c9
+b 217f
+216:",
+        // ldr x9, [x23, #0]
+        // add x10, x19, x22
+        // ldr x11, [x10, #0]
+        // eor x9, x9, x11
+        // str x9, [x10, #0]
+        // add x23, x23, #8
+        // add x22, x22, #8
+        // sub x24, x24, #8
+        // sub x9, x22, x21
+        r".inst 0xf94002e9,0x8b16026a,0xf940014b,0xca0b0129,0xf9000149,0x910022f7,0x910022d6,0xd1002318
+.inst 0xcb1502c9
+217:
+cbz x9, 218f
+b 219f
+218:",
+        // movz x22, #0, lsl #0
+        // add x0, x19, #0
+        // add x1, x20, #0
+        r".inst 0xd2800016,0x91000260,0x91000281
+bl {vg_keccak_f1600}
+219:
+cbnz x24, 215b
+b 214f
+213:
+214:",
+        // add x0, x22, #0
+        // ldr x19, [x20, #512]
+        // ldr x21, [x20, #528]
+        // ldr x22, [x20, #536]
+        // ldr x23, [x20, #544]
+        // ldr x24, [x20, #552]
+        // ldr x20, [x20, #520]
+        // ldr x30, [sp], #16
+        // ret
+        r".inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
+.inst 0xd65f03c0
+.p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -2606,11 +22342,28 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: u
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
+        // sub sp, sp, #640
+        // add x4, sp, #0
+        // str x30, [sp, #-16]!
+        // add x9, x0, x2
+        // ldrb w10, [x9, #0]
+        // eor x10, x10, x3
+        // strb w10, [x9, #0]
+        // add x9, x0, x1
+        // sub x9, x9, #1
+        // ldrb w10, [x9, #0]
+        // movz x11, #128, lsl #0
+        // eor x10, x10, x11
+        // strb w10, [x9, #0]
+        // add x1, x4, #0
         r".inst 0xd10a03ff,0x910003e4,0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009
-.inst 0xd1000529,0x3940012a,0xd280100b,0xca0b014a,0x3900012a,0x91000081",
-        r"bl {vg_keccak_f1600}",
-        r".inst 0xf84107fe,0x910a03ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd1000529,0x3940012a,0xd280100b,0xca0b014a,0x3900012a,0x91000081
+bl {vg_keccak_f1600}",
+        // ldr x30, [sp], #16
+        // add sp, sp, #640
+        // ret
+        r".inst 0xf84107fe,0x910a03ff,0xd65f03c0
+.p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -2630,11 +22383,25 @@ pub unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
+        // str x30, [sp, #-16]!
+        // add x9, x0, x2
+        // ldrb w10, [x9, #0]
+        // eor x10, x10, x3
+        // strb w10, [x9, #0]
+        // add x9, x0, x1
+        // sub x9, x9, #1
+        // ldrb w10, [x9, #0]
+        // movz x11, #128, lsl #0
+        // eor x10, x10, x11
+        // strb w10, [x9, #0]
+        // add x1, x4, #0
         r".inst 0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a
-.inst 0xd280100b,0xca0b014a,0x3900012a,0x91000081",
-        r"bl {vg_keccak_f1600}",
-        r".inst 0xf84107fe,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd280100b,0xca0b014a,0x3900012a,0x91000081
+bl {vg_keccak_f1600}",
+        // ldr x30, [sp], #16
+        // ret
+        r".inst 0xf84107fe,0xd65f03c0
+.p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -2653,15 +22420,77 @@ pub unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usiz
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
+        // sub sp, sp, #640
+        // add x5, sp, #0
+        // str x30, [sp, #-16]!
+        // str x19, [x5, #512]
+        // str x20, [x5, #520]
+        // str x21, [x5, #528]
+        // str x22, [x5, #536]
+        // str x23, [x5, #544]
+        // str x24, [x5, #552]
+        // add x19, x0, #0
+        // add x20, x5, #0
+        // add x21, x1, #0
+        // add x22, x2, #0
+        // add x23, x3, #0
+        // add x24, x4, #0
         r".inst 0xd10a03ff,0x910003e5,0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7
-.inst 0xf90114b8,0x91000013,0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098,0xb40003b8
-.inst 0xcb1502c9,0xb4000049,0x14000005,0xd2800016,0x91000260,0x91000281",
-        r"bl {vg_keccak_f1600}",
-        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a,0xb400010a,0x8b16026a,0x39400149
-.inst 0x390002e9,0x910006f7,0x910006d6,0xd1000718,0x14000007,0x8b16026a,0xf9400149,0xf90002e9
-.inst 0x910022f7,0x910022d6,0xd1002318,0xb5fffcd8,0x14000001,0x910002c0,0xf9410293,0xf9410a95
-.inst 0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0x910a03ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf90114b8,0x91000013,0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbz x24, 20f
+22:",
+        // sub x9, x22, x21
+        r".inst 0xcb1502c9
+cbz x9, 23f
+b 24f
+23:",
+        // movz x22, #0, lsl #0
+        // add x0, x19, #0
+        // add x1, x20, #0
+        r".inst 0xd2800016,0x91000260,0x91000281
+bl {vg_keccak_f1600}
+24:",
+        // movz x10, #7, lsl #0
+        // and x10, x22, x10
+        // sub x11, x24, #8
+        // lsr x11, x11, #63
+        // orr x10, x10, x11
+        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
+cbz x10, 25f",
+        // add x10, x19, x22
+        // ldrb w9, [x10, #0]
+        // strb w9, [x23, #0]
+        // add x23, x23, #1
+        // add x22, x22, #1
+        // sub x24, x24, #1
+        r".inst 0x8b16026a,0x39400149,0x390002e9,0x910006f7,0x910006d6,0xd1000718
+b 26f
+25:",
+        // add x10, x19, x22
+        // ldr x9, [x10, #0]
+        // str x9, [x23, #0]
+        // add x23, x23, #8
+        // add x22, x22, #8
+        // sub x24, x24, #8
+        r".inst 0x8b16026a,0xf9400149,0xf90002e9,0x910022f7,0x910022d6,0xd1002318
+26:
+cbnz x24, 22b
+b 21f
+20:
+21:",
+        // add x0, x22, #0
+        // ldr x19, [x20, #512]
+        // ldr x21, [x20, #528]
+        // ldr x22, [x20, #536]
+        // ldr x23, [x20, #544]
+        // ldr x24, [x20, #552]
+        // ldr x20, [x20, #520]
+        // ldr x30, [sp], #16
+        // add sp, sp, #640
+        // ret
+        r".inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
+.inst 0x910a03ff,0xd65f03c0
+.p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -2682,15 +22511,74 @@ pub unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, p
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
+        // str x30, [sp, #-16]!
+        // str x19, [x5, #512]
+        // str x20, [x5, #520]
+        // str x21, [x5, #528]
+        // str x22, [x5, #536]
+        // str x23, [x5, #544]
+        // str x24, [x5, #552]
+        // add x19, x0, #0
+        // add x20, x5, #0
+        // add x21, x1, #0
+        // add x22, x2, #0
+        // add x23, x3, #0
+        // add x24, x4, #0
         r".inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
-.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098,0xb40003b8,0xcb1502c9,0xb4000049
-.inst 0x14000005,0xd2800016,0x91000260,0x91000281",
-        r"bl {vg_keccak_f1600}",
-        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a,0xb400010a,0x8b16026a,0x39400149
-.inst 0x390002e9,0x910006f7,0x910006d6,0xd1000718,0x14000007,0x8b16026a,0xf9400149,0xf90002e9
-.inst 0x910022f7,0x910022d6,0xd1002318,0xb5fffcd8,0x14000001,0x910002c0,0xf9410293,0xf9410a95
-.inst 0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0xd65f03c0",
-        r".p2align 6",
+.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbz x24, 20f
+22:",
+        // sub x9, x22, x21
+        r".inst 0xcb1502c9
+cbz x9, 23f
+b 24f
+23:",
+        // movz x22, #0, lsl #0
+        // add x0, x19, #0
+        // add x1, x20, #0
+        r".inst 0xd2800016,0x91000260,0x91000281
+bl {vg_keccak_f1600}
+24:",
+        // movz x10, #7, lsl #0
+        // and x10, x22, x10
+        // sub x11, x24, #8
+        // lsr x11, x11, #63
+        // orr x10, x10, x11
+        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
+cbz x10, 25f",
+        // add x10, x19, x22
+        // ldrb w9, [x10, #0]
+        // strb w9, [x23, #0]
+        // add x23, x23, #1
+        // add x22, x22, #1
+        // sub x24, x24, #1
+        r".inst 0x8b16026a,0x39400149,0x390002e9,0x910006f7,0x910006d6,0xd1000718
+b 26f
+25:",
+        // add x10, x19, x22
+        // ldr x9, [x10, #0]
+        // str x9, [x23, #0]
+        // add x23, x23, #8
+        // add x22, x22, #8
+        // sub x24, x24, #8
+        r".inst 0x8b16026a,0xf9400149,0xf90002e9,0x910022f7,0x910022d6,0xd1002318
+26:
+cbnz x24, 22b
+b 21f
+20:
+21:",
+        // add x0, x22, #0
+        // ldr x19, [x20, #512]
+        // ldr x21, [x20, #528]
+        // ldr x22, [x20, #536]
+        // ldr x23, [x20, #544]
+        // ldr x24, [x20, #552]
+        // ldr x20, [x20, #520]
+        // ldr x30, [sp], #16
+        // ret
+        r".inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
+.inst 0xd65f03c0
+.p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -2715,85 +22603,1933 @@ pub const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".inst 0xb4000042,0x14000774,0x91000026,0xcb060087,0xd37ffce7,0xb4000047,0x1400076f,0x910000a1
-.inst 0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e,0x3d801c2f
-.inst 0x3dc00000,0x6e004001,0x3dc00402,0x6e024043,0x3dc00804,0x6e044085,0x3dc00c06,0x6e0640c7
-.inst 0x3dc01008,0x6e084109,0x3dc0140a,0x6e0a414b,0x3dc0180c,0x6e0c418d,0x3dc01c0e,0x6e0e41cf
-.inst 0x3dc02010,0x6e104211,0x3dc02412,0x6e124253,0x3dc02814,0x6e144295,0x3dc02c16,0x6e1642d7
-.inst 0xf9406011,0x4e080e38,0xd10120c7,0xb4001307,0xd101a0c7,0xb4000f47,0xd10220c7,0xb4000a87
-.inst 0xd10240c7,0xb40005a7,0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a
-.inst 0x6e391c42,0x6e3a1c63,0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a
-.inst 0x6e391cc6,0x6e3a1ce7,0x3dc01079,0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a
-.inst 0x6e391d4a,0x6e3a1d6b,0x3dc01879,0x6e19433a,0x6e391d8c,0x6e3a1dad,0x3dc01c79,0x6e19433a
-.inst 0x6e391dce,0x6e3a1def,0x3dc02079,0x6e19433a,0x6e391e10,0x6e3a1e31,0x3dc02479,0x6e19433a
-.inst 0x6e391e52,0x6e3a1e73,0xf9405071,0x4e080e39,0x6e391e94,0x14000025,0x3dc00079,0x6e19433a
-.inst 0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63,0x3dc00879,0x6e19433a
-.inst 0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7,0x3dc01079,0x6e19433a
-.inst 0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a,0x6e391d4a,0x6e3a1d6b,0x3dc01879,0x6e19433a
-.inst 0x6e391d8c,0x6e3a1dad,0x3dc01c79,0x6e19433a,0x6e391dce,0x6e3a1def,0x3dc02079,0x6e19433a
-.inst 0x6e391e10,0x6e3a1e31,0x14000024,0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479
-.inst 0x6e19433a,0x6e391c42,0x6e3a1c63,0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79
-.inst 0x6e19433a,0x6e391cc6,0x6e3a1ce7,0x3dc01079,0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479
-.inst 0x6e19433a,0x6e391d4a,0x6e3a1d6b,0x3dc01879,0x6e19433a,0x6e391d8c,0x6e3a1dad,0x3dc01c79
-.inst 0x6e19433a,0x6e391dce,0x6e3a1def,0xf9404071,0x4e080e39,0x6e391e10,0x1400001c,0x3dc00079
-.inst 0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63,0x3dc00879
-.inst 0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7,0x3dc01079
-.inst 0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a,0x6e391d4a,0x6e3a1d6b,0xf9403071
-.inst 0x4e080e39,0x6e391d8c,0x14000014,0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479
-.inst 0x6e19433a,0x6e391c42,0x6e3a1c63,0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79
-.inst 0x6e19433a,0x6e391cc6,0x6e3a1ce7,0xf9402071,0x4e080e39,0x6e391d08,0xd2800030,0xce0f2a99
-.inst 0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c
-.inst 0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1
-.inst 0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d
-.inst 0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0
-.inst 0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354
-.inst 0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef
-.inst 0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488
-.inst 0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42
-.inst 0x4e080e1a,0x6e3a1c00,0xd2901050,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d
-.inst 0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b
-.inst 0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e
-.inst 0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c
-.inst 0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623
-.inst 0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18
-.inst 0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c
-.inst 0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363
-.inst 0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901150,0xf2f00010
-.inst 0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b
-.inst 0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39
-.inst 0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac
-.inst 0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04
-.inst 0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d
-.inst 0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73
-.inst 0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7
-.inst 0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821
-.inst 0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900010,0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba
-.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
-.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
-.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
-.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
-.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
-.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
-.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
-.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
-.inst 0x6e3a1c00,0xd2901170,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
-.inst 0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c
-.inst 0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a
-.inst 0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8
-.inst 0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e
-.inst 0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1
-.inst 0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad
-.inst 0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384
-.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2800030,0xf2b00010,0xce0f2a99
-.inst 0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c
-.inst 0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1
-.inst 0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d
-.inst 0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0
-.inst 0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354
-.inst 0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef
-.inst 0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488
-.inst 0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42
-.inst 0x4e080e1a,0x6e3a1c00,0xd2901030,0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db
+        r".arch_extension sha3
+cbz x2, 20f
+b 21f
+20:",
+        // add x6, x1, #0
+        // sub x7, x4, x6
+        // lsr x7, x7, #63
+        r".inst 0x91000026,0xcb060087,0xd37ffce7
+cbz x7, 22f
+b 23f
+22:",
+        // add x1, x5, #0
+        // str q8, [x1, #0]
+        // str q9, [x1, #16]
+        // str q10, [x1, #32]
+        // str q11, [x1, #48]
+        // str q12, [x1, #64]
+        // str q13, [x1, #80]
+        // str q14, [x1, #96]
+        // str q15, [x1, #112]
+        // ldr q0, [x0, #0]
+        // ext v1.16b, v0.16b, v0.16b, #8
+        // ldr q2, [x0, #16]
+        // ext v3.16b, v2.16b, v2.16b, #8
+        // ldr q4, [x0, #32]
+        // ext v5.16b, v4.16b, v4.16b, #8
+        // ldr q6, [x0, #48]
+        // ext v7.16b, v6.16b, v6.16b, #8
+        // ldr q8, [x0, #64]
+        // ext v9.16b, v8.16b, v8.16b, #8
+        // ldr q10, [x0, #80]
+        // ext v11.16b, v10.16b, v10.16b, #8
+        // ldr q12, [x0, #96]
+        // ext v13.16b, v12.16b, v12.16b, #8
+        // ldr q14, [x0, #112]
+        // ext v15.16b, v14.16b, v14.16b, #8
+        // ldr q16, [x0, #128]
+        // ext v17.16b, v16.16b, v16.16b, #8
+        // ldr q18, [x0, #144]
+        // ext v19.16b, v18.16b, v18.16b, #8
+        // ldr q20, [x0, #160]
+        // ext v21.16b, v20.16b, v20.16b, #8
+        // ldr q22, [x0, #176]
+        // ext v23.16b, v22.16b, v22.16b, #8
+        // ldr x17, [x0, #192]
+        // dup v24.2d, x17
+        r".inst 0x910000a1,0x3d800028,0x3d800429,0x3d80082a,0x3d800c2b,0x3d80102c,0x3d80142d,0x3d80182e
+.inst 0x3d801c2f,0x3dc00000,0x6e004001,0x3dc00402,0x6e024043,0x3dc00804,0x6e044085,0x3dc00c06
+.inst 0x6e0640c7,0x3dc01008,0x6e084109,0x3dc0140a,0x6e0a414b,0x3dc0180c,0x6e0c418d,0x3dc01c0e
+.inst 0x6e0e41cf,0x3dc02010,0x6e104211,0x3dc02412,0x6e124253,0x3dc02814,0x6e144295,0x3dc02c16
+.inst 0x6e1642d7,0xf9406011,0x4e080e38
+24:",
+        // sub x7, x6, #72
+        r".inst 0xd10120c7
+cbz x7, 25f",
+        // sub x7, x6, #104
+        r".inst 0xd101a0c7
+cbz x7, 27f",
+        // sub x7, x6, #136
+        r".inst 0xd10220c7
+cbz x7, 29f",
+        // sub x7, x6, #144
+        r".inst 0xd10240c7
+cbz x7, 211f",
+        // ldr q25, [x3, #0]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v0.16b, v0.16b, v25.16b
+        // eor v1.16b, v1.16b, v26.16b
+        // ldr q25, [x3, #16]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v2.16b, v2.16b, v25.16b
+        // eor v3.16b, v3.16b, v26.16b
+        // ldr q25, [x3, #32]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v4.16b, v4.16b, v25.16b
+        // eor v5.16b, v5.16b, v26.16b
+        // ldr q25, [x3, #48]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v6.16b, v6.16b, v25.16b
+        // eor v7.16b, v7.16b, v26.16b
+        // ldr q25, [x3, #64]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v8.16b, v8.16b, v25.16b
+        // eor v9.16b, v9.16b, v26.16b
+        // ldr q25, [x3, #80]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v10.16b, v10.16b, v25.16b
+        // eor v11.16b, v11.16b, v26.16b
+        // ldr q25, [x3, #96]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v12.16b, v12.16b, v25.16b
+        // eor v13.16b, v13.16b, v26.16b
+        // ldr q25, [x3, #112]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v14.16b, v14.16b, v25.16b
+        // eor v15.16b, v15.16b, v26.16b
+        // ldr q25, [x3, #128]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v16.16b, v16.16b, v25.16b
+        // eor v17.16b, v17.16b, v26.16b
+        // ldr q25, [x3, #144]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v18.16b, v18.16b, v25.16b
+        // eor v19.16b, v19.16b, v26.16b
+        // ldr x17, [x3, #160]
+        // dup v25.2d, x17
+        // eor v20.16b, v20.16b, v25.16b
+        r".inst 0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63
+.inst 0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7
+.inst 0x3dc01079,0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a,0x6e391d4a,0x6e3a1d6b
+.inst 0x3dc01879,0x6e19433a,0x6e391d8c,0x6e3a1dad,0x3dc01c79,0x6e19433a,0x6e391dce,0x6e3a1def
+.inst 0x3dc02079,0x6e19433a,0x6e391e10,0x6e3a1e31,0x3dc02479,0x6e19433a,0x6e391e52,0x6e3a1e73
+.inst 0xf9405071,0x4e080e39,0x6e391e94
+b 212f
+211:",
+        // ldr q25, [x3, #0]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v0.16b, v0.16b, v25.16b
+        // eor v1.16b, v1.16b, v26.16b
+        // ldr q25, [x3, #16]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v2.16b, v2.16b, v25.16b
+        // eor v3.16b, v3.16b, v26.16b
+        // ldr q25, [x3, #32]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v4.16b, v4.16b, v25.16b
+        // eor v5.16b, v5.16b, v26.16b
+        // ldr q25, [x3, #48]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v6.16b, v6.16b, v25.16b
+        // eor v7.16b, v7.16b, v26.16b
+        // ldr q25, [x3, #64]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v8.16b, v8.16b, v25.16b
+        // eor v9.16b, v9.16b, v26.16b
+        // ldr q25, [x3, #80]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v10.16b, v10.16b, v25.16b
+        // eor v11.16b, v11.16b, v26.16b
+        // ldr q25, [x3, #96]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v12.16b, v12.16b, v25.16b
+        // eor v13.16b, v13.16b, v26.16b
+        // ldr q25, [x3, #112]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v14.16b, v14.16b, v25.16b
+        // eor v15.16b, v15.16b, v26.16b
+        // ldr q25, [x3, #128]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v16.16b, v16.16b, v25.16b
+        // eor v17.16b, v17.16b, v26.16b
+        r".inst 0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63
+.inst 0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7
+.inst 0x3dc01079,0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a,0x6e391d4a,0x6e3a1d6b
+.inst 0x3dc01879,0x6e19433a,0x6e391d8c,0x6e3a1dad,0x3dc01c79,0x6e19433a,0x6e391dce,0x6e3a1def
+.inst 0x3dc02079,0x6e19433a,0x6e391e10,0x6e3a1e31
+212:
+b 210f
+29:",
+        // ldr q25, [x3, #0]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v0.16b, v0.16b, v25.16b
+        // eor v1.16b, v1.16b, v26.16b
+        // ldr q25, [x3, #16]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v2.16b, v2.16b, v25.16b
+        // eor v3.16b, v3.16b, v26.16b
+        // ldr q25, [x3, #32]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v4.16b, v4.16b, v25.16b
+        // eor v5.16b, v5.16b, v26.16b
+        // ldr q25, [x3, #48]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v6.16b, v6.16b, v25.16b
+        // eor v7.16b, v7.16b, v26.16b
+        // ldr q25, [x3, #64]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v8.16b, v8.16b, v25.16b
+        // eor v9.16b, v9.16b, v26.16b
+        // ldr q25, [x3, #80]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v10.16b, v10.16b, v25.16b
+        // eor v11.16b, v11.16b, v26.16b
+        // ldr q25, [x3, #96]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v12.16b, v12.16b, v25.16b
+        // eor v13.16b, v13.16b, v26.16b
+        // ldr q25, [x3, #112]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v14.16b, v14.16b, v25.16b
+        // eor v15.16b, v15.16b, v26.16b
+        // ldr x17, [x3, #128]
+        // dup v25.2d, x17
+        // eor v16.16b, v16.16b, v25.16b
+        r".inst 0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63
+.inst 0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7
+.inst 0x3dc01079,0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a,0x6e391d4a,0x6e3a1d6b
+.inst 0x3dc01879,0x6e19433a,0x6e391d8c,0x6e3a1dad,0x3dc01c79,0x6e19433a,0x6e391dce,0x6e3a1def
+.inst 0xf9404071,0x4e080e39,0x6e391e10
+210:
+b 28f
+27:",
+        // ldr q25, [x3, #0]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v0.16b, v0.16b, v25.16b
+        // eor v1.16b, v1.16b, v26.16b
+        // ldr q25, [x3, #16]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v2.16b, v2.16b, v25.16b
+        // eor v3.16b, v3.16b, v26.16b
+        // ldr q25, [x3, #32]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v4.16b, v4.16b, v25.16b
+        // eor v5.16b, v5.16b, v26.16b
+        // ldr q25, [x3, #48]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v6.16b, v6.16b, v25.16b
+        // eor v7.16b, v7.16b, v26.16b
+        // ldr q25, [x3, #64]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v8.16b, v8.16b, v25.16b
+        // eor v9.16b, v9.16b, v26.16b
+        // ldr q25, [x3, #80]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v10.16b, v10.16b, v25.16b
+        // eor v11.16b, v11.16b, v26.16b
+        // ldr x17, [x3, #96]
+        // dup v25.2d, x17
+        // eor v12.16b, v12.16b, v25.16b
+        r".inst 0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63
+.inst 0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7
+.inst 0x3dc01079,0x6e19433a,0x6e391d08,0x6e3a1d29,0x3dc01479,0x6e19433a,0x6e391d4a,0x6e3a1d6b
+.inst 0xf9403071,0x4e080e39,0x6e391d8c
+28:
+b 26f
+25:",
+        // ldr q25, [x3, #0]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v0.16b, v0.16b, v25.16b
+        // eor v1.16b, v1.16b, v26.16b
+        // ldr q25, [x3, #16]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v2.16b, v2.16b, v25.16b
+        // eor v3.16b, v3.16b, v26.16b
+        // ldr q25, [x3, #32]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v4.16b, v4.16b, v25.16b
+        // eor v5.16b, v5.16b, v26.16b
+        // ldr q25, [x3, #48]
+        // ext v26.16b, v25.16b, v25.16b, #8
+        // eor v6.16b, v6.16b, v25.16b
+        // eor v7.16b, v7.16b, v26.16b
+        // ldr x17, [x3, #64]
+        // dup v25.2d, x17
+        // eor v8.16b, v8.16b, v25.16b
+        r".inst 0x3dc00079,0x6e19433a,0x6e391c00,0x6e3a1c21,0x3dc00479,0x6e19433a,0x6e391c42,0x6e3a1c63
+.inst 0x3dc00879,0x6e19433a,0x6e391c84,0x6e3a1ca5,0x3dc00c79,0x6e19433a,0x6e391cc6,0x6e3a1ce7
+.inst 0xf9402071,0x4e080e39,0x6e391d08
+26:",
+        // movz x16, #1, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32898, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32906, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32768, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32907, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #138, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #136, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32777, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32907, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #139, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32905, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32771, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32770, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #128, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32778, lsl #0
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #10, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32897, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32896, lsl #0
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #1, lsl #0
+        // movk x16, #32768, lsl #16
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // movz x16, #32776, lsl #0
+        // movk x16, #32768, lsl #16
+        // movk x16, #32768, lsl #48
+        // eor3 v25.16b, v20.16b, v15.16b, v10.16b
+        // eor3 v26.16b, v21.16b, v16.16b, v11.16b
+        // eor3 v27.16b, v22.16b, v17.16b, v12.16b
+        // eor3 v28.16b, v23.16b, v18.16b, v13.16b
+        // eor3 v29.16b, v24.16b, v19.16b, v14.16b
+        // eor3 v25.16b, v25.16b, v5.16b, v0.16b
+        // eor3 v26.16b, v26.16b, v6.16b, v1.16b
+        // eor3 v27.16b, v27.16b, v7.16b, v2.16b
+        // eor3 v28.16b, v28.16b, v8.16b, v3.16b
+        // eor3 v29.16b, v29.16b, v9.16b, v4.16b
+        // rax1 v30.2d, v25.2d, v27.2d
+        // rax1 v31.2d, v26.2d, v28.2d
+        // rax1 v27.2d, v27.2d, v29.2d
+        // rax1 v28.2d, v28.2d, v25.2d
+        // rax1 v29.2d, v29.2d, v26.2d
+        // xar v25.2d, v1.2d, v30.2d, #63
+        // xar v1.2d, v6.2d, v30.2d, #20
+        // xar v6.2d, v9.2d, v28.2d, #44
+        // xar v9.2d, v22.2d, v31.2d, #3
+        // xar v22.2d, v14.2d, v28.2d, #25
+        // xar v14.2d, v20.2d, v29.2d, #46
+        // xar v26.2d, v2.2d, v31.2d, #2
+        // xar v2.2d, v12.2d, v31.2d, #21
+        // xar v12.2d, v13.2d, v27.2d, #39
+        // xar v13.2d, v19.2d, v28.2d, #56
+        // xar v19.2d, v23.2d, v27.2d, #8
+        // xar v23.2d, v15.2d, v29.2d, #23
+        // xar v15.2d, v4.2d, v28.2d, #37
+        // xar v28.2d, v24.2d, v28.2d, #50
+        // xar v24.2d, v21.2d, v30.2d, #62
+        // xar v8.2d, v8.2d, v27.2d, #9
+        // xar v4.2d, v16.2d, v30.2d, #19
+        // xar v16.2d, v5.2d, v29.2d, #28
+        // xar v5.2d, v3.2d, v27.2d, #36
+        // eor v0.16b, v0.16b, v29.16b
+        // xar v27.2d, v18.2d, v27.2d, #43
+        // xar v3.2d, v17.2d, v31.2d, #49
+        // xar v30.2d, v11.2d, v30.2d, #54
+        // xar v31.2d, v7.2d, v31.2d, #58
+        // xar v29.2d, v10.2d, v29.2d, #61
+        // bcax v20.16b, v26.16b, v22.16b, v8.16b
+        // bcax v21.16b, v8.16b, v23.16b, v22.16b
+        // bcax v22.16b, v22.16b, v24.16b, v23.16b
+        // bcax v23.16b, v23.16b, v26.16b, v24.16b
+        // bcax v24.16b, v24.16b, v8.16b, v26.16b
+        // bcax v17.16b, v30.16b, v19.16b, v3.16b
+        // bcax v18.16b, v3.16b, v15.16b, v19.16b
+        // bcax v19.16b, v19.16b, v16.16b, v15.16b
+        // bcax v15.16b, v15.16b, v30.16b, v16.16b
+        // bcax v16.16b, v16.16b, v3.16b, v30.16b
+        // bcax v10.16b, v25.16b, v12.16b, v31.16b
+        // bcax v11.16b, v31.16b, v13.16b, v12.16b
+        // bcax v12.16b, v12.16b, v14.16b, v13.16b
+        // bcax v13.16b, v13.16b, v25.16b, v14.16b
+        // bcax v14.16b, v14.16b, v31.16b, v25.16b
+        // bcax v7.16b, v29.16b, v9.16b, v4.16b
+        // bcax v8.16b, v4.16b, v5.16b, v9.16b
+        // bcax v9.16b, v9.16b, v6.16b, v5.16b
+        // bcax v5.16b, v5.16b, v29.16b, v6.16b
+        // bcax v6.16b, v6.16b, v4.16b, v29.16b
+        // bcax v3.16b, v27.16b, v0.16b, v28.16b
+        // bcax v4.16b, v28.16b, v1.16b, v0.16b
+        // bcax v0.16b, v0.16b, v2.16b, v1.16b
+        // bcax v1.16b, v1.16b, v27.16b, v2.16b
+        // bcax v2.16b, v2.16b, v28.16b, v27.16b
+        // dup v26.2d, x16
+        // eor v0.16b, v0.16b, v26.16b
+        // add x3, x3, x6
+        // sub x4, x4, x6
+        // sub x7, x4, x6
+        // lsr x7, x7, #63
+        r".inst 0xd2800030,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a
+.inst 0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd
+.inst 0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582
+.inst 0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508
+.inst 0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff
+.inst 0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72
+.inst 0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce
+.inst 0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400
+.inst 0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901050,0xce0f2a99,0xce102eba,0xce1132db
 .inst 0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e
 .inst 0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9
 .inst 0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7
@@ -2802,7 +24538,7 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a
 .inst 0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5
 .inst 0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00
-.inst 0xd2900130,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
+.inst 0xd2901150,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
 .inst 0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c
 .inst 0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a
 .inst 0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8
@@ -2810,33 +24546,16 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1
 .inst 0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad
 .inst 0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384
-.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2801150,0xce0f2a99,0xce102eba
-.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
-.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
-.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
-.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
-.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
-.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
-.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
-.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
-.inst 0x6e3a1c00,0xd2801110,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
-.inst 0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c
-.inst 0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a
-.inst 0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8
-.inst 0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e
-.inst 0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1
-.inst 0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad
-.inst 0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384
-.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900130,0xf2b00010,0xce0f2a99
-.inst 0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c
-.inst 0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1
-.inst 0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d
-.inst 0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0
-.inst 0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354
-.inst 0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef
-.inst 0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488
-.inst 0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42
-.inst 0x4e080e1a,0x6e3a1c00,0xd2800150,0xf2b00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
+.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900010,0xf2b00010,0xf2f00010
+.inst 0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b
+.inst 0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39
+.inst 0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac
+.inst 0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04
+.inst 0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d
+.inst 0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73
+.inst 0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7
+.inst 0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821
+.inst 0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901170,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
 .inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
 .inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
 .inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
@@ -2844,7 +24563,7 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
 .inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
 .inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
-.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901170
+.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2800030
 .inst 0xf2b00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a
 .inst 0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd
 .inst 0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582
@@ -2853,76 +24572,7 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72
 .inst 0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce
 .inst 0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400
-.inst 0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2801170,0xf2f00010,0xce0f2a99,0xce102eba
-.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
-.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
-.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
-.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
-.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
-.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
-.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
-.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
-.inst 0x6e3a1c00,0xd2901130,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d
-.inst 0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b
-.inst 0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e
-.inst 0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c
-.inst 0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623
-.inst 0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18
-.inst 0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c
-.inst 0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363
-.inst 0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900070,0xf2f00010
-.inst 0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b
-.inst 0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39
-.inst 0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac
-.inst 0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04
-.inst 0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d
-.inst 0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73
-.inst 0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7
-.inst 0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821
-.inst 0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900050,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db
-.inst 0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e
-.inst 0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9
-.inst 0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7
-.inst 0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00
-.inst 0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6
-.inst 0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a
-.inst 0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5
-.inst 0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00
-.inst 0xd2801010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
-.inst 0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c
-.inst 0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a
-.inst 0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8
-.inst 0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e
-.inst 0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1
-.inst 0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad
-.inst 0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384
-.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900150,0xce0f2a99,0xce102eba
-.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
-.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
-.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
-.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
-.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
-.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
-.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
-.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
-.inst 0x6e3a1c00,0xd2800150,0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
-.inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
-.inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
-.inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
-.inst 0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b
-.inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
-.inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
-.inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
-.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901030
-.inst 0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
-.inst 0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c
-.inst 0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a
-.inst 0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8
-.inst 0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e
-.inst 0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1
-.inst 0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad
-.inst 0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384
-.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901010,0xf2f00010,0xce0f2a99
+.inst 0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901030,0xf2b00010,0xf2f00010,0xce0f2a99
 .inst 0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c
 .inst 0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1
 .inst 0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d
@@ -2931,7 +24581,7 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef
 .inst 0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488
 .inst 0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42
-.inst 0x4e080e1a,0x6e3a1c00,0xd2800030,0xf2b00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
+.inst 0x4e080e1a,0x6e3a1c00,0xd2900130,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
 .inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
 .inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
 .inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
@@ -2939,8 +24589,68 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
 .inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
 .inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
-.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900110
-.inst 0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
+.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2801150
+.inst 0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b
+.inst 0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39
+.inst 0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac
+.inst 0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04
+.inst 0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d
+.inst 0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73
+.inst 0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7
+.inst 0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821
+.inst 0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2801110,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
+.inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
+.inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
+.inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
+.inst 0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b
+.inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
+.inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
+.inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
+.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900130
+.inst 0xf2b00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a
+.inst 0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd
+.inst 0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582
+.inst 0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508
+.inst 0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff
+.inst 0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72
+.inst 0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce
+.inst 0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400
+.inst 0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2800150,0xf2b00010,0xce0f2a99,0xce102eba
+.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
+.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
+.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
+.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
+.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
+.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
+.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
+.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
+.inst 0x6e3a1c00,0xd2901170,0xf2b00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d
+.inst 0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b
+.inst 0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e
+.inst 0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c
+.inst 0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623
+.inst 0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18
+.inst 0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c
+.inst 0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363
+.inst 0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2801170,0xf2f00010
+.inst 0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b
+.inst 0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39
+.inst 0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac
+.inst 0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04
+.inst 0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d
+.inst 0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73
+.inst 0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7
+.inst 0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821
+.inst 0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901130,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db
+.inst 0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e
+.inst 0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9
+.inst 0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7
+.inst 0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00
+.inst 0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6
+.inst 0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a
+.inst 0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5
+.inst 0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00
+.inst 0xd2900070,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339
 .inst 0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c
 .inst 0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a
 .inst 0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8
@@ -2948,22 +24658,195 @@ pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], ra
 .inst 0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1
 .inst 0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad
 .inst 0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384
-.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0x8b060063,0xcb060084,0xcb060087
-.inst 0xd37ffce7,0xb4ff1b27,0x4ec13819,0x3d800019,0x4ec33859,0x3d800419,0x4ec53899,0x3d800819
-.inst 0x4ec738d9,0x3d800c19,0x4ec93919,0x3d801019,0x4ecb3959,0x3d801419,0x4ecd3999,0x3d801819
-.inst 0x4ecf39d9,0x3d801c19,0x4ed13a19,0x3d802019,0x4ed33a59,0x3d802419,0x4ed53a99,0x3d802819
-.inst 0x4ed73ad9,0x3d802c19,0x4e083f11,0xf9006011,0x3dc00028,0x3dc00429,0x3dc0082a,0x3dc00c2b
-.inst 0x3dc0102c,0x3dc0142d,0x3dc0182e,0x3dc01c2f,0x910000c1,0xf81f0ffe,0xf90100b3,0xf90104b4
-.inst 0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013,0x910000b4,0x91000035,0x91000056
-.inst 0x91000077,0x91000098,0xb4000458,0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
-.inst 0xb400016a,0x394002e9,0x8b16026a,0x3940014b,0xca0b0129,0x39000149,0x910006f7,0x910006d6
-.inst 0xd1000718,0xcb1502c9,0x1400000a,0xf94002e9,0x8b16026a,0xf940014b,0xca0b0129,0xf9000149
-.inst 0x910022f7,0x910022d6,0xd1002318,0xcb1502c9,0xb4000049,0x14000005,0xd2800016,0x91000260
-.inst 0x91000281",
-        r"bl {vg_keccak_f1600_sha3}",
-        r".inst 0xb5fffc38,0x14000001,0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698
-.inst 0xf9410694,0xf84107fe,0xd65f03c0",
-        r".p2align 6",
+.inst 0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900050,0xf2f00010,0xce0f2a99
+.inst 0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c
+.inst 0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1
+.inst 0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d
+.inst 0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0
+.inst 0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354
+.inst 0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef
+.inst 0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488
+.inst 0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42
+.inst 0x4e080e1a,0x6e3a1c00,0xd2801010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
+.inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
+.inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
+.inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
+.inst 0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b
+.inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
+.inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
+.inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
+.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2900150
+.inst 0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b
+.inst 0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39
+.inst 0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac
+.inst 0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04
+.inst 0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d
+.inst 0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73
+.inst 0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7
+.inst 0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821
+.inst 0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2800150,0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba
+.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
+.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
+.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
+.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
+.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
+.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
+.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
+.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
+.inst 0x6e3a1c00,0xd2901030,0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
+.inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
+.inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
+.inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
+.inst 0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b
+.inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
+.inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
+.inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
+.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2901010
+.inst 0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a
+.inst 0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd
+.inst 0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582
+.inst 0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508
+.inst 0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff
+.inst 0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72
+.inst 0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce
+.inst 0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400
+.inst 0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0xd2800030,0xf2b00010,0xce0f2a99,0xce102eba
+.inst 0xce1132db,0xce1236fc,0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd
+.inst 0xce7b8f3e,0xce7c8f5f,0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126
+.inst 0xce9f0ec9,0xce9c65d6,0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3
+.inst 0xce9d5df7,0xce9c948f,0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065
+.inst 0x6e3d1c00,0xce9bae5b,0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915
+.inst 0xce385ed6,0xce3a62f7,0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10
+.inst 0xce2c7f2a,0xce2d33eb,0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529
+.inst 0xce3d18a5,0xce2474c6,0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a
+.inst 0x6e3a1c00,0xd2900110,0xf2b00010,0xf2f00010,0xce0f2a99,0xce102eba,0xce1132db,0xce1236fc
+.inst 0xce133b1d,0xce050339,0xce06075a,0xce070b7b,0xce080f9c,0xce0913bd,0xce7b8f3e,0xce7c8f5f
+.inst 0xce7d8f7b,0xce798f9c,0xce7a8fbd,0xce9efc39,0xce9e50c1,0xce9cb126,0xce9f0ec9,0xce9c65d6
+.inst 0xce9dba8e,0xce9f085a,0xce9f5582,0xce9b9dac,0xce9ce26d,0xce9b22f3,0xce9d5df7,0xce9c948f
+.inst 0xce9ccb1c,0xce9efab8,0xce9b2508,0xce9e4e04,0xce9d70b0,0xce9b9065,0x6e3d1c00,0xce9bae5b
+.inst 0xce9fc623,0xce9ed97e,0xce9fe8ff,0xce9df55d,0xce362354,0xce375915,0xce385ed6,0xce3a62f7
+.inst 0xce286b18,0xce330fd1,0xce2f4c72,0xce303e73,0xce3e41ef,0xce237a10,0xce2c7f2a,0xce2d33eb
+.inst 0xce2e358c,0xce3939ad,0xce3f65ce,0xce2913a7,0xce252488,0xce261529,0xce3d18a5,0xce2474c6
+.inst 0xce207363,0xce210384,0xce220400,0xce3b0821,0xce3c6c42,0x4e080e1a,0x6e3a1c00,0x8b060063
+.inst 0xcb060084,0xcb060087,0xd37ffce7
+cbz x7, 24b",
+        // zip1 v25.2d, v0.2d, v1.2d
+        // str q25, [x0, #0]
+        // zip1 v25.2d, v2.2d, v3.2d
+        // str q25, [x0, #16]
+        // zip1 v25.2d, v4.2d, v5.2d
+        // str q25, [x0, #32]
+        // zip1 v25.2d, v6.2d, v7.2d
+        // str q25, [x0, #48]
+        // zip1 v25.2d, v8.2d, v9.2d
+        // str q25, [x0, #64]
+        // zip1 v25.2d, v10.2d, v11.2d
+        // str q25, [x0, #80]
+        // zip1 v25.2d, v12.2d, v13.2d
+        // str q25, [x0, #96]
+        // zip1 v25.2d, v14.2d, v15.2d
+        // str q25, [x0, #112]
+        // zip1 v25.2d, v16.2d, v17.2d
+        // str q25, [x0, #128]
+        // zip1 v25.2d, v18.2d, v19.2d
+        // str q25, [x0, #144]
+        // zip1 v25.2d, v20.2d, v21.2d
+        // str q25, [x0, #160]
+        // zip1 v25.2d, v22.2d, v23.2d
+        // str q25, [x0, #176]
+        // umov x17, v24.d[0]
+        // str x17, [x0, #192]
+        // ldr q8, [x1, #0]
+        // ldr q9, [x1, #16]
+        // ldr q10, [x1, #32]
+        // ldr q11, [x1, #48]
+        // ldr q12, [x1, #64]
+        // ldr q13, [x1, #80]
+        // ldr q14, [x1, #96]
+        // ldr q15, [x1, #112]
+        // add x1, x6, #0
+        r".inst 0x4ec13819,0x3d800019,0x4ec33859,0x3d800419,0x4ec53899,0x3d800819,0x4ec738d9,0x3d800c19
+.inst 0x4ec93919,0x3d801019,0x4ecb3959,0x3d801419,0x4ecd3999,0x3d801819,0x4ecf39d9,0x3d801c19
+.inst 0x4ed13a19,0x3d802019,0x4ed33a59,0x3d802419,0x4ed53a99,0x3d802819,0x4ed73ad9,0x3d802c19
+.inst 0x4e083f11,0xf9006011,0x3dc00028,0x3dc00429,0x3dc0082a,0x3dc00c2b,0x3dc0102c,0x3dc0142d
+.inst 0x3dc0182e,0x3dc01c2f,0x910000c1
+23:
+21:",
+        // str x30, [sp, #-16]!
+        // str x19, [x5, #512]
+        // str x20, [x5, #520]
+        // str x21, [x5, #528]
+        // str x22, [x5, #536]
+        // str x23, [x5, #544]
+        // str x24, [x5, #552]
+        // add x19, x0, #0
+        // add x20, x5, #0
+        // add x21, x1, #0
+        // add x22, x2, #0
+        // add x23, x3, #0
+        // add x24, x4, #0
+        r".inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
+.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbz x24, 213f
+215:",
+        // movz x10, #7, lsl #0
+        // and x10, x22, x10
+        // sub x11, x24, #8
+        // lsr x11, x11, #63
+        // orr x10, x10, x11
+        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
+cbz x10, 216f",
+        // ldrb w9, [x23, #0]
+        // add x10, x19, x22
+        // ldrb w11, [x10, #0]
+        // eor x9, x9, x11
+        // strb w9, [x10, #0]
+        // add x23, x23, #1
+        // add x22, x22, #1
+        // sub x24, x24, #1
+        // sub x9, x22, x21
+        r".inst 0x394002e9,0x8b16026a,0x3940014b,0xca0b0129,0x39000149,0x910006f7,0x910006d6,0xd1000718
+.inst 0xcb1502c9
+b 217f
+216:",
+        // ldr x9, [x23, #0]
+        // add x10, x19, x22
+        // ldr x11, [x10, #0]
+        // eor x9, x9, x11
+        // str x9, [x10, #0]
+        // add x23, x23, #8
+        // add x22, x22, #8
+        // sub x24, x24, #8
+        // sub x9, x22, x21
+        r".inst 0xf94002e9,0x8b16026a,0xf940014b,0xca0b0129,0xf9000149,0x910022f7,0x910022d6,0xd1002318
+.inst 0xcb1502c9
+217:
+cbz x9, 218f
+b 219f
+218:",
+        // movz x22, #0, lsl #0
+        // add x0, x19, #0
+        // add x1, x20, #0
+        r".inst 0xd2800016,0x91000260,0x91000281
+bl {vg_keccak_f1600_sha3}
+219:
+cbnz x24, 215b
+b 214f
+213:
+214:",
+        // add x0, x22, #0
+        // ldr x19, [x20, #512]
+        // ldr x21, [x20, #528]
+        // ldr x22, [x20, #536]
+        // ldr x23, [x20, #544]
+        // ldr x24, [x20, #552]
+        // ldr x20, [x20, #520]
+        // ldr x30, [sp], #16
+        // ret
+        r".inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
+.inst 0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -2984,11 +24867,30 @@ pub const VG_KECCAK_PAD_SHA3_FEATURES: verified_garbage_cpu::Features = verified
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_pad_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // sub sp, sp, #640
+        // add x4, sp, #0
+        // str x30, [sp, #-16]!
+        // add x9, x0, x2
+        // ldrb w10, [x9, #0]
+        // eor x10, x10, x3
+        // strb w10, [x9, #0]
+        // add x9, x0, x1
+        // sub x9, x9, #1
+        // ldrb w10, [x9, #0]
+        // movz x11, #128, lsl #0
+        // eor x10, x10, x11
+        // strb w10, [x9, #0]
+        // add x1, x4, #0
         r".inst 0xd10a03ff,0x910003e4,0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009
-.inst 0xd1000529,0x3940012a,0xd280100b,0xca0b014a,0x3900012a,0x91000081",
-        r"bl {vg_keccak_f1600_sha3}",
-        r".inst 0xf84107fe,0x910a03ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd1000529,0x3940012a,0xd280100b,0xca0b014a,0x3900012a,0x91000081
+bl {vg_keccak_f1600_sha3}",
+        // ldr x30, [sp], #16
+        // add sp, sp, #640
+        // ret
+        r".inst 0xf84107fe,0x910a03ff,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -3012,11 +24914,27 @@ pub const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_pad_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // str x30, [sp, #-16]!
+        // add x9, x0, x2
+        // ldrb w10, [x9, #0]
+        // eor x10, x10, x3
+        // strb w10, [x9, #0]
+        // add x9, x0, x1
+        // sub x9, x9, #1
+        // ldrb w10, [x9, #0]
+        // movz x11, #128, lsl #0
+        // eor x10, x10, x11
+        // strb w10, [x9, #0]
+        // add x1, x4, #0
         r".inst 0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a
-.inst 0xd280100b,0xca0b014a,0x3900012a,0x91000081",
-        r"bl {vg_keccak_f1600_sha3}",
-        r".inst 0xf84107fe,0xd65f03c0",
-        r".p2align 6",
+.inst 0xd280100b,0xca0b014a,0x3900012a,0x91000081
+bl {vg_keccak_f1600_sha3}",
+        // ldr x30, [sp], #16
+        // ret
+        r".inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -3039,15 +24957,79 @@ pub const VG_KECCAK_SQUEEZE_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_squeeze_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // sub sp, sp, #640
+        // add x5, sp, #0
+        // str x30, [sp, #-16]!
+        // str x19, [x5, #512]
+        // str x20, [x5, #520]
+        // str x21, [x5, #528]
+        // str x22, [x5, #536]
+        // str x23, [x5, #544]
+        // str x24, [x5, #552]
+        // add x19, x0, #0
+        // add x20, x5, #0
+        // add x21, x1, #0
+        // add x22, x2, #0
+        // add x23, x3, #0
+        // add x24, x4, #0
         r".inst 0xd10a03ff,0x910003e5,0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7
-.inst 0xf90114b8,0x91000013,0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098,0xb40003b8
-.inst 0xcb1502c9,0xb4000049,0x14000005,0xd2800016,0x91000260,0x91000281",
-        r"bl {vg_keccak_f1600_sha3}",
-        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a,0xb400010a,0x8b16026a,0x39400149
-.inst 0x390002e9,0x910006f7,0x910006d6,0xd1000718,0x14000007,0x8b16026a,0xf9400149,0xf90002e9
-.inst 0x910022f7,0x910022d6,0xd1002318,0xb5fffcd8,0x14000001,0x910002c0,0xf9410293,0xf9410a95
-.inst 0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0x910a03ff,0xd65f03c0",
-        r".p2align 6",
+.inst 0xf90114b8,0x91000013,0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbz x24, 20f
+22:",
+        // sub x9, x22, x21
+        r".inst 0xcb1502c9
+cbz x9, 23f
+b 24f
+23:",
+        // movz x22, #0, lsl #0
+        // add x0, x19, #0
+        // add x1, x20, #0
+        r".inst 0xd2800016,0x91000260,0x91000281
+bl {vg_keccak_f1600_sha3}
+24:",
+        // movz x10, #7, lsl #0
+        // and x10, x22, x10
+        // sub x11, x24, #8
+        // lsr x11, x11, #63
+        // orr x10, x10, x11
+        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
+cbz x10, 25f",
+        // add x10, x19, x22
+        // ldrb w9, [x10, #0]
+        // strb w9, [x23, #0]
+        // add x23, x23, #1
+        // add x22, x22, #1
+        // sub x24, x24, #1
+        r".inst 0x8b16026a,0x39400149,0x390002e9,0x910006f7,0x910006d6,0xd1000718
+b 26f
+25:",
+        // add x10, x19, x22
+        // ldr x9, [x10, #0]
+        // str x9, [x23, #0]
+        // add x23, x23, #8
+        // add x22, x22, #8
+        // sub x24, x24, #8
+        r".inst 0x8b16026a,0xf9400149,0xf90002e9,0x910022f7,0x910022d6,0xd1002318
+26:
+cbnz x24, 22b
+b 21f
+20:
+21:",
+        // add x0, x22, #0
+        // ldr x19, [x20, #512]
+        // ldr x21, [x20, #528]
+        // ldr x22, [x20, #536]
+        // ldr x23, [x20, #544]
+        // ldr x24, [x20, #552]
+        // ldr x20, [x20, #520]
+        // ldr x30, [sp], #16
+        // add sp, sp, #640
+        // ret
+        r".inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
+.inst 0x910a03ff,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -3072,15 +25054,76 @@ pub const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_squeeze_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
+        r".arch_extension sha3",
+        // str x30, [sp, #-16]!
+        // str x19, [x5, #512]
+        // str x20, [x5, #520]
+        // str x21, [x5, #528]
+        // str x22, [x5, #536]
+        // str x23, [x5, #544]
+        // str x24, [x5, #552]
+        // add x19, x0, #0
+        // add x20, x5, #0
+        // add x21, x1, #0
+        // add x22, x2, #0
+        // add x23, x3, #0
+        // add x24, x4, #0
         r".inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
-.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098,0xb40003b8,0xcb1502c9,0xb4000049
-.inst 0x14000005,0xd2800016,0x91000260,0x91000281",
-        r"bl {vg_keccak_f1600_sha3}",
-        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a,0xb400010a,0x8b16026a,0x39400149
-.inst 0x390002e9,0x910006f7,0x910006d6,0xd1000718,0x14000007,0x8b16026a,0xf9400149,0xf90002e9
-.inst 0x910022f7,0x910022d6,0xd1002318,0xb5fffcd8,0x14000001,0x910002c0,0xf9410293,0xf9410a95
-.inst 0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0xd65f03c0",
-        r".p2align 6",
+.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbz x24, 20f
+22:",
+        // sub x9, x22, x21
+        r".inst 0xcb1502c9
+cbz x9, 23f
+b 24f
+23:",
+        // movz x22, #0, lsl #0
+        // add x0, x19, #0
+        // add x1, x20, #0
+        r".inst 0xd2800016,0x91000260,0x91000281
+bl {vg_keccak_f1600_sha3}
+24:",
+        // movz x10, #7, lsl #0
+        // and x10, x22, x10
+        // sub x11, x24, #8
+        // lsr x11, x11, #63
+        // orr x10, x10, x11
+        r".inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
+cbz x10, 25f",
+        // add x10, x19, x22
+        // ldrb w9, [x10, #0]
+        // strb w9, [x23, #0]
+        // add x23, x23, #1
+        // add x22, x22, #1
+        // sub x24, x24, #1
+        r".inst 0x8b16026a,0x39400149,0x390002e9,0x910006f7,0x910006d6,0xd1000718
+b 26f
+25:",
+        // add x10, x19, x22
+        // ldr x9, [x10, #0]
+        // str x9, [x23, #0]
+        // add x23, x23, #8
+        // add x22, x22, #8
+        // sub x24, x24, #8
+        r".inst 0x8b16026a,0xf9400149,0xf90002e9,0x910022f7,0x910022d6,0xd1002318
+26:
+cbnz x24, 22b
+b 21f
+20:
+21:",
+        // add x0, x22, #0
+        // ldr x19, [x20, #512]
+        // ldr x21, [x20, #528]
+        // ldr x22, [x20, #536]
+        // ldr x23, [x20, #544]
+        // ldr x24, [x20, #552]
+        // ldr x20, [x20, #520]
+        // ldr x30, [sp], #16
+        // ret
+        r".inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
+.inst 0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }

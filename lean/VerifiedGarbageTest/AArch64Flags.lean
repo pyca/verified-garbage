@@ -196,11 +196,11 @@ def flagsAfter (f : Nat) (a b : BitVec 64) (i : Instr) : Option Nat := (exec i (
 #guard dstOf (.csneg .x .x0 .x1 .x2 .ge) == some .x0
 #guard dstOf (.tst .x .x1 .x2) == none
 
-#guard printer.instr (.tst .x .x3 .x11) == ["tst x3, x11"]
-#guard printer.instr (.tst .w .x3 .x11) == ["tst w3, w11"]
-#guard printer.instr (.ccmp .x .x1 0 8 .ne) == ["ccmp x1, #0, #8, ne"]
-#guard printer.instr (.cselc .x .x0 .x1 .x2 .ge) == ["csel x0, x1, x2, ge"]
-#guard printer.instr (.csneg .w .x0 .x1 .x2 .lt) == ["csneg w0, w1, w2, lt"]
+#guard Instr.asm (.tst .x .x3 .x11) == ["tst x3, x11"]
+#guard Instr.asm (.tst .w .x3 .x11) == ["tst w3, w11"]
+#guard Instr.asm (.ccmp .x .x1 0 8 .ne) == ["ccmp x1, #0, #8, ne"]
+#guard Instr.asm (.cselc .x .x0 .x1 .x2 .ge) == ["csel x0, x1, x2, ge"]
+#guard Instr.asm (.csneg .w .x0 .x1 .x2 .lt) == ["csneg w0, w1, w2, lt"]
 
 -- The flags are not tracked, so a value selected by them is secret, and
 -- instructions writing only the flags keep the public registers.
