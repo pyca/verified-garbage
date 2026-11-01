@@ -62,7 +62,7 @@ fn integers(mut seq: &[u8]) -> Vec<&[u8]> {
     while !seq.is_empty() {
         let (tag, value, rest) = element(seq);
         assert_eq!(tag, 0x02);
-        ints.push(&value[value.iter().take_while(|&&b| b == 0).count()..]);
+        ints.push(crate::bytes::trim_zeros(value));
         seq = rest;
     }
     ints

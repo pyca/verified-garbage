@@ -145,7 +145,7 @@ fn components_generation_and_padding() {
     );
     let z = key.exchange(key.public_key()).unwrap();
     assert_eq!(z.len(), p.len());
-    assert!(z[..z.len() - 1].iter().all(|&b| b == 0));
+    assert!(crate::bytes::all_equal(&z[..z.len() - 1], 0));
     assert_eq!(z[z.len() - 1], 16);
 }
 #[test]

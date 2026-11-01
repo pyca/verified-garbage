@@ -63,7 +63,28 @@ mod triple_des_cfb8;
 mod triple_des_ecb;
 mod triple_des_ofb;
 
+use std::collections::BTreeMap;
+
 use crate::bytes::unhex;
+
+/// The records of a CAVP response file that have a `COUNT`, each as its
+/// `key = value` lines (records end at an empty line; a key given twice
+/// keeps its last value).
+fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
+    let mut records = Vec::new();
+    let mut fields = BTreeMap::new();
+    for line in text.lines().chain([""]) {
+        if line.is_empty() {
+            let record = std::mem::take(&mut fields);
+            if record.contains_key("COUNT") {
+                records.push(record);
+            }
+        } else if let Some((key, value)) = line.trim().split_once(" = ") {
+            fields.insert(key, value);
+        }
+    }
+    records
+}
 
 /// The `key = value` lines of a CAVP response file, in order, without the
 /// comments, blank lines and `[L = ...]` section headers.

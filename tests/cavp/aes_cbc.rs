@@ -10,8 +10,6 @@
     target_arch = "riscv64"
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::aes_cbc::{AesCbc, Error};
 
 use super::unhex;
@@ -47,8 +45,11 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
                 operation(&ctx, &mut chain, &mut storage[offset..offset + input.len()]).unwrap();
                 assert_eq!(&storage[offset..offset + input.len()], expected);
                 assert_eq!(chain, last);
-                assert!(storage[..offset].iter().all(|&b| b == 0xa5));
-                assert!(storage[offset + input.len()..].iter().all(|&b| b == 0xa5));
+                assert!(crate::bytes::all_equal(&storage[..offset], 0xa5));
+                assert!(crate::bytes::all_equal(
+                    &storage[offset + input.len()..],
+                    0xa5
+                ));
             }
             for offset in (0..=input.len()).step_by(16) {
                 let mut output = input.to_vec();
@@ -74,14 +75,7 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
 /// Checks every vector of a response file, and returns how many there were.
 fn check_file(text: &str, split: bool) -> usize {
     let mut count = 0;
-    for record in text.replace('\r', "").split("\n\n") {
-        let fields: BTreeMap<_, _> = record
-            .lines()
-            .filter_map(|line| line.trim().split_once(" = "))
-            .collect();
-        if !fields.contains_key("COUNT") {
-            continue;
-        }
+    for fields in super::records(text) {
         check(
             &unhex(fields["KEY"]),
             &unhex(fields["IV"]),

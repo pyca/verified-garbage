@@ -67,7 +67,7 @@ fn aes_gcm_siv() {
             _ => {
                 assert!(matches!(test.result, Expectation::Invalid), "tcId {id}");
                 assert_eq!(decrypted, Err(Error::TagMismatch), "tcId {id}");
-                assert!(buf.iter().all(|&b| b == 0), "tcId {id}");
+                assert!(crate::bytes::all_equal(&buf, 0), "tcId {id}");
                 invalid.add();
             }
         }

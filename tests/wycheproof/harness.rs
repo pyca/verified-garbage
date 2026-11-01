@@ -123,7 +123,7 @@ pub fn rsa_bits_signed(bits: usize) -> bool {
     feature = "alloc"
 ))]
 pub fn rsa_key_tested(n: &[u8]) -> bool {
-    let n = &n[n.iter().take_while(|&&b| b == 0).count()..];
+    let n = crate::bytes::trim_zeros(n);
     rsa_bits_tested(n.len() * 8 - n.first().map_or(0, |b| b.leading_zeros() as usize))
 }
 

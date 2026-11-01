@@ -29,6 +29,7 @@ use verified_garbage::rsa_oaep::{Error, Hash, decrypt, encrypt};
 use verified_garbage::{rsa_pkcs1_sig, rsa_pss};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
+use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
 
 json_struct! {
@@ -78,12 +79,6 @@ json_struct! {
     struct MsgCase {
         msg: Hex,
     }
-}
-
-/// `x` without its leading zero bytes (the vectors write numbers in DER's
-/// form, with a zero byte before a top bit that is set).
-fn trim(x: &[u8]) -> &[u8] {
-    &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
 /// The hash functions by the vectors' names for them.

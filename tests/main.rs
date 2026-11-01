@@ -9,6 +9,7 @@
 
 mod bytes;
 mod json;
+mod text;
 mod vectors;
 
 #[path = "acvp/main.rs"]

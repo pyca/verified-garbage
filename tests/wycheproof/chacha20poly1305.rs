@@ -72,7 +72,7 @@ fn chacha20_poly1305() {
             // There are no acceptable vectors.
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             assert_eq!(opened, Err(Error::TagMismatch), "tcId {}", test.tc_id);
-            assert!(data.iter().all(|&b| b == 0), "tcId {}", test.tc_id);
+            assert!(crate::bytes::all_equal(&data, 0), "tcId {}", test.tc_id);
         }
         checked.add();
     });

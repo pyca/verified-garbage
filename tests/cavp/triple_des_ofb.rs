@@ -12,8 +12,6 @@
     target_arch = "riscv64"
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::triple_des_ecb::TripleDesEcb;
 use verified_garbage::triple_des_ofb::{InvalidKeyLength, TripleDesOfb};
 
@@ -46,14 +44,7 @@ fn check(ctx: &TripleDesOfb, iv: [u8; 8], input: &[u8], output: &[u8], after: [u
 
 fn check_file(text: &str) -> usize {
     let mut count = 0;
-    for record in text.replace('\r', "").split("\n\n") {
-        let fields: BTreeMap<_, _> = record
-            .lines()
-            .filter_map(|line| line.trim().split_once(" = "))
-            .collect();
-        if !fields.contains_key("COUNT") {
-            continue;
-        }
+    for fields in super::records(text) {
         let mut key = unhex(fields["KEY1"]);
         key.extend(unhex(fields["KEY2"]));
         key.extend(unhex(fields["KEY3"]));

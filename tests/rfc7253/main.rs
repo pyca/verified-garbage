@@ -140,7 +140,7 @@ fn check<const T: usize>(tuple: &Tuple) {
             key.decrypt_in_place(&n, &a, &mut c, t),
             Err(Error::TagMismatch)
         );
-        assert!(c.iter().all(|&b| b == 0));
+        assert!(crate::bytes::all_equal(&c, 0));
     }
 }
 
