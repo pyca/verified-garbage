@@ -1799,37 +1799,71 @@ b 27f
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2960 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "Yf8h+AAAgTloAGz4cACM+HgArPiAAMz4iADs+JAADPmmAgh8mAAM+BABDOhgAAz4eEsnfXhTSH0AASzpAAAoKA=="
+        r#".base64 "Yf8h+AAAgTloAGz4cACM+HgArPiAAMz4iADs+JAADPmmAgh8mAAM+BABDOhgAAz4eEsnfXhTSH0AASzpCAEM6EK6AHgAACAo"
 beq %cr0, 20f
-22:
-.base64 "AABn6AgAh+gQAOc4wuiFeAAAJSg="
-beq %cr0, 23f
-25:
-.base64 "AAAD6AAACfgIAGM4CAApOf//pTgAACUo"
-bne %cr0, 25b
-b 24f
-23:
+.base64 "CABn6BQaKX0QAOc4//8IOQAAKCg="
+beq %cr0, 22f
 24:
-.base64 "BwDAODgwhHwAACQo"
-beq %cr0, 26f
-28:
-.base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
-bne %cr0, 28b
-b 27f
-26:
+.base64 "AABn6AgAh+gQAOc4wuiFeAAAJSg="
+beq %cr0, 25f
 27:
+.base64 "AAAD6AAACfgIAGM4CAApOf//pTgAACUo"
+bne %cr0, 27b
+b 26f
+25:
+26:
+.base64 "BwDAODgwhHwAACQo"
+beq %cr0, 28f
+210:
+.base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
+bne %cr0, 210b
+b 29f
+28:
+29:
 .base64 "//8IOQAAKCg="
-bne %cr0, 22b
+bne %cr0, 24b
+b 23f
+22:
+23:
+.base64 "5CZLeVA4a30AACvpCABL6WgAbOhwAIzoeACs6IAAzOiIAOzokAAM6QABDOhgAAz4CAEM6GgADPgQAQzocAAM+A=="
+bl {vg_aes_gcm_seal_split}
+.base64 "AACBOZgADOimAwh8"
 b 21f
 20:
-21:
+.base64 "AAAoKA=="
+beq %cr0, 211f
+213:
+.base64 "AABn6AgAh+gQAOc4wuiFeAAAJSg="
+beq %cr0, 214f
+216:
+.base64 "AAAD6AAACfgIAGM4CAApOf//pTgAACUo"
+bne %cr0, 216b
+b 215f
+214:
+215:
+.base64 "BwDAODgwhHwAACQo"
+beq %cr0, 217f
+219:
+.base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
+bne %cr0, 219b
+b 218f
+217:
+218:
+.base64 "//8IOQAAKCg="
+bne %cr0, 213b
+b 212f
+211:
+212:
 .base64 "aABs6HAAjOh4AKzogADM6IgA7OiQAAzpAAEs6QgBTOk="
 bl {vg_aes_gcm_seal}
-.base64 "AACBOZgADOimAwh8oAAhOCAAgE4=""#,
+.base64 "AACBOZgADOimAwh8"
+21:
+.base64 "oAAhOCAAgE4=""#,
+        vg_aes_gcm_seal_split = sym super::gcm::vg_aes_gcm_seal_split,
         vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
     )
 }
