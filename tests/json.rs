@@ -28,23 +28,43 @@ pub trait FromJson: Sized {
     /// The field `key` of an object whose value is `v`, or `None` if the
     /// object leaves it out, which only an `Option` allows.
     fn from_field(v: Option<&Value>, key: &str) -> Self {
-        Self::from_json(v.unwrap_or_else(|| panic!("missing field `{key}`")), key)
+        Self::from_json(present(v, key), key)
     }
+}
+
+// The functions below that panic are not generic, so that each panic's
+// closure is compiled once, rather than for every type read: a generic
+// function's closures are as generic as it is.
+
+/// The value `v` of the field `key`; panics if the object leaves it out.
+fn present<'a>(v: Option<&'a Value>, key: &str) -> &'a Value {
+    v.unwrap_or_else(|| panic!("missing field `{key}`"))
 }
 
 /// Parses `json`, the text of the file `name`, as a `T`; panics if it is
 /// not one.
 pub fn parse<T: FromJson>(name: &str, json: &str) -> T {
+    T::from_json(&value(name, json), name)
+}
+
+/// `json`, the text of the file `name`, as a JSON value; panics if it is
+/// not one.
+fn value(name: &str, json: &str) -> Value {
     // `Value`'s `FromStr` is compiled (optimized) in `serde_json`, rather
     // than generically in the test binary.
-    let value: Value = json.parse().unwrap_or_else(|e| panic!("{name}: {e}"));
-    T::from_json(&value, name)
+    json.parse().unwrap_or_else(|e| panic!("{name}: {e}"))
 }
 
 /// `v`, the value of `key`, as an object.
 pub fn object<'a>(v: &'a Value, key: &str) -> &'a Map<String, Value> {
     v.as_object()
         .unwrap_or_else(|| panic!("{key}: expected an object, found {v}"))
+}
+
+/// `v`, the value of `key`, as an array.
+fn array<'a>(v: &'a Value, key: &str) -> &'a [Value] {
+    v.as_array()
+        .unwrap_or_else(|| panic!("{key}: expected an array, found {v}"))
 }
 
 /// The field `key` of the object `o`.
@@ -138,9 +158,7 @@ impl<T: FromJson> FromJson for Option<T> {
 
 impl<T: FromJson> FromJson for Vec<T> {
     fn from_json(v: &Value, key: &str) -> Self {
-        let items = v
-            .as_array()
-            .unwrap_or_else(|| panic!("{key}: expected an array, found {v}"));
+        let items = array(v, key);
         // A loop: `collect`ing compiled iterator adapters for every `T`.
         let mut all = Vec::with_capacity(items.len());
         for x in items {

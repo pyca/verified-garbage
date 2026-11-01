@@ -12,23 +12,15 @@
     target_arch = "riscv64"
 ))]
 
-use super::{fields, unhex};
+use super::{fields, messages, unhex};
 
 /// Checks every `Len`/`Msg`/`MD` vector of a message test file for a
 /// hash function `digest` with `N`-byte digests (whose header gives the
 /// digest length in bits), and returns how many there were.
 fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> usize {
-    assert!(text.contains(&format!("[L = {}]", 8 * N)));
-    let fields = fields(text);
-    assert_eq!(fields.len() % 3, 0);
-    for v in fields.chunks(3) {
-        assert_eq!([v[0].0, v[1].0, v[2].0], ["Len", "Msg", "MD"]);
-        let len: usize = v[0].1.parse().unwrap();
-        assert_eq!(len % 8, 0);
-        let msg = unhex(v[1].1);
-        assert_eq!(digest(&msg[..len / 8])[..], unhex(v[2].1));
-    }
-    fields.len() / 3
+    messages(text, &format!("[L = {}]", 8 * N), &|msg| {
+        digest(msg).to_vec()
+    })
 }
 use verified_garbage::hashes::sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512, Shake128, Shake256};
 
@@ -36,19 +28,29 @@ use verified_garbage::hashes::sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512, Sha
 /// digests: 100 checkpoints, each after 1000 iterations of hashing the
 /// previous digest.
 fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
-    assert!(text.contains(&format!("[L = {}]", 8 * N)));
+    monte_carlo(text, N, &|msg, out| out.copy_from_slice(&digest(msg)));
+}
+
+/// [`check_monte_carlo`], for `n`-byte digests, which `digest` writes to
+/// its second argument; not generic, so that it is compiled once rather
+/// than for every digest length.
+fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
+    assert!(text.contains(&format!("[L = {}]", 8 * n)));
     let fields = fields(text);
     assert_eq!(fields[0].0, "Seed");
-    let mut md: [u8; N] = unhex(fields[0].1).try_into().unwrap();
+    let mut md = unhex(fields[0].1);
+    assert_eq!(md.len(), n);
+    let mut next = vec![0; n];
     let checkpoints = &fields[1..];
     assert_eq!(checkpoints.len(), 2 * 100);
     for (j, v) in checkpoints.chunks(2).enumerate() {
         assert_eq!([v[0].0, v[1].0], ["COUNT", "MD"]);
         assert_eq!(v[0].1, j.to_string());
         for _ in 0..1000 {
-            md = digest(&md);
+            digest(&md, &mut next);
+            std::mem::swap(&mut md, &mut next);
         }
-        assert_eq!(md[..], unhex(v[1].1));
+        assert_eq!(md, unhex(v[1].1));
     }
 }
 
