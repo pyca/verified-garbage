@@ -55,9 +55,8 @@ impl SeedCbc {
     pub fn new(key: &[u8]) -> Result<Self, Error> {
         let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
         let mut schedule = [0; 128];
-        // SAFETY: key and schedule are separate valid buffers of the
-        // required sizes. The function zeroes its working space on its own
-        // stack before returning.
+        // SAFETY: key and schedule are separate valid buffers of the required
+        // sizes.
         unsafe { vg_seed_expand_key(key, &mut schedule) };
         Ok(Self { schedule })
     }
@@ -74,8 +73,7 @@ impl SeedCbc {
         // SAFETY: the buffer holds `len / 16` whole blocks, and it, the
         // chaining value (which the function reads and replaces) and the
         // schedule are separate valid objects of the sizes of the signature,
-        // none of them on the callee's stack. The function zeroes its
-        // working space on its own stack before returning.
+        // none of them on the callee's stack.
         unsafe {
             vg_seed_cbc_encrypt_chained(
                 &self.schedule,

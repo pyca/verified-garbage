@@ -54,8 +54,7 @@ impl Cast5Cbc {
         // the schedule was expanded from; the buffer holds `len / 8` whole
         // blocks, and it, the chaining value (which the function reads and
         // replaces) and the schedule are separate valid objects of the sizes of
-        // the signature, none of them on the callee's stack. The function
-        // zeroes its working space on its own stack before returning.
+        // the signature, none of them on the callee's stack.
         unsafe {
             vg_cast5_cbc_encrypt_chained(
                 self.key.schedule(),

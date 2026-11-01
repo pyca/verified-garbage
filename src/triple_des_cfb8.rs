@@ -42,9 +42,8 @@ impl TripleDesCfb8 {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
-        // SAFETY: the key has a validated length; key and schedule are
-        // separate valid buffers of the required sizes. The function zeroes
-        // its working space on its own stack before returning.
+        // SAFETY: the key has a validated length; key and schedule are separate
+        // valid buffers of the required sizes.
         unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
@@ -57,8 +56,7 @@ impl TripleDesCfb8 {
     pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
         // SAFETY: `buffer`, the block at `iv` and the schedule are separate
         // valid objects of the sizes of the signature, none of them on the
-        // callee's stack. The function zeroes its working space on its own
-        // stack before returning.
+        // callee's stack.
         unsafe {
             vg_triple_des_cfb8_encrypt(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len())
         };

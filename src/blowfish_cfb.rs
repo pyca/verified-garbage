@@ -105,9 +105,8 @@ impl BlowfishCfb64 {
     fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
-        // separate valid objects of the sizes of the signature, none of them
-        // on the callee's stack. The function zeroes its working space on its
-        // own stack before returning.
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack.
         unsafe {
             f(
                 &self.schedule,

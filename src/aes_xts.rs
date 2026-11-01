@@ -280,11 +280,9 @@ impl AesXts {
         );
         let mut data_schedule = [0; 240];
         let mut tweak_schedule = [0; 240];
-        // SAFETY: each half of the key is 16, 24 or 32 bytes long; it and
-        // its schedule are separate valid buffers of the sizes of the
-        // signature, and `select` chose `expand` for the CPU's features. The
-        // function zeroes its working space on its own stack before
-        // returning.
+        // SAFETY: each half of the key is 16, 24 or 32 bytes long; it and its
+        // schedule are separate valid buffers of the sizes of the signature,
+        // and `select` chose `expand` for the CPU's features.
         unsafe {
             expand(key1.as_ptr(), key1.len(), &mut data_schedule);
             expand(key2.as_ptr(), key2.len(), &mut tweak_schedule);

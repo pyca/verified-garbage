@@ -115,9 +115,8 @@ impl TripleDesEcb {
             return Err(Error::InvalidKeyLength);
         }
         let mut schedule = [0; 384];
-        // SAFETY: the key has a validated length; key and schedule are
-        // separate valid buffers of the required sizes. The function zeroes
-        // its working space on its own stack before returning.
+        // SAFETY: the key has a validated length; key and schedule are separate
+        // valid buffers of the required sizes.
         unsafe {
             vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
         }
@@ -156,10 +155,9 @@ impl TripleDesEcb {
             (Backend::Avx512, false) => vg_triple_des_ecb_decrypt_avx512,
         };
         // SAFETY: buffer contains complete eight-byte blocks, including zero
-        // blocks. The buffer and schedule are separate valid objects and do
-        // not overlap the callee's stack. `Backend::select` chose `f` for the
-        // CPU's features. The function zeroes its working space on its own
-        // stack before returning.
+        // blocks. The buffer and schedule are separate valid objects and do not
+        // overlap the callee's stack. `Backend::select` chose `f` for the CPU's
+        // features.
         unsafe {
             f(&self.schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
         }

@@ -41,9 +41,8 @@ impl Sm4Ctr {
     /// Expands a 16-byte key.
     pub fn new(key: &[u8; 16]) -> Self {
         let mut schedule = [0; 128];
-        // SAFETY: key and schedule are separate valid buffers of the
-        // required sizes. The function zeroes its working space on its own
-        // stack before returning.
+        // SAFETY: key and schedule are separate valid buffers of the required
+        // sizes.
         unsafe {
             vg_sm4_expand_key(key, &mut schedule);
         }
@@ -76,9 +75,8 @@ impl Sm4Ctr {
     fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `ctr` and the schedule are
-        // separate valid objects of the sizes of the signature, none of
-        // them on the callee's stack. The function zeroes its working space
-        // on its own stack before returning.
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack.
         unsafe {
             vg_sm4_ctr(
                 &self.schedule,

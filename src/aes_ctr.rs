@@ -128,10 +128,9 @@ impl AesCtr {
             vg_aes_expand_key_aes
         );
         let mut schedule = [0; 240];
-        // SAFETY: the key is 16, 24 or 32 bytes long; the key and the
-        // schedule are separate valid buffers of the sizes of the signature,
-        // and `select` chose `expand` for the CPU's features. The function
-        // zeroes its working space on its own stack before returning.
+        // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
+        // are separate valid buffers of the sizes of the signature, and
+        // `select` chose `expand` for the CPU's features.
         unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,

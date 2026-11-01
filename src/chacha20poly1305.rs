@@ -5,7 +5,7 @@
 //! `VG.Spec.ChaCha20Poly1305.sealContract` and `openContract`); this module
 //! only chooses the implementation and checks the length limit. They take the
 //! key, the nonce and the tag by pointer, and keep their working space on
-//! their own stack, zeroing it before they return.
+//! their own stack.
 //!
 //! Their variants, with the same contracts, are those of ChaCha20's
 //! `crate::chacha20::Backend`, each with its suffix. On x86-64, `select`

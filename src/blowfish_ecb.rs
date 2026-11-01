@@ -106,10 +106,9 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         } else {
             vg_blowfish_ecb_encrypt
         };
-        // SAFETY: `output` holds `written / 8` complete eight-byte blocks;
-        // the schedule, written by key expansion, and `output` are separate
-        // valid objects of the lengths passed. The function zeroes its
-        // working space on its own stack before returning.
+        // SAFETY: `output` holds `written / 8` complete eight-byte blocks; the
+        // schedule, written by key expansion, and `output` are separate valid
+        // objects of the lengths passed.
         unsafe {
             crypt(&self.schedule, output.as_mut_ptr().cast(), written / 8);
         }

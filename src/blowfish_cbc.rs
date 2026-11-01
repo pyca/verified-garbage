@@ -78,8 +78,7 @@ impl BlowfishCbc {
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
-        // the callee's stack. The function zeroes its working space on its own
-        // stack before returning.
+        // the callee's stack.
         unsafe {
             vg_blowfish_cbc_encrypt_chained(
                 &self.schedule,
