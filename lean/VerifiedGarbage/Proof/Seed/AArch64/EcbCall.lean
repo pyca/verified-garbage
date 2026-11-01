@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Seed.AArch64.Modes
+public import VerifiedGarbage.Proof.Seed.Contract
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
@@ -78,7 +79,7 @@ theorem frame_push (s₀ : State) :
 /-- A call, in a frame saving `x30`, of code meeting the blocks contract of
 `d`. -/
 theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa}
-    (hv : Verified AArch64.target c (Spec.Seed.blocksContract AArch64.abi d)) (hn : c.noFrames = true)
+    (hv : Verified AArch64.target c (Proof.Seed.blocksContract AArch64.abi d)) (hn : c.noFrames = true)
     (s₀ : State) (hs : (ecbCallAArch64 d).pre s₀) :
     ∃ t s', Exec isa (.frame (.push .x30) (.call name c) (.pop .x30)) s₀ t s' ∧ abiPreserved s₀ s' ∧
       (ecbCallAArch64 d).post s₀ s' := by
@@ -91,16 +92,16 @@ theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa}
     rcases hR with rfl | rfl
     · exact sD
     · exact sS
-  refine WP.callV (k := Spec.Seed.blocksContract AArch64.abi d) hv.1 (rd := s₀.rd) (wr := s₀.wr) ?_
+  refine WP.callV (k := Proof.Seed.blocksContract AArch64.abi d) hv.1 (rd := s₀.rd) (wr := s₀.wr) ?_
     ?_ ?_ ?_ hn
   rotate_left
   · exact fun _ _ h => h
   · exact fun _ _ h => h
   rotate_left
-  · sig_pre [Spec.Seed.blocksContract, Spec.Seed.blocksSig, AArch64.abi, AArch64.argRegs]
+  · sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, AArch64.abi, AArch64.argRegs]
     exact ⟨hrd, hwr, dKD, dKS, dDS, fitK, fitD, fitS⟩
   · intro s' rd' wr' sp' hf hg _ hvv hpost
-    sig_reduce [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, AArch64.abi, AArch64.argRegs] at hpost
+    sig_reduce [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, AArch64.abi, AArch64.argRegs] at hpost
     rw [BitVec.setWidth_eq] at hpost
     have hfr := frame_push s₀
     have hsch := Proof.Seed.scheduleAt_frame hfr (p := s₀.gpr .x0) fun r hr => by

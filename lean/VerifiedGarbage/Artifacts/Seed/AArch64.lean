@@ -23,14 +23,6 @@ def artifacts : List Artifact := [
   Spec.Seed.ecbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1088 .x3 136 (Impl.Seed.AArch64.ecbCall .decrypt)
     stack := 1104
-    verified := Proof.Seed.AArch64.ecbCall_framed .decrypt },
-  Spec.Seed.encryptBlocksApi.artifact AArch64.target {
-    code := Impl.Seed.AArch64.encrypt
-    stack := 0
-    verified := Proof.Seed.AArch64.encrypt_blocks_verified },
-  Spec.Seed.decryptBlocksApi.artifact AArch64.target {
-    code := Impl.Seed.AArch64.decrypt
-    stack := 0
-    verified := Proof.Seed.AArch64.decrypt_blocks_verified }]
+    verified := Proof.Seed.AArch64.ecbCall_framed .decrypt }]
 
 end VG.Artifacts.Seed.AArch64

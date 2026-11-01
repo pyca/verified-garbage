@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Seed.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Seed.X86.Ecb
 meta import VerifiedGarbage.Proof.Seed.X86.Ecb
@@ -51,7 +52,7 @@ meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
 # SEED ECB on x86 (32-bit) meets its contracts
 
 `ecb_verified`: `ecb dir`, `vg_seed_encrypt_blocks` and
-`vg_seed_decrypt_blocks` (`Spec.Seed.blocksContract`), is correct
+`vg_seed_decrypt_blocks` (`Proof.Seed.blocksContract`), is correct
 (`ecb_wp`) and constant time, by the taint analysis, which starts with `esp`
 public and knows which argument words are the base addresses of the data and
 the scratch buffer: the pointers, `n` and what the code computes from them
@@ -199,15 +200,15 @@ def satState : State where
   wr := [⟨0x3000, 0⟩, ⟨0x4000, 1088⟩, ⟨0x8004, 16⟩]
 
 theorem wide_implies (dir : Spec.Seed.Direction) :
-    (wideContract dir).Implies (Spec.Seed.blocksContract X86.abi dir) := by
+    (wideContract dir).Implies (Proof.Seed.blocksContract X86.abi dir) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
+    sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots] at h
     sig_split h
-    sig_reduce [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
+    sig_reduce [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
-    sig_simp [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
+    sig_simp [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots] []
     sig_and_intros
     sig_close
@@ -216,16 +217,16 @@ theorem wide_implies (dir : Spec.Seed.Direction) :
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
+  · sig_implies_post [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
-  · sig_implies_pub [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
+  · sig_implies_pub [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
-  · sig_implies_sat [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
+  · sig_implies_sat [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem ecb_verified (dir : Spec.Seed.Direction) :
-    Verified X86.target (ecb dir) (Spec.Seed.blocksContract X86.abi dir) := by
+    Verified X86.target (ecb dir) (Proof.Seed.blocksContract X86.abi dir) := by
   have hsat := (wide_implies dir).sat_left
   have narrowSat : ∃ s, (ecbX86 dir).pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -257,11 +258,11 @@ theorem ecb_verified (dir : Spec.Seed.Direction) :
     exact h
 
 theorem encrypt_blocks_verified :
-    Verified X86.target Impl.Seed.X86.encrypt (Spec.Seed.blocksContract X86.abi .encrypt) :=
+    Verified X86.target Impl.Seed.X86.encrypt (Proof.Seed.blocksContract X86.abi .encrypt) :=
   ecb_verified .encrypt
 
 theorem decrypt_blocks_verified :
-    Verified X86.target Impl.Seed.X86.decrypt (Spec.Seed.blocksContract X86.abi .decrypt) :=
+    Verified X86.target Impl.Seed.X86.decrypt (Proof.Seed.blocksContract X86.abi .decrypt) :=
   ecb_verified .decrypt
 
 end VG.Proof.Seed.X86

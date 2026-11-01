@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Spec.Seed.Contract
+public import VerifiedGarbage.Proof.Seed.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Seed.Scratch
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Spec.Seed.Contract
+meta import VerifiedGarbage.Proof.Seed.Contract
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
@@ -150,15 +152,15 @@ def satState : State where
 /-- ECB against `vg_seed_encrypt_blocks`'s contract: its working space is 136
 words, of which the code uses the first 130. -/
 theorem encrypt_blocks_verified : Verified target Impl.Seed.PPC64LE.encrypt
-    (Spec.Seed.blocksContract abi .encrypt) := by
+    (Proof.Seed.blocksContract abi .encrypt) := by
   refine Verified.of_correct (ecb_correct .encrypt (n := 1088) (by decide)) (ecb_ct .encrypt 1088) ?_
-  sig_implies [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
+  sig_implies [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
     contract] [satState] using satState
 
 theorem decrypt_blocks_verified : Verified target Impl.Seed.PPC64LE.decrypt
-    (Spec.Seed.blocksContract abi .decrypt) := by
+    (Proof.Seed.blocksContract abi .decrypt) := by
   refine Verified.of_correct (ecb_correct .decrypt (n := 1088) (by decide)) (ecb_ct .decrypt 1088) ?_
-  sig_implies [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
+  sig_implies [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
     contract] [satState] using satState
 
 end VG.Proof.Seed.PPC64LE

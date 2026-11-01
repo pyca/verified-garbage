@@ -62,7 +62,7 @@ b 23f
 .inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
 .inst 0xa91a4611,0x9116c3ff,0xd65f03c0
 .p2align 6",
-        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym super::internal::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
 
@@ -141,6 +141,6 @@ b 23f
 .inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
 .inst 0xa91a4611,0x9116c3ff,0xd65f03c0
 .p2align 6",
-        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks,
+        vg_seed_decrypt_blocks = sym super::internal::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }
