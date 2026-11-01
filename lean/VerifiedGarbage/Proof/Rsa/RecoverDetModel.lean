@@ -222,3 +222,52 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
     simp [this, ex]
 
 end VG.Proof.Rsa.RecoverDet
+
+namespace VG.Proof.Rsa.RecoverDet
+
+open VG.Spec.Rsa (isqrt recoverDet)
+
+/-- Appendix C.2's factors multiply to the modulus: `p q = (b² - ϒ²) / 4 = n`. -/
+theorem recoverDet_mul {n e d p q : Nat} (h : recoverDet n e d = some (p, q)) : p * q = n := by
+  unfold recoverDet at h
+  simp only at h
+  split at h
+  · cases h
+  split at h
+  · cases h
+  generalize (n - (d * e - 1) * Nat.gcd (n - 1) (d * e - 1) % n) /
+    ((d * e - 1) * Nat.gcd (n - 1) (d * e - 1) / n + 1) + 1 = b at h
+  split at h
+  · cases h
+  rename_i big
+  generalize isqrt (b * b - 4 * n) = γ at h
+  split at h
+  · cases h
+  rename_i ex
+  simp only [ne_eq, Decidable.not_not] at ex
+  simp only [Option.some.injEq, Prod.mk.injEq] at h
+  obtain ⟨rfl, rfl⟩ := h
+  have gb : γ ≤ b := by
+    by_contra c
+    have : b * b < γ * γ := Nat.mul_self_lt_mul_self (by omega)
+    omega
+  obtain ⟨δ, rfl⟩ : ∃ δ, b = γ + δ := ⟨b - γ, by omega⟩
+  have e1 : (γ + δ) * (γ + δ) - 4 * n = γ * γ + δ * (δ + 2 * γ) - 4 * n := by
+    congr 1; ring
+  rw [e1] at ex
+  have prod : δ * (δ + 2 * γ) = 4 * n := by omega
+  obtain ⟨k, rfl⟩ : ∃ k, δ = 2 * k := by
+    refine ⟨δ / 2, ?_⟩
+    rcases Nat.mod_two_eq_zero_or_one δ with h0 | h1
+    · omega
+    · exfalso
+      have : (δ * (δ + 2 * γ)) % 2 = 1 := by
+        rw [Nat.mul_mod, h1, Nat.add_mod, h1]; simp
+      omega
+  have e2 : (γ + 2 * k + γ) / 2 = γ + k := by omega
+  have e3 : (γ + 2 * k - γ) / 2 = k := by omega
+  rw [e2, e3]
+  have : 2 * k * (2 * k + 2 * γ) = 4 * ((γ + k) * k) := by ring
+  omega
+
+end VG.Proof.Rsa.RecoverDet
