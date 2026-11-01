@@ -25,4 +25,8 @@ namespace VG
 
 materialize_code Impl.Ecdsa.RISCV64.Sign.signP256
 
+/-- `vg_ecdsa_p256_sign`'s code has no frame, which its callers' calls need. -/
+theorem Impl.Ecdsa.RISCV64.Sign.signP256_noFrames : Impl.Ecdsa.RISCV64.Sign.signP256.noFrames = true := by
+  lit_decide
+
 end VG
