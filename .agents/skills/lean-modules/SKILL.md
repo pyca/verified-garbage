@@ -100,6 +100,8 @@ without the plugin has no records, and the audits reject what depends on
 it. For Lean's and Mathlib's constants they read `TCB/AuditBase.lean`,
 which `ci/audit_base.py generate` writes after a toolchain or Mathlib
 update. So the emitter's drivers are modules too, which never read the
-private part (`.olean.private`) of this project's modules, and a restored
-build cache leaves those parts empty (`ci/lean_cache.py restore
---empty-private`).
+private part (`.olean.private`) of this project's modules, and CI restores
+its build cache with those parts empty (`ci/lean_cache.py restore
+--empty-private`). A local `ci/lean_cache.py unpack` writes them in full,
+which the files in `lean/` that are not modules (`CheckLitImports.lean`,
+`Check*.lean`, `Generate*.lean`) need.
