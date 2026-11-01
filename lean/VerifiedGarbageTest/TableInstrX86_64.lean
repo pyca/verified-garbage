@@ -106,9 +106,9 @@ def expected : String := "/// Returns 1 plus word 1 of its table.
 #[unsafe(naked)]
 pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
-        r\"lea rdx, [rip + {VG_TEST_ALUTBL}]
-.byte 0x48,0xb8,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x48,0x03,0x42,0x08,0xc3
-.p2align 6\",
+        r#\"lea rdx, [rip + {VG_TEST_ALUTBL}]
+.base64 \"SLgBAAAAAAAAAEgDQgjD\"
+.p2align 6\"#,
         VG_TEST_ALUTBL = sym super::consts::VG_TEST_ALUTBL,
     )
 }

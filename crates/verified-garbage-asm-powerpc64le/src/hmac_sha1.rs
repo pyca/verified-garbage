@@ -17,73 +17,62 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".long 0x78ccc9c2,0x3960007f,0x7ccb5838,0x396b003f,0x796bc9c2,0x7d8c5a14,0x282c0000
+        r#".base64 "wsnMeH8AYDk4WMt8PwBrOcLJa3kUWox9AAAsKA=="
 bne %cr0, 20f
-.long 0xf821fe21,0x38e10020,0x7c0802a6,0xf821ffd1,0xf8010020,0xfa8700a0,0xfaa700a8,0xfac700b0
-.long 0xfae700b8,0xfb0700c0,0xfb2700c8,0x3a830000,0x3aa70000,0x3ac40000,0x3ae50000,0x3b060000
+.base64 "If4h+CAA4TimAgh80f8h+CAAAfigAIf6qACn+rAAx/q4AOf6wAAH+8gAJ/sAAIM6AACnOgAAxDoAAOU6AAAGOw=="
 bl {vg_sha1_init}
-.long 0x38760000
+.base64 "AAB2OA=="
 bl {vg_sha1_init}
-.long 0x39800036,0x3b200000,0x39370000,0x39580000,0x282a0000
+.base64 "NgCAOQAAIDsAADc5AABYOQAAKig="
 beq %cr0, 22f
 24:
-.long 0x89090000,0x7d086278,0x7d76ca14,0x990b0014,0x39290001,0x3b390001,0x394affff,0x282a0000
+.base64 "AAAJiXhiCH0UynZ9FAALmQEAKTkBADk7//9KOQAAKig="
 bne %cr0, 24b
 b 23f
 22:
 23:
-.long 0x39400040,0x7d595050,0x282a0000
+.base64 "QABAOVBQWX0AACoo"
 beq %cr0, 25f
 27:
-.long 0x7d76ca14,0x998b0014,0x3b390001,0x394affff,0x282a0000
+.base64 "FMp2fRQAi5kBADk7//9KOQAAKig="
 bne %cr0, 27b
 b 26f
 25:
 26:
-.long 0x38740000,0x38800000,0x38b60014,0x38c00040,0x38f50000
+.base64 "AAB0OAAAgDgUALY4QADAOAAA9Tg="
 bl {vg_sha1_update_scratch}
-.long 0x3980005c,0x3b200000,0x39370000,0x39580000,0x282a0000
+.base64 "XACAOQAAIDsAADc5AABYOQAAKig="
 beq %cr0, 28f
 210:
-.long 0x89090000,0x7d086278,0x7d74ca14,0x990b0014,0x39290001,0x3b390001,0x394affff,0x282a0000
+.base64 "AAAJiXhiCH0UynR9FAALmQEAKTkBADk7//9KOQAAKig="
 bne %cr0, 210b
 b 29f
 28:
 29:
-.long 0x39400040,0x7d595050,0x282a0000
+.base64 "QABAOVBQWX0AACoo"
 beq %cr0, 211f
 213:
-.long 0x7d74ca14,0x998b0014,0x3b390001,0x394affff,0x282a0000
+.base64 "FMp0fRQAi5kBADk7//9KOQAAKig="
 bne %cr0, 213b
 b 212f
 211:
 212:
-.long 0x38760000,0x38800000,0x38b40014,0x38c00040,0x38f50000
+.base64 "AAB2OAAAgDgUALQ4QADAOAAA9Tg="
 bl {vg_sha1_update_scratch}
-.long 0xea9500a0,0xead500b0,0xeaf500b8,0xeb1500c0,0xeb3500c8,0xeab500a8,0xe8010020,0x38210030
-.long 0x7c0803a6,0x382101e0
+.base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh84AEhOA=="
 21:
-.long 0x4e800020
+.base64 "IACATg=="
 20:
-.long 0xf821fe51,0x38e10020,0x7c0802a6,0xf821ffd1,0xf8010020,0xfa870138,0xfaa70140,0xfac70148
-.long 0xfae70150,0xfb070158,0xfb270160,0x3aa70000,0x3ac30000,0x3ae40000,0x3b060000,0x3b250000
-.long 0x3a8700d0,0x38740000
+.base64 "Uf4h+CAA4TimAgh80f8h+CAAAfg4AYf6QAGn+kgBx/pQAef6WAEH+2ABJ/sAAKc6AADDOgAA5DoAAAY7AAAlO9AAhzoAAHQ4"
 bl {vg_sha1_init}
-.long 0x38740000,0x38800000,0x38b90000,0x38d80000,0x38f50000
+.base64 "AAB0OAAAgDgAALk4AADYOAAA9Tg="
 bl {vg_sha1_update_scratch}
-.long 0x38740000,0x38980000,0x38b50124,0x38d50000
+.base64 "AAB0OAAAmDgkAbU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.long 0x38760000,0x38970000,0x38b50124,0x38c00014,0x38f50000,0xea950138,0xead50148,0xeaf50150
-.long 0xeb150158,0xeb350160,0xeab50140
+.base64 "AAB2OAAAlzgkAbU4FADAOAAA9Tg4AZXqSAHV6lAB9epYARXrYAE160ABteo="
 bl {vg_hmac_sha1_init_scratch}
-.long 0xe8010020,0x38210030,0x7c0803a6,0x39810020,0x39600000,0xf96c0000,0xf96c0008,0xf96c0010
-.long 0xf96c0018,0xf96c0020,0xf96c0028,0xf96c0030,0xf96c0038,0xf96c0040,0xf96c0048,0xf96c0050
-.long 0xf96c0058,0xf96c0060,0xf96c0068,0xf96c0070,0xf96c0078,0xf96c0080,0xf96c0088,0xf96c0090
-.long 0xf96c0098,0xf96c00a0,0xf96c00a8,0xf96c00b0,0xf96c00b8,0xf96c00c0,0xf96c00c8,0xf96c00d0
-.long 0xf96c00d8,0xf96c00e0,0xf96c00e8,0xf96c00f0,0xf96c00f8,0xf96c0100,0xf96c0108,0xf96c0110
-.long 0xf96c0118,0xf96c0120,0xf96c0128,0xf96c0130,0xf96c0138,0xf96c0140,0xf96c0148,0xf96c0150
-.long 0xf96c0158,0xf96c0160,0x382101b0
-b 21b",
+.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPmwASE4"
+b 21b"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
@@ -106,18 +95,13 @@ b 21b",
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".long 0xf821fe21,0x38e10020,0x7c0802a6,0xf821ffd1,0xf8010020,0xfa8700a0,0xfaa700a8,0xfac700b0
-.long 0xfae700b8,0xfb0700c0,0xfb2700c8,0x3a830000,0x3aa70000,0x3ac40000,0x3ae60000,0x38850000
-.long 0x38a700d0,0x38c70000
+        r#".base64 "If4h+CAA4TimAgh80f8h+CAAAfigAIf6qACn+rAAx/q4AOf6wAAH+8gAJ/sAAIM6AACnOgAAxDoAAOY6AACFONAApzgAAMc4"
 bl {vg_sha1_finalize_scratch}
-.long 0x81160000,0x91140000,0x81160004,0x91140004,0x81160008,0x91140008,0x8116000c,0x9114000c
-.long 0x81160010,0x91140010,0x38740000,0x38800040,0x38b500d0,0x38c00014,0x38f50000
+.base64 "AAAWgQAAFJEEABaBBAAUkQgAFoEIABSRDAAWgQwAFJEQABaBEAAUkQAAdDhAAIA40AC1OBQAwDgAAPU4"
 bl {vg_sha1_update_scratch}
-.long 0x38740000,0x38800054,0x38b500d0,0x38d50000
+.base64 "AAB0OFQAgDjQALU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.long 0x811500d0,0x91170000,0x811500d4,0x91170004,0x811500d8,0x91170008,0x811500dc,0x9117000c
-.long 0x811500e0,0x91170010,0xea9500a0,0xead500b0,0xeaf500b8,0xeb1500c0,0xeb3500c8,0xeab500a8
-.long 0xe8010020,0x38210030,0x7c0803a6,0x382101e0,0x4e800020",
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfOABITggAIBO""#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
     )
@@ -140,49 +124,47 @@ bl {vg_sha1_finalize_scratch}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf821ffd1,0xf8010020,0xfa8700a0,0xfaa700a8,0xfac700b0,0xfae700b8,0xfb0700c0
-.long 0xfb2700c8,0x3a830000,0x3aa70000,0x3ac40000,0x3ae50000,0x3b060000
+        r#".base64 "pgIIfNH/IfggAAH4oACH+qgAp/qwAMf6uADn+sAAB/vIACf7AACDOgAApzoAAMQ6AADlOgAABjs="
 bl {vg_sha1_init}
-.long 0x38760000
+.base64 "AAB2OA=="
 bl {vg_sha1_init}
-.long 0x39800036,0x3b200000,0x39370000,0x39580000,0x282a0000
+.base64 "NgCAOQAAIDsAADc5AABYOQAAKig="
 beq %cr0, 20f
 22:
-.long 0x89090000,0x7d086278,0x7d76ca14,0x990b0014,0x39290001,0x3b390001,0x394affff,0x282a0000
+.base64 "AAAJiXhiCH0UynZ9FAALmQEAKTkBADk7//9KOQAAKig="
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0x39400040,0x7d595050,0x282a0000
+.base64 "QABAOVBQWX0AACoo"
 beq %cr0, 23f
 25:
-.long 0x7d76ca14,0x998b0014,0x3b390001,0x394affff,0x282a0000
+.base64 "FMp2fRQAi5kBADk7//9KOQAAKig="
 bne %cr0, 25b
 b 24f
 23:
 24:
-.long 0x38740000,0x38800000,0x38b60014,0x38c00040,0x38f50000
+.base64 "AAB0OAAAgDgUALY4QADAOAAA9Tg="
 bl {vg_sha1_update_scratch}
-.long 0x3980005c,0x3b200000,0x39370000,0x39580000,0x282a0000
+.base64 "XACAOQAAIDsAADc5AABYOQAAKig="
 beq %cr0, 26f
 28:
-.long 0x89090000,0x7d086278,0x7d74ca14,0x990b0014,0x39290001,0x3b390001,0x394affff,0x282a0000
+.base64 "AAAJiXhiCH0UynR9FAALmQEAKTkBADk7//9KOQAAKig="
 bne %cr0, 28b
 b 27f
 26:
 27:
-.long 0x39400040,0x7d595050,0x282a0000
+.base64 "QABAOVBQWX0AACoo"
 beq %cr0, 29f
 211:
-.long 0x7d74ca14,0x998b0014,0x3b390001,0x394affff,0x282a0000
+.base64 "FMp0fRQAi5kBADk7//9KOQAAKig="
 bne %cr0, 211b
 b 210f
 29:
 210:
-.long 0x38760000,0x38800000,0x38b40014,0x38c00040,0x38f50000
+.base64 "AAB2OAAAgDgUALQ4QADAOAAA9Tg="
 bl {vg_sha1_update_scratch}
-.long 0xea9500a0,0xead500b0,0xeaf500b8,0xeb1500c0,0xeb3500c8,0xeab500a8,0xe8010020,0x38210030
-.long 0x7c0803a6,0x4e800020",
+.base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh8IACATg==""#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
     )
@@ -205,17 +187,13 @@ bl {vg_sha1_update_scratch}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf821ffd1,0xf8010020,0xfa8700a0,0xfaa700a8,0xfac700b0,0xfae700b8,0xfb0700c0
-.long 0xfb2700c8,0x3a830000,0x3aa70000,0x3ac40000,0x3ae60000,0x38850000,0x38a700d0,0x38c70000
+        r#".base64 "pgIIfNH/IfggAAH4oACH+qgAp/qwAMf6uADn+sAAB/vIACf7AACDOgAApzoAAMQ6AADmOgAAhTjQAKc4AADHOA=="
 bl {vg_sha1_finalize_scratch}
-.long 0x81160000,0x91140000,0x81160004,0x91140004,0x81160008,0x91140008,0x8116000c,0x9114000c
-.long 0x81160010,0x91140010,0x38740000,0x38800040,0x38b500d0,0x38c00014,0x38f50000
+.base64 "AAAWgQAAFJEEABaBBAAUkQgAFoEIABSRDAAWgQwAFJEQABaBEAAUkQAAdDhAAIA40AC1OBQAwDgAAPU4"
 bl {vg_sha1_update_scratch}
-.long 0x38740000,0x38800054,0x38b500d0,0x38d50000
+.base64 "AAB0OFQAgDjQALU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.long 0x811500d0,0x91170000,0x811500d4,0x91170004,0x811500d8,0x91170008,0x811500dc,0x9117000c
-.long 0x811500e0,0x91170010,0xea9500a0,0xead500b0,0xeaf500b8,0xeb1500c0,0xeb3500c8,0xeab500a8
-.long 0xe8010020,0x38210030,0x7c0803a6,0x4e800020",
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfCAAgE4=""#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
     )

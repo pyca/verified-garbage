@@ -16,43 +16,43 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_secp256k1_point_a0_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8030e00,0x38800e40,0x38a00d20,0x38c00d20
+        r#".base64 "pgIIfAAOA/hADoA4IA2gOCANwDg="
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ce0,0x38a00e40,0x38c00e40
+.base64 "4AyAOEAOoDhADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ce0,0x38a00ce0,0x38c00ce0
+.base64 "4AyAOOAMoDjgDMA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ce0,0x38a00ce0,0x38c00ce0
+.base64 "4AyAOOAMoDjgDMA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e60,0x38a00d20,0x38c00d40
+.base64 "YA6AOCANoDhADcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800e80,0x38a00d40,0x38c00d40
+.base64 "gA6AOEANoDhADcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800e80,0x38a00de0,0x38c00e80
+.base64 "gA6AOOANoDiADsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ca0,0x38a00e80,0x38c00ce0
+.base64 "oAyAOIAOoDjgDMA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800cc0,0x38a00e40,0x38c00e80
+.base64 "wAyAOEAOoDiADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ce0,0x38a00e60,0x38c00ce0
+.base64 "4AyAOGAOoDjgDMA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800e60,0x38a00e80,0x38c00e80
+.base64 "YA6AOIAOoDiADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e80,0x38a00e60,0x38c00e80
+.base64 "gA6AOGAOoDiADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e40,0x38a00e40,0x38c00e80
+.base64 "QA6AOEAOoDiADsA4"
 bl {vg_secp256k1_sub_mod_p}
-.long 0x38800cc0,0x38a00e40,0x38c00cc0
+.base64 "wAyAOEAOoDjADMA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800cc0,0x38a00ca0,0x38c00cc0
+.base64 "wAyAOKAMoDjADMA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e60,0x38a00d00,0x38c00d20
+.base64 "YA6AOAANoDggDcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ca0,0x38a00e40,0x38c00e60
+.base64 "oAyAOEAOoDhgDsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ca0,0x38a00ca0,0x38c00ca0
+.base64 "oAyAOKAMoDigDMA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0xe8030e00,0x7c0803a6,0x4e800020",
+.base64 "AA4D6KYDCHwgAIBO""#,
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
@@ -72,59 +72,59 @@ bl {vg_secp256k1_add_mod_p}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_secp256k1_point_a0_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8030e00,0x38800e40,0x38a00d00,0x38c00d60
+        r#".base64 "pgIIfAAOA/hADoA4AA2gOGANwDg="
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800e60,0x38a00d20,0x38c00d80
+.base64 "YA6AOCANoDiADcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ea0,0x38a00d60,0x38c00d80
+.base64 "oA6AOGANoDiADcA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ec0,0x38a00d00,0x38c00d20
+.base64 "wA6AOAANoDggDcA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ea0,0x38a00ea0,0x38c00ec0
+.base64 "oA6AOKAOoDjADsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ec0,0x38a00e40,0x38c00e60
+.base64 "wA6AOEAOoDhgDsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ea0,0x38a00ea0,0x38c00ec0
+.base64 "oA6AOKAOoDjADsA4"
 bl {vg_secp256k1_sub_mod_p}
-.long 0x38800ec0,0x38a00d80,0x38c00d40
+.base64 "wA6AOIANoDhADcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ec0,0x38a00ec0,0x38c00d20
+.base64 "wA6AOMAOoDggDcA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800cc0,0x38a00d60,0x38c00d40
+.base64 "wAyAOGANoDhADcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800cc0,0x38a00cc0,0x38c00d00
+.base64 "wAyAOMAMoDgADcA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800ca0,0x38a00e40,0x38c00e40
+.base64 "oAyAOEAOoDhADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e40,0x38a00ca0,0x38c00e40
+.base64 "QA6AOKAMoDhADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e80,0x38a00de0,0x38c00d40
+.base64 "gA6AOOANoDhADcA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ce0,0x38a00e60,0x38c00e80
+.base64 "4AyAOGAOoDiADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e60,0x38a00e60,0x38c00e80
+.base64 "YA6AOGAOoDiADsA4"
 bl {vg_secp256k1_sub_mod_p}
-.long 0x38800cc0,0x38a00de0,0x38c00cc0
+.base64 "wAyAOOANoDjADMA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ca0,0x38a00ec0,0x38c00cc0
+.base64 "oAyAOMAOoDjADMA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800e80,0x38a00ea0,0x38c00e60
+.base64 "gA6AOKAOoDhgDsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ca0,0x38a00e80,0x38c00ca0
+.base64 "oAyAOIAOoDigDMA4"
 bl {vg_secp256k1_sub_mod_p}
-.long 0x38800cc0,0x38a00cc0,0x38c00e40
+.base64 "wAyAOMAMoDhADsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800e60,0x38a00e60,0x38c00ce0
+.base64 "YA6AOGAOoDjgDMA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800cc0,0x38a00e60,0x38c00cc0
+.base64 "wAyAOGAOoDjADMA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0x38800e40,0x38a00e40,0x38c00ea0
+.base64 "QA6AOEAOoDigDsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ce0,0x38a00ce0,0x38c00ec0
+.base64 "4AyAOOAMoDjADsA4"
 bl {vg_secp256k1_mul_mod_p}
-.long 0x38800ce0,0x38a00ce0,0x38c00e40
+.base64 "4AyAOOAMoDhADsA4"
 bl {vg_secp256k1_add_mod_p}
-.long 0xe8030e00,0x7c0803a6,0x4e800020",
+.base64 "AA4D6KYDCHwgAIBO""#,
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,

@@ -24,23 +24,18 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
-.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.octa 0x8b04468b0689c8310b8b068b0c245c8b,0x89c831084b8b08468b044689c831044b,0x24448b0c4689c8310c4b8b0c468b0846,0x18246c8b00000001bff38908244c8b04
-.byte 0x55,0x57,0x53,0x51,0x50
+.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMi0QkBItMJAiJ878BAAAAi2wkGFVXU1FQ"
 call {vg_aes_encrypt_blocks_aesni}
-.octa 0x38900000000b80c245c8b5858585858,0x89c8310e8b038b0c4389084389044389,0x8b08438b044389c831044e8b04438b03,0x89c8310c4e8b0c438b084389c831084e
-.octa 0x1c001c001c0011424448b10c6830c43
-.byte 0xc0,0x03,0x44,0x24,0x10,0x39,0xc6
+.base64 "WFhYWFiLXCQMuAAAAACJA4lDBIlDCIlDDIsDiw4xyIkDi0MEi04EMciJQwSLQwiLTggxyIlDCItDDItODDHIiUMMg8YQi0QkFAHAAcABwAHAA0QkEDnG"
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x814b08b00000810988b1824448b
-.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -66,25 +61,18 @@ pub const VG_AES_CBC_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
-.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.octa 0x8900000800858900000000b818246c8b,0x80c85890000080885890000080485,0x8008589c8310e8b00000800858b00,0x8048589c831044e8b00000804858b00
-.octa 0x88589c831084e8b00000808858b0000,0x8589c8310c4e8b0000080c858b000008,0x1bff38908244c8b0424448b0000080c
-.byte 0x00,0x00,0x00,0x8b,0x6c,0x24,0x18,0x55,0x57,0x53,0x51,0x50
+.base64 "i2wkGLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAi4UACAAAiw4xyImFAAgAAIuFBAgAAItOBDHIiYUECAAAi4UICAAAi04IMciJhQgIAACLhQwIAACLTgwxyImFDAgAAItEJASLTCQIifO/AQAAAItsJBhVV1NRUA=="
 call {vg_aes_decrypt_blocks_aesni}
-.octa 0x89c8310b8b068b0c245c8b5858585858,0x8b08468b044689c831044b8b04468b06,0x89c8310c4b8b0c468b084689c831084b,0x44389038900000000b818246c8b0c46
-.octa 0xc831000008008d8b038b0c4389084389,0x44389c831000008048d8b04438b0389,0x438b084389c831000008088d8b08438b,0x8b10c6830c4389c8310000080c8d8b0c
-.octa 0x3910244403c001c001c001c001142444
-.byte 0xc6
+.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyLbCQYuAAAAACJA4lDBIlDCIlDDIsDi40ACAAAMciJA4tDBIuNBAgAADHIiUMEi0MIi40ICAAAMciJQwiLQwyLjQwIAAAxyIlDDIPGEItEJBQBwAHAAcABwANEJBA5xg=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x814b08b00000810988b1824448b
-.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
     )
 }
@@ -106,23 +94,18 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
-.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.octa 0x8b04468b0689c8310b8b068b0c245c8b,0x89c831084b8b08468b044689c831044b,0x24448b0c4689c8310c4b8b0c468b0846,0x18246c8b00000001bff38908244c8b04
-.byte 0x55,0x57,0x53,0x51,0x50
+.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMi0QkBItMJAiJ878BAAAAi2wkGFVXU1FQ"
 call {vg_aes_encrypt_blocks}
-.octa 0x38900000000b80c245c8b5858585858,0x89c8310e8b038b0c4389084389044389,0x8b08438b044389c831044e8b04438b03,0x89c8310c4e8b0c438b084389c831084e
-.octa 0x1c001c001c0011424448b10c6830c43
-.byte 0xc0,0x03,0x44,0x24,0x10,0x39,0xc6
+.base64 "WFhYWFiLXCQMuAAAAACJA4lDBIlDCIlDDIsDiw4xyIkDi0MEi04EMciJQwSLQwiLTggxyIlDCItDDItODDHIiUMMg8YQi0QkFAHAAcABwAHAA0QkEDnG"
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x814b08b00000810988b1824448b
-.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -144,25 +127,18 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
-.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.octa 0x8900000800858900000000b818246c8b,0x80c85890000080885890000080485,0x8008589c8310e8b00000800858b00,0x8048589c831044e8b00000804858b00
-.octa 0x88589c831084e8b00000808858b0000,0x8589c8310c4e8b0000080c858b000008,0x1bff38908244c8b0424448b0000080c
-.byte 0x00,0x00,0x00,0x8b,0x6c,0x24,0x18,0x55,0x57,0x53,0x51,0x50
+.base64 "i2wkGLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAi4UACAAAiw4xyImFAAgAAIuFBAgAAItOBDHIiYUECAAAi4UICAAAi04IMciJhQgIAACLhQwIAACLTgwxyImFDAgAAItEJASLTCQIifO/AQAAAItsJBhVV1NRUA=="
 call {vg_aes_decrypt_blocks}
-.octa 0x89c8310b8b068b0c245c8b5858585858,0x8b08468b044689c831044b8b04468b06,0x89c8310c4b8b0c468b084689c831084b,0x44389038900000000b818246c8b0c46
-.octa 0xc831000008008d8b038b0c4389084389,0x44389c831000008048d8b04438b0389,0x438b084389c831000008088d8b08438b,0x8b10c6830c4389c8310000080c8d8b0c
-.octa 0x3910244403c001c001c001c001142444
-.byte 0xc6
+.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyLbCQYuAAAAACJA4lDBIlDCIlDDIsDi40ACAAAMciJA4tDBIuNBAgAADHIiUMEi0MIi40ICAAAMciJQwiLQwyLjQwIAAAxyIlDDIPGEItEJBQBwAHAAcABwANEJBA5xg=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x814b08b00000810988b1824448b
-.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )
 }

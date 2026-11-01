@@ -23,16 +23,10 @@ pub const VG_CMAC_AES_SUBKEYS_AESNI_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_subkeys_aesni(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891024448b,0x5c8bc5890000081ca88900000818b889,0x4858900000800858900000000b80c24,0xb80000080c8589000008088589000008
-.octa 0x8b0c4389084389044389038900000000,0xbf00000800c281ea8908244c8b042444
-.byte 0x01,0x00,0x00,0x00,0x55,0x57,0x53,0x52,0x51,0x50
+        r#".base64 "i0QkEImYEAgAAImwFAgAAIm4GAgAAImoHAgAAInFi1wkDLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAuAAAAACJA4lDBIlDCIlDDItEJASLTCQIieqBwgAIAAC/AQAAAFVXU1JRUA=="
 call {vg_aes_ctr32_aesni}
-.octa 0x738b08538b044b8b038b585858585858,0xbd1fefc1c789ce0fca0fc90fc80f0c,0xc1cf89c00100000087e581fd29000000,0x89d201f9091fefc1d789c901f8091fef
-.octa 0xca0fc90fc80fee31f601fa091fefc1f7,0x8b038b0c7389085389044b890389ce0f,0xce0fca0fc90fc80f0c738b08538b044b,0x87e581fd2900000000bd1fefc1c789
-.octa 0xc1d789c901f8091fefc1cf89c0010000,0x31f601fa091fefc1f789d201f9091fef,0x89144b89104389ce0fca0fc90fc80fee,0x8b00000810988b1024448b1c73891853
-.octa 0x81ca88b00000818b88b00000814b0
-.byte 0x00,0xc3
-.p2align 6",
+.base64 "WFhYWFhYiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzolDEIlLFIlTGIlzHItEJBCLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
+.p2align 6"#,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -58,23 +52,18 @@ pub const VG_CMAC_AES_UPDATE_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_update_aesni(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
-.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.octa 0x8589c8310e8b038b18246c8b0c245c8b,0x8048589c831044e8b04438b00000800,0x8088589c831084e8b08438b0000,0xb80000080c8589c8310c4e8b0c438b
-.octa 0x448b0c43890843890443890389000000,0x1bf00000800c281ea8908244c8b0424
-.byte 0x00,0x00,0x00,0x55,0x57,0x53,0x52,0x51,0x50
+.base64 "i1wkDItsJBiLA4sOMciJhQAIAACLQwSLTgQxyImFBAgAAItDCItOCDHIiYUICAAAi0MMi04MMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
 call {vg_aes_ctr32_aesni}
-.octa 0x1c0011424448b10c683585858585858
-.byte 0xc0,0x01,0xc0,0x01,0xc0,0x03,0x44,0x24,0x10,0x39,0xc6
+.base64 "WFhYWFhYg8YQi0QkFAHAAcABwAHAA0QkEDnG"
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x814b08b00000810988b1824448b
-.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -101,33 +90,25 @@ pub const VG_CMAC_AES_FINALIZE_AESNI_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finalize_aesni(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x4c8bc5890000081ca88900000818b889
-.byte 0x24,0x14,0x83,0xf9,0x10
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAInFi0wkFIP5EA=="
 je 20f
-.octa 0x804858900000800858900000000b8,0x81ef890000080c858900000808858900
-.byte 0xc7,0x00,0x08,0x00,0x00,0x8b,0x74,0x24,0x10,0x8b,0x4c,0x24,0x14,0x85,0xc9
+.base64 "uAAAAACJhQAIAACJhQQIAACJhQgIAACJhQwIAACJ74HHAAgAAIt0JBCLTCQUhck="
 je 22f
 24:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 24b
 jmp 23f
 22:
 23:
-.octa 0x800858b0424548b078800000080b8,0x8b000008008589c831000001008a8b00,0x48589c831000001048a8b0000080485,0x31000001088a8b00000808858b000008
-.octa 0xc8a8b0000080c858b000008088589c8
-.byte 0x01,0x00,0x00,0x31,0xc8,0x89,0x85,0x0c,0x08,0x00,0x00
+.base64 "uIAAAACIB4tUJASLhQAIAACLigABAAAxyImFAAgAAIuFBAgAAIuKBAEAADHIiYUECAAAi4UICAAAi4oIAQAAMciJhQgIAACLhQwIAACLigwBAAAxyImFDAgAAA=="
 jmp 21f
 20:
-.octa 0xf08a8b038b0424548b10245c8b,0xf48a8b04438b000008008589c831,0xf88a8b08438b000008048589c83100,0xfc8a8b0c438b000008088589c8310000
-.byte 0x00,0x00,0x00,0x31,0xc8,0x89,0x85,0x0c,0x08,0x00,0x00
+.base64 "i1wkEItUJASLA4uK8AAAADHIiYUACAAAi0MEi4r0AAAAMciJhQQIAACLQwiLivgAAAAxyImFCAgAAItDDIuK/AAAADHIiYUMCAAA"
 21:
-.octa 0x8589c8310b8b00000800858b0c245c8b,0x89c831044b8b00000804858b00000800,0xc831084b8b00000808858b0000080485,0x310c4b8b0000080c858b000008088589
-.octa 0x4389038900000000b80000080c8589c8,0x8908244c8b0424448b0c438908438904,0x5253575500000001bf00000800c281ea
-.byte 0x51,0x50
+.base64 "i1wkDIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
 call {vg_aes_ctr32_aesni}
-.octa 0x810988b1824448b585858585858,0x81ca88b00000818b88b00000814b08b
-.byte 0x00,0x00,0xc3
-.p2align 6",
+.base64 "WFhYWFhYi0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -150,16 +131,12 @@ pub const VG_CMAC_AES_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x44890000091824848bfffff6ec24a48d,0x24848b082444890000091c24848b0424,0x24448914c083e0890c24448900000920,0x884b0890000088098891024448b10
-.octa 0x24448b0000088ca88900000888b88900,0x51525310245c8b0424548b0c244c8b08
-.byte 0x50
+        r#".base64 "jaQk7Pb//4uEJBgJAACJRCQEi4QkHAkAAIlEJAiLhCQgCQAAiUQkDIngg8AUiUQkEItEJBCJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQIi0wkDItUJASLXCQQU1JRUA=="
 call {vg_aes_expand_key_scratch_aesni}
-.octa 0x8302e9c10c244c8b0424448b58585858,0x525310245c8b000000f0c281c28906c1
-.byte 0x51,0x50
+.base64 "WFhYWItEJASLTCQMwekCg8EGicKBwvAAAACLXCQQU1JRUA=="
 call {vg_cmac_aes_subkeys_aesni}
-.octa 0x10828900000000b80424548b58585858,0x89000001188289000001148289000001,0x8b00000880988b1024448b0000011c82,0x88ca88b00000888b88b00000884b0
-.byte 0x00,0x8d,0xa4,0x24,0x14,0x09,0x00,0x00,0xc3
-.p2align 6",
+.base64 "WFhYWItUJAS4AAAAAImCEAEAAImCFAEAAImCGAEAAImCHAEAAItEJBCLmIAIAACLsIQIAACLuIgIAACLqIwIAACNpCQUCQAAww=="
+.p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
     )
@@ -183,61 +160,52 @@ pub const VG_CMAC_AES_ABSORB_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x44890000092424848bfffff6e024a48d,0x24848b082444890000092824848b0424,0x890000093024848b0c2444890000092c,0x848b142444890000093424848b102444
-.octa 0x448920c083e089182444890000093824,0x884b0890000088098891c24448b1c24,0x448b0000088ca88900000888b8890000
-.byte 0x24,0x0c,0x8b,0x4c,0x24,0x10,0x09,0xc1
+        r#".base64 "jaQk4Pb//4uEJCQJAACJRCQEi4QkKAkAAIlEJAiLhCQsCQAAiUQkDIuEJDAJAACJRCQQi4QkNAkAAIlEJBSLhCQ4CQAAiUQkGIngg8AgiUQkHItEJByJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQMi0wkEAnB"
 je 20f
-.byte 0x83,0xe8,0x01,0x83,0xe0,0x0f,0x83,0xc0,0x01
+.base64 "g+gBg+APg8AB"
 jmp 21f
 20:
 21:
-.byte 0xb9,0x10,0x00,0x00,0x00,0x29,0xc1,0x8b,0x54,0x24,0x18,0x39,0xca
+.base64 "uRAAAAApwYtUJBg5yg=="
 jb 22f
 jmp 23f
 22:
-.byte 0x89,0xd1
+.base64 "idE="
 23:
-.octa 0x120c78104247c8b1424748bcd89
-.byte 0x01,0xc7,0x85,0xc9
+.base64 "ic2LdCQUi3wkBIHHIAEAAAHHhck="
 je 24f
 26:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 26b
 jmp 25f
 24:
 25:
-.byte 0xbe,0x00,0x00,0x00,0x00,0x8b,0x54,0x24,0x18,0x29,0xea
+.base64 "vgAAAACLVCQYKeo="
 je 27f
-.byte 0xbe,0x01,0x00,0x00,0x00
+.base64 "vgEAAAA="
 jmp 28f
 27:
 28:
-.octa 0x110c281c28908244c8b0424448b,0x525356571c247c8b00000120c381c389
-.byte 0x51,0x50
+.base64 "i0QkBItMJAiJwoHCEAEAAInDgcMgAQAAi3wkHFdWU1JRUA=="
 call {vg_cmac_aes_update_aesni}
-.octa 0x8104245c8b00000000b9585858585858
-.byte 0xc3,0x20,0x01,0x00,0x00,0x8b,0x54,0x24,0x18,0x29,0xea
+.base64 "WFhYWFhYuQAAAACLXCQEgcMgAQAAi1QkGCnq"
 je 29f
-.octa 0x14245c8bc1290fe083c88901e983d189
-.byte 0x01,0xeb
+.base64 "idGD6QGJyIPgDynBi1wkFAHr"
 jmp 210f
 29:
 210:
-.octa 0x8908244c8b0424448bcd0104eec1ce89,0x51525356571c247c8b00000110c281c2
-.byte 0x50
+.base64 "ic7B7gQBzYtEJASLTCQIicKBwhABAACLfCQcV1ZTUlFQ"
 call {vg_cmac_aes_update_aesni}
-.octa 0x4247c8bee011424748b585858585858
-.byte 0x81,0xc7,0x20,0x01,0x00,0x00,0x8b,0x4c,0x24,0x18,0x29,0xe9,0x85,0xc9
+.base64 "WFhYWFhYi3QkFAHui3wkBIHHIAEAAItMJBgp6YXJ"
 je 211f
 213:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 213b
 jmp 212f
 211:
 212:
-.octa 0x884b08b00000880988b1c24448b,0x2024a48d0000088ca88b00000888b88b
-.byte 0x09,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkHIuYgAgAAIuwhAgAAIu4iAgAAIuojAgAAI2kJCAJAADD"
+.p2align 6"#,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
     )
 }
@@ -261,28 +229,24 @@ pub const VG_CMAC_AES_FINISH_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x44890000092024848bfffff6e424a48d,0x24848b082444890000092424848b0424,0x890000092c24848b0c24448900000928,0xe089142444890000093024848b102444
-.octa 0x88098891824448b182444891cc083,0x8ca88900000888b88900000884b08900,0x247c8b00000110c6810424748b000008
-.byte 0x14,0xb9,0x10,0x00,0x00,0x00,0x85,0xc9
+        r#".base64 "jaQk5Pb//4uEJCAJAACJRCQEi4QkJAkAAIlEJAiLhCQoCQAAiUQkDIuEJCwJAACJRCQQi4QkMAkAAIlEJBSJ4IPAHIlEJBiLRCQYiZiACAAAibCECAAAibiICAAAiaiMCAAAi3QkBIHGEAEAAIt8JBS5EAAAAIXJ"
 je 20f
 22:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 22b
 jmp 21f
 20:
 21:
-.byte 0x8b,0x74,0x24,0x0c,0x8b,0x4c,0x24,0x10,0x09,0xf1
+.base64 "i3QkDItMJBAJ8Q=="
 je 23f
-.byte 0x83,0xee,0x01,0x83,0xe6,0x0f,0x83,0xc6,0x01
+.base64 "g+4Bg+YPg8YB"
 jmp 24f
 23:
 24:
-.octa 0xc381c3891424548b08244c8b0424448b
-.byte 0x20,0x01,0x00,0x00,0x8b,0x7c,0x24,0x18,0x57,0x56,0x53,0x52,0x51,0x50
+.base64 "i0QkBItMJAiLVCQUicOBwyABAACLfCQYV1ZTUlFQ"
 call {vg_cmac_aes_finalize_aesni}
-.octa 0x880988b1824448b585858585858,0x88ca88b00000888b88b00000884b08b
-.byte 0x00,0x00,0x8d,0xa4,0x24,0x1c,0x09,0x00,0x00,0xc3
-.p2align 6",
+.base64 "WFhYWFhYi0QkGIuYgAgAAIuwhAgAAIu4iAgAAIuojAgAAI2kJBwJAADD"
+.p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni,
     )
 }
@@ -303,16 +267,10 @@ call {vg_cmac_aes_finalize_aesni}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891024448b,0x5c8bc5890000081ca88900000818b889,0x4858900000800858900000000b80c24,0xb80000080c8589000008088589000008
-.octa 0x8b0c4389084389044389038900000000,0xbf00000800c281ea8908244c8b042444
-.byte 0x01,0x00,0x00,0x00,0x55,0x57,0x53,0x52,0x51,0x50
+        r#".base64 "i0QkEImYEAgAAImwFAgAAIm4GAgAAImoHAgAAInFi1wkDLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAuAAAAACJA4lDBIlDCIlDDItEJASLTCQIieqBwgAIAAC/AQAAAFVXU1JRUA=="
 call {vg_aes_ctr32}
-.octa 0x738b08538b044b8b038b585858585858,0xbd1fefc1c789ce0fca0fc90fc80f0c,0xc1cf89c00100000087e581fd29000000,0x89d201f9091fefc1d789c901f8091fef
-.octa 0xca0fc90fc80fee31f601fa091fefc1f7,0x8b038b0c7389085389044b890389ce0f,0xce0fca0fc90fc80f0c738b08538b044b,0x87e581fd2900000000bd1fefc1c789
-.octa 0xc1d789c901f8091fefc1cf89c0010000,0x31f601fa091fefc1f789d201f9091fef,0x89144b89104389ce0fca0fc90fc80fee,0x8b00000810988b1024448b1c73891853
-.octa 0x81ca88b00000818b88b00000814b0
-.byte 0x00,0xc3
-.p2align 6",
+.base64 "WFhYWFhYiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzolDEIlLFIlTGIlzHItEJBCLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
+.p2align 6"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -334,23 +292,18 @@ call {vg_aes_ctr32}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x1024748b0000081ca88900000818b889
-.byte 0x8b,0x44,0x24,0x14,0x85,0xc0
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.octa 0x8589c8310e8b038b18246c8b0c245c8b,0x8048589c831044e8b04438b00000800,0x8088589c831084e8b08438b0000,0xb80000080c8589c8310c4e8b0c438b
-.octa 0x448b0c43890843890443890389000000,0x1bf00000800c281ea8908244c8b0424
-.byte 0x00,0x00,0x00,0x55,0x57,0x53,0x52,0x51,0x50
+.base64 "i1wkDItsJBiLA4sOMciJhQAIAACLQwSLTgQxyImFBAgAAItDCItOCDHIiYUICAAAi0MMi04MMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
 call {vg_aes_ctr32}
-.octa 0x1c0011424448b10c683585858585858
-.byte 0xc0,0x01,0xc0,0x01,0xc0,0x03,0x44,0x24,0x10,0x39,0xc6
+.base64 "WFhYWFhYg8YQi0QkFAHAAcABwAHAA0QkEDnG"
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x814b08b00000810988b1824448b
-.byte 0x8b,0xb8,0x18,0x08,0x00,0x00,0x8b,0xa8,0x1c,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -373,33 +326,25 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x814b0890000081098891824448b,0x4c8bc5890000081ca88900000818b889
-.byte 0x24,0x14,0x83,0xf9,0x10
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAInFi0wkFIP5EA=="
 je 20f
-.octa 0x804858900000800858900000000b8,0x81ef890000080c858900000808858900
-.byte 0xc7,0x00,0x08,0x00,0x00,0x8b,0x74,0x24,0x10,0x8b,0x4c,0x24,0x14,0x85,0xc9
+.base64 "uAAAAACJhQAIAACJhQQIAACJhQgIAACJhQwIAACJ74HHAAgAAIt0JBCLTCQUhck="
 je 22f
 24:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 24b
 jmp 23f
 22:
 23:
-.octa 0x800858b0424548b078800000080b8,0x8b000008008589c831000001008a8b00,0x48589c831000001048a8b0000080485,0x31000001088a8b00000808858b000008
-.octa 0xc8a8b0000080c858b000008088589c8
-.byte 0x01,0x00,0x00,0x31,0xc8,0x89,0x85,0x0c,0x08,0x00,0x00
+.base64 "uIAAAACIB4tUJASLhQAIAACLigABAAAxyImFAAgAAIuFBAgAAIuKBAEAADHIiYUECAAAi4UICAAAi4oIAQAAMciJhQgIAACLhQwIAACLigwBAAAxyImFDAgAAA=="
 jmp 21f
 20:
-.octa 0xf08a8b038b0424548b10245c8b,0xf48a8b04438b000008008589c831,0xf88a8b08438b000008048589c83100,0xfc8a8b0c438b000008088589c8310000
-.byte 0x00,0x00,0x00,0x31,0xc8,0x89,0x85,0x0c,0x08,0x00,0x00
+.base64 "i1wkEItUJASLA4uK8AAAADHIiYUACAAAi0MEi4r0AAAAMciJhQQIAACLQwiLivgAAAAxyImFCAgAAItDDIuK/AAAADHIiYUMCAAA"
 21:
-.octa 0x8589c8310b8b00000800858b0c245c8b,0x89c831044b8b00000804858b00000800,0xc831084b8b00000808858b0000080485,0x310c4b8b0000080c858b000008088589
-.octa 0x4389038900000000b80000080c8589c8,0x8908244c8b0424448b0c438908438904,0x5253575500000001bf00000800c281ea
-.byte 0x51,0x50
+.base64 "i1wkDIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
 call {vg_aes_ctr32}
-.octa 0x810988b1824448b585858585858,0x81ca88b00000818b88b00000814b08b
-.byte 0x00,0x00,0xc3
-.p2align 6",
+.base64 "WFhYWFhYi0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -418,16 +363,12 @@ call {vg_aes_ctr32}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x44890000091824848bfffff6ec24a48d,0x24848b082444890000091c24848b0424,0x24448914c083e0890c24448900000920,0x884b0890000088098891024448b10
-.octa 0x24448b0000088ca88900000888b88900,0x51525310245c8b0424548b0c244c8b08
-.byte 0x50
+        r#".base64 "jaQk7Pb//4uEJBgJAACJRCQEi4QkHAkAAIlEJAiLhCQgCQAAiUQkDIngg8AUiUQkEItEJBCJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQIi0wkDItUJASLXCQQU1JRUA=="
 call {vg_aes_expand_key_scratch}
-.octa 0x8302e9c10c244c8b0424448b58585858,0x525310245c8b000000f0c281c28906c1
-.byte 0x51,0x50
+.base64 "WFhYWItEJASLTCQMwekCg8EGicKBwvAAAACLXCQQU1JRUA=="
 call {vg_cmac_aes_subkeys}
-.octa 0x10828900000000b80424548b58585858,0x89000001188289000001148289000001,0x8b00000880988b1024448b0000011c82,0x88ca88b00000888b88b00000884b0
-.byte 0x00,0x8d,0xa4,0x24,0x14,0x09,0x00,0x00,0xc3
-.p2align 6",
+.base64 "WFhYWItUJAS4AAAAAImCEAEAAImCFAEAAImCGAEAAImCHAEAAItEJBCLmIAIAACLsIQIAACLuIgIAACLqIwIAACNpCQUCQAAww=="
+.p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
@@ -447,61 +388,52 @@ call {vg_cmac_aes_subkeys}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x44890000092424848bfffff6e024a48d,0x24848b082444890000092824848b0424,0x890000093024848b0c2444890000092c,0x848b142444890000093424848b102444
-.octa 0x448920c083e089182444890000093824,0x884b0890000088098891c24448b1c24,0x448b0000088ca88900000888b8890000
-.byte 0x24,0x0c,0x8b,0x4c,0x24,0x10,0x09,0xc1
+        r#".base64 "jaQk4Pb//4uEJCQJAACJRCQEi4QkKAkAAIlEJAiLhCQsCQAAiUQkDIuEJDAJAACJRCQQi4QkNAkAAIlEJBSLhCQ4CQAAiUQkGIngg8AgiUQkHItEJByJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQMi0wkEAnB"
 je 20f
-.byte 0x83,0xe8,0x01,0x83,0xe0,0x0f,0x83,0xc0,0x01
+.base64 "g+gBg+APg8AB"
 jmp 21f
 20:
 21:
-.byte 0xb9,0x10,0x00,0x00,0x00,0x29,0xc1,0x8b,0x54,0x24,0x18,0x39,0xca
+.base64 "uRAAAAApwYtUJBg5yg=="
 jb 22f
 jmp 23f
 22:
-.byte 0x89,0xd1
+.base64 "idE="
 23:
-.octa 0x120c78104247c8b1424748bcd89
-.byte 0x01,0xc7,0x85,0xc9
+.base64 "ic2LdCQUi3wkBIHHIAEAAAHHhck="
 je 24f
 26:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 26b
 jmp 25f
 24:
 25:
-.byte 0xbe,0x00,0x00,0x00,0x00,0x8b,0x54,0x24,0x18,0x29,0xea
+.base64 "vgAAAACLVCQYKeo="
 je 27f
-.byte 0xbe,0x01,0x00,0x00,0x00
+.base64 "vgEAAAA="
 jmp 28f
 27:
 28:
-.octa 0x110c281c28908244c8b0424448b,0x525356571c247c8b00000120c381c389
-.byte 0x51,0x50
+.base64 "i0QkBItMJAiJwoHCEAEAAInDgcMgAQAAi3wkHFdWU1JRUA=="
 call {vg_cmac_aes_update}
-.octa 0x8104245c8b00000000b9585858585858
-.byte 0xc3,0x20,0x01,0x00,0x00,0x8b,0x54,0x24,0x18,0x29,0xea
+.base64 "WFhYWFhYuQAAAACLXCQEgcMgAQAAi1QkGCnq"
 je 29f
-.octa 0x14245c8bc1290fe083c88901e983d189
-.byte 0x01,0xeb
+.base64 "idGD6QGJyIPgDynBi1wkFAHr"
 jmp 210f
 29:
 210:
-.octa 0x8908244c8b0424448bcd0104eec1ce89,0x51525356571c247c8b00000110c281c2
-.byte 0x50
+.base64 "ic7B7gQBzYtEJASLTCQIicKBwhABAACLfCQcV1ZTUlFQ"
 call {vg_cmac_aes_update}
-.octa 0x4247c8bee011424748b585858585858
-.byte 0x81,0xc7,0x20,0x01,0x00,0x00,0x8b,0x4c,0x24,0x18,0x29,0xe9,0x85,0xc9
+.base64 "WFhYWFhYi3QkFAHui3wkBIHHIAEAAItMJBgp6YXJ"
 je 211f
 213:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 213b
 jmp 212f
 211:
 212:
-.octa 0x884b08b00000880988b1c24448b,0x2024a48d0000088ca88b00000888b88b
-.byte 0x09,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkHIuYgAgAAIuwhAgAAIu4iAgAAIuojAgAAI2kJCAJAADD"
+.p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
 }
@@ -521,28 +453,24 @@ jmp 212f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x44890000092024848bfffff6e424a48d,0x24848b082444890000092424848b0424,0x890000092c24848b0c24448900000928,0xe089142444890000093024848b102444
-.octa 0x88098891824448b182444891cc083,0x8ca88900000888b88900000884b08900,0x247c8b00000110c6810424748b000008
-.byte 0x14,0xb9,0x10,0x00,0x00,0x00,0x85,0xc9
+        r#".base64 "jaQk5Pb//4uEJCAJAACJRCQEi4QkJAkAAIlEJAiLhCQoCQAAiUQkDIuEJCwJAACJRCQQi4QkMAkAAIlEJBSJ4IPAHIlEJBiLRCQYiZiACAAAibCECAAAibiICAAAiaiMCAAAi3QkBIHGEAEAAIt8JBS5EAAAAIXJ"
 je 20f
 22:
-.byte 0x0f,0xb6,0x06,0x88,0x07,0x83,0xc6,0x01,0x83,0xc7,0x01,0x83,0xe9,0x01
+.base64 "D7YGiAeDxgGDxwGD6QE="
 jne 22b
 jmp 21f
 20:
 21:
-.byte 0x8b,0x74,0x24,0x0c,0x8b,0x4c,0x24,0x10,0x09,0xf1
+.base64 "i3QkDItMJBAJ8Q=="
 je 23f
-.byte 0x83,0xee,0x01,0x83,0xe6,0x0f,0x83,0xc6,0x01
+.base64 "g+4Bg+YPg8YB"
 jmp 24f
 23:
 24:
-.octa 0xc381c3891424548b08244c8b0424448b
-.byte 0x20,0x01,0x00,0x00,0x8b,0x7c,0x24,0x18,0x57,0x56,0x53,0x52,0x51,0x50
+.base64 "i0QkBItMJAiLVCQUicOBwyABAACLfCQYV1ZTUlFQ"
 call {vg_cmac_aes_finalize}
-.octa 0x880988b1824448b585858585858,0x88ca88b00000888b88b00000884b08b
-.byte 0x00,0x00,0x8d,0xa4,0x24,0x1c,0x09,0x00,0x00,0xc3
-.p2align 6",
+.base64 "WFhYWFhYi0QkGIuYgAgAAIuwhAgAAIu4iAgAAIuojAgAAI2kJBwJAADD"
+.p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
     )
 }

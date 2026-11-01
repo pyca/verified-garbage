@@ -59,8 +59,11 @@ members = ["crates/*"]
 [workspace.package]
 version = "0.0.0"
 edition = "2024"
-# Naked functions (`#[unsafe(naked)]`, `naked_asm!`) were stabilized in 1.88.
-rust-version = "1.88"
+# The generated code's `.base64` directive, which the assembler of LLVM 22
+# reads (`lean/VerifiedGarbage/TCB/Rust.lean`, `packRun`), is first in 1.95
+# (naked functions, `#[unsafe(naked)]` and `naked_asm!`, were stabilized in
+# 1.88).
+rust-version = "1.95"
 license = "Apache-2.0 OR BSD-3-Clause"
 repository = "https://github.com/pyca/verified-garbage"
 publish = false

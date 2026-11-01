@@ -20,28 +20,23 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
-.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
 22:
-.long 0x3940000c,0x7d30542c,0x39400001,0x794a07c6,0x7d495050,0x7d6a9050,0x796b0fe0,0x39800000
-.long 0x7d6b6050,0x7e4c5278,0x7d8c5838,0x7d4a6278,0xf9530800,0x7dc37378,0x7de47b78,0x7e058378
-.long 0x7e268b78,0x7d475378,0x7e689b78
+.base64 "DABAOSxUMH0BAEA5xgdKeVBQSX1QkGp94A9reQAAgDlQYGt9eFJMfjhYjH14Ykp9AAhT+Xhzw314e+R9eIMFfniLJn54U0d9eJtofg=="
 bl {vg_aes_ctr32}
-.long 0xe9330800,0x7e499050,0x792926e4,0x7e314a14,0x3940000c,0x7d30542c,0x28290000
+.base64 "AAgz6VCQSX7kJil5FEoxfgwAQDksVDB9AAApKA=="
 beq %cr0, 23f
 b 24f
 23:
-.long 0x39400008,0x7d305428,0x39600001,0x796b07c6,0x7d295a14,0x7d305528,0x79290022,0x3929ffff
-.long 0x79290fe0,0x39400000,0x7d705428,0x7d6b4a14,0x7d705528
+.base64 "CABAOShUMH0BAGA5xgdreRRaKX0oVTB9IgApef//KTngDyl5AABAOShUcH0USmt9KFVwfQ=="
 24:
-.long 0x28320000
+.base64 "AAAyKA=="
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
-.long 0x4e800020",
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }

@@ -184,10 +184,11 @@ def escapeBraces (s : String) : String :=
 
 /-- A Rust string literal whose value is `s`: a raw string literal, which
 rustc reads faster (it maps each character of an ordinary literal's
-template back to the source by unescaping it), unless `s` has a `"` or a
-carriage return, which a raw string literal cannot hold. -/
+template back to the source by unescaping it), `r"…"`, or `r#"…"#` if `s`
+has a `"` (`.base64`'s string, `packRun`); an ordinary one if `s` has a
+carriage return, which a raw string literal cannot hold, or a `"#`. -/
 def literal (s : String) : String :=
-  if s.any (fun c => c == '"' || c == '\r') then
+  if s.contains '\r' || (s.splitOn "\"#").length > 1 then
     "\"" ++ s.foldl (init := "") (fun acc c =>
       match c with
       | '\\' => acc ++ "\\\\"
@@ -195,6 +196,7 @@ def literal (s : String) : String :=
       | '\n' => acc ++ "\\n"
       | '\r' => acc ++ "\\r"
       | c => acc.push c) ++ "\""
+  else if s.contains '"' then "r#\"" ++ s ++ "\"#"
   else "r\"" ++ s ++ "\""
 
 def header : String :=
@@ -239,10 +241,11 @@ def commentOf : Line → Option String
     if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
   | _ => none
 
-/-- The directives of a printer's encoded instructions, one word each, that
-`pushLine` joins: `.inst` (AArch64's, `TCB/AArch64/Encode.lean`) and
-`.long` (PPC64LE's, `TCB/PPC64LE/Encode.lean`). -/
-def joinable : List String := [".inst ", ".long "]
+/-- The directive of a printer's encoded instructions, one word each, that
+`pushLine` joins: `.inst` (AArch64's, `TCB/AArch64/Encode.lean`), which
+marks its words as instructions (the object's mapping symbols), unlike the
+data that `packRun` writes. -/
+def joinable : List String := [".inst "]
 
 /-- The value of a hexadecimal digit. -/
 def hexDigit (c : Char) : Option Nat :=
@@ -250,66 +253,85 @@ def hexDigit (c : Char) : Option Nat :=
   else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
   else none
 
+/-- The value of `n` lowercase hexadecimal digits after `0x`. -/
+def hexValue? (n : Nat) (p : String) : Option Nat :=
+  match p.toList with
+  | '0' :: 'x' :: ds =>
+    if ds.length == n then ds.foldlM (fun v c => return v * 16 + (← hexDigit c)) 0 else none
+  | _ => none
+
 /-- The bytes of an encoded `.byte` line, as x86's printers emit each
 instruction (`TCB/X86/Encode.lean`'s `byteLine`): `.byte ` then bytes of two
 lowercase hexadecimal digits each (`0xNN`), separated by commas alone;
 `none` for any other line (e.g. `symPush`'s `.byte 0x81, 199`). -/
 def byteLine? (l : String) : Option (List Nat) :=
-  if l.startsWith ".byte " then
-    ((l.drop 6).toString.splitOn ",").mapM fun p =>
-      match p.toList with
-      | ['0', 'x', h, l] => do return (← hexDigit h) * 16 + (← hexDigit l)
-      | _ => none
+  if l.startsWith ".byte " then ((l.drop 6).toString.splitOn ",").mapM (hexValue? 2) else none
+
+/-- The bytes of an encoded `.long` line, as PPC64LE's printer emits each
+instruction (`TCB/PPC64LE/Encode.lean`'s `longLine`): `.long ` then words of
+eight lowercase hexadecimal digits each (`0xNNNNNNNN`), separated by commas
+alone, each little-endian (GNU as, "`.long`", in the target's byte order,
+little-endian on PPC64LE); `none` for any other line (e.g. x86's
+`.long {VG_TABLE} - 2b`). -/
+def wordLine? (l : String) : Option (List Nat) :=
+  if l.startsWith ".long " then
+    ((l.drop 6).toString.splitOn ",").flatMapM fun w => do
+      let v ← hexValue? 8 w
+      return [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
   else none
 
-/-- The bytes `bs` as `.octa` lines, each of up to 4 values of 16 bytes,
-little-endian (GNU as, "`.octa`": "16-byte integers", in the target's byte
-order, little-endian on x86), then a `.byte` line of the bytes after the
-last whole 16 (in `byteLine?`'s form). -/
-def packBytes (bs : List Nat) : List String :=
-  let hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
-  let byte (b : Nat) : String :=
-    let ds := Nat.toDigits 16 b
-    "0x" ++ String.ofList (List.replicate (2 - ds.length) '0' ++ ds)
-  let whole := bs.length / 16
-  let octas := (List.range whole).map fun i =>
-    ((bs.drop (16 * i)).take 16).foldr (fun b v => v * 256 + b) 0
-  let lines := (List.range ((whole + 3) / 4)).map fun j =>
-    ".octa " ++ ",".intercalate (((octas.drop (4 * j)).take 4).map hex)
-  let tail := bs.drop (16 * whole)
-  lines ++ (if tail.isEmpty then [] else [".byte " ++ ",".intercalate (tail.map byte)])
+/-- The bytes of a line that a printer emits as an instruction's machine
+code as data (`byteLine?`, `wordLine?`), if it is one. -/
+def dataBytes? (l : String) : Option (List Nat) := (byteLine? l).orElse fun _ => wordLine? l
 
-/-- A line of a template as it is written: an encoded `.byte` line of 16
-bytes or more packed into `.octa`s (`packBytes`), any other as it is. -/
-def packLine (l : String) : List String :=
-  match byteLine? l with
-  | some bs => if bs.length ≥ 16 then packBytes bs else [l]
-  | none => [l]
+/-- The base64 encoding of the bytes `bs` (RFC 4648, §4: the standard
+alphabet, padded with `=`). -/
+def base64 (bs : List Nat) : String :=
+  let alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toList
+  let digit (n : Nat) : Char := alphabet.getD (n % 64) '='
+  String.ofList (go bs digit)
+where
+  go (bs : List Nat) (digit : Nat → Char) : List Char :=
+    match bs with
+    | a :: b :: c :: rest =>
+      let v := a * 65536 + b * 256 + c
+      [digit (v / 262144), digit (v / 4096), digit (v / 64), digit v] ++ go rest digit
+    | [a, b] =>
+      let v := a * 65536 + b * 256
+      [digit (v / 262144), digit (v / 4096), digit (v / 64), '=']
+    | [a] => let v := a * 65536; [digit (v / 262144), digit (v / 4096), '=', '=']
+    | [] => []
 
-/-- Whether `p` is a `.byte` line that ends in an encoded byte (`, 0xNN` or
-` 0xNN`): its last five characters, so that joining a run of lines reads
-each once. Joining `.byte` lines is correct whatever their form, as the
-bytes of `.byte a, b` then `.byte c` are those of `.byte a, b,c`; this only
-keeps the other `.byte` lines (`symPush`'s `.byte 0x81, 199`) out of the
-runs that `packLine` packs. -/
-def endsInByte (p : String) : Bool :=
-  let tail := (p.takeEnd 5).toString
-  p.startsWith ".byte " && (tail.startsWith "," || tail.startsWith " ") &&
-    (byteLine? (".byte " ++ (tail.drop 1).toString)).isSome
+/-- The lines of a run of template lines `ls` as they are written: each run of
+consecutive lines of encoded instructions' bytes (`dataBytes?`) as one line,
+`.base64 "<their bytes>"` (the assembler's `.base64` directive, which emits
+the bytes its string encodes: LLVM 22's, Rust 1.95's assembler, the
+workspace's `rust-version`), so that rustc and the assembler read about 1.3
+characters a byte, not one directive an instruction; any other line as it
+is. -/
+def packRun (ls : List String) : List String :=
+  go ls []
+where
+  /-- The lines for `ls`, after the bytes `acc` (reversed) of the run of
+  encoded lines before it. -/
+  go : List String → List (List Nat) → List String
+    | [], acc => flush acc
+    | l :: ls, acc => match dataBytes? l with
+      | some bs => go ls (bs :: acc)
+      | none => flush acc ++ l :: go ls []
+  flush : List (List Nat) → List String
+    | [] => []
+    | acc => [".base64 \"" ++ base64 acc.reverse.flatten ++ "\""]
 
 /-- The template line `t` added to the run of lines `run` (reversed): joined
-to the line before it if `t` is an encoded `.byte` line (`byteLine?`) and
-that one a `.byte` line ending in an encoded byte (`endsInByte`), as the one
-`.byte` line of the bytes of both, in order; or if both are lines of the same `joinable` directive,
-of one word (`t`) and of fewer than 8 (the line before), as
+to the line before it if both are lines of the same `joinable` directive, of
+one word (`t`) and of fewer than 8 (the line before), as
 `<directive> <words>,<word>`, which the assembler reads as the same words in
-turn (GNU as, "`.inst`": "one or more expressions"; "`.long`": "zero or more
-expressions, of any section, separated by commas"); else a line of its own.
+turn (GNU as, "`.inst`": "one or more expressions"); else a line of its own.
 So a run of encoded instructions is a few lines for rustc and the assembler
 to read, not one per instruction. -/
 def pushLine (t : String) : List String → List String
   | p :: run =>
-    if (byteLine? t).isSome && endsInByte p then (p ++ "," ++ (t.drop 6).toString) :: run else
     match joinable.find? (t.startsWith ·) with
     | some d =>
       let w := (t.drop d.length).toString
@@ -329,8 +351,8 @@ for rustc to parse and expand, not one per line.
 A comment line (`commentOf`) is not part of the template, nor of the Rust
 code: the assembly file has it (`assembly`), so that neither rustc nor the
 assembler reads it. Consecutive lines of an encoded instruction's directive
-are joined (`pushLine`), and encoded bytes packed into `.octa`s
-(`packLine`). -/
+are joined (`pushLine`), and encoded bytes written as `.base64`
+(`packRun`). -/
 def template (call : String) (ls : List Line) : String :=
   go (ls.filter (commentOf · |>.isNone)) []
 where
@@ -343,7 +365,7 @@ where
   /-- The run of text lines `run` as one string literal (reversed). -/
   flush : List String → String
     | [] => ""
-    | run => "        " ++ literal ("\n".intercalate (run.reverse.flatMap packLine)) ++ ",\n"
+    | run => "        " ++ literal ("\n".intercalate (packRun run.reverse)) ++ ",\n"
 
 /-- A line of a function's assembly file (`assembly`): a line of text as it is, a
 call or the address of a static as `lineText` writes it, the static's name

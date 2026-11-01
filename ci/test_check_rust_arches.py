@@ -120,7 +120,7 @@ class Output(unittest.TestCase):
         self.assertEqual(out["thumb"], [])
         self.assertEqual({e.get("arch", "x86_64") for e in out["cpu"]}, {"x86_64"})
         self.assertIn("icx", {e["chip"] for e in out["cpu"]})
-        self.assertEqual({e["rust"] for e in out["rust"]}, {"stable", "1.88", "beta", "nightly"})
+        self.assertEqual({e["rust"] for e in out["rust"]}, {"stable", "1.95", "beta", "nightly"})
 
     def test_nothing(self):
         out = run("pull_request", "lean/A.lean\n")

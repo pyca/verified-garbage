@@ -640,22 +640,32 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
     .call "vg_f", .text ".inst 0x4"] ==
   "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
--- Consecutive encoded `.byte` lines are joined, and packed into `.octa`s of
--- 16 bytes, little-endian, then a `.byte` of the rest; another `.byte` line
--- (`symPush`'s) is neither.
+-- Each run of consecutive encoded `.byte` lines (x86's) and `.long` lines
+-- (PPC64LE's, whose words are little-endian) is one `.base64` line of their
+-- bytes; another `.byte` or `.long` line (`symPush`'s) is neither, and ends
+-- a run.
 #guard Rust.template "call" ((List.range 18).map fun i => .text (X86.byteLine [i])) ==
-  "        r\".octa 0xf0e0d0c0b0a09080706050403020100\n.byte 0x10,0x11\",\n"
+  "        " ++ Rust.literal ".base64 \"AAECAwQFBgcICQoLDA0ODxAR\"" ++ ",\n"
 #guard Rust.template "call" [.text ".byte 0x81, 199", .text (X86.byteLine [1, 2]),
-    .text (X86.byteLine [3])] ==
-  "        r\".byte 0x81, 199\n.byte 0x01,0x02,0x03\",\n"
-#guard Rust.packBytes ((List.range 70).map (· % 256)) == [
-  ".octa 0xf0e0d0c0b0a09080706050403020100,0x1f1e1d1c1b1a19181716151413121110," ++
-    "0x2f2e2d2c2b2a29282726252423222120,0x3f3e3d3c3b3a39383736353433323130",
-  ".byte 0x40,0x41,0x42,0x43,0x44,0x45"]
+    .text (X86.byteLine [3]), .text ".long 1b - 2b", .text (X86.byteLine [3])] ==
+  "        " ++ Rust.literal ".byte 0x81, 199\n.base64 \"AQID\"\n.long 1b - 2b\n.base64 \"Aw==\"" ++
+    ",\n"
+#guard Rust.template "bl" [.text (PPC64LE.longLine 0x28250000), .text (PPC64LE.longLine 0x7c642a14),
+    .text "beq %cr0, 20f"] ==
+  "        " ++ Rust.literal ".base64 \"AAAlKBQqZHw=\"\nbeq %cr0, 20f" ++ ",\n"
 #guard Rust.byteLine? ".byte 0x81, 199" == none
 #guard Rust.byteLine? ".byte 0x81,0xc7" == some [0x81, 0xc7]
-#guard Rust.template "bl" [.text ".long 0x1", .text ".long 0x2", .text ".inst 0x3"] ==
-  "        r\".long 0x1,0x2\n.inst 0x3\",\n"
+#guard Rust.wordLine? ".long 0x28250000,0x00000001" == some [0, 0, 0x25, 0x28, 1, 0, 0, 0]
+#guard Rust.wordLine? ".long 0x1" == none
+#guard Rust.wordLine? ".long {VG_TABLE} - 2b" == none
+-- RFC 4648's padding: none for whole groups of 3 bytes, `==` after 1, `=` after 2.
+#guard Rust.base64 [255, 255, 255] == "////"
+#guard Rust.base64 [0xfb] == "+w=="
+#guard Rust.base64 [0xfb, 0xff] == "+/8="
+#guard Rust.base64 [] == ""
+-- `.inst` lines are joined, but not other directives.
+#guard Rust.template "bl" [.text ".long x", .text ".long y", .text ".inst 0x3"] ==
+  "        r\".long x\n.long y\n.inst 0x3\",\n"
 #guard Rust.template "bl" [.text ".insn 4, 0x1", .text ".insn 4, 0x2"] ==
   "        r\".insn 4, 0x1\n.insn 4, 0x2\",\n"
 -- A comment line is a printer's `// ` line of one line: anything else is
@@ -786,9 +796,11 @@ def callSample : Prog X86_64.isa :=
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
   "        r\"mov rax, QWORD PTR [rdi]\",\n"
 
--- A raw string literal, unless the text has a `"` or a carriage return.
+-- A raw string literal, `r#"…"#` if the text has a `"`, unless it has a
+-- carriage return or a `"#`.
 #guard Rust.literal "mov rax, rbx\nret" == "r\"mov rax, rbx\nret\""
-#guard Rust.literal ".ascii \"a\\b\"\nret" == "\".ascii \\\"a\\\\b\\\"\\nret\""
+#guard Rust.literal ".ascii \"a\\b\"\nret" == "r#\".ascii \"a\\b\"\nret\"#"
+#guard Rust.literal "a\"#b" == "\"a\\\"#b\""
 #guard Rust.literal "a\rb" == "\"a\\rb\""
 
 -- A run of lines that are text alone is one string literal, its lines

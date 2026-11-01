@@ -14,22 +14,22 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".long 0x38a00000,0x7886e8c2,0x38e00007,0x7c843838,0x28260000
+        r#".base64 "AACgOMLohngHAOA4ODiEfAAAJig="
 beq %cr0, 20f
 22:
-.long 0xf8a30000,0x38630008,0x38c6ffff,0x28260000
+.base64 "AACj+AgAYzj//8Y4AAAmKA=="
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0x38c40000,0x28260000
+.base64 "AADEOAAAJig="
 beq %cr0, 23f
 25:
-.long 0x98a30000,0x38630001,0x38c6ffff,0x28260000
+.base64 "AACjmAEAYzj//8Y4AAAmKA=="
 bne %cr0, 25b
 b 24f
 23:
 24:
-.long 0x4e800020",
+.base64 "IACATg==""#,
     )
 }
