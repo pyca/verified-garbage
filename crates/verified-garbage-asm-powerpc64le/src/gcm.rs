@@ -3,6 +3,73 @@
 //! `assembly/gcm.s`.
 #![allow(dead_code)]
 
+/// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
+///
+/// Contract: `VG.Spec.Gcm.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key context, the counter block, `Y` or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `counter` must be valid for reads and writes of 16 bytes.
+/// * `y` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2112 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `counter`, `y`, `data` and `scratch` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `counter`, `y`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+    core::arch::naked_asm!(
+        r#".base64 "AAAoKA=="
+beq %cr0, 20f
+.base64 "AAAp+wgASfsQAGn7GACJ+yAAqfsoAMn7MADp+6YCCHw4AAn4eBt9fHgjnHx4K7t8eDPafHg7/nx4Qxl9eEs/fULZLHsAACwo"
+beq %cr0, 22f
+.base64 "eOujf3jjhH9422V/ePPGfwcAADg4ACt/UMjrfPAAHTl400l/QABfOQAAJyg="
+beq %cr0, 24f
+.base64 "AADK+QgA6vkQAAr6KACK+jAAqvo4AMr6QADq+kgACvtQAEr6eFNQfYAAEDp4Sy59cADgOQAAADjEBAAQBgdgPQQFa2HGB2t5AgNrZQABa2EOD4A9DA2MYcYHjHkKC4xlCAmMYWcBa35nASx8LJpgEiwKcxIQAIA6AAEQO2AAQDoAAGA9AABrYcYHa3kAAGtlAABrYQAAgD0AAIxhxgeMeQAAjGUBAIxhZwErfmcBLHwsiiASLAoxEpmnMH4AwmA9AABrYcYHa3kAAGtlAABrYQDCgD0AAIxhxgeMeQAAjGUAAIxhZwGrfWcBLHwsaqARLAqtEQBGYD0AAGthxgdreQAAa2UAAGthAACAPQAAjGHGB4x5AACMZQMAjGFnAWt9ZwEsfCxaYBEsCmsRmQYofetMKREsSikRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJRwESxaaxGZBk5961RKEQwAYDksXAV9eBtpfIRcixGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEeAAYDmZXxB98ABgOZlfUH4sYiwRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJSQESxijBGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEcAAYDmZXxB90ABgOZlfUH4sYiwRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJSQESxijBGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEaAAYDmZXxB9sABgOZlfUH4sYiwRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJSQESxijBGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEYAAYDmZXxB9kABgOZlfUH54wwt/AQCEOQ=="
+26:
+.base64 "mQYJfetECBGZBwt9EAApORAAazn//4w5AAAsKA=="
+bne %cr0, 26b
+.base64 "eMMDf0AA4DpQAAA7mQYFfOsEABCZfxB8"
+27:
+.base64 "mX4QfJmmMH6AiFESgIggEICQQBCAkGEQgJCCEICQoxCAkMQQgJDlEICQRhKZf1B+CAAIOZkGA33ERAAQxEQhEMREQhDERGMQxESEEMREpRDERMYQxETnEJmmA30gAKA6ma4jfTAAwDqZtmN9mb6DfZnGw32ZluN9cABgOZleA36AAIA5mWYjfpAAIzmZBkl+CEUAEAhFIRAIRUIQCEVjEAhFhBAIRaUQCEXGEAhF5xAITQAQCE0hEAhNQhAITWMQCE2EEAhNpRAITcYQCE3nEAhdABAIXSEQCF1CEAhdYxAIXYQQCF2lEAhdxhAIXecQCGUAEAhlIRAIZUIQCGVjEAhlhBAIZaUQCGXGEAhl5xAIdQAQCHUhEAh1QhAIdWMQCHWEEAh1pRAIdcYQCHXnEAh9ABAIfSEQCH1CEAh9YxAIfYQQCH2lEAh9xhAIfecQCIUAEAiFIRAIhUIQCIVjEAiFhBAIhaUQCIXGEAiF5xAIjQAQCI0hEAiNQhAIjWMQCI2EEAiNpRAIjcYQCI3nEAiVABAIlSEQCJVCEAiVYxAIlYQQCJWlEAiVxhAIlecQoAAjOfb/RDkAACoo"
+beq %cr0, 28f
+210:
+.base64 "mQYJfQhFABAIRSEQCEVCEAhFYxAIRYQQCEWlEAhFxhAIRecQEAApOf//SjkAACoo"
+bne %cr0, 210b
+b 29f
+28:
+29:
+.base64 "mQYJfQlFABAJRSEQCUVCEAlFYxAJRYQQCUWlEAlFxhAJRecQmQYGfZmmJn2ZrmZ9mbaGfZm+xn2ZxuZ9mZYGfpleJn7rRAgRxEQAEOtMKRHETCEQ61xrEcRcQhDrZIwRxGRjEOt0zhHEdIQQ63zvEcR8pRDrhBASxITGEOuMMRLEjOcQ6wQAEZkHBn3rDCERmacmfesUYhGZr2Z96xyDEZm3hn3rJMQRmb/Gfess5RGZx+Z96zQGEpmXBn7rPCcSmV8mfoAAxjj4/+c4gACgOpAAwDrEVAAQma4QfZm2MH0gALU6IADWOiwKARIsgkASLAIwEiyKMRLITBESyETSEchE8RHITDISxIzvEYR0ThGEfG8RhISQEZmuEH2ZtjB9IAC1OiAA1josGgMSLIJCEiwSMBIsijESyEwREshE0hHIRPERyEwyEsSM7xHEdEoRxHxrEcSEjBGZrhB9mbYwfSAAtTogANY6LCoFEiyCRBIsIjASLIoxEshMERLIRNIRyETxEchMMhLEjO8RxHRKEcR8axHEhIwRma4QfZm2MH0gALU6IADWOiw6BxIsgkYSLDIwEiyKMRLITBESyETSEchE8RHITDISxIzvEcRUzhHEXO8RxGQQEsSMMRIsik4SyGxSEixyzhHEdO8RxJTvESyKTxLIbFISLIIQEsR8EBIsklISxJRQESxSShEAACco"
+bne %cr0, 27b
+.base64 "DABgOSxdBX3rVEoRmQdOfYD/kDkAAMzpCADs6RAADOooAIzqMACs6jgAzOpAAOzqSAAM61AATOo="
+b 25f
+24:
+25:
+.base64 "BwAAODgAK39QyIt95CaMeRRi3n94W3l9"
+b 23f
+22:
+23:
+.base64 "AAA5KA=="
+beq %cr0, 211f
+.base64 "eOujf3jjhH9422V/ePPGf3jLJ39AAB85"
+bl {vg_aes_ctr32}
+.base64 "8AB9OHjTRH9488V/eMsmf0AA/zg="
+bl {vg_ghash}
+b 212f
+211:
+212:
+.base64 "OAAf6KYDCHx4++x/AAAs6wgATOsQAGzrGACM6yAArOsoAMzrMADs6w=="
+b 21f
+20:
+21:
+.base64 "IACATg==""#,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
