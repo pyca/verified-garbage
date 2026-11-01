@@ -20,8 +20,8 @@
 mod blake2b;
 mod blake2s;
 
-use crate::bytes::unhex;
 use crate::json_struct;
+use verified_garbage_test_vectors::unhex;
 
 json_struct! {
     /// A vector of the file: the digest `out` of `input` with the key `key` (none

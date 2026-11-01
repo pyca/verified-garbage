@@ -63,28 +63,7 @@ mod triple_des_cfb8;
 mod triple_des_ecb;
 mod triple_des_ofb;
 
-use std::collections::BTreeMap;
-
-use crate::bytes::unhex;
-
-/// The records of a CAVP response file that have a `COUNT`, each as its
-/// `key = value` lines (records end at an empty line; a key given twice
-/// keeps its last value).
-fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
-    let mut records = Vec::new();
-    let mut fields = BTreeMap::new();
-    for line in text.lines().chain([""]) {
-        if line.is_empty() {
-            let record = std::mem::take(&mut fields);
-            if record.contains_key("COUNT") {
-                records.push(record);
-            }
-        } else if let Some((key, value)) = line.trim().split_once(" = ") {
-            fields.insert(key, value);
-        }
-    }
-    records
-}
+use verified_garbage_test_vectors::{cavp_fields, unhex};
 
 /// The vectors of the curve `curve` (`"P-192"`) of the SP 800-56A ECC CDH
 /// primitive test, its integers `len` bytes long: each `QCAVS`
@@ -102,7 +81,7 @@ fn ecdh_vectors(curve: &str, len: usize) -> Vec<[Vec<u8>; 4]> {
     let text = crate::vectors::text("vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
     let text = text.split_once(&format!("[{curve}]")).unwrap().1;
     let text = text.split_once("\n[").unwrap().0;
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields.len(), 25 * 7);
     let mut vectors = Vec::new();
     for v in fields.chunks(7) {
@@ -123,16 +102,6 @@ fn ecdh_vectors(curve: &str, len: usize) -> Vec<[Vec<u8>; 4]> {
     vectors
 }
 
-/// The `key = value` lines of a CAVP response file, in order, without the
-/// comments, blank lines and `[L = ...]` section headers.
-fn fields(text: &str) -> Vec<(&str, &str)> {
-    text.lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with('#') && !l.starts_with('['))
-        .map(|l| l.split_once(" = ").unwrap())
-        .collect()
-}
-
 /// Checks every `Len`/`Msg`/`MD` vector of a message test file for a hash
 /// function `digest` with `N`-byte digests, and returns how many there were.
 fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> usize {
@@ -144,7 +113,7 @@ fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> u
 /// every digest length.
 fn messages(text: &str, header: &str, digest: &dyn Fn(&[u8]) -> Vec<u8>) -> usize {
     assert!(text.contains(header));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields.len() % 3, 0);
     for v in fields.chunks(3) {
         assert_eq!([v[0].0, v[1].0, v[2].0], ["Len", "Msg", "MD"]);
@@ -168,7 +137,7 @@ fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
 /// its second argument; not generic, as [`messages`].
 fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
     assert!(text.contains(&format!("[L = {n}]")));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields[0].0, "Seed");
     let mut seed = unhex(fields[0].1);
     assert_eq!(seed.len(), n);

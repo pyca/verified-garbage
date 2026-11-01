@@ -16,7 +16,7 @@
 
 use verified_garbage::rsa::{Error, PublicKey};
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 #[test]
 fn rsadp_component() {

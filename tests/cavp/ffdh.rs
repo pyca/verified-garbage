@@ -10,9 +10,9 @@
     ),
     feature = "alloc"
 ))]
-use super::unhex;
 use std::collections::BTreeMap;
 use verified_garbage::ffdh::{Error, Parameters, PrivateKey, PublicKey};
+use verified_garbage_test_vectors::{cavp_fields, unhex};
 
 fn cases(text: &str) -> Vec<BTreeMap<String, String>> {
     let mut domain = BTreeMap::new();
@@ -227,7 +227,7 @@ fn malformed_components_and_domains() {
 #[test]
 fn rfc3526_sizes() {
     let text = crate::vectors::text("vectors/cryptography-ffdh/rfc3526/rfc3526.txt");
-    for (_, p) in super::fields(&text).into_iter().filter(|(k, _)| *k == "P") {
+    for (_, p) in cavp_fields(&text).into_iter().filter(|(k, _)| *k == "P") {
         let p = hex(p);
         let params = Parameters::from_components(&p, &[2], None).unwrap();
         let k = PrivateKey::from_components(&params, &[8], &[3]).unwrap();

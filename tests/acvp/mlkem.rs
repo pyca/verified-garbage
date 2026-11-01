@@ -15,9 +15,9 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-pub use crate::bytes::unhex;
 use crate::json::FromJson;
 use crate::json_struct;
+use verified_garbage_test_vectors::unhex;
 
 json_struct! {
     struct File<T> {
@@ -98,7 +98,8 @@ macro_rules! mlkem_tests {
         use verified_garbage::hashes::sha3::{Sha3_256, Shake256};
         use verified_garbage::$module::{Error, $DecapsulationKey, $EncapsulationKey};
 
-        use super::mlkem::{KeyGen, array, encap_decap, keygen_vectors, unhex};
+        use super::mlkem::{KeyGen, array, encap_decap, keygen_vectors};
+        use verified_garbage_test_vectors::unhex;
 
         const EK: usize = $EncapsulationKey::SIZE;
         const CT: usize = $EncapsulationKey::CIPHERTEXT_SIZE;

@@ -21,8 +21,8 @@ use verified_garbage::chacha20::ChaCha20;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::SizesGroup;
-use crate::bytes::unhex;
 use crate::require_vectors;
+use verified_garbage_test_vectors::unhex;
 
 json_struct! {
     struct Case {

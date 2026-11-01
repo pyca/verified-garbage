@@ -14,9 +14,8 @@
 
 use verified_garbage::seed_ecb::{Error, SeedEcb};
 
-use super::records;
-use super::unhex;
 use crate::bytes::xor;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 fn key16(key: &[u8]) -> [u8; 16] {
     key.try_into().unwrap()
@@ -80,7 +79,7 @@ fn rfc4269() {
 #[test]
 fn cryptography_cbc() {
     let mut count = 0;
-    for f in records(&crate::vectors::text(
+    for f in cavp_records(&crate::vectors::text(
         "vectors/cryptography-seed-cbc/rfc-4196.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
@@ -106,7 +105,7 @@ fn cryptography_cbc() {
 #[test]
 fn cryptography_ofb() {
     let mut count = 0;
-    for f in records(&crate::vectors::text(
+    for f in cavp_records(&crate::vectors::text(
         "vectors/cryptography-seed-ofb/seed-ofb.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
@@ -125,7 +124,7 @@ fn cryptography_ofb() {
 #[test]
 fn cryptography_cfb() {
     let mut count = 0;
-    for f in records(&crate::vectors::text(
+    for f in cavp_records(&crate::vectors::text(
         "vectors/cryptography-seed-cfb/seed-cfb.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));

@@ -12,8 +12,8 @@
 
 use std::collections::BTreeMap;
 
-use crate::bytes::unhex;
 use verified_garbage::idea_ecb::{Error, IdeaEcb};
+use verified_garbage_test_vectors::{Record, unhex};
 
 /// Encrypts or decrypts `input` with `operation`, whole, in two pieces at
 /// every block boundary (with empty calls around them), and a block at a
@@ -51,7 +51,7 @@ fn nessie() {
         .replace('\r', "")
         .split("\n\n")
     {
-        let fields = crate::text::fields(record);
+        let fields = Record::parse(record);
         let Some(key) = fields.get("KEY") else {
             continue;
         };

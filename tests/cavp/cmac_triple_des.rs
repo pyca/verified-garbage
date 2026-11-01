@@ -11,14 +11,13 @@
 ))]
 
 use verified_garbage::cmac::triple_des::TripleDesCmac;
-
-use super::{fields, unhex};
+use verified_garbage_test_vectors::{cavp_fields, unhex};
 
 /// The vectors of a CMAC response file: the fields of each, from its
 /// `Count` line to the next one.
 fn vectors(text: &str) -> Vec<Vec<(&str, &str)>> {
     let mut vs: Vec<Vec<(&str, &str)>> = Vec::new();
-    for (k, v) in fields(text) {
+    for (k, v) in cavp_fields(text) {
         if k == "Count" {
             vs.push(Vec::new());
         }

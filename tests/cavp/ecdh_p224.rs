@@ -13,7 +13,7 @@
 
 use verified_garbage::ecdh::{Error, P224, PrivateKey};
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// Each vector: `QCAVS` (uncompressed), `dIUT`, `QIUT` (uncompressed) and
 /// `ZIUT`.

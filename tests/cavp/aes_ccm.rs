@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 use verified_garbage::aes_ccm::{AesCcm, Error};
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// The parameters of a file, each from its header or a section header
 /// (`[Alen = 0, Plen = 0, ...]`), or the record's own, whichever came last.

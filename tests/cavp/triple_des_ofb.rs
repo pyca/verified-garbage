@@ -15,7 +15,7 @@
 use verified_garbage::triple_des_ecb::TripleDesEcb;
 use verified_garbage::triple_des_ofb::{InvalidKeyLength, TripleDesOfb};
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// OFB from ECB: the output and the last output block used.
 fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> (Vec<u8>, [u8; 8]) {
@@ -44,7 +44,7 @@ fn check(ctx: &TripleDesOfb, iv: [u8; 8], input: &[u8], output: &[u8], after: [u
 
 fn check_file(text: &str) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         let mut key = unhex(fields["KEY1"]);
         key.extend(unhex(fields["KEY2"]));
         key.extend(unhex(fields["KEY3"]));

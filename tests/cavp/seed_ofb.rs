@@ -14,7 +14,7 @@
 use verified_garbage::seed_ecb::SeedEcb;
 use verified_garbage::seed_ofb::{InvalidKeyLength, SeedOfb};
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// OFB from ECB: the output and the last output block used.
 fn reference(key: &[u8], iv: [u8; 16], data: &[u8]) -> (Vec<u8>, [u8; 16]) {

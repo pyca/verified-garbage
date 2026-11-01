@@ -20,6 +20,8 @@
 
 use verified_garbage::aes_ocb::{AesOcb, Error};
 
+use verified_garbage_test_vectors::try_unhex;
+
 /// The lines of Appendix A, without the page breaks.
 fn appendix() -> Vec<String> {
     crate::vectors::text("vectors/rfc7253/rfc7253.txt")
@@ -30,19 +32,6 @@ fn appendix() -> Vec<String> {
         .filter(|l| !(l.starts_with("Krovetz & Rogaway") || l.starts_with("RFC 7253 ")))
         .map(str::to_owned)
         .collect()
-}
-
-fn unhex(s: &str) -> Option<Vec<u8>> {
-    if !s.len().is_multiple_of(2) || !s.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return None;
-    }
-    let b = s.as_bytes();
-    Some(
-        (0..s.len())
-            .step_by(2)
-            .map(|i| u8::from_str_radix(core::str::from_utf8(&b[i..i + 2]).unwrap(), 16).unwrap())
-            .collect(),
-    )
 }
 
 /// A tuple: `C = OCB-ENCRYPT(K, N, A, P)`, the ciphertext followed by the
@@ -67,12 +56,12 @@ fn tuples() -> Vec<Tuple> {
             let i = ["K", "N", "A", "P", "C"]
                 .iter()
                 .position(|&f| f == name.trim())?;
-            Some((i, unhex(value.trim())?))
+            Some((i, try_unhex(value.trim())?))
         });
         if let Some((i, value)) = field {
             fields[i] = value;
             current = Some(i);
-        } else if let (Some(i), Some(row)) = (current, unhex(&line).filter(|r| !r.is_empty())) {
+        } else if let (Some(i), Some(row)) = (current, try_unhex(&line).filter(|r| !r.is_empty())) {
             fields[i].extend(row);
         } else {
             if current == Some(4) {
@@ -202,7 +191,7 @@ fn aes_ocb_iterative() {
         };
         let (bits, rest) = rest.split_once("_OCB_TAGLEN").unwrap();
         let (tag_bits, output) = rest.split_once("Output").unwrap();
-        let expected = unhex(output.trim_start_matches([' ', ':'])).unwrap();
+        let expected = try_unhex(output.trim_start_matches([' ', ':'])).unwrap();
         let key_len = bits.parse::<usize>().unwrap() / 8;
         let got = match tag_bits.trim() {
             "128" => iterate::<16>(key_len).to_vec(),

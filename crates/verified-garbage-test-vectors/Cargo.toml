@@ -1,0 +1,10 @@
+[package]
+name = "verified-garbage-test-vectors"
+description = "Parsing the text of verified-garbage's test vector files, optimized in test builds"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+build = false

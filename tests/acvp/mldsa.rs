@@ -81,7 +81,7 @@ macro_rules! mldsa_tests {
         use verified_garbage::hashes::sha3::Shake256;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
-        use crate::bytes::unhex;
+        use verified_garbage_test_vectors::unhex;
 
         #[test]
         fn keygen() {

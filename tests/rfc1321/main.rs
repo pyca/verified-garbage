@@ -14,9 +14,9 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::md5::Md5;
+use verified_garbage_test_vectors::unhex;
 
 /// The `(message, digest)` of each `MD5 ("message") = digest` line of the
 /// test suite. The RFC wraps two of them onto a second line, so the suite's

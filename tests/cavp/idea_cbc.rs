@@ -14,7 +14,7 @@
 use verified_garbage::idea_cbc::{Error, IdeaCbc};
 use verified_garbage::idea_ecb::IdeaEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// CBC encryption from ECB, one block at a time.
 fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> Vec<u8> {

@@ -1,7 +1,8 @@
 //! pyca/cryptography's SM3 vectors (`hashes/SM3/oscca.txt`, in the NIST
 //! response file format).
 
-use super::{check, unhex};
+use super::check;
+use verified_garbage_test_vectors::unhex;
 
 #[test]
 fn oscca() {

@@ -14,7 +14,7 @@
 use verified_garbage::triple_des_cfb8::{InvalidKeyLength, TripleDesCfb8};
 use verified_garbage::triple_des_ecb::TripleDesEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// CFB8 from ECB: the output and the input block to continue from.
 fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [u8; 8]) {
@@ -60,7 +60,7 @@ fn check(ctx: &TripleDesCfb8, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) 
 
 fn check_file(text: &str) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         let mut key = unhex(fields["KEY1"]);
         key.extend(unhex(fields["KEY2"]));
         key.extend(unhex(fields["KEY3"]));

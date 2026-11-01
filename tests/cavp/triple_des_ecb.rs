@@ -11,7 +11,7 @@
 
 use verified_garbage::triple_des_ecb::{Error, TripleDesEcb};
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 fn check(key: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
     assert_eq!(plaintext.len(), ciphertext.len());
@@ -55,7 +55,7 @@ fn check(key: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
 
 fn check_file(text: &str, stream: bool) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         let key = if let Some(key) = fields.get("KEYs") {
             let key = unhex(key);
             key.repeat(3)
