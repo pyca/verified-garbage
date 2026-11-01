@@ -34,7 +34,7 @@ on `n`.
 namespace VG.Impl.AesXts.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
-open VG.Impl.AesCbc.RISCV64 (xorInto callArgs advance whole encCall decCall)
+open VG.Impl.AesCbc.RISCV64 (xorInto callArgs advance whole encCall decCall chainWrapped)
 
 /-- Word `j` of the tweak times `α`, from the word in `w` and the word
 before it in `p`, stored at `off(s3)`. -/
@@ -58,8 +58,12 @@ def encBody : Prog isa := .seq (.block pre) (.seq encCall (.block post))
 
 def decBody : Prog isa := .seq (.block pre) (.seq decCall (.block post))
 
-def encrypt : Prog isa := whole encBody
+/-- Four blocks at a time, by the wide XTS encryption
+(`Impl.Aes.RISCV64.xtsEncWide`), which bitslices the round keys once. -/
+def encrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.xtsEncWideCall
 
-def decrypt : Prog isa := whole decBody
+/-- Four blocks at a time, by the wide XTS decryption
+(`Impl.Aes.RISCV64.xtsDecWide`). -/
+def decrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.xtsDecWideCall
 
 end VG.Impl.AesXts.RISCV64

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.RISCV64.Blocks
 public import VerifiedGarbage.Impl.Aes.RISCV64.Chain
+public import VerifiedGarbage.Impl.Aes.RISCV64.Wide
 public import VerifiedGarbage.Impl.Words.RISCV64.XorBytes
 
 /-!
@@ -121,6 +122,8 @@ def decBody : Prog isa :=
   .seq (.block (savePtr .s6 ++ copy .t0 .s4 ++ callArgs))
     (.seq decCall (.block (xorInto .s4 .s3 ++ savePtr .s6 ++ copy .s3 .t0 ++ advance)))
 
-def decrypt : Prog isa := whole decBody
+/-- Four blocks at a time, by the wide CBC decryption
+(`Impl.Aes.RISCV64.cbcDecWide`), which bitslices the round keys once. -/
+def decrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cbcDecWideCall
 
 end VG.Impl.AesCbc.RISCV64

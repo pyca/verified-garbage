@@ -44,6 +44,8 @@ def decPost : List Instr := xorInto .s4 .s3 ++ xorInto .s3 .s4 ++ advance
 the blocks. -/
 def encrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cfbChainCall
 
-def decrypt : Prog isa := whole (body decPost)
+/-- Four blocks at a time, by the wide CFB128 decryption
+(`Impl.Aes.RISCV64.cfbDecWide`), which bitslices the round keys once. -/
+def decrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cfbDecWideCall
 
 end VG.Impl.AesCfb.RISCV64
