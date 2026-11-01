@@ -10,27 +10,10 @@
     target_arch = "riscv64"
 ))]
 
-use crate::json_struct;
 use verified_garbage::hmac::{Hmac, HmacHash};
 
-use super::harness::{self, Expectation, Hex};
-
-json_struct! {
-    struct Group {
-        #[json(rename = "keySize")]
-        key_size: usize,
-        #[json(rename = "tagSize")]
-        tag_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        msg: Hex,
-        tag: Hex,
-    }
-}
+use super::harness::{self, Expectation};
+use super::schema::{MacCase as Case, SizesGroup as Group};
 
 /// Checks every vector of `name` with `Hmac<H>`, whose `new` is passed in:
 /// a (possibly truncated) tag computed with the key must equal the expected
@@ -39,8 +22,9 @@ pub(crate) fn check<H: HmacHash>(name: &str, new: fn(&[u8]) -> Hmac<H>) {
     let file = harness::load::<Group, Case>(name);
     file.par_tests(|group, test| {
         let Case { key, msg, tag } = &test.case;
-        assert_eq!(key.0.len() * 8, group.params.key_size);
-        assert!(group.params.tag_size <= H::OUTPUT_SIZE * 8);
+        assert_eq!(Some(key.0.len() * 8), group.params.key_size);
+        let tag_size = group.params.tag_size.unwrap();
+        assert!(tag_size <= H::OUTPUT_SIZE * 8);
         // Three ways of computing the MAC: at once, in one `update`, and one
         // byte at a time.
         let full = Hmac::<H>::mac(&key.0, &msg.0);
@@ -56,11 +40,10 @@ pub(crate) fn check<H: HmacHash>(name: &str, new: fn(&[u8]) -> Hmac<H>) {
         // the test is valid and is not truncated, and rejects it otherwise.
         let mut h = new(&key.0);
         h.update(&msg.0);
-        let accept =
-            group.params.tag_size == H::OUTPUT_SIZE * 8 && test.result == Expectation::Valid;
+        let accept = tag_size == H::OUTPUT_SIZE * 8 && test.result == Expectation::Valid;
         let ok = h.verify(&tag.0).is_ok();
         assert_eq!(ok, accept, "tcId {}", test.tc_id);
-        let computed = &full.as_ref()[..group.params.tag_size / 8];
+        let computed = &full.as_ref()[..tag_size / 8];
         if test.result == Expectation::Valid {
             assert_eq!(computed, &tag.0[..], "tcId {}", test.tc_id);
         } else {

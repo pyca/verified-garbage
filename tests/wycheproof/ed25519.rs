@@ -9,32 +9,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::json_struct;
 use verified_garbage::ed25519::{Error, VerifyingKey};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{EdGroup as Group, SigCase as Case};
 use crate::require_vectors;
-
-json_struct! {
-    struct PublicKey {
-        curve: String,
-        pk: Hex,
-    }
-}
-
-json_struct! {
-    struct Group {
-        #[json(rename = "publicKey")]
-        public_key: PublicKey,
-    }
-}
-
-json_struct! {
-    struct Case {
-        msg: Hex,
-        sig: Hex,
-    }
-}
 
 #[test]
 fn ed25519_test() {

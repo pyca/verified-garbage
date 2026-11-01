@@ -21,41 +21,12 @@
 
 use std::sync::Mutex;
 
-use crate::json_struct;
 use verified_garbage::rsa::{Error, PrivateKey, PublicKey};
 
-use super::harness::{self, Expectation, Hex, TestFile, TestGroup};
+use super::harness::{self, Expectation, TestFile, TestGroup};
+use super::schema::{EncryptCase as Case, RsaPrivateKeyGroup as Group};
 use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
-
-json_struct! {
-    struct Key {
-        modulus: Hex,
-        #[json(rename = "privateExponent")]
-        private_exponent: Hex,
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-        prime1: Hex,
-        prime2: Hex,
-        exponent1: Hex,
-        exponent2: Hex,
-        coefficient: Hex,
-    }
-}
-
-json_struct! {
-    struct Group {
-        #[json(rename = "privateKey")]
-        private_key: Key,
-    }
-}
-
-json_struct! {
-    struct Case {
-        msg: Hex,
-        ct: Hex,
-    }
-}
 
 /// Checks every vector of `group`, of the file `name`; `pkcs1` if its padding
 /// is PKCS #1 v1.5's. Returns the numbers of ciphertexts decrypted and

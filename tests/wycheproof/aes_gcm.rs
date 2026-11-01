@@ -17,29 +17,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::json_struct;
 use verified_garbage::aes_gcm::{AesGcm, Error};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{AeadCase as Case, SizesGroup as Group};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "tagSize")]
-        tag_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        iv: Hex,
-        aad: Hex,
-        msg: Hex,
-        ct: Hex,
-        tag: Hex,
-    }
-}
 
 /// The tag of `c`, which is 16 bytes long.
 fn tag(c: &Case) -> &[u8; 16] {
@@ -80,8 +62,8 @@ fn aes_gcm() {
     file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
-        assert_eq!(group.params.tag_size, 8 * c.tag.0.len(), "tcId {id}");
-        assert_eq!(group.params.tag_size, 128, "tcId {id}");
+        assert_eq!(group.params.tag_size, Some(8 * c.tag.0.len()), "tcId {id}");
+        assert_eq!(group.params.tag_size, Some(128), "tcId {id}");
         let key = AesGcm::new(&c.key.0).unwrap();
         let mut buf = c.ct.0.clone();
         let decrypted = key.decrypt_in_place(&c.iv.0, &c.aad.0, &mut buf, tag(c));

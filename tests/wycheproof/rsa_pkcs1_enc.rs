@@ -23,42 +23,13 @@
     feature = "alloc"
 ))]
 
-use crate::json_struct;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
-use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
+use super::harness::{self, Count, Expectation, TestFile, TestGroup};
+use super::schema::{EncryptCase as Case, RsaPrivateKeyGroup as Group};
 use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
-
-json_struct! {
-    struct Key {
-        modulus: Hex,
-        #[json(rename = "privateExponent")]
-        private_exponent: Hex,
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-        prime1: Hex,
-        prime2: Hex,
-        exponent1: Hex,
-        exponent2: Hex,
-        coefficient: Hex,
-    }
-}
-
-json_struct! {
-    struct Group {
-        #[json(rename = "privateKey")]
-        private_key: Key,
-    }
-}
-
-json_struct! {
-    struct Case {
-        msg: Hex,
-        ct: Hex,
-    }
-}
 
 /// Checks every vector of the file `name`; returns the numbers of valid
 /// vectors, of invalid paddings and of refused ciphertexts.

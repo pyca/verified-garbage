@@ -18,26 +18,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::json_struct;
 use verified_garbage::ecdh::{BrainpoolP256r1, Error, PrivateKey};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{CurveEncodingGroup as Group, EcdhCase as Case};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        curve: String,
-        encoding: String,
-    }
-}
-
-json_struct! {
-    struct Case {
-        public: Hex,
-        private: Hex,
-        shared: Hex,
-    }
-}
 
 /// The DER encoding of a `SubjectPublicKeyInfo` up to its point (RFC 5480
 /// §2): `id-ecPublicKey` with the named curve brainpoolP256r1

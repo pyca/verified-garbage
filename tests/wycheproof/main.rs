@@ -72,5 +72,6 @@ mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;
 mod rsa_public;
+mod schema;
 mod x25519;
 mod x448;

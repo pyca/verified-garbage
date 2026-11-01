@@ -11,6 +11,7 @@
 ))]
 
 use super::harness::{self, Count, Expectation, Hex};
+use super::schema::SigCase as Case;
 use crate::json_struct;
 use crate::require_vectors;
 use verified_garbage::dsa::PublicKey;
@@ -32,13 +33,6 @@ json_struct! {
         #[json(rename = "publicKey")]
         public_key: Key,
         sha: String,
-    }
-}
-
-json_struct! {
-    struct Case {
-        msg: Hex,
-        sig: Hex,
     }
 }
 

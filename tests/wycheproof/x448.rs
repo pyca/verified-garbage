@@ -17,25 +17,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::json_struct;
 use verified_garbage::x448::{Error, PrivateKey, x448};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{CurveGroup as Group, EcdhCase as Case};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        curve: String,
-    }
-}
-
-json_struct! {
-    struct Case {
-        public: Hex,
-        private: Hex,
-        shared: Hex,
-    }
-}
 
 #[test]
 fn x448_test() {

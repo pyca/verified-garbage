@@ -14,29 +14,12 @@
     target_arch = "riscv64"
 ))]
 
-use crate::json_struct;
 use verified_garbage::cmac::InvalidKeyLength;
 use verified_garbage::cmac::aes::AesCmac;
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{MacCase as Case, SizesGroup as Group};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "keySize")]
-        key_size: usize,
-        #[json(rename = "tagSize")]
-        tag_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        msg: Hex,
-        tag: Hex,
-    }
-}
 
 #[test]
 fn cmac_aes() {
@@ -46,8 +29,8 @@ fn cmac_aes() {
     file.par_tests(|group, test| {
         let Case { key, msg, tag } = &test.case;
         let id = test.tc_id;
-        assert_eq!(key.0.len() * 8, group.params.key_size, "tcId {id}");
-        assert_eq!(group.params.tag_size, 128, "tcId {id}");
+        assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");
+        assert_eq!(group.params.tag_size, Some(128), "tcId {id}");
         if !matches!(key.0.len(), 16 | 24 | 32) {
             assert_eq!(test.result, Expectation::Invalid, "tcId {id}");
             let err = AesCmac::new(&key.0).err();

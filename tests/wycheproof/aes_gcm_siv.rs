@@ -12,31 +12,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::json_struct;
 use verified_garbage::aes_gcm_siv::{AesGcmSiv, Error};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{AeadCase as Case, SizesGroup as Group};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "ivSize")]
-        iv_size: usize,
-        #[json(rename = "tagSize")]
-        tag_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        iv: Hex,
-        aad: Hex,
-        msg: Hex,
-        ct: Hex,
-        tag: Hex,
-    }
-}
 
 #[test]
 fn aes_gcm_siv() {
@@ -47,7 +27,7 @@ fn aes_gcm_siv() {
         let c = &test.case;
         let id = test.tc_id;
         let sizes = (group.params.iv_size, group.params.tag_size);
-        assert_eq!(sizes, (96, 128), "tcId {id}");
+        assert_eq!(sizes, (Some(96), Some(128)), "tcId {id}");
         let key = AesGcmSiv::new(&c.key.0).unwrap();
         let nonce: &[u8; 12] = c.iv.0.as_slice().try_into().unwrap();
         let tag: &[u8; 16] = c.tag.0.as_slice().try_into().unwrap();

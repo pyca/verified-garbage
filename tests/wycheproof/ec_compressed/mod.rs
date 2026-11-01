@@ -13,6 +13,7 @@
 use crate::json_struct;
 
 use super::harness::Hex;
+use crate::wycheproof::schema::EcdhCase;
 
 json_struct! {
     pub(super) struct Key {
@@ -50,14 +51,6 @@ macro_rules! public_keys {
             });
         }
     };
-}
-
-json_struct! {
-    pub(super) struct EcdhCase {
-        public: Hex,
-        private: Hex,
-        shared: Hex,
-    }
 }
 
 macro_rules! compressed_peers {
