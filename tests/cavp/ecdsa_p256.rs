@@ -69,6 +69,12 @@ fn vectors() -> Vec<Vector> {
         let Some(hash) = header.strip_prefix("P-256,") else {
             continue;
         };
+        // The table's name for the hash, which outlives the file's text.
+        let hash = HASHES
+            .iter()
+            .map(|(name, _)| *name)
+            .find(|name| *name == hash)
+            .unwrap();
         let fields = super::fields(body);
         assert_eq!(fields.len(), 15 * 6);
         for v in fields.chunks(6) {

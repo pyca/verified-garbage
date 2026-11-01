@@ -25,7 +25,7 @@ mod poly1305;
 /// A test vector: the lines of its text that are not rows of hex, each with
 /// the bytes of the rows of hex that follow it (none if it is not the label
 /// of a value).
-struct Vector(Vec<(&'static str, Vec<u8>)>);
+struct Vector(Vec<(String, Vec<u8>)>);
 
 impl Vector {
     /// Whether the vector has a line `label` (with or without colons after
@@ -59,7 +59,7 @@ impl Vector {
     fn assignment(&self, name: &str) -> String {
         let prefix = format!("{name} = ");
         let start = self.0.iter().position(|(l, _)| l.starts_with(&prefix));
-        let mut lines = self.0[start.unwrap()..].iter().map(|(l, _)| *l);
+        let mut lines = self.0[start.unwrap()..].iter().map(|(l, _)| l.as_str());
         let mut text = lines.next().unwrap()[prefix.len()..].to_string();
         while text.ends_with(':') {
             text.push_str(lines.next().unwrap());
@@ -88,7 +88,8 @@ impl Vector {
 /// lines, `====` underlines and page breaks are skipped, so a value continues
 /// on the next page.
 fn vectors(from: &str, to: &str) -> Vec<Vector> {
-    let lines = crate::vectors::text("vectors/rfc8439/rfc8439.txt")
+    let text = crate::vectors::text("vectors/rfc8439/rfc8439.txt");
+    let lines = text
         .lines()
         .skip_while(|l| !l.starts_with(from))
         .take_while(|l| !l.starts_with(to))
@@ -107,7 +108,7 @@ fn vectors(from: &str, to: &str) -> Vec<Vector> {
         let lines = &mut vectors.last_mut().unwrap().0;
         match hex_row(line) {
             Some(row) => lines.last_mut().unwrap().1.extend(row),
-            None => lines.push((line, Vec::new())),
+            None => lines.push((line.to_owned(), Vec::new())),
         }
     }
     if vectors.len() > 1 {

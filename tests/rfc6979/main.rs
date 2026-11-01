@@ -64,10 +64,8 @@ fn section<const Q: usize, const U: usize, const S: usize>(
     title: &str,
     hashes: &[&'static str],
 ) -> ([u8; Q], [u8; Q], [u8; U], Signatures<S>) {
-    let text = crate::vectors::text("vectors/rfc6979/rfc6979.txt")
-        .split_once(title)
-        .unwrap()
-        .1;
+    let rfc = crate::vectors::text("vectors/rfc6979/rfc6979.txt");
+    let text = rfc.split_once(title).unwrap().1;
     let text = text.split_once("\nA.").unwrap().0;
     let lines: Vec<&str> = text.lines().map(str::trim).collect();
     let mut i = 0;

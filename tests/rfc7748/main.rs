@@ -19,14 +19,15 @@ mod x448;
 use verified_garbage::x25519::{BASE_POINT, PrivateKey, x25519};
 
 /// The vectors' file (`crate::vectors`).
-fn text() -> &'static str {
+fn text() -> String {
     crate::vectors::text("vectors/rfc7748/rfc7748.txt")
 }
 
 /// The values labelled `label` (a line ending with `:`) in the lines from the
 /// one starting with `from` to the next one starting with `to`, in order.
 fn values(from: &str, to: &str, label: &str) -> Vec<[u8; 32]> {
-    let mut lines = text()
+    let text = text();
+    let mut lines = text
         .lines()
         .skip_while(|l| !l.starts_with(from))
         .skip(1)

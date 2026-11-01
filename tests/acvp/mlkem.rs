@@ -86,14 +86,14 @@ fn tests<T: FromJson>(text: &str, name: &str, function: Option<&str>) -> Vec<T> 
 pub fn keygen_vectors(name: &str) -> Vec<KeyGen> {
     let text =
         crate::vectors::text("vectors/nist-acvp/ML-KEM-keyGen-FIPS203/internalProjection.json");
-    tests(text, name, None)
+    tests(&text, name, None)
 }
 
 /// The vectors of the parameter set `name` for `function`.
 pub fn encap_decap(name: &str, function: &str) -> Vec<EncapDecap> {
     let text =
         crate::vectors::text("vectors/nist-acvp/ML-KEM-encapDecap-FIPS203/internalProjection.json");
-    tests(text, name, Some(function))
+    tests(&text, name, Some(function))
 }
 
 /// Defines the tests of the parameter set named `$name` (`"ML-KEM-768"`), of

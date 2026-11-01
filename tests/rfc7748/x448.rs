@@ -13,7 +13,7 @@ use verified_garbage::x448::{BASE_POINT, PrivateKey, x448};
 
 use super::text;
 
-fn section(from: &str, to: &str) -> &'static str {
+fn section(from: &str, to: &str) -> String {
     text()
         .split_once(&format!("\n{from}"))
         .unwrap()
@@ -21,6 +21,7 @@ fn section(from: &str, to: &str) -> &'static str {
         .split_once(&format!("\n{to}"))
         .unwrap()
         .0
+        .to_owned()
 }
 
 /// X448 values occupy two consecutive lines of 56 hex digits.
@@ -42,10 +43,8 @@ fn values(text: &str, label: &str) -> Vec<[u8; 56]> {
 /// §5.2: both scalar-multiplication vectors.
 #[test]
 fn x448_vectors() {
-    let text = section("5.2.  Test Vectors", "   The second type of test vector")
-        .split_once("   X448:")
-        .unwrap()
-        .1;
+    let section = section("5.2.  Test Vectors", "   The second type of test vector");
+    let text = section.split_once("   X448:").unwrap().1;
     let scalars = values(text, "Input scalar:");
     let us = values(text, "Input u-coordinate:");
     let outs = values(text, "Output u-coordinate:");
@@ -58,7 +57,7 @@ fn x448_vectors() {
 /// §5.2: one and 1,000 iterations from `k = u = 5`.
 #[test]
 fn iterated() {
-    let text = section("   The second type of test vector", "6.  Diffie-Hellman");
+    let text = &section("   The second type of test vector", "6.  Diffie-Hellman");
     assert_eq!(values(text, "For X448:"), [BASE_POINT]);
     let text = text.split_once("   X448:").unwrap().1;
     let one = values(text, "After one iteration:");
@@ -76,7 +75,7 @@ fn iterated() {
 /// §6.2: the Diffie-Hellman vector.
 #[test]
 fn diffie_hellman() {
-    let text = section("6.2.  Curve448\n", "7.  Security Considerations\n");
+    let text = &section("6.2.  Curve448\n", "7.  Security Considerations\n");
     let v = |label| values(text, label)[0];
     let a = PrivateKey::from_bytes(&v("Alice's private key, a:"));
     let b = PrivateKey::from_bytes(&v("Bob's private key, b:"));

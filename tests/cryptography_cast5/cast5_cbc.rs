@@ -11,7 +11,7 @@ use verified_garbage::cast5_cbc::{Cast5Cbc, Error};
 
 #[test]
 fn vectors() {
-    let records = super::records(crate::vectors::text(
+    let records = super::records(&crate::vectors::text(
         "vectors/cryptography-cast5/cast5-cbc.txt",
     ));
     assert_eq!(records.len(), 20);

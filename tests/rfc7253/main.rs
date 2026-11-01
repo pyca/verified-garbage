@@ -20,13 +20,15 @@
 use verified_garbage::aes_ocb::{AesOcb, Error};
 
 /// The lines of Appendix A, without the page breaks.
-fn appendix() -> impl Iterator<Item = &'static str> {
+fn appendix() -> Vec<String> {
     crate::vectors::text("vectors/rfc7253/rfc7253.txt")
         .lines()
         .skip_while(|l| !l.starts_with("Appendix A.  Sample Results"))
         .take_while(|l| !l.starts_with("Authors' Addresses"))
         .map(str::trim)
         .filter(|l| !(l.starts_with("Krovetz & Rogaway") || l.starts_with("RFC 7253 ")))
+        .map(str::to_owned)
+        .collect()
 }
 
 fn unhex(s: &str) -> Option<Vec<u8>> {
@@ -69,7 +71,7 @@ fn tuples() -> Vec<Tuple> {
         if let Some((i, value)) = field {
             fields[i] = value;
             current = Some(i);
-        } else if let (Some(i), Some(row)) = (current, unhex(line).filter(|r| !r.is_empty())) {
+        } else if let (Some(i), Some(row)) = (current, unhex(&line).filter(|r| !r.is_empty())) {
             fields[i].extend(row);
         } else {
             if current == Some(4) {

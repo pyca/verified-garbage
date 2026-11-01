@@ -25,15 +25,16 @@ mod blake2s;
 type Keyed = fn(&[u8], &[u8]) -> Vec<u8>;
 
 /// The vectors' file (`crate::vectors`).
-fn text() -> &'static str {
+fn text() -> String {
     crate::vectors::text("vectors/rfc7693/rfc7693.txt")
 }
 
 /// The digest `label = ...` of an example: the hex bytes after it, up to the
 /// next blank line.
 fn example(label: &str) -> Vec<u8> {
-    let start = text().find(label).unwrap() + label.len();
-    let rest = text()[start..].trim_start().strip_prefix('=').unwrap();
+    let text = text();
+    let start = text.find(label).unwrap() + label.len();
+    let rest = text[start..].trim_start().strip_prefix('=').unwrap();
     rest.lines()
         .take_while(|l| !l.trim().is_empty())
         .flat_map(str::split_whitespace)
@@ -44,8 +45,9 @@ fn example(label: &str) -> Vec<u8> {
 /// The elements of the C array `name` in Appendix E (`name[n] = { ... };`),
 /// decimal or `0x` hex.
 fn c_array(name: &str) -> Vec<usize> {
-    let start = text().find(&format!(" {name}[")).unwrap();
-    let body = &text()[start..];
+    let text = text();
+    let start = text.find(&format!(" {name}[")).unwrap();
+    let body = &text[start..];
     let body = &body[body.find('{').unwrap() + 1..body.find("};").unwrap()];
     body.split(',')
         .map(str::trim)

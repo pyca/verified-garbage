@@ -115,7 +115,7 @@ fn check_ntt(text: &str, key_len: usize) {
 #[test]
 fn ntt_128() {
     check_ntt(
-        crate::vectors::text("vectors/cryptography-camellia-128/camellia-128-ecb.txt"),
+        &crate::vectors::text("vectors/cryptography-camellia-128/camellia-128-ecb.txt"),
         16,
     );
 }
@@ -123,7 +123,7 @@ fn ntt_128() {
 #[test]
 fn ntt_192() {
     check_ntt(
-        crate::vectors::text("vectors/cryptography-camellia-192/camellia-192-ecb.txt"),
+        &crate::vectors::text("vectors/cryptography-camellia-192/camellia-192-ecb.txt"),
         24,
     );
 }
@@ -131,7 +131,7 @@ fn ntt_192() {
 #[test]
 fn ntt_256() {
     check_ntt(
-        crate::vectors::text("vectors/cryptography-camellia-256/camellia-256-ecb.txt"),
+        &crate::vectors::text("vectors/cryptography-camellia-256/camellia-256-ecb.txt"),
         32,
     );
 }

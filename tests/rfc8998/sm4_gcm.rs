@@ -15,7 +15,8 @@ fn unhex(text: &str) -> Vec<u8> {
 /// The value of the field `label` of Appendix A.1: the hex after `label:`,
 /// and on the lines after it that hold nothing but hex.
 fn field(label: &str) -> Vec<u8> {
-    let section = crate::vectors::text("vectors/rfc8998/rfc8998.txt")
+    let text = crate::vectors::text("vectors/rfc8998/rfc8998.txt");
+    let section = text
         .split("\nA.1.  SM4-GCM Test Vectors\n")
         .nth(1)
         .unwrap()

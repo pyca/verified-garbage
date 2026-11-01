@@ -29,7 +29,7 @@ json_struct! {
 
 fn vectors() -> Vec<Case> {
     let json = crate::vectors::text("vectors/secp256k1-ecdsa/ecdsa.json");
-    crate::json::parse::<Vectors>("ecdsa.json", json).valid
+    crate::json::parse::<Vectors>("ecdsa.json", &json).valid
 }
 
 fn hex<const N: usize>(s: &str) -> [u8; N] {

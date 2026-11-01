@@ -77,14 +77,14 @@ fn check(text: &str, expected: usize) {
 #[test]
 fn rfc5114() {
     check(
-        crate::vectors::text("vectors/cryptography-ffdh/RFC5114/RFC5114.txt"),
+        &crate::vectors::text("vectors/cryptography-ffdh/RFC5114/RFC5114.txt"),
         3,
     );
 }
 #[test]
 fn nist_initiator() {
     check(
-        crate::vectors::text(
+        &crate::vectors::text(
             "vectors/cryptography-ffdh/KASValidityTest_FFCStatic_NOKC_ZZOnly_init/KASValidityTest_FFCStatic_NOKC_ZZOnly_init.fax",
         ),
         72,
@@ -93,7 +93,7 @@ fn nist_initiator() {
 #[test]
 fn nist_responder() {
     check(
-        crate::vectors::text(
+        &crate::vectors::text(
             "vectors/cryptography-ffdh/KASValidityTest_FFCStatic_NOKC_ZZOnly_resp/KASValidityTest_FFCStatic_NOKC_ZZOnly_resp.fax",
         ),
         72,
@@ -101,7 +101,7 @@ fn nist_responder() {
 }
 #[test]
 fn components_generation_and_padding() {
-    let v = &cases(crate::vectors::text(
+    let v = &cases(&crate::vectors::text(
         "vectors/cryptography-ffdh/RFC5114/RFC5114.txt",
     ))[0];
     let p = hex(&v["P"]);
@@ -150,7 +150,7 @@ fn components_generation_and_padding() {
 }
 #[test]
 fn malformed_components_and_domains() {
-    let v = &cases(crate::vectors::text(
+    let v = &cases(&crate::vectors::text(
         "vectors/cryptography-ffdh/RFC5114/RFC5114.txt",
     ))[0];
     let (p, g, q) = (hex(&v["P"]), hex(&v["G"]), hex(&v["Q"]));
@@ -227,7 +227,7 @@ fn malformed_components_and_domains() {
 #[test]
 fn rfc3526_sizes() {
     let text = crate::vectors::text("vectors/cryptography-ffdh/rfc3526/rfc3526.txt");
-    for (_, p) in super::fields(text).into_iter().filter(|(k, _)| *k == "P") {
+    for (_, p) in super::fields(&text).into_iter().filter(|(k, _)| *k == "P") {
         let p = hex(p);
         let params = Parameters::from_components(&p, &[2], None).unwrap();
         let k = PrivateKey::from_components(&params, &[8], &[3]).unwrap();
@@ -258,7 +258,7 @@ fn safe_prime_parameter_generation() {
 
 #[test]
 fn imported_private_components() {
-    for v in cases(crate::vectors::text(
+    for v in cases(&crate::vectors::text(
         "vectors/cryptography-ffdh/RFC5114/RFC5114.txt",
     )) {
         let (p, q, g, x, y) = (

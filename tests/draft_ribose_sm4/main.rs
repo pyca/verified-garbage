@@ -28,15 +28,15 @@ fn unhex(s: &str) -> Vec<u8> {
 }
 
 /// The text of the appendix between the headings starting `from` and `to`.
-fn section(from: &str, to: &str) -> &'static str {
-    let appendix =
-        crate::vectors::text("vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt")
-            .split("Appendix A.  Appendix A: Example Calculations")
-            .last()
-            .unwrap();
+fn section(from: &str, to: &str) -> String {
+    let draft = crate::vectors::text("vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt");
+    let appendix = draft
+        .split("Appendix A.  Appendix A: Example Calculations")
+        .last()
+        .unwrap();
     let start = appendix.find(from).unwrap();
     let end = start + appendix[start..].find(to).unwrap();
-    &appendix[start..end]
+    appendix[start..end].to_owned()
 }
 
 /// The bytes after the label `label` (e.g. `"Plaintext:"`), from the lines

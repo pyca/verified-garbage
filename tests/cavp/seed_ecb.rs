@@ -96,7 +96,7 @@ fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
 #[test]
 fn cryptography_cbc() {
     let mut count = 0;
-    for f in records(crate::vectors::text(
+    for f in records(&crate::vectors::text(
         "vectors/cryptography-seed-cbc/rfc-4196.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
@@ -122,7 +122,7 @@ fn cryptography_cbc() {
 #[test]
 fn cryptography_ofb() {
     let mut count = 0;
-    for f in records(crate::vectors::text(
+    for f in records(&crate::vectors::text(
         "vectors/cryptography-seed-ofb/seed-ofb.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
@@ -141,7 +141,7 @@ fn cryptography_ofb() {
 #[test]
 fn cryptography_cfb() {
     let mut count = 0;
-    for f in records(crate::vectors::text(
+    for f in records(&crate::vectors::text(
         "vectors/cryptography-seed-cfb/seed-cfb.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));

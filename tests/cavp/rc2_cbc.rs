@@ -190,7 +190,8 @@ fn openssl_cbc() {
 
 #[test]
 fn cryptography_cbc_and_default_bits() {
-    let f = fields(crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt"));
+    let text = crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt");
+    let f = fields(&text);
     let key = unhex(f["Key"]);
     let iv = unhex(f["IV"]);
     let plaintext = unhex(f["Plaintext"]);
@@ -233,7 +234,8 @@ fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8], input: &[u8], expected: &[
 
 #[test]
 fn output_too_small() {
-    let f = fields(crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt"));
+    let text = crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt");
+    let f = fields(&text);
     let key = unhex(f["Key"]);
     let iv = unhex(f["IV"]);
     let plaintext = unhex(f["Plaintext"]);

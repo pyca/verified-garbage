@@ -100,10 +100,8 @@ fn check(ctx: &CamelliaCtr, ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
 #[test]
 fn rfc5528_test_vectors() {
     // The section itself, not its line in the table of contents.
-    let section = crate::vectors::text("vectors/rfc5528/rfc5528.txt")
-        .rsplit_once("4.1.  Camellia-CTR")
-        .unwrap()
-        .1;
+    let text = crate::vectors::text("vectors/rfc5528/rfc5528.txt");
+    let section = text.rsplit_once("4.1.  Camellia-CTR").unwrap().1;
     let section = section.split_once("4.2.  Camellia-CCM").unwrap().0;
     let mut key_lens = Vec::new();
     for vector in section.split("TV #").skip(1) {

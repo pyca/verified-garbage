@@ -101,10 +101,8 @@ fn check(ctx: &AesCtr, ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
 #[test]
 fn rfc3686_test_vectors() {
     // The section itself, not its line in the table of contents.
-    let section = crate::vectors::text("vectors/rfc3686/rfc3686.txt")
-        .rsplit_once("6.  Test Vectors")
-        .unwrap()
-        .1;
+    let text = crate::vectors::text("vectors/rfc3686/rfc3686.txt");
+    let section = text.rsplit_once("6.  Test Vectors").unwrap().1;
     let section = section.split_once("7.  Security Considerations").unwrap().0;
     let mut key_lens = Vec::new();
     for vector in section.split("Test Vector #").skip(1) {

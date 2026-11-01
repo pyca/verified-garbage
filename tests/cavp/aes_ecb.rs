@@ -73,77 +73,77 @@ fn check_file(text: &str, split: bool) -> usize {
 fn nist_ecb() {
     let files = [
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox128.rsp"),
             14,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox192.rsp"),
             12,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox256.rsp"),
             10,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox128.rsp"),
             42,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox192.rsp"),
             48,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox256.rsp"),
             32,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey128.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey192.rsp"),
             384,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey256.rsp"),
             512,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt128.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt192.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt256.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-mmt/ECBMMT128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-mmt/ECBMMT128.rsp"),
             20,
             true,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-mmt/ECBMMT192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-mmt/ECBMMT192.rsp"),
             20,
             true,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-mmt/ECBMMT256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-mmt/ECBMMT256.rsp"),
             20,
             true,
         ),
@@ -164,18 +164,18 @@ fn nist_ecb() {
 #[test]
 fn nist_ecb_runs() {
     let files = [
-        crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox128.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox192.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox256.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox128.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox192.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox256.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey128.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey192.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey256.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt128.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt192.rsp"),
-        crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt256.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox128.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox192.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBGFSbox256.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox128.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox192.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBKeySbox256.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey128.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey192.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBVarKey256.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt128.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt192.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/aes/ECBVarTxt256.rsp"),
     ];
     struct Run {
         key: Vec<u8>,

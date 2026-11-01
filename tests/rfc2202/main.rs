@@ -55,7 +55,8 @@ struct Case {
 /// the previous one's value; the page footers and headers are skipped.
 fn cases(start: &str, stop: &str) -> Vec<Case> {
     let mut groups: Vec<(String, Vec<(String, String)>)> = Vec::new();
-    let section = crate::vectors::text("vectors/rfc2202/rfc2202.txt")
+    let text = crate::vectors::text("vectors/rfc2202/rfc2202.txt");
+    let section = text
         .lines()
         .skip_while(|l| *l != start)
         .skip(1)

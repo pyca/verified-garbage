@@ -55,11 +55,11 @@ fn check_file(text: &str) -> (usize, usize) {
 fn nist_xts() {
     let files = [
         (
-            crate::vectors::text("vectors/nist-cavp-aes-xts/XTSGenAES128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-xts/XTSGenAES128.rsp"),
             (800, 200),
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-xts/XTSGenAES256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-xts/XTSGenAES256.rsp"),
             (600, 400),
         ),
     ];

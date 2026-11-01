@@ -24,7 +24,8 @@ struct Vector {
 
 /// The cases of section 7.4.
 fn vectors() -> Vec<Vector> {
-    let section = text()
+    let text = text();
+    let section = text
         .split_once("\n7.4.  Test Vectors for Ed448\n")
         .unwrap()
         .1
