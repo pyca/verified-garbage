@@ -8,7 +8,8 @@ public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Sqrt
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Product
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Product
+import VerifiedGarbage.Proof.Rsa.X86.Rd.Count
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
@@ -106,23 +107,21 @@ theorem divB_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n m r : Nat}
   · exact hnW
   · exact hz2
 
-/-- `b = q + 1`, and `b²` (wide). -/
-theorem square_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n q : Nat}
+/-- The square's set-up: `b = q + 1` narrow in `aD` and `aBy` and wide in `wB`, and the sum zeroed. -/
+theorem squareHead_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n q : Nat}
     (h : KS g s0 A [aD, aOne1, aZero, VG.Impl.Rsa.X86.Recover.aN] AW [wN, wZ2] V [sExact, sLt, sOkDE] s)
-    (hq : A aD = q) (h1 : A aOne1 = 1) (hz : A aZero = 0) (hn : A VG.Impl.Rsa.X86.Recover.aN = n)
-    (hnW : AW wN = n) (hz2 : AW wZ2 = 0) :
-    WP isa square s fun t => ∃ A' AW' V',
-      KS g s0 A' [aD, aZero] AW' [wA, wN] V' [sK, sExact, sLt, sOkDE] t ∧
-      A' aD = (q + 1) % 2 ^ (32 * g.w) ∧ A' aZero = 0 ∧
-      AW' wA = ((prodStep (32 * g.W))^[32 * g.w] ((q + 1) % 2 ^ (32 * g.w), (q + 1) % 2 ^ (32 * g.w), 0)).2.2 ∧
-      AW' wN = n ∧ V' sExact = V sExact ∧ V' sLt = V sLt ∧ V' sOkDE = V sOkDE := by
+    (hq : A aD = q) (h1 : A aOne1 = 1) (hz : A aZero = 0) (hnW : AW wN = n) (hz2 : AW wZ2 = 0) :
+    WP isa (seqs [VG.Impl.Rsa.X86.KeyRt.chain nar .adc aD aD aOne1 false, VG.Impl.Rsa.X86.KeyRt.copy nar aBy aD,
+      VG.Impl.Rsa.X86.KeyRt.zeroWide wid wB, VG.Impl.Rsa.X86.KeyRt.copy nar (2 * wB) aD,
+      VG.Impl.Rsa.X86.KeyRt.zeroWide wid wA]) s fun u => ∃ A' AW',
+      KS g s0 A' [aBy, aD, aOne1, aZero, VG.Impl.Rsa.X86.Recover.aN] AW' [wA, wB, wN, wZ2] V
+        [sExact, sLt, sOkDE] u ∧
+      A' aBy = (q + 1) % 2 ^ (32 * g.w) ∧ AW' wB = (q + 1) % 2 ^ (32 * g.w) ∧ AW' wA = 0 ∧ AW' wZ2 = 0 ∧
+      A' aD = (q + 1) % 2 ^ (32 * g.w) ∧ A' aZero = 0 ∧ AW' wN = n := by
   have hq' : A 30 = q := hq
-  have h1' : A 26 = 1 := h1
   have hz' : A 10 = 0 := hz
-  have hn' : A 32 = n := hn
   have hnW' : AW 19 = n := hnW
   have hz2' : AW 18 = 0 := hz2
-  unfold square
   simp only [seqs]
   refine WP.seq (WP.mono (h.add_w (o := aD) (a := aD) (b := aOne1) (by decide) (by simp) (by simp) (by decide))
     fun u1 ⟨k1, _⟩ => ?_)
@@ -133,17 +132,38 @@ theorem square_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n q : Nat}
     (fun j hj => ⟨by revert hj; revert j; decide, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
   refine WP.seq (WP.mono (h3'.widen (k := wB) (a := aD) (by decide) (by simp) (by decide) z3 (by decide)
     (by decide)) fun u4 ⟨h4, _⟩ => ?_)
-  refine WP.seq (WP.mono (h4.zeroWide_W (j := wA) (by decide) (by decide)) fun u5 ⟨h5, _⟩ => ?_)
-  refine WP.mono (product_ok' (y := aBy) (x := wB) (a := wA) (t := wT) (z := wZ2)
-    ⟨by simp, by simp, by simp, by simp, by decide, by decide, by decide, by decide, by decide, by decide,
-      by decide, by decide, by decide, by decide, by decide⟩ (by simp [upd, wZ2, wA, wB, hz2']) h5
-    (Y := (q + 1) % 2 ^ (32 * g.w)) (X := (q + 1) % 2 ^ (32 * g.w))
-    (by simp [upd, aBy, aD, hq', h1]) (by simp [upd, wA, wB, aD, hq', h1]) (by simp [upd])) fun t ht => ?_
+  refine WP.mono (h4.zeroWide_W (j := wA) (by decide) (by decide)) fun u5 ⟨h5, _⟩ => ?_
+  exact ⟨_, _, h5.mono (fun j hj => ⟨by revert hj; revert j; decide, rfl⟩) (fun j hj => ⟨hj, rfl⟩)
+    (fun d hd => ⟨hd, rfl⟩), by simp [upd, aBy, aD, hq', h1], by simp [upd, wA, wB, aD, hq', h1], by simp [upd],
+    by simp [upd, wZ2, wA, wB, hz2'], by simp [upd, aBy, aD, hq', h1], by simp [upd, aBy, aZero, aD, hz'],
+    by simp [upd, wN, wA, wB, hnW']⟩
+
+/-- The arrays the product of `square` names. -/
+theorem squareIdx : ProdIdx aBy wB wA wT wZ2 [aBy, aD, aOne1, aZero, VG.Impl.Rsa.X86.Recover.aN]
+    [wA, wB, wN, wZ2] [sExact, sLt, sOkDE] :=
+  ⟨by simp, by simp, by simp, by simp, by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, by decide, by decide⟩
+
+/-- `b = q + 1`, and `b²` (wide). -/
+theorem square_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n q : Nat}
+    (h : KS g s0 A [aD, aOne1, aZero, VG.Impl.Rsa.X86.Recover.aN] AW [wN, wZ2] V [sExact, sLt, sOkDE] s)
+    (hq : A aD = q) (h1 : A aOne1 = 1) (hz : A aZero = 0) (hnW : AW wN = n) (hz2 : AW wZ2 = 0) :
+    WP isa square s fun t => ∃ A' AW' V',
+      KS g s0 A' [aD, aZero] AW' [wA, wN] V' [sK, sExact, sLt, sOkDE] t ∧
+      A' aD = (q + 1) % 2 ^ (32 * g.w) ∧ A' aZero = 0 ∧
+      AW' wA = ((prodStep (32 * g.W))^[32 * g.w] ((q + 1) % 2 ^ (32 * g.w), (q + 1) % 2 ^ (32 * g.w), 0)).2.2 ∧
+      AW' wN = n ∧ V' sExact = V sExact ∧ V' sLt = V sLt ∧ V' sOkDE = V sOkDE := by
+  unfold square
+  refine wp_seqs_snoc (WP.mono (squareHead_ok h hq h1 hz hnW hz2)
+    fun u ⟨A5, AW5, h5, y5, x5, a5, z5, d5, zz5, n5⟩ => ?_)
+  refine WP.mono (product_ok' squareIdx z5 h5 y5 x5 a5) fun t ht => ?_
   unfold ProdS at ht
   refine ⟨_, _, _, ht.mono (fun j hj => ⟨by revert hj; revert j; decide, rfl⟩)
     (fun j hj => ⟨by revert hj; revert j; decide, rfl⟩) (fun d hd => ⟨by revert hd; revert d; decide, rfl⟩),
-    by simp [upd, aBy, aD, hq', h1], by simp [upd, aBy, aZero, aD, hz'], by simp [upd],
-    by simp [upd, wN, wA, wB, hnW'], by simp [upd, sK, sExact], by simp [upd, sK, sLt], by simp [upd, sK, sOkDE]⟩
+    by rw [upd_ne _ _ (show aD ≠ aBy by decide)]; exact d5,
+    by rw [upd_ne _ _ (show aZero ≠ aBy by decide)]; exact zz5, by simp [upd],
+    by rw [upd_ne _ _ (show wN ≠ wA by decide), upd_ne _ _ (show wN ≠ wB by decide)]; exact n5,
+    by simp [upd, sK, sExact], by simp [upd, sK, sLt], by simp [upd, sK, sOkDE]⟩
 
 /-- `b² - 4 n` (wide) and whether `b² > 4 n`. -/
 theorem minus4n_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n sq : Nat}
@@ -185,7 +205,7 @@ theorem minus4n_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {n sq : Nat}
 
 /-- The factors `(b + y) / 2` and `(b - y) / 2` into narrow arrays 5 and 6, and the mask of every
 check into `sMask`. -/
-theorem factors_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {b y : Nat} {okde lt ex ok4 ok5 : Bool}
+theorem factorsD_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {b y : Nat} {okde lt ex ok4 ok5 : Bool}
     (h : KS g s0 A [aY, aD, aZero] AW [] V (sOk5 :: sqSlots) s)
     (hy : A aY = y) (hb : A aD = b) (hz : A aZero = 0) (v1 : V sOkDE = b2n okde) (v2 : V sLt = b2n lt)
     (v3 : V sExact = b2n ex) (v4 : V sOk4 = b2n ok4) (v5 : V sOk5 = b2n ok5) :
