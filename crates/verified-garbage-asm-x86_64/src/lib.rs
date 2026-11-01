@@ -886,3 +886,7 @@ pub mod x448;
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub mod zeroize;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
+mod internal;

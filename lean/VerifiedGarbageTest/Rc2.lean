@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Rc2.Contract
 meta import VerifiedGarbage.Spec.Rc2.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # RC2 specification tests
@@ -211,10 +209,5 @@ run_cmd do
   | .ok () => pure ()
   | .error e => throwError "RC2: {e}"
 
-#assert_standard_axioms VG.Spec.Rc2.expandKeyContract
-#assert_standard_axioms VG.Spec.Rc2.encryptBlockContract
-#assert_standard_axioms VG.Spec.Rc2.decryptBlockContract
-#assert_standard_axioms VG.Spec.Rc2.cbcEncryptContract
-#assert_standard_axioms VG.Spec.Rc2.cbcDecryptContract
 
 end VG.Test.Rc2

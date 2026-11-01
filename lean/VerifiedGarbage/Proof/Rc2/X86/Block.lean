@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc2.X86.Lit
@@ -14,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Rc2.X86.Lit
@@ -278,31 +280,31 @@ def blockSatState : State where
   rd := [⟨0x1000, 128⟩, ⟨0x4004, 12⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 256⟩]
 
-theorem encrypt_verified : Verified target encryptBlock (Spec.Rc2.encryptBlockContract abi) := by
+theorem encrypt_verified : Verified target encryptBlock (Proof.Rc2.encryptBlockContract abi) := by
   refine Verified.of_correct (block_correct .encrypt) encryptBlock_constantTime ?_
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
-  · sig_implies_pre [Spec.Rc2.encryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal,
+  · sig_implies_pre [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
       argBytes, addr32, blockContract, cipher]
   · intro s s' _ h
-    sig_post [Spec.Rc2.encryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal, argBytes]
+    sig_post [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal, argBytes]
     exact h.2
-  · sig_implies_pub [Spec.Rc2.encryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal,
+  · sig_implies_pub [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
       argBytes, addr32, blockContract, cipher]
-  · sig_implies_sat [Spec.Rc2.encryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal,
+  · sig_implies_sat [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
       argBytes, addr32, blockContract, cipher]
       [blockSatState, arg, argAddr, Mem.readW, Mem.read] using blockSatState
 
-theorem decrypt_verified : Verified target decryptBlock (Spec.Rc2.decryptBlockContract abi) := by
+theorem decrypt_verified : Verified target decryptBlock (Proof.Rc2.decryptBlockContract abi) := by
   refine Verified.of_correct (block_correct .decrypt) decryptBlock_constantTime ?_
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
-  · sig_implies_pre [Spec.Rc2.decryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal,
+  · sig_implies_pre [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
       argBytes, addr32, blockContract, cipher]
   · intro s s' _ h
-    sig_post [Spec.Rc2.decryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal, argBytes]
+    sig_post [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal, argBytes]
     exact h.2
-  · sig_implies_pub [Spec.Rc2.decryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal,
+  · sig_implies_pub [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
       argBytes, addr32, blockContract, cipher]
-  · sig_implies_sat [Spec.Rc2.decryptBlockContract, Spec.Rc2.blockSig, abi, argSlots, argVal,
+  · sig_implies_sat [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argSlots, argVal,
       argBytes, addr32, blockContract, cipher]
       [blockSatState, arg, argAddr, Mem.readW, Mem.read] using blockSatState
 

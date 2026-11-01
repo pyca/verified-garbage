@@ -63,13 +63,13 @@ def satState : State where
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩, ⟨0x6004, 20⟩]
 
 theorem wide_implies (d : Spec.Rc2.Direction) :
-    (wideContract d).Implies (Spec.Rc2.cbcContract abi d 16) := by
+    (wideContract d).Implies (Proof.Rc2.cbcContract abi d 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] at h
+    sig_pre [Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] at h
     sig_split h
-    sig_reduce [Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
-    sig_simp [Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] []
+    sig_reduce [Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+    sig_simp [Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] []
     sig_and_intros
     sig_close
     all_goals first
@@ -78,13 +78,13 @@ theorem wide_implies (d : Spec.Rc2.Direction) :
       | omega
       | (rw [Taint.sub_setWidth (by omega)]; simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
-  · sig_implies_pub [Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
-  · sig_implies_sat [Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+  · sig_implies_post [Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+  · sig_implies_pub [Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+  · sig_implies_sat [Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem cbc_verified (d : Spec.Rc2.Direction) :
-    Verified target (Impl.Rc2.X86.Cbc.cbc d) (Spec.Rc2.cbcContract abi d 16) := by
+    Verified target (Impl.Rc2.X86.Cbc.cbc d) (Proof.Rc2.cbcContract abi d 16) := by
   have hsat := (wide_implies d).sat_left
   have narrowSat : ∃ s, (contract d).pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -114,7 +114,7 @@ theorem cbc_verified (d : Spec.Rc2.Direction) :
     rc2_cbc_narrow
     exact h
 
-theorem encrypt_verified : Verified target Impl.Rc2.X86.Cbc.encrypt (Spec.Rc2.cbcEncryptContract abi 16) := cbc_verified .encrypt
-theorem decrypt_verified : Verified target Impl.Rc2.X86.Cbc.decrypt (Spec.Rc2.cbcDecryptContract abi 16) := cbc_verified .decrypt
+theorem encrypt_verified : Verified target Impl.Rc2.X86.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 16) := cbc_verified .encrypt
+theorem decrypt_verified : Verified target Impl.Rc2.X86.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 16) := cbc_verified .decrypt
 
 end VG.Proof.Rc2.X86.Cbc

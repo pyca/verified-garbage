@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.X86_64.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
 public import VerifiedGarbage.Proof.Rc2.X86_64.Save
@@ -830,9 +831,9 @@ theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.rdi, .rsi, .rdx, .rcx
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 := by
   simp [PublicRegs]
 
-theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract abi) := by
+theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
   refine Verified.of_correct key_correct (expandKey_constantTime _) ?_
-  sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argRegs,
+  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
     keyContract, publicRegs_five, Spec.Rc2.validKey] [keySatState] using keySatState
 
 end VG.Proof.Rc2.X86_64

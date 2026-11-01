@@ -768,15 +768,15 @@ theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
   change Exec isa Impl.Rc2.Arm.Cbc.decrypt s t s' at he
   exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
 
-theorem encrypt_verified : Verified target Impl.Rc2.Arm.Cbc.encrypt (Spec.Rc2.cbcEncryptContract abi 0) := by
+theorem encrypt_verified : Verified target Impl.Rc2.Arm.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 0) := by
   refine Verified.of_correct encrypt_correct (cbc_constantTime .encrypt) ?_
-  sig_implies [Spec.Rc2.cbcEncryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs,
+  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr, contract]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
-theorem decrypt_verified : Verified target Impl.Rc2.Arm.Cbc.decrypt (Spec.Rc2.cbcDecryptContract abi 0) := by
+theorem decrypt_verified : Verified target Impl.Rc2.Arm.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 0) := by
   refine Verified.of_correct decrypt_correct (cbc_constantTime .decrypt) ?_
-  sig_implies [Spec.Rc2.cbcDecryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs,
+  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr, contract]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 

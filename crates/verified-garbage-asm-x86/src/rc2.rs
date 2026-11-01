@@ -3,7 +3,7 @@
 //! `assembly/rc2.s`.
 #![allow(dead_code)]
 
-/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (as `vg_rc2_expand_key`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. Effective bits are independent of the supplied key length.
+/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. Effective bits are independent of the supplied key length.
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
@@ -46,7 +46,7 @@ jmp 27f
 27:
 .base64 "uQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAImMJBQCAACJjCQYAgAAiYwkHAIAAImMJCACAACJjCQkAgAAiYwkKAIAAImMJCwCAACJjCQwAgAAiYwkNAIAAImMJDgCAACJjCQ8AgAAiYwkQAIAAImMJEQCAACJjCRIAgAAiYwkTAIAAImMJFACAACJjCRUAgAAiYwkWAIAAImMJFwCAACNpCRgAgAAww=="
 .p2align 6"#,
-        vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key,
+        vg_rc2_expand_key = sym super::internal::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
 
@@ -115,7 +115,7 @@ jmp 215f
 215:
 .base64 "i7MEAgAAi5sAAgAAuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAImMJBQCAACJjCQYAgAAiYwkHAIAAImMJCACAACJjCQkAgAAiYwkKAIAAImMJCwCAACJjCQwAgAAiYwkNAIAAImMJDgCAACJjCQ8AgAAiYwkQAIAAImMJEQCAACJjCRIAgAAiYwkTAIAAImMJFACAACJjCRUAgAAiYwkWAIAAImMJFwCAACNpCRgAgAAww=="
 .p2align 6"#,
-        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt,
+        vg_rc2_cbc_encrypt = sym super::internal::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
     )
 }
 
@@ -184,198 +184,6 @@ jmp 215f
 215:
 .base64 "i7MEAgAAi5sAAgAAuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAImMJBQCAACJjCQYAgAAiYwkHAIAAImMJCACAACJjCQkAgAAiYwkKAIAAImMJCwCAACJjCQwAgAAiYwkNAIAAImMJDgCAACJjCQ8AgAAiYwkQAIAAImMJEQCAACJjCRIAgAAiYwkTAIAAImMJFACAACJjCRUAgAAiYwkWAIAAImMJFwCAACNpCRgAgAAww=="
 .p2align 6"#,
-        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt,
-    )
-}
-
-/// RC2-CBC encryption on `n` complete 8-byte blocks at `data`, in place: `C[i] = RC2(schedule, P[i] XOR C[i-1])`, starting with `C[0] = *iv`. Writes the last ciphertext block to `*iv`; for `n = 0`, leaves `*iv` unchanged. The schedule is the 64 little-endian 16-bit words written by `vg_rc2_expand_key`. No padding is added.
-///
-/// Contract: `VG.Spec.Rc2.cbcEncryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_cbc_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImoCAEAAImYDAEAAImwEAEAAIm4FAEAAInFi1wkBItMJAiLdCQMi3wkEIP/AA=="
-je 20f
-22:
-.base64 "iwaLVgQzATNRBIkGiVYEVVZT"
-call {vg_rc2_encrypt_block}
-.base64 "WFhYiwaLVgSJAYlRBIPGCIPvAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ieiLqAgBAACLmAwBAACLsBABAACLuBQBAADD"
-.p2align 6"#,
-        vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block,
-    )
-}
-
-/// RC2-CBC decryption on `n` complete 8-byte blocks at `data`, in place: `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]`, starting with `C[0] = *iv`. Writes the last input ciphertext block to `*iv`; for `n = 0`, leaves `*iv` unchanged. The schedule is the 64 little-endian 16-bit words written by `vg_rc2_expand_key`. No padding is removed.
-///
-/// Contract: `VG.Spec.Rc2.cbcDecryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_cbc_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImoCAEAAImYDAEAAImwEAEAAIm4FAEAAInFi1wkBItMJAiLdCQMi3wkEIP/AA=="
-je 20f
-22:
-.base64 "iwaLVgSJhQABAACJlQQBAABVVlM="
-call {vg_rc2_decrypt_block}
-.base64 "WFhYiwaLVgQzATNRBIkGiVYEi4UAAQAAi5UEAQAAiQGJUQSDxgiD7wE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ieiLqAgBAACLmAwBAACLsBABAACLuBQBAADD"
-.p2align 6"#,
-        vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block,
-    )
-}
-
-/// RC2 key expansion (RFC 2268 §2): expands the `key_len` bytes at `key` with `effective_bits` effective key bits into `*schedule`, as 64 little-endian 16-bit words. Effective bits are independent of the supplied key length.
-///
-/// Contract: `VG.Spec.Rc2.expandKeyContract`. Constant time: only pointers, `key_len` and `effective_bits` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `schedule` must be valid for reads and writes of 128 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be in 1..=128.
-/// * `effective_bits` must be in 1..=1024.
-/// * The contents of `scratch` on return are unspecified.
-/// * `schedule` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_expand_key(key: *const u8, key_len: usize, effective_bits: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFIkoiVgEiXAIiXgMi2wkBIt0JAiLfCQQuQAAAAA="
-20:
-.base64 "ieoByg+2Aon6AcqIAoPBATnx"
-jne 20b
-.base64 "gfmAAAAA"
-jne 21f
-jmp 22f
-21:
-23:
-.base64 "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"
-jne 23b
-22:
-.base64 "i3QkDIPGB8HuA7mAAAAAKfGLVCQMg+IHu/8AAACD+gE="
-je 24f
-jmp 25f
-24:
-.base64 "uwEAAAA="
-25:
-.base64 "g/oC"
-je 26f
-jmp 27f
-26:
-.base64 "uwMAAAA="
-27:
-.base64 "g/oD"
-je 28f
-jmp 29f
-28:
-.base64 "uwcAAAA="
-29:
-.base64 "g/oE"
-je 210f
-jmp 211f
-210:
-.base64 "uw8AAAA="
-211:
-.base64 "g/oF"
-je 212f
-jmp 213f
-212:
-.base64 "ux8AAAA="
-213:
-.base64 "g/oG"
-je 214f
-jmp 215f
-214:
-.base64 "uz8AAAA="
-215:
-.base64 "g/oH"
-je 216f
-jmp 217f
-216:
-.base64 "u38AAAA="
-217:
-.base64 "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"
-jne 218f
-jmp 219f
-218:
-220:
-.base64 "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"
-jne 220b
-219:
-.base64 "i0QkFIsoi1gEi3AIi3gMww=="
-.p2align 6"#,
-    )
-}
-
-/// RC2 block encryption (RFC 2268 §3): encrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
-///
-/// Contract: `VG.Spec.Rc2.encryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the mashing indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `data` must be valid for reads and writes of 8 bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "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"
-.p2align 6"#,
-    )
-}
-
-/// RC2 block decryption (RFC 2268 §4): decrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
-///
-/// Contract: `VG.Spec.Rc2.decryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the reverse-mashing indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `data` must be valid for reads and writes of 8 bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "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SItVTInOwe4DwckTCfGB4f//AACJxjHWId4x1inxi3wkBA+2dyQPtn8lwc8YCf4p8YHh//8AAIlNSItFQItdRItNSItVTInewe4CwcsSCfOB4///AACJ1jHOIcYxzinzi3wkBA+2dyIPtn8jwc8YCf4p84Hj//8AAIldRItFQItdRItNSItVTInG0e7ByBEJ8CX//wAAic4x3iHWMd4p8It8JAQPtncgD7Z/IcHPGAn+KfAl//8AAIlFQItFQItdRItNSItVTInWwe4FwcoVCfKB4v//AACJ3jHGIc4xxinyi3wkBA+2dx4Ptn8fwc8YCf4p8oHi//8AAIlVTItFQItdRItNSItVTInOwe4DwckTCfGB4f//AACJxjHWId4x1inxi3wkBA+2dxwPtn8dwc8YCf4p8YHh//8AAIlNSItFQItdRItNSItVTInewe4CwcsSCfOB4///AACJ1jHOIcYxzinzi3wkBA+2dxoPtn8bwc8YCf4p84Hj//8AAIldRItFQItdRItNSItVTInG0e7ByBEJ8CX//wAAic4x3iHWMd4p8It8JAQPtncYD7Z/GcHPGAn+KfAl//8AAIlFQItFQItdRItNSItVTInWwe4FwcoVCfKB4v//AACJ3jHGIc4xxinyi3wkBA+2dxYPtn8Xwc8YCf4p8oHi//8AAIlVTItFQItdRItNSItVTInOwe4DwckTCfGB4f//AACJxjHWId4x1inxi3wkBA+2dxQPtn8Vwc8YCf4p8YHh//8AAIlNSItFQItdRItNSItVTInewe4CwcsSCfOB4///AACJ1jHOIcYxzinzi3wkBA+2dxIPtn8Twc8YCf4p84Hj//8AAIldRItFQItdRItNSItVTInG0e7ByBEJ8CX//wAAic4x3iHWMd4p8It8JAQPtncQD7Z/EcHPGAn+KfAl//8AAIlFQItFQItdRItNSItVTInWwe4FwcoVCfKB4v//AACJ3jHGIc4xxinyi3wkBA+2dw4Ptn8Pwc8YCf4p8oHi//8AAIlVTItFQItdRItNSItVTInOwe4DwckTCfGB4f//AACJxjHWId4x1inxi3wkBA+2dwwPtn8Nwc8YCf4p8YHh//8AAIlNSItFQItdRItNSItVTInewe4CwcsSCfOB4///AACJ1jHOIcYxzinzi3wkBA+2dwoPtn8Lwc8YCf4p84Hj//8AAIldRItFQItdRItNSItVTInG0e7ByBEJ8CX//wAAic4x3iHWMd4p8It8JAQPtncID7Z/CcHPGAn+KfAl//8AAIlFQItFQItdRItNSItVTInWwe4FwcoVCfKB4v//AACJ3jHGIc4xxinyi3wkBA+2dwYPtn8Hwc8YCf4p8oHi//8AAIlVTItFQItdRItNSItVTInOwe4DwckTCfGB4f//AACJxjHWId4x1inxi3wkBA+2dwQPtn8Fwc8YCf4p8YHh//8AAIlNSItFQItdRItNSItVTInewe4CwcsSCfOB4///AACJ1jHOIcYxzinzi3wkBA+2dwIPtn8Dwc8YCf4p84Hj//8AAIldRItFQItdRItNSItVTInG0e7ByBEJ8CX//wAAic4x3iHWMd4p8It8JAQPtjcPtn8Bwc8YCf4p8CX//wAAiUVAi3wkCItFQIgHwegIiEcBi0VEiEcCwegIiEcDi0VIiEcEwegIiEcFi0VMiEcGwegIiEcHieiLKItYBItwCIt4DItIEMM="
-.p2align 6"#,
+        vg_rc2_cbc_decrypt = sym super::internal::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
     )
 }

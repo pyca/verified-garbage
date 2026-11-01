@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Proof.Rc2.Arm.ConstantTime
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -158,15 +159,15 @@ theorem publicRegs_three (s₁ s₂ : State) : PublicRegs [.r0, .r1, .r2] s₁ s
   simp [PublicRegs]
 
 theorem encrypt_verified :
-    Verified target encryptBlock (Spec.Rc2.encryptBlockContract abi) := by
+    Verified target encryptBlock (Proof.Rc2.encryptBlockContract abi) := by
   refine Verified.of_correct encrypt_correct (encryptBlock_constantTime _) ?_
-  sig_implies [Spec.Rc2.encryptBlockContract, Spec.Rc2.blockSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val,
+  sig_implies [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val,
     blockContract, publicRegs_three, cipher, State.addr] [satState] using satState
 
 theorem decrypt_verified :
-    Verified target decryptBlock (Spec.Rc2.decryptBlockContract abi) := by
+    Verified target decryptBlock (Proof.Rc2.decryptBlockContract abi) := by
   refine Verified.of_correct decrypt_correct (decryptBlock_constantTime _) ?_
-  sig_implies [Spec.Rc2.decryptBlockContract, Spec.Rc2.blockSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val,
+  sig_implies [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val,
     blockContract, publicRegs_three, cipher, State.addr] [satState] using satState
 
 end VG.Proof.Rc2.Arm
