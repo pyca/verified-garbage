@@ -3,6 +3,179 @@
 //! `assembly/mldsa87.s`.
 #![allow(dead_code)]
 
+/// Prepares ML-DSA-87 verification key polynomials, copying the encoded key and caching its canonical NTT coefficients.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 2592 bytes.
+/// * `prepared` must be valid for reads and writes of 10784 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `prepared` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_prepare_verifying_key(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ff9,0xf81f0ffa,0xf81f0ffc,0xf81f0ffe,0x91000019,0x9100003a,0x9100005c,0x91000340
+.inst 0x91000321,0xd2801442
+20:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 20b
+.inst 0x91008320,0x91288341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91288340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91058320,0x91388341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91388340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910a8320,0xd2824401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd2824400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910f8320,0xd282c401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd282c400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91148320,0xd2834401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd2834400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91198320,0xd283c401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd283c400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x911e8320,0xd2844401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd2844400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91238320,0xd284c401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd284c400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xf84107fe,0xf84107fc,0xf84107fa,0xf84107f9,0xd65f03c0
+.p2align 6",
+        vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
+        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
+    )
+}
+
+/// Prepares ML-DSA-87 signing key polynomials, copying the encoded key and caching its canonical NTT coefficients.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4896 bytes.
+/// * `prepared` must be valid for reads and writes of 28448 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * The prepared key and scratch contain private key material and must be destroyed after use.
+/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
+/// * None of `sk`, `prepared` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_prepare_signing_key(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ff9,0xf81f0ffa,0xf81f0ffc,0xf81f0ffe,0x91000019,0x9100003a,0x9100005c,0x91000340
+.inst 0x91000321,0xd2802642
+20:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 20b
+.inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd2826404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2826400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91038320,0xd2800c01,0xd2800042,0xd2800043,0xd282e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd282e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91050320,0xd2800c01,0xd2800042,0xd2800043,0xd2836404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2836400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91068320,0xd2800c01,0xd2800042,0xd2800043,0xd283e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd283e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91080320,0xd2800c01,0xd2800042,0xd2800043,0xd2846404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2846400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91098320,0xd2800c01,0xd2800042,0xd2800043,0xd284e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd284e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910b0320,0xd2800c01,0xd2800042,0xd2800043,0xd2856404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2856400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910c8320,0xd2800c01,0xd2800042,0xd2800043,0xd285e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd285e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910e0320,0xd2800c01,0xd2800042,0xd2800043,0xd2866404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2866400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910f8320,0xd2800c01,0xd2800042,0xd2800043,0xd286e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd286e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91110320,0xd2800c01,0xd2800042,0xd2800043,0xd2876404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2876400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91128320,0xd2800c01,0xd2800042,0xd2800043,0xd287e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd287e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91140320,0xd2800c01,0xd2800042,0xd2800043,0xd2886404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2886400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91158320,0xd2800c01,0xd2800042,0xd2800043,0xd288e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd288e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91170320,0xd2800c01,0xd2800042,0xd2800043,0xd2896404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2896400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91188320,0xd2803401,0xd281ffe2,0xd2820003,0xd289e404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd289e400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x911f0320,0xd2803401,0xd281ffe2,0xd2820003,0xd28a6404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28a6400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91258320,0xd2803401,0xd281ffe2,0xd2820003,0xd28ae404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28ae400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x912c0320,0xd2803401,0xd281ffe2,0xd2820003,0xd28b6404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28b6400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91328320,0xd2803401,0xd281ffe2,0xd2820003,0xd28be404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28be400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91390320,0xd2803401,0xd281ffe2,0xd2820003,0xd28c6404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28c6400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x913f8320,0xd2803401,0xd281ffe2,0xd2820003,0xd28ce404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28ce400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xd2823000,0x8b000320,0xd2803401,0xd281ffe2,0xd2820003,0xd28d6404,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd28d6400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xf84107fe,0xf84107fc,0xf84107fa,0xf84107f9,0xd65f03c0
+.p2align 6",
+        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
+    )
+}
+
 /// ML-DSA-87 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
@@ -628,9 +801,7 @@ bl {vg_keccak_squeeze_scratch}
     )
 }
 
-/// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+/// Private common ML-DSA-87 signing kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of signContract.
 ///
 /// # Safety
 ///
@@ -639,25 +810,28 @@ bl {vg_keccak_squeeze_scratch}
 /// * `rnd` must be valid for reads of 32 bytes.
 /// * `sig` must be valid for reads and writes of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.
+/// * Cached secret coefficients contain private key material and must be destroyed after use.
 /// * `sk` must have been written by `vg_mldsa87_keygen`.
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or `cache` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa87_sign_with_cache(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
-.inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
-.inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
-.inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
-.inst 0xd2800009,0x39168789,0x91168b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789
-.inst 0xf9000949,0xf941db89,0xf9000d49,0xd2800029,0x39170b89,0xd2800009,0x39170f89,0x9117138a
-.inst 0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49
-.inst 0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a,0xf941cf89,0xf9000149,0xf941d389
-.inst 0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800069,0x39181b89,0xd2800009
-.inst 0x39181f89,0x91160380,0xd29f8001,0x8b010381,0xd29b8002,0xf2a00022,0xf2c00002,0xf2e00002
-.inst 0x8b020382
+        r".inst 0xf81f0ff5,0xf81f0ff6,0x910000b5,0x910000d6,0xf901a497,0xf901a898,0xf901ac99,0xf901b09a
+.inst 0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c,0x91000019,0x9100003a,0x9100005b,0x91000077
+.inst 0xd2800038,0xf9400329,0xf901cf89,0xf9400729,0xf901d389,0xf9400b29,0xf901d789,0xf9400f29
+.inst 0xf901db89,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
+.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf941cf89
+.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
+.inst 0x39170b89,0xd2800009,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
+.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800009,0x39179789
+.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
+.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800009,0x39181f89,0x91160380,0xd29f8001,0x8b010381
+.inst 0xd29b8002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_rej_ntt_poly4}
 .inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
 .inst 0xf941db89,0xf9000d49,0xd2800089,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf941cf89
@@ -780,6 +954,7 @@ bl {vg_mldsa_rej_ntt_poly4}
 cbnz w24, 20f
 b 21f
 20:
+cbnz x22, 22f
 .inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd2940004,0x8b040384
 bl {vg_mldsa_bit_unpack}
 .inst 0xd2940000,0x8b000380
@@ -886,8 +1061,117 @@ bl {vg_keccak_absorb_scratch}
 bl {vg_keccak_pad_scratch}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
 bl {vg_keccak_squeeze_scratch}
-.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+b 23f
 22:
+.inst 0xd2940000,0x8b000380,0x910002a1,0xd2800802
+24:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 24b
+.inst 0xd2948000,0x8b000380,0x911002a1,0xd2800802
+25:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 25b
+.inst 0xd2950000,0x8b000380,0x912002a1,0xd2800802
+26:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 26b
+.inst 0xd2958000,0x8b000380,0x913002a1,0xd2800802
+27:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 27b
+.inst 0xd2960000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
+28:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 28b
+.inst 0xd2968000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
+29:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 29b
+.inst 0xd2970000,0x8b000380,0xd2830001,0x8b0102a1,0xd2800802
+210:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 210b
+.inst 0xd2978000,0x8b000380,0xd2838001,0x8b0102a1,0xd2800802
+211:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 211b
+.inst 0xd2980000,0x8b000380,0xd2840001,0x8b0102a1,0xd2800802
+212:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 212b
+.inst 0xd2988000,0x8b000380,0xd2848001,0x8b0102a1,0xd2800802
+213:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 213b
+.inst 0xd2990000,0x8b000380,0xd2850001,0x8b0102a1,0xd2800802
+214:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 214b
+.inst 0xd2998000,0x8b000380,0xd2858001,0x8b0102a1,0xd2800802
+215:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 215b
+.inst 0xd29a0000,0x8b000380,0xd2860001,0x8b0102a1,0xd2800802
+216:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 216b
+.inst 0xd29a8000,0x8b000380,0xd2868001,0x8b0102a1,0xd2800802
+217:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 217b
+.inst 0xd29b0000,0x8b000380,0xd2870001,0x8b0102a1,0xd2800802
+218:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 218b
+.inst 0xd29b8000,0x8b000380,0xd2878001,0x8b0102a1,0xd2800802
+219:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 219b
+.inst 0xd29c0000,0x8b000380,0xd2880001,0x8b0102a1,0xd2800802
+220:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 220b
+.inst 0xd29c8000,0x8b000380,0xd2888001,0x8b0102a1,0xd2800802
+221:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 221b
+.inst 0xd29d0000,0x8b000380,0xd2890001,0x8b0102a1,0xd2800802
+222:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 222b
+.inst 0xd29d8000,0x8b000380,0xd2898001,0x8b0102a1,0xd2800802
+223:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 223b
+.inst 0xd29e0000,0x8b000380,0xd28a0001,0x8b0102a1,0xd2800802
+224:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 224b
+.inst 0xd29e8000,0x8b000380,0xd28a8001,0x8b0102a1,0xd2800802
+225:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 225b
+.inst 0xd29f0000,0x8b000380,0xd28b0001,0x8b0102a1,0xd2800802
+226:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 226b
+.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
+.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
+.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
+.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91008323
+.inst 0xd2800404
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000363,0xd2800404
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
+bl {vg_keccak_pad_scratch}
+.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
+bl {vg_keccak_squeeze_scratch}
+23:
+.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+227:
 .inst 0xf941c789,0x91000129,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
 .inst 0xf2c00001,0xf2e00001,0xd2890002,0x8b020382,0x91300383,0xf903f079,0xf903f47a,0xf903f87b
 .inst 0xf903fc7e,0x91000079,0x9100005a,0x1100003b,0x91000003,0xd2800844,0xd2800009,0xf9000329
@@ -901,24 +1185,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 23f
+cbz x9, 228f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-25:
+230:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 25b
-b 24f
-23:
+cbnz x5, 230b
+b 229f
+228:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-26:
+231:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 26b
-24:
+cbnz x5, 231b
+229:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28c8000,0x8b000380,0xd2890001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91000529,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
@@ -934,24 +1218,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 27f
+cbz x9, 232f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-29:
+234:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 29b
-b 28f
-27:
+cbnz x5, 234b
+b 233f
+232:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-210:
+235:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 210b
-28:
+cbnz x5, 235b
+233:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28d0000,0x8b000380,0xd2898001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91000929,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
@@ -967,24 +1251,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 211f
+cbz x9, 236f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-213:
+238:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 213b
-b 212f
-211:
+cbnz x5, 238b
+b 237f
+236:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-214:
+239:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 214b
-212:
+cbnz x5, 239b
+237:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28d8000,0x8b000380,0xd28a0001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91000d29,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
@@ -1000,24 +1284,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 215f
+cbz x9, 240f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-217:
+242:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 217b
-b 216f
-215:
+cbnz x5, 242b
+b 241f
+240:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-218:
+243:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 218b
-216:
+cbnz x5, 243b
+241:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28e0000,0x8b000380,0xd28a8001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91001129,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
@@ -1033,24 +1317,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 219f
+cbz x9, 244f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-221:
+246:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 221b
-b 220f
-219:
+cbnz x5, 246b
+b 245f
+244:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-222:
+247:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 222b
-220:
+cbnz x5, 247b
+245:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28e8000,0x8b000380,0xd28b0001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91001529,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
@@ -1066,24 +1350,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 223f
+cbz x9, 248f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-225:
+250:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 225b
-b 224f
-223:
+cbnz x5, 250b
+b 249f
+248:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-226:
+251:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 226b
-224:
+cbnz x5, 251b
+249:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28f0000,0x8b000380,0xd28b8001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91001929,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
@@ -1099,24 +1383,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 227f
+cbz x9, 252f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-229:
+254:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 229b
-b 228f
-227:
+cbnz x5, 254b
+b 253f
+252:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-230:
+255:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 230b
-228:
+cbnz x5, 255b
+253:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28f8000,0x8b000380,0xd28c0001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xd2900000,0x8b000380,0xd29f8001,0x8b010381,0xd28c8002,0x8b020382,0x91300383
@@ -1172,10 +1456,10 @@ bl {vg_keccak_pad_scratch}
 bl {vg_keccak_squeeze_scratch}
 .inst 0x91104380,0xd2800801,0xd2800782,0xd2828003,0x8b030383,0x91300384
 bl {vg_mldsa_sample_in_ball}
-cbnz w0, 231f
+cbnz w0, 256f
 .inst 0xd2800018,0xd2800029,0xf901c389
-b 232f
-231:
+b 257f
+256:
 .inst 0xd2828000,0x8b000380
 bl {vg_mldsa_ntt_positive}
 .inst 0xd2800038,0xd2800009,0xf901cb89,0xd2828000,0x8b000380,0xd2940001,0x8b010381,0xd2890002
@@ -1183,77 +1467,77 @@ bl {vg_mldsa_ntt_positive}
 .inst 0xf2e00005,0xd29ff106,0xf2a000e6,0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 233f
-b 234f
-233:
+cbnz w24, 258f
+b 259f
+258:
 .inst 0xd2828000,0x8b000380,0xd2950001,0x8b010381,0xd28a0002,0x8b020382,0xd2830003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00105,0xf2c00005,0xf2e00005,0xd29ff106,0xf2a000e6
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 235f
-b 236f
-235:
+cbnz w24, 260f
+b 261f
+260:
 .inst 0xd2828000,0x8b000380,0xd2960001,0x8b010381,0xd28b0002,0x8b020382,0xd2830003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00105,0xf2c00005,0xf2e00005,0xd29ff106,0xf2a000e6
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 237f
-b 238f
-237:
+cbnz w24, 262f
+b 263f
+262:
 .inst 0xd2830000,0x8b000380,0xd2828001,0x8b010381,0xd2970002,0x8b020382,0x91300383
 bl {vg_mldsa_multiply_inverse_raw}
 .inst 0xd28c0000,0x8b000380,0xd2830001,0x8b010381,0xd29ff102,0xf2a000e2,0xf2c00002,0xf2e00002
 bl {vg_mldsa_signed_add_norm}
 .inst 0x0a000318
-238:
-236:
-234:
-cbnz w24, 239f
+263:
+261:
+259:
+cbnz w24, 264f
 .inst 0xf941c789,0x91001d29,0xf901c789
-b 240f
-239:
+b 265f
+264:
 .inst 0xd2828000,0x8b000380,0xd2978001,0x8b010381,0xd2900002,0x8b020382,0xd2850003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 241f
-b 242f
-241:
+cbnz w24, 266f
+b 267f
+266:
 .inst 0xd2828000,0x8b000380,0xd2988001,0x8b010381,0xd2910002,0x8b020382,0xd2860003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 243f
-b 244f
-243:
+cbnz w24, 268f
+b 269f
+268:
 .inst 0xd2828000,0x8b000380,0xd2998001,0x8b010381,0xd2920002,0x8b020382,0xd2870003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 245f
-b 246f
-245:
+cbnz w24, 270f
+b 271f
+270:
 .inst 0xd2828000,0x8b000380,0xd29a8001,0x8b010381,0xd2930002,0x8b020382,0xd2880003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 247f
-b 248f
-247:
-248:
-246:
-244:
-242:
-cbnz w24, 249f
+cbnz w24, 272f
+b 273f
+272:
+273:
+271:
+269:
+267:
+cbnz w24, 274f
 .inst 0xf941c789,0x91001d29,0xf901c789
-b 250f
-249:
+b 275f
+274:
 .inst 0xd2828000,0x8b000380,0xd29b8001,0x8b010381,0xd2850002,0x8b020382,0xd2900003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fe006,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
@@ -1272,20 +1556,20 @@ bl {vg_mldsa_fused_pair_h}
 bl {vg_mldsa_fused_pair_h}
 .inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xf941cb89,0xd1013129,0xd37ffd29
 .inst 0x0a090318
-cbnz w24, 251f
+cbnz w24, 276f
 .inst 0xf941c789,0x91001d29,0xf901c789
-b 252f
-251:
+b 277f
+276:
 .inst 0xd2800029,0xf901c389
-252:
-250:
-240:
-232:
+277:
+275:
+265:
+257:
 .inst 0xf941c389,0xd1000529,0xf901c389
-cbnz x9, 22b
-cbnz w24, 253f
-b 254f
-253:
+cbnz x9, 227b
+cbnz w24, 278f
+b 279f
+278:
 .inst 0xd2890000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0xd2898000,0x8b000380
@@ -1301,9 +1585,9 @@ bl {vg_mldsa_canonicalize_signed}
 .inst 0xd28c0000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0x910002e0,0x91104381,0xd2800802
-255:
+280:
 .inst 0x39400029,0x39000009,0x91000400,0x91000421,0xd1000442
-cbnz x2, 255b
+cbnz x2, 280b
 .inst 0xd2890000,0x8b000380,0xd29fffe1,0xf2a000e1,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00102
 .inst 0xf2c00002,0xf2e00002,0x910102e3,0xd2805004
 bl {vg_mldsa_bit_pack}
@@ -1327,10 +1611,10 @@ bl {vg_mldsa_bit_pack}
 bl {vg_mldsa_bit_pack}
 .inst 0xd2850000,0x8b000380,0xd2810001,0xd2800962,0xd2823803,0x8b0302e3,0xd2800a64
 bl {vg_mldsa_hint_bit_pack}
-254:
+279:
 21:
 .inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
-.inst 0xd65f03c0
+.inst 0xf84107f6,0xf84107f5,0xd65f03c0
 .p2align 6",
         vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
         vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
@@ -1353,6 +1637,60 @@ bl {vg_mldsa_hint_bit_pack}
     )
 }
 
+/// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4896 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `sk` must have been written by `vg_mldsa87_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91000005,0xd2800006
+bl {vg_mldsa87_sign_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache,
+    )
+}
+
+/// Signs a message representative with a prepared ML-DSA-87 key; results and permitted leakage are those of signContract.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 28448 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa87_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_sign_prepared(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0xd2826405,0x8b050005,0xd28b8006
+bl {vg_mldsa87_sign_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache,
+    )
+}
+
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
@@ -1369,7 +1707,7 @@ bl {vg_mldsa_hint_bit_pack}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -1409,9 +1747,63 @@ b 21f
     )
 }
 
-/// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+/// Signs a message and context with a prepared ML-DSA-87 key; formatting, results and permitted leakage are those of signMessageContract.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+/// # Safety
+///
+/// * `sk` must be valid for reads of 28448 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa87_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_sign_message_prepared(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2868009,0xf2a00049,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941cf83,0x91010063,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch}
+.inst 0xf941cf80,0x910d2381,0xf941e382,0xf941e783,0xf941eb84
+bl {vg_mldsa87_sign_prepared}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_mldsa87_sign_prepared = sym super::mldsa87::vg_mldsa87_sign_prepared,
+    )
+}
+
+/// Private common ML-DSA-87 verification kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of verifyContract.
 ///
 /// # Safety
 ///
@@ -1419,15 +1811,17 @@ b 21f
 /// * `mu` must be valid for reads of 64 bytes.
 /// * `sig` must be valid for reads of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `mu`, `sig` or `cache` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa87_verify_with_cache(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
-.inst 0x9100005b,0x9100007c,0xd2800038,0xd2823800,0x8b000360,0xd2800a61,0xd2800962,0xd29e8003
-.inst 0x8b030383,0xd2810004
+        r".inst 0xf81f0ff5,0xf81f0ff6,0x91000095,0x910000b6,0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b
+.inst 0xf901b47c,0xf901b87e,0x91000019,0x9100003a,0x9100005b,0x9100007c,0xd2800038,0xd2823800
+.inst 0x8b000360,0xd2800a61,0xd2800962,0xd29e8003,0x8b030383,0xd2810004
 bl {vg_mldsa_hint_bit_unpack}
 .inst 0x0a000318
 cbnz x24, 20f
@@ -1707,10 +2101,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2850001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 219f
 .inst 0x91008320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 220f
+219:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x910002a1,0xd2800802
+221:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 221b
+220:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1746,10 +2148,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2888001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 222f
 .inst 0x91058320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 223f
+222:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x911002a1,0xd2800802
+224:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 224b
+223:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1785,10 +2195,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd28c0001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 225f
 .inst 0x910a8320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 226f
+225:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x912002a1,0xd2800802
+227:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 227b
+226:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1824,10 +2242,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd28f8001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 228f
 .inst 0x910f8320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 229f
+228:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x913002a1,0xd2800802
+230:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 230b
+229:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1864,10 +2290,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2930001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 231f
 .inst 0x91148320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 232f
+231:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
+233:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 233b
+232:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1904,10 +2338,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2968001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 234f
 .inst 0x91198320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 235f
+234:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
+236:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 236b
+235:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1944,10 +2386,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd29a0001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 237f
 .inst 0x911e8320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 238f
+237:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2830001,0x8b0102a1,0xd2800802
+239:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 239b
+238:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -1984,10 +2434,18 @@ bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd29d8001,0x8b010381,0xd2858002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 240f
 .inst 0x91238320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 241f
+240:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2838001,0x8b0102a1,0xd2800802
+242:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 242b
+241:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
@@ -2016,13 +2474,14 @@ bl {vg_keccak_pad_scratch}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91100383,0xd2800804
 bl {vg_keccak_squeeze_scratch}
 .inst 0x91100380,0x91000361,0xd2800802,0xd280000a
-219:
+243:
 .inst 0x39400009,0x3940002b,0xca0b0129,0xaa09014a,0x91000400,0x91000421,0xd1000442
-cbnz x2, 219b
+cbnz x2, 243b
 .inst 0xd100054a,0xd37ffd4a,0x0a0a0318
 23:
 21:
-.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xf84107f6
+.inst 0xf84107f5,0xd65f03c0
 .p2align 6",
         vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
         vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
@@ -2043,6 +2502,53 @@ cbnz x2, 219b
     )
 }
 
+/// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 2592 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91000004,0xd2800005
+bl {vg_mldsa87_verify_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache,
+    )
+}
+
+/// Verifies a message representative with a prepared ML-DSA-87 key; results and permitted leakage are those of verifyContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 10784 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_verify_prepared(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91288004,0xd2840005
+bl {vg_mldsa87_verify_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache,
+    )
+}
+
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa87_verify_message`.
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
@@ -2058,7 +2564,7 @@ cbnz x2, 219b
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2095,6 +2601,60 @@ b 21f
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
         vg_mldsa87_verify = sym super::mldsa87::vg_mldsa87_verify,
+    )
+}
+
+/// Verifies a message and context with a prepared ML-DSA-87 key and cached public-key digest; formatting, results and permitted leakage match verifyMessageCachedContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 10784 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * The cached digest must equal SHAKE256 of the encoded public-key prefix, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_verify_message_prepared(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2868009,0xf2a00049,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941e383,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch}
+.inst 0xf941cf80,0x910d2381,0xf941e782,0xf941eb83
+bl {vg_mldsa87_verify_prepared}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_mldsa87_verify_prepared = sym super::mldsa87::vg_mldsa87_verify_prepared,
     )
 }
 
@@ -2516,12 +3076,10 @@ bl {vg_keccak_squeeze_scratch_sha3}
     )
 }
 
-/// The CPU features `vg_mldsa87_sign_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA87_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_mldsa87_sign_with_cache_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_SIGN_WITH_CACHE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+/// Private common ML-DSA-87 signing kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of signContract.
 ///
 /// # Safety
 ///
@@ -2530,27 +3088,30 @@ pub const VG_MLDSA87_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `rnd` must be valid for reads of 32 bytes.
 /// * `sig` must be valid for reads and writes of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.
+/// * Cached secret coefficients contain private key material and must be destroyed after use.
 /// * `sk` must have been written by `vg_mldsa87_keygen`.
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or `cache` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa87_sign_sha3(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa87_sign_with_cache_sha3(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
-.inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
-.inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
-.inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
-.inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
-.inst 0xd2800009,0x39168789,0x91168b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789
-.inst 0xf9000949,0xf941db89,0xf9000d49,0xd2800029,0x39170b89,0xd2800009,0x39170f89,0x9117138a
-.inst 0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49
-.inst 0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a,0xf941cf89,0xf9000149,0xf941d389
-.inst 0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800069,0x39181b89,0xd2800009
-.inst 0x39181f89,0x91160380,0xd29f8001,0x8b010381,0xd29b8002,0xf2a00022,0xf2c00002,0xf2e00002
-.inst 0x8b020382
+.inst 0xf81f0ff5,0xf81f0ff6,0x910000b5,0x910000d6,0xf901a497,0xf901a898,0xf901ac99,0xf901b09a
+.inst 0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c,0x91000019,0x9100003a,0x9100005b,0x91000077
+.inst 0xd2800038,0xf9400329,0xf901cf89,0xf9400729,0xf901d389,0xf9400b29,0xf901d789,0xf9400f29
+.inst 0xf901db89,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
+.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf941cf89
+.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
+.inst 0x39170b89,0xd2800009,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
+.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800009,0x39179789
+.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
+.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800009,0x39181f89,0x91160380,0xd29f8001,0x8b010381
+.inst 0xd29b8002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_rej_ntt_poly4_sha3}
 .inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
 .inst 0xf941db89,0xf9000d49,0xd2800089,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf941cf89
@@ -2673,6 +3234,7 @@ bl {vg_mldsa_rej_ntt_poly4_sha3}
 cbnz w24, 20f
 b 21f
 20:
+cbnz x22, 22f
 .inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd2940004,0x8b040384
 bl {vg_mldsa_bit_unpack}
 .inst 0xd2940000,0x8b000380
@@ -2779,8 +3341,117 @@ bl {vg_keccak_absorb_scratch_sha3}
 bl {vg_keccak_pad_scratch_sha3}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
 bl {vg_keccak_squeeze_scratch_sha3}
-.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+b 23f
 22:
+.inst 0xd2940000,0x8b000380,0x910002a1,0xd2800802
+24:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 24b
+.inst 0xd2948000,0x8b000380,0x911002a1,0xd2800802
+25:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 25b
+.inst 0xd2950000,0x8b000380,0x912002a1,0xd2800802
+26:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 26b
+.inst 0xd2958000,0x8b000380,0x913002a1,0xd2800802
+27:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 27b
+.inst 0xd2960000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
+28:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 28b
+.inst 0xd2968000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
+29:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 29b
+.inst 0xd2970000,0x8b000380,0xd2830001,0x8b0102a1,0xd2800802
+210:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 210b
+.inst 0xd2978000,0x8b000380,0xd2838001,0x8b0102a1,0xd2800802
+211:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 211b
+.inst 0xd2980000,0x8b000380,0xd2840001,0x8b0102a1,0xd2800802
+212:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 212b
+.inst 0xd2988000,0x8b000380,0xd2848001,0x8b0102a1,0xd2800802
+213:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 213b
+.inst 0xd2990000,0x8b000380,0xd2850001,0x8b0102a1,0xd2800802
+214:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 214b
+.inst 0xd2998000,0x8b000380,0xd2858001,0x8b0102a1,0xd2800802
+215:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 215b
+.inst 0xd29a0000,0x8b000380,0xd2860001,0x8b0102a1,0xd2800802
+216:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 216b
+.inst 0xd29a8000,0x8b000380,0xd2868001,0x8b0102a1,0xd2800802
+217:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 217b
+.inst 0xd29b0000,0x8b000380,0xd2870001,0x8b0102a1,0xd2800802
+218:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 218b
+.inst 0xd29b8000,0x8b000380,0xd2878001,0x8b0102a1,0xd2800802
+219:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 219b
+.inst 0xd29c0000,0x8b000380,0xd2880001,0x8b0102a1,0xd2800802
+220:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 220b
+.inst 0xd29c8000,0x8b000380,0xd2888001,0x8b0102a1,0xd2800802
+221:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 221b
+.inst 0xd29d0000,0x8b000380,0xd2890001,0x8b0102a1,0xd2800802
+222:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 222b
+.inst 0xd29d8000,0x8b000380,0xd2898001,0x8b0102a1,0xd2800802
+223:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 223b
+.inst 0xd29e0000,0x8b000380,0xd28a0001,0x8b0102a1,0xd2800802
+224:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 224b
+.inst 0xd29e8000,0x8b000380,0xd28a8001,0x8b0102a1,0xd2800802
+225:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 225b
+.inst 0xd29f0000,0x8b000380,0xd28b0001,0x8b0102a1,0xd2800802
+226:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 226b
+.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
+.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
+.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
+.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91008323
+.inst 0xd2800404
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000363,0xd2800404
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
+bl {vg_keccak_squeeze_scratch_sha3}
+23:
+.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+227:
 .inst 0x9119838a,0xf941e389,0xf9000149,0xf941e789,0xf9000549,0xf941eb89,0xf9000949,0xf941ef89
 .inst 0xf9000d49,0x911a038a,0xf941f389,0xf9000149,0xf941f789,0xf9000549,0xf941fb89,0xf9000949
 .inst 0xf941ff89,0xf9000d49,0xf941c789,0x91000129,0x391a8389,0xd348fd29,0x391a8789,0x911a8b8a
@@ -2821,17 +3492,17 @@ bl {vg_mldsa_ntt_positive_from}
 .inst 0xd28f0000,0x8b000380,0xd28b8001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789
-cbnz x9, 23f
+cbnz x9, 228f
 .inst 0xf941c789,0x91001929,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00101
 .inst 0xf2c00001,0xf2e00001,0xd28c0002,0x8b020382,0x91300383
 bl {vg_mldsa_expand_mask_poly_sha3}
-b 24f
-23:
+b 229f
+228:
 .inst 0xd28c0000,0x8b000380,0xd2848001,0x8b010381,0xd2801002
-25:
+230:
 .inst 0xf9400029,0xf9000009,0x91002000,0x91002021,0xd1000442
-cbnz x2, 25b
-24:
+cbnz x2, 230b
+229:
 .inst 0xd28f8000,0x8b000380,0xd28c0001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xd2900000,0x8b000380,0xd29f8001,0x8b010381,0xd28c8002,0x8b020382,0x91300383
@@ -2878,10 +3549,10 @@ bl {vg_mldsa_high_pack4}
 bl {vg_mldsa_commit_tail87}
 .inst 0x91104380,0xd2800801,0xd2800782,0xd2828003,0x8b030383,0x91300384
 bl {vg_mldsa_sample_in_ball_sha3}
-cbnz w0, 26f
+cbnz w0, 231f
 .inst 0xd2800018,0xd2800029,0xf901c389
-b 27f
-26:
+b 232f
+231:
 .inst 0xd2828000,0x8b000380
 bl {vg_mldsa_ntt_positive}
 .inst 0xd2800038,0xd2800009,0xf901cb89,0xd2828000,0x8b000380,0xd2940001,0x8b010381,0xd2890002
@@ -2889,77 +3560,77 @@ bl {vg_mldsa_ntt_positive}
 .inst 0xf2e00005,0xd29ff106,0xf2a000e6,0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 28f
-b 29f
-28:
+cbnz w24, 233f
+b 234f
+233:
 .inst 0xd2828000,0x8b000380,0xd2950001,0x8b010381,0xd28a0002,0x8b020382,0xd2830003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00105,0xf2c00005,0xf2e00005,0xd29ff106,0xf2a000e6
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 210f
-b 211f
-210:
+cbnz w24, 235f
+b 236f
+235:
 .inst 0xd2828000,0x8b000380,0xd2960001,0x8b010381,0xd28b0002,0x8b020382,0xd2830003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00105,0xf2c00005,0xf2e00005,0xd29ff106,0xf2a000e6
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 212f
-b 213f
-212:
+cbnz w24, 237f
+b 238f
+237:
 .inst 0xd2830000,0x8b000380,0xd2828001,0x8b010381,0xd2970002,0x8b020382,0x91300383
 bl {vg_mldsa_multiply_inverse_raw}
 .inst 0xd28c0000,0x8b000380,0xd2830001,0x8b010381,0xd29ff102,0xf2a000e2,0xf2c00002,0xf2e00002
 bl {vg_mldsa_signed_add_norm}
 .inst 0x0a000318
-213:
-211:
-29:
-cbnz w24, 214f
+238:
+236:
+234:
+cbnz w24, 239f
 .inst 0xf941c789,0x91001d29,0xf901c789
-b 215f
-214:
+b 240f
+239:
 .inst 0xd2828000,0x8b000380,0xd2978001,0x8b010381,0xd2900002,0x8b020382,0xd2850003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 216f
-b 217f
-216:
+cbnz w24, 241f
+b 242f
+241:
 .inst 0xd2828000,0x8b000380,0xd2988001,0x8b010381,0xd2910002,0x8b020382,0xd2860003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 218f
-b 219f
-218:
+cbnz w24, 243f
+b 244f
+243:
 .inst 0xd2828000,0x8b000380,0xd2998001,0x8b010381,0xd2920002,0x8b020382,0xd2870003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 220f
-b 221f
-220:
+cbnz w24, 245f
+b 246f
+245:
 .inst 0xd2828000,0x8b000380,0xd29a8001,0x8b010381,0xd2930002,0x8b020382,0xd2880003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fd106,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 222f
-b 223f
-222:
-223:
-221:
-219:
-217:
-cbnz w24, 224f
+cbnz w24, 247f
+b 248f
+247:
+248:
+246:
+244:
+242:
+cbnz w24, 249f
 .inst 0xf941c789,0x91001d29,0xf901c789
-b 225f
-224:
+b 250f
+249:
 .inst 0xd2828000,0x8b000380,0xd29b8001,0x8b010381,0xd2850002,0x8b020382,0xd2900003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd29fe005,0xf2a00065,0xf2c00005,0xf2e00005,0xd29fe006,0xf2a00066
 .inst 0xf2c00006,0xf2e00006
@@ -2978,20 +3649,20 @@ bl {vg_mldsa_fused_pair_h}
 bl {vg_mldsa_fused_pair_h}
 .inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xf941cb89,0xd1013129,0xd37ffd29
 .inst 0x0a090318
-cbnz w24, 226f
+cbnz w24, 251f
 .inst 0xf941c789,0x91001d29,0xf901c789
-b 227f
-226:
+b 252f
+251:
 .inst 0xd2800029,0xf901c389
-227:
-225:
-215:
-27:
+252:
+250:
+240:
+232:
 .inst 0xf941c389,0xd1000529,0xf901c389
-cbnz x9, 22b
-cbnz w24, 228f
-b 229f
-228:
+cbnz x9, 227b
+cbnz w24, 253f
+b 254f
+253:
 .inst 0xd2890000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0xd2898000,0x8b000380
@@ -3007,9 +3678,9 @@ bl {vg_mldsa_canonicalize_signed}
 .inst 0xd28c0000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0x910002e0,0x91104381,0xd2800802
-230:
+255:
 .inst 0x39400029,0x39000009,0x91000400,0x91000421,0xd1000442
-cbnz x2, 230b
+cbnz x2, 255b
 .inst 0xd2890000,0x8b000380,0xd29fffe1,0xf2a000e1,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00102
 .inst 0xf2c00002,0xf2e00002,0x910102e3,0xd2805004
 bl {vg_mldsa_bit_pack}
@@ -3033,10 +3704,10 @@ bl {vg_mldsa_bit_pack}
 bl {vg_mldsa_bit_pack}
 .inst 0xd2850000,0x8b000380,0xd2810001,0xd2800962,0xd2823803,0x8b0302e3,0xd2800a64
 bl {vg_mldsa_hint_bit_pack}
-229:
+254:
 21:
 .inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
-.inst 0xd65f03c0
+.inst 0xf84107f6,0xf84107f5,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
         vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
@@ -3063,6 +3734,72 @@ bl {vg_mldsa_hint_bit_pack}
     )
 }
 
+/// The CPU features `vg_mldsa87_sign_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4896 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `sk` must have been written by `vg_mldsa87_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_sign_sha3(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91000005,0xd2800006
+bl {vg_mldsa87_sign_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa87_sign_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_sign_with_cache_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa87_sign_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_SIGN_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Signs a message representative with a prepared ML-DSA-87 key; results and permitted leakage are those of signContract.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 28448 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa87_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_sign_prepared_sha3(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0xd2826405,0x8b050005,0xd28b8006
+bl {vg_mldsa87_sign_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa87_sign_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_sign_with_cache_sha3,
+    )
+}
+
 /// The CPU features `vg_mldsa87_sign_message_sha3` requires (`Artifact.features`).
 pub const VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
@@ -3082,7 +3819,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa87_sign_message_sha3(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -3125,12 +3862,72 @@ b 21f
     )
 }
 
-/// The CPU features `vg_mldsa87_verify_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA87_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_mldsa87_sign_message_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+/// Signs a message and context with a prepared ML-DSA-87 key; formatting, results and permitted leakage are those of signMessageContract.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+/// # Safety
+///
+/// * `sk` must be valid for reads of 28448 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa87_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_sign_message_prepared_sha3(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2868009,0xf2a00049,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941cf83,0x91010063,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf941cf80,0x910d2381,0xf941e382,0xf941e783,0xf941eb84
+bl {vg_mldsa87_sign_prepared_sha3}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa87_sign_prepared_sha3 = sym super::mldsa87::vg_mldsa87_sign_prepared_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa87_verify_with_cache_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_VERIFY_WITH_CACHE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Private common ML-DSA-87 verification kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of verifyContract.
 ///
 /// # Safety
 ///
@@ -3138,17 +3935,19 @@ pub const VG_MLDSA87_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 /// * `mu` must be valid for reads of 64 bytes.
 /// * `sig` must be valid for reads of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `mu`, `sig` or `cache` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa87_verify_sha3(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa87_verify_with_cache_sha3(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
-.inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
-.inst 0x9100005b,0x9100007c,0xd2800038,0xd2823800,0x8b000360,0xd2800a61,0xd2800962,0xd29e8003
-.inst 0x8b030383,0xd2810004
+.inst 0xf81f0ff5,0xf81f0ff6,0x91000095,0x910000b6,0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b
+.inst 0xf901b47c,0xf901b87e,0x91000019,0x9100003a,0x9100005b,0x9100007c,0xd2800038,0xd2823800
+.inst 0x8b000360,0xd2800a61,0xd2800962,0xd29e8003,0x8b030383,0xd2810004
 bl {vg_mldsa_hint_bit_unpack}
 .inst 0x0a000318
 cbnz x24, 20f
@@ -3425,10 +4224,18 @@ bl {vg_mldsa_ntt_positive}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2820001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 219f
 .inst 0x91008320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 220f
+219:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x910002a1,0xd2800802
+221:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 221b
+220:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3443,10 +4250,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2858001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 222f
 .inst 0x91058320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 223f
+222:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x911002a1,0xd2800802
+224:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 224b
+223:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3461,10 +4276,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2890001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 225f
 .inst 0x910a8320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 226f
+225:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x912002a1,0xd2800802
+227:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 227b
+226:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3479,10 +4302,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd28c8001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 228f
 .inst 0x910f8320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 229f
+228:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0x913002a1,0xd2800802
+230:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 230b
+229:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3497,10 +4328,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2900001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 231f
 .inst 0x91148320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 232f
+231:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
+233:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 233b
+232:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3515,10 +4354,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2938001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 234f
 .inst 0x91198320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 235f
+234:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
+236:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 236b
+235:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3533,10 +4380,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2970001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 237f
 .inst 0x911e8320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 238f
+237:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2830001,0x8b0102a1,0xd2800802
+239:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 239b
+238:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3551,10 +4406,18 @@ bl {vg_mldsa_usehint_pack4}
 .inst 0xd2878000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd29a8001,0x8b010381,0xd2828002
 .inst 0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_dot7}
+cbnz x22, 240f
 .inst 0x91238320,0xd2868001,0xf2a00021,0xf2c00001,0xf2e00001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 241f
+240:
+.inst 0xd2868000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2838001,0x8b0102a1,0xd2800802
+242:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 242b
+241:
 .inst 0xd2870000,0xf2a00020,0xf2c00000,0xf2e00000,0x8b000380,0xd2860001,0xf2a00021,0xf2c00001
 .inst 0xf2e00001,0x8b010381,0xd2868002,0xf2a00022,0xf2c00002,0xf2e00002,0x8b020382
 bl {vg_mldsa_montgomery_product}
@@ -3579,13 +4442,14 @@ bl {vg_keccak_pad_scratch_sha3}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91100383,0xd2800804
 bl {vg_keccak_squeeze_scratch_sha3}
 .inst 0x91100380,0x91000361,0xd2800802,0xd280000a
-219:
+243:
 .inst 0x39400009,0x3940002b,0xca0b0129,0xaa09014a,0x91000400,0x91000421,0xd1000442
-cbnz x2, 219b
+cbnz x2, 243b
 .inst 0xd100054a,0xd37ffd4a,0x0a0a0318
 23:
 21:
-.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xf84107f6
+.inst 0xf84107f5,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
         vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
@@ -3603,6 +4467,65 @@ cbnz x2, 219b
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa87_verify_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 2592 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_verify_sha3(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91000004,0xd2800005
+bl {vg_mldsa87_verify_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa87_verify_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_verify_with_cache_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa87_verify_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_VERIFY_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Verifies a message representative with a prepared ML-DSA-87 key; results and permitted leakage are those of verifyContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 10784 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_verify_prepared_sha3(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91288004,0xd2840005
+bl {vg_mldsa87_verify_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa87_verify_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_verify_with_cache_sha3,
     )
 }
 
@@ -3624,7 +4547,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES: verified_garbage_cpu::
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa87_verify_message_cached_sha3(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -3664,5 +4587,65 @@ b 21f
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
         vg_mldsa87_verify_sha3 = sym super::mldsa87::vg_mldsa87_verify_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa87_verify_message_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Verifies a message and context with a prepared ML-DSA-87 key and cached public-key digest; formatting, results and permitted leakage match verifyMessageCachedContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 10784 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * The cached digest must equal SHAKE256 of the encoded public-key prefix, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_verify_message_prepared_sha3(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2868009,0xf2a00049,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941e383,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf941cf80,0x910d2381,0xf941e782,0xf941eb83
+bl {vg_mldsa87_verify_prepared_sha3}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa87_verify_prepared_sha3 = sym super::mldsa87::vg_mldsa87_verify_prepared_sha3,
     )
 }

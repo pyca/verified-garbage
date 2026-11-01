@@ -3,6 +3,119 @@
 //! `assembly/mldsa44.s`.
 #![allow(dead_code)]
 
+/// Prepares ML-DSA-44 verification key polynomials, copying the encoded key and caching its canonical NTT coefficients.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `prepared` must be valid for reads and writes of 5408 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `prepared` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_prepare_verifying_key(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ff9,0xf81f0ffa,0xf81f0ffc,0xf81f0ffe,0x91000019,0x9100003a,0x9100005c,0x91000340
+.inst 0x91000321,0xd2800a42
+20:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 20b
+.inst 0x91008320,0x91148341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91148340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91058320,0x91248341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91248340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910a8320,0x91348341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91348340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910f8320,0xd2822401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd2822400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xf84107fe,0xf84107fc,0xf84107fa,0xf84107f9,0xd65f03c0
+.p2align 6",
+        vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
+        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
+    )
+}
+
+/// Prepares ML-DSA-44 signing key polynomials, copying the encoded key and caching its canonical NTT coefficients.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `prepared` must be valid for reads and writes of 14848 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * The prepared key and scratch contain private key material and must be destroyed after use.
+/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
+/// * None of `sk`, `prepared` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_prepare_signing_key(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ff9,0xf81f0ffa,0xf81f0ffc,0xf81f0ffe,0x91000019,0x9100003a,0x9100005c,0x91000340
+.inst 0x91000321,0xd2801402
+20:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 20b
+.inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0x91280344
+bl {vg_mldsa_bit_unpack}
+.inst 0x91280340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91038320,0xd2800c01,0xd2800042,0xd2800043,0x91380344
+bl {vg_mldsa_bit_unpack}
+.inst 0x91380340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91050320,0xd2800c01,0xd2800042,0xd2800043,0xd2824004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2824000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91068320,0xd2800c01,0xd2800042,0xd2800043,0xd282c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd282c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91080320,0xd2800c01,0xd2800042,0xd2800043,0xd2834004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2834000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91098320,0xd2800c01,0xd2800042,0xd2800043,0xd283c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd283c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910b0320,0xd2800c01,0xd2800042,0xd2800043,0xd2844004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2844000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910c8320,0xd2800c01,0xd2800042,0xd2800043,0xd284c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd284c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910e0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2854004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2854000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91148320,0xd2803401,0xd281ffe2,0xd2820003,0xd285c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd285c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x911b0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2864004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2864000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91218320,0xd2803401,0xd281ffe2,0xd2820003,0xd286c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd286c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xf84107fe,0xf84107fc,0xf84107fa,0xf84107f9,0xd65f03c0
+.p2align 6",
+        vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
+    )
+}
+
 /// ML-DSA-44 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
@@ -241,9 +354,7 @@ bl {vg_keccak_squeeze_scratch}
     )
 }
 
-/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+/// Private common ML-DSA-44 signing kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of signContract.
 ///
 /// # Safety
 ///
@@ -252,24 +363,28 @@ bl {vg_keccak_squeeze_scratch}
 /// * `rnd` must be valid for reads of 32 bytes.
 /// * `sig` must be valid for reads and writes of 2420 bytes.
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.
+/// * Cached secret coefficients contain private key material and must be destroyed after use.
 /// * `sk` must have been written by `vg_mldsa44_keygen`.
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or `cache` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa44_sign_with_cache(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
-.inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
-.inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
-.inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
-.inst 0xd2800009,0x39168789,0x91168b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789
-.inst 0xf9000949,0xf941db89,0xf9000d49,0xd2800029,0x39170b89,0xd2800009,0x39170f89,0x9117138a
-.inst 0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49
-.inst 0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a,0xf941cf89,0xf9000149,0xf941d389
-.inst 0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800069,0x39181b89,0xd2800009
-.inst 0x39181f89,0x91160380,0xd2930001,0x8b010381,0xd29b0002,0x8b020382
+        r".inst 0xf81f0ff5,0xf81f0ff6,0x910000b5,0x910000d6,0xf901a497,0xf901a898,0xf901ac99,0xf901b09a
+.inst 0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c,0x91000019,0x9100003a,0x9100005b,0x91000077
+.inst 0xd2800038,0xf9400329,0xf901cf89,0xf9400729,0xf901d389,0xf9400b29,0xf901d789,0xf9400f29
+.inst 0xf901db89,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
+.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf941cf89
+.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
+.inst 0x39170b89,0xd2800009,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
+.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800009,0x39179789
+.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
+.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800009,0x39181f89,0x91160380,0xd2930001,0x8b010381
+.inst 0xd29b0002,0x8b020382
 bl {vg_mldsa_rej_ntt_poly4}
 .inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
 .inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800029,0x39168789,0x91168b8a,0xf941cf89
@@ -302,6 +417,7 @@ bl {vg_mldsa_rej_ntt_poly4}
 cbnz w24, 20f
 b 21f
 20:
+cbnz x22, 22f
 .inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd28d0004,0x8b040384
 bl {vg_mldsa_bit_unpack}
 .inst 0xd28d0000,0x8b000380
@@ -364,8 +480,73 @@ bl {vg_keccak_absorb_scratch}
 bl {vg_keccak_pad_scratch}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
 bl {vg_keccak_squeeze_scratch}
-.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+b 23f
 22:
+.inst 0xd28d0000,0x8b000380,0x910002a1,0xd2800802
+24:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 24b
+.inst 0xd28d8000,0x8b000380,0x911002a1,0xd2800802
+25:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 25b
+.inst 0xd28e0000,0x8b000380,0x912002a1,0xd2800802
+26:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 26b
+.inst 0xd28e8000,0x8b000380,0x913002a1,0xd2800802
+27:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 27b
+.inst 0xd28f0000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
+28:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 28b
+.inst 0xd28f8000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
+29:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 29b
+.inst 0xd2900000,0x8b000380,0xd2830001,0x8b0102a1,0xd2800802
+210:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 210b
+.inst 0xd2908000,0x8b000380,0xd2838001,0x8b0102a1,0xd2800802
+211:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 211b
+.inst 0xd2910000,0x8b000380,0xd2840001,0x8b0102a1,0xd2800802
+212:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 212b
+.inst 0xd2918000,0x8b000380,0xd2848001,0x8b0102a1,0xd2800802
+213:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 213b
+.inst 0xd2920000,0x8b000380,0xd2850001,0x8b0102a1,0xd2800802
+214:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 214b
+.inst 0xd2928000,0x8b000380,0xd2858001,0x8b0102a1,0xd2800802
+215:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 215b
+.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
+.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
+.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
+.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91008323
+.inst 0xd2800404
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000363,0xd2800404
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
+bl {vg_keccak_pad_scratch}
+.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
+bl {vg_keccak_squeeze_scratch}
+23:
+.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+216:
 .inst 0xf941c789,0x91000129,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
 .inst 0xf2c00001,0xf2e00001,0xd2870002,0x8b020382,0x91300383,0xf903f079,0xf903f47a,0xf903f87b
 .inst 0xf903fc7e,0x91000079,0x9100005a,0x1100003b,0x91000003,0xd2800844,0xd2800009,0xf9000329
@@ -379,24 +560,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 23f
+cbz x9, 217f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-25:
+219:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 25b
-b 24f
-23:
+cbnz x5, 219b
+b 218f
+217:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-26:
+220:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 26b
-24:
+cbnz x5, 220b
+218:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd2890000,0x8b000380,0xd2870001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91000529,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
@@ -412,24 +593,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 27f
+cbz x9, 221f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-29:
+223:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 29b
-b 28f
-27:
+cbnz x5, 223b
+b 222f
+221:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-210:
+224:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 210b
-28:
+cbnz x5, 224b
+222:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd2898000,0x8b000380,0xd2878001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91000929,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
@@ -445,24 +626,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 211f
+cbz x9, 225f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-213:
+227:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 213b
-b 212f
-211:
+cbnz x5, 227b
+b 226f
+225:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-214:
+228:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 214b
-212:
+cbnz x5, 228b
+226:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28a0000,0x8b000380,0xd2880001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xf941c789,0x91000d29,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
@@ -478,24 +659,24 @@ bl {vg_keccak_pad_scratch}
 .inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
 bl {vg_keccak_squeeze_scratch}
 .inst 0xd352ff69
-cbz x9, 215f
+cbz x9, 229f
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-217:
+231:
 .inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
 .inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
 .inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
 .inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 217b
-b 216f
-215:
+cbnz x5, 231b
+b 230f
+229:
 .inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-218:
+232:
 .inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
 .inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
 .inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
 .inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 218b
-216:
+cbnz x5, 232b
+230:
 .inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28a8000,0x8b000380,0xd2888001,0x8b010381
 bl {vg_mldsa_ntt_positive_from}
 .inst 0xd28b0000,0x8b000380,0xd2930001,0x8b010381,0xd2890002,0x8b020382,0x91300383
@@ -528,10 +709,10 @@ bl {vg_keccak_pad_scratch}
 bl {vg_keccak_squeeze_scratch}
 .inst 0x91104380,0xd2800401,0xd28004e2,0xd2828003,0x8b030383,0x91300384
 bl {vg_mldsa_sample_in_ball}
-cbnz w0, 219f
+cbnz w0, 233f
 .inst 0xd2800018,0xd2800029,0xf901c389
-b 220f
-219:
+b 234f
+233:
 .inst 0xd2828000,0x8b000380
 bl {vg_mldsa_ntt_positive}
 .inst 0xd2800038,0xd2800009,0xf901cb89,0xd2828000,0x8b000380,0xd28d0001,0x8b010381,0xd2870002
@@ -539,45 +720,45 @@ bl {vg_mldsa_ntt_positive}
 .inst 0xf2e00005,0xd29ff646,0xf2a00026,0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 221f
-b 222f
-221:
+cbnz w24, 235f
+b 236f
+235:
 .inst 0xd2828000,0x8b000380,0xd28e0001,0x8b010381,0xd2880002,0x8b020382,0xd2830003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00045,0xf2c00005,0xf2e00005,0xd29ff646,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 223f
-b 224f
-223:
-224:
-222:
-cbnz w24, 225f
+cbnz w24, 237f
+b 238f
+237:
+238:
+236:
+cbnz w24, 239f
 .inst 0xf941c789,0x91001129,0xf901c789
-b 226f
-225:
+b 240f
+239:
 .inst 0xd2828000,0x8b000380,0xd28f0001,0x8b010381,0xd28b0002,0x8b020382,0xd2850003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 227f
-b 228f
-227:
+cbnz w24, 241f
+b 242f
+241:
 .inst 0xd2828000,0x8b000380,0xd2900001,0x8b010381,0xd28c0002,0x8b020382,0xd2860003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 229f
-b 230f
-229:
-230:
-228:
-cbnz w24, 231f
+cbnz w24, 243f
+b 244f
+243:
+244:
+242:
+cbnz w24, 245f
 .inst 0xf941c789,0x91001129,0xf901c789
-b 232f
-231:
+b 246f
+245:
 .inst 0xd2828000,0x8b000380,0xd2910001,0x8b010381,0xd2850002,0x8b020382,0xd28b0003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e8006,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
@@ -588,20 +769,20 @@ bl {vg_mldsa_fused_pair_h}
 bl {vg_mldsa_fused_pair_h}
 .inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xf941cb89,0xd1014529,0xd37ffd29
 .inst 0x0a090318
-cbnz w24, 233f
+cbnz w24, 247f
 .inst 0xf941c789,0x91001129,0xf901c789
-b 234f
-233:
+b 248f
+247:
 .inst 0xd2800029,0xf901c389
+248:
+246:
+240:
 234:
-232:
-226:
-220:
 .inst 0xf941c389,0xd1000529,0xf901c389
-cbnz x9, 22b
-cbnz w24, 235f
-b 236f
-235:
+cbnz x9, 216b
+cbnz w24, 249f
+b 250f
+249:
 .inst 0xd2870000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0xd2878000,0x8b000380
@@ -611,9 +792,9 @@ bl {vg_mldsa_canonicalize_signed}
 .inst 0xd2888000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0x910002e0,0x91104381,0xd2800402
-237:
+251:
 .inst 0x39400029,0x39000009,0x91000400,0x91000421,0xd1000442
-cbnz x2, 237b
+cbnz x2, 251b
 .inst 0xd2870000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
 .inst 0xf2c00002,0xf2e00002,0x910082e3,0xd2804804
 bl {vg_mldsa_bit_pack}
@@ -628,10 +809,10 @@ bl {vg_mldsa_bit_pack}
 bl {vg_mldsa_bit_pack}
 .inst 0xd2850000,0x8b000380,0xd2808001,0xd2800a02,0x912482e3,0xd2800a84
 bl {vg_mldsa_hint_bit_pack}
-236:
+250:
 21:
 .inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
-.inst 0xd65f03c0
+.inst 0xf84107f6,0xf84107f5,0xd65f03c0
 .p2align 6",
         vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
         vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
@@ -652,6 +833,60 @@ bl {vg_mldsa_hint_bit_pack}
     )
 }
 
+/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `sk` must have been written by `vg_mldsa44_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91000005,0xd2800006
+bl {vg_mldsa44_sign_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache,
+    )
+}
+
+/// Signs a message representative with a prepared ML-DSA-44 key; results and permitted leakage are those of signContract.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa44_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_prepared(sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91280005,0xd2860006
+bl {vg_mldsa44_sign_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache,
+    )
+}
+
 /// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
@@ -668,7 +903,7 @@ bl {vg_mldsa_hint_bit_pack}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_message(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
@@ -708,9 +943,63 @@ b 21f
     )
 }
 
-/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+/// Signs a message and context with a prepared ML-DSA-44 key; formatting, results and permitted leakage are those of signMessageContract.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa44_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_message_prepared(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941cf83,0x91010063,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch}
+.inst 0xf941cf80,0x910d2381,0xf941e382,0xf941e783,0xf941eb84
+bl {vg_mldsa44_sign_prepared}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_mldsa44_sign_prepared = sym super::mldsa44::vg_mldsa44_sign_prepared,
+    )
+}
+
+/// Private common ML-DSA-44 verification kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of verifyContract.
 ///
 /// # Safety
 ///
@@ -718,15 +1007,17 @@ b 21f
 /// * `mu` must be valid for reads of 64 bytes.
 /// * `sig` must be valid for reads of 2420 bytes.
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `mu`, `sig` or `cache` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa44_verify_with_cache(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
-.inst 0x9100005b,0x9100007c,0xd2800038,0x91248360,0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383
-.inst 0xd2808004
+        r".inst 0xf81f0ff5,0xf81f0ff6,0x91000095,0x910000b6,0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b
+.inst 0xf901b47c,0xf901b87e,0x91000019,0x9100003a,0x9100005b,0x9100007c,0xd2800038,0x91248360
+.inst 0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383,0xd2808004
 bl {vg_mldsa_hint_bit_unpack}
 .inst 0x0a000318
 cbnz x24, 20f
@@ -833,10 +1124,18 @@ bl {vg_mldsa_multiply_add_ntt}
 bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2900000,0x8b000380,0xd2838001,0x8b010381,0xd28e0002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 29f
 .inst 0x91008320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 210f
+29:
+.inst 0xd28f0000,0x8b000380,0x910002a1,0xd2800802
+211:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 211b
+210:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -856,10 +1155,18 @@ bl {vg_mldsa_multiply_add_ntt}
 bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2900000,0x8b000380,0xd2858001,0x8b010381,0xd28e0002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 212f
 .inst 0x91058320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 213f
+212:
+.inst 0xd28f0000,0x8b000380,0x911002a1,0xd2800802
+214:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 214b
+213:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -879,10 +1186,18 @@ bl {vg_mldsa_multiply_add_ntt}
 bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2900000,0x8b000380,0xd2878001,0x8b010381,0xd28e0002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 215f
 .inst 0x910a8320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 216f
+215:
+.inst 0xd28f0000,0x8b000380,0x912002a1,0xd2800802
+217:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 217b
+216:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -902,10 +1217,18 @@ bl {vg_mldsa_multiply_add_ntt}
 bl {vg_mldsa_multiply_add_ntt}
 .inst 0xd2900000,0x8b000380,0xd2898001,0x8b010381,0xd28e0002,0x8b020382
 bl {vg_mldsa_multiply_add_ntt}
+cbnz x22, 218f
 .inst 0x910f8320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380,0x91200381
 bl {vg_mldsa_ntt}
+b 219f
+218:
+.inst 0xd28f0000,0x8b000380,0x913002a1,0xd2800802
+220:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 220b
+219:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_multiply_ntt}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -930,13 +1253,14 @@ bl {vg_keccak_pad_scratch}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91100383,0xd2800404
 bl {vg_keccak_squeeze_scratch}
 .inst 0x91100380,0x91000361,0xd2800402,0xd280000a
-29:
+221:
 .inst 0x39400009,0x3940002b,0xca0b0129,0xaa09014a,0x91000400,0x91000421,0xd1000442
-cbnz x2, 29b
+cbnz x2, 221b
 .inst 0xd100054a,0xd37ffd4a,0x0a0a0318
 23:
 21:
-.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xf84107f6
+.inst 0xf84107f5,0xd65f03c0
 .p2align 6",
         vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
         vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
@@ -957,6 +1281,53 @@ cbnz x2, 29b
     )
 }
 
+/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91000004,0xd2800005
+bl {vg_mldsa44_verify_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache,
+    )
+}
+
+/// Verifies a message representative with a prepared ML-DSA-44 key; results and permitted leakage are those of verifyContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_prepared(pk: *const [u8; 5408], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x91148004,0xd2820005
+bl {vg_mldsa44_verify_with_cache}
+.inst 0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache,
+    )
+}
+
 /// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa44_verify_message`.
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
@@ -972,7 +1343,7 @@ cbnz x2, 29b
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_message_cached(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -1009,6 +1380,60 @@ b 21f
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
         vg_mldsa44_verify = sym super::mldsa44::vg_mldsa44_verify,
+    )
+}
+
+/// Verifies a message and context with a prepared ML-DSA-44 key and cached public-key digest; formatting, results and permitted leakage match verifyMessageCachedContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * The cached digest must equal SHAKE256 of the encoded public-key prefix, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_message_prepared(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941e383,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch}
+.inst 0xf941cf80,0x910d2381,0xf941e782,0xf941eb83
+bl {vg_mldsa44_verify_prepared}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_prepared = sym super::mldsa44::vg_mldsa44_verify_prepared,
     )
 }
 
@@ -1211,12 +1636,10 @@ bl {vg_keccak_squeeze_scratch_sha3}
     )
 }
 
-/// The CPU features `vg_mldsa44_sign_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_mldsa44_sign_with_cache_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_WITH_CACHE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+/// Private common ML-DSA-44 signing kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of signContract.
 ///
 /// # Safety
 ///
@@ -1225,26 +1648,30 @@ pub const VG_MLDSA44_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `rnd` must be valid for reads of 32 bytes.
 /// * `sig` must be valid for reads and writes of 2420 bytes.
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.
+/// * Cached secret coefficients contain private key material and must be destroyed after use.
 /// * `sk` must have been written by `vg_mldsa44_keygen`.
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or `cache` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_sign_sha3(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa44_sign_with_cache_sha3(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
-.inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
-.inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
-.inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
-.inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
-.inst 0xd2800009,0x39168789,0x91168b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789
-.inst 0xf9000949,0xf941db89,0xf9000d49,0xd2800029,0x39170b89,0xd2800009,0x39170f89,0x9117138a
-.inst 0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49
-.inst 0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a,0xf941cf89,0xf9000149,0xf941d389
-.inst 0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800069,0x39181b89,0xd2800009
-.inst 0x39181f89,0x91160380,0xd2930001,0x8b010381,0xd29b0002,0x8b020382
+.inst 0xf81f0ff5,0xf81f0ff6,0x910000b5,0x910000d6,0xf901a497,0xf901a898,0xf901ac99,0xf901b09a
+.inst 0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c,0x91000019,0x9100003a,0x9100005b,0x91000077
+.inst 0xd2800038,0xf9400329,0xf901cf89,0xf9400729,0xf901d389,0xf9400b29,0xf901d789,0xf9400f29
+.inst 0xf901db89,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
+.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf941cf89
+.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
+.inst 0x39170b89,0xd2800009,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
+.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800009,0x39179789
+.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
+.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800009,0x39181f89,0x91160380,0xd2930001,0x8b010381
+.inst 0xd29b0002,0x8b020382
 bl {vg_mldsa_rej_ntt_poly4_sha3}
 .inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
 .inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800029,0x39168789,0x91168b8a,0xf941cf89
@@ -1277,6 +1704,7 @@ bl {vg_mldsa_rej_ntt_poly4_sha3}
 cbnz w24, 20f
 b 21f
 20:
+cbnz x22, 22f
 .inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd28d0004,0x8b040384
 bl {vg_mldsa_bit_unpack}
 .inst 0xd28d0000,0x8b000380
@@ -1339,8 +1767,73 @@ bl {vg_keccak_absorb_scratch_sha3}
 bl {vg_keccak_pad_scratch_sha3}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
 bl {vg_keccak_squeeze_scratch_sha3}
-.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+b 23f
 22:
+.inst 0xd28d0000,0x8b000380,0x910002a1,0xd2800802
+24:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 24b
+.inst 0xd28d8000,0x8b000380,0x911002a1,0xd2800802
+25:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 25b
+.inst 0xd28e0000,0x8b000380,0x912002a1,0xd2800802
+26:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 26b
+.inst 0xd28e8000,0x8b000380,0x913002a1,0xd2800802
+27:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 27b
+.inst 0xd28f0000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
+28:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 28b
+.inst 0xd28f8000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
+29:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 29b
+.inst 0xd2900000,0x8b000380,0xd2830001,0x8b0102a1,0xd2800802
+210:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 210b
+.inst 0xd2908000,0x8b000380,0xd2838001,0x8b0102a1,0xd2800802
+211:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 211b
+.inst 0xd2910000,0x8b000380,0xd2840001,0x8b0102a1,0xd2800802
+212:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 212b
+.inst 0xd2918000,0x8b000380,0xd2848001,0x8b0102a1,0xd2800802
+213:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 213b
+.inst 0xd2920000,0x8b000380,0xd2850001,0x8b0102a1,0xd2800802
+214:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 214b
+.inst 0xd2928000,0x8b000380,0xd2858001,0x8b0102a1,0xd2800802
+215:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 215b
+.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
+.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
+.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
+.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91008323
+.inst 0xd2800404
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000363,0xd2800404
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
+bl {vg_keccak_squeeze_scratch_sha3}
+23:
+.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
+216:
 .inst 0x9119838a,0xf941e389,0xf9000149,0xf941e789,0xf9000549,0xf941eb89,0xf9000949,0xf941ef89
 .inst 0xf9000d49,0x911a038a,0xf941f389,0xf9000149,0xf941f789,0xf9000549,0xf941fb89,0xf9000949
 .inst 0xf941ff89,0xf9000d49,0xf941c789,0x91000129,0x391a8389,0xd348fd29,0x391a8789,0x911a8b8a
@@ -1397,10 +1890,10 @@ bl {vg_keccak_pad_scratch_sha3}
 bl {vg_keccak_squeeze_scratch_sha3}
 .inst 0x91104380,0xd2800401,0xd28004e2,0xd2828003,0x8b030383,0x91300384
 bl {vg_mldsa_sample_in_ball_sha3}
-cbnz w0, 23f
+cbnz w0, 217f
 .inst 0xd2800018,0xd2800029,0xf901c389
-b 24f
-23:
+b 218f
+217:
 .inst 0xd2828000,0x8b000380
 bl {vg_mldsa_ntt_positive}
 .inst 0xd2800038,0xd2800009,0xf901cb89,0xd2828000,0x8b000380,0xd28d0001,0x8b010381,0xd2870002
@@ -1408,45 +1901,45 @@ bl {vg_mldsa_ntt_positive}
 .inst 0xf2e00005,0xd29ff646,0xf2a00026,0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 25f
-b 26f
-25:
+cbnz w24, 219f
+b 220f
+219:
 .inst 0xd2828000,0x8b000380,0xd28e0001,0x8b010381,0xd2880002,0x8b020382,0xd2830003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00045,0xf2c00005,0xf2e00005,0xd29ff646,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_z}
 .inst 0x0a000318
-cbnz w24, 27f
-b 28f
-27:
-28:
-26:
-cbnz w24, 29f
+cbnz w24, 221f
+b 222f
+221:
+222:
+220:
+cbnz w24, 223f
 .inst 0xf941c789,0x91001129,0xf901c789
-b 210f
-29:
+b 224f
+223:
 .inst 0xd2828000,0x8b000380,0xd28f0001,0x8b010381,0xd28b0002,0x8b020382,0xd2850003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 211f
-b 212f
-211:
+cbnz w24, 225f
+b 226f
+225:
 .inst 0xd2828000,0x8b000380,0xd2900001,0x8b010381,0xd28c0002,0x8b020382,0xd2860003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
 bl {vg_mldsa_fused_pair_r0}
 .inst 0x0a000318
-cbnz w24, 213f
-b 214f
-213:
-214:
-212:
-cbnz w24, 215f
+cbnz w24, 227f
+b 228f
+227:
+228:
+226:
+cbnz w24, 229f
 .inst 0xf941c789,0x91001129,0xf901c789
-b 216f
-215:
+b 230f
+229:
 .inst 0xd2828000,0x8b000380,0xd2910001,0x8b010381,0xd2850002,0x8b020382,0xd28b0003,0x8b030383
 .inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e8006,0xf2a00026
 .inst 0xf2c00006,0xf2e00006
@@ -1457,20 +1950,20 @@ bl {vg_mldsa_fused_pair_h}
 bl {vg_mldsa_fused_pair_h}
 .inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xf941cb89,0xd1014529,0xd37ffd29
 .inst 0x0a090318
-cbnz w24, 217f
+cbnz w24, 231f
 .inst 0xf941c789,0x91001129,0xf901c789
-b 218f
-217:
+b 232f
+231:
 .inst 0xd2800029,0xf901c389
+232:
+230:
+224:
 218:
-216:
-210:
-24:
 .inst 0xf941c389,0xd1000529,0xf901c389
-cbnz x9, 22b
-cbnz w24, 219f
-b 220f
-219:
+cbnz x9, 216b
+cbnz w24, 233f
+b 234f
+233:
 .inst 0xd2870000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0xd2878000,0x8b000380
@@ -1480,9 +1973,9 @@ bl {vg_mldsa_canonicalize_signed}
 .inst 0xd2888000,0x8b000380
 bl {vg_mldsa_canonicalize_signed}
 .inst 0x910002e0,0x91104381,0xd2800402
-221:
+235:
 .inst 0x39400029,0x39000009,0x91000400,0x91000421,0xd1000442
-cbnz x2, 221b
+cbnz x2, 235b
 .inst 0xd2870000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
 .inst 0xf2c00002,0xf2e00002,0x910082e3,0xd2804804
 bl {vg_mldsa_bit_pack}
@@ -1497,10 +1990,10 @@ bl {vg_mldsa_bit_pack}
 bl {vg_mldsa_bit_pack}
 .inst 0xd2850000,0x8b000380,0xd2808001,0xd2800a02,0x912482e3,0xd2800a84
 bl {vg_mldsa_hint_bit_pack}
-220:
+234:
 21:
 .inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
-.inst 0xd65f03c0
+.inst 0xf84107f6,0xf84107f5,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
         vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
@@ -1523,6 +2016,72 @@ bl {vg_mldsa_hint_bit_pack}
     )
 }
 
+/// The CPU features `vg_mldsa44_sign_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `sk` must have been written by `vg_mldsa44_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_sha3(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91000005,0xd2800006
+bl {vg_mldsa44_sign_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa44_sign_with_cache_sha3 = sym super::mldsa44::vg_mldsa44_sign_with_cache_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa44_sign_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Signs a message representative with a prepared ML-DSA-44 key; results and permitted leakage are those of signContract.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa44_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_prepared_sha3(sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91280005,0xd2860006
+bl {vg_mldsa44_sign_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa44_sign_with_cache_sha3 = sym super::mldsa44::vg_mldsa44_sign_with_cache_sha3,
+    )
+}
+
 /// The CPU features `vg_mldsa44_sign_message_sha3` requires (`Artifact.features`).
 pub const VG_MLDSA44_SIGN_MESSAGE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
@@ -1542,7 +2101,7 @@ pub const VG_MLDSA44_SIGN_MESSAGE_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_message_sha3(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
@@ -1585,12 +2144,72 @@ b 21f
     )
 }
 
-/// The CPU features `vg_mldsa44_verify_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_mldsa44_sign_message_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_MESSAGE_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+/// Signs a message and context with a prepared ML-DSA-44 key; formatting, results and permitted leakage are those of signMessageContract.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedSecretKey.
+/// * The encoded secret-key prefix must have been written by `vg_mldsa44_keygen`.
+/// * All bytes of the prepared key contain private key material and must be destroyed after use.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_message_prepared_sha3(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941cf83,0x91010063,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf941cf80,0x910d2381,0xf941e382,0xf941e783,0xf941eb84
+bl {vg_mldsa44_sign_prepared_sha3}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa44_sign_prepared_sha3 = sym super::mldsa44::vg_mldsa44_sign_prepared_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_with_cache_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_WITH_CACHE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Private common ML-DSA-44 verification kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of verifyContract.
 ///
 /// # Safety
 ///
@@ -1598,17 +2217,19 @@ pub const VG_MLDSA44_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 /// * `mu` must be valid for reads of 64 bytes.
 /// * `sig` must be valid for reads of 2420 bytes.
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `cache` must be valid for reads of `cache_len` bytes.
+/// * An absent cache has zero length. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `mu`, `sig` or `cache` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig`, `scratch` and `cache` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_verify_sha3(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa44_verify_with_cache_sha3(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728], cache: *const u8, cache_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
-.inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
-.inst 0x9100005b,0x9100007c,0xd2800038,0x91248360,0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383
-.inst 0xd2808004
+.inst 0xf81f0ff5,0xf81f0ff6,0x91000095,0x910000b6,0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b
+.inst 0xf901b47c,0xf901b87e,0x91000019,0x9100003a,0x9100005b,0x9100007c,0xd2800038,0x91248360
+.inst 0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383,0xd2808004
 bl {vg_mldsa_hint_bit_unpack}
 .inst 0x0a000318
 cbnz x24, 20f
@@ -1714,10 +2335,18 @@ bl {vg_mldsa_ntt_positive}
 bl {vg_mldsa_ntt_positive}
 .inst 0xd2900000,0x8b000380,0xd2820001,0x8b010381,0xd28c8002,0x8b020382
 bl {vg_mldsa_montgomery_dot4}
+cbnz x22, 29f
 .inst 0x91008320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 210f
+29:
+.inst 0xd28f0000,0x8b000380,0x910002a1,0xd2800802
+211:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 211b
+210:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_montgomery_product}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -1729,10 +2358,18 @@ bl {vg_mldsa_montgomery_inv_ntt}
 bl {vg_mldsa_usehint_pack6}
 .inst 0xd2900000,0x8b000380,0xd2840001,0x8b010381,0xd28c8002,0x8b020382
 bl {vg_mldsa_montgomery_dot4}
+cbnz x22, 212f
 .inst 0x91058320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 213f
+212:
+.inst 0xd28f0000,0x8b000380,0x911002a1,0xd2800802
+214:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 214b
+213:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_montgomery_product}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -1744,10 +2381,18 @@ bl {vg_mldsa_montgomery_inv_ntt}
 bl {vg_mldsa_usehint_pack6}
 .inst 0xd2900000,0x8b000380,0xd2860001,0x8b010381,0xd28c8002,0x8b020382
 bl {vg_mldsa_montgomery_dot4}
+cbnz x22, 215f
 .inst 0x910a8320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 216f
+215:
+.inst 0xd28f0000,0x8b000380,0x912002a1,0xd2800802
+217:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 217b
+216:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_montgomery_product}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -1759,10 +2404,18 @@ bl {vg_mldsa_montgomery_inv_ntt}
 bl {vg_mldsa_usehint_pack6}
 .inst 0xd2900000,0x8b000380,0xd2880001,0x8b010381,0xd28c8002,0x8b020382
 bl {vg_mldsa_montgomery_dot4}
+cbnz x22, 218f
 .inst 0x910f8320,0xd28f0001,0x8b010381
 bl {vg_mldsa_unpack_t1}
 .inst 0xd28f0000,0x8b000380
 bl {vg_mldsa_ntt_positive}
+b 219f
+218:
+.inst 0xd28f0000,0x8b000380,0x913002a1,0xd2800802
+220:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 220b
+219:
 .inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
 bl {vg_mldsa_montgomery_product}
 .inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
@@ -1785,13 +2438,14 @@ bl {vg_keccak_pad_scratch_sha3}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91100383,0xd2800404
 bl {vg_keccak_squeeze_scratch_sha3}
 .inst 0x91100380,0x91000361,0xd2800402,0xd280000a
-29:
+221:
 .inst 0x39400009,0x3940002b,0xca0b0129,0xaa09014a,0x91000400,0x91000421,0xd1000442
-cbnz x2, 29b
+cbnz x2, 221b
 .inst 0xd100054a,0xd37ffd4a,0x0a0a0318
 23:
 21:
-.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xf84107f6
+.inst 0xf84107f5,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
         vg_mldsa_hint_bit_unpack = sym super::mldsa::vg_mldsa_hint_bit_unpack,
@@ -1809,6 +2463,65 @@ cbnz x2, 29b
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_sha3(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91000004,0xd2800005
+bl {vg_mldsa44_verify_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa44_verify_with_cache_sha3 = sym super::mldsa44::vg_mldsa44_verify_with_cache_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Verifies a message representative with a prepared ML-DSA-44 key; results and permitted leakage are those of verifyContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_prepared_sha3(pk: *const [u8; 5408], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xf81f0ffe,0x91148004,0xd2820005
+bl {vg_mldsa44_verify_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_mldsa44_verify_with_cache_sha3 = sym super::mldsa44::vg_mldsa44_verify_with_cache_sha3,
     )
 }
 
@@ -1830,7 +2543,7 @@ pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_SHA3_FEATURES: verified_garbage_cpu::
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_message_cached_sha3(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
@@ -1870,5 +2583,65 @@ b 21f
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
         vg_mldsa44_verify_sha3 = sym super::mldsa44::vg_mldsa44_verify_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_message_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Verifies a message and context with a prepared ML-DSA-44 key and cached public-key digest; formatting, results and permitted leakage match verifyMessageCachedContract.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * The encoded key prefix and appended canonical NTTs must satisfy PreparedPublicKey.
+/// * The cached digest must equal SHAKE256 of the encoded public-key prefix, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_message_prepared_sha3(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+.inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941e383,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf941cf80,0x910d2381,0xf941e782,0xf941eb83
+bl {vg_mldsa44_verify_prepared_sha3}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.arch_extension nosha3
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa44_verify_prepared_sha3 = sym super::mldsa44::vg_mldsa44_verify_prepared_sha3,
     )
 }
