@@ -1796,19 +1796,16 @@ bl vg_ghash
 b 238f
 237:
 238:
-// std %r17, 112(%r31)
-.long 0xfa3f0070
 // addi %r12, %r1, 0
 .long 0x39810000
-// ld %r17, 112(%r12)
-.long 0xea2c0070
-// ld %r19, 120(%r12)
-.long 0xea6c0078
-// rldicl %r12, %r23, 55, 9
-.long 0x7aecba42
-// cmpldi %cr0, %r12, 0
-.long 0x282c0000
-beq %cr0, 240f
+// ld %r0, 96(%r12)
+.long 0xe80c0060
+// std %r0, 256(%r31)
+.long 0xf81f0100
+// addi %r0, %r31, 448
+.long 0x381f01c0
+// std %r0, 96(%r12)
+.long 0xf80c0060
 // or %r3, %r29, %r29
 .long 0x7fa3eb78
 // or %r4, %r28, %r28
@@ -1817,13 +1814,21 @@ beq %cr0, 240f
 .long 0x38be0030
 // addi %r6, %r30, 16
 .long 0x38de0010
-// or %r7, %r27, %r27
-.long 0x7f67db78
-// rldicl %r8, %r23, 60, 4
-.long 0x7ae8e102
-// addi %r9, %r31, 448
-.long 0x393f01c0
-bl vg_gcm_split_probe
+// ld %r7, 112(%r12)
+.long 0xe8ec0070
+// ld %r8, 120(%r12)
+.long 0xe90c0078
+// or %r9, %r27, %r27
+.long 0x7f69db78
+// rldicl %r10, %r23, 60, 4
+.long 0x7aeae102
+bl vg_aes_gcm_encrypt_blocks_split
+// addi %r12, %r1, 0
+.long 0x39810000
+// ld %r0, 256(%r31)
+.long 0xe81f0100
+// std %r0, 96(%r12)
+.long 0xf80c0060
 // li %r0, 15
 .long 0x3800000f
 // and %r25, %r23, %r0
@@ -1836,7 +1841,7 @@ bl vg_gcm_split_probe
 .long 0x3b400000
 // cmpldi %cr0, %r25, 0
 .long 0x28390000
-beq %cr0, 242f
+beq %cr0, 240f
 // li %r0, 0
 .long 0x38000000
 // std %r0, 64(%r30)
@@ -1862,7 +1867,7 @@ bl vg_aes_ctr32
 .long 0x7f04c378
 // or %r5, %r25, %r25
 .long 0x7f25cb78
-244:
+242:
 // lbz %r0, 0(%r4)
 .long 0x88040000
 // lbz %r6, 0(%r3)
@@ -1879,16 +1884,16 @@ bl vg_aes_ctr32
 .long 0x38a5ffff
 // cmpldi %cr0, %r5, 0
 .long 0x28250000
-bne %cr0, 244b
-b 243f
-242:
-243:
+bne %cr0, 242b
+b 241f
+240:
+241:
 // cmpldi %cr0, %r25, 0
 .long 0x28390000
-beq %cr0, 245f
+beq %cr0, 243f
 // cmpldi %cr0, %r26, 0
 .long 0x283a0000
-beq %cr0, 247f
+beq %cr0, 245f
 // li %r5, 16
 .long 0x38a00010
 // subf %r5, %r26, %r5
@@ -1897,22 +1902,22 @@ beq %cr0, 247f
 .long 0x7b26e102
 // cmpldi %cr0, %r6, 0
 .long 0x28260000
-bne %cr0, 249f
+bne %cr0, 247f
 // subf %r6, %r5, %r25
 .long 0x7cc5c850
 // rldicl %r6, %r6, 1, 63
 .long 0x78c60fe0
 // cmpldi %cr0, %r6, 0
 .long 0x28260000
-bne %cr0, 251f
-b 252f
-251:
-// or %r5, %r25, %r25
-.long 0x7f25cb78
-252:
+bne %cr0, 249f
 b 250f
 249:
+// or %r5, %r25, %r25
+.long 0x7f25cb78
 250:
+b 248f
+247:
+248:
 // addi %r4, %r30, 32
 .long 0x389e0020
 // add %r4, %r4, %r26
@@ -1925,7 +1930,7 @@ b 250f
 .long 0x7f25c850
 // add %r26, %r26, %r5
 .long 0x7f5a2a14
-253:
+251:
 // lbz %r0, 0(%r3)
 .long 0x88030000
 // stb %r0, 0(%r4)
@@ -1938,14 +1943,14 @@ b 250f
 .long 0x38a5ffff
 // cmpldi %cr0, %r5, 0
 .long 0x28250000
-bne %cr0, 253b
+bne %cr0, 251b
 // addi %r6, %r26, -16
 .long 0x38dafff0
 // cmpldi %cr0, %r6, 0
 .long 0x28260000
-beq %cr0, 254f
-b 255f
-254:
+beq %cr0, 252f
+b 253f
+252:
 // addi %r3, %r29, 240
 .long 0x387d00f0
 // addi %r4, %r30, 16
@@ -1957,10 +1962,10 @@ b 255f
 // addi %r7, %r31, 512
 .long 0x38ff0200
 bl vg_ghash
-255:
-b 248f
-247:
-248:
+253:
+b 246f
+245:
+246:
 // or %r5, %r24, %r24
 .long 0x7f05c378
 // rldicl %r6, %r25, 60, 4
@@ -1977,7 +1982,7 @@ b 248f
 .long 0x7d194378
 // cmpldi %cr0, %r6, 0
 .long 0x28260000
-beq %cr0, 256f
+beq %cr0, 254f
 // addi %r3, %r29, 240
 .long 0x387d00f0
 // addi %r4, %r30, 16
@@ -1985,19 +1990,19 @@ beq %cr0, 256f
 // addi %r7, %r31, 512
 .long 0x38ff0200
 bl vg_ghash
-b 257f
-256:
-257:
+b 255f
+254:
+255:
 // cmpldi %cr0, %r25, 0
 .long 0x28390000
-beq %cr0, 258f
+beq %cr0, 256f
 // or %r3, %r24, %r24
 .long 0x7f03c378
 // addi %r4, %r30, 32
 .long 0x389e0020
 // or %r5, %r25, %r25
 .long 0x7f25cb78
-260:
+258:
 // lbz %r0, 0(%r3)
 .long 0x88030000
 // stb %r0, 0(%r4)
@@ -2010,30 +2015,30 @@ beq %cr0, 258f
 .long 0x38a5ffff
 // cmpldi %cr0, %r5, 0
 .long 0x28250000
-bne %cr0, 260b
-b 259f
-258:
-259:
-b 246f
-245:
-246:
+bne %cr0, 258b
+b 257f
+256:
+257:
+b 244f
+243:
+244:
 // cmpldi %cr0, %r23, 0
 .long 0x28370000
-beq %cr0, 261f
+beq %cr0, 259f
 // li %r0, 15
 .long 0x3800000f
 // and %r26, %r23, %r0
 .long 0x7efa0038
-b 262f
-261:
+b 260f
+259:
 // li %r0, 15
 .long 0x3800000f
 // and %r26, %r22, %r0
 .long 0x7eda0038
-262:
+260:
 // cmpldi %cr0, %r26, 0
 .long 0x283a0000
-beq %cr0, 263f
+beq %cr0, 261f
 // li %r0, 0
 .long 0x38000000
 // std %r0, 96(%r31)
@@ -2046,34 +2051,34 @@ beq %cr0, 263f
 .long 0x389f0060
 // or %r5, %r26, %r26
 .long 0x7f45d378
-265:
-// lbz %r0, 0(%r3)
-.long 0x88030000
-// stb %r0, 0(%r4)
-.long 0x98040000
-// addi %r3, %r3, 1
-.long 0x38630001
-// addi %r4, %r4, 1
-.long 0x38840001
-// addi %r5, %r5, -1
-.long 0x38a5ffff
-// cmpldi %cr0, %r5, 0
-.long 0x28250000
-bne %cr0, 265b
-// addi %r3, %r29, 240
-.long 0x387d00f0
-// addi %r4, %r30, 16
-.long 0x389e0010
-// addi %r5, %r31, 96
-.long 0x38bf0060
-// li %r6, 1
-.long 0x38c00001
-// addi %r7, %r31, 512
-.long 0x38ff0200
-bl vg_ghash
-b 264f
 263:
-264:
+// lbz %r0, 0(%r3)
+.long 0x88030000
+// stb %r0, 0(%r4)
+.long 0x98040000
+// addi %r3, %r3, 1
+.long 0x38630001
+// addi %r4, %r4, 1
+.long 0x38840001
+// addi %r5, %r5, -1
+.long 0x38a5ffff
+// cmpldi %cr0, %r5, 0
+.long 0x28250000
+bne %cr0, 263b
+// addi %r3, %r29, 240
+.long 0x387d00f0
+// addi %r4, %r30, 16
+.long 0x389e0010
+// addi %r5, %r31, 96
+.long 0x38bf0060
+// li %r6, 1
+.long 0x38c00001
+// addi %r7, %r31, 512
+.long 0x38ff0200
+bl vg_ghash
+b 262f
+261:
+262:
 // or %r24, %r22, %r22
 .long 0x7ed8b378
 // or %r26, %r23, %r23
@@ -2124,424 +2129,6 @@ bl vg_ghash
 // addi %r8, %r31, 512
 .long 0x391f0200
 bl vg_aes_ctr32
-b 241f
-240:
-// or %r30, %r27, %r27
-.long 0x7f7edb78
-// cmpldi %cr0, %r19, 0
-.long 0x28330000
-beq %cr0, 266f
-// or %r11, %r30, %r30
-.long 0x7fcbf378
-// li %r0, 0
-.long 0x38000000
-268:
-// lxvd2x 49, %r17, %r0
-.long 0x7e310699
-// stxvd2x 49, %r11, %r0
-.long 0x7e2b0799
-// addi %r17, %r17, 16
-.long 0x3a310010
-// addi %r11, %r11, 16
-.long 0x396b0010
-// addi %r19, %r19, -1
-.long 0x3a73ffff
-// cmpldi %cr0, %r19, 0
-.long 0x28330000
-bne %cr0, 268b
-b 267f
-266:
-267:
-// addi %r30, %r31, 16
-.long 0x3bdf0010
-// or %r24, %r27, %r27
-.long 0x7f78db78
-// or %r25, %r23, %r23
-.long 0x7ef9bb78
-// li %r26, 0
-.long 0x3b400000
-// cmpldi %cr0, %r25, 0
-.long 0x28390000
-beq %cr0, 269f
-// cmpldi %cr0, %r26, 0
-.long 0x283a0000
-beq %cr0, 271f
-// li %r5, 16
-.long 0x38a00010
-// subf %r5, %r26, %r5
-.long 0x7cba2850
-// rldicl %r6, %r25, 60, 4
-.long 0x7b26e102
-// cmpldi %cr0, %r6, 0
-.long 0x28260000
-bne %cr0, 273f
-// subf %r6, %r5, %r25
-.long 0x7cc5c850
-// rldicl %r6, %r6, 1, 63
-.long 0x78c60fe0
-// cmpldi %cr0, %r6, 0
-.long 0x28260000
-bne %cr0, 275f
-b 276f
-275:
-// or %r5, %r25, %r25
-.long 0x7f25cb78
-276:
-b 274f
-273:
-274:
-// addi %r3, %r30, 64
-.long 0x387e0040
-// add %r3, %r3, %r26
-.long 0x7c63d214
-// or %r4, %r24, %r24
-.long 0x7f04c378
-// add %r24, %r24, %r5
-.long 0x7f182a14
-// subf %r25, %r5, %r25
-.long 0x7f25c850
-277:
-// lbz %r0, 0(%r4)
-.long 0x88040000
-// lbz %r6, 0(%r3)
-.long 0x88c30000
-// xor %r0, %r0, %r6
-.long 0x7c003278
-// stb %r0, 0(%r4)
-.long 0x98040000
-// addi %r3, %r3, 1
-.long 0x38630001
-// addi %r4, %r4, 1
-.long 0x38840001
-// addi %r5, %r5, -1
-.long 0x38a5ffff
-// cmpldi %cr0, %r5, 0
-.long 0x28250000
-bne %cr0, 277b
-b 272f
-271:
-272:
-// or %r6, %r24, %r24
-.long 0x7f06c378
-// rldicl %r7, %r25, 60, 4
-.long 0x7b27e102
-// li %r0, 15
-.long 0x3800000f
-// and %r8, %r25, %r0
-.long 0x7f280038
-// subf %r9, %r8, %r25
-.long 0x7d28c850
-// add %r24, %r24, %r9
-.long 0x7f184a14
-// or %r25, %r8, %r8
-.long 0x7d194378
-// cmpldi %cr0, %r7, 0
-.long 0x28270000
-beq %cr0, 278f
-// or %r3, %r29, %r29
-.long 0x7fa3eb78
-// or %r4, %r28, %r28
-.long 0x7f84e378
-// addi %r5, %r30, 48
-.long 0x38be0030
-// addi %r8, %r31, 512
-.long 0x391f0200
-bl vg_aes_ctr32
-b 279f
-278:
-279:
-// cmpldi %cr0, %r25, 0
-.long 0x28390000
-beq %cr0, 280f
-// li %r0, 0
-.long 0x38000000
-// std %r0, 64(%r30)
-.long 0xf81e0040
-// std %r0, 72(%r30)
-.long 0xf81e0048
-// addi %r6, %r30, 64
-.long 0x38de0040
-// li %r7, 1
-.long 0x38e00001
-// or %r3, %r29, %r29
-.long 0x7fa3eb78
-// or %r4, %r28, %r28
-.long 0x7f84e378
-// addi %r5, %r30, 48
-.long 0x38be0030
-// addi %r8, %r31, 512
-.long 0x391f0200
-bl vg_aes_ctr32
-// addi %r3, %r30, 64
-.long 0x387e0040
-// or %r4, %r24, %r24
-.long 0x7f04c378
-// or %r5, %r25, %r25
-.long 0x7f25cb78
-282:
-// lbz %r0, 0(%r4)
-.long 0x88040000
-// lbz %r6, 0(%r3)
-.long 0x88c30000
-// xor %r0, %r0, %r6
-.long 0x7c003278
-// stb %r0, 0(%r4)
-.long 0x98040000
-// addi %r3, %r3, 1
-.long 0x38630001
-// addi %r4, %r4, 1
-.long 0x38840001
-// addi %r5, %r5, -1
-.long 0x38a5ffff
-// cmpldi %cr0, %r5, 0
-.long 0x28250000
-bne %cr0, 282b
-b 281f
-280:
-281:
-b 270f
-269:
-270:
-// or %r24, %r27, %r27
-.long 0x7f78db78
-// or %r25, %r23, %r23
-.long 0x7ef9bb78
-// li %r26, 0
-.long 0x3b400000
-// cmpldi %cr0, %r25, 0
-.long 0x28390000
-beq %cr0, 283f
-// cmpldi %cr0, %r26, 0
-.long 0x283a0000
-beq %cr0, 285f
-// li %r5, 16
-.long 0x38a00010
-// subf %r5, %r26, %r5
-.long 0x7cba2850
-// rldicl %r6, %r25, 60, 4
-.long 0x7b26e102
-// cmpldi %cr0, %r6, 0
-.long 0x28260000
-bne %cr0, 287f
-// subf %r6, %r5, %r25
-.long 0x7cc5c850
-// rldicl %r6, %r6, 1, 63
-.long 0x78c60fe0
-// cmpldi %cr0, %r6, 0
-.long 0x28260000
-bne %cr0, 289f
-b 290f
-289:
-// or %r5, %r25, %r25
-.long 0x7f25cb78
-290:
-b 288f
-287:
-288:
-// addi %r4, %r30, 32
-.long 0x389e0020
-// add %r4, %r4, %r26
-.long 0x7c84d214
-// or %r3, %r24, %r24
-.long 0x7f03c378
-// add %r24, %r24, %r5
-.long 0x7f182a14
-// subf %r25, %r5, %r25
-.long 0x7f25c850
-// add %r26, %r26, %r5
-.long 0x7f5a2a14
-291:
-// lbz %r0, 0(%r3)
-.long 0x88030000
-// stb %r0, 0(%r4)
-.long 0x98040000
-// addi %r3, %r3, 1
-.long 0x38630001
-// addi %r4, %r4, 1
-.long 0x38840001
-// addi %r5, %r5, -1
-.long 0x38a5ffff
-// cmpldi %cr0, %r5, 0
-.long 0x28250000
-bne %cr0, 291b
-// addi %r6, %r26, -16
-.long 0x38dafff0
-// cmpldi %cr0, %r6, 0
-.long 0x28260000
-beq %cr0, 292f
-b 293f
-292:
-// addi %r3, %r29, 240
-.long 0x387d00f0
-// addi %r4, %r30, 16
-.long 0x389e0010
-// addi %r5, %r30, 32
-.long 0x38be0020
-// li %r6, 1
-.long 0x38c00001
-// addi %r7, %r31, 512
-.long 0x38ff0200
-bl vg_ghash
-293:
-b 286f
-285:
-286:
-// or %r5, %r24, %r24
-.long 0x7f05c378
-// rldicl %r6, %r25, 60, 4
-.long 0x7b26e102
-// li %r0, 15
-.long 0x3800000f
-// and %r8, %r25, %r0
-.long 0x7f280038
-// subf %r9, %r8, %r25
-.long 0x7d28c850
-// add %r24, %r24, %r9
-.long 0x7f184a14
-// or %r25, %r8, %r8
-.long 0x7d194378
-// cmpldi %cr0, %r6, 0
-.long 0x28260000
-beq %cr0, 294f
-// addi %r3, %r29, 240
-.long 0x387d00f0
-// addi %r4, %r30, 16
-.long 0x389e0010
-// addi %r7, %r31, 512
-.long 0x38ff0200
-bl vg_ghash
-b 295f
-294:
-295:
-// cmpldi %cr0, %r25, 0
-.long 0x28390000
-beq %cr0, 296f
-// or %r3, %r24, %r24
-.long 0x7f03c378
-// addi %r4, %r30, 32
-.long 0x389e0020
-// or %r5, %r25, %r25
-.long 0x7f25cb78
-298:
-// lbz %r0, 0(%r3)
-.long 0x88030000
-// stb %r0, 0(%r4)
-.long 0x98040000
-// addi %r3, %r3, 1
-.long 0x38630001
-// addi %r4, %r4, 1
-.long 0x38840001
-// addi %r5, %r5, -1
-.long 0x38a5ffff
-// cmpldi %cr0, %r5, 0
-.long 0x28250000
-bne %cr0, 298b
-b 297f
-296:
-297:
-b 284f
-283:
-284:
-// li %r0, 15
-.long 0x3800000f
-// and %r26, %r23, %r0
-.long 0x7efa0038
-// cmpldi %cr0, %r26, 0
-.long 0x283a0000
-beq %cr0, 299f
-// li %r0, 0
-.long 0x38000000
-// std %r0, 96(%r31)
-.long 0xf81f0060
-// std %r0, 104(%r31)
-.long 0xf81f0068
-// addi %r3, %r30, 32
-.long 0x387e0020
-// addi %r4, %r31, 96
-.long 0x389f0060
-// or %r5, %r26, %r26
-.long 0x7f45d378
-2101:
-// lbz %r0, 0(%r3)
-.long 0x88030000
-// stb %r0, 0(%r4)
-.long 0x98040000
-// addi %r3, %r3, 1
-.long 0x38630001
-// addi %r4, %r4, 1
-.long 0x38840001
-// addi %r5, %r5, -1
-.long 0x38a5ffff
-// cmpldi %cr0, %r5, 0
-.long 0x28250000
-bne %cr0, 2101b
-// addi %r3, %r29, 240
-.long 0x387d00f0
-// addi %r4, %r30, 16
-.long 0x389e0010
-// addi %r5, %r31, 96
-.long 0x38bf0060
-// li %r6, 1
-.long 0x38c00001
-// addi %r7, %r31, 512
-.long 0x38ff0200
-bl vg_ghash
-b 2100f
-299:
-2100:
-// or %r24, %r22, %r22
-.long 0x7ed8b378
-// or %r26, %r23, %r23
-.long 0x7efabb78
-// rldicr %r3, %r24, 3, 60
-.long 0x7b031f24
-// rldicr %r4, %r26, 3, 60
-.long 0x7b441f24
-// addi %r5, %r31, 96
-.long 0x38bf0060
-// li %r6, 0
-.long 0x38c00000
-// stdbrx %r3, %r5, %r6
-.long 0x7c653528
-// li %r6, 8
-.long 0x38c00008
-// stdbrx %r4, %r5, %r6
-.long 0x7c853528
-// addi %r3, %r29, 240
-.long 0x387d00f0
-// addi %r4, %r30, 16
-.long 0x389e0010
-// addi %r5, %r31, 96
-.long 0x38bf0060
-// li %r6, 1
-.long 0x38c00001
-// addi %r7, %r31, 512
-.long 0x38ff0200
-bl vg_ghash
-// ld %r3, 16(%r30)
-.long 0xe87e0010
-// std %r3, 0(%r31)
-.long 0xf87f0000
-// ld %r3, 24(%r30)
-.long 0xe87e0018
-// std %r3, 8(%r31)
-.long 0xf87f0008
-// or %r3, %r29, %r29
-.long 0x7fa3eb78
-// or %r4, %r28, %r28
-.long 0x7f84e378
-// or %r5, %r30, %r30
-.long 0x7fc5f378
-// addi %r6, %r31, 0
-.long 0x38df0000
-// li %r7, 1
-.long 0x38e00001
-// addi %r8, %r31, 512
-.long 0x391f0200
-bl vg_aes_ctr32
-241:
-// ld %r17, 112(%r31)
-.long 0xea3f0070
 // ld %r3, 0(%r31)
 .long 0xe87f0000
 // std %r3, 0(%r20)
@@ -2586,12 +2173,30 @@ bl vg_aes_ctr32
 .long 0xebec00e8
 // blr
 .long 0x4e800020
-.globl vg_gcm_split_probe
-.type vg_gcm_split_probe,@function
-vg_gcm_split_probe:
-// cmpldi %cr0, %r8, 0
-.long 0x28280000
+.globl vg_aes_gcm_encrypt_blocks_split
+.type vg_aes_gcm_encrypt_blocks_split,@function
+vg_aes_gcm_encrypt_blocks_split:
+// cmpldi %cr0, %r10, 0
+.long 0x282a0000
 beq %cr0, 20f
+// addi %r12, %r1, 0
+.long 0x39810000
+// ld %r11, 96(%r12)
+.long 0xe96c0060
+// std %r17, 152(%r11)
+.long 0xfa2b0098
+// std %r19, 160(%r11)
+.long 0xfa6b00a0
+// or %r17, %r7, %r7
+.long 0x7cf13b78
+// or %r19, %r8, %r8
+.long 0x7d134378
+// or %r7, %r9, %r9
+.long 0x7d274b78
+// or %r8, %r10, %r10
+.long 0x7d485378
+// or %r9, %r11, %r11
+.long 0x7d695b78
 // std %r25, 0(%r9)
 .long 0xfb290000
 // std %r26, 8(%r9)
@@ -4016,6 +3621,10 @@ bne %cr0, 233b
 b 232f
 231:
 232:
+// ld %r17, 152(%r31)
+.long 0xea3f0098
+// ld %r19, 160(%r31)
+.long 0xea7f00a0
 // cmpldi %cr0, %r25, 0
 .long 0x28390000
 beq %cr0, 234f

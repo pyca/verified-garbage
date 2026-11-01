@@ -21,5 +21,8 @@
     "gcm-seal-split-expected.bin": "6376802b8054d42455f7b646b34948dba3618bf681a21f9e3652da4da2d3a88a",
     "gcm-seal-split.c": "817bdc0a19e5508012cc3381de59c78b006de5bcbe993ebc9f943f468c805733",
     "GcmSealSplitProbe.lean": "25ec705f3494e04d804e10e4b8791d61a766133430bf197b06bad91b9682eb25"
-  }
+  },
+  "callable_helper_revision": "c3558443f",
+  "change": "Use the registered nine-argument source-prefix helper, including its register preservation. The enclosing experimental seal always uses the helper and saves/restores its outgoing stack argument; no internal r17/r19 convention.",
+  "scope": "Enclosing seal remains an unverified probe; the helper is the exact Impl.AesGcm.PPC64LE.SplitBlocks.encrypt program verified and registered at the recorded revision. Public Rust API timing is not measured here."
 }
