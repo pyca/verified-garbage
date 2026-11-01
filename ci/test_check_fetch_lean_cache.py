@@ -7,6 +7,8 @@ import json
 import os
 import threading
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from unittest import mock
 
 import fetch_lean_cache
 
@@ -125,6 +127,35 @@ class FetchLeanCacheTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as raised:
             self.fetch()
         self.assertIn("does not match", str(raised.exception))
+
+
+class Arguments(unittest.TestCase):
+    """--help answers without downloading anything; other arguments are refused."""
+
+    def run_main(self, argv):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with mock.patch.object(fetch_lean_cache, "fetch") as fetch, \
+                redirect_stdout(stdout), redirect_stderr(stderr), \
+                self.assertRaises(SystemExit) as raised:
+            fetch_lean_cache.main(argv)
+        fetch.assert_not_called()
+        return raised.exception.code, stdout.getvalue(), stderr.getvalue()
+
+    def test_help(self):
+        code, stdout, _ = self.run_main(["--help"])
+        self.assertEqual(code, 0)
+        self.assertIn("usage:", stdout)
+        self.assertIn("zstd -dc | python3 ci/lean_cache.py unpack", stdout)
+
+    def test_refuses_arguments(self):
+        code, _, stderr = self.run_main(["lean"])
+        self.assertEqual(code, 2)
+        self.assertIn("unrecognized arguments", stderr)
+
+    def test_no_arguments_fetches_to_stdout(self):
+        with mock.patch.object(fetch_lean_cache, "fetch") as fetch:
+            fetch_lean_cache.main([])
+        fetch.assert_called_once_with(fetch_lean_cache.sys.stdout.buffer)
 
 
 if __name__ == "__main__":
