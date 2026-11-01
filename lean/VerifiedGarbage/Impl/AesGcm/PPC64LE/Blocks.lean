@@ -9,8 +9,8 @@ public import VerifiedGarbage.Impl.Aes.PPC64LE.Ctr32
 
 Eight ciphertext vectors are stored and then folded directly into GHASH.
 The counter, hash powers and native-layout round keys use caller scratch.
-The nonzero block count is a multiple of eight. This internal kernel is
-not registered or used by the public API until its proof is complete.
+The internal kernel takes a nonzero multiple of eight blocks. The callable
+wrapper handles short inputs and tails with the existing CTR and GHASH functions.
 -/
 
 @[expose] public section
@@ -221,6 +221,10 @@ def bulkRest : List Instr :=
  [.li .r0 7, .logic .and .r11 .r25 .r0, .sub .r12 .r25 .r11, .lsl .r12 .r12 4,
   .add .r30 .r30 .r12, mov .r25 .r11]
 
+def bulk : Prog isa := .seq (.block bulkArgs) (.seq code (.block bulkRest))
+
+def maybeBulk : Prog isa := .ite (.zero .d .r12) (.block []) bulk
+
 def tailCtrArgs : List Instr :=
  [mov .r3 .r29, mov .r4 .r28, mov .r5 .r27, mov .r6 .r30, mov .r7 .r25, .addi .r8 .r31 64]
 
@@ -240,8 +244,7 @@ def wrapperExit : List Instr :=
 The signature grants 2112 scratch bytes: 64 for the wrapper, 2048 for its code. -/
 def encrypt : Prog isa := .ite (.zero .d .r8) (.block [])
  (.seq (.block wrapperEntry)
- (.seq (.ite (.zero .d .r12) (.block [])
-   (.seq (.block bulkArgs) (.seq code (.block bulkRest))))
+ (.seq maybeBulk
  (.seq tail (.block wrapperExit))))
 
 end VG.Impl.AesGcm.PPC64LE.Blocks
