@@ -133,6 +133,7 @@ dependencies = [
  "verified-garbage-asm-x86",
  "verified-garbage-asm-x86_64",
  "verified-garbage-cpu",
+ "verified-garbage-test-vectors",
 ]
 
 [[package]]
@@ -179,6 +180,10 @@ dependencies = [
 
 [[package]]
 name = "verified-garbage-cpu"
+version = "0.0.0"
+
+[[package]]
+name = "verified-garbage-test-vectors"
 version = "0.0.0"
 
 [[package]]

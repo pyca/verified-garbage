@@ -29,21 +29,9 @@ pub fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
     bytes
 }
 
-/// The bytes written in hex in `s`, two digits each.
-pub fn unhex(s: &str) -> Vec<u8> {
-    assert!(s.len().is_multiple_of(2), "odd length: {s}");
-    let mut bytes = Vec::with_capacity(s.len() / 2);
-    for i in (0..s.len()).step_by(2) {
-        bytes.push(u8::from_str_radix(&s[i..i + 2], 16).unwrap());
-    }
-    bytes
-}
-
-/// [`unhex`] of `text` without its whitespace.
-pub fn unhex_spaced(text: &str) -> Vec<u8> {
-    let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    unhex(&hex)
-}
+// Hex decoding, optimized in test builds (Cargo.toml): the tests decode
+// tens of megabytes of it.
+pub use verified_garbage_test_vectors::{unhex, unhex_spaced};
 
 /// Whether every byte of `bytes` is `value` (guard bytes a call must not
 /// have written).

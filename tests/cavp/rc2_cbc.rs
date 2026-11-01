@@ -158,7 +158,7 @@ fn openssl_cbc() {
         let Some(cipher) = f.get("Cipher").filter(|name| name.ends_with("CBC")) else {
             continue;
         };
-        let default_bits = match *cipher {
+        let default_bits = match cipher {
             "RC2-40-CBC" => 40,
             "RC2-64-CBC" => 64,
             name => {

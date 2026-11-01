@@ -63,28 +63,12 @@ mod triple_des_cfb8;
 mod triple_des_ecb;
 mod triple_des_ofb;
 
-use std::collections::BTreeMap;
-
 use crate::bytes::unhex;
-
-/// The records of a CAVP response file that have a `COUNT`, each as its
-/// `key = value` lines (records end at an empty line; a key given twice
-/// keeps its last value).
-fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
-    let mut records = Vec::new();
-    let mut fields = BTreeMap::new();
-    for line in text.lines().chain([""]) {
-        if line.is_empty() {
-            let record = std::mem::take(&mut fields);
-            if record.contains_key("COUNT") {
-                records.push(record);
-            }
-        } else if let Some((key, value)) = line.trim().split_once(" = ") {
-            fields.insert(key, value);
-        }
-    }
-    records
-}
+// The records of a CAVP response file that have a `COUNT` (records end at
+// an empty line; a key given twice keeps its last value), and its `key =
+// value` lines in order: parsed in a crate optimized in test builds
+// (Cargo.toml).
+use verified_garbage_test_vectors::{cavp_fields as fields, cavp_records as records};
 
 /// The vectors of the curve `curve` (`"P-192"`) of the SP 800-56A ECC CDH
 /// primitive test, its integers `len` bytes long: each `QCAVS`
@@ -121,16 +105,6 @@ fn ecdh_vectors(curve: &str, len: usize) -> Vec<[Vec<u8>; 4]> {
         ]);
     }
     vectors
-}
-
-/// The `key = value` lines of a CAVP response file, in order, without the
-/// comments, blank lines and `[L = ...]` section headers.
-fn fields(text: &str) -> Vec<(&str, &str)> {
-    text.lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with('#') && !l.starts_with('['))
-        .map(|l| l.split_once(" = ").unwrap())
-        .collect()
 }
 
 /// Checks every `Len`/`Msg`/`MD` vector of a message test file for a hash

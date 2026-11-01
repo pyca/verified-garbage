@@ -13,41 +13,21 @@
 
 use verified_garbage::aes_gcm::{AesGcm, Error};
 
+use verified_garbage_test_vectors::{Record, cavp_blocks};
+
 use super::unhex;
 
-/// The records of a CAVP response file with bracketed section headers (as
-/// the GCM files have): each is the `key = value` fields from a `Count` line
-/// to the next blank line, and whether it has a bare `FAIL` line.
-fn records(text: &str) -> Vec<(Vec<(&str, &str)>, bool)> {
+/// The records of a GCM response file, from each `Count` line to the next
+/// blank line, and whether each has a bare `FAIL` line, its only line that
+/// is not a field.
+fn records(text: &str) -> Vec<(Record<'_>, bool)> {
     let mut records = Vec::new();
-    for chunk in text.split("\r\n\r\n") {
-        for chunk in chunk.split("\n\n") {
-            let chunk = chunk.trim_start();
-            if !chunk.starts_with("Count = ") {
-                continue;
-            }
-            let mut fields = Vec::new();
-            let mut fail = false;
-            for line in chunk.lines().map(str::trim).filter(|l| !l.is_empty()) {
-                if line == "FAIL" {
-                    fail = true;
-                } else {
-                    fields.push(line.split_once(" =").map(|(k, v)| (k, v.trim())).unwrap());
-                }
-            }
-            records.push((fields, fail));
-        }
+    for (fields, bare) in cavp_blocks(text, "Count") {
+        let fail = bare == ["FAIL"];
+        assert!(fail || bare.is_empty(), "not a field: {bare:?}");
+        records.push((fields, fail));
     }
     records
-}
-
-/// The value of the field `key` of a record.
-fn field<'a>(fields: &[(&str, &'a str)], key: &str) -> &'a str {
-    fields
-        .iter()
-        .find(|(k, _)| *k == key)
-        .unwrap_or_else(|| panic!("no {key}"))
-        .1
 }
 
 /// Decrypts `data` with `tag`, whose length the vector gives: the API takes
@@ -76,34 +56,28 @@ fn aes_gcm() {
         let text = std::fs::read_to_string(dir.join(format!("gcmEncryptExtIV{bits}.rsp"))).unwrap();
         for (r, fail) in records(&text) {
             assert!(!fail);
-            let key = AesGcm::new(&unhex(field(&r, "Key"))).unwrap();
-            let tag = unhex(field(&r, "Tag"));
-            let mut buf = unhex(field(&r, "PT"));
+            let key = AesGcm::new(&unhex(r["Key"])).unwrap();
+            let tag = unhex(r["Tag"]);
+            let mut buf = unhex(r["PT"]);
             let t = key
-                .encrypt_in_place(&unhex(field(&r, "IV")), &unhex(field(&r, "AAD")), &mut buf)
+                .encrypt_in_place(&unhex(r["IV"]), &unhex(r["AAD"]), &mut buf)
                 .unwrap();
-            assert_eq!(buf, unhex(field(&r, "CT")));
+            assert_eq!(buf, unhex(r["CT"]));
             assert_eq!(t[..tag.len()], tag);
             encrypted += 1;
         }
         let text = std::fs::read_to_string(dir.join(format!("gcmDecrypt{bits}.rsp"))).unwrap();
         for (r, fail) in records(&text) {
-            let key = AesGcm::new(&unhex(field(&r, "Key"))).unwrap();
-            let mut buf = unhex(field(&r, "CT"));
-            let tag = unhex(field(&r, "Tag"));
-            let result = decrypt(
-                &key,
-                &unhex(field(&r, "IV")),
-                &unhex(field(&r, "AAD")),
-                &mut buf,
-                &tag,
-            );
+            let key = AesGcm::new(&unhex(r["Key"])).unwrap();
+            let mut buf = unhex(r["CT"]);
+            let tag = unhex(r["Tag"]);
+            let result = decrypt(&key, &unhex(r["IV"]), &unhex(r["AAD"]), &mut buf, &tag);
             if fail {
                 assert!(result.is_err());
                 failed += 1;
             } else {
                 result.unwrap();
-                assert_eq!(buf, unhex(field(&r, "PT")));
+                assert_eq!(buf, unhex(r["PT"]));
             }
             decrypted += 1;
         }

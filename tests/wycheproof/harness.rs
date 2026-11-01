@@ -306,9 +306,8 @@ impl FromJson for Hex {
     fn from_json(v: &Value, key: &str) -> Self {
         let s = v.as_str();
         let s = s.unwrap_or_else(|| panic!("{key}: expected a string, found {v}"));
-        let byte = |i| u8::from_str_radix(&s[i..i + 2], 16);
-        let byte = |i| byte(i).unwrap_or_else(|e| panic!("{key}: {s}: {e}"));
-        Hex((0..s.len()).step_by(2).map(byte).collect())
+        let bytes = verified_garbage_test_vectors::try_unhex(s);
+        Hex(bytes.unwrap_or_else(|| panic!("{key}: {s}: not hex")))
     }
 }
 

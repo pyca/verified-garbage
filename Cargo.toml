@@ -76,15 +76,23 @@ path = "tests/main.rs"
 # Parsing the JSON test vector files (`tests/json.rs` reads them into Rust
 # types, without serde's derive).
 serde_json = "1"
+# Hex and the `key = value` records of the text vector files
+# (`crates/verified-garbage-test-vectors`), optimized below.
+verified-garbage-test-vectors = { path = "crates/verified-garbage-test-vectors" }
 
 # The Wycheproof tests parse ~100 MB of JSON; optimize the parser (and the
-# `memchr` it scans strings with) in test builds. Only these: the other
+# `memchr` it scans strings with) in test builds. Only these and the text
+# files' parsing below: the other
 # dependencies' speed does not matter to the tests, and optimizing them, and
 # their build scripts, kept the cores busy while the generated crate and
 # the library, which the tests wait for, were compiling.
 [profile.dev.package.serde_json]
 opt-level = 3
 [profile.dev.package.memchr]
+opt-level = 3
+# The text vector files' parsing, for the same reason: unoptimized, decoding
+# the hex of CAVP's AES-GCM files was nine tenths of that test's time.
+[profile.dev.package.verified-garbage-test-vectors]
 opt-level = 3
 
 # Test builds keep only line tables (the file and line of each frame of a

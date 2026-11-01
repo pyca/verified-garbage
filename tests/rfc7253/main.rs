@@ -19,6 +19,8 @@
 
 use verified_garbage::aes_ocb::{AesOcb, Error};
 
+use verified_garbage_test_vectors::try_unhex as unhex;
+
 /// The lines of Appendix A, without the page breaks.
 fn appendix() -> Vec<String> {
     crate::vectors::text("vectors/rfc7253/rfc7253.txt")
@@ -29,19 +31,6 @@ fn appendix() -> Vec<String> {
         .filter(|l| !(l.starts_with("Krovetz & Rogaway") || l.starts_with("RFC 7253 ")))
         .map(str::to_owned)
         .collect()
-}
-
-fn unhex(s: &str) -> Option<Vec<u8>> {
-    if !s.len().is_multiple_of(2) || !s.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return None;
-    }
-    let b = s.as_bytes();
-    Some(
-        (0..s.len())
-            .step_by(2)
-            .map(|i| u8::from_str_radix(core::str::from_utf8(&b[i..i + 2]).unwrap(), 16).unwrap())
-            .collect(),
-    )
 }
 
 /// A tuple: `C = OCB-ENCRYPT(K, N, A, P)`, the ciphertext followed by the
