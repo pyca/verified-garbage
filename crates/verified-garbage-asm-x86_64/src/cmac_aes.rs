@@ -23,15 +23,120 @@ pub const VG_CMAC_AES_UPDATE_AESNI_CBC_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_update_aesni_cbc(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x6f0ff30f6f0ff3000001ae840fc0854d,0xf3205f6f0ff310576f0ff3c1ef0f6602,0xff350776f0ff3406f6f0ff330676f0f,0x808f6f0f44f370476f0f44f3607f6f
-.octa 0x9f6f0f44f300000090976f0f44f30000,0xf44f3000000b0a76f0f44f3000000a0,0x48000000d0b76f0f44f3000000c0af6f,0xf370740cfe8348000000da840f0afe83
-.octa 0x6f0ff3f9ef0f4466000000e0bf6f0f44,0x66c3dc380f66c2dc380f66c1ef0f6609,0xf66c6dc380f66c5dc380f66c4dc380f,0x66c1dc380f4166c0dc380f4166c7dc38
-.octa 0xdc380f4166c3dc380f4166c2dc380f41,0xf4166c6dc380f4166c5dc380f4166c4,0xf362eba07501e8834910c18348c7dd38,0x6f0ff3f9ef0f4466000000c0bf6f0f44
-.octa 0x66c3dc380f66c2dc380f66c1ef0f6609,0xf66c6dc380f66c5dc380f66c4dc380f,0x66c1dc380f4166c0dc380f4166c7dc38,0xdc380f4166c3dc380f4166c2dc380f41
-.octa 0x7501e8834910c18348c7dd380f4166c4,0xef0f4466000000a0bf6f0f44f356ebac,0xf66c2dc380f66c1ef0f66096f0ff3f9,0x380f66c5dc380f66c4dc380f66c3dc38
-.octa 0xf4166c0dc380f4166c7dc380f66c6dc,0x48c7dd380f4166c2dc380f4166c1dc38,0xef0f660f6f0ff3b87501e8834910c183
-.byte 193,243,15,127,2,235,0,195",
-        r".p2align 6",
+        // test r8, r8
+        r".byte 0x4d,0x85,0xc0
+je 20f",
+        // movdqu xmm1, XMMWORD PTR [rdi]
+        // movdqu xmm0, XMMWORD PTR [rdx]
+        // pxor xmm0, xmm1
+        // movdqu xmm2, XMMWORD PTR [rdi+16]
+        // movdqu xmm3, XMMWORD PTR [rdi+32]
+        // movdqu xmm4, XMMWORD PTR [rdi+48]
+        // movdqu xmm5, XMMWORD PTR [rdi+64]
+        // movdqu xmm6, XMMWORD PTR [rdi+80]
+        // movdqu xmm7, XMMWORD PTR [rdi+96]
+        // movdqu xmm8, XMMWORD PTR [rdi+112]
+        // movdqu xmm9, XMMWORD PTR [rdi+128]
+        // movdqu xmm10, XMMWORD PTR [rdi+144]
+        // movdqu xmm11, XMMWORD PTR [rdi+160]
+        // movdqu xmm12, XMMWORD PTR [rdi+176]
+        // movdqu xmm13, XMMWORD PTR [rdi+192]
+        // movdqu xmm14, XMMWORD PTR [rdi+208]
+        // cmp rsi, 10
+        r".octa 0x576f0ff3c1ef0f66026f0ff30f6f0ff3,0x406f6f0ff330676f0ff3205f6f0ff310,0x70476f0f44f3607f6f0ff350776f0ff3,0x90976f0f44f3000000808f6f0f44f3
+.octa 0xa76f0f44f3000000a09f6f0f44f30000,0xf44f3000000c0af6f0f44f3000000b0
+.byte 0x6f,0xb7,0xd0,0x00,0x00,0x00,0x48,0x83,0xfe,0x0a
+je 22f",
+        // cmp rsi, 12
+        r".byte 0x48,0x83,0xfe,0x0c
+je 24f",
+        // movdqu xmm15, XMMWORD PTR [rdi+224]
+        // pxor xmm15, xmm1
+        r".byte 0xf3,0x44,0x0f,0x6f,0xbf,0xe0,0x00,0x00,0x00,0x66,0x44,0x0f,0xef,0xf9
+26:",
+        // movdqu xmm1, XMMWORD PTR [rcx]
+        // pxor xmm0, xmm1
+        // aesenc xmm0, xmm2
+        // aesenc xmm0, xmm3
+        // aesenc xmm0, xmm4
+        // aesenc xmm0, xmm5
+        // aesenc xmm0, xmm6
+        // aesenc xmm0, xmm7
+        // aesenc xmm0, xmm8
+        // aesenc xmm0, xmm9
+        // aesenc xmm0, xmm10
+        // aesenc xmm0, xmm11
+        // aesenc xmm0, xmm12
+        // aesenc xmm0, xmm13
+        // aesenc xmm0, xmm14
+        // aesenclast xmm0, xmm15
+        // add rcx, 16
+        // sub r8, 1
+        r".octa 0x380f66c2dc380f66c1ef0f66096f0ff3,0xdc380f66c5dc380f66c4dc380f66c3dc,0x380f4166c0dc380f4166c7dc380f66c6,0x4166c3dc380f4166c2dc380f4166c1dc
+.octa 0xc6dc380f4166c5dc380f4166c4dc380f
+.byte 0x66,0x41,0x0f,0x38,0xdd,0xc7,0x48,0x83,0xc1,0x10,0x49,0x83,0xe8,0x01
+jne 26b
+jmp 25f
+24:",
+        // movdqu xmm15, XMMWORD PTR [rdi+192]
+        // pxor xmm15, xmm1
+        r".byte 0xf3,0x44,0x0f,0x6f,0xbf,0xc0,0x00,0x00,0x00,0x66,0x44,0x0f,0xef,0xf9
+27:",
+        // movdqu xmm1, XMMWORD PTR [rcx]
+        // pxor xmm0, xmm1
+        // aesenc xmm0, xmm2
+        // aesenc xmm0, xmm3
+        // aesenc xmm0, xmm4
+        // aesenc xmm0, xmm5
+        // aesenc xmm0, xmm6
+        // aesenc xmm0, xmm7
+        // aesenc xmm0, xmm8
+        // aesenc xmm0, xmm9
+        // aesenc xmm0, xmm10
+        // aesenc xmm0, xmm11
+        // aesenc xmm0, xmm12
+        // aesenclast xmm0, xmm15
+        // add rcx, 16
+        // sub r8, 1
+        r".octa 0x380f66c2dc380f66c1ef0f66096f0ff3,0xdc380f66c5dc380f66c4dc380f66c3dc,0x380f4166c0dc380f4166c7dc380f66c6,0x4166c3dc380f4166c2dc380f4166c1dc
+.octa 0x834910c18348c7dd380f4166c4dc380f
+.byte 0xe8,0x01
+jne 27b
+25:
+jmp 23f
+22:",
+        // movdqu xmm15, XMMWORD PTR [rdi+160]
+        // pxor xmm15, xmm1
+        r".byte 0xf3,0x44,0x0f,0x6f,0xbf,0xa0,0x00,0x00,0x00,0x66,0x44,0x0f,0xef,0xf9
+28:",
+        // movdqu xmm1, XMMWORD PTR [rcx]
+        // pxor xmm0, xmm1
+        // aesenc xmm0, xmm2
+        // aesenc xmm0, xmm3
+        // aesenc xmm0, xmm4
+        // aesenc xmm0, xmm5
+        // aesenc xmm0, xmm6
+        // aesenc xmm0, xmm7
+        // aesenc xmm0, xmm8
+        // aesenc xmm0, xmm9
+        // aesenc xmm0, xmm10
+        // aesenclast xmm0, xmm15
+        // add rcx, 16
+        // sub r8, 1
+        r".octa 0x380f66c2dc380f66c1ef0f66096f0ff3,0xdc380f66c5dc380f66c4dc380f66c3dc,0x380f4166c0dc380f4166c7dc380f66c6,0x8348c7dd380f4166c2dc380f4166c1dc
+.byte 0xc1,0x10,0x49,0x83,0xe8,0x01
+jne 28b
+23:",
+        // movdqu xmm1, XMMWORD PTR [rdi]
+        // pxor xmm0, xmm1
+        // movdqu XMMWORD PTR [rdx], xmm0
+        r".byte 0xf3,0x0f,0x6f,0x0f,0x66,0x0f,0xef,0xc1,0xf3,0x0f,0x7f,0x02
+jmp 21f
+20:
+21:",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -55,14 +160,69 @@ pub const VG_CMAC_AES_SUBKEYS_AESNI_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys_aesni(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        // mov QWORD PTR [rcx+2064], rbx
+        // mov QWORD PTR [rcx+2072], rbp
+        // mov rbx, rdx
+        // mov rbp, rcx
+        // mov eax, 0
+        // mov QWORD PTR [rcx+2048], rax
+        // mov QWORD PTR [rcx+2056], rax
+        // mov QWORD PTR [rdx], rax
+        // mov QWORD PTR [rdx+8], rax
+        // mov r9, rbp
+        // mov rdx, rbp
+        // add rdx, 2048
+        // mov rcx, rbx
+        // mov r8d, 1
         r".octa 0x894800000818a9894800000810998948,0x80081894800000000b8cd8948d3,0x89490842894802894800000808818948,0xb841d9894800000800c28148ea8948e9
-.byte 1,0,0,0",
-        r"call {vg_aes_ctr32_aesni}",
+.byte 0x01,0x00,0x00,0x00
+call {vg_aes_ctr32_aesni}",
+        // mov rax, QWORD PTR [rbx]
+        // bswap rax
+        // mov rdx, QWORD PTR [rbx+8]
+        // bswap rdx
+        // mov rcx, rax
+        // shr rcx, 63
+        // mov r8d, 0
+        // sub r8, rcx
+        // and r8, 135
+        // mov rcx, rdx
+        // shr rcx, 63
+        // add rax, rax
+        // or rax, rcx
+        // add rdx, rdx
+        // xor rdx, r8
+        // bswap rax
+        // bswap rdx
+        // mov QWORD PTR [rbx], rax
+        // mov QWORD PTR [rbx+8], rdx
+        // mov rax, QWORD PTR [rbx]
+        // bswap rax
+        // mov rdx, QWORD PTR [rbx+8]
+        // bswap rdx
+        // mov rcx, rax
+        // shr rcx, 63
+        // mov r8d, 0
+        // sub r8, rcx
+        // and r8, 135
+        // mov rcx, rdx
+        // shr rcx, 63
+        // add rax, rax
+        // or rax, rcx
+        // add rdx, rdx
+        // xor rdx, r8
+        // bswap rax
+        // bswap rdx
+        // mov QWORD PTR [rbx+16], rax
+        // mov QWORD PTR [rbx+24], rdx
+        // mov rbx, QWORD PTR [rbp+2064]
+        // mov rbp, QWORD PTR [rbp+2072]
+        // ret
         r".octa 0xc18948ca0f4808538b48c80f48038b48,0xe08149c8294900000000b8413fe9c148,0x948c001483fe9c148d1894800000087,0x38948ca0f48c80f48c2314cd20148c8
 .octa 0xf4808538b48c80f48038b4808538948,0x294900000000b8413fe9c148c18948ca,0x483fe9c148d1894800000087e08149c8,0xf48c80f48c2314cd20148c80948c001
 .octa 0x8109d8b481853894810438948ca
-.byte 72,139,173,24,8,0,0,195",
-        r".p2align 6",
+.byte 0x48,0x8b,0xad,0x18,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -88,13 +248,59 @@ pub const VG_CMAC_AES_UPDATE_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_update_aesni(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x8008789490045334924048b495a,0x808878949084533490824448b49,0x894808244489492404894900000000b8,0x800c28148fa894cf9894dee8948df
-.byte 0,76,137,225,65,184,1,0,0,0",
-        r"call {vg_aes_ctr32_aesni}",
-        r".octa 0x109f8b4900eba87501ee834910c58349,0x820a78b4d00000818af8b49000008,0x4d00000830b78b4d00000828af8b4d00
-.byte 139,191,56,8,0,0,195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rax, QWORD PTR [r12]
+        // xor rax, QWORD PTR [r13]
+        // mov QWORD PTR [r15+2048], rax
+        // mov rax, QWORD PTR [r12+8]
+        // xor rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r15+2056], rax
+        // mov eax, 0
+        // mov QWORD PTR [r12], rax
+        // mov QWORD PTR [r12+8], rax
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov r9, r15
+        // mov rdx, r15
+        // add rdx, 2048
+        // mov rcx, r12
+        // mov r8d, 1
+        r".octa 0x49000008008789490045334924048b49,0xb800000808878949084533490824448b,0xdf894808244489492404894900000000,0x800c28148fa894cf9894dee8948
+.byte 0x4c,0x89,0xe1,0x41,0xb8,0x01,0x00,0x00,0x00
+call {vg_aes_ctr32_aesni}",
+        // add r13, 16
+        // sub r14, 1
+        r".byte 0x49,0x83,0xc5,0x10,0x49,0x83,0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -121,14 +327,69 @@ pub const VG_CMAC_AES_FINALIZE_AESNI_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_finalize_aesni(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x80081894900000000b86f7410f88349,0xba411e74c0854d000008088189490000,0x800118488431104b60f4200000000,0x80b800ebea75c2394d01c2834900
-.octa 0x800818b49000008000184884300,0x8b490000080081894900000100873348,0x8818949000001088733480000080881,0x49000000f0873348018b4823eb000008
-.octa 0xf887334808418b48000008008189,0x4800000800818b490000080881894900,0x808818b49000008008189490233,0xb80000080881894908423348
-.octa 0xc28148ca894cd1894808428948028948
-.byte 0,8,0,0,65,184,1,0,0,0",
-        r"call {vg_aes_ctr32_aesni}",
-        r".byte 195",
-        r".p2align 6",
+        // cmp r8, 16
+        r".byte 0x49,0x83,0xf8,0x10
+je 20f",
+        // mov eax, 0
+        // mov QWORD PTR [r9+2048], rax
+        // mov QWORD PTR [r9+2056], rax
+        // test r8, r8
+        r".octa 0x88189490000080081894900000000b8
+.byte 0x08,0x00,0x00,0x4d,0x85,0xc0
+je 22f",
+        // mov r10d, 0
+        r".byte 0x41,0xba,0x00,0x00,0x00,0x00
+24:",
+        // movzx eax, BYTE PTR [rcx+r10*1]
+        // mov BYTE PTR [r9+r10*1+2048], al
+        // add r10, 1
+        // cmp r10, r8
+        r".octa 0xc2834900000800118488431104b60f42
+.byte 0x01,0x4d,0x39,0xc2
+jne 24b
+jmp 23f
+22:
+23:",
+        // mov eax, 128
+        // mov BYTE PTR [r9+r8*1+2048], al
+        // mov rax, QWORD PTR [r9+2048]
+        // xor rax, QWORD PTR [rdi+256]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [r9+2056]
+        // xor rax, QWORD PTR [rdi+264]
+        // mov QWORD PTR [r9+2056], rax
+        r".octa 0x818b49000008000184884300000080b8,0x8008189490000010087334800000800,0x10887334800000808818b490000
+.byte 0x49,0x89,0x81,0x08,0x08,0x00,0x00
+jmp 21f
+20:",
+        // mov rax, QWORD PTR [rcx]
+        // xor rax, QWORD PTR [rdi+240]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [rcx+8]
+        // xor rax, QWORD PTR [rdi+248]
+        // mov QWORD PTR [r9+2056], rax
+        r".octa 0x800818949000000f0873348018b48,0x8818949000000f887334808418b4800
+.byte 0x08,0x00,0x00
+21:",
+        // mov rax, QWORD PTR [r9+2048]
+        // xor rax, QWORD PTR [rdx]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [r9+2056]
+        // xor rax, QWORD PTR [rdx+8]
+        // mov QWORD PTR [r9+2056], rax
+        // mov eax, 0
+        // mov QWORD PTR [rdx], rax
+        // mov QWORD PTR [rdx+8], rax
+        // mov rcx, rdx
+        // mov rdx, r9
+        // add rdx, 2048
+        // mov r8d, 1
+        r".octa 0x80081894902334800000800818b49,0x88189490842334800000808818b4900,0x480842894802894800000000b8000008,0x1b84100000800c28148ca894cd189
+.byte 0x00,0x00
+call {vg_aes_ctr32_aesni}",
+        // ret
+        r".byte 0xc3
+.p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -151,15 +412,42 @@ pub const VG_CMAC_AES_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov rcx, rsp
+        // add rcx, 8
+        // mov QWORD PTR [rcx+2176], rbx
+        // mov QWORD PTR [rcx+2184], rbp
+        // mov QWORD PTR [rcx+2192], r12
+        // mov rbx, rdi
+        // mov rbp, rcx
+        // mov r12, rdx
+        // shr r12, 2
+        // add r12, 6
+        // mov rdi, rsi
+        // mov rsi, rdx
+        // mov rdx, rbx
         r".octa 0x4808c18348e18948fffff6f824a48d48,0xa1894c00000888a98948000008809989,0xecc149d48949cd8948fb894800000890
-.byte 2,73,131,196,6,72,137,247,72,137,214,72,137,218",
-        r"call {vg_aes_expand_key_scratch_aesni}",
+.byte 0x02,0x49,0x83,0xc4,0x06,0x48,0x89,0xf7,0x48,0x89,0xd6,0x48,0x89,0xda
+call {vg_aes_expand_key_scratch_aesni}",
+        // mov rdi, rbx
+        // mov rsi, r12
+        // mov rdx, rbx
+        // add rdx, 240
+        // mov rcx, rbp
         r".octa 0xf0c28148da8948e6894cdf8948
-.byte 72,137,233",
-        r"call {vg_cmac_aes_subkeys_aesni}",
+.byte 0x48,0x89,0xe9
+call {vg_cmac_aes_subkeys_aesni}",
+        // mov eax, 0
+        // mov QWORD PTR [rbx+272], rax
+        // mov QWORD PTR [rbx+280], rax
+        // mov rbx, QWORD PTR [rbp+2176]
+        // mov r12, QWORD PTR [rbp+2192]
+        // mov rbp, QWORD PTR [rbp+2184]
+        // lea rsp, [rsp+2312]
+        // ret
         r".octa 0x188389480000011083894800000000b8,0x890a58b4c000008809d8b48000001,0x90824a48d4800000888ad8b4800
-.byte 195",
-        r".p2align 6",
+.byte 0xc3
+.p2align 6",
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
     )
@@ -184,11 +472,34 @@ pub const VG_CMAC_AES_FINISH_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x4808c08349e08949fffff6f824a48d48,0x118878b4801894800000110878b,0xf98948ca8948d08949c1894d08418948,0x1e883490e74c0854d00000120c18148
-.byte 73,131,224,15,73,131,192,1,235,0",
-        r"call {vg_cmac_aes_finalize_aesni}",
-        r".byte 72,141,164,36,8,9,0,0,195",
-        r".p2align 6",
+        // lea rsp, [rsp-2312]
+        // mov r8, rsp
+        // add r8, 8
+        // mov rax, QWORD PTR [rdi+272]
+        // mov QWORD PTR [rcx], rax
+        // mov rax, QWORD PTR [rdi+280]
+        // mov QWORD PTR [rcx+8], rax
+        // mov r9, r8
+        // mov r8, rdx
+        // mov rdx, rcx
+        // mov rcx, rdi
+        // add rcx, 288
+        // test r8, r8
+        r".octa 0x4808c08349e08949fffff6f824a48d48,0x118878b4801894800000110878b,0xf98948ca8948d08949c1894d08418948
+.byte 0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x85,0xc0
+je 20f",
+        // sub r8, 1
+        // and r8, 15
+        // add r8, 1
+        r".byte 0x49,0x83,0xe8,0x01,0x49,0x83,0xe0,0x0f,0x49,0x83,0xc0,0x01
+jmp 21f
+20:
+21:
+call {vg_cmac_aes_finalize_aesni}",
+        // lea rsp, [rsp+2312]
+        // ret
+        r".byte 0x48,0x8d,0xa4,0x24,0x08,0x09,0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni,
     )
 }
@@ -209,14 +520,69 @@ pub unsafe extern "sysv64" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], ro
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        // mov QWORD PTR [rcx+2064], rbx
+        // mov QWORD PTR [rcx+2072], rbp
+        // mov rbx, rdx
+        // mov rbp, rcx
+        // mov eax, 0
+        // mov QWORD PTR [rcx+2048], rax
+        // mov QWORD PTR [rcx+2056], rax
+        // mov QWORD PTR [rdx], rax
+        // mov QWORD PTR [rdx+8], rax
+        // mov r9, rbp
+        // mov rdx, rbp
+        // add rdx, 2048
+        // mov rcx, rbx
+        // mov r8d, 1
         r".octa 0x894800000818a9894800000810998948,0x80081894800000000b8cd8948d3,0x89490842894802894800000808818948,0xb841d9894800000800c28148ea8948e9
-.byte 1,0,0,0",
-        r"call {vg_aes_ctr32}",
+.byte 0x01,0x00,0x00,0x00
+call {vg_aes_ctr32}",
+        // mov rax, QWORD PTR [rbx]
+        // bswap rax
+        // mov rdx, QWORD PTR [rbx+8]
+        // bswap rdx
+        // mov rcx, rax
+        // shr rcx, 63
+        // mov r8d, 0
+        // sub r8, rcx
+        // and r8, 135
+        // mov rcx, rdx
+        // shr rcx, 63
+        // add rax, rax
+        // or rax, rcx
+        // add rdx, rdx
+        // xor rdx, r8
+        // bswap rax
+        // bswap rdx
+        // mov QWORD PTR [rbx], rax
+        // mov QWORD PTR [rbx+8], rdx
+        // mov rax, QWORD PTR [rbx]
+        // bswap rax
+        // mov rdx, QWORD PTR [rbx+8]
+        // bswap rdx
+        // mov rcx, rax
+        // shr rcx, 63
+        // mov r8d, 0
+        // sub r8, rcx
+        // and r8, 135
+        // mov rcx, rdx
+        // shr rcx, 63
+        // add rax, rax
+        // or rax, rcx
+        // add rdx, rdx
+        // xor rdx, r8
+        // bswap rax
+        // bswap rdx
+        // mov QWORD PTR [rbx+16], rax
+        // mov QWORD PTR [rbx+24], rdx
+        // mov rbx, QWORD PTR [rbp+2064]
+        // mov rbp, QWORD PTR [rbp+2072]
+        // ret
         r".octa 0xc18948ca0f4808538b48c80f48038b48,0xe08149c8294900000000b8413fe9c148,0x948c001483fe9c148d1894800000087,0x38948ca0f48c80f48c2314cd20148c8
 .octa 0xf4808538b48c80f48038b4808538948,0x294900000000b8413fe9c148c18948ca,0x483fe9c148d1894800000087e08149c8,0xf48c80f48c2314cd20148c80948c001
 .octa 0x8109d8b481853894810438948ca
-.byte 72,139,173,24,8,0,0,195",
-        r".p2align 6",
+.byte 0x48,0x8b,0xad,0x18,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -238,13 +604,59 @@ pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], ro
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x8008789490045334924048b495a,0x808878949084533490824448b49,0x894808244489492404894900000000b8,0x800c28148fa894cf9894dee8948df
-.byte 0,76,137,225,65,184,1,0,0,0",
-        r"call {vg_aes_ctr32}",
-        r".octa 0x109f8b4900eba87501ee834910c58349,0x820a78b4d00000818af8b49000008,0x4d00000830b78b4d00000828af8b4d00
-.byte 139,191,56,8,0,0,195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rax, QWORD PTR [r12]
+        // xor rax, QWORD PTR [r13]
+        // mov QWORD PTR [r15+2048], rax
+        // mov rax, QWORD PTR [r12+8]
+        // xor rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r15+2056], rax
+        // mov eax, 0
+        // mov QWORD PTR [r12], rax
+        // mov QWORD PTR [r12+8], rax
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov r9, r15
+        // mov rdx, r15
+        // add rdx, 2048
+        // mov rcx, r12
+        // mov r8d, 1
+        r".octa 0x49000008008789490045334924048b49,0xb800000808878949084533490824448b,0xdf894808244489492404894900000000,0x800c28148fa894cf9894dee8948
+.byte 0x4c,0x89,0xe1,0x41,0xb8,0x01,0x00,0x00,0x00
+call {vg_aes_ctr32}",
+        // add r13, 16
+        // sub r14, 1
+        r".byte 0x49,0x83,0xc5,0x10,0x49,0x83,0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -267,14 +679,69 @@ pub unsafe extern "sysv64" fn vg_cmac_aes_update(schedule: *const [u8; 240], rou
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x80081894900000000b86f7410f88349,0xba411e74c0854d000008088189490000,0x800118488431104b60f4200000000,0x80b800ebea75c2394d01c2834900
-.octa 0x800818b49000008000184884300,0x8b490000080081894900000100873348,0x8818949000001088733480000080881,0x49000000f0873348018b4823eb000008
-.octa 0xf887334808418b48000008008189,0x4800000800818b490000080881894900,0x808818b49000008008189490233,0xb80000080881894908423348
-.octa 0xc28148ca894cd1894808428948028948
-.byte 0,8,0,0,65,184,1,0,0,0",
-        r"call {vg_aes_ctr32}",
-        r".byte 195",
-        r".p2align 6",
+        // cmp r8, 16
+        r".byte 0x49,0x83,0xf8,0x10
+je 20f",
+        // mov eax, 0
+        // mov QWORD PTR [r9+2048], rax
+        // mov QWORD PTR [r9+2056], rax
+        // test r8, r8
+        r".octa 0x88189490000080081894900000000b8
+.byte 0x08,0x00,0x00,0x4d,0x85,0xc0
+je 22f",
+        // mov r10d, 0
+        r".byte 0x41,0xba,0x00,0x00,0x00,0x00
+24:",
+        // movzx eax, BYTE PTR [rcx+r10*1]
+        // mov BYTE PTR [r9+r10*1+2048], al
+        // add r10, 1
+        // cmp r10, r8
+        r".octa 0xc2834900000800118488431104b60f42
+.byte 0x01,0x4d,0x39,0xc2
+jne 24b
+jmp 23f
+22:
+23:",
+        // mov eax, 128
+        // mov BYTE PTR [r9+r8*1+2048], al
+        // mov rax, QWORD PTR [r9+2048]
+        // xor rax, QWORD PTR [rdi+256]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [r9+2056]
+        // xor rax, QWORD PTR [rdi+264]
+        // mov QWORD PTR [r9+2056], rax
+        r".octa 0x818b49000008000184884300000080b8,0x8008189490000010087334800000800,0x10887334800000808818b490000
+.byte 0x49,0x89,0x81,0x08,0x08,0x00,0x00
+jmp 21f
+20:",
+        // mov rax, QWORD PTR [rcx]
+        // xor rax, QWORD PTR [rdi+240]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [rcx+8]
+        // xor rax, QWORD PTR [rdi+248]
+        // mov QWORD PTR [r9+2056], rax
+        r".octa 0x800818949000000f0873348018b48,0x8818949000000f887334808418b4800
+.byte 0x08,0x00,0x00
+21:",
+        // mov rax, QWORD PTR [r9+2048]
+        // xor rax, QWORD PTR [rdx]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [r9+2056]
+        // xor rax, QWORD PTR [rdx+8]
+        // mov QWORD PTR [r9+2056], rax
+        // mov eax, 0
+        // mov QWORD PTR [rdx], rax
+        // mov QWORD PTR [rdx+8], rax
+        // mov rcx, rdx
+        // mov rdx, r9
+        // add rdx, 2048
+        // mov r8d, 1
+        r".octa 0x80081894902334800000800818b49,0x88189490842334800000808818b4900,0x480842894802894800000000b8000008,0x1b84100000800c28148ca894cd189
+.byte 0x00,0x00
+call {vg_aes_ctr32}",
+        // ret
+        r".byte 0xc3
+.p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -293,15 +760,42 @@ pub unsafe extern "sysv64" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov rcx, rsp
+        // add rcx, 8
+        // mov QWORD PTR [rcx+2176], rbx
+        // mov QWORD PTR [rcx+2184], rbp
+        // mov QWORD PTR [rcx+2192], r12
+        // mov rbx, rdi
+        // mov rbp, rcx
+        // mov r12, rdx
+        // shr r12, 2
+        // add r12, 6
+        // mov rdi, rsi
+        // mov rsi, rdx
+        // mov rdx, rbx
         r".octa 0x4808c18348e18948fffff6f824a48d48,0xa1894c00000888a98948000008809989,0xecc149d48949cd8948fb894800000890
-.byte 2,73,131,196,6,72,137,247,72,137,214,72,137,218",
-        r"call {vg_aes_expand_key_scratch}",
+.byte 0x02,0x49,0x83,0xc4,0x06,0x48,0x89,0xf7,0x48,0x89,0xd6,0x48,0x89,0xda
+call {vg_aes_expand_key_scratch}",
+        // mov rdi, rbx
+        // mov rsi, r12
+        // mov rdx, rbx
+        // add rdx, 240
+        // mov rcx, rbp
         r".octa 0xf0c28148da8948e6894cdf8948
-.byte 72,137,233",
-        r"call {vg_cmac_aes_subkeys}",
+.byte 0x48,0x89,0xe9
+call {vg_cmac_aes_subkeys}",
+        // mov eax, 0
+        // mov QWORD PTR [rbx+272], rax
+        // mov QWORD PTR [rbx+280], rax
+        // mov rbx, QWORD PTR [rbp+2176]
+        // mov r12, QWORD PTR [rbp+2192]
+        // mov rbp, QWORD PTR [rbp+2184]
+        // lea rsp, [rsp+2312]
+        // ret
         r".octa 0x188389480000011083894800000000b8,0x890a58b4c000008809d8b48000001,0x90824a48d4800000888ad8b4800
-.byte 195",
-        r".p2align 6",
+.byte 0xc3
+.p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
@@ -322,11 +816,34 @@ pub unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *cons
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x4808c08349e08949fffff6f824a48d48,0x118878b4801894800000110878b,0xf98948ca8948d08949c1894d08418948,0x1e883490e74c0854d00000120c18148
-.byte 73,131,224,15,73,131,192,1,235,0",
-        r"call {vg_cmac_aes_finalize}",
-        r".byte 72,141,164,36,8,9,0,0,195",
-        r".p2align 6",
+        // lea rsp, [rsp-2312]
+        // mov r8, rsp
+        // add r8, 8
+        // mov rax, QWORD PTR [rdi+272]
+        // mov QWORD PTR [rcx], rax
+        // mov rax, QWORD PTR [rdi+280]
+        // mov QWORD PTR [rcx+8], rax
+        // mov r9, r8
+        // mov r8, rdx
+        // mov rdx, rcx
+        // mov rcx, rdi
+        // add rcx, 288
+        // test r8, r8
+        r".octa 0x4808c08349e08949fffff6f824a48d48,0x118878b4801894800000110878b,0xf98948ca8948d08949c1894d08418948
+.byte 0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x85,0xc0
+je 20f",
+        // sub r8, 1
+        // and r8, 15
+        // add r8, 1
+        r".byte 0x49,0x83,0xe8,0x01,0x49,0x83,0xe0,0x0f,0x49,0x83,0xc0,0x01
+jmp 21f
+20:
+21:
+call {vg_cmac_aes_finalize}",
+        // lea rsp, [rsp+2312]
+        // ret
+        r".byte 0x48,0x8d,0xa4,0x24,0x08,0x09,0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
     )
 }
@@ -351,14 +868,69 @@ pub const VG_CMAC_AES_SUBKEYS_VAES_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys_vaes(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
+        // mov QWORD PTR [rcx+2064], rbx
+        // mov QWORD PTR [rcx+2072], rbp
+        // mov rbx, rdx
+        // mov rbp, rcx
+        // mov eax, 0
+        // mov QWORD PTR [rcx+2048], rax
+        // mov QWORD PTR [rcx+2056], rax
+        // mov QWORD PTR [rdx], rax
+        // mov QWORD PTR [rdx+8], rax
+        // mov r9, rbp
+        // mov rdx, rbp
+        // add rdx, 2048
+        // mov rcx, rbx
+        // mov r8d, 1
         r".octa 0x894800000818a9894800000810998948,0x80081894800000000b8cd8948d3,0x89490842894802894800000808818948,0xb841d9894800000800c28148ea8948e9
-.byte 1,0,0,0",
-        r"call {vg_aes_ctr32_vaes}",
+.byte 0x01,0x00,0x00,0x00
+call {vg_aes_ctr32_vaes}",
+        // mov rax, QWORD PTR [rbx]
+        // bswap rax
+        // mov rdx, QWORD PTR [rbx+8]
+        // bswap rdx
+        // mov rcx, rax
+        // shr rcx, 63
+        // mov r8d, 0
+        // sub r8, rcx
+        // and r8, 135
+        // mov rcx, rdx
+        // shr rcx, 63
+        // add rax, rax
+        // or rax, rcx
+        // add rdx, rdx
+        // xor rdx, r8
+        // bswap rax
+        // bswap rdx
+        // mov QWORD PTR [rbx], rax
+        // mov QWORD PTR [rbx+8], rdx
+        // mov rax, QWORD PTR [rbx]
+        // bswap rax
+        // mov rdx, QWORD PTR [rbx+8]
+        // bswap rdx
+        // mov rcx, rax
+        // shr rcx, 63
+        // mov r8d, 0
+        // sub r8, rcx
+        // and r8, 135
+        // mov rcx, rdx
+        // shr rcx, 63
+        // add rax, rax
+        // or rax, rcx
+        // add rdx, rdx
+        // xor rdx, r8
+        // bswap rax
+        // bswap rdx
+        // mov QWORD PTR [rbx+16], rax
+        // mov QWORD PTR [rbx+24], rdx
+        // mov rbx, QWORD PTR [rbp+2064]
+        // mov rbp, QWORD PTR [rbp+2072]
+        // ret
         r".octa 0xc18948ca0f4808538b48c80f48038b48,0xe08149c8294900000000b8413fe9c148,0x948c001483fe9c148d1894800000087,0x38948ca0f48c80f48c2314cd20148c8
 .octa 0xf4808538b48c80f48038b4808538948,0x294900000000b8413fe9c148c18948ca,0x483fe9c148d1894800000087e08149c8,0xf48c80f48c2314cd20148c80948c001
 .octa 0x8109d8b481853894810438948ca
-.byte 72,139,173,24,8,0,0,195",
-        r".p2align 6",
+.byte 0x48,0x8b,0xad,0x18,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
     )
 }
@@ -384,13 +956,59 @@ pub const VG_CMAC_AES_UPDATE_VAES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_update_vaes(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x8008789490045334924048b495a,0x808878949084533490824448b49,0x894808244489492404894900000000b8,0x800c28148fa894cf9894dee8948df
-.byte 0,76,137,225,65,184,1,0,0,0",
-        r"call {vg_aes_ctr32_vaes}",
-        r".octa 0x109f8b4900eba87501ee834910c58349,0x820a78b4d00000818af8b49000008,0x4d00000830b78b4d00000828af8b4d00
-.byte 139,191,56,8,0,0,195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rax, QWORD PTR [r12]
+        // xor rax, QWORD PTR [r13]
+        // mov QWORD PTR [r15+2048], rax
+        // mov rax, QWORD PTR [r12+8]
+        // xor rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r15+2056], rax
+        // mov eax, 0
+        // mov QWORD PTR [r12], rax
+        // mov QWORD PTR [r12+8], rax
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov r9, r15
+        // mov rdx, r15
+        // add rdx, 2048
+        // mov rcx, r12
+        // mov r8d, 1
+        r".octa 0x49000008008789490045334924048b49,0xb800000808878949084533490824448b,0xdf894808244489492404894900000000,0x800c28148fa894cf9894dee8948
+.byte 0x4c,0x89,0xe1,0x41,0xb8,0x01,0x00,0x00,0x00
+call {vg_aes_ctr32_vaes}",
+        // add r13, 16
+        // sub r14, 1
+        r".byte 0x49,0x83,0xc5,0x10,0x49,0x83,0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
     )
 }
@@ -417,14 +1035,69 @@ pub const VG_CMAC_AES_FINALIZE_VAES_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_finalize_vaes(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x80081894900000000b86f7410f88349,0xba411e74c0854d000008088189490000,0x800118488431104b60f4200000000,0x80b800ebea75c2394d01c2834900
-.octa 0x800818b49000008000184884300,0x8b490000080081894900000100873348,0x8818949000001088733480000080881,0x49000000f0873348018b4823eb000008
-.octa 0xf887334808418b48000008008189,0x4800000800818b490000080881894900,0x808818b49000008008189490233,0xb80000080881894908423348
-.octa 0xc28148ca894cd1894808428948028948
-.byte 0,8,0,0,65,184,1,0,0,0",
-        r"call {vg_aes_ctr32_vaes}",
-        r".byte 195",
-        r".p2align 6",
+        // cmp r8, 16
+        r".byte 0x49,0x83,0xf8,0x10
+je 20f",
+        // mov eax, 0
+        // mov QWORD PTR [r9+2048], rax
+        // mov QWORD PTR [r9+2056], rax
+        // test r8, r8
+        r".octa 0x88189490000080081894900000000b8
+.byte 0x08,0x00,0x00,0x4d,0x85,0xc0
+je 22f",
+        // mov r10d, 0
+        r".byte 0x41,0xba,0x00,0x00,0x00,0x00
+24:",
+        // movzx eax, BYTE PTR [rcx+r10*1]
+        // mov BYTE PTR [r9+r10*1+2048], al
+        // add r10, 1
+        // cmp r10, r8
+        r".octa 0xc2834900000800118488431104b60f42
+.byte 0x01,0x4d,0x39,0xc2
+jne 24b
+jmp 23f
+22:
+23:",
+        // mov eax, 128
+        // mov BYTE PTR [r9+r8*1+2048], al
+        // mov rax, QWORD PTR [r9+2048]
+        // xor rax, QWORD PTR [rdi+256]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [r9+2056]
+        // xor rax, QWORD PTR [rdi+264]
+        // mov QWORD PTR [r9+2056], rax
+        r".octa 0x818b49000008000184884300000080b8,0x8008189490000010087334800000800,0x10887334800000808818b490000
+.byte 0x49,0x89,0x81,0x08,0x08,0x00,0x00
+jmp 21f
+20:",
+        // mov rax, QWORD PTR [rcx]
+        // xor rax, QWORD PTR [rdi+240]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [rcx+8]
+        // xor rax, QWORD PTR [rdi+248]
+        // mov QWORD PTR [r9+2056], rax
+        r".octa 0x800818949000000f0873348018b48,0x8818949000000f887334808418b4800
+.byte 0x08,0x00,0x00
+21:",
+        // mov rax, QWORD PTR [r9+2048]
+        // xor rax, QWORD PTR [rdx]
+        // mov QWORD PTR [r9+2048], rax
+        // mov rax, QWORD PTR [r9+2056]
+        // xor rax, QWORD PTR [rdx+8]
+        // mov QWORD PTR [r9+2056], rax
+        // mov eax, 0
+        // mov QWORD PTR [rdx], rax
+        // mov QWORD PTR [rdx+8], rax
+        // mov rcx, rdx
+        // mov rdx, r9
+        // add rdx, 2048
+        // mov r8d, 1
+        r".octa 0x80081894902334800000800818b49,0x88189490842334800000808818b4900,0x480842894802894800000000b8000008,0x1b84100000800c28148ca894cd189
+.byte 0x00,0x00
+call {vg_aes_ctr32_vaes}",
+        // ret
+        r".byte 0xc3
+.p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
     )
 }
@@ -447,15 +1120,42 @@ pub const VG_CMAC_AES_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov rcx, rsp
+        // add rcx, 8
+        // mov QWORD PTR [rcx+2176], rbx
+        // mov QWORD PTR [rcx+2184], rbp
+        // mov QWORD PTR [rcx+2192], r12
+        // mov rbx, rdi
+        // mov rbp, rcx
+        // mov r12, rdx
+        // shr r12, 2
+        // add r12, 6
+        // mov rdi, rsi
+        // mov rsi, rdx
+        // mov rdx, rbx
         r".octa 0x4808c18348e18948fffff6f824a48d48,0xa1894c00000888a98948000008809989,0xecc149d48949cd8948fb894800000890
-.byte 2,73,131,196,6,72,137,247,72,137,214,72,137,218",
-        r"call {vg_aes_expand_key_scratch_aesni}",
+.byte 0x02,0x49,0x83,0xc4,0x06,0x48,0x89,0xf7,0x48,0x89,0xd6,0x48,0x89,0xda
+call {vg_aes_expand_key_scratch_aesni}",
+        // mov rdi, rbx
+        // mov rsi, r12
+        // mov rdx, rbx
+        // add rdx, 240
+        // mov rcx, rbp
         r".octa 0xf0c28148da8948e6894cdf8948
-.byte 72,137,233",
-        r"call {vg_cmac_aes_subkeys_vaes}",
+.byte 0x48,0x89,0xe9
+call {vg_cmac_aes_subkeys_vaes}",
+        // mov eax, 0
+        // mov QWORD PTR [rbx+272], rax
+        // mov QWORD PTR [rbx+280], rax
+        // mov rbx, QWORD PTR [rbp+2176]
+        // mov r12, QWORD PTR [rbp+2192]
+        // mov rbp, QWORD PTR [rbp+2184]
+        // lea rsp, [rsp+2312]
+        // ret
         r".octa 0x188389480000011083894800000000b8,0x890a58b4c000008809d8b48000001,0x90824a48d4800000888ad8b4800
-.byte 195",
-        r".p2align 6",
+.byte 0xc3
+.p2align 6",
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes,
     )
@@ -480,11 +1180,34 @@ pub const VG_CMAC_AES_FINISH_VAES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x4808c08349e08949fffff6f824a48d48,0x118878b4801894800000110878b,0xf98948ca8948d08949c1894d08418948,0x1e883490e74c0854d00000120c18148
-.byte 73,131,224,15,73,131,192,1,235,0",
-        r"call {vg_cmac_aes_finalize_vaes}",
-        r".byte 72,141,164,36,8,9,0,0,195",
-        r".p2align 6",
+        // lea rsp, [rsp-2312]
+        // mov r8, rsp
+        // add r8, 8
+        // mov rax, QWORD PTR [rdi+272]
+        // mov QWORD PTR [rcx], rax
+        // mov rax, QWORD PTR [rdi+280]
+        // mov QWORD PTR [rcx+8], rax
+        // mov r9, r8
+        // mov r8, rdx
+        // mov rdx, rcx
+        // mov rcx, rdi
+        // add rcx, 288
+        // test r8, r8
+        r".octa 0x4808c08349e08949fffff6f824a48d48,0x118878b4801894800000110878b,0xf98948ca8948d08949c1894d08418948
+.byte 0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x85,0xc0
+je 20f",
+        // sub r8, 1
+        // and r8, 15
+        // add r8, 1
+        r".byte 0x49,0x83,0xe8,0x01,0x49,0x83,0xe0,0x0f,0x49,0x83,0xc0,0x01
+jmp 21f
+20:
+21:
+call {vg_cmac_aes_finalize_vaes}",
+        // lea rsp, [rsp+2312]
+        // ret
+        r".byte 0x48,0x8d,0xa4,0x24,0x08,0x09,0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes,
     )
 }
@@ -507,19 +1230,140 @@ pub const VG_CMAC_AES_ABSORB_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov r9, rsp
+        // add r9, 8
+        // mov QWORD PTR [r9+2176], rbx
+        // mov QWORD PTR [r9+2184], rbp
+        // mov QWORD PTR [r9+2192], r12
+        // mov QWORD PTR [r9+2200], r13
+        // mov QWORD PTR [r9+2208], r14
+        // mov QWORD PTR [r9+2216], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test rdx, rdx
         r".octa 0x4908c18349e18949fffff6f824a48d48,0xa1894d00000888a98949000008809989,0x8a0b1894d00000898a9894d00000890,0x49f58948fb8948000008a8b9894d0000
-.octa 0xd089481174d28548cf894dc6894dcd89,0xb805eb01c083480fe0834801e88348,0x272ce3949c1294800000010b9000000,0x4800000120c28148da8948f1894c03eb
-.octa 0xb60f431574c9854800000000ba41c201,0xed75ca394901c2834912048842001544,0x874ce294900000000b841cd014900eb,0x8948ee8948df894800eb00000001b841
-.octa 0x120c18148d9894800000110c28148da
-.byte 0,0,77,137,249",
-        r"call {vg_cmac_aes_update_aesni}",
-        r".octa 0x8349f4894d1374f6854d00000000bc41,0x894d00ebc429490fe08348e0894c01ec,0x8148da8948ee8948df894804e8c149e0
-.byte 194,16,1,0,0,76,137,233,77,137,249",
-        r"call {vg_cmac_aes_update_aesni}",
-        r".octa 0x120c28148da8948e6294de5014d,0xf431574c9854800000000ba41f1894c,0x75ca394901c2834912048842001544b6,0x888af8b49000008809f8b4900ebed
-.octa 0x4d00000898af8b4d00000890a78b4d00,0xa48d48000008a8bf8b4d000008a0b78b
-.byte 36,8,9,0,0,195",
-        r".p2align 6",
+.byte 0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x48,0x85,0xd2
+je 20f",
+        // mov rax, rdx
+        // sub rax, 1
+        // and rax, 15
+        // add rax, 1
+        r".byte 0x48,0x89,0xd0,0x48,0x83,0xe8,0x01,0x48,0x83,0xe0,0x0f,0x48,0x83,0xc0,0x01
+jmp 21f
+20:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+21:",
+        // mov ecx, 16
+        // sub rcx, rax
+        // cmp r14, rcx
+        r".byte 0xb9,0x10,0x00,0x00,0x00,0x48,0x29,0xc1,0x49,0x39,0xce
+jb 22f
+jmp 23f
+22:",
+        // mov rcx, r14
+        r".byte 0x4c,0x89,0xf1
+23:",
+        // mov rdx, rbx
+        // add rdx, 288
+        // add rdx, rax
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0xba41c2014800000120c28148da8948
+.byte 0x00,0x00,0x00,0x48,0x85,0xc9
+je 24f
+26:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 26b
+jmp 25f
+24:
+25:",
+        // add r13, rcx
+        // mov r8d, 0
+        // sub r14, rcx
+        r".byte 0x49,0x01,0xcd,0x41,0xb8,0x00,0x00,0x00,0x00,0x49,0x29,0xce
+je 27f",
+        // mov r8d, 1
+        r".byte 0x41,0xb8,0x01,0x00,0x00,0x00
+jmp 28f
+27:
+28:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, rbx
+        // add rcx, 288
+        // mov r9, r15
+        r".octa 0x110c28148da8948ee8948df8948
+.byte 0x48,0x89,0xd9,0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x89,0xf9
+call {vg_cmac_aes_update_aesni}",
+        // mov r12d, 0
+        // test r14, r14
+        r".byte 0x41,0xbc,0x00,0x00,0x00,0x00,0x4d,0x85,0xf6
+je 29f",
+        // mov r12, r14
+        // sub r12, 1
+        // mov rax, r12
+        // and rax, 15
+        // sub r12, rax
+        r".octa 0x29490fe08348e0894c01ec8349f4894d
+.byte 0xc4
+jmp 210f
+29:
+210:",
+        // mov r8, r12
+        // shr r8, 4
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, r13
+        // mov r9, r15
+        r".octa 0xda8948ee8948df894804e8c149e0894d
+.byte 0x48,0x81,0xc2,0x10,0x01,0x00,0x00,0x4c,0x89,0xe9,0x4d,0x89,0xf9
+call {vg_cmac_aes_update_aesni}",
+        // add r13, r12
+        // sub r14, r12
+        // mov rdx, rbx
+        // add rdx, 288
+        // mov rcx, r14
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0x120c28148da8948e6294de5014d
+.byte 0x4c,0x89,0xf1,0x41,0xba,0x00,0x00,0x00,0x00,0x48,0x85,0xc9
+je 211f
+213:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 213b
+jmp 212f
+211:
+212:",
+        // mov rbx, QWORD PTR [r15+2176]
+        // mov rbp, QWORD PTR [r15+2184]
+        // mov r12, QWORD PTR [r15+2192]
+        // mov r13, QWORD PTR [r15+2200]
+        // mov r14, QWORD PTR [r15+2208]
+        // mov r15, QWORD PTR [r15+2216]
+        // lea rsp, [rsp+2312]
+        // ret
+        r".octa 0x8b4d00000888af8b49000008809f8b49,0xa0b78b4d00000898af8b4d00000890a7,0x90824a48d48000008a8bf8b4d000008
+.byte 0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
     )
 }
@@ -542,19 +1386,140 @@ pub const VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov r9, rsp
+        // add r9, 8
+        // mov QWORD PTR [r9+2176], rbx
+        // mov QWORD PTR [r9+2184], rbp
+        // mov QWORD PTR [r9+2192], r12
+        // mov QWORD PTR [r9+2200], r13
+        // mov QWORD PTR [r9+2208], r14
+        // mov QWORD PTR [r9+2216], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test rdx, rdx
         r".octa 0x4908c18349e18949fffff6f824a48d48,0xa1894d00000888a98949000008809989,0x8a0b1894d00000898a9894d00000890,0x49f58948fb8948000008a8b9894d0000
-.octa 0xd089481174d28548cf894dc6894dcd89,0xb805eb01c083480fe0834801e88348,0x272ce3949c1294800000010b9000000,0x4800000120c28148da8948f1894c03eb
-.octa 0xb60f431574c9854800000000ba41c201,0xed75ca394901c2834912048842001544,0x874ce294900000000b841cd014900eb,0x8948ee8948df894800eb00000001b841
-.octa 0x120c18148d9894800000110c28148da
-.byte 0,0,77,137,249",
-        r"call {vg_cmac_aes_update_aesni_cbc}",
-        r".octa 0x8349f4894d1374f6854d00000000bc41,0x894d00ebc429490fe08348e0894c01ec,0x8148da8948ee8948df894804e8c149e0
-.byte 194,16,1,0,0,76,137,233,77,137,249",
-        r"call {vg_cmac_aes_update_aesni_cbc}",
-        r".octa 0x120c28148da8948e6294de5014d,0xf431574c9854800000000ba41f1894c,0x75ca394901c2834912048842001544b6,0x888af8b49000008809f8b4900ebed
-.octa 0x4d00000898af8b4d00000890a78b4d00,0xa48d48000008a8bf8b4d000008a0b78b
-.byte 36,8,9,0,0,195",
-        r".p2align 6",
+.byte 0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x48,0x85,0xd2
+je 20f",
+        // mov rax, rdx
+        // sub rax, 1
+        // and rax, 15
+        // add rax, 1
+        r".byte 0x48,0x89,0xd0,0x48,0x83,0xe8,0x01,0x48,0x83,0xe0,0x0f,0x48,0x83,0xc0,0x01
+jmp 21f
+20:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+21:",
+        // mov ecx, 16
+        // sub rcx, rax
+        // cmp r14, rcx
+        r".byte 0xb9,0x10,0x00,0x00,0x00,0x48,0x29,0xc1,0x49,0x39,0xce
+jb 22f
+jmp 23f
+22:",
+        // mov rcx, r14
+        r".byte 0x4c,0x89,0xf1
+23:",
+        // mov rdx, rbx
+        // add rdx, 288
+        // add rdx, rax
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0xba41c2014800000120c28148da8948
+.byte 0x00,0x00,0x00,0x48,0x85,0xc9
+je 24f
+26:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 26b
+jmp 25f
+24:
+25:",
+        // add r13, rcx
+        // mov r8d, 0
+        // sub r14, rcx
+        r".byte 0x49,0x01,0xcd,0x41,0xb8,0x00,0x00,0x00,0x00,0x49,0x29,0xce
+je 27f",
+        // mov r8d, 1
+        r".byte 0x41,0xb8,0x01,0x00,0x00,0x00
+jmp 28f
+27:
+28:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, rbx
+        // add rcx, 288
+        // mov r9, r15
+        r".octa 0x110c28148da8948ee8948df8948
+.byte 0x48,0x89,0xd9,0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x89,0xf9
+call {vg_cmac_aes_update_aesni_cbc}",
+        // mov r12d, 0
+        // test r14, r14
+        r".byte 0x41,0xbc,0x00,0x00,0x00,0x00,0x4d,0x85,0xf6
+je 29f",
+        // mov r12, r14
+        // sub r12, 1
+        // mov rax, r12
+        // and rax, 15
+        // sub r12, rax
+        r".octa 0x29490fe08348e0894c01ec8349f4894d
+.byte 0xc4
+jmp 210f
+29:
+210:",
+        // mov r8, r12
+        // shr r8, 4
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, r13
+        // mov r9, r15
+        r".octa 0xda8948ee8948df894804e8c149e0894d
+.byte 0x48,0x81,0xc2,0x10,0x01,0x00,0x00,0x4c,0x89,0xe9,0x4d,0x89,0xf9
+call {vg_cmac_aes_update_aesni_cbc}",
+        // add r13, r12
+        // sub r14, r12
+        // mov rdx, rbx
+        // add rdx, 288
+        // mov rcx, r14
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0x120c28148da8948e6294de5014d
+.byte 0x4c,0x89,0xf1,0x41,0xba,0x00,0x00,0x00,0x00,0x48,0x85,0xc9
+je 211f
+213:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 213b
+jmp 212f
+211:
+212:",
+        // mov rbx, QWORD PTR [r15+2176]
+        // mov rbp, QWORD PTR [r15+2184]
+        // mov r12, QWORD PTR [r15+2192]
+        // mov r13, QWORD PTR [r15+2200]
+        // mov r14, QWORD PTR [r15+2208]
+        // mov r15, QWORD PTR [r15+2216]
+        // lea rsp, [rsp+2312]
+        // ret
+        r".octa 0x8b4d00000888af8b49000008809f8b49,0xa0b78b4d00000898af8b4d00000890a7,0x90824a48d48000008a8bf8b4d000008
+.byte 0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc,
     )
 }
@@ -573,19 +1538,140 @@ pub unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni_cbc(state: *mut [u64; 38]
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov r9, rsp
+        // add r9, 8
+        // mov QWORD PTR [r9+2176], rbx
+        // mov QWORD PTR [r9+2184], rbp
+        // mov QWORD PTR [r9+2192], r12
+        // mov QWORD PTR [r9+2200], r13
+        // mov QWORD PTR [r9+2208], r14
+        // mov QWORD PTR [r9+2216], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test rdx, rdx
         r".octa 0x4908c18349e18949fffff6f824a48d48,0xa1894d00000888a98949000008809989,0x8a0b1894d00000898a9894d00000890,0x49f58948fb8948000008a8b9894d0000
-.octa 0xd089481174d28548cf894dc6894dcd89,0xb805eb01c083480fe0834801e88348,0x272ce3949c1294800000010b9000000,0x4800000120c28148da8948f1894c03eb
-.octa 0xb60f431574c9854800000000ba41c201,0xed75ca394901c2834912048842001544,0x874ce294900000000b841cd014900eb,0x8948ee8948df894800eb00000001b841
-.octa 0x120c18148d9894800000110c28148da
-.byte 0,0,77,137,249",
-        r"call {vg_cmac_aes_update}",
-        r".octa 0x8349f4894d1374f6854d00000000bc41,0x894d00ebc429490fe08348e0894c01ec,0x8148da8948ee8948df894804e8c149e0
-.byte 194,16,1,0,0,76,137,233,77,137,249",
-        r"call {vg_cmac_aes_update}",
-        r".octa 0x120c28148da8948e6294de5014d,0xf431574c9854800000000ba41f1894c,0x75ca394901c2834912048842001544b6,0x888af8b49000008809f8b4900ebed
-.octa 0x4d00000898af8b4d00000890a78b4d00,0xa48d48000008a8bf8b4d000008a0b78b
-.byte 36,8,9,0,0,195",
-        r".p2align 6",
+.byte 0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x48,0x85,0xd2
+je 20f",
+        // mov rax, rdx
+        // sub rax, 1
+        // and rax, 15
+        // add rax, 1
+        r".byte 0x48,0x89,0xd0,0x48,0x83,0xe8,0x01,0x48,0x83,0xe0,0x0f,0x48,0x83,0xc0,0x01
+jmp 21f
+20:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+21:",
+        // mov ecx, 16
+        // sub rcx, rax
+        // cmp r14, rcx
+        r".byte 0xb9,0x10,0x00,0x00,0x00,0x48,0x29,0xc1,0x49,0x39,0xce
+jb 22f
+jmp 23f
+22:",
+        // mov rcx, r14
+        r".byte 0x4c,0x89,0xf1
+23:",
+        // mov rdx, rbx
+        // add rdx, 288
+        // add rdx, rax
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0xba41c2014800000120c28148da8948
+.byte 0x00,0x00,0x00,0x48,0x85,0xc9
+je 24f
+26:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 26b
+jmp 25f
+24:
+25:",
+        // add r13, rcx
+        // mov r8d, 0
+        // sub r14, rcx
+        r".byte 0x49,0x01,0xcd,0x41,0xb8,0x00,0x00,0x00,0x00,0x49,0x29,0xce
+je 27f",
+        // mov r8d, 1
+        r".byte 0x41,0xb8,0x01,0x00,0x00,0x00
+jmp 28f
+27:
+28:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, rbx
+        // add rcx, 288
+        // mov r9, r15
+        r".octa 0x110c28148da8948ee8948df8948
+.byte 0x48,0x89,0xd9,0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x89,0xf9
+call {vg_cmac_aes_update}",
+        // mov r12d, 0
+        // test r14, r14
+        r".byte 0x41,0xbc,0x00,0x00,0x00,0x00,0x4d,0x85,0xf6
+je 29f",
+        // mov r12, r14
+        // sub r12, 1
+        // mov rax, r12
+        // and rax, 15
+        // sub r12, rax
+        r".octa 0x29490fe08348e0894c01ec8349f4894d
+.byte 0xc4
+jmp 210f
+29:
+210:",
+        // mov r8, r12
+        // shr r8, 4
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, r13
+        // mov r9, r15
+        r".octa 0xda8948ee8948df894804e8c149e0894d
+.byte 0x48,0x81,0xc2,0x10,0x01,0x00,0x00,0x4c,0x89,0xe9,0x4d,0x89,0xf9
+call {vg_cmac_aes_update}",
+        // add r13, r12
+        // sub r14, r12
+        // mov rdx, rbx
+        // add rdx, 288
+        // mov rcx, r14
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0x120c28148da8948e6294de5014d
+.byte 0x4c,0x89,0xf1,0x41,0xba,0x00,0x00,0x00,0x00,0x48,0x85,0xc9
+je 211f
+213:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 213b
+jmp 212f
+211:
+212:",
+        // mov rbx, QWORD PTR [r15+2176]
+        // mov rbp, QWORD PTR [r15+2184]
+        // mov r12, QWORD PTR [r15+2192]
+        // mov r13, QWORD PTR [r15+2200]
+        // mov r14, QWORD PTR [r15+2208]
+        // mov r15, QWORD PTR [r15+2216]
+        // lea rsp, [rsp+2312]
+        // ret
+        r".octa 0x8b4d00000888af8b49000008809f8b49,0xa0b78b4d00000898af8b4d00000890a7,0x90824a48d48000008a8bf8b4d000008
+.byte 0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
 }
@@ -608,19 +1694,140 @@ pub const VG_CMAC_AES_ABSORB_VAES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_cmac_aes_absorb_vaes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-2312]
+        // mov r9, rsp
+        // add r9, 8
+        // mov QWORD PTR [r9+2176], rbx
+        // mov QWORD PTR [r9+2184], rbp
+        // mov QWORD PTR [r9+2192], r12
+        // mov QWORD PTR [r9+2200], r13
+        // mov QWORD PTR [r9+2208], r14
+        // mov QWORD PTR [r9+2216], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test rdx, rdx
         r".octa 0x4908c18349e18949fffff6f824a48d48,0xa1894d00000888a98949000008809989,0x8a0b1894d00000898a9894d00000890,0x49f58948fb8948000008a8b9894d0000
-.octa 0xd089481174d28548cf894dc6894dcd89,0xb805eb01c083480fe0834801e88348,0x272ce3949c1294800000010b9000000,0x4800000120c28148da8948f1894c03eb
-.octa 0xb60f431574c9854800000000ba41c201,0xed75ca394901c2834912048842001544,0x874ce294900000000b841cd014900eb,0x8948ee8948df894800eb00000001b841
-.octa 0x120c18148d9894800000110c28148da
-.byte 0,0,77,137,249",
-        r"call {vg_cmac_aes_update_vaes}",
-        r".octa 0x8349f4894d1374f6854d00000000bc41,0x894d00ebc429490fe08348e0894c01ec,0x8148da8948ee8948df894804e8c149e0
-.byte 194,16,1,0,0,76,137,233,77,137,249",
-        r"call {vg_cmac_aes_update_vaes}",
-        r".octa 0x120c28148da8948e6294de5014d,0xf431574c9854800000000ba41f1894c,0x75ca394901c2834912048842001544b6,0x888af8b49000008809f8b4900ebed
-.octa 0x4d00000898af8b4d00000890a78b4d00,0xa48d48000008a8bf8b4d000008a0b78b
-.byte 36,8,9,0,0,195",
-        r".p2align 6",
+.byte 0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x48,0x85,0xd2
+je 20f",
+        // mov rax, rdx
+        // sub rax, 1
+        // and rax, 15
+        // add rax, 1
+        r".byte 0x48,0x89,0xd0,0x48,0x83,0xe8,0x01,0x48,0x83,0xe0,0x0f,0x48,0x83,0xc0,0x01
+jmp 21f
+20:",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+21:",
+        // mov ecx, 16
+        // sub rcx, rax
+        // cmp r14, rcx
+        r".byte 0xb9,0x10,0x00,0x00,0x00,0x48,0x29,0xc1,0x49,0x39,0xce
+jb 22f
+jmp 23f
+22:",
+        // mov rcx, r14
+        r".byte 0x4c,0x89,0xf1
+23:",
+        // mov rdx, rbx
+        // add rdx, 288
+        // add rdx, rax
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0xba41c2014800000120c28148da8948
+.byte 0x00,0x00,0x00,0x48,0x85,0xc9
+je 24f
+26:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 26b
+jmp 25f
+24:
+25:",
+        // add r13, rcx
+        // mov r8d, 0
+        // sub r14, rcx
+        r".byte 0x49,0x01,0xcd,0x41,0xb8,0x00,0x00,0x00,0x00,0x49,0x29,0xce
+je 27f",
+        // mov r8d, 1
+        r".byte 0x41,0xb8,0x01,0x00,0x00,0x00
+jmp 28f
+27:
+28:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, rbx
+        // add rcx, 288
+        // mov r9, r15
+        r".octa 0x110c28148da8948ee8948df8948
+.byte 0x48,0x89,0xd9,0x48,0x81,0xc1,0x20,0x01,0x00,0x00,0x4d,0x89,0xf9
+call {vg_cmac_aes_update_vaes}",
+        // mov r12d, 0
+        // test r14, r14
+        r".byte 0x41,0xbc,0x00,0x00,0x00,0x00,0x4d,0x85,0xf6
+je 29f",
+        // mov r12, r14
+        // sub r12, 1
+        // mov rax, r12
+        // and rax, 15
+        // sub r12, rax
+        r".octa 0x29490fe08348e0894c01ec8349f4894d
+.byte 0xc4
+jmp 210f
+29:
+210:",
+        // mov r8, r12
+        // shr r8, 4
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, rbx
+        // add rdx, 272
+        // mov rcx, r13
+        // mov r9, r15
+        r".octa 0xda8948ee8948df894804e8c149e0894d
+.byte 0x48,0x81,0xc2,0x10,0x01,0x00,0x00,0x4c,0x89,0xe9,0x4d,0x89,0xf9
+call {vg_cmac_aes_update_vaes}",
+        // add r13, r12
+        // sub r14, r12
+        // mov rdx, rbx
+        // add rdx, 288
+        // mov rcx, r14
+        // mov r10d, 0
+        // test rcx, rcx
+        r".octa 0x120c28148da8948e6294de5014d
+.byte 0x4c,0x89,0xf1,0x41,0xba,0x00,0x00,0x00,0x00,0x48,0x85,0xc9
+je 211f
+213:",
+        // movzx eax, BYTE PTR [r13+r10*1]
+        // mov BYTE PTR [rdx+r10*1], al
+        // add r10, 1
+        // cmp r10, rcx
+        r".octa 0x394901c2834912048842001544b60f43
+.byte 0xca
+jne 213b
+jmp 212f
+211:
+212:",
+        // mov rbx, QWORD PTR [r15+2176]
+        // mov rbp, QWORD PTR [r15+2184]
+        // mov r12, QWORD PTR [r15+2192]
+        // mov r13, QWORD PTR [r15+2200]
+        // mov r14, QWORD PTR [r15+2208]
+        // mov r15, QWORD PTR [r15+2216]
+        // lea rsp, [rsp+2312]
+        // ret
+        r".octa 0x8b4d00000888af8b49000008809f8b49,0xa0b78b4d00000898af8b4d00000890a7,0x90824a48d48000008a8bf8b4d000008
+.byte 0x00,0x00,0xc3
+.p2align 6",
         vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes,
     )
 }

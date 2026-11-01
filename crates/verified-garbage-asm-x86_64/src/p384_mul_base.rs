@@ -15,16 +15,1819 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_p384_mul_base(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x894c000005b8af8948000005b09f8948,0xd0b7894c000005c8af894c000005c0a7,0xf00000000bb000005d8bf894c000005,0x948801e28348c28948000006101f84b6
-.octa 0x8801e28348ead148c28948000008b0df,0xe2834802eac148c28948000008b1df94,0x4803eac148c28948000008b2df948801,0xeac148c28948000008b3df948801e283
-.octa 0x48c28948000008b4df948801e2834804,0x8948000008b5df948801e2834805eac1,0x8b6df948801e2834806eac148c2,0x8b7df948801e2834807eac148c28948
-.octa 0xffffff5f850f30fb834801c383480000,0x7c0878948081188719d412dccb848,0x7c8878948f729add87a4c32ecb84800,0xd087894877f2209b1920022eb8480000
-.octa 0x878948e3374bee94938ae2b848000007,0x8948b62b21f41f022094b848000007d8,0x48cd08114b604fbff9b848000007e087,0xa3087894800000000b8000007e88789
-.octa 0x4800000007b9d8894800000000bb0000,0x94b60fc0014800000000b8c18948e1f7,0xb50f94b60fc00148d00148000008b60f,0x8b40f94b60fc00148d00148000008
-.octa 0x48000008b30f94b60fc00148d0014800,0xd00148000008b20f94b60fc00148d001,0x148d00148000008b10f94b60fc00148,0xf94b60fd00148000008b00f94b60fc0
-.octa 0xc0314cd0294900000000b841000008b6,0xc08949c0014c00000080e08149c0294c
-.byte 72,137,216,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+        // mov QWORD PTR [rdi+1456], rbx
+        // mov QWORD PTR [rdi+1464], rbp
+        // mov QWORD PTR [rdi+1472], r12
+        // mov QWORD PTR [rdi+1480], r13
+        // mov QWORD PTR [rdi+1488], r14
+        // mov QWORD PTR [rdi+1496], r15
+        // mov ebx, 0
+        r".octa 0x894c000005b8af8948000005b09f8948,0xd0b7894c000005c8af894c000005c0a7
+.byte 0x05,0x00,0x00,0x4c,0x89,0xbf,0xd8,0x05,0x00,0x00,0xbb,0x00,0x00,0x00,0x00
+20:",
+        // movzx eax, BYTE PTR [rdi+rbx*1+1552]
+        // mov rdx, rax
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2224], dl
+        // mov rdx, rax
+        // shr rdx, 1
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2225], dl
+        // mov rdx, rax
+        // shr rdx, 2
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2226], dl
+        // mov rdx, rax
+        // shr rdx, 3
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2227], dl
+        // mov rdx, rax
+        // shr rdx, 4
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2228], dl
+        // mov rdx, rax
+        // shr rdx, 5
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2229], dl
+        // mov rdx, rax
+        // shr rdx, 6
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2230], dl
+        // mov rdx, rax
+        // shr rdx, 7
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2231], dl
+        // add rbx, 1
+        // cmp rbx, 48
+        r".octa 0x8801e28348c28948000006101f84b60f,0x1e28348ead148c28948000008b0df94,0x834802eac148c28948000008b1df9488,0x3eac148c28948000008b2df948801e2
+.octa 0xc148c28948000008b3df948801e28348,0xc28948000008b4df948801e2834804ea,0x48000008b5df948801e2834805eac148,0x8b6df948801e2834806eac148c289
+.octa 0xb7df948801e2834807eac148c2894800
+.byte 0x08,0x00,0x00,0x48,0x83,0xc3,0x01,0x48,0x83,0xfb,0x30
+jne 20b",
+        // movabs rax, 581395848458481100
+        // mov QWORD PTR [rdi+1984], rax
+        // movabs rax, -636786727019859220
+        // mov QWORD PTR [rdi+1992], rax
+        // movabs rax, 8643006485390950958
+        // mov QWORD PTR [rdi+2000], rax
+        // movabs rax, -2074105615313827102
+        // mov QWORD PTR [rdi+2008], rax
+        // movabs rax, -5320121202432139116
+        // mov QWORD PTR [rdi+2016], rax
+        // movabs rax, -3672666480684580871
+        // mov QWORD PTR [rdi+2024], rax
+        // mov eax, 0
+        // mov QWORD PTR [rdi+2608], rax
+        // mov ebx, 0
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov rax, rbx
+        // mov ecx, 6144
+        // mul rcx
+        r".octa 0x7c0878948081188719d412dccb848,0x7c8878948f729add87a4c32ecb84800,0xd087894877f2209b1920022eb8480000,0x878948e3374bee94938ae2b848000007
+.octa 0x8948b62b21f41f022094b848000007d8,0x48cd08114b604fbff9b848000007e087,0xa3087894800000000b8000007e88789,0x4800000007b9d8894800000000bb0000
+.octa 0x94b60fc0014800000000b8c18948e1f7,0xb50f94b60fc00148d00148000008b60f,0x8b40f94b60fc00148d00148000008,0x48000008b30f94b60fc00148d0014800
+.octa 0xd00148000008b20f94b60fc00148d001,0x148d00148000008b10f94b60fc00148,0xf94b60fd00148000008b00f94b60fc0,0xc0314cd0294900000000b841000008b6
+.octa 0xc08949c0014c00000080e08149c0294c
+.byte 0x48,0x89,0xd8,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // pxor xmm0, xmm0
+        // pxor xmm1, xmm1
+        // pxor xmm2, xmm2
+        // pxor xmm3, xmm3
+        // pxor xmm4, xmm4
+        // pxor xmm5, xmm5
+        // mov ecx, 1
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+16]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+32]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+48]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+64]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+80]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 2
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+96]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+112]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+128]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+144]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+160]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+176]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 3
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+192]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+208]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+224]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+240]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+256]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+272]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 4
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+288]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+304]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+320]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+336]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+352]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+368]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 5
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+384]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+400]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+416]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+432]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+448]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+464]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 6
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+480]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+496]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+512]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+528]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+544]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+560]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 7
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+576]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+592]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+608]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+624]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+640]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+656]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 8
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+672]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+688]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+704]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+720]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+736]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+752]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 9
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+768]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+784]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+800]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+816]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+832]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+848]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 10
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+864]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+880]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+896]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+912]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+928]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+944]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 11
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+960]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+976]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+992]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1008]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1024]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1040]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 12
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1056]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1072]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1088]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1104]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1120]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1136]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 13
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1152]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1168]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1184]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1200]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1216]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1232]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 14
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1248]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1264]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1280]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1296]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1312]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1328]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 15
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1344]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1360]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1376]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1392]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1408]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1424]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 16
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1440]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1456]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1472]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1488]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1504]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1520]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 17
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1536]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1552]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1568]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1584]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1600]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1616]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 18
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1632]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1648]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1664]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1680]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1696]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1712]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 19
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1728]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1744]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1760]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1776]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1792]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1808]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 20
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1824]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1840]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1856]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1872]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1888]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1904]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 21
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1920]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1936]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1952]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1968]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1984]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2000]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 22
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2016]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2032]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2048]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2064]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2080]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2096]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 23
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2112]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2128]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2144]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2160]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2176]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2192]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 24
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2208]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2224]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2240]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2256]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2272]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2288]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 25
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2304]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2320]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2336]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2352]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2368]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2384]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 26
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2400]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2416]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2432]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2448]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2464]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2480]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 27
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2496]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2512]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2528]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2544]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2560]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2576]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 28
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2592]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2608]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2624]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2640]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2656]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2672]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 29
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2688]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2704]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2720]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2736]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2752]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2768]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 30
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2784]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2800]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2816]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2832]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2848]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2864]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 31
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2880]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2896]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2912]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2928]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2944]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2960]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 32
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2976]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2992]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3008]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3024]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3040]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3056]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 33
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3072]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3088]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3104]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3120]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3136]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3152]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 34
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3168]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3184]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3200]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3216]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3232]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3248]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 35
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3264]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3280]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3296]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3312]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3328]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3344]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 36
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3360]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3376]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3392]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3408]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3424]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3440]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 37
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3456]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3472]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3488]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3504]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3520]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3536]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 38
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3552]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3568]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3584]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3600]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3616]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3632]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 39
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3648]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3664]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3680]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3696]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3712]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3728]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 40
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3744]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3760]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3776]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3792]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3808]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3824]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 41
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3840]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3856]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3872]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3888]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3904]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3920]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 42
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3936]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3952]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3968]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3984]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4000]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4016]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 43
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4032]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4048]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4064]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4080]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4096]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4112]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 44
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4128]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4144]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4160]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4176]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4192]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4208]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 45
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4224]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4240]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4256]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4272]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4288]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4304]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 46
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4320]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4336]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4352]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4368]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4384]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4400]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 47
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4416]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4432]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4448]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4464]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4480]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4496]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 48
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4512]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4528]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4544]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4560]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4576]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4592]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 49
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4608]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4624]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4640]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4656]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4672]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4688]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 50
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4704]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4720]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4736]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4752]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4768]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4784]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 51
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4800]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4816]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4832]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4848]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4864]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4880]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 52
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4896]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4912]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4928]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4944]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4960]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4976]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 53
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4992]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5008]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5024]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5040]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5056]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5072]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 54
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5088]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5104]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5120]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5136]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5152]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5168]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 55
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5184]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5200]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5216]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5232]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5248]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5264]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 56
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5280]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5296]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5312]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5328]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5344]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5360]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 57
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5376]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5392]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5408]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5424]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5440]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5456]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 58
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5472]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5488]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5504]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5520]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5536]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5552]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 59
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5568]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5584]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5600]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5616]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5632]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5648]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 60
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5664]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5680]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5696]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5712]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5728]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5744]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 61
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5760]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5776]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5792]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5808]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5824]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5840]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 62
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5856]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5872]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5888]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5904]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5920]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5936]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 63
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5952]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5968]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5984]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6000]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6016]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6032]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 64
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+6048]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6064]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6080]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6096]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6112]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6128]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // movdqu XMMWORD PTR [rdi+1024], xmm0
+        // movdqu XMMWORD PTR [rdi+1040], xmm1
+        // movdqu XMMWORD PTR [rdi+1056], xmm2
+        // movdqu XMMWORD PTR [rdi+1072], xmm3
+        // movdqu XMMWORD PTR [rdi+1088], xmm4
+        // movdqu XMMWORD PTR [rdi+1104], xmm5
+        // mov rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+1072], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+1080], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+1088], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+1096], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+1104], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+1112], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1120], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1128], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1136], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1144], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1152], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1160], rax
+        // mov r8, QWORD PTR [rdi+208]
+        // mov r9, QWORD PTR [rdi+216]
+        // mov r10, QWORD PTR [rdi+224]
+        // mov r11, QWORD PTR [rdi+232]
+        // mov r12, QWORD PTR [rdi+240]
+        // mov r13, QWORD PTR [rdi+248]
+        // sub r8, QWORD PTR [rdi+1072]
+        // sbb r9, QWORD PTR [rdi+1080]
+        // sbb r10, QWORD PTR [rdi+1088]
+        // sbb r11, QWORD PTR [rdi+1096]
+        // sbb r12, QWORD PTR [rdi+1104]
+        // sbb r13, QWORD PTR [rdi+1112]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1504], r8
+        // mov QWORD PTR [rdi+1512], r9
+        // mov QWORD PTR [rdi+1520], r10
+        // mov QWORD PTR [rdi+1528], r11
+        // mov QWORD PTR [rdi+1536], r12
+        // mov QWORD PTR [rdi+1544], r13
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // movzx eax, BYTE PTR [rdi+rcx*1+2230]
+        // mov ecx, 0
+        // sub rcx, rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+1504]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1072], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+1512]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1080], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+1520]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1088], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+1528]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1096], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+1536]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1104], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+1544]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1112], rax
+        // mov rax, QWORD PTR [rdi+1024]
+        // mov QWORD PTR [rdi+736], rax
+        // mov rax, QWORD PTR [rdi+1032]
+        // mov QWORD PTR [rdi+744], rax
+        // mov rax, QWORD PTR [rdi+1040]
+        // mov QWORD PTR [rdi+752], rax
+        // mov rax, QWORD PTR [rdi+1048]
+        // mov QWORD PTR [rdi+760], rax
+        // mov rax, QWORD PTR [rdi+1056]
+        // mov QWORD PTR [rdi+768], rax
+        // mov rax, QWORD PTR [rdi+1064]
+        // mov QWORD PTR [rdi+776], rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+824], rax
+        // mov rax, QWORD PTR [rdi+1120]
+        // mov QWORD PTR [rdi+832], rax
+        // mov rax, QWORD PTR [rdi+1128]
+        // mov QWORD PTR [rdi+840], rax
+        // mov rax, QWORD PTR [rdi+1136]
+        // mov QWORD PTR [rdi+848], rax
+        // mov rax, QWORD PTR [rdi+1144]
+        // mov QWORD PTR [rdi+856], rax
+        // mov rax, QWORD PTR [rdi+1152]
+        // mov QWORD PTR [rdi+864], rax
+        // mov rax, QWORD PTR [rdi+1160]
+        // mov QWORD PTR [rdi+872], rax
+        // mov ebx, 1
         r".octa 0x66d2ef0f66c9ef0f66c0ef0f66c20148,0x1b9edef0f66e4ef0f66dbef0f,0x66f96e0f4c66c9194801f98348c1314c,0x4166f7db0f4566326f0f44f3ff6c0f45
 .octa 0x4166f7db0f456610726f0f44f3c6eb0f,0x4166f7db0f456620726f0f44f3ceeb0f,0x4166f7db0f456630726f0f44f3d6eb0f,0x4166f7db0f456640726f0f44f3deeb0f
 .octa 0x4166f7db0f456650726f0f44f3e6eb0f,0x4801f98348c1314c00000002b9eeeb0f,0x6f0f44f3ff6c0f4566f96e0f4c66c919,0x6f0f44f3c6eb0f4166f7db0f45666072
@@ -179,11 +1982,6727 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base(ws: *mut [u64; 1024]) {
 .octa 0x87894800000420878b48000002f88789,0x30887894800000428878b4800000300,0x31087894800000430878b480000,0x8b480000031887894800000438878b48
 .octa 0x48878b48000003208789480000044087,0x450878b4800000328878948000004,0x4800000458878b480000033087894800,0x87894800000460878b48000003388789
 .octa 0x34887894800000468878b4800000340,0x35087894800000470878b480000,0x8b480000035887894800000478878b48,0x88878b48000003608789480000048087
-.octa 0x4800000001bb00000368878948000004,0xb8c18948e1f74800000007b9d889,0xd00148000008b60f94b60fc001480000,0x148d00148000008b50f94b60fc00148
-.octa 0xfc00148d00148000008b40f94b60fc0,0x94b60fc00148d00148000008b30f94b6,0xb10f94b60fc00148d00148000008b20f,0x8b00f94b60fc00148d00148000008
-.octa 0xfd00148000008af0f94b60fd0014800,0xd0294900000000b841000008b60f94b6,0xc0014c00000080e08149c0294cc0314c
-.byte 73,137,192,72,137,216,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x04,0x00,0x00,0x48,0x89,0x87,0x68,0x03,0x00,0x00,0xbb,0x01,0x00,0x00,0x00
+21:",
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov rax, rbx
+        // mov ecx, 6144
+        // mul rcx
+        r".octa 0xb8c18948e1f74800000007b9d88948,0x148000008b60f94b60fc00148000000,0x48d00148000008b50f94b60fc00148d0,0xc00148d00148000008b40f94b60fc001
+.octa 0xb60fc00148d00148000008b30f94b60f,0xf94b60fc00148d00148000008b20f94,0x8b00f94b60fc00148d00148000008b1,0xd00148000008af0f94b60fd001480000
+.octa 0x294900000000b841000008b60f94b60f,0x14c00000080e08149c0294cc0314cd0
+.byte 0xc0,0x49,0x89,0xc0,0x48,0x89,0xd8,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // pxor xmm0, xmm0
+        // pxor xmm1, xmm1
+        // pxor xmm2, xmm2
+        // pxor xmm3, xmm3
+        // pxor xmm4, xmm4
+        // pxor xmm5, xmm5
+        // mov ecx, 1
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+16]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+32]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+48]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+64]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+80]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 2
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+96]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+112]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+128]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+144]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+160]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+176]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 3
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+192]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+208]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+224]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+240]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+256]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+272]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 4
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+288]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+304]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+320]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+336]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+352]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+368]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 5
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+384]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+400]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+416]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+432]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+448]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+464]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 6
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+480]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+496]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+512]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+528]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+544]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+560]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 7
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+576]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+592]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+608]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+624]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+640]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+656]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 8
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+672]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+688]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+704]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+720]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+736]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+752]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 9
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+768]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+784]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+800]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+816]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+832]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+848]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 10
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+864]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+880]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+896]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+912]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+928]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+944]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 11
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+960]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+976]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+992]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1008]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1024]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1040]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 12
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1056]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1072]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1088]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1104]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1120]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1136]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 13
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1152]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1168]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1184]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1200]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1216]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1232]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 14
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1248]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1264]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1280]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1296]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1312]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1328]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 15
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1344]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1360]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1376]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1392]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1408]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1424]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 16
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1440]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1456]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1472]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1488]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1504]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1520]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 17
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1536]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1552]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1568]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1584]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1600]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1616]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 18
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1632]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1648]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1664]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1680]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1696]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1712]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 19
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1728]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1744]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1760]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1776]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1792]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1808]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 20
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1824]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1840]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1856]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1872]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1888]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1904]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 21
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+1920]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1936]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1952]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1968]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+1984]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2000]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 22
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2016]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2032]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2048]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2064]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2080]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2096]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 23
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2112]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2128]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2144]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2160]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2176]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2192]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 24
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2208]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2224]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2240]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2256]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2272]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2288]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 25
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2304]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2320]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2336]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2352]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2368]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2384]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 26
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2400]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2416]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2432]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2448]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2464]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2480]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 27
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2496]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2512]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2528]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2544]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2560]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2576]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 28
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2592]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2608]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2624]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2640]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2656]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2672]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 29
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2688]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2704]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2720]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2736]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2752]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2768]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 30
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2784]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2800]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2816]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2832]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2848]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2864]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 31
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2880]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2896]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2912]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2928]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2944]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2960]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 32
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+2976]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+2992]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3008]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3024]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3040]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3056]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 33
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3072]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3088]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3104]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3120]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3136]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3152]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 34
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3168]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3184]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3200]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3216]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3232]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3248]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 35
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3264]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3280]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3296]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3312]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3328]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3344]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 36
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3360]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3376]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3392]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3408]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3424]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3440]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 37
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3456]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3472]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3488]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3504]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3520]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3536]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 38
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3552]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3568]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3584]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3600]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3616]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3632]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 39
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3648]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3664]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3680]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3696]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3712]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3728]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 40
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3744]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3760]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3776]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3792]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3808]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3824]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 41
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3840]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3856]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3872]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3888]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3904]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3920]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 42
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+3936]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3952]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3968]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+3984]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4000]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4016]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 43
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4032]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4048]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4064]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4080]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4096]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4112]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 44
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4128]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4144]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4160]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4176]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4192]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4208]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 45
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4224]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4240]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4256]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4272]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4288]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4304]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 46
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4320]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4336]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4352]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4368]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4384]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4400]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 47
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4416]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4432]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4448]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4464]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4480]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4496]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 48
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4512]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4528]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4544]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4560]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4576]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4592]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 49
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4608]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4624]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4640]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4656]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4672]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4688]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 50
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4704]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4720]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4736]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4752]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4768]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4784]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 51
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4800]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4816]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4832]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4848]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4864]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4880]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 52
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4896]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4912]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4928]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4944]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4960]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+4976]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 53
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+4992]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5008]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5024]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5040]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5056]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5072]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 54
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5088]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5104]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5120]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5136]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5152]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5168]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 55
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5184]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5200]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5216]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5232]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5248]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5264]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 56
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5280]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5296]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5312]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5328]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5344]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5360]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 57
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5376]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5392]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5408]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5424]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5440]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5456]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 58
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5472]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5488]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5504]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5520]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5536]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5552]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 59
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5568]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5584]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5600]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5616]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5632]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5648]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 60
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5664]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5680]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5696]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5712]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5728]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5744]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 61
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5760]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5776]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5792]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5808]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5824]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5840]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 62
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5856]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5872]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5888]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5904]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5920]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5936]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 63
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+5952]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5968]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+5984]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6000]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6016]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6032]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // mov ecx, 64
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movq xmm15, rcx
+        // punpcklqdq xmm15, xmm15
+        // movdqu xmm14, XMMWORD PTR [rdx+6048]
+        // pand xmm14, xmm15
+        // por xmm0, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6064]
+        // pand xmm14, xmm15
+        // por xmm1, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6080]
+        // pand xmm14, xmm15
+        // por xmm2, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6096]
+        // pand xmm14, xmm15
+        // por xmm3, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6112]
+        // pand xmm14, xmm15
+        // por xmm4, xmm14
+        // movdqu xmm14, XMMWORD PTR [rdx+6128]
+        // pand xmm14, xmm15
+        // por xmm5, xmm14
+        // movdqu XMMWORD PTR [rdi+1024], xmm0
+        // movdqu XMMWORD PTR [rdi+1040], xmm1
+        // movdqu XMMWORD PTR [rdi+1056], xmm2
+        // movdqu XMMWORD PTR [rdi+1072], xmm3
+        // movdqu XMMWORD PTR [rdi+1088], xmm4
+        // movdqu XMMWORD PTR [rdi+1104], xmm5
+        // mov rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+1072], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+1080], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+1088], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+1096], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+1104], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+1112], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1120], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1128], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1136], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1144], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1152], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1160], rax
+        // mov r8, QWORD PTR [rdi+208]
+        // mov r9, QWORD PTR [rdi+216]
+        // mov r10, QWORD PTR [rdi+224]
+        // mov r11, QWORD PTR [rdi+232]
+        // mov r12, QWORD PTR [rdi+240]
+        // mov r13, QWORD PTR [rdi+248]
+        // sub r8, QWORD PTR [rdi+1072]
+        // sbb r9, QWORD PTR [rdi+1080]
+        // sbb r10, QWORD PTR [rdi+1088]
+        // sbb r11, QWORD PTR [rdi+1096]
+        // sbb r12, QWORD PTR [rdi+1104]
+        // sbb r13, QWORD PTR [rdi+1112]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1504], r8
+        // mov QWORD PTR [rdi+1512], r9
+        // mov QWORD PTR [rdi+1520], r10
+        // mov QWORD PTR [rdi+1528], r11
+        // mov QWORD PTR [rdi+1536], r12
+        // mov QWORD PTR [rdi+1544], r13
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // movzx eax, BYTE PTR [rdi+rcx*1+2230]
+        // mov ecx, 0
+        // sub rcx, rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+1504]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1072], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+1512]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1080], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+1520]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1088], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+1528]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1096], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+1536]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1104], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+1544]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1112], rax
+        // mov rcx, QWORD PTR [rdi+832]
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rcx, QWORD PTR [rdi+840]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r14, rbp
+        // mov rcx, QWORD PTR [rdi+848]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r15, rbp
+        // mov rcx, QWORD PTR [rdi+856]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r8, rbp
+        // mov rcx, QWORD PTR [rdi+864]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r9, rbp
+        // mov rax, QWORD PTR [rdi+4056]
+        // add rax, rax
+        // mov QWORD PTR [rdi+4056], rax
+        // mov rax, QWORD PTR [rdi+4064]
+        // adc rax, rax
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, r10
+        // adc r11, r11
+        // adc r12, r12
+        // adc r13, r13
+        // adc r14, r14
+        // adc r15, r15
+        // adc r8, r8
+        // adc r9, r9
+        // mov ecx, 0
+        // adc rcx, rcx
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rax
+        // mov QWORD PTR [rdi+4048], rax
+        // add rdx, QWORD PTR [rdi+4056]
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add rax, QWORD PTR [rdi+4064]
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc r12, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc r14, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc r8, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r8
+        // mov QWORD PTR [rdi+1200], r9
+        // mov QWORD PTR [rdi+1208], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r10, r13
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rcx
+        // sbb r13, 0
+        // mov rcx, r14
+        // shl rcx, 32
+        // add rcx, r14
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r14d, 0
+        // adc r14, 0
+        // sub r15, rbp
+        // sbb r10, rdx
+        // sbb r11, r14
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rcx
+        // sbb r14, 0
+        // mov rcx, r15
+        // shl rcx, 32
+        // add rcx, r15
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r15d, 0
+        // adc r15, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r15
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rcx
+        // sbb r15, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rcx
+        // sbb r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rcx
+        // sbb r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rcx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1168]
+        // adc r14, QWORD PTR [rdi+1176]
+        // adc r15, QWORD PTR [rdi+1184]
+        // adc r10, QWORD PTR [rdi+1192]
+        // adc r11, QWORD PTR [rdi+1200]
+        // adc r12, QWORD PTR [rdi+1208]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r10
+        // mov QWORD PTR [rdi+1200], r11
+        // mov QWORD PTR [rdi+1208], r12
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+1024]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+1032]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+1040]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+1048]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+1056]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+1064]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1216], r14
+        // mov QWORD PTR [rdi+1224], r15
+        // mov QWORD PTR [rdi+1232], r8
+        // mov QWORD PTR [rdi+1240], r9
+        // mov QWORD PTR [rdi+1248], r10
+        // mov QWORD PTR [rdi+1256], r11
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+832]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+840]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+848]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+856]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+864]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+872]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1168]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1176]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1184]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1192]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1200]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1208]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1264], r14
+        // mov QWORD PTR [rdi+1272], r15
+        // mov QWORD PTR [rdi+1280], r8
+        // mov QWORD PTR [rdi+1288], r9
+        // mov QWORD PTR [rdi+1296], r10
+        // mov QWORD PTR [rdi+1304], r11
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+1072]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+1080]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+1088]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+1096]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+1104]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+1112]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1264], r14
+        // mov QWORD PTR [rdi+1272], r15
+        // mov QWORD PTR [rdi+1280], r8
+        // mov QWORD PTR [rdi+1288], r9
+        // mov QWORD PTR [rdi+1296], r10
+        // mov QWORD PTR [rdi+1304], r11
+        // mov r8, QWORD PTR [rdi+1216]
+        // mov r9, QWORD PTR [rdi+1224]
+        // mov r10, QWORD PTR [rdi+1232]
+        // mov r11, QWORD PTR [rdi+1240]
+        // mov r12, QWORD PTR [rdi+1248]
+        // mov r13, QWORD PTR [rdi+1256]
+        // sub r8, QWORD PTR [rdi+736]
+        // sbb r9, QWORD PTR [rdi+744]
+        // sbb r10, QWORD PTR [rdi+752]
+        // sbb r11, QWORD PTR [rdi+760]
+        // sbb r12, QWORD PTR [rdi+768]
+        // sbb r13, QWORD PTR [rdi+776]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1216], r8
+        // mov QWORD PTR [rdi+1224], r9
+        // mov QWORD PTR [rdi+1232], r10
+        // mov QWORD PTR [rdi+1240], r11
+        // mov QWORD PTR [rdi+1248], r12
+        // mov QWORD PTR [rdi+1256], r13
+        // mov r8, QWORD PTR [rdi+1264]
+        // mov r9, QWORD PTR [rdi+1272]
+        // mov r10, QWORD PTR [rdi+1280]
+        // mov r11, QWORD PTR [rdi+1288]
+        // mov r12, QWORD PTR [rdi+1296]
+        // mov r13, QWORD PTR [rdi+1304]
+        // sub r8, QWORD PTR [rdi+784]
+        // sbb r9, QWORD PTR [rdi+792]
+        // sbb r10, QWORD PTR [rdi+800]
+        // sbb r11, QWORD PTR [rdi+808]
+        // sbb r12, QWORD PTR [rdi+816]
+        // sbb r13, QWORD PTR [rdi+824]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1264], r8
+        // mov QWORD PTR [rdi+1272], r9
+        // mov QWORD PTR [rdi+1280], r10
+        // mov QWORD PTR [rdi+1288], r11
+        // mov QWORD PTR [rdi+1296], r12
+        // mov QWORD PTR [rdi+1304], r13
+        // mov rcx, QWORD PTR [rdi+1216]
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rcx, QWORD PTR [rdi+1224]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r14, rbp
+        // mov rcx, QWORD PTR [rdi+1232]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r15, rbp
+        // mov rcx, QWORD PTR [rdi+1240]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r8, rbp
+        // mov rcx, QWORD PTR [rdi+1248]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r9, rbp
+        // mov rax, QWORD PTR [rdi+4056]
+        // add rax, rax
+        // mov QWORD PTR [rdi+4056], rax
+        // mov rax, QWORD PTR [rdi+4064]
+        // adc rax, rax
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, r10
+        // adc r11, r11
+        // adc r12, r12
+        // adc r13, r13
+        // adc r14, r14
+        // adc r15, r15
+        // adc r8, r8
+        // adc r9, r9
+        // mov ecx, 0
+        // adc rcx, rcx
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rax
+        // mov QWORD PTR [rdi+4048], rax
+        // add rdx, QWORD PTR [rdi+4056]
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add rax, QWORD PTR [rdi+4064]
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc r12, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc r14, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc r8, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov QWORD PTR [rdi+1312], r13
+        // mov QWORD PTR [rdi+1320], r14
+        // mov QWORD PTR [rdi+1328], r15
+        // mov QWORD PTR [rdi+1336], r8
+        // mov QWORD PTR [rdi+1344], r9
+        // mov QWORD PTR [rdi+1352], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r10, r13
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rcx
+        // sbb r13, 0
+        // mov rcx, r14
+        // shl rcx, 32
+        // add rcx, r14
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r14d, 0
+        // adc r14, 0
+        // sub r15, rbp
+        // sbb r10, rdx
+        // sbb r11, r14
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rcx
+        // sbb r14, 0
+        // mov rcx, r15
+        // shl rcx, 32
+        // add rcx, r15
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r15d, 0
+        // adc r15, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r15
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rcx
+        // sbb r15, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rcx
+        // sbb r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rcx
+        // sbb r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rcx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1312]
+        // adc r14, QWORD PTR [rdi+1320]
+        // adc r15, QWORD PTR [rdi+1328]
+        // adc r10, QWORD PTR [rdi+1336]
+        // adc r11, QWORD PTR [rdi+1344]
+        // adc r12, QWORD PTR [rdi+1352]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1312], r13
+        // mov QWORD PTR [rdi+1320], r14
+        // mov QWORD PTR [rdi+1328], r15
+        // mov QWORD PTR [rdi+1336], r10
+        // mov QWORD PTR [rdi+1344], r11
+        // mov QWORD PTR [rdi+1352], r12
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+1216]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+1224]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+1232]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+1240]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+1248]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+1256]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1360], r14
+        // mov QWORD PTR [rdi+1368], r15
+        // mov QWORD PTR [rdi+1376], r8
+        // mov QWORD PTR [rdi+1384], r9
+        // mov QWORD PTR [rdi+1392], r10
+        // mov QWORD PTR [rdi+1400], r11
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+736]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+744]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+752]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+760]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+768]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+776]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1312], r14
+        // mov QWORD PTR [rdi+1320], r15
+        // mov QWORD PTR [rdi+1328], r8
+        // mov QWORD PTR [rdi+1336], r9
+        // mov QWORD PTR [rdi+1344], r10
+        // mov QWORD PTR [rdi+1352], r11
+        // mov rcx, QWORD PTR [rdi+1264]
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rcx, QWORD PTR [rdi+1272]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r14, rbp
+        // mov rcx, QWORD PTR [rdi+1280]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r15, rbp
+        // mov rcx, QWORD PTR [rdi+1288]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r8, rbp
+        // mov rcx, QWORD PTR [rdi+1296]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r9, rbp
+        // mov rax, QWORD PTR [rdi+4056]
+        // add rax, rax
+        // mov QWORD PTR [rdi+4056], rax
+        // mov rax, QWORD PTR [rdi+4064]
+        // adc rax, rax
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, r10
+        // adc r11, r11
+        // adc r12, r12
+        // adc r13, r13
+        // adc r14, r14
+        // adc r15, r15
+        // adc r8, r8
+        // adc r9, r9
+        // mov ecx, 0
+        // adc rcx, rcx
+        // mov rax, QWORD PTR [rdi+1264]
+        // mul rax
+        // mov QWORD PTR [rdi+4048], rax
+        // add rdx, QWORD PTR [rdi+4056]
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1272]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add rax, QWORD PTR [rdi+4064]
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1280]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc r12, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1288]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc r14, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1296]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc r8, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+1304]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov QWORD PTR [rdi+880], r13
+        // mov QWORD PTR [rdi+888], r14
+        // mov QWORD PTR [rdi+896], r15
+        // mov QWORD PTR [rdi+904], r8
+        // mov QWORD PTR [rdi+912], r9
+        // mov QWORD PTR [rdi+920], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r10, r13
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rcx
+        // sbb r13, 0
+        // mov rcx, r14
+        // shl rcx, 32
+        // add rcx, r14
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r14d, 0
+        // adc r14, 0
+        // sub r15, rbp
+        // sbb r10, rdx
+        // sbb r11, r14
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rcx
+        // sbb r14, 0
+        // mov rcx, r15
+        // shl rcx, 32
+        // add rcx, r15
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r15d, 0
+        // adc r15, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r15
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rcx
+        // sbb r15, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rcx
+        // sbb r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rcx
+        // sbb r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rcx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+880]
+        // adc r14, QWORD PTR [rdi+888]
+        // adc r15, QWORD PTR [rdi+896]
+        // adc r10, QWORD PTR [rdi+904]
+        // adc r11, QWORD PTR [rdi+912]
+        // adc r12, QWORD PTR [rdi+920]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+880], r13
+        // mov QWORD PTR [rdi+888], r14
+        // mov QWORD PTR [rdi+896], r15
+        // mov QWORD PTR [rdi+904], r10
+        // mov QWORD PTR [rdi+912], r11
+        // mov QWORD PTR [rdi+920], r12
+        // mov r8, QWORD PTR [rdi+880]
+        // mov r9, QWORD PTR [rdi+888]
+        // mov r10, QWORD PTR [rdi+896]
+        // mov r11, QWORD PTR [rdi+904]
+        // mov r12, QWORD PTR [rdi+912]
+        // mov r13, QWORD PTR [rdi+920]
+        // sub r8, QWORD PTR [rdi+1360]
+        // sbb r9, QWORD PTR [rdi+1368]
+        // sbb r10, QWORD PTR [rdi+1376]
+        // sbb r11, QWORD PTR [rdi+1384]
+        // sbb r12, QWORD PTR [rdi+1392]
+        // sbb r13, QWORD PTR [rdi+1400]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+880], r8
+        // mov QWORD PTR [rdi+888], r9
+        // mov QWORD PTR [rdi+896], r10
+        // mov QWORD PTR [rdi+904], r11
+        // mov QWORD PTR [rdi+912], r12
+        // mov QWORD PTR [rdi+920], r13
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // mov r14d, 0
+        // add r8, QWORD PTR [rdi+1312]
+        // adc r9, QWORD PTR [rdi+1320]
+        // adc r10, QWORD PTR [rdi+1328]
+        // adc r11, QWORD PTR [rdi+1336]
+        // adc r12, QWORD PTR [rdi+1344]
+        // adc r13, QWORD PTR [rdi+1352]
+        // adc r14, 0
+        // sub r8, QWORD PTR [rdi+64]
+        // sbb r9, QWORD PTR [rdi+72]
+        // sbb r10, QWORD PTR [rdi+80]
+        // sbb r11, QWORD PTR [rdi+88]
+        // sbb r12, QWORD PTR [rdi+96]
+        // sbb r13, QWORD PTR [rdi+104]
+        // sbb r14, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1408], r8
+        // mov QWORD PTR [rdi+1416], r9
+        // mov QWORD PTR [rdi+1424], r10
+        // mov QWORD PTR [rdi+1432], r11
+        // mov QWORD PTR [rdi+1440], r12
+        // mov QWORD PTR [rdi+1448], r13
+        // mov r8, QWORD PTR [rdi+880]
+        // mov r9, QWORD PTR [rdi+888]
+        // mov r10, QWORD PTR [rdi+896]
+        // mov r11, QWORD PTR [rdi+904]
+        // mov r12, QWORD PTR [rdi+912]
+        // mov r13, QWORD PTR [rdi+920]
+        // sub r8, QWORD PTR [rdi+1408]
+        // sbb r9, QWORD PTR [rdi+1416]
+        // sbb r10, QWORD PTR [rdi+1424]
+        // sbb r11, QWORD PTR [rdi+1432]
+        // sbb r12, QWORD PTR [rdi+1440]
+        // sbb r13, QWORD PTR [rdi+1448]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+880], r8
+        // mov QWORD PTR [rdi+888], r9
+        // mov QWORD PTR [rdi+896], r10
+        // mov QWORD PTR [rdi+904], r11
+        // mov QWORD PTR [rdi+912], r12
+        // mov QWORD PTR [rdi+920], r13
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // sub r8, QWORD PTR [rdi+880]
+        // sbb r9, QWORD PTR [rdi+888]
+        // sbb r10, QWORD PTR [rdi+896]
+        // sbb r11, QWORD PTR [rdi+904]
+        // sbb r12, QWORD PTR [rdi+912]
+        // sbb r13, QWORD PTR [rdi+920]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1312], r8
+        // mov QWORD PTR [rdi+1320], r9
+        // mov QWORD PTR [rdi+1328], r10
+        // mov QWORD PTR [rdi+1336], r11
+        // mov QWORD PTR [rdi+1344], r12
+        // mov QWORD PTR [rdi+1352], r13
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+1264]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+1272]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+1280]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+1288]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+1296]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+1304]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1312]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1320]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1328]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1336]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1344]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1352]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1312], r14
+        // mov QWORD PTR [rdi+1320], r15
+        // mov QWORD PTR [rdi+1328], r8
+        // mov QWORD PTR [rdi+1336], r9
+        // mov QWORD PTR [rdi+1344], r10
+        // mov QWORD PTR [rdi+1352], r11
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+784]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1360]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1368]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1376]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1384]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1392]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1400]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+792]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1360]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1368]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1376]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1384]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1392]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1400]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+800]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1360]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1368]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1376]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1384]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1392]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1400]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+808]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1360]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1368]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1376]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1384]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1392]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1400]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+816]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1360]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1368]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1376]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1384]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1392]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1400]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+824]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1360]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1368]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1376]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1384]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1392]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1400]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1360], r14
+        // mov QWORD PTR [rdi+1368], r15
+        // mov QWORD PTR [rdi+1376], r8
+        // mov QWORD PTR [rdi+1384], r9
+        // mov QWORD PTR [rdi+1392], r10
+        // mov QWORD PTR [rdi+1400], r11
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // sub r8, QWORD PTR [rdi+1360]
+        // sbb r9, QWORD PTR [rdi+1368]
+        // sbb r10, QWORD PTR [rdi+1376]
+        // sbb r11, QWORD PTR [rdi+1384]
+        // sbb r12, QWORD PTR [rdi+1392]
+        // sbb r13, QWORD PTR [rdi+1400]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+928], r8
+        // mov QWORD PTR [rdi+936], r9
+        // mov QWORD PTR [rdi+944], r10
+        // mov QWORD PTR [rdi+952], r11
+        // mov QWORD PTR [rdi+960], r12
+        // mov QWORD PTR [rdi+968], r13
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+832]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+840]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+848]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+856]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+864]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+872]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+1216]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1224]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1232]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1240]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1248]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+1256]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+976], r14
+        // mov QWORD PTR [rdi+984], r15
+        // mov QWORD PTR [rdi+992], r8
+        // mov QWORD PTR [rdi+1000], r9
+        // mov QWORD PTR [rdi+1008], r10
+        // mov QWORD PTR [rdi+1016], r11
+        // mov rax, QWORD PTR [rdi+832]
+        // or rax, QWORD PTR [rdi+840]
+        // or rax, QWORD PTR [rdi+848]
+        // or rax, QWORD PTR [rdi+856]
+        // or rax, QWORD PTR [rdi+864]
+        // or rax, QWORD PTR [rdi+872]
+        // mov ecx, 0
+        // sub rcx, rax
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+1024]
+        // mov rdx, QWORD PTR [rdi+880]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+880], rax
+        // mov rax, QWORD PTR [rdi+1032]
+        // mov rdx, QWORD PTR [rdi+888]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+888], rax
+        // mov rax, QWORD PTR [rdi+1040]
+        // mov rdx, QWORD PTR [rdi+896]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+896], rax
+        // mov rax, QWORD PTR [rdi+1048]
+        // mov rdx, QWORD PTR [rdi+904]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+904], rax
+        // mov rax, QWORD PTR [rdi+1056]
+        // mov rdx, QWORD PTR [rdi+912]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+912], rax
+        // mov rax, QWORD PTR [rdi+1064]
+        // mov rdx, QWORD PTR [rdi+920]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+920], rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+928]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+928], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+936]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+936], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+944]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+944], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+952]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+952], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+960]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+960], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+968]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+968], rax
+        // mov rax, QWORD PTR [rdi+1120]
+        // mov rdx, QWORD PTR [rdi+976]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+976], rax
+        // mov rax, QWORD PTR [rdi+1128]
+        // mov rdx, QWORD PTR [rdi+984]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+984], rax
+        // mov rax, QWORD PTR [rdi+1136]
+        // mov rdx, QWORD PTR [rdi+992]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+992], rax
+        // mov rax, QWORD PTR [rdi+1144]
+        // mov rdx, QWORD PTR [rdi+1000]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1000], rax
+        // mov rax, QWORD PTR [rdi+1152]
+        // mov rdx, QWORD PTR [rdi+1008]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1008], rax
+        // mov rax, QWORD PTR [rdi+1160]
+        // mov rdx, QWORD PTR [rdi+1016]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1016], rax
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov ecx, 0
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+880]
+        // mov rdx, QWORD PTR [rdi+736]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+736], rax
+        // mov rax, QWORD PTR [rdi+888]
+        // mov rdx, QWORD PTR [rdi+744]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+744], rax
+        // mov rax, QWORD PTR [rdi+896]
+        // mov rdx, QWORD PTR [rdi+752]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+752], rax
+        // mov rax, QWORD PTR [rdi+904]
+        // mov rdx, QWORD PTR [rdi+760]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+760], rax
+        // mov rax, QWORD PTR [rdi+912]
+        // mov rdx, QWORD PTR [rdi+768]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+768], rax
+        // mov rax, QWORD PTR [rdi+920]
+        // mov rdx, QWORD PTR [rdi+776]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+776], rax
+        // mov rax, QWORD PTR [rdi+928]
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+936]
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+944]
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+952]
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+960]
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+968]
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+824], rax
+        // mov rax, QWORD PTR [rdi+976]
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+832], rax
+        // mov rax, QWORD PTR [rdi+984]
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+840], rax
+        // mov rax, QWORD PTR [rdi+992]
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+848], rax
+        // mov rax, QWORD PTR [rdi+1000]
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+856], rax
+        // mov rax, QWORD PTR [rdi+1008]
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+864], rax
+        // mov rax, QWORD PTR [rdi+1016]
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+872], rax
+        // add rbx, 1
+        // cmp rbx, 55
         r".octa 0x66d2ef0f66c9ef0f66c0ef0f66c20148,0x1b9edef0f66e4ef0f66dbef0f,0x66f96e0f4c66c9194801f98348c1314c,0x4166f7db0f4566326f0f44f3ff6c0f45
 .octa 0x4166f7db0f456610726f0f44f3c6eb0f,0x4166f7db0f456620726f0f44f3ceeb0f,0x4166f7db0f456630726f0f44f3d6eb0f,0x4166f7db0f456640726f0f44f3deeb0f
 .octa 0x4166f7db0f456650726f0f44f3e6eb0f,0x4801f98348c1314c00000002b9eeeb0f,0x6f0f44f3ff6c0f4566f96e0f4c66c919,0x6f0f44f3c6eb0f4166f7db0f45666072
@@ -659,94 +9178,1390 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base(ws: *mut [u64; 1024]) {
 .octa 0x314800000330978b48000003c0878b48,0x8b4800000330878948d03148ca2148c2,0x48c2314800000338978b48000003c887,0xd0878b4800000338878948d03148ca21
 .octa 0xca2148c2314800000340978b48000003,0x3d8878b4800000340878948d03148,0x3148ca2148c2314800000348978b4800,0x48000003e0878b4800000348878948d0
 .octa 0x48d03148ca2148c2314800000350978b,0x978b48000003e8878b48000003508789,0x878948d03148ca2148c2314800000358,0x360978b48000003f0878b4800000358
-.octa 0x360878948d03148ca2148c231480000,0x368978b48000003f8878b480000,0x368878948d03148ca2148c23148,0x8b48ffff884c850f37fb834801c38348
-.octa 0x50870b4800000348870b480000034087,0x360870b4800000358870b48000003,0xc1294800000000b900000368870b4800,0x310978b48000000d0878b48c91948
-.octa 0x310878948d03148ca2148c2314800,0x4800000318978b48000000d8878b4800,0x4800000318878948d03148ca2148c231,0xc2314800000320978b48000000e0878b
-.octa 0x878b4800000320878948d03148ca2148,0x2148c2314800000328978b48000000e8,0xf0878b4800000328878948d03148ca,0x48ca2148c2314800000330978b480000
-.octa 0xf8878b4800000330878948d031,0xd03148ca2148c2314800000338978b48,0x1b848fff1834800000338878948,0x4800000310870b48c82148ffffffff00
-.octa 0xffffffffb848000003108789,0x31887894800000318870b48c82148,0xb48c821480000000000000001b84800,0xb848000003208789480000032087
-.octa 0x328870b48c82148000000000000,0xb84800000328878948,0x33087894800000330870b48c8214800,0x48c821480000000000000000b8480000
-.octa 0xb8410000033887894800000338870b,0x4100000000ba4100000000b941000000,0xbd4100000000bc4100000000bb,0x8f8b4800000000bf4100000000be4100
-.octa 0x340878b4800000000bd000002e0,0xd28348c0014900d28348e80148e1f748,0x148e1f74800000348878b48d5894800,0x48d5894800d28348c1014900d28348e8
-.octa 0xd28348e80148e1f74800000350878b,0x358878b48d5894800d28348c20149,0x8348c3014900d28348e80148e1f74800,0x48e1f74800000360878b48d5894800d2
-.octa 0xd5894800d28348c4014900d28348e801,0xd28348e80148e1f74800000368878b48,0x8349ee0149d5894800d28348c5014900,0x1b848c1014c20e1c148c1894c00d7
-.octa 0xffffffb8d58948e1f748ffffffff0000,0xb841ca1148c50148e1f748ff,0xdc8349c3194dd21949e9294900d08349,0xd78349ce014900d9834800dd834900
-.octa 0xbd000002e88f8b4800000000b841,0x48e80148e1f74800000340878b480000,0x878b48d5894800d28348c1014900d283,0x14900d28348e80148e1f74800000348
-.octa 0x4800000350878b48d5894800d28348c2,0xd28348c3014900d28348e80148e1f7,0xe80148e1f74800000358878b48d58948,0x8b48d5894800d28348c4014900d28348
-.octa 0x4900d28348e80148e1f7480000036087,0x368878b48d5894800d28348c501,0xd28348c6014900d28348e80148e1f748,0xc148c9894c00d08349ef0149d5894800
-.octa 0x48ffffffff00000001b848c9014c20e1,0xc50148e1f748ffffffffb8d58948e1f7,0xea294900d1834900000000b941ca1148,0x834800de834900dd8349cc194dd31949
-.octa 0x4800000000b94100d08349cf014900d9,0x340878b4800000000bd000002f08f8b,0x48c2014900d28348e80148e1f7480000,0xe1f74800000348878b48d5894800d283
-.octa 0x894800d28348c3014900d28348e80148,0x8348e80148e1f74800000350878b48d5,0x58878b48d5894800d28348c4014900d2,0xc5014900d28348e80148e1f748000003
-.octa 0xf74800000360878b48d5894800d28348,0x4800d28348c6014900d28348e80148e1,0x48e80148e1f74800000368878b48d589,0xe80149d5894800d28348c7014900d283
-.octa 0xb848d1014c20e1c148d1894c00d18349,0xffb8d58948e1f748ffffffff00000001,0xba41ca1148c50148e1f748ffffff,0x49d5194dd41949eb294900d283490000
-.octa 0x8349c8014900d9834800df834900de83,0xbd000002f88f8b4800000000ba4100d1,0x148e1f74800000340878b4800000000,0x48d5894800d28348c3014900d28348e8
-.octa 0xd28348e80148e1f74800000348878b,0x350878b48d5894800d28348c40149,0x8348c5014900d28348e80148e1f74800,0x48e1f74800000358878b48d5894800d2
-.octa 0xd5894800d28348c6014900d28348e801,0xd28348e80148e1f74800000360878b48,0x368878b48d5894800d28348c7014900,0x48c0014900d28348e80148e1f7480000
-.octa 0xd9894c00d28349e90149d5894800d283,0xffffff00000001b848d9014c20e1c148,0x48e1f748ffffffffb8d58948e1f748ff,0x4900d3834900000000bb41ca1148c501
-.octa 0xd8834900df8349de194dd51949ec29,0xbb4100d28349c9014900d98348,0x878b4800000000bd000003008f8b4800,0x14900d28348e80148e1f74800000340
-.octa 0x4800000348878b48d5894800d28348c4,0xd28348c5014900d28348e80148e1f7,0xe80148e1f74800000350878b48d58948,0x8b48d5894800d28348c6014900d28348
-.octa 0x4900d28348e80148e1f7480000035887,0x360878b48d5894800d28348c701,0xd28348c0014900d28348e80148e1f748,0x148e1f74800000368878b48d5894800
-.octa 0x49d5894800d28348c1014900d28348e8,0xe1014c20e1c148e1894c00d38349ea01,0xd58948e1f748ffffffff00000001b848,0xbc41ca1148c50148e1f748ffffffffb8
-.octa 0x194dd61949ed294900d4834900000000,0xca014900d9834800d9834900d88349e7,0x3088f8b4800000000bc4100d38349,0xe1f74800000340878b4800000000bd00
-.octa 0x894800d28348c5014900d28348e80148,0x8348e80148e1f74800000348878b48d5,0x50878b48d5894800d28348c6014900d2,0xc7014900d28348e80148e1f748000003
-.octa 0xf74800000358878b48d5894800d28348,0x4800d28348c0014900d28348e80148e1,0x48e80148e1f74800000360878b48d589,0x878b48d5894800d28348c1014900d283
-.octa 0x14900d28348e80148e1f74800000368,0x4c00d48349eb0149d5894800d28348c2,0xff00000001b848e9014c20e1c148e989,0xf748ffffffffb8d58948e1f748ffffff
-.octa 0xd5834900000000bd41ca1148c50148e1,0x834900d98349e8194dd71949ee294900,0xbd4100d48349cb014900d9834800da,0x4c50471b4c487f1b4c40772b4c000000
-.octa 0x4800dc8349685f1b4c60571b4c584f1b,0xd148c5894820e2c148c28948c189c019,0xc21149c11149e81149d71149ce0149e5,0x2e8bf894c000002e0b7894cc31149
-.octa 0x4c000002f88f894c000002f087894c00,0x8f8b48000003089f894c000003009789,0xb94100000000b84100000340,0xbc4100000000bb4100000000ba41
-.octa 0xf74800000348878b4800000000bd0000,0x4800d28348c0014900d28348e80148e1,0x48e80148e1f74800000350878b48d589,0x878b48d5894800d28348c1014900d283
-.octa 0x14900d28348e80148e1f74800000358,0x4800000360878b48d5894800d28348c2,0xd28348c3014900d28348e80148e1f7,0xe80148e1f74800000368878b48d58948
-.octa 0x8949d5894800d28348c4014900d28348,0x4800000fe08f894c00000fd887894ced,0x350878b4800000000bd000003488f8b,0x48c2014900d28348e80148e1f7480000
-.octa 0xe1f74800000358878b48d5894800d283,0x894800d28348c3014900d28348e80148,0x8348e80148e1f74800000360878b48d5,0x68878b48d5894800d28348c4014900d2
-.octa 0xc5014900d28348e80148e1f748000003,0x3508f8b48ee8949d5894800d28348,0xe1f74800000358878b4800000000bd00,0x894800d28348c4014900d28348e80148
-.octa 0x8348e80148e1f74800000360878b48d5,0x68878b48d5894800d28348c5014900d2,0xc6014900d28348e80148e1f748000003,0x3588f8b48ef8949d5894800d28348
-.octa 0xe1f74800000360878b4800000000bd00,0x894800d28348c6014900d28348e80148,0x8348e80148e1f74800000368878b48d5,0x48e88949d5894800d28348c7014900d2
-.octa 0x368878b4800000000bd000003608f8b,0x48c0014900d28348e80148e1f7480000,0xfd8878b48e98949d5894800d283,0xfe0878b4800000fd8878948c00148
-.octa 0x114dd2114d00000fe0878948c0114800,0xc0114dff114df6114ded114de4114ddb,0x340878b48c9114800000000b9c9114d,0xd897034800000fd0878948e0f7480000
-.octa 0x4800000000bd00000fd897894800000f,0xe80148e0f74800000348878b4800d583,0xfe087894800000fe087034800d28348,0x8b4800d5834800000000bdd211490000
-.octa 0x4900d28348e80148e0f7480000035087,0x8b4800d5834800000000bdd41149c301,0x4900d28348e80148e0f7480000035887,0x8b4800d5834800000000bdd61149c501
-.octa 0x4900d28348e80148e0f7480000036087,0x8b4800d5834800000000bdd01149c701,0x4900d28348e80148e0f7480000036887,0x894c00d5834800000000bdd11148c101
-.octa 0xa0bf894c00000498b7894c00000490af,0x4b08f894c000004a887894c000004,0x4c00000fd0af8b4c000004b88f894800,0xe9894c00000fe0bf8b4c00000fd8b78b
-.octa 0xffffff00000001b848e9014c20e1c148,0x48e1f748ffffffffb8d58948e1f748ff,0x4900d5834900000000bd41ca1148c501,0xdc834900db8349ea194dd71949ee29
-.octa 0x14c20e1c148f1894c00dd8349cd8949,0x8948e1f748ffffffff00000001b848f1,0x41ca1148c50148e1f748ffffffffb8d5,0x4dd21949ef294900d6834900000000be
-.octa 0xde8349ce894900dd834900dc8349f319,0x1b848f9014c20e1c148f9894c00,0xffffffffb8d58948e1f748ffffffff00,0x4900000000bf41ca1148c50148e1f748
-.octa 0xdd8349fc194dd31949ea294900d783,0xc148d1894c00df8349cf894900de8349,0x48ffffffff00000001b848d1014c20e1,0xc50148e1f748ffffffffb8d58948e1f7
-.octa 0xeb294900d2834900000000ba41ca1148,0x894900df834900de8349d5194dd41949,0x48d9014c20e1c148d9894c00da8349ca,0xb8d58948e1f748ffffffff00000001b8
-.octa 0xbb41ca1148c50148e1f748ffffffff,0xde194dd51949ec294900d38349000000,0x4c00db8349cb894900da834900df8349,0xff00000001b848e1014c20e1c148e189
-.octa 0xf748ffffffffb8d58948e1f748ffffff,0xd4834900000000bc41ca1148c50148e1,0x834900da8349e7194dd61949ed294900,0x4c00000000b84100dc8349cc894900db
-.octa 0xbf134c00000498b7134c00000490af03,0x4b09f134c000004a897134c000004a0,0x6f2b4c00d08349000004b8a7134c0000,0x5f1b4c58571b4c507f1b4c48771b4c40
-.octa 0x8948c189c0194800d8834968671b4c60,0x1149cd0149e5d148c5894820e2c148c2,0xaf894cc41149c31149c21149ef1149d6,0x4a0bf894c00000498b7894c00000490
-.octa 0x4b09f894c000004a897894c0000,0xb94100000000b841000004b8a7894c,0x4100000000bb4100000000ba41000000,0xbe4100000000bd4100000000bc
-.octa 0xbd000004908f8b4800000000bf4100,0xe80148e1f74800000340878b48000000,0x8b48d5894800d28348c0014900d28348,0x4900d28348e80148e1f7480000034887
-.octa 0x350878b48d5894800d28348c101,0xd28348c2014900d28348e80148e1f748,0x148e1f74800000358878b48d5894800,0x48d5894800d28348c3014900d28348e8
-.octa 0xd28348e80148e1f74800000360878b,0x368878b48d5894800d28348c40149,0x8348c5014900d28348e80148e1f74800,0x48c1894c00d78349ee0149d5894800d2
-.octa 0xffffffff00000001b848c1014c20e1c1,0x148e1f748ffffffffb8d58948e1f748,0x294900d0834900000000b841ca1148c5,0x4800dd834900dc8349c3194dd21949e9
-.octa 0xb84100d78349ce014900d983,0x40878b4800000000bd000004988f8b48,0xc1014900d28348e80148e1f748000003,0xf74800000348878b48d5894800d28348
-.octa 0x4800d28348c2014900d28348e80148e1,0x48e80148e1f74800000350878b48d589,0x878b48d5894800d28348c3014900d283,0x14900d28348e80148e1f74800000358
-.octa 0x4800000360878b48d5894800d28348c4,0xd28348c5014900d28348e80148e1f7,0xe80148e1f74800000368878b48d58948,0x149d5894800d28348c6014900d28348
-.octa 0x48c9014c20e1c148c9894c00d08349ef,0xb8d58948e1f748ffffffff00000001b8,0xb941ca1148c50148e1f748ffffffff,0xcc194dd31949ea294900d18349000000
-.octa 0x49cf014900d9834800de834900dd8349,0x4a08f8b4800000000b94100d083,0x48e1f74800000340878b4800000000bd,0xd5894800d28348c2014900d28348e801
-.octa 0xd28348e80148e1f74800000348878b48,0x350878b48d5894800d28348c3014900,0x48c4014900d28348e80148e1f7480000,0xe1f74800000358878b48d5894800d283
-.octa 0x894800d28348c5014900d28348e80148,0x8348e80148e1f74800000360878b48d5,0x68878b48d5894800d28348c6014900d2,0xc7014900d28348e80148e1f748000003
-.octa 0x894c00d18349e80149d5894800d28348,0xffff00000001b848d1014c20e1c148d1,0xe1f748ffffffffb8d58948e1f748ffff,0xd2834900000000ba41ca1148c50148
-.octa 0xdf834900de8349d5194dd41949eb2949,0xba4100d18349c8014900d9834800,0x8b4800000000bd000004a88f8b480000,0x4900d28348e80148e1f7480000034087
-.octa 0x348878b48d5894800d28348c301,0xd28348c4014900d28348e80148e1f748,0x148e1f74800000350878b48d5894800,0x48d5894800d28348c5014900d28348e8
-.octa 0xd28348e80148e1f74800000358878b,0x360878b48d5894800d28348c60149,0x8348c7014900d28348e80148e1f74800,0x48e1f74800000368878b48d5894800d2
-.octa 0xd5894800d28348c0014900d28348e801,0x14c20e1c148d9894c00d28349e90149,0x8948e1f748ffffffff00000001b848d9,0x41ca1148c50148e1f748ffffffffb8d5
-.octa 0x4dd51949ec294900d3834900000000bb,0x14900d9834800d8834900df8349de19,0x4b08f8b4800000000bb4100d28349c9,0xf74800000340878b4800000000bd0000
-.octa 0x4800d28348c4014900d28348e80148e1,0x48e80148e1f74800000348878b48d589,0x878b48d5894800d28348c5014900d283,0x14900d28348e80148e1f74800000350
-.octa 0x4800000358878b48d5894800d28348c6,0xd28348c7014900d28348e80148e1f7,0xe80148e1f74800000360878b48d58948,0x8b48d5894800d28348c0014900d28348
-.octa 0x4900d28348e80148e1f7480000036887,0xd38349ea0149d5894800d28348c101,0x1b848e1014c20e1c148e1894c,0x48ffffffffb8d58948e1f748ffffffff
-.octa 0x834900000000bc41ca1148c50148e1f7,0x4900d88349e7194dd61949ed294900d4,0xbc4100d38349ca014900d9834800d983,0xbd000004b88f8b4800000000
-.octa 0xd28348e80148e1f74800000340878b48,0x348878b48d5894800d28348c5014900,0x48c6014900d28348e80148e1f7480000,0xe1f74800000350878b48d5894800d283
-.octa 0x894800d28348c7014900d28348e80148,0x8348e80148e1f74800000358878b48d5,0x60878b48d5894800d28348c0014900d2,0xc1014900d28348e80148e1f748000003
-.octa 0xf74800000368878b48d5894800d28348,0x4800d28348c2014900d28348e80148e1,0x20e1c148e9894c00d48349eb0149d589,0xe1f748ffffffff00000001b848e9014c
-.octa 0x1148c50148e1f748ffffffffb8d58948,0x1949ee294900d5834900000000bd41ca,0xd9834800da834900d98349e8194dd7,0x772b4c00000000bd4100d48349cb0149
-.octa 0x571b4c584f1b4c50471b4c487f1b4c40,0x8948c189c0194800dc8349685f1b4c60,0x1149ce0149e5d148c5894820e2c148c2,0xb7894cc31149c21149c11149e81149d7
-.octa 0x35087894c00000348bf894c00000340,0x36097894c000003588f894c0000,0x8b48000005b09f8b48000003689f894c,0xc8af8b4c000005c0a78b4c000005b8af
-.octa 0x5d8bf8b4c000005d0b78b4c000005
-.byte 0,195",
-        r".p2align 6",
+.octa 0x360878948d03148ca2148c231480000,0x368978b48000003f8878b480000,0x368878948d03148ca2148c23148
+.byte 0x48,0x83,0xc3,0x01,0x48,0x83,0xfb,0x37
+jne 21b",
+        // mov rax, QWORD PTR [rdi+832]
+        // or rax, QWORD PTR [rdi+840]
+        // or rax, QWORD PTR [rdi+848]
+        // or rax, QWORD PTR [rdi+856]
+        // or rax, QWORD PTR [rdi+864]
+        // or rax, QWORD PTR [rdi+872]
+        // mov ecx, 0
+        // sub rcx, rax
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+208]
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+216]
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+224]
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+232]
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+240]
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+248]
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+824], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+784]
+        // mov QWORD PTR [rdi+784], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+792]
+        // mov QWORD PTR [rdi+792], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+800]
+        // mov QWORD PTR [rdi+800], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+808]
+        // mov QWORD PTR [rdi+808], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+816]
+        // mov QWORD PTR [rdi+816], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+824]
+        // mov QWORD PTR [rdi+824], rax
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+736]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+744]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+752]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+760]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+768]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+776]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+736], r14
+        // mov QWORD PTR [rdi+744], r15
+        // mov QWORD PTR [rdi+752], r8
+        // mov QWORD PTR [rdi+760], r9
+        // mov QWORD PTR [rdi+768], r10
+        // mov QWORD PTR [rdi+776], r11
+        // mov rcx, QWORD PTR [rdi+832]
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rcx, QWORD PTR [rdi+840]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r14, rbp
+        // mov rcx, QWORD PTR [rdi+848]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r15, rbp
+        // mov rcx, QWORD PTR [rdi+856]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r8, rbp
+        // mov rcx, QWORD PTR [rdi+864]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov r9, rbp
+        // mov rax, QWORD PTR [rdi+4056]
+        // add rax, rax
+        // mov QWORD PTR [rdi+4056], rax
+        // mov rax, QWORD PTR [rdi+4064]
+        // adc rax, rax
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, r10
+        // adc r11, r11
+        // adc r12, r12
+        // adc r13, r13
+        // adc r14, r14
+        // adc r15, r15
+        // adc r8, r8
+        // adc r9, r9
+        // mov ecx, 0
+        // adc rcx, rcx
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rax
+        // mov QWORD PTR [rdi+4048], rax
+        // add rdx, QWORD PTR [rdi+4056]
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add rax, QWORD PTR [rdi+4064]
+        // mov QWORD PTR [rdi+4064], rax
+        // adc r10, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc r12, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc r14, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc r8, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rax
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, 0
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r8
+        // mov QWORD PTR [rdi+1200], r9
+        // mov QWORD PTR [rdi+1208], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r10, r13
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rcx
+        // sbb r13, 0
+        // mov rcx, r14
+        // shl rcx, 32
+        // add rcx, r14
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r14d, 0
+        // adc r14, 0
+        // sub r15, rbp
+        // sbb r10, rdx
+        // sbb r11, r14
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rcx
+        // sbb r14, 0
+        // mov rcx, r15
+        // shl rcx, 32
+        // add rcx, r15
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r15d, 0
+        // adc r15, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r15
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rcx
+        // sbb r15, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rcx
+        // sbb r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rcx
+        // sbb r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rcx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1168]
+        // adc r14, QWORD PTR [rdi+1176]
+        // adc r15, QWORD PTR [rdi+1184]
+        // adc r10, QWORD PTR [rdi+1192]
+        // adc r11, QWORD PTR [rdi+1200]
+        // adc r12, QWORD PTR [rdi+1208]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r10
+        // mov QWORD PTR [rdi+1200], r11
+        // mov QWORD PTR [rdi+1208], r12
+        // mov r8d, 0
+        // mov r9d, 0
+        // mov r10d, 0
+        // mov r11d, 0
+        // mov r12d, 0
+        // mov r13d, 0
+        // mov r14d, 0
+        // mov r15d, 0
+        // mov rcx, QWORD PTR [rdi+1168]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r14, rbp
+        // adc r15, 0
+        // mov rcx, r8
+        // shl rcx, 32
+        // add rcx, r8
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r8d, 0
+        // adc r8, 0
+        // sub r9, rbp
+        // sbb r10, rdx
+        // sbb r11, r8
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rcx, 0
+        // add r14, rcx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rcx, QWORD PTR [rdi+1176]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r15, rbp
+        // adc r8, 0
+        // mov rcx, r9
+        // shl rcx, 32
+        // add rcx, r9
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r9d, 0
+        // adc r9, 0
+        // sub r10, rbp
+        // sbb r11, rdx
+        // sbb r12, r9
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rcx, 0
+        // add r15, rcx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rcx, QWORD PTR [rdi+1184]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r8, rbp
+        // adc r9, 0
+        // mov rcx, r10
+        // shl rcx, 32
+        // add rcx, r10
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r10d, 0
+        // adc r10, 0
+        // sub r11, rbp
+        // sbb r12, rdx
+        // sbb r13, r10
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rcx, 0
+        // add r8, rcx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rcx, QWORD PTR [rdi+1192]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r11, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r9, rbp
+        // adc r10, 0
+        // mov rcx, r11
+        // shl rcx, 32
+        // add rcx, r11
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r11d, 0
+        // adc r11, 0
+        // sub r12, rbp
+        // sbb r13, rdx
+        // sbb r14, r11
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rcx, 0
+        // add r9, rcx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rcx, QWORD PTR [rdi+1200]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r12, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r10, rbp
+        // adc r11, 0
+        // mov rcx, r12
+        // shl rcx, 32
+        // add rcx, r12
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r12d, 0
+        // adc r12, 0
+        // sub r13, rbp
+        // sbb r14, rdx
+        // sbb r15, r12
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rcx, 0
+        // add r10, rcx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rcx, QWORD PTR [rdi+1208]
+        // mov ebp, 0
+        // mov rax, QWORD PTR [rdi+832]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r13, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+840]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r14, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+848]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r15, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+856]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r8, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+864]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r9, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // mov rax, QWORD PTR [rdi+872]
+        // mul rcx
+        // add rax, rbp
+        // adc rdx, 0
+        // add r10, rax
+        // adc rdx, 0
+        // mov rbp, rdx
+        // add r11, rbp
+        // adc r12, 0
+        // mov rcx, r13
+        // shl rcx, 32
+        // add rcx, r13
+        // movabs rax, -4294967295
+        // mul rcx
+        // mov rbp, rdx
+        // mov eax, -1
+        // mul rcx
+        // add rbp, rax
+        // adc rdx, rcx
+        // mov r13d, 0
+        // adc r13, 0
+        // sub r14, rbp
+        // sbb r15, rdx
+        // sbb r8, r13
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rcx, 0
+        // add r11, rcx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+832], r14
+        // mov QWORD PTR [rdi+840], r15
+        // mov QWORD PTR [rdi+848], r8
+        // mov QWORD PTR [rdi+856], r9
+        // mov QWORD PTR [rdi+864], r10
+        // mov QWORD PTR [rdi+872], r11
+        // mov rbx, QWORD PTR [rdi+1456]
+        // mov rbp, QWORD PTR [rdi+1464]
+        // mov r12, QWORD PTR [rdi+1472]
+        // mov r13, QWORD PTR [rdi+1480]
+        // mov r14, QWORD PTR [rdi+1488]
+        // mov r15, QWORD PTR [rdi+1496]
+        // ret
+        r".octa 0xb4800000348870b4800000340878b48,0x60870b4800000358870b480000035087,0x4800000000b900000368870b48000003,0x10978b48000000d0878b48c91948c129
+.octa 0x10878948d03148ca2148c23148000003,0x318978b48000000d8878b48000003,0x318878948d03148ca2148c2314800,0x4800000320978b48000000e0878b4800
+.octa 0x4800000320878948d03148ca2148c231,0xc2314800000328978b48000000e8878b,0x878b4800000328878948d03148ca2148,0x2148c2314800000330978b48000000f0
+.octa 0xf8878b4800000330878948d03148ca,0x48ca2148c2314800000338978b480000,0x1b848fff1834800000338878948d031,0x310870b48c82148ffffffff000000
+.octa 0xffffffffb8480000031087894800,0x1887894800000318870b48c821480000,0xc821480000000000000001b848000003,0xb8480000032087894800000320870b48
+.octa 0x328870b48c821480000000000000000,0xb848000003288789480000,0x87894800000330870b48c82148000000,0x21480000000000000000b84800000330
+.octa 0x410000033887894800000338870b48c8,0xba4100000000b94100000000b8,0xbd4100000000bc4100000000bb4100,0x4800000000bf4100000000be41000000
+.octa 0x340878b4800000000bd000002e08f8b,0x48c0014900d28348e80148e1f7480000,0xe1f74800000348878b48d5894800d283,0x894800d28348c1014900d28348e80148
+.octa 0x8348e80148e1f74800000350878b48d5,0x58878b48d5894800d28348c2014900d2,0xc3014900d28348e80148e1f748000003,0xf74800000360878b48d5894800d28348
+.octa 0x4800d28348c4014900d28348e80148e1,0x48e80148e1f74800000368878b48d589,0xee0149d5894800d28348c5014900d283,0xb848c1014c20e1c148c1894c00d78349
+.octa 0xffb8d58948e1f748ffffffff00000001,0xb841ca1148c50148e1f748ffffff,0x49c3194dd21949e9294900d083490000,0x8349ce014900d9834800dd834900dc83
+.octa 0xbd000002e88f8b4800000000b84100d7,0x148e1f74800000340878b4800000000,0x48d5894800d28348c1014900d28348e8,0xd28348e80148e1f74800000348878b
+.octa 0x350878b48d5894800d28348c20149,0x8348c3014900d28348e80148e1f74800,0x48e1f74800000358878b48d5894800d2,0xd5894800d28348c4014900d28348e801
+.octa 0xd28348e80148e1f74800000360878b48,0x368878b48d5894800d28348c5014900,0x48c6014900d28348e80148e1f7480000,0xc9894c00d08349ef0149d5894800d283
+.octa 0xffffff00000001b848c9014c20e1c148,0x48e1f748ffffffffb8d58948e1f748ff,0x4900d1834900000000b941ca1148c501,0xde834900dd8349cc194dd31949ea29
+.octa 0xb94100d08349cf014900d98348,0x878b4800000000bd000002f08f8b4800,0x14900d28348e80148e1f74800000340,0x4800000348878b48d5894800d28348c2
+.octa 0xd28348c3014900d28348e80148e1f7,0xe80148e1f74800000350878b48d58948,0x8b48d5894800d28348c4014900d28348,0x4900d28348e80148e1f7480000035887
+.octa 0x360878b48d5894800d28348c501,0xd28348c6014900d28348e80148e1f748,0x148e1f74800000368878b48d5894800,0x49d5894800d28348c7014900d28348e8
+.octa 0xd1014c20e1c148d1894c00d18349e801,0xd58948e1f748ffffffff00000001b848,0xba41ca1148c50148e1f748ffffffffb8,0x194dd41949eb294900d2834900000000
+.octa 0xc8014900d9834800df834900de8349d5,0x2f88f8b4800000000ba4100d18349,0xe1f74800000340878b4800000000bd00,0x894800d28348c3014900d28348e80148
+.octa 0x8348e80148e1f74800000348878b48d5,0x50878b48d5894800d28348c4014900d2,0xc5014900d28348e80148e1f748000003,0xf74800000358878b48d5894800d28348
+.octa 0x4800d28348c6014900d28348e80148e1,0x48e80148e1f74800000360878b48d589,0x878b48d5894800d28348c7014900d283,0x14900d28348e80148e1f74800000368
+.octa 0x4c00d28349e90149d5894800d28348c0,0xff00000001b848d9014c20e1c148d989,0xf748ffffffffb8d58948e1f748ffffff,0xd3834900000000bb41ca1148c50148e1
+.octa 0x834900df8349de194dd51949ec294900,0xbb4100d28349c9014900d9834800d8,0x4800000000bd000003008f8b48000000,0xd28348e80148e1f74800000340878b
+.octa 0x348878b48d5894800d28348c40149,0x8348c5014900d28348e80148e1f74800,0x48e1f74800000350878b48d5894800d2,0xd5894800d28348c6014900d28348e801
+.octa 0xd28348e80148e1f74800000358878b48,0x360878b48d5894800d28348c7014900,0x48c0014900d28348e80148e1f7480000,0xe1f74800000368878b48d5894800d283
+.octa 0x894800d28348c1014900d28348e80148,0x4c20e1c148e1894c00d38349ea0149d5,0x48e1f748ffffffff00000001b848e101,0xca1148c50148e1f748ffffffffb8d589
+.octa 0xd61949ed294900d4834900000000bc41,0x4900d9834800d9834900d88349e7194d,0x88f8b4800000000bc4100d38349ca01,0x4800000340878b4800000000bd000003
+.octa 0xd28348c5014900d28348e80148e1f7,0xe80148e1f74800000348878b48d58948,0x8b48d5894800d28348c6014900d28348,0x4900d28348e80148e1f7480000035087
+.octa 0x358878b48d5894800d28348c701,0xd28348c0014900d28348e80148e1f748,0x148e1f74800000360878b48d5894800,0x48d5894800d28348c1014900d28348e8
+.octa 0xd28348e80148e1f74800000368878b,0xd48349eb0149d5894800d28348c20149,0x1b848e9014c20e1c148e9894c00,0xffffffffb8d58948e1f748ffffffff00
+.octa 0x4900000000bd41ca1148c50148e1f748,0xd98349e8194dd71949ee294900d583,0x4100d48349cb014900d9834800da8349,0x471b4c487f1b4c40772b4c00000000bd
+.octa 0xdc8349685f1b4c60571b4c584f1b4c50,0xc5894820e2c148c28948c189c0194800,0x49c11149e81149d71149ce0149e5d148,0xe8bf894c000002e0b7894cc31149c211
+.octa 0x2f88f894c000002f087894c000002,0x48000003089f894c0000030097894c00,0xb94100000000b841000003408f8b,0xbc4100000000bb4100000000ba410000
+.octa 0x348878b4800000000bd00000000,0xd28348c0014900d28348e80148e1f748,0x148e1f74800000350878b48d5894800,0x48d5894800d28348c1014900d28348e8
+.octa 0xd28348e80148e1f74800000358878b,0x360878b48d5894800d28348c20149,0x8348c3014900d28348e80148e1f74800,0x48e1f74800000368878b48d5894800d2
+.octa 0xd5894800d28348c4014900d28348e801,0xfe08f894c00000fd887894ced8949,0x878b4800000000bd000003488f8b4800,0x14900d28348e80148e1f74800000350
+.octa 0x4800000358878b48d5894800d28348c2,0xd28348c3014900d28348e80148e1f7,0xe80148e1f74800000360878b48d58948,0x8b48d5894800d28348c4014900d28348
+.octa 0x4900d28348e80148e1f7480000036887,0x508f8b48ee8949d5894800d28348c501,0x4800000358878b4800000000bd000003,0xd28348c4014900d28348e80148e1f7
+.octa 0xe80148e1f74800000360878b48d58948,0x8b48d5894800d28348c5014900d28348,0x4900d28348e80148e1f7480000036887,0x588f8b48ef8949d5894800d28348c601
+.octa 0x4800000360878b4800000000bd000003,0xd28348c6014900d28348e80148e1f7,0xe80148e1f74800000368878b48d58948,0x8949d5894800d28348c7014900d28348
+.octa 0x878b4800000000bd000003608f8b48e8,0x14900d28348e80148e1f74800000368,0xfd8878b48e98949d5894800d28348c0,0xe0878b4800000fd8878948c001480000
+.octa 0xd2114d00000fe0878948c0114800000f,0x4dff114df6114ded114de4114ddb114d,0x878b48c9114800000000b9c9114dc011,0x34800000fd0878948e0f74800000340
+.octa 0xbd00000fd897894800000fd897,0x48e0f74800000348878b4800d5834800,0x87894800000fe087034800d28348e801,0xd5834800000000bdd2114900000fe0
+.octa 0xd28348e80148e0f74800000350878b48,0xd5834800000000bdd41149c3014900,0xd28348e80148e0f74800000358878b48,0xd5834800000000bdd61149c5014900
+.octa 0xd28348e80148e0f74800000360878b48,0xd5834800000000bdd01149c7014900,0xd28348e80148e0f74800000368878b48,0xd5834800000000bdd11148c1014900
+.octa 0x894c00000498b7894c00000490af894c,0xb08f894c000004a887894c000004a0bf,0xfd0af8b4c000004b88f8948000004,0x4c00000fe0bf8b4c00000fd8b78b4c00
+.octa 0xff00000001b848e9014c20e1c148e989,0xf748ffffffffb8d58948e1f748ffffff,0xd5834900000000bd41ca1148c50148e1,0x834900db8349ea194dd71949ee294900
+.octa 0x20e1c148f1894c00dd8349cd894900dc,0xe1f748ffffffff00000001b848f1014c,0x1148c50148e1f748ffffffffb8d58948,0x1949ef294900d6834900000000be41ca
+.octa 0x49ce894900dd834900dc8349f3194dd2,0x1b848f9014c20e1c148f9894c00de83,0xffffb8d58948e1f748ffffffff000000,0xbf41ca1148c50148e1f748ffff
+.octa 0x8349fc194dd31949ea294900d7834900,0xd1894c00df8349cf894900de834900dd,0xffffff00000001b848d1014c20e1c148,0x48e1f748ffffffffb8d58948e1f748ff
+.octa 0x4900d2834900000000ba41ca1148c501,0xdf834900de8349d5194dd41949eb29,0x14c20e1c148d9894c00da8349ca8949,0x8948e1f748ffffffff00000001b848d9
+.octa 0x41ca1148c50148e1f748ffffffffb8d5,0x4dd51949ec294900d3834900000000bb,0xdb8349cb894900da834900df8349de19,0x1b848e1014c20e1c148e1894c00
+.octa 0xffffffffb8d58948e1f748ffffffff00,0x4900000000bc41ca1148c50148e1f748,0xda8349e7194dd61949ed294900d483,0xb84100dc8349cc894900db8349
+.octa 0x4c00000498b7134c00000490af034c00,0x9f134c000004a897134c000004a0bf13,0x4c00d08349000004b8a7134c000004b0,0x4c58571b4c507f1b4c48771b4c406f2b
+.octa 0xc189c0194800d8834968671b4c605f1b,0xcd0149e5d148c5894820e2c148c28948,0x4cc41149c31149c21149ef1149d61149,0xbf894c00000498b7894c00000490af89
+.octa 0x4b09f894c000004a897894c000004a0,0x4100000000b841000004b8a7894c0000,0xbb4100000000ba4100000000b9,0xbe4100000000bd4100000000bc4100
+.octa 0x4908f8b4800000000bf41000000,0x48e1f74800000340878b4800000000bd,0xd5894800d28348c0014900d28348e801,0xd28348e80148e1f74800000348878b48
+.octa 0x350878b48d5894800d28348c1014900,0x48c2014900d28348e80148e1f7480000,0xe1f74800000358878b48d5894800d283,0x894800d28348c3014900d28348e80148
+.octa 0x8348e80148e1f74800000360878b48d5,0x68878b48d5894800d28348c4014900d2,0xc5014900d28348e80148e1f748000003,0x894c00d78349ee0149d5894800d28348
+.octa 0xffff00000001b848c1014c20e1c148c1,0xe1f748ffffffffb8d58948e1f748ffff,0xd0834900000000b841ca1148c50148,0xdd834900dc8349c3194dd21949e92949
+.octa 0xb84100d78349ce014900d9834800,0x8b4800000000bd000004988f8b480000,0x4900d28348e80148e1f7480000034087,0x348878b48d5894800d28348c101
+.octa 0xd28348c2014900d28348e80148e1f748,0x148e1f74800000350878b48d5894800,0x48d5894800d28348c3014900d28348e8,0xd28348e80148e1f74800000358878b
+.octa 0x360878b48d5894800d28348c40149,0x8348c5014900d28348e80148e1f74800,0x48e1f74800000368878b48d5894800d2,0xd5894800d28348c6014900d28348e801
+.octa 0x14c20e1c148c9894c00d08349ef0149,0x8948e1f748ffffffff00000001b848c9,0x41ca1148c50148e1f748ffffffffb8d5,0x4dd31949ea294900d1834900000000b9
+.octa 0x14900d9834800de834900dd8349cc19,0x4a08f8b4800000000b94100d08349cf,0xf74800000340878b4800000000bd0000,0x4800d28348c2014900d28348e80148e1
+.octa 0x48e80148e1f74800000348878b48d589,0x878b48d5894800d28348c3014900d283,0x14900d28348e80148e1f74800000350,0x4800000358878b48d5894800d28348c4
+.octa 0xd28348c5014900d28348e80148e1f7,0xe80148e1f74800000360878b48d58948,0x8b48d5894800d28348c6014900d28348,0x4900d28348e80148e1f7480000036887
+.octa 0xd18349e80149d5894800d28348c701,0x1b848d1014c20e1c148d1894c,0x48ffffffffb8d58948e1f748ffffffff,0x834900000000ba41ca1148c50148e1f7
+.octa 0x4900de8349d5194dd41949eb294900d2,0xba4100d18349c8014900d9834800df83,0xbd000004a88f8b4800000000,0xd28348e80148e1f74800000340878b48
+.octa 0x348878b48d5894800d28348c3014900,0x48c4014900d28348e80148e1f7480000,0xe1f74800000350878b48d5894800d283,0x894800d28348c5014900d28348e80148
+.octa 0x8348e80148e1f74800000358878b48d5,0x60878b48d5894800d28348c6014900d2,0xc7014900d28348e80148e1f748000003,0xf74800000368878b48d5894800d28348
+.octa 0x4800d28348c0014900d28348e80148e1,0x20e1c148d9894c00d28349e90149d589,0xe1f748ffffffff00000001b848d9014c,0x1148c50148e1f748ffffffffb8d58948
+.octa 0x1949ec294900d3834900000000bb41ca,0xd9834800d8834900df8349de194dd5,0x8f8b4800000000bb4100d28349c90149,0x340878b4800000000bd000004b0
+.octa 0xd28348c4014900d28348e80148e1f748,0x148e1f74800000348878b48d5894800,0x48d5894800d28348c5014900d28348e8,0xd28348e80148e1f74800000350878b
+.octa 0x358878b48d5894800d28348c60149,0x8348c7014900d28348e80148e1f74800,0x48e1f74800000360878b48d5894800d2,0xd5894800d28348c0014900d28348e801
+.octa 0xd28348e80148e1f74800000368878b48,0x8349ea0149d5894800d28348c1014900,0x1b848e1014c20e1c148e1894c00d3,0xffffffb8d58948e1f748ffffffff0000
+.octa 0xbc41ca1148c50148e1f748ff,0xd88349e7194dd61949ed294900d48349,0xd38349ca014900d9834800d9834900,0xbd000004b88f8b4800000000bc41
+.octa 0x48e80148e1f74800000340878b480000,0x878b48d5894800d28348c5014900d283,0x14900d28348e80148e1f74800000348,0x4800000350878b48d5894800d28348c6
+.octa 0xd28348c7014900d28348e80148e1f7,0xe80148e1f74800000358878b48d58948,0x8b48d5894800d28348c0014900d28348,0x4900d28348e80148e1f7480000036087
+.octa 0x368878b48d5894800d28348c101,0xd28348c2014900d28348e80148e1f748,0xc148e9894c00d48349eb0149d5894800,0x48ffffffff00000001b848e9014c20e1
+.octa 0xc50148e1f748ffffffffb8d58948e1f7,0xee294900d5834900000000bd41ca1148,0x834800da834900d98349e8194dd71949,0x4c00000000bd4100d48349cb014900d9
+.octa 0x4c584f1b4c50471b4c487f1b4c40772b,0xc189c0194800dc8349685f1b4c60571b,0xce0149e5d148c5894820e2c148c28948,0x4cc31149c21149c11149e81149d71149
+.octa 0x87894c00000348bf894c00000340b789,0x36097894c000003588f894c00000350,0x5b09f8b48000003689f894c0000,0x8b4c000005c0a78b4c000005b8af8b48
+.octa 0xd8bf8b4c000005d0b78b4c000005c8af
+.byte 0x05,0x00,0x00,0xc3
+.p2align 6",
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
 }
@@ -768,16 +10583,835 @@ pub const VG_P384_MUL_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x894c000005b8af8948000005b09f8948,0xd0b7894c000005c8af894c000005c0a7,0xf00000000bb000005d8bf894c000005,0x948801e28348c28948000006101f84b6
-.octa 0x8801e28348ead148c28948000008b0df,0xe2834802eac148c28948000008b1df94,0x4803eac148c28948000008b2df948801,0xeac148c28948000008b3df948801e283
-.octa 0x48c28948000008b4df948801e2834804,0x8948000008b5df948801e2834805eac1,0x8b6df948801e2834806eac148c2,0x8b7df948801e2834807eac148c28948
-.octa 0xffffff5f850f30fb834801c383480000,0x7c0878948081188719d412dccb848,0x7c8878948f729add87a4c32ecb84800,0xd087894877f2209b1920022eb8480000
-.octa 0x878948e3374bee94938ae2b848000007,0x8948b62b21f41f022094b848000007d8,0x48cd08114b604fbff9b848000007e087,0xa3087894800000000b8000007e88789
-.octa 0x4800000007b9d8894800000000bb0000,0x94b60fc0014800000000b8c18948e1f7,0xb50f94b60fc00148d00148000008b60f,0x8b40f94b60fc00148d00148000008
-.octa 0x48000008b30f94b60fc00148d0014800,0xd00148000008b20f94b60fc00148d001,0x148d00148000008b10f94b60fc00148,0xf94b60fd00148000008b00f94b60fc0
-.octa 0xc0314cd0294900000000b841000008b6,0xc08949c0014c00000080e08149c0294c
-.byte 72,137,216,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+        // mov QWORD PTR [rdi+1456], rbx
+        // mov QWORD PTR [rdi+1464], rbp
+        // mov QWORD PTR [rdi+1472], r12
+        // mov QWORD PTR [rdi+1480], r13
+        // mov QWORD PTR [rdi+1488], r14
+        // mov QWORD PTR [rdi+1496], r15
+        // mov ebx, 0
+        r".octa 0x894c000005b8af8948000005b09f8948,0xd0b7894c000005c8af894c000005c0a7
+.byte 0x05,0x00,0x00,0x4c,0x89,0xbf,0xd8,0x05,0x00,0x00,0xbb,0x00,0x00,0x00,0x00
+20:",
+        // movzx eax, BYTE PTR [rdi+rbx*1+1552]
+        // mov rdx, rax
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2224], dl
+        // mov rdx, rax
+        // shr rdx, 1
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2225], dl
+        // mov rdx, rax
+        // shr rdx, 2
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2226], dl
+        // mov rdx, rax
+        // shr rdx, 3
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2227], dl
+        // mov rdx, rax
+        // shr rdx, 4
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2228], dl
+        // mov rdx, rax
+        // shr rdx, 5
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2229], dl
+        // mov rdx, rax
+        // shr rdx, 6
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2230], dl
+        // mov rdx, rax
+        // shr rdx, 7
+        // and rdx, 1
+        // mov BYTE PTR [rdi+rbx*8+2231], dl
+        // add rbx, 1
+        // cmp rbx, 48
+        r".octa 0x8801e28348c28948000006101f84b60f,0x1e28348ead148c28948000008b0df94,0x834802eac148c28948000008b1df9488,0x3eac148c28948000008b2df948801e2
+.octa 0xc148c28948000008b3df948801e28348,0xc28948000008b4df948801e2834804ea,0x48000008b5df948801e2834805eac148,0x8b6df948801e2834806eac148c289
+.octa 0xb7df948801e2834807eac148c2894800
+.byte 0x08,0x00,0x00,0x48,0x83,0xc3,0x01,0x48,0x83,0xfb,0x30
+jne 20b",
+        // movabs rax, 581395848458481100
+        // mov QWORD PTR [rdi+1984], rax
+        // movabs rax, -636786727019859220
+        // mov QWORD PTR [rdi+1992], rax
+        // movabs rax, 8643006485390950958
+        // mov QWORD PTR [rdi+2000], rax
+        // movabs rax, -2074105615313827102
+        // mov QWORD PTR [rdi+2008], rax
+        // movabs rax, -5320121202432139116
+        // mov QWORD PTR [rdi+2016], rax
+        // movabs rax, -3672666480684580871
+        // mov QWORD PTR [rdi+2024], rax
+        // mov eax, 0
+        // mov QWORD PTR [rdi+2608], rax
+        // mov ebx, 0
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov rax, rbx
+        // mov ecx, 6144
+        // mul rcx
+        r".octa 0x7c0878948081188719d412dccb848,0x7c8878948f729add87a4c32ecb84800,0xd087894877f2209b1920022eb8480000,0x878948e3374bee94938ae2b848000007
+.octa 0x8948b62b21f41f022094b848000007d8,0x48cd08114b604fbff9b848000007e087,0xa3087894800000000b8000007e88789,0x4800000007b9d8894800000000bb0000
+.octa 0x94b60fc0014800000000b8c18948e1f7,0xb50f94b60fc00148d00148000008b60f,0x8b40f94b60fc00148d00148000008,0x48000008b30f94b60fc00148d0014800
+.octa 0xd00148000008b20f94b60fc00148d001,0x148d00148000008b10f94b60fc00148,0xf94b60fd00148000008b00f94b60fc0,0xc0314cd0294900000000b841000008b6
+.octa 0xc08949c0014c00000080e08149c0294c
+.byte 0x48,0x89,0xd8,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vmovq xmm13, r8
+        // vpbroadcastd ymm13, xmm13
+        // mov ecx, 1
+        // vmovq xmm12, rcx
+        // vpbroadcastd ymm12, xmm12
+        // vmovdqa ymm14, ymm12
+        // vpxor ymm0, ymm0, ymm0
+        // vpxor ymm1, ymm1, ymm1
+        // vpxor ymm2, ymm2, ymm2
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+32]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+64]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+96]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+128]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+160]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+192]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+224]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+256]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+288]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+320]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+352]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+384]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+416]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+448]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+480]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+512]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+544]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+576]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+608]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+640]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+672]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+704]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+736]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+768]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+800]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+832]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+864]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+896]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+928]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+960]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+992]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1024]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1056]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1088]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1120]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1152]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1184]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1216]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1248]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1280]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1312]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1344]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1376]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1408]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1440]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1472]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1504]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1536]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1568]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1600]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1632]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1664]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1696]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1728]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1760]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1792]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1824]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1856]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1888]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1920]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1952]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1984]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2016]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2048]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2080]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2112]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2144]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2176]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2208]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2240]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2272]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2304]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2336]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2368]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2400]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2432]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2464]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2496]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2528]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2560]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2592]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2624]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2656]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2688]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2720]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2752]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2784]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2816]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2848]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2880]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2912]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2944]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2976]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3008]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3040]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3072]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3104]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3136]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3168]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3200]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3232]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3264]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3296]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3328]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3360]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3392]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3424]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3456]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3488]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3520]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3552]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3584]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3616]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3648]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3680]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3712]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3744]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3776]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3808]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3840]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3872]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3904]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3936]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3968]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4000]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4032]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4064]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4096]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4128]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4160]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4192]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4224]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4256]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4288]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4320]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4352]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4384]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4416]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4448]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4480]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4512]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4544]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4576]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4608]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4640]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4672]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4704]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4736]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4768]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4800]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4832]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4864]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4896]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4928]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4960]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4992]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5024]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5056]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5088]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5120]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5152]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5184]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5216]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5248]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5280]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5312]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5344]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5376]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5408]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5440]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5472]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5504]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5536]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5568]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5600]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5632]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5664]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5696]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5728]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5760]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5792]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5824]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5856]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5888]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5920]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5952]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5984]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6016]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6048]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6080]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6112]
+        // vpor ymm2, ymm2, ymm11
+        // vmovdqu YMMWORD PTR [rdi+1024], ymm0
+        // vmovdqu YMMWORD PTR [rdi+1056], ymm1
+        // vmovdqu YMMWORD PTR [rdi+1088], ymm2
+        // vzeroupper
+        // mov rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+1072], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+1080], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+1088], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+1096], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+1104], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+1112], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1120], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1128], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1136], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1144], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1152], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1160], rax
+        // mov r8, QWORD PTR [rdi+208]
+        // mov r9, QWORD PTR [rdi+216]
+        // mov r10, QWORD PTR [rdi+224]
+        // mov r11, QWORD PTR [rdi+232]
+        // mov r12, QWORD PTR [rdi+240]
+        // mov r13, QWORD PTR [rdi+248]
+        // sub r8, QWORD PTR [rdi+1072]
+        // sbb r9, QWORD PTR [rdi+1080]
+        // sbb r10, QWORD PTR [rdi+1088]
+        // sbb r11, QWORD PTR [rdi+1096]
+        // sbb r12, QWORD PTR [rdi+1104]
+        // sbb r13, QWORD PTR [rdi+1112]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1504], r8
+        // mov QWORD PTR [rdi+1512], r9
+        // mov QWORD PTR [rdi+1520], r10
+        // mov QWORD PTR [rdi+1528], r11
+        // mov QWORD PTR [rdi+1536], r12
+        // mov QWORD PTR [rdi+1544], r13
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // movzx eax, BYTE PTR [rdi+rcx*1+2230]
+        // mov ecx, 0
+        // sub rcx, rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+1504]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1072], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+1512]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1080], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+1520]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1088], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+1528]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1096], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+1536]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1104], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+1544]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1112], rax
+        // mov rax, QWORD PTR [rdi+1024]
+        // mov QWORD PTR [rdi+736], rax
+        // mov rax, QWORD PTR [rdi+1032]
+        // mov QWORD PTR [rdi+744], rax
+        // mov rax, QWORD PTR [rdi+1040]
+        // mov QWORD PTR [rdi+752], rax
+        // mov rax, QWORD PTR [rdi+1048]
+        // mov QWORD PTR [rdi+760], rax
+        // mov rax, QWORD PTR [rdi+1056]
+        // mov QWORD PTR [rdi+768], rax
+        // mov rax, QWORD PTR [rdi+1064]
+        // mov QWORD PTR [rdi+776], rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+824], rax
+        // mov rax, QWORD PTR [rdi+1120]
+        // mov QWORD PTR [rdi+832], rax
+        // mov rax, QWORD PTR [rdi+1128]
+        // mov QWORD PTR [rdi+840], rax
+        // mov rax, QWORD PTR [rdi+1136]
+        // mov QWORD PTR [rdi+848], rax
+        // mov rax, QWORD PTR [rdi+1144]
+        // mov QWORD PTR [rdi+856], rax
+        // mov rax, QWORD PTR [rdi+1152]
+        // mov QWORD PTR [rdi+864], rax
+        // mov rax, QWORD PTR [rdi+1160]
+        // mov QWORD PTR [rdi+872], rax
+        // mov ebx, 1
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov rax, rbx
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0x1b9ed587d42c4e86ef941c4c20148,0x6f7d41c4e4587d42c4e16ef961c40000,0xd41c4d2efedc5c9eff5c5c0effdc5f4,0xc5c0eba5c51adb05c5f4fe0d41c4fd76
 .octa 0xeba5c5405adb05c5c9eba5c5205adb05,0x605adb05c5f4fe0d41c4fd760d41c4d2,0xc9eba5c5000000809adb05c5c0eba5c5,0x760d41c4d2eba5c5000000a09adb05c5
 .octa 0xa5c5000000c09adb05c5f4fe0d41c4fd,0x5c5c9eba5c5000000e09adb05c5c0eb,0xc4fd760d41c4d2eba5c5000001009adb,0xc0eba5c5000001209adb05c5f4fe0d41
@@ -842,8 +11476,653 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x6887894800000488878b480000036087,0x7b9d8894800000001bb000003,0xb60fc0014800000000b8c18948e1f748,0xf94b60fc00148d00148000008b60f94
 .octa 0x8b40f94b60fc00148d00148000008b5,0x8b30f94b60fc00148d001480000,0x148000008b20f94b60fc00148d00148,0x48d00148000008b10f94b60fc00148d0
 .octa 0x94b60fd00148000008b00f94b60fc001,0x8b60f94b60fd00148000008af0f,0x49c0294cc0314cd0294900000000b841,0xb9d88948c08949c0014c00000080e081
-.byte 0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vmovq xmm13, r8
+        // vpbroadcastd ymm13, xmm13
+        // mov ecx, 1
+        // vmovq xmm12, rcx
+        // vpbroadcastd ymm12, xmm12
+        // vmovdqa ymm14, ymm12
+        // vpxor ymm0, ymm0, ymm0
+        // vpxor ymm1, ymm1, ymm1
+        // vpxor ymm2, ymm2, ymm2
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+32]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+64]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+96]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+128]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+160]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+192]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+224]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+256]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+288]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+320]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+352]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+384]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+416]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+448]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+480]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+512]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+544]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+576]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+608]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+640]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+672]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+704]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+736]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+768]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+800]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+832]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+864]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+896]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+928]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+960]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+992]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1024]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1056]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1088]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1120]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1152]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1184]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1216]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1248]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1280]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1312]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1344]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1376]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1408]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1440]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1472]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1504]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1536]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1568]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1600]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1632]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1664]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1696]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1728]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1760]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1792]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1824]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1856]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1888]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1920]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1952]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1984]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2016]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2048]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2080]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2112]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2144]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2176]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2208]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2240]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2272]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2304]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2336]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2368]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2400]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2432]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2464]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2496]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2528]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2560]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2592]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2624]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2656]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2688]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2720]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2752]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2784]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2816]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2848]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2880]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2912]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2944]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2976]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3008]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3040]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3072]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3104]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3136]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3168]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3200]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3232]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3264]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3296]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3328]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3360]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3392]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3424]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3456]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3488]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3520]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3552]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3584]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3616]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3648]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3680]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3712]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3744]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3776]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3808]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3840]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3872]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3904]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3936]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3968]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4000]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4032]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4064]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4096]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4128]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4160]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4192]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4224]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4256]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4288]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4320]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4352]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4384]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4416]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4448]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4480]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4512]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4544]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4576]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4608]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4640]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4672]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4704]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4736]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4768]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4800]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4832]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4864]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4896]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4928]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4960]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4992]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5024]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5056]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5088]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5120]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5152]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5184]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5216]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5248]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5280]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5312]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5344]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5376]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5408]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5440]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5472]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5504]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5536]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5568]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5600]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5632]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5664]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5696]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5728]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5760]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5792]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5824]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5856]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5888]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5920]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5952]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5984]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6016]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6048]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6080]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6112]
+        // vpor ymm2, ymm2, ymm11
+        // vmovdqu YMMWORD PTR [rdi+1024], ymm0
+        // vmovdqu YMMWORD PTR [rdi+1056], ymm1
+        // vmovdqu YMMWORD PTR [rdi+1088], ymm2
+        // vzeroupper
+        // mov rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+1072], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+1080], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+1088], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+1096], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+1104], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+1112], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1120], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1128], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1136], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1144], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1152], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1160], rax
+        // mov r8, QWORD PTR [rdi+208]
+        // mov r9, QWORD PTR [rdi+216]
+        // mov r10, QWORD PTR [rdi+224]
+        // mov r11, QWORD PTR [rdi+232]
+        // mov r12, QWORD PTR [rdi+240]
+        // mov r13, QWORD PTR [rdi+248]
+        // sub r8, QWORD PTR [rdi+1072]
+        // sbb r9, QWORD PTR [rdi+1080]
+        // sbb r10, QWORD PTR [rdi+1088]
+        // sbb r11, QWORD PTR [rdi+1096]
+        // sbb r12, QWORD PTR [rdi+1104]
+        // sbb r13, QWORD PTR [rdi+1112]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1504], r8
+        // mov QWORD PTR [rdi+1512], r9
+        // mov QWORD PTR [rdi+1520], r10
+        // mov QWORD PTR [rdi+1528], r11
+        // mov QWORD PTR [rdi+1536], r12
+        // mov QWORD PTR [rdi+1544], r13
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // movzx eax, BYTE PTR [rdi+rcx*1+2230]
+        // mov ecx, 0
+        // sub rcx, rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+1504]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1072], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+1512]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1080], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+1520]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1088], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+1528]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1096], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+1536]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1104], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+1544]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1112], rax
         r".octa 0x1b9ed587d42c4e86ef941c4c20148,0x6f7d41c4e4587d42c4e16ef961c40000,0xd41c4d2efedc5c9eff5c5c0effdc5f4,0xc5c0eba5c51adb05c5f4fe0d41c4fd76
 .octa 0xeba5c5405adb05c5c9eba5c5205adb05,0x605adb05c5f4fe0d41c4fd760d41c4d2,0xc9eba5c5000000809adb05c5c0eba5c5,0x760d41c4d2eba5c5000000a09adb05c5
 .octa 0xa5c5000000c09adb05c5f4fe0d41c4fd,0x5c5c9eba5c5000000e09adb05c5c0eb,0xc4fd760d41c4d2eba5c5000001009adb,0xc0eba5c5000001209adb05c5f4fe0d41
@@ -901,33 +12180,627 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0xe1f74800000007b9d8894800000608af,0xb9000008b60f84b60fc18948,0x5e0978b4800000430878b48c12948,0x430878948d03148ca2148c2314800
 .octa 0x48000005e8978b4800000438878b4800,0x4800000438878948d03148ca2148c231,0xc23148000005f0978b4800000440878b,0x878b4800000440878948d03148ca2148
 .octa 0x2148c23148000005f8978b4800000448,0x450878b4800000448878948d03148ca,0x48ca2148c2314800000600978b480000,0x458878b4800000450878948d031
-.octa 0xd03148ca2148c2314800000608978b48,0x7b9d8894801c3834800000458878948,0x14800000000b8c18948e1f748000000,0xfc00148d00148000008b60f94b60fc0
-.octa 0x94b60fc00148d00148000008b50f94b6,0xb30f94b60fc00148d00148000008b40f,0x8b20f94b60fc00148d00148000008,0x48000008b10f94b60fc00148d0014800
-.octa 0xd00148000008b00f94b60fc00148d001,0xb60f94b60fd00148000008af0f94b60f,0x4cc0314cd0294900000000b841000008,0x48c08949c0014c00000080e08149c029
-.octa 0x1b9ed587d42c4e86ef941c401eb83,0x6f7d41c4e4587d42c4e16ef961c40000,0x978b48d2efedc5c9eff5c5c0effdc5f4,0xc4000003488ff6bb62c4ed3100000340
-.octa 0x62c4c8f6380f4c660000035097f6fb62,0xfb62c4d0f6380f4c66000003589ff6fb,0xf6fb62c4d8f6380f4c6600000360a7f6,0xf6380f4c66e0f6380f4c6600000368af
-.octa 0x4800000fe08f894c00000fd887894ced,0x3508ff6fbe2c4ed3100000348978b,0xfbe2c4d9f6380f4c66d0f6380f4cf300,0x380f4c66d8f6380f4cf3000003588ff6
-.octa 0xf6380f4cf3000003608ff6fbe2c4e1f6,0x368b7f6fb62c4e9f6380f4c66e0,0x380f4cf3f5f6380f4c66e8f6380f4cf3,0x8ff6fbe2c4ed3100000350978b48f5f6
-.octa 0xe9f6380f4c66e0f6380f4cf300000358,0x66e8f6380f4cf3000003608ff6fbe2c4,0x4cf300000368bff6fb62c4f1f6380f4c,0xfdf6380f4cf3fdf6380f4c66f0f6380f
-.octa 0x3608ff6fbe2c4ed3100000358978b48,0x62c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf30000036887f6fb,0x360978b48c5f6380f4cf3c5f638
-.octa 0xf6380f4cf3000003688ff6fb62c4ed31,0x48ed31cdf6380f4cf3cdf6380f4c66c0,0xf6380f4866caf6fbe2c400000340978b,0x8b4800000fd0af8948e8f6380f48f3ed
-.octa 0xf6380f48f3d2f6380f486600000fd897,0xc400000348978b4800000fd8978948d1,0xf6380f486600000fe0978b48caf6fbe2,0x4d6600000fe0978948d0f6380f48f3d2
-.octa 0x350978b48d1f6380f4cf3d2f6380f,0x380f4cf3dbf6380f4d66caf6fbe2c400,0x8b48e1f6380f4cf3e4f6380f4d66d8f6,0xedf6380f4d66caf6fbe2c40000035897
-.octa 0x380f4cf3f6f6380f4d66e8f6380f4cf3,0x4d66caf6fbe2c400000360978b48f1f6,0xc0f6380f4d66f8f6380f4cf3fff6380f,0xfbe2c400000368978b48c1f6380f4cf3
-.octa 0xbac8f6380f4cf3c9f6380f4d66caf6,0x4ccaf6380f48f3caf6380f4866000000,0xbf894c00000498b7894c00000490af89,0x4b08f894c000004a887894c000004a0
-.octa 0xfd0af8b4c000004b88f89480000,0xba4800000fe0bf8b4c00000fd8b78b4c,0x1b848d5af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000
-.octa 0xbdd11148e8014cc9f693e2c4,0xdb8349ea1949cf1949c62949ed1148,0x1ba4800dd8349d5894900dc8349,0xff00000001b848d6af0f490000000100
-.octa 0x8be2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148f0014cc9f6,0xdd834900dc8349eb1949ca1949c72949,0x100000001ba4800de8349d6894900
-.octa 0xffffffff00000001b848d7af0f490000,0x4cc9f683e2c4ffffffffb9c0f6f3e2c4,0xc22949ed114800000000bdd11148f801,0x894900de834900dd8349ec1949cb1949
-.octa 0x490000000100000001ba4800df8349d7,0xf3e2c4ffffffff00000001b848d2af0f,0x48d0014cc9f6abe2c4ffffffffb9c0f6,0xcc1949c32949ed114800000000bdd111
-.octa 0x8349d2894900df834900de8349ed1949,0xd3af0f490000000100000001ba4800da,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148d8014cc9f6a3e2c4ffffffff
-.octa 0xee1949cd1949c42949ed114800000000,0x4800db8349d3894900da834900df8349,0x1b848d4af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000
-.octa 0xbdd11148e0014cc9f69be2c4ff,0xda8349ef1949ce1949c52949ed114800,0xb84100dc8349d4894900db834900,0x498b7134c00000490af034c0000
-.octa 0x134c000004a897134c000004a0bf134c,0xd08349000004b8a7134c000004b09f,0x58571b4c507f1b4c48771b4c406f2b4c,0x89c0194800d8834968671b4c605f1b4c
-.octa 0x149e5d148c5894820e2c148c28948c1,0xc41149c31149c21149ef1149d61149cd,0x894c00000498b7894c00000490af894c,0xb09f894c000004a897894c000004a0bf
-.octa 0xc08348d88948000004b8a7894c000004
-.byte 1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.octa 0xd03148ca2148c2314800000608978b48
+.byte 0x48,0x89,0x87,0x58,0x04,0x00,0x00
+21:",
+        // add rbx, 1
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // sub rbx, 1
+        // vmovq xmm13, r8
+        // vpbroadcastd ymm13, xmm13
+        // mov ecx, 1
+        // vmovq xmm12, rcx
+        // vpbroadcastd ymm12, xmm12
+        // vmovdqa ymm14, ymm12
+        // vpxor ymm0, ymm0, ymm0
+        // vpxor ymm1, ymm1, ymm1
+        // vpxor ymm2, ymm2, ymm2
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+840]
+        // mulx r10, rax, QWORD PTR [rdi+848]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+856]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+864]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+872]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+872]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+872]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+872]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+872]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+832]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+840]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+848]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+856]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+864]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+872]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r8
+        // mov QWORD PTR [rdi+1200], r9
+        // mov QWORD PTR [rdi+1208], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1168]
+        // adc r14, QWORD PTR [rdi+1176]
+        // adc r15, QWORD PTR [rdi+1184]
+        // adc r10, QWORD PTR [rdi+1192]
+        // adc r11, QWORD PTR [rdi+1200]
+        // adc r12, QWORD PTR [rdi+1208]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r10
+        // mov QWORD PTR [rdi+1200], r11
+        // mov QWORD PTR [rdi+1208], r12
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
+        r".octa 0x48e1f74800000007b9d8894801c38348,0x8b60f94b60fc0014800000000b8c189,0x8b50f94b60fc00148d001480000,0x148000008b40f94b60fc00148d00148
+.octa 0x48d00148000008b30f94b60fc00148d0,0xc00148d00148000008b20f94b60fc001,0xb60fc00148d00148000008b10f94b60f,0x8af0f94b60fd00148000008b00f94
+.octa 0xb841000008b60f94b60fd0014800,0x80e08149c0294cc0314cd029490000,0x6ef941c401eb8348c08949c0014c0000,0xe16ef961c400000001b9ed587d42c4e8
+.octa 0xf5c5c0effdc5f46f7d41c4e4587d42c4,0xc4ed3100000340978b48d2efedc5c9ef,0x35097f6fb62c4000003488ff6bb62,0x3589ff6fb62c4c8f6380f4c6600
+.octa 0x6600000360a7f6fb62c4d0f6380f4c66,0x4c6600000368aff6fb62c4d8f6380f4c,0xfd887894cedf6380f4c66e0f6380f,0x3100000348978b4800000fe08f894c00
+.octa 0xd0f6380f4cf3000003508ff6fbe2c4ed,0xf3000003588ff6fbe2c4d9f6380f4c66,0x8ff6fbe2c4e1f6380f4c66d8f6380f4c,0xe9f6380f4c66e0f6380f4cf300000360
+.octa 0x66e8f6380f4cf300000368b7f6fb62c4,0x350978b48f5f6380f4cf3f5f6380f4c,0xf4cf3000003588ff6fbe2c4ed310000,0x3608ff6fbe2c4e9f6380f4c66e0f638
+.octa 0x62c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf300000368bff6fb,0x358978b48fdf6380f4cf3fdf638,0xf6380f4cf3000003608ff6fbe2c4ed31
+.octa 0x36887f6fb62c4f9f6380f4c66f0,0x380f4cf3c5f6380f4c66f8f6380f4cf3,0x8ff6fb62c4ed3100000360978b48c5f6,0xcdf6380f4c66c0f6380f4cf300000368
+.octa 0xc400000340978b48ed31cdf6380f4cf3,0xe8f6380f48f3edf6380f4866caf6fbe2,0x486600000fd8978b4800000fd0af8948,0xfd8978948d1f6380f48f3d2f6380f
+.octa 0x978b48caf6fbe2c400000348978b4800,0xd0f6380f48f3d2f6380f486600000fe0,0xf4cf3d2f6380f4d6600000fe0978948,0x66caf6fbe2c400000350978b48d1f638
+.octa 0xf6380f4d66d8f6380f4cf3dbf6380f4d,0xe2c400000358978b48e1f6380f4cf3e4,0x66e8f6380f4cf3edf6380f4d66caf6fb,0x360978b48f1f6380f4cf3f6f6380f4d
+.octa 0xf4cf3fff6380f4d66caf6fbe2c40000,0x48c1f6380f4cf3c0f6380f4d66f8f638,0xf6380f4d66caf6fbe2c400000368978b,0x380f486600000000bac8f6380f4cf3c9
+.octa 0x4c00000490af894ccaf6380f48f3caf6,0x87894c000004a0bf894c00000498b789,0x4b88f8948000004b08f894c000004a8,0xfd8b78b4c00000fd0af8b4c0000
+.octa 0x100000001ba4800000fe0bf8b4c,0xc4ffffffff00000001b848d5af0f4900,0x14cc9f693e2c4ffffffffb9c0f6f3e2,0x49c62949ed114800000000bdd11148e8
+.octa 0xd5894900dc834900db8349ea1949cf19,0xf490000000100000001ba4800dd8349,0xf6f3e2c4ffffffff00000001b848d6af,0x1148f0014cc9f68be2c4ffffffffb9c0
+.octa 0x49ca1949c72949ed114800000000bdd1,0xde8349d6894900dd834900dc8349eb19,0x48d7af0f490000000100000001ba4800,0xffb9c0f6f3e2c4ffffffff00000001b8
+.octa 0xbdd11148f8014cc9f683e2c4ffffff,0x49ec1949cb1949c22949ed1148000000,0xba4800df8349d7894900de834900dd83,0x1b848d2af0f490000000100000001
+.octa 0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148d0014cc9f6abe2c4,0xde8349ed1949cc1949c32949ed1148,0x1ba4800da8349d2894900df8349
+.octa 0xff00000001b848d3af0f490000000100,0xa3e2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148d8014cc9f6,0xda834900df8349ee1949cd1949c42949
+.octa 0x100000001ba4800db8349d3894900,0xffffffff00000001b848d4af0f490000,0x4cc9f69be2c4ffffffffb9c0f6f3e2c4,0xc52949ed114800000000bdd11148e001
+.octa 0x894900db834900da8349ef1949ce1949,0x490af034c00000000b84100dc8349d4,0x4a0bf134c00000498b7134c0000,0x134c000004b09f134c000004a897134c
+.octa 0x771b4c406f2b4c00d08349000004b8a7,0x671b4c605f1b4c58571b4c507f1b4c48,0xe2c148c28948c189c0194800d8834968,0xef1149d61149cd0149e5d148c5894820
+.octa 0x490af894cc41149c31149c21149,0x894c000004a0bf894c00000498b7894c,0xb8a7894c000004b09f894c000004a897,0x4800001800b901c08348d88948000004
+.byte 0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+32]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+64]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+96]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+128]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+160]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+192]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+224]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+256]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+1024]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1168]
+        // mulx r10, rax, QWORD PTR [rdi+1176]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1184]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1192]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1200]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1208]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1032]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1040]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1048]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1056]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1064]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1216], r14
+        // mov QWORD PTR [rdi+1224], r15
+        // mov QWORD PTR [rdi+1232], r8
+        // mov QWORD PTR [rdi+1240], r9
+        // mov QWORD PTR [rdi+1248], r10
+        // mov QWORD PTR [rdi+1256], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x5c5c9eba5c5205adb05c5c0eba5c51a,0xfe0d41c4fd760d41c4d2eba5c5405adb,0x809adb05c5c0eba5c5605adb05c5f4
 .octa 0xa5c5000000a09adb05c5c9eba5c50000,0x9adb05c5f4fe0d41c4fd760d41c4d2eb,0xe09adb05c5c0eba5c5000000c0,0xd2eba5c5000001009adb05c5c9eba5c5
 .octa 0x4908ff6bb62c4ed3100000400978b48,0xf6380f4c660000049897f6fb62c40000,0xd0f6380f4c66000004a09ff6fb62c4c8,0xc4d8f6380f4c66000004a8a7f6fb62c4
@@ -954,8 +12827,314 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x2949ed114800000000bdd11148e8014c,0x4800da834900d98349e81949cf1949c6,0xbd4100d48349d3014900da83,0x584f1b4c50471b4c487f1b4c40772b4c
 .octa 0x89c0194800dc8349685f1b4c60571b4c,0x149e5d148c5894820e2c148c28948c1,0xc31149c21149c11149e81149d71149ce,0x894c000004c8bf894c000004c0b7894c
 .octa 0xe097894c000004d88f894c000004d087,0xc08348d88948000004e89f894c000004
-.byte 1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+288]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+320]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+352]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+384]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+416]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+448]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+480]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+512]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+544]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+576]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+608]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+640]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1168]
+        // mulx r10, rax, QWORD PTR [rdi+1176]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1184]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1192]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1200]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1208]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1264], r14
+        // mov QWORD PTR [rdi+1272], r15
+        // mov QWORD PTR [rdi+1280], r8
+        // mov QWORD PTR [rdi+1288], r9
+        // mov QWORD PTR [rdi+1296], r10
+        // mov QWORD PTR [rdi+1304], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x1409adb05c5c0eba5c5000001209a,0xeba5c5000001609adb05c5c9eba5c500,0x809adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000001a09adb05c5c0eba5c5000001,0xc4d2eba5c5000001c09adb05c5c9eba5,0x1e09adb05c5f4fe0d41c4fd760d41,0xeba5c5000002009adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000002209adb05c5c9,0xc5000002409adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000002609adb05c5c0eba5,0x340978b48d2eba5c5000002809adb05
@@ -983,8 +13162,306 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x49cf1949c62949ed114800000000bdd1,0x14900da834800da834900d98349e819,0x4c40772b4c00000000bd4100d48349d3,0x4c60571b4c584f1b4c50471b4c487f1b
 .octa 0x48c28948c189c0194800dc8349685f1b,0x49d71149ce0149e5d148c5894820e2c1,0x4f0b7894cc31149c21149c11149e811,0x50087894c000004f8bf894c0000
 .octa 0x894c0000051097894c000005088f894c,0x1800b901c08348d88948000005189f
-.byte 0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+672]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+704]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+736]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+768]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+800]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+832]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+864]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+896]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+928]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+1072]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1264]
+        // mulx r10, rax, QWORD PTR [rdi+1272]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1280]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1288]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1296]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1304]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1080]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1088]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1096]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1104]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1112]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1264], r14
+        // mov QWORD PTR [rdi+1272], r15
+        // mov QWORD PTR [rdi+1280], r8
+        // mov QWORD PTR [rdi+1288], r9
+        // mov QWORD PTR [rdi+1296], r10
+        // mov QWORD PTR [rdi+1304], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x2c09adb05c5c0eba5c5000002a09a,0xeba5c5000002e09adb05c5c9eba5c500,0x9adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000003209adb05c5c0eba5c5000003,0xc4d2eba5c5000003409adb05c5c9eba5,0x3609adb05c5f4fe0d41c4fd760d41,0xeba5c5000003809adb05c5c0eba5c500
 .octa 0x978b48d2eba5c5000003a09adb05c5c9,0xc4000004f08ff6bb62c4ed3100000430,0x62c4c8f6380f4c66000004f897f6fb62,0xfb62c4d0f6380f4c66000005009ff6fb
@@ -1011,23 +13488,429 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0xe8014cc9f693e2c4ffffffffb9c0f6f3,0x1949c62949ed114800000000bdd11148,0xda834800da834900d98349e81949cf,0x772b4c00000000bd4100d48349d30149
 .octa 0x571b4c584f1b4c50471b4c487f1b4c40,0x8948c189c0194800dc8349685f1b4c60,0x1149ce0149e5d148c5894820e2c148c2,0xb7894cc31149c21149c11149e81149d7
 .octa 0x50087894c000004f8bf894c000004f0,0x51097894c000005088f894c0000,0xb901c08348d88948000005189f894c
-.byte 24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+960]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+992]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1024]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1056]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1088]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1120]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1152]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1184]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1216]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1248]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1280]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1312]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+1216]
+        // mov r9, QWORD PTR [rdi+1224]
+        // mov r10, QWORD PTR [rdi+1232]
+        // mov r11, QWORD PTR [rdi+1240]
+        // mov r12, QWORD PTR [rdi+1248]
+        // mov r13, QWORD PTR [rdi+1256]
+        // sub r8, QWORD PTR [rdi+736]
+        // sbb r9, QWORD PTR [rdi+744]
+        // sbb r10, QWORD PTR [rdi+752]
+        // sbb r11, QWORD PTR [rdi+760]
+        // sbb r12, QWORD PTR [rdi+768]
+        // sbb r13, QWORD PTR [rdi+776]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1216], r8
+        // mov QWORD PTR [rdi+1224], r9
+        // mov QWORD PTR [rdi+1232], r10
+        // mov QWORD PTR [rdi+1240], r11
+        // mov QWORD PTR [rdi+1248], r12
+        // mov QWORD PTR [rdi+1256], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x3e09adb05c5c0eba5c5000003c09a,0xeba5c5000004009adb05c5c9eba5c500,0x209adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000004409adb05c5c0eba5c5000004,0xc4d2eba5c5000004609adb05c5c9eba5,0x4809adb05c5f4fe0d41c4fd760d41,0xeba5c5000004a09adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000004c09adb05c5c9,0xc5000004e09adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000005009adb05c5c0eba5,0x4c0878b4cd2eba5c5000005209adb05
 .octa 0x4d0978b4c000004c88f8b4c0000,0x8b4c000004e0a78b4c000004d89f8b4c,0xe88f1b4c000002e0872b4c000004e8af,0x2f89f1b4c000002f0971b4c000002
 .octa 0x4800000308af1b4c00000300a71b4c00,0xd148c5894820e2c148c28948c189c019,0xc41149c31149ea1149d11149c80149e5,0x4c88f894c000004c087894cc51149
 .octa 0x4c000004d89f894c000004d097894c00,0xd88948000004e8af894c000004e0a789
-.byte 72,131,192,1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x48,0x83,0xc0,0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1344]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1376]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1408]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1440]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1472]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1504]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1536]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1568]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1600]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+1264]
+        // mov r9, QWORD PTR [rdi+1272]
+        // mov r10, QWORD PTR [rdi+1280]
+        // mov r11, QWORD PTR [rdi+1288]
+        // mov r12, QWORD PTR [rdi+1296]
+        // mov r13, QWORD PTR [rdi+1304]
+        // sub r8, QWORD PTR [rdi+784]
+        // sbb r9, QWORD PTR [rdi+792]
+        // sbb r10, QWORD PTR [rdi+800]
+        // sbb r11, QWORD PTR [rdi+808]
+        // sbb r12, QWORD PTR [rdi+816]
+        // sbb r13, QWORD PTR [rdi+824]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1264], r8
+        // mov QWORD PTR [rdi+1272], r9
+        // mov QWORD PTR [rdi+1280], r10
+        // mov QWORD PTR [rdi+1288], r11
+        // mov QWORD PTR [rdi+1296], r12
+        // mov QWORD PTR [rdi+1304], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x5609adb05c5c0eba5c5000005409a,0xeba5c5000005809adb05c5c9eba5c500,0xa09adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000005c09adb05c5c0eba5c5000005,0xc4d2eba5c5000005e09adb05c5c9eba5,0x6009adb05c5f4fe0d41c4fd760d41,0xeba5c5000006209adb05c5c0eba5c500
 .octa 0x878b4cd2eba5c5000006409adb05c5c9,0x500978b4c000004f88f8b4c000004f0,0x510a78b4c000005089f8b4c0000,0x1b4c00000310872b4c00000518af8b4c
 .octa 0x289f1b4c00000320971b4c000003188f,0x338af1b4c00000330a71b4c000003,0xc5894820e2c148c28948c189c0194800,0x49c31149ea1149d11149c80149e5d148
 .octa 0xf88f894c000004f087894cc51149c411,0x5089f894c0000050097894c000004,0x4800000518af894c00000510a7894c00
-.byte 137,216,72,131,192,1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x89,0xd8,0x48,0x83,0xc0,0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1632]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1664]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1696]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1728]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1760]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1792]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1824]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1856]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1888]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1920]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1952]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+1984]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+1216]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1224]
+        // mulx r10, rax, QWORD PTR [rdi+1232]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1240]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1248]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1256]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+1224]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+1256]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+1232]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+1256]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+1240]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+1256]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+1248]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+1256]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+1216]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+1224]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+1232]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+1240]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+1248]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+1256]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+1312], r13
+        // mov QWORD PTR [rdi+1320], r14
+        // mov QWORD PTR [rdi+1328], r15
+        // mov QWORD PTR [rdi+1336], r8
+        // mov QWORD PTR [rdi+1344], r9
+        // mov QWORD PTR [rdi+1352], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1312]
+        // adc r14, QWORD PTR [rdi+1320]
+        // adc r15, QWORD PTR [rdi+1328]
+        // adc r10, QWORD PTR [rdi+1336]
+        // adc r11, QWORD PTR [rdi+1344]
+        // adc r12, QWORD PTR [rdi+1352]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1312], r13
+        // mov QWORD PTR [rdi+1320], r14
+        // mov QWORD PTR [rdi+1328], r15
+        // mov QWORD PTR [rdi+1336], r10
+        // mov QWORD PTR [rdi+1344], r11
+        // mov QWORD PTR [rdi+1352], r12
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x6809adb05c5c0eba5c5000006609a,0xeba5c5000006a09adb05c5c9eba5c500,0xc09adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000006e09adb05c5c0eba5c5000006,0xc4d2eba5c5000007009adb05c5c9eba5,0x7209adb05c5f4fe0d41c4fd760d41,0xeba5c5000007409adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000007609adb05c5c9,0xc5000007809adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000007a09adb05c5c0eba5,0x4c0978b48d2eba5c5000007c09adb05
@@ -1052,8 +13935,306 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x134c00000528b7134c00000520af034c,0x409f134c0000053897134c00000530bf,0x2b4c00d0834900000548a7134c000005,0x1b4c58571b4c507f1b4c48771b4c406f
 .octa 0x48c189c0194800d8834968671b4c605f,0x49cd0149e5d148c5894820e2c148c289,0x894cc41149c31149c21149ef1149d611,0x30bf894c00000528b7894c00000520af
 .octa 0x5409f894c0000053897894c000005,0xb901c08348d8894800000548a7894c00
-.byte 0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2016]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2048]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2080]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2112]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2144]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2176]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2208]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2240]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2272]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+1216]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1312]
+        // mulx r10, rax, QWORD PTR [rdi+1320]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1328]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1336]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1344]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1352]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1224]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1232]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1240]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1248]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1256]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1360], r14
+        // mov QWORD PTR [rdi+1368], r15
+        // mov QWORD PTR [rdi+1376], r8
+        // mov QWORD PTR [rdi+1384], r9
+        // mov QWORD PTR [rdi+1392], r10
+        // mov QWORD PTR [rdi+1400], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x8009adb05c5c0eba5c5000007e09a,0xeba5c5000008209adb05c5c9eba5c500,0x409adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000008609adb05c5c0eba5c5000008,0xc4d2eba5c5000008809adb05c5c9eba5,0x8a09adb05c5f4fe0d41c4fd760d41,0xeba5c5000008c09adb05c5c0eba5c500
 .octa 0x978b48d2eba5c5000008e09adb05c5c9,0xc4000005208ff6bb62c4ed31000004c0,0x62c4c8f6380f4c660000052897f6fb62,0xfb62c4d0f6380f4c66000005309ff6fb
@@ -1080,8 +14261,314 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0xe8014cc9f693e2c4ffffffffb9c0f6f3,0x1949c62949ed114800000000bdd11148,0xda834800da834900d98349e81949cf,0x772b4c00000000bd4100d48349d30149
 .octa 0x571b4c584f1b4c50471b4c487f1b4c40,0x8948c189c0194800dc8349685f1b4c60,0x1149ce0149e5d148c5894820e2c148c2,0xb7894cc31149c21149c11149e81149d7
 .octa 0x56087894c00000558bf894c00000550,0x57097894c000005688f894c0000,0xb901c08348d88948000005789f894c
-.byte 24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2304]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2336]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2368]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2400]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2432]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2464]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2496]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2528]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2560]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2592]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2624]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2656]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+736]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1312]
+        // mulx r10, rax, QWORD PTR [rdi+1320]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1328]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1336]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1344]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1352]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+744]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+752]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+760]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+768]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+776]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1312], r14
+        // mov QWORD PTR [rdi+1320], r15
+        // mov QWORD PTR [rdi+1328], r8
+        // mov QWORD PTR [rdi+1336], r9
+        // mov QWORD PTR [rdi+1344], r10
+        // mov QWORD PTR [rdi+1352], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x9209adb05c5c0eba5c5000009009a,0xeba5c5000009409adb05c5c9eba5c500,0x609adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000009809adb05c5c0eba5c5000009,0xc4d2eba5c5000009a09adb05c5c9eba5,0x9c09adb05c5f4fe0d41c4fd760d41,0xeba5c5000009e09adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c500000a009adb05c5c9,0xc500000a209adb05c5f4fe0d41c4fd76,0xc5c9eba5c500000a409adb05c5c0eba5,0x2e0978b48d2eba5c500000a609adb05
@@ -1109,8 +14596,288 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x49cf1949c62949ed114800000000bdd1,0x14900da834800da834900d98349e819,0x4c40772b4c00000000bd4100d48349d3,0x4c60571b4c584f1b4c50471b4c487f1b
 .octa 0x48c28948c189c0194800dc8349685f1b,0x49d71149ce0149e5d148c5894820e2c1,0x520b7894cc31149c21149c11149e811,0x53087894c00000528bf894c0000
 .octa 0x894c0000054097894c000005388f894c,0x1800b901c08348d88948000005489f
-.byte 0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2688]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2720]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2752]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2784]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2816]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2848]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2880]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2912]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2944]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+2976]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3008]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3040]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+1264]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1272]
+        // mulx r10, rax, QWORD PTR [rdi+1280]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1288]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1296]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1304]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+1272]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+1304]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+1280]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+1304]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+1288]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+1304]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+1296]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+1304]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+1264]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+1272]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+1280]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+1288]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+1296]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+1304]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+880], r13
+        // mov QWORD PTR [rdi+888], r14
+        // mov QWORD PTR [rdi+896], r15
+        // mov QWORD PTR [rdi+904], r8
+        // mov QWORD PTR [rdi+912], r9
+        // mov QWORD PTR [rdi+920], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+880]
+        // adc r14, QWORD PTR [rdi+888]
+        // adc r15, QWORD PTR [rdi+896]
+        // adc r10, QWORD PTR [rdi+904]
+        // adc r11, QWORD PTR [rdi+912]
+        // adc r12, QWORD PTR [rdi+920]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+880], r13
+        // mov QWORD PTR [rdi+888], r14
+        // mov QWORD PTR [rdi+896], r15
+        // mov QWORD PTR [rdi+904], r10
+        // mov QWORD PTR [rdi+912], r11
+        // mov QWORD PTR [rdi+920], r12
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0xaa09adb05c5c0eba5c500000a809a,0xeba5c500000ac09adb05c5c9eba5c500,0xe09adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc500000b009adb05c5c0eba5c500000a,0xc4d2eba5c500000b209adb05c5c9eba5,0xb409adb05c5f4fe0d41c4fd760d41,0xeba5c500000b609adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c500000b809adb05c5c9,0xc500000ba09adb05c5f4fe0d41c4fd76,0xc5c9eba5c500000bc09adb05c5c0eba5,0x4f0978b48d2eba5c500000be09adb05
@@ -1135,15 +14902,150 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x134c00000378b7134c00000370af034c,0x909f134c0000038897134c00000380bf,0x2b4c00d0834900000398a7134c000003,0x1b4c58571b4c507f1b4c48771b4c406f
 .octa 0x48c189c0194800d8834968671b4c605f,0x49cd0149e5d148c5894820e2c148c289,0x894cc41149c31149c21149ef1149d611,0x80bf894c00000378b7894c00000370af
 .octa 0x3909f894c0000038897894c000003,0xb901c08348d8894800000398a7894c00
-.byte 0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3072]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3104]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3136]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3168]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3200]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3232]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3264]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3296]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3328]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+880]
+        // mov r9, QWORD PTR [rdi+888]
+        // mov r10, QWORD PTR [rdi+896]
+        // mov r11, QWORD PTR [rdi+904]
+        // mov r12, QWORD PTR [rdi+912]
+        // mov r13, QWORD PTR [rdi+920]
+        // sub r8, QWORD PTR [rdi+1360]
+        // sbb r9, QWORD PTR [rdi+1368]
+        // sbb r10, QWORD PTR [rdi+1376]
+        // sbb r11, QWORD PTR [rdi+1384]
+        // sbb r12, QWORD PTR [rdi+1392]
+        // sbb r13, QWORD PTR [rdi+1400]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+880], r8
+        // mov QWORD PTR [rdi+888], r9
+        // mov QWORD PTR [rdi+896], r10
+        // mov QWORD PTR [rdi+904], r11
+        // mov QWORD PTR [rdi+912], r12
+        // mov QWORD PTR [rdi+920], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0xc209adb05c5c0eba5c500000c009a,0xeba5c500000c409adb05c5c9eba5c500,0x609adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc500000c809adb05c5c0eba5c500000c,0xc4d2eba5c500000ca09adb05c5c9eba5,0xcc09adb05c5f4fe0d41c4fd760d41,0xeba5c500000ce09adb05c5c0eba5c500
 .octa 0x878b4cd2eba5c500000d009adb05c5c9,0x380978b4c000003788f8b4c00000370,0x390a78b4c000003889f8b4c0000,0x1b4c00000550872b4c00000398af8b4c
 .octa 0x689f1b4c00000560971b4c000005588f,0x578af1b4c00000570a71b4c000005,0xc5894820e2c148c28948c189c0194800,0x49c31149ea1149d11149c80149e5d148
 .octa 0x788f894c0000037087894cc51149c411,0x3889f894c0000038097894c000003,0x4800000398af894c00000390a7894c00
-.byte 137,216,72,131,192,1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x89,0xd8,0x48,0x83,0xc0,0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3360]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3392]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3424]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3456]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3488]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3520]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3552]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3584]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3616]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3648]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3680]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3712]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // mov r14d, 0
+        // add r8, QWORD PTR [rdi+1312]
+        // adc r9, QWORD PTR [rdi+1320]
+        // adc r10, QWORD PTR [rdi+1328]
+        // adc r11, QWORD PTR [rdi+1336]
+        // adc r12, QWORD PTR [rdi+1344]
+        // adc r13, QWORD PTR [rdi+1352]
+        // adc r14, 0
+        // sub r8, QWORD PTR [rdi+64]
+        // sbb r9, QWORD PTR [rdi+72]
+        // sbb r10, QWORD PTR [rdi+80]
+        // sbb r11, QWORD PTR [rdi+88]
+        // sbb r12, QWORD PTR [rdi+96]
+        // sbb r13, QWORD PTR [rdi+104]
+        // sbb r14, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1408], r8
+        // mov QWORD PTR [rdi+1416], r9
+        // mov QWORD PTR [rdi+1424], r10
+        // mov QWORD PTR [rdi+1432], r11
+        // mov QWORD PTR [rdi+1440], r12
+        // mov QWORD PTR [rdi+1448], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0xd409adb05c5c0eba5c500000d209a,0xeba5c500000d609adb05c5c9eba5c500,0x809adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc500000da09adb05c5c0eba5c500000d,0xc4d2eba5c500000dc09adb05c5c9eba5,0xde09adb05c5f4fe0d41c4fd760d41,0xeba5c500000e009adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c500000e209adb05c5c9,0xc500000e409adb05c5f4fe0d41c4fd76,0xc5c9eba5c500000e609adb05c5c0eba5,0x520878b4cd2eba5c500000e809adb05
@@ -1151,23 +15053,447 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x134c00000540a7134c000005389f134c,0x4f1b4c40472b4c00d6834900000548af,0x6f1b4c60671b4c585f1b4c50571b4c48,0xe2c148c28948c189c0194800de834968
 .octa 0xea1149d11149c80149e5d148c5894820,0x58087894cc51149c41149c31149,0x894c0000059097894c000005888f894c,0xa8af894c000005a0a7894c000005989f
 .octa 0x4800001800b901c08348d88948000005
-.byte 247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3744]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3776]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3808]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3840]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3872]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3904]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3936]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+3968]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4000]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+880]
+        // mov r9, QWORD PTR [rdi+888]
+        // mov r10, QWORD PTR [rdi+896]
+        // mov r11, QWORD PTR [rdi+904]
+        // mov r12, QWORD PTR [rdi+912]
+        // mov r13, QWORD PTR [rdi+920]
+        // sub r8, QWORD PTR [rdi+1408]
+        // sbb r9, QWORD PTR [rdi+1416]
+        // sbb r10, QWORD PTR [rdi+1424]
+        // sbb r11, QWORD PTR [rdi+1432]
+        // sbb r12, QWORD PTR [rdi+1440]
+        // sbb r13, QWORD PTR [rdi+1448]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+880], r8
+        // mov QWORD PTR [rdi+888], r9
+        // mov QWORD PTR [rdi+896], r10
+        // mov QWORD PTR [rdi+904], r11
+        // mov QWORD PTR [rdi+912], r12
+        // mov QWORD PTR [rdi+920], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0xec09adb05c5c0eba5c500000ea09a,0xeba5c500000ee09adb05c5c9eba5c500,0x9adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc500000f209adb05c5c0eba5c500000f,0xc4d2eba5c500000f409adb05c5c9eba5,0xf609adb05c5f4fe0d41c4fd760d41,0xeba5c500000f809adb05c5c0eba5c500
 .octa 0x878b4cd2eba5c500000fa09adb05c5c9,0x380978b4c000003788f8b4c00000370,0x390a78b4c000003889f8b4c0000,0x1b4c00000580872b4c00000398af8b4c
 .octa 0x989f1b4c00000590971b4c000005888f,0x5a8af1b4c000005a0a71b4c000005,0xc5894820e2c148c28948c189c0194800,0x49c31149ea1149d11149c80149e5d148
 .octa 0x788f894c0000037087894cc51149c411,0x3889f894c0000038097894c000003,0x4800000398af894c00000390a7894c00
-.byte 137,216,72,131,192,1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x89,0xd8,0x48,0x83,0xc0,0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4032]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4064]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4096]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4128]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4160]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4192]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4224]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4256]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4288]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4320]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4352]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4384]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // sub r8, QWORD PTR [rdi+880]
+        // sbb r9, QWORD PTR [rdi+888]
+        // sbb r10, QWORD PTR [rdi+896]
+        // sbb r11, QWORD PTR [rdi+904]
+        // sbb r12, QWORD PTR [rdi+912]
+        // sbb r13, QWORD PTR [rdi+920]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1312], r8
+        // mov QWORD PTR [rdi+1320], r9
+        // mov QWORD PTR [rdi+1328], r10
+        // mov QWORD PTR [rdi+1336], r11
+        // mov QWORD PTR [rdi+1344], r12
+        // mov QWORD PTR [rdi+1352], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0xfe09adb05c5c0eba5c500000fc09a,0xeba5c5000010009adb05c5c9eba5c500,0x209adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000010409adb05c5c0eba5c5000010,0xc4d2eba5c5000010609adb05c5c9eba5,0x10809adb05c5f4fe0d41c4fd760d41,0xeba5c5000010a09adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000010c09adb05c5c9,0xc5000010e09adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000011009adb05c5c0eba5,0x520878b4cd2eba5c5000011209adb05
 .octa 0x530978b4c000005288f8b4c0000,0x8b4c00000540a78b4c000005389f8b4c,0x788f1b4c00000370872b4c00000548af,0x3889f1b4c00000380971b4c000003
 .octa 0x4800000398af1b4c00000390a71b4c00,0xd148c5894820e2c148c28948c189c019,0xc41149c31149ea1149d11149c80149e5,0x5288f894c0000052087894cc51149
 .octa 0x4c000005389f894c0000053097894c00,0xd8894800000548af894c00000540a789
-.byte 72,131,192,1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x48,0x83,0xc0,0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4416]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4448]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4480]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4512]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4544]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4576]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4608]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4640]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4672]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+1264]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1312]
+        // mulx r10, rax, QWORD PTR [rdi+1320]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1328]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1336]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1344]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1352]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1272]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1280]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1288]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1296]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1304]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1312], r14
+        // mov QWORD PTR [rdi+1320], r15
+        // mov QWORD PTR [rdi+1328], r8
+        // mov QWORD PTR [rdi+1336], r9
+        // mov QWORD PTR [rdi+1344], r10
+        // mov QWORD PTR [rdi+1352], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x11609adb05c5c0eba5c5000011409a,0xeba5c5000011809adb05c5c9eba5c500,0xa09adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000011c09adb05c5c0eba5c5000011,0xc4d2eba5c5000011e09adb05c5c9eba5,0x12009adb05c5f4fe0d41c4fd760d41,0xeba5c5000012209adb05c5c0eba5c500
 .octa 0x978b48d2eba5c5000012409adb05c5c9,0xc4000005208ff6bb62c4ed31000004f0,0x62c4c8f6380f4c660000052897f6fb62,0xfb62c4d0f6380f4c66000005309ff6fb
@@ -1194,8 +15520,314 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0xe8014cc9f693e2c4ffffffffb9c0f6f3,0x1949c62949ed114800000000bdd11148,0xda834800da834900d98349e81949cf,0x772b4c00000000bd4100d48349d30149
 .octa 0x571b4c584f1b4c50471b4c487f1b4c40,0x8948c189c0194800dc8349685f1b4c60,0x1149ce0149e5d148c5894820e2c148c2,0xb7894cc31149c21149c11149e81149d7
 .octa 0x53087894c00000528bf894c00000520,0x54097894c000005388f894c0000,0xb901c08348d88948000005489f894c
-.byte 24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4704]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4736]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4768]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4800]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4832]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4864]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4896]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4928]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4960]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+4992]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5024]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5056]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1360]
+        // mulx r10, rax, QWORD PTR [rdi+1368]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1376]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1384]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1392]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1400]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1360], r14
+        // mov QWORD PTR [rdi+1368], r15
+        // mov QWORD PTR [rdi+1376], r8
+        // mov QWORD PTR [rdi+1384], r9
+        // mov QWORD PTR [rdi+1392], r10
+        // mov QWORD PTR [rdi+1400], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x12809adb05c5c0eba5c5000012609a,0xeba5c5000012a09adb05c5c9eba5c500,0xc09adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000012e09adb05c5c0eba5c5000012,0xc4d2eba5c5000013009adb05c5c9eba5,0x13209adb05c5f4fe0d41c4fd760d41,0xeba5c5000013409adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000013609adb05c5c9,0xc5000013809adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000013a09adb05c5c0eba5,0x310978b48d2eba5c5000013c09adb05
@@ -1223,15 +15855,380 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x49cf1949c62949ed114800000000bdd1,0x14900da834800da834900d98349e819,0x4c40772b4c00000000bd4100d48349d3,0x4c60571b4c584f1b4c50471b4c487f1b
 .octa 0x48c28948c189c0194800dc8349685f1b,0x49d71149ce0149e5d148c5894820e2c1,0x550b7894cc31149c21149c11149e811,0x56087894c00000558bf894c0000
 .octa 0x894c0000057097894c000005688f894c,0x1800b901c08348d88948000005789f
-.byte 0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5088]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5120]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5152]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5184]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5216]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5248]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5280]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5312]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5344]
+        // vpor ymm2, ymm2, ymm11
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // sub r8, QWORD PTR [rdi+1360]
+        // sbb r9, QWORD PTR [rdi+1368]
+        // sbb r10, QWORD PTR [rdi+1376]
+        // sbb r11, QWORD PTR [rdi+1384]
+        // sbb r12, QWORD PTR [rdi+1392]
+        // sbb r13, QWORD PTR [rdi+1400]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+928], r8
+        // mov QWORD PTR [rdi+936], r9
+        // mov QWORD PTR [rdi+944], r10
+        // mov QWORD PTR [rdi+952], r11
+        // mov QWORD PTR [rdi+960], r12
+        // mov QWORD PTR [rdi+968], r13
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x14009adb05c5c0eba5c5000013e09a,0xeba5c5000014209adb05c5c9eba5c500,0x409adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000014609adb05c5c0eba5c5000014,0xc4d2eba5c5000014809adb05c5c9eba5,0x14a09adb05c5f4fe0d41c4fd760d41,0xeba5c5000014c09adb05c5c0eba5c500
 .octa 0x878b4cd2eba5c5000014e09adb05c5c9,0x530978b4c000005288f8b4c00000520,0x540a78b4c000005389f8b4c0000,0x1b4c00000550872b4c00000548af8b4c
 .octa 0x689f1b4c00000560971b4c000005588f,0x578af1b4c00000570a71b4c000005,0xc5894820e2c148c28948c189c0194800,0x49c31149ea1149d11149c80149e5d148
 .octa 0xa88f894c000003a087894cc51149c411,0x3b89f894c000003b097894c000003,0x48000003c8af894c000003c0a7894c00
-.byte 137,216,72,131,192,1,185,0,24,0,0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x89,0xd8,0x48,0x83,0xc0,0x01,0xb9,0x00,0x18,0x00,0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5376]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5408]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5440]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5472]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5504]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5536]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5568]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5600]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5632]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5664]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5696]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5728]
+        // vpor ymm2, ymm2, ymm11
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1216]
+        // mulx r10, rax, QWORD PTR [rdi+1224]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1232]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1240]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1248]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1256]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+976], r14
+        // mov QWORD PTR [rdi+984], r15
+        // mov QWORD PTR [rdi+992], r8
+        // mov QWORD PTR [rdi+1000], r9
+        // mov QWORD PTR [rdi+1008], r10
+        // mov QWORD PTR [rdi+1016], r11
+        // mov rax, rbx
+        // add rax, 1
+        // mov ecx, 6144
+        // mul rcx
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x15209adb05c5c0eba5c5000015009a,0xeba5c5000015409adb05c5c9eba5c500,0x609adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000015809adb05c5c0eba5c5000015,0xc4d2eba5c5000015a09adb05c5c9eba5,0x15c09adb05c5f4fe0d41c4fd760d41,0xeba5c5000015e09adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000016009adb05c5c9,0xc5000016209adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000016409adb05c5c0eba5,0x340978b48d2eba5c5000016609adb05
@@ -1259,8 +16256,467 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0x49cf1949c62949ed114800000000bdd1,0x14900da834800da834900d98349e819,0x4c40772b4c00000000bd4100d48349d3,0x4c60571b4c584f1b4c50471b4c487f1b
 .octa 0x48c28948c189c0194800dc8349685f1b,0x49d71149ce0149e5d148c5894820e2c1,0x3d0b7894cc31149c21149c11149e811,0x3e087894c000003d8bf894c0000
 .octa 0x894c000003f097894c000003e88f894c,0x1800b901c08348d88948000003f89f
-.byte 0,72,247,225",
-        r"lea rdx, [rip + {VG_P384_COMB}]",
+.byte 0x00,0x48,0xf7,0xe1
+lea rdx, [rip + {VG_P384_COMB}]",
+        // add rdx, rax
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5760]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5792]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5824]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5856]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5888]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5920]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5952]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+5984]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6016]
+        // vpor ymm2, ymm2, ymm11
+        // vpcmpeqd ymm15, ymm14, ymm13
+        // vpaddd ymm14, ymm14, ymm12
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6048]
+        // vpor ymm0, ymm0, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6080]
+        // vpor ymm1, ymm1, ymm11
+        // vpand ymm11, ymm15, YMMWORD PTR [rdx+6112]
+        // vpor ymm2, ymm2, ymm11
+        // mov rax, QWORD PTR [rdi+832]
+        // or rax, QWORD PTR [rdi+840]
+        // or rax, QWORD PTR [rdi+848]
+        // or rax, QWORD PTR [rdi+856]
+        // or rax, QWORD PTR [rdi+864]
+        // or rax, QWORD PTR [rdi+872]
+        // mov ecx, 0
+        // sub rcx, rax
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+1024]
+        // mov rdx, QWORD PTR [rdi+880]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+880], rax
+        // mov rax, QWORD PTR [rdi+1032]
+        // mov rdx, QWORD PTR [rdi+888]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+888], rax
+        // mov rax, QWORD PTR [rdi+1040]
+        // mov rdx, QWORD PTR [rdi+896]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+896], rax
+        // mov rax, QWORD PTR [rdi+1048]
+        // mov rdx, QWORD PTR [rdi+904]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+904], rax
+        // mov rax, QWORD PTR [rdi+1056]
+        // mov rdx, QWORD PTR [rdi+912]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+912], rax
+        // mov rax, QWORD PTR [rdi+1064]
+        // mov rdx, QWORD PTR [rdi+920]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+920], rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+928]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+928], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+936]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+936], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+944]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+944], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+952]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+952], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+960]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+960], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+968]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+968], rax
+        // mov rax, QWORD PTR [rdi+1120]
+        // mov rdx, QWORD PTR [rdi+976]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+976], rax
+        // mov rax, QWORD PTR [rdi+1128]
+        // mov rdx, QWORD PTR [rdi+984]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+984], rax
+        // mov rax, QWORD PTR [rdi+1136]
+        // mov rdx, QWORD PTR [rdi+992]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+992], rax
+        // mov rax, QWORD PTR [rdi+1144]
+        // mov rdx, QWORD PTR [rdi+1000]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1000], rax
+        // mov rax, QWORD PTR [rdi+1152]
+        // mov rdx, QWORD PTR [rdi+1008]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1008], rax
+        // mov rax, QWORD PTR [rdi+1160]
+        // mov rdx, QWORD PTR [rdi+1016]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1016], rax
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov ecx, 0
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+880]
+        // mov rdx, QWORD PTR [rdi+736]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+736], rax
+        // mov rax, QWORD PTR [rdi+888]
+        // mov rdx, QWORD PTR [rdi+744]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+744], rax
+        // mov rax, QWORD PTR [rdi+896]
+        // mov rdx, QWORD PTR [rdi+752]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+752], rax
+        // mov rax, QWORD PTR [rdi+904]
+        // mov rdx, QWORD PTR [rdi+760]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+760], rax
+        // mov rax, QWORD PTR [rdi+912]
+        // mov rdx, QWORD PTR [rdi+768]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+768], rax
+        // mov rax, QWORD PTR [rdi+920]
+        // mov rdx, QWORD PTR [rdi+776]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+776], rax
+        // mov rax, QWORD PTR [rdi+928]
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+936]
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+944]
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+952]
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+960]
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+968]
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+824], rax
+        // mov rax, QWORD PTR [rdi+976]
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+832], rax
+        // mov rax, QWORD PTR [rdi+984]
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+840], rax
+        // mov rax, QWORD PTR [rdi+992]
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+848], rax
+        // mov rax, QWORD PTR [rdi+1000]
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+856], rax
+        // mov rax, QWORD PTR [rdi+1008]
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+864], rax
+        // mov rax, QWORD PTR [rdi+1016]
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+872], rax
+        // add rbx, 1
+        // vmovdqu YMMWORD PTR [rdi+1024], ymm0
+        // vmovdqu YMMWORD PTR [rdi+1056], ymm1
+        // vmovdqu YMMWORD PTR [rdi+1088], ymm2
+        // vzeroupper
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1072]
+        // mov QWORD PTR [rdi+1072], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1080]
+        // mov QWORD PTR [rdi+1080], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1088]
+        // mov QWORD PTR [rdi+1088], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1096]
+        // mov QWORD PTR [rdi+1096], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1104]
+        // mov QWORD PTR [rdi+1104], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+1112]
+        // mov QWORD PTR [rdi+1112], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1120], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1128], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1136], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1144], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1152], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // mov QWORD PTR [rdi+1160], rax
+        // mov r8, QWORD PTR [rdi+208]
+        // mov r9, QWORD PTR [rdi+216]
+        // mov r10, QWORD PTR [rdi+224]
+        // mov r11, QWORD PTR [rdi+232]
+        // mov r12, QWORD PTR [rdi+240]
+        // mov r13, QWORD PTR [rdi+248]
+        // sub r8, QWORD PTR [rdi+1072]
+        // sbb r9, QWORD PTR [rdi+1080]
+        // sbb r10, QWORD PTR [rdi+1088]
+        // sbb r11, QWORD PTR [rdi+1096]
+        // sbb r12, QWORD PTR [rdi+1104]
+        // sbb r13, QWORD PTR [rdi+1112]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1504], r8
+        // mov QWORD PTR [rdi+1512], r9
+        // mov QWORD PTR [rdi+1520], r10
+        // mov QWORD PTR [rdi+1528], r11
+        // mov QWORD PTR [rdi+1536], r12
+        // mov QWORD PTR [rdi+1544], r13
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // movzx eax, BYTE PTR [rdi+rcx*1+2230]
+        // mov ecx, 0
+        // sub rcx, rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+1504]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1072], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+1512]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1080], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+1520]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1088], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+1528]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1096], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+1536]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1104], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+1544]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1112], rax
+        // cmp rbx, 54
         r".octa 0xdb05c5f4fe0d41c4fd760d41c4c20148,0x16a09adb05c5c0eba5c5000016809a,0xeba5c5000016c09adb05c5c9eba5c500,0xe09adb05c5f4fe0d41c4fd760d41c4d2
 .octa 0xc5000017009adb05c5c0eba5c5000016,0xc4d2eba5c5000017209adb05c5c9eba5,0x17409adb05c5f4fe0d41c4fd760d41,0xeba5c5000017609adb05c5c0eba5c500
 .octa 0xd41c4d2eba5c5000017809adb05c5c9,0xc5000017a09adb05c5f4fe0d41c4fd76,0xc5c9eba5c5000017c09adb05c5c0eba5,0x340878b48d2eba5c5000017e09adb05
@@ -1297,371 +16753,4598 @@ pub unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
 .octa 0xf097894c000005e88f894c000005e087,0x600a7894c000005f89f894c000005,0x7b9d8894800000608af894c00,0xb9000008b60f84b60fc18948e1f748
 .octa 0x978b4800000430878b48c12948000000,0x878948d03148ca2148c23148000005e0,0x5e8978b4800000438878b4800000430,0x438878948d03148ca2148c231480000
 .octa 0x5f0978b4800000440878b480000,0x440878948d03148ca2148c23148,0x3148000005f8978b4800000448878b48,0x8b4800000448878948d03148ca2148c2
-.octa 0x48c2314800000600978b480000045087,0x58878b4800000450878948d03148ca21,0xca2148c2314800000608978b48000004,0x850f36fb834800000458878948d03148
-.octa 0xbb62c4ed3100000340978b48ffffa6b1,0x660000035097f6fb62c4000003488ff6,0x4c66000003589ff6fb62c4c8f6380f4c,0xf4c6600000360a7f6fb62c4d0f6380f
-.octa 0x380f4c6600000368aff6fb62c4d8f638,0x4c00000fd887894cedf6380f4c66e0f6,0xc4ed3100000348978b4800000fe08f89,0x4c66d0f6380f4cf3000003508ff6fbe2
-.octa 0xf4cf3000003588ff6fbe2c4d9f6380f,0x3608ff6fbe2c4e1f6380f4c66d8f638,0x62c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf300000368b7f6fb
-.octa 0x350978b48f5f6380f4cf3f5f638,0xf6380f4cf3000003588ff6fbe2c4ed31,0x3608ff6fbe2c4e9f6380f4c66e0,0xf6fb62c4f1f6380f4c66e8f6380f4cf3
-.octa 0xf6380f4c66f0f6380f4cf300000368bf,0xed3100000358978b48fdf6380f4cf3fd,0x66f0f6380f4cf3000003608ff6fbe2c4,0x4cf30000036887f6fb62c4f9f6380f4c
-.octa 0xc5f6380f4cf3c5f6380f4c66f8f6380f,0x3688ff6fb62c4ed3100000360978b48,0x4cf3cdf6380f4c66c0f6380f4cf30000,0xfbe2c400000340978b48ed31cdf6380f
-.octa 0x8948e8f6380f48f3edf6380f4866caf6,0x380f486600000fd8978b4800000fd0af,0x4800000fd8978948d1f6380f48f3d2f6,0xfe0978b48caf6fbe2c400000348978b
-.octa 0x8948d0f6380f48f3d2f6380f48660000,0xf6380f4cf3d2f6380f4d6600000fe097,0xf4d66caf6fbe2c400000350978b48d1,0xf3e4f6380f4d66d8f6380f4cf3dbf638
-.octa 0xf6fbe2c400000358978b48e1f6380f4c,0xf4d66e8f6380f4cf3edf6380f4d66ca,0x360978b48f1f6380f4cf3f6f638,0xf6380f4cf3fff6380f4d66caf6fbe2c4
-.octa 0x978b48c1f6380f4cf3c0f6380f4d66f8,0xf3c9f6380f4d66caf6fbe2c400000368,0xcaf6380f486600000000bac8f6380f4c,0xb7894c00000490af894ccaf6380f48f3
-.octa 0x4a887894c000004a0bf894c00000498,0x4b88f8948000004b08f894c0000,0x8b4c00000fd8b78b4c00000fd0af8b4c,0x490000000100000001ba4800000fe0bf
-.octa 0xf3e2c4ffffffff00000001b848d5af0f,0x48e8014cc9f693e2c4ffffffffb9c0f6,0xcf1949c62949ed114800000000bdd111,0x8349d5894900dc834900db8349ea1949
-.octa 0xd6af0f490000000100000001ba4800dd,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148f0014cc9f68be2c4ffffffff,0xeb1949ca1949c72949ed114800000000
-.octa 0x4800de8349d6894900dd834900dc8349,0x1b848d7af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148f8014cc9f683e2c4ff
-.octa 0xdd8349ec1949cb1949c22949ed114800,0x1ba4800df8349d7894900de834900,0x1b848d2af0f49000000010000,0xe2c4ffffffffb9c0f6f3e2c4ffffffff
-.octa 0x114800000000bdd11148d0014cc9f6ab,0x834900de8349ed1949cc1949c32949ed,0x100000001ba4800da8349d2894900df,0xffffff00000001b848d3af0f49000000
-.octa 0xc9f6a3e2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148d8014c,0x4900da834900df8349ee1949cd1949c4,0x100000001ba4800db8349d389
-.octa 0xe2c4ffffffff00000001b848d4af0f49,0xe0014cc9f69be2c4ffffffffb9c0f6f3,0x1949c52949ed114800000000bdd11148,0x49d4894900db834900da8349ef1949ce
-.octa 0x490af034c00000000b84100dc83,0x134c000004a0bf134c00000498b7134c,0xb8a7134c000004b09f134c000004a897,0x4c48771b4c406f2b4c00d08349000004
-.octa 0x4968671b4c605f1b4c58571b4c507f1b,0x4820e2c148c28948c189c0194800d883,0x1149ef1149d61149cd0149e5d148c589,0x894c00000490af894cc41149c31149c2
-.octa 0xa897894c000004a0bf894c00000498b7,0x4b8a7894c000004b09f894c000004,0x908ff6bb62c4ed3100000400978b4800,0x380f4c660000049897f6fb62c4000004
-.octa 0xf6380f4c66000004a09ff6fb62c4c8f6,0xd8f6380f4c66000004a8a7f6fb62c4d0,0xc4e0f6380f4c66000004b0aff6fb62c4,0x4c66e8f6380f4c66000004b8b7f6fb62
-.octa 0x1ba4800000000bf41f5f6380f,0xffff00000001b848d0af0f4900000001,0xf6bbe2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148c0014cc9
-.octa 0xdd834900dc8349eb1949ca1949c129,0xb84100d78349d6014900da8348,0x908ff6fbe2c4ed3100000408978b4800,0xc4d1f6380f4c66c8f6380f4cf3000004
-.octa 0x4c66d0f6380f4cf3000004988ff6fbe2,0xf4cf3000004a08ff6fbe2c4d9f6380f,0x4a88ff6fbe2c4e1f6380f4c66d8f638,0xe2c4e9f6380f4c66e0f6380f4cf30000
-.octa 0xf4c66e8f6380f4cf3000004b08ff6fb,0x380f4cf3000004b88ff6fbe2c4f1f638,0x4c66fdf6380f4cf3f9f6380f4c66f0f6,0x1ba48c5f6380f4cf3c5f6380f
-.octa 0xffff00000001b848d1af0f4900000001,0xf6b3e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148c8014cc9,0xde834900dd8349ec1949cb1949c229
-.octa 0xb94100d08349d7014900da8348,0x908ff6fbe2c4ed3100000410978b4800,0xc4d9f6380f4c66d0f6380f4cf3000004,0x4c66d8f6380f4cf3000004988ff6fbe2
-.octa 0xf4cf3000004a08ff6fbe2c4e1f6380f,0x4a88ff6fbe2c4e9f6380f4c66e0f638,0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000004b08ff6fb
-.octa 0x380f4cf3000004b88ff6fbe2c4f9f638,0x4c66c5f6380f4cf3c1f6380f4c66f8f6,0x1ba48cdf6380f4cf3cdf6380f,0xffff00000001b848d2af0f4900000001
-.octa 0xf6abe2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148d0014cc9,0xdf834900de8349ed1949cc1949c329,0xba4100d18349d0014900da8348
-.octa 0x908ff6fbe2c4ed3100000418978b4800,0xc4e1f6380f4c66d8f6380f4cf3000004,0x4c66e0f6380f4cf3000004988ff6fbe2,0xf4cf3000004a08ff6fbe2c4e9f6380f
-.octa 0x4a88ff6fbe2c4f1f6380f4c66e8f638,0xe2c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf3000004b08ff6fb,0x380f4cf3000004b88ff6fbe2c4c1f638
-.octa 0x4c66cdf6380f4cf3c9f6380f4c66c0f6,0x1ba48d5f6380f4cf3d5f6380f,0xffff00000001b848d3af0f4900000001,0xf6a3e2c4ffffffffb9c0f6f3e2c4ffff
-.octa 0x49ed114800000000bdd11148d8014cc9,0xd8834900df8349ee1949cd1949c429,0xbb4100d28349d1014900da8348,0x908ff6fbe2c4ed3100000420978b4800
-.octa 0xc4e9f6380f4c66e0f6380f4cf3000004,0x4c66e8f6380f4cf3000004988ff6fbe2,0xf4cf3000004a08ff6fbe2c4f1f6380f,0x4a88ff6fbe2c4f9f6380f4c66f0f638
-.octa 0xe2c4c1f6380f4c66f8f6380f4cf30000,0xf4c66c0f6380f4cf3000004b08ff6fb,0x380f4cf3000004b88ff6fbe2c4c9f638,0x4c66d5f6380f4cf3d1f6380f4c66c8f6
-.octa 0x1ba48ddf6380f4cf3ddf6380f,0xffff00000001b848d4af0f4900000001,0xf69be2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148e0014cc9
-.octa 0xd9834900d88349ef1949ce1949c529,0xbc4100d38349d2014900da8348,0x908ff6fbe2c4ed3100000428978b4800,0xc4f1f6380f4c66e8f6380f4cf3000004
-.octa 0x4c66f0f6380f4cf3000004988ff6fbe2,0xf4cf3000004a08ff6fbe2c4f9f6380f,0x4a88ff6fbe2c4c1f6380f4c66f8f638,0xe2c4c9f6380f4c66c0f6380f4cf30000
-.octa 0xf4c66c8f6380f4cf3000004b08ff6fb,0x380f4cf3000004b88ff6fbe2c4d1f638,0x4c66ddf6380f4cf3d9f6380f4c66d0f6,0x1ba48e5f6380f4cf3e5f6380f
-.octa 0xffff00000001b848d5af0f4900000001,0xf693e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148e8014cc9,0xda834900d98349e81949cf1949c629
-.octa 0xbd4100d48349d3014900da8348,0x4f1b4c50471b4c487f1b4c40772b4c00,0xc0194800dc8349685f1b4c60571b4c58,0x49e5d148c5894820e2c148c28948c189
-.octa 0x1149c21149c11149e81149d71149ce01,0x4c000004c8bf894c000004c0b7894cc3,0x97894c000004d88f894c000004d08789,0x340978b48000004e89f894c000004e0
-.octa 0xfb62c4000004908ff6bb62c4ed310000,0xf6fb62c4c8f6380f4c660000049897f6,0xa7f6fb62c4d0f6380f4c66000004a09f,0xb0aff6fb62c4d8f6380f4c66000004a8
-.octa 0x4b8b7f6fb62c4e0f6380f4c66000004,0xbf41f5f6380f4c66e8f6380f4c660000,0xf490000000100000001ba4800000000,0xf6f3e2c4ffffffff00000001b848d0af
-.octa 0x1148c0014cc9f6bbe2c4ffffffffb9c0,0x49ca1949c12949ed114800000000bdd1,0x14900da834800dd834900dc8349eb19,0x348978b4800000000b84100d78349d6
-.octa 0xf4cf3000004908ff6fbe2c4ed310000,0x4988ff6fbe2c4d1f6380f4c66c8f638,0xe2c4d9f6380f4c66d0f6380f4cf30000,0xf4c66d8f6380f4cf3000004a08ff6fb
-.octa 0x380f4cf3000004a88ff6fbe2c4e1f638,0x4b08ff6fbe2c4e9f6380f4c66e0f6,0xfbe2c4f1f6380f4c66e8f6380f4cf300,0x380f4c66f0f6380f4cf3000004b88ff6
-.octa 0x4cf3c5f6380f4c66fdf6380f4cf3f9f6,0xf490000000100000001ba48c5f6380f,0xf6f3e2c4ffffffff00000001b848d1af,0x1148c8014cc9f6b3e2c4ffffffffb9c0
-.octa 0x49cb1949c22949ed114800000000bdd1,0x14900da834800de834900dd8349ec19,0x350978b4800000000b94100d08349d7,0xf4cf3000004908ff6fbe2c4ed310000
-.octa 0x4988ff6fbe2c4d9f6380f4c66d0f638,0xe2c4e1f6380f4c66d8f6380f4cf30000,0xf4c66e0f6380f4cf3000004a08ff6fb,0x380f4cf3000004a88ff6fbe2c4e9f638
-.octa 0x4b08ff6fbe2c4f1f6380f4c66e8f6,0xfbe2c4f9f6380f4c66f0f6380f4cf300,0x380f4c66f8f6380f4cf3000004b88ff6,0x4cf3cdf6380f4c66c5f6380f4cf3c1f6
-.octa 0xf490000000100000001ba48cdf6380f,0xf6f3e2c4ffffffff00000001b848d2af,0x1148d0014cc9f6abe2c4ffffffffb9c0,0x49cc1949c32949ed114800000000bdd1
-.octa 0x14900da834800df834900de8349ed19,0x358978b4800000000ba4100d18349d0,0xf4cf3000004908ff6fbe2c4ed310000,0x4988ff6fbe2c4e1f6380f4c66d8f638
-.octa 0xe2c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf3000004a08ff6fb,0x380f4cf3000004a88ff6fbe2c4f1f638,0x4b08ff6fbe2c4f9f6380f4c66f0f6
-.octa 0xfbe2c4c1f6380f4c66f8f6380f4cf300,0x380f4c66c0f6380f4cf3000004b88ff6,0x4cf3d5f6380f4c66cdf6380f4cf3c9f6,0xf490000000100000001ba48d5f6380f
-.octa 0xf6f3e2c4ffffffff00000001b848d3af,0x1148d8014cc9f6a3e2c4ffffffffb9c0,0x49cd1949c42949ed114800000000bdd1,0x14900da834800d8834900df8349ee19
-.octa 0x360978b4800000000bb4100d28349d1,0xf4cf3000004908ff6fbe2c4ed310000,0x4988ff6fbe2c4e9f6380f4c66e0f638,0xe2c4f1f6380f4c66e8f6380f4cf30000
-.octa 0xf4c66f0f6380f4cf3000004a08ff6fb,0x380f4cf3000004a88ff6fbe2c4f9f638,0x4b08ff6fbe2c4c1f6380f4c66f8f6,0xfbe2c4c9f6380f4c66c0f6380f4cf300
-.octa 0x380f4c66c8f6380f4cf3000004b88ff6,0x4cf3ddf6380f4c66d5f6380f4cf3d1f6,0xf490000000100000001ba48ddf6380f,0xf6f3e2c4ffffffff00000001b848d4af
-.octa 0x1148e0014cc9f69be2c4ffffffffb9c0,0x49ce1949c52949ed114800000000bdd1,0x14900da834800d9834900d88349ef19,0x368978b4800000000bc4100d38349d2
-.octa 0xf4cf3000004908ff6fbe2c4ed310000,0x4988ff6fbe2c4f1f6380f4c66e8f638,0xe2c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf3000004a08ff6fb
-.octa 0x380f4cf3000004a88ff6fbe2c4c1f638,0x4b08ff6fbe2c4c9f6380f4c66c0f6,0xfbe2c4d1f6380f4c66c8f6380f4cf300,0x380f4c66d0f6380f4cf3000004b88ff6
-.octa 0x4cf3e5f6380f4c66ddf6380f4cf3d9f6,0xf490000000100000001ba48e5f6380f,0xf6f3e2c4ffffffff00000001b848d5af,0x1148e8014cc9f693e2c4ffffffffb9c0
-.octa 0x49cf1949c62949ed114800000000bdd1,0x14900da834800da834900d98349e819,0x4c40772b4c00000000bd4100d48349d3,0x4c60571b4c584f1b4c50471b4c487f1b
-.octa 0x48c28948c189c0194800dc8349685f1b,0x49d71149ce0149e5d148c5894820e2c1,0x4f0b7894cc31149c21149c11149e811,0x50087894c000004f8bf894c0000
-.octa 0x894c0000051097894c000005088f894c,0x62c4ed3100000430978b48000005189f,0x4f897f6fb62c4000004f08ff6bb,0x66000005009ff6fb62c4c8f6380f4c66
-.octa 0x4c6600000508a7f6fb62c4d0f6380f4c,0xf4c6600000510aff6fb62c4d8f6380f,0x380f4c6600000518b7f6fb62c4e0f638,0xba4800000000bf41f5f6380f4c66e8f6
-.octa 0x1b848d0af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148c0014cc9f6bbe2c4,0xdc8349eb1949ca1949c12949ed1148
-.octa 0x4100d78349d6014900da834800dd8349,0xe2c4ed3100000438978b4800000000b8,0xf4c66c8f6380f4cf3000004f08ff6fb,0x380f4cf3000004f88ff6fbe2c4d1f638
-.octa 0x5008ff6fbe2c4d9f6380f4c66d0f6,0xfbe2c4e1f6380f4c66d8f6380f4cf300,0x380f4c66e0f6380f4cf3000005088ff6,0xf6380f4cf3000005108ff6fbe2c4e9f6
-.octa 0x5188ff6fbe2c4f1f6380f4c66e8,0x380f4cf3f9f6380f4c66f0f6380f4cf3,0xba48c5f6380f4cf3c5f6380f4c66fdf6,0x1b848d1af0f490000000100000001
-.octa 0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148c8014cc9f6b3e2c4,0xdd8349ec1949cb1949c22949ed1148,0x4100d08349d7014900da834800de8349
-.octa 0xe2c4ed3100000440978b4800000000b9,0xf4c66d0f6380f4cf3000004f08ff6fb,0x380f4cf3000004f88ff6fbe2c4d9f638,0x5008ff6fbe2c4e1f6380f4c66d8f6
-.octa 0xfbe2c4e9f6380f4c66e0f6380f4cf300,0x380f4c66e8f6380f4cf3000005088ff6,0xf6380f4cf3000005108ff6fbe2c4f1f6,0x5188ff6fbe2c4f9f6380f4c66f0
-.octa 0x380f4cf3c1f6380f4c66f8f6380f4cf3,0xba48cdf6380f4cf3cdf6380f4c66c5f6,0x1b848d2af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000
-.octa 0xbdd11148d0014cc9f6abe2c4,0xde8349ed1949cc1949c32949ed1148,0x4100d18349d0014900da834800df8349,0xe2c4ed3100000448978b4800000000ba
-.octa 0xf4c66d8f6380f4cf3000004f08ff6fb,0x380f4cf3000004f88ff6fbe2c4e1f638,0x5008ff6fbe2c4e9f6380f4c66e0f6,0xfbe2c4f1f6380f4c66e8f6380f4cf300
-.octa 0x380f4c66f0f6380f4cf3000005088ff6,0xf6380f4cf3000005108ff6fbe2c4f9f6,0x5188ff6fbe2c4c1f6380f4c66f8,0x380f4cf3c9f6380f4c66c0f6380f4cf3
-.octa 0xba48d5f6380f4cf3d5f6380f4c66cdf6,0x1b848d3af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148d8014cc9f6a3e2c4
-.octa 0xdf8349ee1949cd1949c42949ed1148,0x4100d28349d1014900da834800d88349,0xe2c4ed3100000450978b4800000000bb,0xf4c66e0f6380f4cf3000004f08ff6fb
-.octa 0x380f4cf3000004f88ff6fbe2c4e9f638,0x5008ff6fbe2c4f1f6380f4c66e8f6,0xfbe2c4f9f6380f4c66f0f6380f4cf300,0x380f4c66f8f6380f4cf3000005088ff6
-.octa 0xf6380f4cf3000005108ff6fbe2c4c1f6,0x5188ff6fbe2c4c9f6380f4c66c0,0x380f4cf3d1f6380f4c66c8f6380f4cf3,0xba48ddf6380f4cf3ddf6380f4c66d5f6
-.octa 0x1b848d4af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148e0014cc9f69be2c4,0xd88349ef1949ce1949c52949ed1148
-.octa 0x4100d38349d2014900da834800d98349,0xe2c4ed3100000458978b4800000000bc,0xf4c66e8f6380f4cf3000004f08ff6fb,0x380f4cf3000004f88ff6fbe2c4f1f638
-.octa 0x5008ff6fbe2c4f9f6380f4c66f0f6,0xfbe2c4c1f6380f4c66f8f6380f4cf300,0x380f4c66c0f6380f4cf3000005088ff6,0xf6380f4cf3000005108ff6fbe2c4c9f6
-.octa 0x5188ff6fbe2c4d1f6380f4c66c8,0x380f4cf3d9f6380f4c66d0f6380f4cf3,0xba48e5f6380f4cf3e5f6380f4c66ddf6,0x1b848d5af0f490000000100000001
-.octa 0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148e8014cc9f693e2c4,0xd98349e81949cf1949c62949ed1148,0x4100d48349d3014900da834800da8349
-.octa 0x471b4c487f1b4c40772b4c00000000bd,0xdc8349685f1b4c60571b4c584f1b4c50,0xc5894820e2c148c28948c189c0194800,0x49c11149e81149d71149ce0149e5d148
-.octa 0xf8bf894c000004f0b7894cc31149c211,0x5088f894c0000050087894c000004,0x4c000005189f894c0000051097894c00,0x978b4c000004c88f8b4c000004c0878b
-.octa 0x4e0a78b4c000004d89f8b4c000004d0,0x2e0872b4c000004e8af8b4c0000,0x1b4c000002f0971b4c000002e88f1b4c,0x8af1b4c00000300a71b4c000002f89f
-.octa 0x4820e2c148c28948c189c01948000003,0x1149ea1149d11149c80149e5d148c589,0x894c000004c087894cc51149c41149c3,0xd89f894c000004d097894c000004c88f
-.octa 0x4e8af894c000004e0a7894c000004,0x4c000004f88f8b4c000004f0878b4c00,0xa78b4c000005089f8b4c00000500978b,0x310872b4c00000518af8b4c00000510
-.octa 0x320971b4c000003188f1b4c0000,0x1b4c00000330a71b4c000003289f1b4c,0xe2c148c28948c189c0194800000338af,0xea1149d11149c80149e5d148c5894820
-.octa 0x4f087894cc51149c41149c31149,0x894c0000050097894c000004f88f894c,0x18af894c00000510a7894c000005089f,0xf6bb62c4ed31000004c0978b48000005
-.octa 0x4c66000004d097f6fb62c4000004c88f,0xf4c66000004d89ff6fb62c4c8f6380f,0x380f4c66000004e0a7f6fb62c4d0f638,0xf6380f4c66000004e8aff6fb62c4d8f6
-.octa 0x894c00000fd887894cedf6380f4c66e0,0xe2c4ed31000004c8978b4800000fe08f,0xf4c66d0f6380f4cf3000004d08ff6fb,0x380f4cf3000004d88ff6fbe2c4d9f638
-.octa 0x4e08ff6fbe2c4e1f6380f4c66d8f6,0xfb62c4e9f6380f4c66e0f6380f4cf300,0x380f4c66e8f6380f4cf3000004e8b7f6,0x31000004d0978b48f5f6380f4cf3f5f6
-.octa 0xe0f6380f4cf3000004d88ff6fbe2c4ed,0xf3000004e08ff6fbe2c4e9f6380f4c66,0xbff6fb62c4f1f6380f4c66e8f6380f4c,0xfdf6380f4c66f0f6380f4cf3000004e8
-.octa 0xc4ed31000004d8978b48fdf6380f4cf3,0x4c66f0f6380f4cf3000004e08ff6fbe2,0xf4cf3000004e887f6fb62c4f9f6380f,0x48c5f6380f4cf3c5f6380f4c66f8f638
-.octa 0x4e88ff6fb62c4ed31000004e0978b,0xf4cf3cdf6380f4c66c0f6380f4cf300,0xf6fbe2c4000004c0978b48ed31cdf638,0xaf8948e8f6380f48f3edf6380f4866ca
-.octa 0xf6380f486600000fd8978b4800000fd0,0x8b4800000fd8978948d1f6380f48f3d2,0xfe0978b48caf6fbe2c4000004c897,0x978948d0f6380f48f3d2f6380f486600
-.octa 0xd1f6380f4cf3d2f6380f4d6600000fe0,0x380f4d66caf6fbe2c4000004d0978b48,0x4cf3e4f6380f4d66d8f6380f4cf3dbf6,0xcaf6fbe2c4000004d8978b48e1f6380f
-.octa 0x380f4d66e8f6380f4cf3edf6380f4d66,0xc4000004e0978b48f1f6380f4cf3f6f6,0xf8f6380f4cf3fff6380f4d66caf6fbe2,0xe8978b48c1f6380f4cf3c0f6380f4d66
-.octa 0x4cf3c9f6380f4d66caf6fbe2c4000004,0xf3caf6380f486600000000bac8f6380f,0x28b7894c00000520af894ccaf6380f48,0x53887894c00000530bf894c000005
-.octa 0x4c000005488f8948000005408f894c00,0xbf8b4c00000fd8b78b4c00000fd0af8b,0xf490000000100000001ba4800000fe0,0xf6f3e2c4ffffffff00000001b848d5af
-.octa 0x1148e8014cc9f693e2c4ffffffffb9c0,0x49cf1949c62949ed114800000000bdd1,0xdd8349d5894900dc834900db8349ea19,0x48d6af0f490000000100000001ba4800
-.octa 0xffb9c0f6f3e2c4ffffffff00000001b8,0xbdd11148f0014cc9f68be2c4ffffff,0x49eb1949ca1949c72949ed1148000000,0xba4800de8349d6894900dd834900dc83
-.octa 0x1b848d7af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148f8014cc9f683e2c4,0xdd8349ec1949cb1949c22949ed1148
-.octa 0x1ba4800df8349d7894900de8349,0xff00000001b848d2af0f490000000100,0xabe2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148d0014cc9f6
-.octa 0xdf834900de8349ed1949cc1949c32949,0x100000001ba4800da8349d2894900,0xffffffff00000001b848d3af0f490000,0x4cc9f6a3e2c4ffffffffb9c0f6f3e2c4
-.octa 0xc42949ed114800000000bdd11148d801,0x894900da834900df8349ee1949cd1949,0x490000000100000001ba4800db8349d3,0xf3e2c4ffffffff00000001b848d4af0f
-.octa 0x48e0014cc9f69be2c4ffffffffb9c0f6,0xce1949c52949ed114800000000bdd111,0x8349d4894900db834900da8349ef1949,0x4c00000520af034c00000000b84100dc
-.octa 0x97134c00000530bf134c00000528b713,0x548a7134c000005409f134c00000538,0x1b4c48771b4c406f2b4c00d083490000,0x834968671b4c605f1b4c58571b4c507f
-.octa 0x894820e2c148c28948c189c0194800d8,0xc21149ef1149d61149cd0149e5d148c5,0xb7894c00000520af894cc41149c31149,0x53897894c00000530bf894c00000528
-.octa 0x548a7894c000005409f894c0000,0x5208ff6bb62c4ed31000004c0978b48,0xf6380f4c660000052897f6fb62c40000,0xd0f6380f4c66000005309ff6fb62c4c8
-.octa 0xc4d8f6380f4c6600000538a7f6fb62c4,0x62c4e0f6380f4c6600000540aff6fb62,0xf4c66e8f6380f4c6600000548b7f6fb,0x100000001ba4800000000bf41f5f638
-.octa 0xffffff00000001b848d0af0f49000000,0xc9f6bbe2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148c0014c,0x4800dd834900dc8349eb1949ca1949c1
-.octa 0xb84100d78349d6014900da83,0x5208ff6fbe2c4ed31000004c8978b48,0xe2c4d1f6380f4c66c8f6380f4cf30000,0xf4c66d0f6380f4cf3000005288ff6fb
-.octa 0x380f4cf3000005308ff6fbe2c4d9f638,0x5388ff6fbe2c4e1f6380f4c66d8f6,0xfbe2c4e9f6380f4c66e0f6380f4cf300,0x380f4c66e8f6380f4cf3000005408ff6
-.octa 0xf6380f4cf3000005488ff6fbe2c4f1f6,0xf4c66fdf6380f4cf3f9f6380f4c66f0,0x100000001ba48c5f6380f4cf3c5f638,0xffffff00000001b848d1af0f49000000
-.octa 0xc9f6b3e2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148c8014c,0x4800de834900dd8349ec1949cb1949c2,0xb94100d08349d7014900da83
-.octa 0x5208ff6fbe2c4ed31000004d0978b48,0xe2c4d9f6380f4c66d0f6380f4cf30000,0xf4c66d8f6380f4cf3000005288ff6fb,0x380f4cf3000005308ff6fbe2c4e1f638
-.octa 0x5388ff6fbe2c4e9f6380f4c66e0f6,0xfbe2c4f1f6380f4c66e8f6380f4cf300,0x380f4c66f0f6380f4cf3000005408ff6,0xf6380f4cf3000005488ff6fbe2c4f9f6
-.octa 0xf4c66c5f6380f4cf3c1f6380f4c66f8,0x100000001ba48cdf6380f4cf3cdf638,0xffffff00000001b848d2af0f49000000,0xc9f6abe2c4ffffffffb9c0f6f3e2c4ff
-.octa 0x2949ed114800000000bdd11148d0014c,0x4800df834900de8349ed1949cc1949c3,0xba4100d18349d0014900da83,0x5208ff6fbe2c4ed31000004d8978b48
-.octa 0xe2c4e1f6380f4c66d8f6380f4cf30000,0xf4c66e0f6380f4cf3000005288ff6fb,0x380f4cf3000005308ff6fbe2c4e9f638,0x5388ff6fbe2c4f1f6380f4c66e8f6
-.octa 0xfbe2c4f9f6380f4c66f0f6380f4cf300,0x380f4c66f8f6380f4cf3000005408ff6,0xf6380f4cf3000005488ff6fbe2c4c1f6,0xf4c66cdf6380f4cf3c9f6380f4c66c0
-.octa 0x100000001ba48d5f6380f4cf3d5f638,0xffffff00000001b848d3af0f49000000,0xc9f6a3e2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148d8014c
-.octa 0x4800d8834900df8349ee1949cd1949c4,0xbb4100d28349d1014900da83,0x5208ff6fbe2c4ed31000004e0978b48,0xe2c4e9f6380f4c66e0f6380f4cf30000
-.octa 0xf4c66e8f6380f4cf3000005288ff6fb,0x380f4cf3000005308ff6fbe2c4f1f638,0x5388ff6fbe2c4f9f6380f4c66f0f6,0xfbe2c4c1f6380f4c66f8f6380f4cf300
-.octa 0x380f4c66c0f6380f4cf3000005408ff6,0xf6380f4cf3000005488ff6fbe2c4c9f6,0xf4c66d5f6380f4cf3d1f6380f4c66c8,0x100000001ba48ddf6380f4cf3ddf638
-.octa 0xffffff00000001b848d4af0f49000000,0xc9f69be2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148e0014c,0x4800d9834900d88349ef1949ce1949c5
-.octa 0xbc4100d38349d2014900da83,0x5208ff6fbe2c4ed31000004e8978b48,0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000005288ff6fb
-.octa 0x380f4cf3000005308ff6fbe2c4f9f638,0x5388ff6fbe2c4c1f6380f4c66f8f6,0xfbe2c4c9f6380f4c66c0f6380f4cf300,0x380f4c66c8f6380f4cf3000005408ff6
-.octa 0xf6380f4cf3000005488ff6fbe2c4d1f6,0xf4c66ddf6380f4cf3d9f6380f4c66d0,0x100000001ba48e5f6380f4cf3e5f638,0xffffff00000001b848d5af0f49000000
-.octa 0xc9f693e2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148e8014c,0x4800da834900d98349e81949cf1949c6,0xbd4100d48349d3014900da83
-.octa 0x584f1b4c50471b4c487f1b4c40772b4c,0x89c0194800dc8349685f1b4c60571b4c,0x149e5d148c5894820e2c148c28948c1,0xc31149c21149c11149e81149d71149ce
-.octa 0x894c00000558bf894c00000550b7894c,0x7097894c000005688f894c0000056087,0x2e0978b48000005789f894c000005,0xf6fb62c4000005208ff6bb62c4ed3100
-.octa 0x9ff6fb62c4c8f6380f4c660000052897,0x38a7f6fb62c4d0f6380f4c6600000530,0x540aff6fb62c4d8f6380f4c66000005,0x548b7f6fb62c4e0f6380f4c660000
-.octa 0xbf41f5f6380f4c66e8f6380f4c6600,0xaf0f490000000100000001ba48000000,0xc0f6f3e2c4ffffffff00000001b848d0,0xd11148c0014cc9f6bbe2c4ffffffffb9
-.octa 0x1949ca1949c12949ed114800000000bd,0xd6014900da834800dd834900dc8349eb,0x2e8978b4800000000b84100d78349,0x380f4cf3000005208ff6fbe2c4ed3100
-.octa 0x5288ff6fbe2c4d1f6380f4c66c8f6,0xfbe2c4d9f6380f4c66d0f6380f4cf300,0x380f4c66d8f6380f4cf3000005308ff6,0xf6380f4cf3000005388ff6fbe2c4e1f6
-.octa 0x5408ff6fbe2c4e9f6380f4c66e0,0xf6fbe2c4f1f6380f4c66e8f6380f4cf3,0xf6380f4c66f0f6380f4cf3000005488f,0xf4cf3c5f6380f4c66fdf6380f4cf3f9
-.octa 0xaf0f490000000100000001ba48c5f638,0xc0f6f3e2c4ffffffff00000001b848d1,0xd11148c8014cc9f6b3e2c4ffffffffb9,0x1949cb1949c22949ed114800000000bd
-.octa 0xd7014900da834800de834900dd8349ec,0x2f0978b4800000000b94100d08349,0x380f4cf3000005208ff6fbe2c4ed3100,0x5288ff6fbe2c4d9f6380f4c66d0f6
-.octa 0xfbe2c4e1f6380f4c66d8f6380f4cf300,0x380f4c66e0f6380f4cf3000005308ff6,0xf6380f4cf3000005388ff6fbe2c4e9f6,0x5408ff6fbe2c4f1f6380f4c66e8
-.octa 0xf6fbe2c4f9f6380f4c66f0f6380f4cf3,0xf6380f4c66f8f6380f4cf3000005488f,0xf4cf3cdf6380f4c66c5f6380f4cf3c1,0xaf0f490000000100000001ba48cdf638
-.octa 0xc0f6f3e2c4ffffffff00000001b848d2,0xd11148d0014cc9f6abe2c4ffffffffb9,0x1949cc1949c32949ed114800000000bd,0xd0014900da834800df834900de8349ed
-.octa 0x2f8978b4800000000ba4100d18349,0x380f4cf3000005208ff6fbe2c4ed3100,0x5288ff6fbe2c4e1f6380f4c66d8f6,0xfbe2c4e9f6380f4c66e0f6380f4cf300
-.octa 0x380f4c66e8f6380f4cf3000005308ff6,0xf6380f4cf3000005388ff6fbe2c4f1f6,0x5408ff6fbe2c4f9f6380f4c66f0,0xf6fbe2c4c1f6380f4c66f8f6380f4cf3
-.octa 0xf6380f4c66c0f6380f4cf3000005488f,0xf4cf3d5f6380f4c66cdf6380f4cf3c9,0xaf0f490000000100000001ba48d5f638,0xc0f6f3e2c4ffffffff00000001b848d3
-.octa 0xd11148d8014cc9f6a3e2c4ffffffffb9,0x1949cd1949c42949ed114800000000bd,0xd1014900da834800d8834900df8349ee,0x300978b4800000000bb4100d28349
-.octa 0x380f4cf3000005208ff6fbe2c4ed3100,0x5288ff6fbe2c4e9f6380f4c66e0f6,0xfbe2c4f1f6380f4c66e8f6380f4cf300,0x380f4c66f0f6380f4cf3000005308ff6
-.octa 0xf6380f4cf3000005388ff6fbe2c4f9f6,0x5408ff6fbe2c4c1f6380f4c66f8,0xf6fbe2c4c9f6380f4c66c0f6380f4cf3,0xf6380f4c66c8f6380f4cf3000005488f
-.octa 0xf4cf3ddf6380f4c66d5f6380f4cf3d1,0xaf0f490000000100000001ba48ddf638,0xc0f6f3e2c4ffffffff00000001b848d4,0xd11148e0014cc9f69be2c4ffffffffb9
-.octa 0x1949ce1949c52949ed114800000000bd,0xd2014900da834800d9834900d88349ef,0x308978b4800000000bc4100d38349,0x380f4cf3000005208ff6fbe2c4ed3100
-.octa 0x5288ff6fbe2c4f1f6380f4c66e8f6,0xfbe2c4f9f6380f4c66f0f6380f4cf300,0x380f4c66f8f6380f4cf3000005308ff6,0xf6380f4cf3000005388ff6fbe2c4c1f6
-.octa 0x5408ff6fbe2c4c9f6380f4c66c0,0xf6fbe2c4d1f6380f4c66c8f6380f4cf3,0xf6380f4c66d0f6380f4cf3000005488f,0xf4cf3e5f6380f4c66ddf6380f4cf3d9
-.octa 0xaf0f490000000100000001ba48e5f638,0xc0f6f3e2c4ffffffff00000001b848d5,0xd11148e8014cc9f693e2c4ffffffffb9,0x1949cf1949c62949ed114800000000bd
-.octa 0xd3014900da834800da834900d98349e8,0x1b4c40772b4c00000000bd4100d48349,0x1b4c60571b4c584f1b4c50471b4c487f,0xc148c28948c189c0194800dc8349685f
-.octa 0x1149d71149ce0149e5d148c5894820e2,0x520b7894cc31149c21149c11149e8,0x4c0000053087894c00000528bf894c00,0x9f894c0000054097894c000005388f89
-.octa 0xbb62c4ed31000004f0978b4800000548,0x660000050097f6fb62c4000004f88ff6,0x4c66000005089ff6fb62c4c8f6380f4c,0xf4c6600000510a7f6fb62c4d0f6380f
-.octa 0x380f4c6600000518aff6fb62c4d8f638,0x4c00000fd887894cedf6380f4c66e0f6,0xc4ed31000004f8978b4800000fe08f89,0x4c66d0f6380f4cf3000005008ff6fbe2
-.octa 0xf4cf3000005088ff6fbe2c4d9f6380f,0x5108ff6fbe2c4e1f6380f4c66d8f638,0x62c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf300000518b7f6fb
-.octa 0x500978b48f5f6380f4cf3f5f638,0xf6380f4cf3000005088ff6fbe2c4ed31,0x5108ff6fbe2c4e9f6380f4c66e0,0xf6fb62c4f1f6380f4c66e8f6380f4cf3
-.octa 0xf6380f4c66f0f6380f4cf300000518bf,0xed3100000508978b48fdf6380f4cf3fd,0x66f0f6380f4cf3000005108ff6fbe2c4,0x4cf30000051887f6fb62c4f9f6380f4c
-.octa 0xc5f6380f4cf3c5f6380f4c66f8f6380f,0x5188ff6fb62c4ed3100000510978b48,0x4cf3cdf6380f4c66c0f6380f4cf30000,0xfbe2c4000004f0978b48ed31cdf6380f
-.octa 0x8948e8f6380f48f3edf6380f4866caf6,0x380f486600000fd8978b4800000fd0af,0x4800000fd8978948d1f6380f48f3d2f6,0xfe0978b48caf6fbe2c4000004f8978b
-.octa 0x8948d0f6380f48f3d2f6380f48660000,0xf6380f4cf3d2f6380f4d6600000fe097,0xf4d66caf6fbe2c400000500978b48d1,0xf3e4f6380f4d66d8f6380f4cf3dbf638
-.octa 0xf6fbe2c400000508978b48e1f6380f4c,0xf4d66e8f6380f4cf3edf6380f4d66ca,0x510978b48f1f6380f4cf3f6f638,0xf6380f4cf3fff6380f4d66caf6fbe2c4
-.octa 0x978b48c1f6380f4cf3c0f6380f4d66f8,0xf3c9f6380f4d66caf6fbe2c400000518,0xcaf6380f486600000000bac8f6380f4c,0xb7894c00000370af894ccaf6380f48f3
-.octa 0x38887894c00000380bf894c00000378,0x3988f8948000003908f894c0000,0x8b4c00000fd8b78b4c00000fd0af8b4c,0x490000000100000001ba4800000fe0bf
-.octa 0xf3e2c4ffffffff00000001b848d5af0f,0x48e8014cc9f693e2c4ffffffffb9c0f6,0xcf1949c62949ed114800000000bdd111,0x8349d5894900dc834900db8349ea1949
-.octa 0xd6af0f490000000100000001ba4800dd,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148f0014cc9f68be2c4ffffffff,0xeb1949ca1949c72949ed114800000000
-.octa 0x4800de8349d6894900dd834900dc8349,0x1b848d7af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148f8014cc9f683e2c4ff
-.octa 0xdd8349ec1949cb1949c22949ed114800,0x1ba4800df8349d7894900de834900,0x1b848d2af0f49000000010000,0xe2c4ffffffffb9c0f6f3e2c4ffffffff
-.octa 0x114800000000bdd11148d0014cc9f6ab,0x834900de8349ed1949cc1949c32949ed,0x100000001ba4800da8349d2894900df,0xffffff00000001b848d3af0f49000000
-.octa 0xc9f6a3e2c4ffffffffb9c0f6f3e2c4ff,0x2949ed114800000000bdd11148d8014c,0x4900da834900df8349ee1949cd1949c4,0x100000001ba4800db8349d389
-.octa 0xe2c4ffffffff00000001b848d4af0f49,0xe0014cc9f69be2c4ffffffffb9c0f6f3,0x1949c52949ed114800000000bdd11148,0x49d4894900db834900da8349ef1949ce
-.octa 0x370af034c00000000b84100dc83,0x134c00000380bf134c00000378b7134c,0x98a7134c000003909f134c0000038897,0x4c48771b4c406f2b4c00d08349000003
-.octa 0x4968671b4c605f1b4c58571b4c507f1b,0x4820e2c148c28948c189c0194800d883,0x1149ef1149d61149cd0149e5d148c589,0x894c00000370af894cc41149c31149c2
-.octa 0x8897894c00000380bf894c00000378b7,0x398a7894c000003909f894c000003,0x4c000003788f8b4c00000370878b4c00,0xa78b4c000003889f8b4c00000380978b
-.octa 0x550872b4c00000398af8b4c00000390,0x560971b4c000005588f1b4c0000,0x1b4c00000570a71b4c000005689f1b4c,0xe2c148c28948c189c0194800000578af
-.octa 0xea1149d11149c80149e5d148c5894820,0x37087894cc51149c41149c31149,0x894c0000038097894c000003788f894c,0x98af894c00000390a7894c000003889f
-.octa 0x5288f8b4c00000520878b4c000003,0x4c000005389f8b4c00000530978b4c00,0xbe4100000548af8b4c00000540a78b,0x5288f134c0000052087034c000000
-.octa 0x4c000005389f134c0000053097134c00,0xd6834900000548af134c00000540a713,0x5f1b4c50571b4c484f1b4c40472b4c00,0xc0194800de8349686f1b4c60671b4c58
-.octa 0x49e5d148c5894820e2c148c28948c189,0x1149c41149c31149ea1149d11149c801,0x4c000005888f894c0000058087894cc5,0xa7894c000005989f894c000005909789
-.octa 0x370878b4c000005a8af894c000005a0,0x380978b4c000003788f8b4c0000,0x8b4c00000390a78b4c000003889f8b4c,0x888f1b4c00000580872b4c00000398af
-.octa 0x5989f1b4c00000590971b4c000005,0x48000005a8af1b4c000005a0a71b4c00,0xd148c5894820e2c148c28948c189c019,0xc41149c31149ea1149d11149c80149e5
-.octa 0x3788f894c0000037087894cc51149,0x4c000003889f894c0000038097894c00,0x878b4c00000398af894c00000390a789,0x530978b4c000005288f8b4c00000520
-.octa 0x540a78b4c000005389f8b4c0000,0x1b4c00000370872b4c00000548af8b4c,0x889f1b4c00000380971b4c000003788f,0x398af1b4c00000390a71b4c000003
-.octa 0xc5894820e2c148c28948c189c0194800,0x49c31149ea1149d11149c80149e5d148,0x288f894c0000052087894cc51149c411,0x5389f894c0000053097894c000005
-.octa 0x4800000548af894c00000540a7894c00,0x5208ff6bb62c4ed31000004f0978b,0xc8f6380f4c660000052897f6fb62c400,0xc4d0f6380f4c66000005309ff6fb62c4
-.octa 0x62c4d8f6380f4c6600000538a7f6fb62,0xfb62c4e0f6380f4c6600000540aff6fb,0x380f4c66e8f6380f4c6600000548b7f6,0x100000001ba4800000000bf41f5f6
-.octa 0xffffffff00000001b848d0af0f490000,0x4cc9f6bbe2c4ffffffffb9c0f6f3e2c4,0xc12949ed114800000000bdd11148c001,0x834800dd834900dc8349eb1949ca1949
-.octa 0x4800000000b84100d78349d6014900da,0x5208ff6fbe2c4ed31000004f8978b,0xfbe2c4d1f6380f4c66c8f6380f4cf300,0x380f4c66d0f6380f4cf3000005288ff6
-.octa 0xf6380f4cf3000005308ff6fbe2c4d9f6,0x5388ff6fbe2c4e1f6380f4c66d8,0xf6fbe2c4e9f6380f4c66e0f6380f4cf3,0xf6380f4c66e8f6380f4cf3000005408f
-.octa 0xf0f6380f4cf3000005488ff6fbe2c4f1,0x380f4c66fdf6380f4cf3f9f6380f4c66,0x100000001ba48c5f6380f4cf3c5f6,0xffffffff00000001b848d1af0f490000
-.octa 0x4cc9f6b3e2c4ffffffffb9c0f6f3e2c4,0xc22949ed114800000000bdd11148c801,0x834800de834900dd8349ec1949cb1949,0x4800000000b94100d08349d7014900da
-.octa 0x5208ff6fbe2c4ed3100000500978b,0xfbe2c4d9f6380f4c66d0f6380f4cf300,0x380f4c66d8f6380f4cf3000005288ff6,0xf6380f4cf3000005308ff6fbe2c4e1f6
-.octa 0x5388ff6fbe2c4e9f6380f4c66e0,0xf6fbe2c4f1f6380f4c66e8f6380f4cf3,0xf6380f4c66f0f6380f4cf3000005408f,0xf8f6380f4cf3000005488ff6fbe2c4f9
-.octa 0x380f4c66c5f6380f4cf3c1f6380f4c66,0x100000001ba48cdf6380f4cf3cdf6,0xffffffff00000001b848d2af0f490000,0x4cc9f6abe2c4ffffffffb9c0f6f3e2c4
-.octa 0xc32949ed114800000000bdd11148d001,0x834800df834900de8349ed1949cc1949,0x4800000000ba4100d18349d0014900da,0x5208ff6fbe2c4ed3100000508978b
-.octa 0xfbe2c4e1f6380f4c66d8f6380f4cf300,0x380f4c66e0f6380f4cf3000005288ff6,0xf6380f4cf3000005308ff6fbe2c4e9f6,0x5388ff6fbe2c4f1f6380f4c66e8
-.octa 0xf6fbe2c4f9f6380f4c66f0f6380f4cf3,0xf6380f4c66f8f6380f4cf3000005408f,0xc0f6380f4cf3000005488ff6fbe2c4c1,0x380f4c66cdf6380f4cf3c9f6380f4c66
-.octa 0x100000001ba48d5f6380f4cf3d5f6,0xffffffff00000001b848d3af0f490000,0x4cc9f6a3e2c4ffffffffb9c0f6f3e2c4,0xc42949ed114800000000bdd11148d801
-.octa 0x834800d8834900df8349ee1949cd1949,0x4800000000bb4100d28349d1014900da,0x5208ff6fbe2c4ed3100000510978b,0xfbe2c4e9f6380f4c66e0f6380f4cf300
-.octa 0x380f4c66e8f6380f4cf3000005288ff6,0xf6380f4cf3000005308ff6fbe2c4f1f6,0x5388ff6fbe2c4f9f6380f4c66f0,0xf6fbe2c4c1f6380f4c66f8f6380f4cf3
-.octa 0xf6380f4c66c0f6380f4cf3000005408f,0xc8f6380f4cf3000005488ff6fbe2c4c9,0x380f4c66d5f6380f4cf3d1f6380f4c66,0x100000001ba48ddf6380f4cf3ddf6
-.octa 0xffffffff00000001b848d4af0f490000,0x4cc9f69be2c4ffffffffb9c0f6f3e2c4,0xc52949ed114800000000bdd11148e001,0x834800d9834900d88349ef1949ce1949
-.octa 0x4800000000bc4100d38349d2014900da,0x5208ff6fbe2c4ed3100000518978b,0xfbe2c4f1f6380f4c66e8f6380f4cf300,0x380f4c66f0f6380f4cf3000005288ff6
-.octa 0xf6380f4cf3000005308ff6fbe2c4f9f6,0x5388ff6fbe2c4c1f6380f4c66f8,0xf6fbe2c4c9f6380f4c66c0f6380f4cf3,0xf6380f4c66c8f6380f4cf3000005408f
-.octa 0xd0f6380f4cf3000005488ff6fbe2c4d1,0x380f4c66ddf6380f4cf3d9f6380f4c66,0x100000001ba48e5f6380f4cf3e5f6,0xffffffff00000001b848d5af0f490000
-.octa 0x4cc9f693e2c4ffffffffb9c0f6f3e2c4,0xc62949ed114800000000bdd11148e801,0x834800da834900d98349e81949cf1949,0x4c00000000bd4100d48349d3014900da
-.octa 0x4c584f1b4c50471b4c487f1b4c40772b,0xc189c0194800dc8349685f1b4c60571b,0xce0149e5d148c5894820e2c148c28948,0x4cc31149c21149c11149e81149d71149
-.octa 0x87894c00000528bf894c00000520b789,0x54097894c000005388f894c00000530,0x310978b48000005489f894c0000,0x97f6fb62c4000005508ff6bb62c4ed31
-.octa 0x609ff6fb62c4c8f6380f4c6600000558,0x568a7f6fb62c4d0f6380f4c66000005,0x570aff6fb62c4d8f6380f4c660000,0x578b7f6fb62c4e0f6380f4c6600
-.octa 0xbf41f5f6380f4c66e8f6380f4c66,0xd0af0f490000000100000001ba480000,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148c0014cc9f6bbe2c4ffffffff
-.octa 0xeb1949ca1949c12949ed114800000000,0x49d6014900da834800dd834900dc8349,0x318978b4800000000b84100d783,0xf6380f4cf3000005508ff6fbe2c4ed31
-.octa 0x5588ff6fbe2c4d1f6380f4c66c8,0xf6fbe2c4d9f6380f4c66d0f6380f4cf3,0xf6380f4c66d8f6380f4cf3000005608f,0xe0f6380f4cf3000005688ff6fbe2c4e1
-.octa 0xf3000005708ff6fbe2c4e9f6380f4c66,0x8ff6fbe2c4f1f6380f4c66e8f6380f4c,0xf9f6380f4c66f0f6380f4cf300000578,0x380f4cf3c5f6380f4c66fdf6380f4cf3
-.octa 0xd1af0f490000000100000001ba48c5f6,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148c8014cc9f6b3e2c4ffffffff,0xec1949cb1949c22949ed114800000000
-.octa 0x49d7014900da834800de834900dd8349,0x320978b4800000000b94100d083,0xf6380f4cf3000005508ff6fbe2c4ed31,0x5588ff6fbe2c4d9f6380f4c66d0
-.octa 0xf6fbe2c4e1f6380f4c66d8f6380f4cf3,0xf6380f4c66e0f6380f4cf3000005608f,0xe8f6380f4cf3000005688ff6fbe2c4e9,0xf3000005708ff6fbe2c4f1f6380f4c66
-.octa 0x8ff6fbe2c4f9f6380f4c66f0f6380f4c,0xc1f6380f4c66f8f6380f4cf300000578,0x380f4cf3cdf6380f4c66c5f6380f4cf3,0xd2af0f490000000100000001ba48cdf6
-.octa 0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148d0014cc9f6abe2c4ffffffff,0xed1949cc1949c32949ed114800000000,0x49d0014900da834800df834900de8349
-.octa 0x328978b4800000000ba4100d183,0xf6380f4cf3000005508ff6fbe2c4ed31,0x5588ff6fbe2c4e1f6380f4c66d8,0xf6fbe2c4e9f6380f4c66e0f6380f4cf3
-.octa 0xf6380f4c66e8f6380f4cf3000005608f,0xf0f6380f4cf3000005688ff6fbe2c4f1,0xf3000005708ff6fbe2c4f9f6380f4c66,0x8ff6fbe2c4c1f6380f4c66f8f6380f4c
-.octa 0xc9f6380f4c66c0f6380f4cf300000578,0x380f4cf3d5f6380f4c66cdf6380f4cf3,0xd3af0f490000000100000001ba48d5f6,0xb9c0f6f3e2c4ffffffff00000001b848
-.octa 0xbdd11148d8014cc9f6a3e2c4ffffffff,0xee1949cd1949c42949ed114800000000,0x49d1014900da834800d8834900df8349,0x330978b4800000000bb4100d283
-.octa 0xf6380f4cf3000005508ff6fbe2c4ed31,0x5588ff6fbe2c4e9f6380f4c66e0,0xf6fbe2c4f1f6380f4c66e8f6380f4cf3,0xf6380f4c66f0f6380f4cf3000005608f
-.octa 0xf8f6380f4cf3000005688ff6fbe2c4f9,0xf3000005708ff6fbe2c4c1f6380f4c66,0x8ff6fbe2c4c9f6380f4c66c0f6380f4c,0xd1f6380f4c66c8f6380f4cf300000578
-.octa 0x380f4cf3ddf6380f4c66d5f6380f4cf3,0xd4af0f490000000100000001ba48ddf6,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e0014cc9f69be2c4ffffffff
-.octa 0xef1949ce1949c52949ed114800000000,0x49d2014900da834800d9834900d88349,0x338978b4800000000bc4100d383,0xf6380f4cf3000005508ff6fbe2c4ed31
-.octa 0x5588ff6fbe2c4f1f6380f4c66e8,0xf6fbe2c4f9f6380f4c66f0f6380f4cf3,0xf6380f4c66f8f6380f4cf3000005608f,0xc0f6380f4cf3000005688ff6fbe2c4c1
-.octa 0xf3000005708ff6fbe2c4c9f6380f4c66,0x8ff6fbe2c4d1f6380f4c66c8f6380f4c,0xd9f6380f4c66d0f6380f4cf300000578,0x380f4cf3e5f6380f4c66ddf6380f4cf3
-.octa 0xd5af0f490000000100000001ba48e5f6,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e8014cc9f693e2c4ffffffff,0xe81949cf1949c62949ed114800000000
-.octa 0x49d3014900da834800da834900d98349,0x7f1b4c40772b4c00000000bd4100d483,0x5f1b4c60571b4c584f1b4c50471b4c48,0xe2c148c28948c189c0194800dc834968
-.octa 0xe81149d71149ce0149e5d148c5894820,0x550b7894cc31149c21149c11149,0x894c0000056087894c00000558bf894c,0x789f894c0000057097894c000005688f
-.octa 0x5288f8b4c00000520878b4c000005,0x4c000005389f8b4c00000530978b4c00,0x872b4c00000548af8b4c00000540a78b,0x560971b4c000005588f1b4c00000550
-.octa 0x570a71b4c000005689f1b4c0000,0x48c28948c189c0194800000578af1b4c,0x49d11149c80149e5d148c5894820e2c1,0x3a087894cc51149c41149c31149ea11
-.octa 0x3b097894c000003a88f894c0000,0x894c000003c0a7894c000003b89f894c,0x62c4ed3100000340978b48000003c8af,0x4c897f6fb62c4000004c08ff6bb
-.octa 0x66000004d09ff6fb62c4c8f6380f4c66,0x4c66000004d8a7f6fb62c4d0f6380f4c,0xf4c66000004e0aff6fb62c4d8f6380f,0x380f4c66000004e8b7f6fb62c4e0f638
+.octa 0x48c2314800000600978b480000045087,0x58878b4800000450878948d03148ca21,0xca2148c2314800000608978b48000004
+.byte 0x48,0x31,0xd0,0x48,0x89,0x87,0x58,0x04,0x00,0x00,0x48,0x83,0xfb,0x36
+jne 21b",
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+840]
+        // mulx r10, rax, QWORD PTR [rdi+848]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+856]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+864]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+872]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+872]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+872]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+872]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+872]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+832]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+840]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+848]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+856]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+864]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+872]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r8
+        // mov QWORD PTR [rdi+1200], r9
+        // mov QWORD PTR [rdi+1208], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1168]
+        // adc r14, QWORD PTR [rdi+1176]
+        // adc r15, QWORD PTR [rdi+1184]
+        // adc r10, QWORD PTR [rdi+1192]
+        // adc r11, QWORD PTR [rdi+1200]
+        // adc r12, QWORD PTR [rdi+1208]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r10
+        // mov QWORD PTR [rdi+1200], r11
+        // mov QWORD PTR [rdi+1208], r12
+        // mov rdx, QWORD PTR [rdi+1024]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1168]
+        // mulx r10, rax, QWORD PTR [rdi+1176]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1184]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1192]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1200]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1208]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1032]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1040]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1048]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1056]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1064]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1216], r14
+        // mov QWORD PTR [rdi+1224], r15
+        // mov QWORD PTR [rdi+1232], r8
+        // mov QWORD PTR [rdi+1240], r9
+        // mov QWORD PTR [rdi+1248], r10
+        // mov QWORD PTR [rdi+1256], r11
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1168]
+        // mulx r10, rax, QWORD PTR [rdi+1176]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1184]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1192]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1200]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1208]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1168]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1176]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1184]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1192]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1200]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1208]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1264], r14
+        // mov QWORD PTR [rdi+1272], r15
+        // mov QWORD PTR [rdi+1280], r8
+        // mov QWORD PTR [rdi+1288], r9
+        // mov QWORD PTR [rdi+1296], r10
+        // mov QWORD PTR [rdi+1304], r11
+        // mov rdx, QWORD PTR [rdi+1072]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1264]
+        // mulx r10, rax, QWORD PTR [rdi+1272]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1280]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1288]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1296]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1304]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1080]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1088]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1096]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1104]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1112]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1264]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1272]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1304]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1264], r14
+        // mov QWORD PTR [rdi+1272], r15
+        // mov QWORD PTR [rdi+1280], r8
+        // mov QWORD PTR [rdi+1288], r9
+        // mov QWORD PTR [rdi+1296], r10
+        // mov QWORD PTR [rdi+1304], r11
+        // mov r8, QWORD PTR [rdi+1216]
+        // mov r9, QWORD PTR [rdi+1224]
+        // mov r10, QWORD PTR [rdi+1232]
+        // mov r11, QWORD PTR [rdi+1240]
+        // mov r12, QWORD PTR [rdi+1248]
+        // mov r13, QWORD PTR [rdi+1256]
+        // sub r8, QWORD PTR [rdi+736]
+        // sbb r9, QWORD PTR [rdi+744]
+        // sbb r10, QWORD PTR [rdi+752]
+        // sbb r11, QWORD PTR [rdi+760]
+        // sbb r12, QWORD PTR [rdi+768]
+        // sbb r13, QWORD PTR [rdi+776]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1216], r8
+        // mov QWORD PTR [rdi+1224], r9
+        // mov QWORD PTR [rdi+1232], r10
+        // mov QWORD PTR [rdi+1240], r11
+        // mov QWORD PTR [rdi+1248], r12
+        // mov QWORD PTR [rdi+1256], r13
+        // mov r8, QWORD PTR [rdi+1264]
+        // mov r9, QWORD PTR [rdi+1272]
+        // mov r10, QWORD PTR [rdi+1280]
+        // mov r11, QWORD PTR [rdi+1288]
+        // mov r12, QWORD PTR [rdi+1296]
+        // mov r13, QWORD PTR [rdi+1304]
+        // sub r8, QWORD PTR [rdi+784]
+        // sbb r9, QWORD PTR [rdi+792]
+        // sbb r10, QWORD PTR [rdi+800]
+        // sbb r11, QWORD PTR [rdi+808]
+        // sbb r12, QWORD PTR [rdi+816]
+        // sbb r13, QWORD PTR [rdi+824]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1264], r8
+        // mov QWORD PTR [rdi+1272], r9
+        // mov QWORD PTR [rdi+1280], r10
+        // mov QWORD PTR [rdi+1288], r11
+        // mov QWORD PTR [rdi+1296], r12
+        // mov QWORD PTR [rdi+1304], r13
+        // mov rdx, QWORD PTR [rdi+1216]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1224]
+        // mulx r10, rax, QWORD PTR [rdi+1232]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1240]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1248]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1256]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+1224]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+1256]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+1232]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+1256]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+1240]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+1256]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+1248]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+1256]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+1216]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+1224]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+1232]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+1240]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+1248]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+1256]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+1312], r13
+        // mov QWORD PTR [rdi+1320], r14
+        // mov QWORD PTR [rdi+1328], r15
+        // mov QWORD PTR [rdi+1336], r8
+        // mov QWORD PTR [rdi+1344], r9
+        // mov QWORD PTR [rdi+1352], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1312]
+        // adc r14, QWORD PTR [rdi+1320]
+        // adc r15, QWORD PTR [rdi+1328]
+        // adc r10, QWORD PTR [rdi+1336]
+        // adc r11, QWORD PTR [rdi+1344]
+        // adc r12, QWORD PTR [rdi+1352]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1312], r13
+        // mov QWORD PTR [rdi+1320], r14
+        // mov QWORD PTR [rdi+1328], r15
+        // mov QWORD PTR [rdi+1336], r10
+        // mov QWORD PTR [rdi+1344], r11
+        // mov QWORD PTR [rdi+1352], r12
+        // mov rdx, QWORD PTR [rdi+1216]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1312]
+        // mulx r10, rax, QWORD PTR [rdi+1320]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1328]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1336]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1344]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1352]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1224]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1232]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1240]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1248]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1256]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1360], r14
+        // mov QWORD PTR [rdi+1368], r15
+        // mov QWORD PTR [rdi+1376], r8
+        // mov QWORD PTR [rdi+1384], r9
+        // mov QWORD PTR [rdi+1392], r10
+        // mov QWORD PTR [rdi+1400], r11
+        // mov rdx, QWORD PTR [rdi+736]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1312]
+        // mulx r10, rax, QWORD PTR [rdi+1320]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1328]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1336]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1344]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1352]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+744]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+752]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+760]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+768]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+776]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1312], r14
+        // mov QWORD PTR [rdi+1320], r15
+        // mov QWORD PTR [rdi+1328], r8
+        // mov QWORD PTR [rdi+1336], r9
+        // mov QWORD PTR [rdi+1344], r10
+        // mov QWORD PTR [rdi+1352], r11
+        // mov rdx, QWORD PTR [rdi+1264]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1272]
+        // mulx r10, rax, QWORD PTR [rdi+1280]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1288]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1296]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1304]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+1272]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1280]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+1304]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+1280]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1288]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+1304]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+1288]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1296]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+1304]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+1296]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+1304]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+1264]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+1272]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+1280]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+1288]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+1296]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+1304]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+880], r13
+        // mov QWORD PTR [rdi+888], r14
+        // mov QWORD PTR [rdi+896], r15
+        // mov QWORD PTR [rdi+904], r8
+        // mov QWORD PTR [rdi+912], r9
+        // mov QWORD PTR [rdi+920], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+880]
+        // adc r14, QWORD PTR [rdi+888]
+        // adc r15, QWORD PTR [rdi+896]
+        // adc r10, QWORD PTR [rdi+904]
+        // adc r11, QWORD PTR [rdi+912]
+        // adc r12, QWORD PTR [rdi+920]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+880], r13
+        // mov QWORD PTR [rdi+888], r14
+        // mov QWORD PTR [rdi+896], r15
+        // mov QWORD PTR [rdi+904], r10
+        // mov QWORD PTR [rdi+912], r11
+        // mov QWORD PTR [rdi+920], r12
+        // mov r8, QWORD PTR [rdi+880]
+        // mov r9, QWORD PTR [rdi+888]
+        // mov r10, QWORD PTR [rdi+896]
+        // mov r11, QWORD PTR [rdi+904]
+        // mov r12, QWORD PTR [rdi+912]
+        // mov r13, QWORD PTR [rdi+920]
+        // sub r8, QWORD PTR [rdi+1360]
+        // sbb r9, QWORD PTR [rdi+1368]
+        // sbb r10, QWORD PTR [rdi+1376]
+        // sbb r11, QWORD PTR [rdi+1384]
+        // sbb r12, QWORD PTR [rdi+1392]
+        // sbb r13, QWORD PTR [rdi+1400]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+880], r8
+        // mov QWORD PTR [rdi+888], r9
+        // mov QWORD PTR [rdi+896], r10
+        // mov QWORD PTR [rdi+904], r11
+        // mov QWORD PTR [rdi+912], r12
+        // mov QWORD PTR [rdi+920], r13
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // mov r14d, 0
+        // add r8, QWORD PTR [rdi+1312]
+        // adc r9, QWORD PTR [rdi+1320]
+        // adc r10, QWORD PTR [rdi+1328]
+        // adc r11, QWORD PTR [rdi+1336]
+        // adc r12, QWORD PTR [rdi+1344]
+        // adc r13, QWORD PTR [rdi+1352]
+        // adc r14, 0
+        // sub r8, QWORD PTR [rdi+64]
+        // sbb r9, QWORD PTR [rdi+72]
+        // sbb r10, QWORD PTR [rdi+80]
+        // sbb r11, QWORD PTR [rdi+88]
+        // sbb r12, QWORD PTR [rdi+96]
+        // sbb r13, QWORD PTR [rdi+104]
+        // sbb r14, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1408], r8
+        // mov QWORD PTR [rdi+1416], r9
+        // mov QWORD PTR [rdi+1424], r10
+        // mov QWORD PTR [rdi+1432], r11
+        // mov QWORD PTR [rdi+1440], r12
+        // mov QWORD PTR [rdi+1448], r13
+        // mov r8, QWORD PTR [rdi+880]
+        // mov r9, QWORD PTR [rdi+888]
+        // mov r10, QWORD PTR [rdi+896]
+        // mov r11, QWORD PTR [rdi+904]
+        // mov r12, QWORD PTR [rdi+912]
+        // mov r13, QWORD PTR [rdi+920]
+        // sub r8, QWORD PTR [rdi+1408]
+        // sbb r9, QWORD PTR [rdi+1416]
+        // sbb r10, QWORD PTR [rdi+1424]
+        // sbb r11, QWORD PTR [rdi+1432]
+        // sbb r12, QWORD PTR [rdi+1440]
+        // sbb r13, QWORD PTR [rdi+1448]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+880], r8
+        // mov QWORD PTR [rdi+888], r9
+        // mov QWORD PTR [rdi+896], r10
+        // mov QWORD PTR [rdi+904], r11
+        // mov QWORD PTR [rdi+912], r12
+        // mov QWORD PTR [rdi+920], r13
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // sub r8, QWORD PTR [rdi+880]
+        // sbb r9, QWORD PTR [rdi+888]
+        // sbb r10, QWORD PTR [rdi+896]
+        // sbb r11, QWORD PTR [rdi+904]
+        // sbb r12, QWORD PTR [rdi+912]
+        // sbb r13, QWORD PTR [rdi+920]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+1312], r8
+        // mov QWORD PTR [rdi+1320], r9
+        // mov QWORD PTR [rdi+1328], r10
+        // mov QWORD PTR [rdi+1336], r11
+        // mov QWORD PTR [rdi+1344], r12
+        // mov QWORD PTR [rdi+1352], r13
+        // mov rdx, QWORD PTR [rdi+1264]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1312]
+        // mulx r10, rax, QWORD PTR [rdi+1320]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1328]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1336]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1344]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1352]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1272]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1280]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1288]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1296]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1304]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1312]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1320]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1328]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1336]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1344]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1352]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1312], r14
+        // mov QWORD PTR [rdi+1320], r15
+        // mov QWORD PTR [rdi+1328], r8
+        // mov QWORD PTR [rdi+1336], r9
+        // mov QWORD PTR [rdi+1344], r10
+        // mov QWORD PTR [rdi+1352], r11
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1360]
+        // mulx r10, rax, QWORD PTR [rdi+1368]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1376]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1384]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1392]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1400]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1360]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1368]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1376]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1384]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1392]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1400]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+1360], r14
+        // mov QWORD PTR [rdi+1368], r15
+        // mov QWORD PTR [rdi+1376], r8
+        // mov QWORD PTR [rdi+1384], r9
+        // mov QWORD PTR [rdi+1392], r10
+        // mov QWORD PTR [rdi+1400], r11
+        // mov r8, QWORD PTR [rdi+1312]
+        // mov r9, QWORD PTR [rdi+1320]
+        // mov r10, QWORD PTR [rdi+1328]
+        // mov r11, QWORD PTR [rdi+1336]
+        // mov r12, QWORD PTR [rdi+1344]
+        // mov r13, QWORD PTR [rdi+1352]
+        // sub r8, QWORD PTR [rdi+1360]
+        // sbb r9, QWORD PTR [rdi+1368]
+        // sbb r10, QWORD PTR [rdi+1376]
+        // sbb r11, QWORD PTR [rdi+1384]
+        // sbb r12, QWORD PTR [rdi+1392]
+        // sbb r13, QWORD PTR [rdi+1400]
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r8, rcx
+        // adc r9, rdx
+        // adc r10, rbp
+        // adc r11, rax
+        // adc r12, rax
+        // adc r13, rax
+        // mov QWORD PTR [rdi+928], r8
+        // mov QWORD PTR [rdi+936], r9
+        // mov QWORD PTR [rdi+944], r10
+        // mov QWORD PTR [rdi+952], r11
+        // mov QWORD PTR [rdi+960], r12
+        // mov QWORD PTR [rdi+968], r13
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+1216]
+        // mulx r10, rax, QWORD PTR [rdi+1224]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+1232]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+1240]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+1248]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+1256]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+1216]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1224]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1232]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1240]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1248]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+1256]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+976], r14
+        // mov QWORD PTR [rdi+984], r15
+        // mov QWORD PTR [rdi+992], r8
+        // mov QWORD PTR [rdi+1000], r9
+        // mov QWORD PTR [rdi+1008], r10
+        // mov QWORD PTR [rdi+1016], r11
+        // mov rax, QWORD PTR [rdi+832]
+        // or rax, QWORD PTR [rdi+840]
+        // or rax, QWORD PTR [rdi+848]
+        // or rax, QWORD PTR [rdi+856]
+        // or rax, QWORD PTR [rdi+864]
+        // or rax, QWORD PTR [rdi+872]
+        // mov ecx, 0
+        // sub rcx, rax
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+1024]
+        // mov rdx, QWORD PTR [rdi+880]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+880], rax
+        // mov rax, QWORD PTR [rdi+1032]
+        // mov rdx, QWORD PTR [rdi+888]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+888], rax
+        // mov rax, QWORD PTR [rdi+1040]
+        // mov rdx, QWORD PTR [rdi+896]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+896], rax
+        // mov rax, QWORD PTR [rdi+1048]
+        // mov rdx, QWORD PTR [rdi+904]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+904], rax
+        // mov rax, QWORD PTR [rdi+1056]
+        // mov rdx, QWORD PTR [rdi+912]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+912], rax
+        // mov rax, QWORD PTR [rdi+1064]
+        // mov rdx, QWORD PTR [rdi+920]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+920], rax
+        // mov rax, QWORD PTR [rdi+1072]
+        // mov rdx, QWORD PTR [rdi+928]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+928], rax
+        // mov rax, QWORD PTR [rdi+1080]
+        // mov rdx, QWORD PTR [rdi+936]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+936], rax
+        // mov rax, QWORD PTR [rdi+1088]
+        // mov rdx, QWORD PTR [rdi+944]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+944], rax
+        // mov rax, QWORD PTR [rdi+1096]
+        // mov rdx, QWORD PTR [rdi+952]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+952], rax
+        // mov rax, QWORD PTR [rdi+1104]
+        // mov rdx, QWORD PTR [rdi+960]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+960], rax
+        // mov rax, QWORD PTR [rdi+1112]
+        // mov rdx, QWORD PTR [rdi+968]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+968], rax
+        // mov rax, QWORD PTR [rdi+1120]
+        // mov rdx, QWORD PTR [rdi+976]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+976], rax
+        // mov rax, QWORD PTR [rdi+1128]
+        // mov rdx, QWORD PTR [rdi+984]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+984], rax
+        // mov rax, QWORD PTR [rdi+1136]
+        // mov rdx, QWORD PTR [rdi+992]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+992], rax
+        // mov rax, QWORD PTR [rdi+1144]
+        // mov rdx, QWORD PTR [rdi+1000]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1000], rax
+        // mov rax, QWORD PTR [rdi+1152]
+        // mov rdx, QWORD PTR [rdi+1008]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1008], rax
+        // mov rax, QWORD PTR [rdi+1160]
+        // mov rdx, QWORD PTR [rdi+1016]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+1016], rax
+        // mov rax, rbx
+        // mov ecx, 7
+        // mul rcx
+        // mov rcx, rax
+        // mov eax, 0
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2229]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2228]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2227]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2226]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2225]
+        // add rax, rdx
+        // add rax, rax
+        // movzx edx, BYTE PTR [rdi+rcx*1+2224]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2223]
+        // add rax, rdx
+        // movzx edx, BYTE PTR [rdi+rcx*1+2230]
+        // mov r8d, 0
+        // sub r8, rdx
+        // xor rax, r8
+        // sub rax, r8
+        // and r8, 128
+        // add rax, r8
+        // mov r8, rax
+        // mov ecx, 0
+        // xor rcx, r8
+        // cmp rcx, 1
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+880]
+        // mov rdx, QWORD PTR [rdi+736]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+736], rax
+        // mov rax, QWORD PTR [rdi+888]
+        // mov rdx, QWORD PTR [rdi+744]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+744], rax
+        // mov rax, QWORD PTR [rdi+896]
+        // mov rdx, QWORD PTR [rdi+752]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+752], rax
+        // mov rax, QWORD PTR [rdi+904]
+        // mov rdx, QWORD PTR [rdi+760]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+760], rax
+        // mov rax, QWORD PTR [rdi+912]
+        // mov rdx, QWORD PTR [rdi+768]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+768], rax
+        // mov rax, QWORD PTR [rdi+920]
+        // mov rdx, QWORD PTR [rdi+776]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+776], rax
+        // mov rax, QWORD PTR [rdi+928]
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+936]
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+944]
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+952]
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+960]
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+968]
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+824], rax
+        // mov rax, QWORD PTR [rdi+976]
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+832], rax
+        // mov rax, QWORD PTR [rdi+984]
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+840], rax
+        // mov rax, QWORD PTR [rdi+992]
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+848], rax
+        // mov rax, QWORD PTR [rdi+1000]
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+856], rax
+        // mov rax, QWORD PTR [rdi+1008]
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+864], rax
+        // mov rax, QWORD PTR [rdi+1016]
+        // mov rdx, QWORD PTR [rdi+872]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+872], rax
+        // add rbx, 1
+        // cmp rbx, 55
+        // mov rax, QWORD PTR [rdi+832]
+        // or rax, QWORD PTR [rdi+840]
+        // or rax, QWORD PTR [rdi+848]
+        // or rax, QWORD PTR [rdi+856]
+        // or rax, QWORD PTR [rdi+864]
+        // or rax, QWORD PTR [rdi+872]
+        // mov ecx, 0
+        // sub rcx, rax
+        // sbb rcx, rcx
+        // mov rax, QWORD PTR [rdi+208]
+        // mov rdx, QWORD PTR [rdi+784]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+784], rax
+        // mov rax, QWORD PTR [rdi+216]
+        // mov rdx, QWORD PTR [rdi+792]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+792], rax
+        // mov rax, QWORD PTR [rdi+224]
+        // mov rdx, QWORD PTR [rdi+800]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+800], rax
+        // mov rax, QWORD PTR [rdi+232]
+        // mov rdx, QWORD PTR [rdi+808]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+808], rax
+        // mov rax, QWORD PTR [rdi+240]
+        // mov rdx, QWORD PTR [rdi+816]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+816], rax
+        // mov rax, QWORD PTR [rdi+248]
+        // mov rdx, QWORD PTR [rdi+824]
+        // xor rdx, rax
+        // and rdx, rcx
+        // xor rax, rdx
+        // mov QWORD PTR [rdi+824], rax
+        // xor rcx, -1
+        // movabs rax, -4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+784]
+        // mov QWORD PTR [rdi+784], rax
+        // movabs rax, 4294967295
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+792]
+        // mov QWORD PTR [rdi+792], rax
+        // movabs rax, 1
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+800]
+        // mov QWORD PTR [rdi+800], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+808]
+        // mov QWORD PTR [rdi+808], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+816]
+        // mov QWORD PTR [rdi+816], rax
+        // movabs rax, 0
+        // and rax, rcx
+        // or rax, QWORD PTR [rdi+824]
+        // mov QWORD PTR [rdi+824], rax
+        // mov rdx, QWORD PTR [rdi+736]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+832]
+        // mulx r10, rax, QWORD PTR [rdi+840]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+848]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+856]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+864]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+872]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+744]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+752]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+760]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+768]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+776]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+736], r14
+        // mov QWORD PTR [rdi+744], r15
+        // mov QWORD PTR [rdi+752], r8
+        // mov QWORD PTR [rdi+760], r9
+        // mov QWORD PTR [rdi+768], r10
+        // mov QWORD PTR [rdi+776], r11
+        // mov rdx, QWORD PTR [rdi+832]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+840]
+        // mulx r10, rax, QWORD PTR [rdi+848]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+856]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+864]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+872]
+        // adcx r12, rax
+        // adcx r13, rbp
+        // mov QWORD PTR [rdi+4056], r8
+        // mov QWORD PTR [rdi+4064], r9
+        // mov rdx, QWORD PTR [rdi+840]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx r14, rax, QWORD PTR [rdi+872]
+        // adox r13, rax
+        // adcx r14, rbp
+        // adox r14, rbp
+        // mov rdx, QWORD PTR [rdi+848]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx r15, rax, QWORD PTR [rdi+872]
+        // adox r14, rax
+        // adcx r15, rbp
+        // adox r15, rbp
+        // mov rdx, QWORD PTR [rdi+856]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx r8, rax, QWORD PTR [rdi+872]
+        // adox r15, rax
+        // adcx r8, rbp
+        // adox r8, rbp
+        // mov rdx, QWORD PTR [rdi+864]
+        // xor ebp, ebp
+        // mulx r9, rax, QWORD PTR [rdi+872]
+        // adox r8, rax
+        // adcx r9, rbp
+        // adox r9, rbp
+        // xor ebp, ebp
+        // mov rdx, QWORD PTR [rdi+832]
+        // mulx rcx, rax, rdx
+        // adcx rbp, rbp
+        // adox rbp, rax
+        // mov QWORD PTR [rdi+4048], rbp
+        // mov rdx, QWORD PTR [rdi+4056]
+        // adcx rdx, rdx
+        // adox rdx, rcx
+        // mov QWORD PTR [rdi+4056], rdx
+        // mov rdx, QWORD PTR [rdi+840]
+        // mulx rcx, rax, rdx
+        // mov rdx, QWORD PTR [rdi+4064]
+        // adcx rdx, rdx
+        // adox rdx, rax
+        // mov QWORD PTR [rdi+4064], rdx
+        // adcx r10, r10
+        // adox r10, rcx
+        // mov rdx, QWORD PTR [rdi+848]
+        // mulx rcx, rax, rdx
+        // adcx r11, r11
+        // adox r11, rax
+        // adcx r12, r12
+        // adox r12, rcx
+        // mov rdx, QWORD PTR [rdi+856]
+        // mulx rcx, rax, rdx
+        // adcx r13, r13
+        // adox r13, rax
+        // adcx r14, r14
+        // adox r14, rcx
+        // mov rdx, QWORD PTR [rdi+864]
+        // mulx rcx, rax, rdx
+        // adcx r15, r15
+        // adox r15, rax
+        // adcx r8, r8
+        // adox r8, rcx
+        // mov rdx, QWORD PTR [rdi+872]
+        // mulx rcx, rax, rdx
+        // adcx r9, r9
+        // adox r9, rax
+        // mov edx, 0
+        // adcx rcx, rdx
+        // adox rcx, rdx
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r8
+        // mov QWORD PTR [rdi+1200], r9
+        // mov QWORD PTR [rdi+1208], rcx
+        // mov r13, QWORD PTR [rdi+4048]
+        // mov r14, QWORD PTR [rdi+4056]
+        // mov r15, QWORD PTR [rdi+4064]
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r10, rbp
+        // sbb r11, 0
+        // sbb r12, 0
+        // mov r13, rdx
+        // sbb r13, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r14
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r14, rcx
+        // add rax, r14
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r15, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // mov r14, rdx
+        // sbb r14, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r15
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r15, rcx
+        // add rax, r15
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // mov r15, rdx
+        // sbb r15, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // mov r10, rdx
+        // sbb r10, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r10, 0
+        // mov r11, rdx
+        // sbb r11, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r10, 0
+        // sbb r11, 0
+        // mov r12, rdx
+        // sbb r12, 0
+        // mov r8d, 0
+        // add r13, QWORD PTR [rdi+1168]
+        // adc r14, QWORD PTR [rdi+1176]
+        // adc r15, QWORD PTR [rdi+1184]
+        // adc r10, QWORD PTR [rdi+1192]
+        // adc r11, QWORD PTR [rdi+1200]
+        // adc r12, QWORD PTR [rdi+1208]
+        // adc r8, 0
+        // sub r13, QWORD PTR [rdi+64]
+        // sbb r14, QWORD PTR [rdi+72]
+        // sbb r15, QWORD PTR [rdi+80]
+        // sbb r10, QWORD PTR [rdi+88]
+        // sbb r11, QWORD PTR [rdi+96]
+        // sbb r12, QWORD PTR [rdi+104]
+        // sbb r8, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r13, rcx
+        // adc r14, rdx
+        // adc r15, rbp
+        // adc r10, rax
+        // adc r11, rax
+        // adc r12, rax
+        // mov QWORD PTR [rdi+1168], r13
+        // mov QWORD PTR [rdi+1176], r14
+        // mov QWORD PTR [rdi+1184], r15
+        // mov QWORD PTR [rdi+1192], r10
+        // mov QWORD PTR [rdi+1200], r11
+        // mov QWORD PTR [rdi+1208], r12
+        // mov rdx, QWORD PTR [rdi+1168]
+        // xor ebp, ebp
+        // mulx r9, r8, QWORD PTR [rdi+832]
+        // mulx r10, rax, QWORD PTR [rdi+840]
+        // adcx r9, rax
+        // mulx r11, rax, QWORD PTR [rdi+848]
+        // adcx r10, rax
+        // mulx r12, rax, QWORD PTR [rdi+856]
+        // adcx r11, rax
+        // mulx r13, rax, QWORD PTR [rdi+864]
+        // adcx r12, rax
+        // mulx r14, rax, QWORD PTR [rdi+872]
+        // adcx r13, rax
+        // adcx r14, rbp
+        // mov r15d, 0
+        // movabs rdx, 4294967297
+        // imul rdx, r8
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r8, rcx
+        // add rax, r8
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r9, rax
+        // sbb r10, rcx
+        // sbb r11, rbp
+        // sbb r12, 0
+        // sbb r13, 0
+        // sbb rdx, 0
+        // add r14, rdx
+        // adc r15, 0
+        // mov r8d, 0
+        // mov rdx, QWORD PTR [rdi+1176]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r14, rax
+        // adcx r15, rcx
+        // adox r15, rbp
+        // adcx r8, rbp
+        // adox r8, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r9
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r9, rcx
+        // add rax, r9
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r10, rax
+        // sbb r11, rcx
+        // sbb r12, rbp
+        // sbb r13, 0
+        // sbb r14, 0
+        // sbb rdx, 0
+        // add r15, rdx
+        // adc r8, 0
+        // mov r9d, 0
+        // mov rdx, QWORD PTR [rdi+1184]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r10, rax
+        // adcx r11, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r15, rax
+        // adcx r8, rcx
+        // adox r8, rbp
+        // adcx r9, rbp
+        // adox r9, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r10
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r10, rcx
+        // add rax, r10
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r11, rax
+        // sbb r12, rcx
+        // sbb r13, rbp
+        // sbb r14, 0
+        // sbb r15, 0
+        // sbb rdx, 0
+        // add r8, rdx
+        // adc r9, 0
+        // mov r10d, 0
+        // mov rdx, QWORD PTR [rdi+1192]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r11, rax
+        // adcx r12, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r8, rax
+        // adcx r9, rcx
+        // adox r9, rbp
+        // adcx r10, rbp
+        // adox r10, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r11
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r11, rcx
+        // add rax, r11
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r12, rax
+        // sbb r13, rcx
+        // sbb r14, rbp
+        // sbb r15, 0
+        // sbb r8, 0
+        // sbb rdx, 0
+        // add r9, rdx
+        // adc r10, 0
+        // mov r11d, 0
+        // mov rdx, QWORD PTR [rdi+1200]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r12, rax
+        // adcx r13, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r9, rax
+        // adcx r10, rcx
+        // adox r10, rbp
+        // adcx r11, rbp
+        // adox r11, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r12
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r12, rcx
+        // add rax, r12
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r13, rax
+        // sbb r14, rcx
+        // sbb r15, rbp
+        // sbb r8, 0
+        // sbb r9, 0
+        // sbb rdx, 0
+        // add r10, rdx
+        // adc r11, 0
+        // mov r12d, 0
+        // mov rdx, QWORD PTR [rdi+1208]
+        // xor ebp, ebp
+        // mulx rcx, rax, QWORD PTR [rdi+832]
+        // adox r13, rax
+        // adcx r14, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+840]
+        // adox r14, rax
+        // adcx r15, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+848]
+        // adox r15, rax
+        // adcx r8, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+856]
+        // adox r8, rax
+        // adcx r9, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+864]
+        // adox r9, rax
+        // adcx r10, rcx
+        // mulx rcx, rax, QWORD PTR [rdi+872]
+        // adox r10, rax
+        // adcx r11, rcx
+        // adox r11, rbp
+        // adcx r12, rbp
+        // adox r12, rbp
+        // movabs rdx, 4294967297
+        // imul rdx, r13
+        // movabs rax, -4294967295
+        // mulx rax, rcx, rax
+        // mov ecx, -1
+        // mulx rcx, r13, rcx
+        // add rax, r13
+        // adc rcx, rdx
+        // mov ebp, 0
+        // adc rbp, rbp
+        // sub r14, rax
+        // sbb r15, rcx
+        // sbb r8, rbp
+        // sbb r9, 0
+        // sbb r10, 0
+        // sbb rdx, 0
+        // add r11, rdx
+        // adc r12, 0
+        // mov r13d, 0
+        // sub r14, QWORD PTR [rdi+64]
+        // sbb r15, QWORD PTR [rdi+72]
+        // sbb r8, QWORD PTR [rdi+80]
+        // sbb r9, QWORD PTR [rdi+88]
+        // sbb r10, QWORD PTR [rdi+96]
+        // sbb r11, QWORD PTR [rdi+104]
+        // sbb r12, 0
+        // sbb rax, rax
+        // mov ecx, eax
+        // mov rdx, rax
+        // shl rdx, 32
+        // mov rbp, rax
+        // shl rbp, 1
+        // add r14, rcx
+        // adc r15, rdx
+        // adc r8, rbp
+        // adc r9, rax
+        // adc r10, rax
+        // adc r11, rax
+        // mov QWORD PTR [rdi+832], r14
+        // mov QWORD PTR [rdi+840], r15
+        // mov QWORD PTR [rdi+848], r8
+        // mov QWORD PTR [rdi+856], r9
+        // mov QWORD PTR [rdi+864], r10
+        // mov QWORD PTR [rdi+872], r11
+        // mov rbx, QWORD PTR [rdi+1456]
+        // mov rbp, QWORD PTR [rdi+1464]
+        // mov r12, QWORD PTR [rdi+1472]
+        // mov r13, QWORD PTR [rdi+1480]
+        // mov r14, QWORD PTR [rdi+1488]
+        // mov r15, QWORD PTR [rdi+1496]
+        // ret
+        r".octa 0x3488ff6bb62c4ed3100000340978b48,0xf6380f4c660000035097f6fb62c40000,0xd0f6380f4c66000003589ff6fb62c4c8,0xc4d8f6380f4c6600000360a7f6fb62c4
+.octa 0x4c66e0f6380f4c6600000368aff6fb62,0xfe08f894c00000fd887894cedf6380f,0x8ff6fbe2c4ed3100000348978b480000,0xd9f6380f4c66d0f6380f4cf300000350
+.octa 0x66d8f6380f4cf3000003588ff6fbe2c4,0x4cf3000003608ff6fbe2c4e1f6380f4c,0x68b7f6fb62c4e9f6380f4c66e0f6380f,0xf3f5f6380f4c66e8f6380f4cf3000003
+.octa 0xe2c4ed3100000350978b48f5f6380f4c,0xf4c66e0f6380f4cf3000003588ff6fb,0x380f4cf3000003608ff6fbe2c4e9f638,0x368bff6fb62c4f1f6380f4c66e8f6
+.octa 0xf4cf3fdf6380f4c66f0f6380f4cf300,0xf6fbe2c4ed3100000358978b48fdf638,0xf6380f4c66f0f6380f4cf3000003608f,0xf8f6380f4cf30000036887f6fb62c4f9
+.octa 0x60978b48c5f6380f4cf3c5f6380f4c66,0x4cf3000003688ff6fb62c4ed31000003,0xcdf6380f4cf3cdf6380f4c66c0f6380f,0x4866caf6fbe2c400000340978b48ed31
+.octa 0xfd0af8948e8f6380f48f3edf6380f,0x48f3d2f6380f486600000fd8978b4800,0x348978b4800000fd8978948d1f6380f,0x486600000fe0978b48caf6fbe2c40000
+.octa 0xfe0978948d0f6380f48f3d2f6380f,0x978b48d1f6380f4cf3d2f6380f4d6600,0xf3dbf6380f4d66caf6fbe2c400000350,0xf6380f4cf3e4f6380f4d66d8f6380f4c
+.octa 0xf4d66caf6fbe2c400000358978b48e1,0xf3f6f6380f4d66e8f6380f4cf3edf638,0xf6fbe2c400000360978b48f1f6380f4c,0xf4d66f8f6380f4cf3fff6380f4d66ca
+.octa 0x368978b48c1f6380f4cf3c0f638,0xf6380f4cf3c9f6380f4d66caf6fbe2c4,0x380f48f3caf6380f486600000000bac8,0x498b7894c00000490af894ccaf6
+.octa 0x894c000004a887894c000004a0bf894c,0xd0af8b4c000004b88f8948000004b08f,0xfe0bf8b4c00000fd8b78b4c00000f,0x48d5af0f490000000100000001ba4800
+.octa 0xffb9c0f6f3e2c4ffffffff00000001b8,0xbdd11148e8014cc9f693e2c4ffffff,0x49ea1949cf1949c62949ed1148000000,0xba4800dd8349d5894900dc834900db83
+.octa 0x1b848d6af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148f0014cc9f68be2c4,0xdc8349eb1949ca1949c72949ed1148
+.octa 0x1ba4800de8349d6894900dd8349,0xff00000001b848d7af0f490000000100,0x83e2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148f8014cc9f6
+.octa 0xde834900dd8349ec1949cb1949c22949,0x100000001ba4800df8349d7894900,0xffffffff00000001b848d2af0f490000,0x4cc9f6abe2c4ffffffffb9c0f6f3e2c4
+.octa 0xc32949ed114800000000bdd11148d001,0x894900df834900de8349ed1949cc1949,0x490000000100000001ba4800da8349d2,0xf3e2c4ffffffff00000001b848d3af0f
+.octa 0x48d8014cc9f6a3e2c4ffffffffb9c0f6,0xcd1949c42949ed114800000000bdd111,0x8349d3894900da834900df8349ee1949,0xd4af0f490000000100000001ba4800db
+.octa 0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e0014cc9f69be2c4ffffffff,0xef1949ce1949c52949ed114800000000,0x4100dc8349d4894900db834900da8349
+.octa 0x98b7134c00000490af034c00000000b8,0x4a897134c000004a0bf134c000004,0x49000004b8a7134c000004b09f134c00,0x4c507f1b4c48771b4c406f2b4c00d083
+.octa 0x4800d8834968671b4c605f1b4c58571b,0xd148c5894820e2c148c28948c189c019,0xc31149c21149ef1149d61149cd0149e5,0x498b7894c00000490af894cc41149
+.octa 0x4c000004a897894c000004a0bf894c00,0x978b48000004b8a7894c000004b09f89,0xc4000004908ff6bb62c4ed3100000400,0x62c4c8f6380f4c660000049897f6fb62
+.octa 0xfb62c4d0f6380f4c66000004a09ff6fb,0xf6fb62c4d8f6380f4c66000004a8a7f6,0xb7f6fb62c4e0f6380f4c66000004b0af,0xf5f6380f4c66e8f6380f4c66000004b8
+.octa 0x100000001ba4800000000bf41,0xe2c4ffffffff00000001b848d0af0f49,0xc0014cc9f6bbe2c4ffffffffb9c0f6f3,0x1949c12949ed114800000000bdd11148
+.octa 0xda834800dd834900dc8349eb1949ca,0x978b4800000000b84100d78349d60149,0xf3000004908ff6fbe2c4ed3100000408,0x8ff6fbe2c4d1f6380f4c66c8f6380f4c
+.octa 0xd9f6380f4c66d0f6380f4cf300000498,0x66d8f6380f4cf3000004a08ff6fbe2c4,0x4cf3000004a88ff6fbe2c4e1f6380f4c,0xb08ff6fbe2c4e9f6380f4c66e0f6380f
+.octa 0xc4f1f6380f4c66e8f6380f4cf3000004,0x4c66f0f6380f4cf3000004b88ff6fbe2,0xc5f6380f4c66fdf6380f4cf3f9f6380f,0x100000001ba48c5f6380f4cf3
+.octa 0xe2c4ffffffff00000001b848d1af0f49,0xc8014cc9f6b3e2c4ffffffffb9c0f6f3,0x1949c22949ed114800000000bdd11148,0xda834800de834900dd8349ec1949cb
+.octa 0x978b4800000000b94100d08349d70149,0xf3000004908ff6fbe2c4ed3100000410,0x8ff6fbe2c4d9f6380f4c66d0f6380f4c,0xe1f6380f4c66d8f6380f4cf300000498
+.octa 0x66e0f6380f4cf3000004a08ff6fbe2c4,0x4cf3000004a88ff6fbe2c4e9f6380f4c,0xb08ff6fbe2c4f1f6380f4c66e8f6380f,0xc4f9f6380f4c66f0f6380f4cf3000004
+.octa 0x4c66f8f6380f4cf3000004b88ff6fbe2,0xcdf6380f4c66c5f6380f4cf3c1f6380f,0x100000001ba48cdf6380f4cf3,0xe2c4ffffffff00000001b848d2af0f49
+.octa 0xd0014cc9f6abe2c4ffffffffb9c0f6f3,0x1949c32949ed114800000000bdd11148,0xda834800df834900de8349ed1949cc,0x978b4800000000ba4100d18349d00149
+.octa 0xf3000004908ff6fbe2c4ed3100000418,0x8ff6fbe2c4e1f6380f4c66d8f6380f4c,0xe9f6380f4c66e0f6380f4cf300000498,0x66e8f6380f4cf3000004a08ff6fbe2c4
+.octa 0x4cf3000004a88ff6fbe2c4f1f6380f4c,0xb08ff6fbe2c4f9f6380f4c66f0f6380f,0xc4c1f6380f4c66f8f6380f4cf3000004,0x4c66c0f6380f4cf3000004b88ff6fbe2
+.octa 0xd5f6380f4c66cdf6380f4cf3c9f6380f,0x100000001ba48d5f6380f4cf3,0xe2c4ffffffff00000001b848d3af0f49,0xd8014cc9f6a3e2c4ffffffffb9c0f6f3
+.octa 0x1949c42949ed114800000000bdd11148,0xda834800d8834900df8349ee1949cd,0x978b4800000000bb4100d28349d10149,0xf3000004908ff6fbe2c4ed3100000420
+.octa 0x8ff6fbe2c4e9f6380f4c66e0f6380f4c,0xf1f6380f4c66e8f6380f4cf300000498,0x66f0f6380f4cf3000004a08ff6fbe2c4,0x4cf3000004a88ff6fbe2c4f9f6380f4c
+.octa 0xb08ff6fbe2c4c1f6380f4c66f8f6380f,0xc4c9f6380f4c66c0f6380f4cf3000004,0x4c66c8f6380f4cf3000004b88ff6fbe2,0xddf6380f4c66d5f6380f4cf3d1f6380f
+.octa 0x100000001ba48ddf6380f4cf3,0xe2c4ffffffff00000001b848d4af0f49,0xe0014cc9f69be2c4ffffffffb9c0f6f3,0x1949c52949ed114800000000bdd11148
+.octa 0xda834800d9834900d88349ef1949ce,0x978b4800000000bc4100d38349d20149,0xf3000004908ff6fbe2c4ed3100000428,0x8ff6fbe2c4f1f6380f4c66e8f6380f4c
+.octa 0xf9f6380f4c66f0f6380f4cf300000498,0x66f8f6380f4cf3000004a08ff6fbe2c4,0x4cf3000004a88ff6fbe2c4c1f6380f4c,0xb08ff6fbe2c4c9f6380f4c66c0f6380f
+.octa 0xc4d1f6380f4c66c8f6380f4cf3000004,0x4c66d0f6380f4cf3000004b88ff6fbe2,0xe5f6380f4c66ddf6380f4cf3d9f6380f,0x100000001ba48e5f6380f4cf3
+.octa 0xe2c4ffffffff00000001b848d5af0f49,0xe8014cc9f693e2c4ffffffffb9c0f6f3,0x1949c62949ed114800000000bdd11148,0xda834800da834900d98349e81949cf
+.octa 0x772b4c00000000bd4100d48349d30149,0x571b4c584f1b4c50471b4c487f1b4c40,0x8948c189c0194800dc8349685f1b4c60,0x1149ce0149e5d148c5894820e2c148c2
+.octa 0xb7894cc31149c21149c11149e81149d7,0x4d087894c000004c8bf894c000004c0,0x4e097894c000004d88f894c0000,0xed3100000340978b48000004e89f894c
+.octa 0x49897f6fb62c4000004908ff6bb62c4,0x4a09ff6fb62c4c8f6380f4c660000,0x4a8a7f6fb62c4d0f6380f4c6600,0x66000004b0aff6fb62c4d8f6380f4c66
+.octa 0x4c66000004b8b7f6fb62c4e0f6380f4c,0xbf41f5f6380f4c66e8f6380f,0xb848d0af0f490000000100000001ba48,0xffffb9c0f6f3e2c4ffffffff00000001
+.octa 0xbdd11148c0014cc9f6bbe2c4ffff,0x8349eb1949ca1949c12949ed11480000,0xd78349d6014900da834800dd834900dc,0xed3100000348978b4800000000b84100
+.octa 0x66c8f6380f4cf3000004908ff6fbe2c4,0x4cf3000004988ff6fbe2c4d1f6380f4c,0xa08ff6fbe2c4d9f6380f4c66d0f6380f,0xc4e1f6380f4c66d8f6380f4cf3000004
+.octa 0x4c66e0f6380f4cf3000004a88ff6fbe2,0xf4cf3000004b08ff6fbe2c4e9f6380f,0x4b88ff6fbe2c4f1f6380f4c66e8f638,0x4cf3f9f6380f4c66f0f6380f4cf30000
+.octa 0xc5f6380f4cf3c5f6380f4c66fdf6380f,0xb848d1af0f490000000100000001ba48,0xffffb9c0f6f3e2c4ffffffff00000001,0xbdd11148c8014cc9f6b3e2c4ffff
+.octa 0x8349ec1949cb1949c22949ed11480000,0xd08349d7014900da834800de834900dd,0xed3100000350978b4800000000b94100,0x66d0f6380f4cf3000004908ff6fbe2c4
+.octa 0x4cf3000004988ff6fbe2c4d9f6380f4c,0xa08ff6fbe2c4e1f6380f4c66d8f6380f,0xc4e9f6380f4c66e0f6380f4cf3000004,0x4c66e8f6380f4cf3000004a88ff6fbe2
+.octa 0xf4cf3000004b08ff6fbe2c4f1f6380f,0x4b88ff6fbe2c4f9f6380f4c66f0f638,0x4cf3c1f6380f4c66f8f6380f4cf30000,0xcdf6380f4cf3cdf6380f4c66c5f6380f
+.octa 0xb848d2af0f490000000100000001ba48,0xffffb9c0f6f3e2c4ffffffff00000001,0xbdd11148d0014cc9f6abe2c4ffff,0x8349ed1949cc1949c32949ed11480000
+.octa 0xd18349d0014900da834800df834900de,0xed3100000358978b4800000000ba4100,0x66d8f6380f4cf3000004908ff6fbe2c4,0x4cf3000004988ff6fbe2c4e1f6380f4c
+.octa 0xa08ff6fbe2c4e9f6380f4c66e0f6380f,0xc4f1f6380f4c66e8f6380f4cf3000004,0x4c66f0f6380f4cf3000004a88ff6fbe2,0xf4cf3000004b08ff6fbe2c4f9f6380f
+.octa 0x4b88ff6fbe2c4c1f6380f4c66f8f638,0x4cf3c9f6380f4c66c0f6380f4cf30000,0xd5f6380f4cf3d5f6380f4c66cdf6380f,0xb848d3af0f490000000100000001ba48
+.octa 0xffffb9c0f6f3e2c4ffffffff00000001,0xbdd11148d8014cc9f6a3e2c4ffff,0x8349ee1949cd1949c42949ed11480000,0xd28349d1014900da834800d8834900df
+.octa 0xed3100000360978b4800000000bb4100,0x66e0f6380f4cf3000004908ff6fbe2c4,0x4cf3000004988ff6fbe2c4e9f6380f4c,0xa08ff6fbe2c4f1f6380f4c66e8f6380f
+.octa 0xc4f9f6380f4c66f0f6380f4cf3000004,0x4c66f8f6380f4cf3000004a88ff6fbe2,0xf4cf3000004b08ff6fbe2c4c1f6380f,0x4b88ff6fbe2c4c9f6380f4c66c0f638
+.octa 0x4cf3d1f6380f4c66c8f6380f4cf30000,0xddf6380f4cf3ddf6380f4c66d5f6380f,0xb848d4af0f490000000100000001ba48,0xffffb9c0f6f3e2c4ffffffff00000001
+.octa 0xbdd11148e0014cc9f69be2c4ffff,0x8349ef1949ce1949c52949ed11480000,0xd38349d2014900da834800d9834900d8,0xed3100000368978b4800000000bc4100
+.octa 0x66e8f6380f4cf3000004908ff6fbe2c4,0x4cf3000004988ff6fbe2c4f1f6380f4c,0xa08ff6fbe2c4f9f6380f4c66f0f6380f,0xc4c1f6380f4c66f8f6380f4cf3000004
+.octa 0x4c66c0f6380f4cf3000004a88ff6fbe2,0xf4cf3000004b08ff6fbe2c4c9f6380f,0x4b88ff6fbe2c4d1f6380f4c66c8f638,0x4cf3d9f6380f4c66d0f6380f4cf30000
+.octa 0xe5f6380f4cf3e5f6380f4c66ddf6380f,0xb848d5af0f490000000100000001ba48,0xffffb9c0f6f3e2c4ffffffff00000001,0xbdd11148e8014cc9f693e2c4ffff
+.octa 0x8349e81949cf1949c62949ed11480000,0xd48349d3014900da834800da834900d9,0x4c487f1b4c40772b4c00000000bd4100,0x49685f1b4c60571b4c584f1b4c50471b
+.octa 0x4820e2c148c28948c189c0194800dc83,0x1149e81149d71149ce0149e5d148c589,0x894c000004f0b7894cc31149c21149c1,0x88f894c0000050087894c000004f8bf
+.octa 0x5189f894c0000051097894c000005,0xf08ff6bb62c4ed3100000430978b4800,0x380f4c66000004f897f6fb62c4000004,0xf6380f4c66000005009ff6fb62c4c8f6
+.octa 0xd8f6380f4c6600000508a7f6fb62c4d0,0xc4e0f6380f4c6600000510aff6fb62c4,0x4c66e8f6380f4c6600000518b7f6fb62,0x1ba4800000000bf41f5f6380f
+.octa 0xffff00000001b848d0af0f4900000001,0xf6bbe2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148c0014cc9,0xdd834900dc8349eb1949ca1949c129
+.octa 0xb84100d78349d6014900da8348,0xf08ff6fbe2c4ed3100000438978b4800,0xc4d1f6380f4c66c8f6380f4cf3000004,0x4c66d0f6380f4cf3000004f88ff6fbe2
+.octa 0xf4cf3000005008ff6fbe2c4d9f6380f,0x5088ff6fbe2c4e1f6380f4c66d8f638,0xe2c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf3000005108ff6fb
+.octa 0x380f4cf3000005188ff6fbe2c4f1f638,0x4c66fdf6380f4cf3f9f6380f4c66f0f6,0x1ba48c5f6380f4cf3c5f6380f,0xffff00000001b848d1af0f4900000001
+.octa 0xf6b3e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148c8014cc9,0xde834900dd8349ec1949cb1949c229,0xb94100d08349d7014900da8348
+.octa 0xf08ff6fbe2c4ed3100000440978b4800,0xc4d9f6380f4c66d0f6380f4cf3000004,0x4c66d8f6380f4cf3000004f88ff6fbe2,0xf4cf3000005008ff6fbe2c4e1f6380f
+.octa 0x5088ff6fbe2c4e9f6380f4c66e0f638,0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000005108ff6fb,0x380f4cf3000005188ff6fbe2c4f9f638
+.octa 0x4c66c5f6380f4cf3c1f6380f4c66f8f6,0x1ba48cdf6380f4cf3cdf6380f,0xffff00000001b848d2af0f4900000001,0xf6abe2c4ffffffffb9c0f6f3e2c4ffff
+.octa 0x49ed114800000000bdd11148d0014cc9,0xdf834900de8349ed1949cc1949c329,0xba4100d18349d0014900da8348,0xf08ff6fbe2c4ed3100000448978b4800
+.octa 0xc4e1f6380f4c66d8f6380f4cf3000004,0x4c66e0f6380f4cf3000004f88ff6fbe2,0xf4cf3000005008ff6fbe2c4e9f6380f,0x5088ff6fbe2c4f1f6380f4c66e8f638
+.octa 0xe2c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf3000005108ff6fb,0x380f4cf3000005188ff6fbe2c4c1f638,0x4c66cdf6380f4cf3c9f6380f4c66c0f6
+.octa 0x1ba48d5f6380f4cf3d5f6380f,0xffff00000001b848d3af0f4900000001,0xf6a3e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148d8014cc9
+.octa 0xd8834900df8349ee1949cd1949c429,0xbb4100d28349d1014900da8348,0xf08ff6fbe2c4ed3100000450978b4800,0xc4e9f6380f4c66e0f6380f4cf3000004
+.octa 0x4c66e8f6380f4cf3000004f88ff6fbe2,0xf4cf3000005008ff6fbe2c4f1f6380f,0x5088ff6fbe2c4f9f6380f4c66f0f638,0xe2c4c1f6380f4c66f8f6380f4cf30000
+.octa 0xf4c66c0f6380f4cf3000005108ff6fb,0x380f4cf3000005188ff6fbe2c4c9f638,0x4c66d5f6380f4cf3d1f6380f4c66c8f6,0x1ba48ddf6380f4cf3ddf6380f
+.octa 0xffff00000001b848d4af0f4900000001,0xf69be2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148e0014cc9,0xd9834900d88349ef1949ce1949c529
+.octa 0xbc4100d38349d2014900da8348,0xf08ff6fbe2c4ed3100000458978b4800,0xc4f1f6380f4c66e8f6380f4cf3000004,0x4c66f0f6380f4cf3000004f88ff6fbe2
+.octa 0xf4cf3000005008ff6fbe2c4f9f6380f,0x5088ff6fbe2c4c1f6380f4c66f8f638,0xe2c4c9f6380f4c66c0f6380f4cf30000,0xf4c66c8f6380f4cf3000005108ff6fb
+.octa 0x380f4cf3000005188ff6fbe2c4d1f638,0x4c66ddf6380f4cf3d9f6380f4c66d0f6,0x1ba48e5f6380f4cf3e5f6380f,0xffff00000001b848d5af0f4900000001
+.octa 0xf693e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148e8014cc9,0xda834900d98349e81949cf1949c629,0xbd4100d48349d3014900da8348
+.octa 0x4f1b4c50471b4c487f1b4c40772b4c00,0xc0194800dc8349685f1b4c60571b4c58,0x49e5d148c5894820e2c148c28948c189,0x1149c21149c11149e81149d71149ce01
+.octa 0x4c000004f8bf894c000004f0b7894cc3,0x97894c000005088f894c000005008789,0x4c0878b4c000005189f894c00000510,0x4d0978b4c000004c88f8b4c0000
+.octa 0x8b4c000004e0a78b4c000004d89f8b4c,0xe88f1b4c000002e0872b4c000004e8af,0x2f89f1b4c000002f0971b4c000002,0x4800000308af1b4c00000300a71b4c00
+.octa 0xd148c5894820e2c148c28948c189c019,0xc41149c31149ea1149d11149c80149e5,0x4c88f894c000004c087894cc51149,0x4c000004d89f894c000004d097894c00
+.octa 0x878b4c000004e8af894c000004e0a789,0x500978b4c000004f88f8b4c000004f0,0x510a78b4c000005089f8b4c0000,0x1b4c00000310872b4c00000518af8b4c
+.octa 0x289f1b4c00000320971b4c000003188f,0x338af1b4c00000330a71b4c000003,0xc5894820e2c148c28948c189c0194800,0x49c31149ea1149d11149c80149e5d148
+.octa 0xf88f894c000004f087894cc51149c411,0x5089f894c0000050097894c000004,0x4800000518af894c00000510a7894c00,0x4c88ff6bb62c4ed31000004c0978b
+.octa 0xc8f6380f4c66000004d097f6fb62c400,0xc4d0f6380f4c66000004d89ff6fb62c4,0x62c4d8f6380f4c66000004e0a7f6fb62,0xf4c66e0f6380f4c66000004e8aff6fb
+.octa 0xfe08f894c00000fd887894cedf638,0xd08ff6fbe2c4ed31000004c8978b4800,0xc4d9f6380f4c66d0f6380f4cf3000004,0x4c66d8f6380f4cf3000004d88ff6fbe2
+.octa 0xf4cf3000004e08ff6fbe2c4e1f6380f,0x4e8b7f6fb62c4e9f6380f4c66e0f638,0x4cf3f5f6380f4c66e8f6380f4cf30000,0xfbe2c4ed31000004d0978b48f5f6380f
+.octa 0x380f4c66e0f6380f4cf3000004d88ff6,0xf6380f4cf3000004e08ff6fbe2c4e9f6,0x4e8bff6fb62c4f1f6380f4c66e8,0x380f4cf3fdf6380f4c66f0f6380f4cf3
+.octa 0x8ff6fbe2c4ed31000004d8978b48fdf6,0xf9f6380f4c66f0f6380f4cf3000004e0,0x66f8f6380f4cf3000004e887f6fb62c4,0x4e0978b48c5f6380f4cf3c5f6380f4c
+.octa 0xf4cf3000004e88ff6fb62c4ed310000,0x31cdf6380f4cf3cdf6380f4c66c0f638,0xf4866caf6fbe2c4000004c0978b48ed,0xfd0af8948e8f6380f48f3edf638
+.octa 0xf48f3d2f6380f486600000fd8978b48,0x4c8978b4800000fd8978948d1f638,0xf486600000fe0978b48caf6fbe2c400,0xfe0978948d0f6380f48f3d2f638
+.octa 0xd0978b48d1f6380f4cf3d2f6380f4d66,0x4cf3dbf6380f4d66caf6fbe2c4000004,0xe1f6380f4cf3e4f6380f4d66d8f6380f,0x380f4d66caf6fbe2c4000004d8978b48
+.octa 0x4cf3f6f6380f4d66e8f6380f4cf3edf6,0xcaf6fbe2c4000004e0978b48f1f6380f,0x380f4d66f8f6380f4cf3fff6380f4d66,0xc4000004e8978b48c1f6380f4cf3c0f6
+.octa 0xc8f6380f4cf3c9f6380f4d66caf6fbe2,0xf6380f48f3caf6380f486600000000ba,0x4c00000528b7894c00000520af894cca,0x8f894c0000053887894c00000530bf89
+.octa 0xfd0af8b4c000005488f894800000540,0xfe0bf8b4c00000fd8b78b4c0000,0xb848d5af0f490000000100000001ba48,0xffffb9c0f6f3e2c4ffffffff00000001
+.octa 0xbdd11148e8014cc9f693e2c4ffff,0x8349ea1949cf1949c62949ed11480000,0x1ba4800dd8349d5894900dc834900db,0x1b848d6af0f4900000001000000
+.octa 0xc4ffffffffb9c0f6f3e2c4ffffffff00,0x4800000000bdd11148f0014cc9f68be2,0x4900dc8349eb1949ca1949c72949ed11,0x1ba4800de8349d6894900dd83
+.octa 0xffff00000001b848d7af0f4900000001,0xf683e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148f8014cc9,0xde834900dd8349ec1949cb1949c229
+.octa 0x100000001ba4800df8349d78949,0xc4ffffffff00000001b848d2af0f4900,0x14cc9f6abe2c4ffffffffb9c0f6f3e2,0x49c32949ed114800000000bdd11148d0
+.octa 0xd2894900df834900de8349ed1949cc19,0xf490000000100000001ba4800da8349,0xf6f3e2c4ffffffff00000001b848d3af,0x1148d8014cc9f6a3e2c4ffffffffb9c0
+.octa 0x49cd1949c42949ed114800000000bdd1,0xdb8349d3894900da834900df8349ee19,0x48d4af0f490000000100000001ba4800,0xffb9c0f6f3e2c4ffffffff00000001b8
+.octa 0xbdd11148e0014cc9f69be2c4ffffff,0x49ef1949ce1949c52949ed1148000000,0xb84100dc8349d4894900db834900da83,0x528b7134c00000520af034c00000000
+.octa 0x53897134c00000530bf134c0000,0x834900000548a7134c000005409f134c,0x1b4c507f1b4c48771b4c406f2b4c00d0,0x194800d8834968671b4c605f1b4c5857
+.octa 0xe5d148c5894820e2c148c28948c189c0,0x49c31149c21149ef1149d61149cd0149,0x528b7894c00000520af894cc411,0x894c0000053897894c00000530bf894c
+.octa 0xc0978b4800000548a7894c000005409f,0x62c4000005208ff6bb62c4ed31000004,0xfb62c4c8f6380f4c660000052897f6fb,0xf6fb62c4d0f6380f4c66000005309ff6
+.octa 0xaff6fb62c4d8f6380f4c6600000538a7,0x48b7f6fb62c4e0f6380f4c6600000540,0x41f5f6380f4c66e8f6380f4c66000005,0x490000000100000001ba4800000000bf
+.octa 0xf3e2c4ffffffff00000001b848d0af0f,0x48c0014cc9f6bbe2c4ffffffffb9c0f6,0xca1949c12949ed114800000000bdd111,0x4900da834800dd834900dc8349eb1949
+.octa 0xc8978b4800000000b84100d78349d601,0x4cf3000005208ff6fbe2c4ed31000004,0x288ff6fbe2c4d1f6380f4c66c8f6380f,0xc4d9f6380f4c66d0f6380f4cf3000005
+.octa 0x4c66d8f6380f4cf3000005308ff6fbe2,0xf4cf3000005388ff6fbe2c4e1f6380f,0x5408ff6fbe2c4e9f6380f4c66e0f638,0xe2c4f1f6380f4c66e8f6380f4cf30000
+.octa 0xf4c66f0f6380f4cf3000005488ff6fb,0xf3c5f6380f4c66fdf6380f4cf3f9f638,0x490000000100000001ba48c5f6380f4c,0xf3e2c4ffffffff00000001b848d1af0f
+.octa 0x48c8014cc9f6b3e2c4ffffffffb9c0f6,0xcb1949c22949ed114800000000bdd111,0x4900da834800de834900dd8349ec1949,0xd0978b4800000000b94100d08349d701
+.octa 0x4cf3000005208ff6fbe2c4ed31000004,0x288ff6fbe2c4d9f6380f4c66d0f6380f,0xc4e1f6380f4c66d8f6380f4cf3000005,0x4c66e0f6380f4cf3000005308ff6fbe2
+.octa 0xf4cf3000005388ff6fbe2c4e9f6380f,0x5408ff6fbe2c4f1f6380f4c66e8f638,0xe2c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf3000005488ff6fb
+.octa 0xf3cdf6380f4c66c5f6380f4cf3c1f638,0x490000000100000001ba48cdf6380f4c,0xf3e2c4ffffffff00000001b848d2af0f,0x48d0014cc9f6abe2c4ffffffffb9c0f6
+.octa 0xcc1949c32949ed114800000000bdd111,0x4900da834800df834900de8349ed1949,0xd8978b4800000000ba4100d18349d001,0x4cf3000005208ff6fbe2c4ed31000004
+.octa 0x288ff6fbe2c4e1f6380f4c66d8f6380f,0xc4e9f6380f4c66e0f6380f4cf3000005,0x4c66e8f6380f4cf3000005308ff6fbe2,0xf4cf3000005388ff6fbe2c4f1f6380f
+.octa 0x5408ff6fbe2c4f9f6380f4c66f0f638,0xe2c4c1f6380f4c66f8f6380f4cf30000,0xf4c66c0f6380f4cf3000005488ff6fb,0xf3d5f6380f4c66cdf6380f4cf3c9f638
+.octa 0x490000000100000001ba48d5f6380f4c,0xf3e2c4ffffffff00000001b848d3af0f,0x48d8014cc9f6a3e2c4ffffffffb9c0f6,0xcd1949c42949ed114800000000bdd111
+.octa 0x4900da834800d8834900df8349ee1949,0xe0978b4800000000bb4100d28349d101,0x4cf3000005208ff6fbe2c4ed31000004,0x288ff6fbe2c4e9f6380f4c66e0f6380f
+.octa 0xc4f1f6380f4c66e8f6380f4cf3000005,0x4c66f0f6380f4cf3000005308ff6fbe2,0xf4cf3000005388ff6fbe2c4f9f6380f,0x5408ff6fbe2c4c1f6380f4c66f8f638
+.octa 0xe2c4c9f6380f4c66c0f6380f4cf30000,0xf4c66c8f6380f4cf3000005488ff6fb,0xf3ddf6380f4c66d5f6380f4cf3d1f638,0x490000000100000001ba48ddf6380f4c
+.octa 0xf3e2c4ffffffff00000001b848d4af0f,0x48e0014cc9f69be2c4ffffffffb9c0f6,0xce1949c52949ed114800000000bdd111,0x4900da834800d9834900d88349ef1949
+.octa 0xe8978b4800000000bc4100d38349d201,0x4cf3000005208ff6fbe2c4ed31000004,0x288ff6fbe2c4f1f6380f4c66e8f6380f,0xc4f9f6380f4c66f0f6380f4cf3000005
+.octa 0x4c66f8f6380f4cf3000005308ff6fbe2,0xf4cf3000005388ff6fbe2c4c1f6380f,0x5408ff6fbe2c4c9f6380f4c66c0f638,0xe2c4d1f6380f4c66c8f6380f4cf30000
+.octa 0xf4c66d0f6380f4cf3000005488ff6fb,0xf3e5f6380f4c66ddf6380f4cf3d9f638,0x490000000100000001ba48e5f6380f4c,0xf3e2c4ffffffff00000001b848d5af0f
+.octa 0x48e8014cc9f693e2c4ffffffffb9c0f6,0xcf1949c62949ed114800000000bdd111,0x4900da834800da834900d98349e81949,0x40772b4c00000000bd4100d48349d301
+.octa 0x60571b4c584f1b4c50471b4c487f1b4c,0xc28948c189c0194800dc8349685f1b4c,0xd71149ce0149e5d148c5894820e2c148,0x50b7894cc31149c21149c11149e81149
+.octa 0x56087894c00000558bf894c000005,0x4c0000057097894c000005688f894c00,0xc4ed31000002e0978b48000005789f89,0x52897f6fb62c4000005208ff6bb62
+.octa 0x5309ff6fb62c4c8f6380f4c6600,0x6600000538a7f6fb62c4d0f6380f4c66,0x4c6600000540aff6fb62c4d8f6380f4c,0xf4c6600000548b7f6fb62c4e0f6380f
+.octa 0x4800000000bf41f5f6380f4c66e8f638,0x1b848d0af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148c0014cc9f6bbe2c4ff
+.octa 0xdc8349eb1949ca1949c12949ed114800,0xd78349d6014900da834800dd834900,0xc4ed31000002e8978b4800000000b841,0x4c66c8f6380f4cf3000005208ff6fbe2
+.octa 0xf4cf3000005288ff6fbe2c4d1f6380f,0x5308ff6fbe2c4d9f6380f4c66d0f638,0xe2c4e1f6380f4c66d8f6380f4cf30000,0xf4c66e0f6380f4cf3000005388ff6fb
+.octa 0x380f4cf3000005408ff6fbe2c4e9f638,0x5488ff6fbe2c4f1f6380f4c66e8f6,0xf4cf3f9f6380f4c66f0f6380f4cf300,0x48c5f6380f4cf3c5f6380f4c66fdf638
+.octa 0x1b848d1af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148c8014cc9f6b3e2c4ff,0xdd8349ec1949cb1949c22949ed114800
+.octa 0xd08349d7014900da834800de834900,0xc4ed31000002f0978b4800000000b941,0x4c66d0f6380f4cf3000005208ff6fbe2,0xf4cf3000005288ff6fbe2c4d9f6380f
+.octa 0x5308ff6fbe2c4e1f6380f4c66d8f638,0xe2c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf3000005388ff6fb,0x380f4cf3000005408ff6fbe2c4f1f638
+.octa 0x5488ff6fbe2c4f9f6380f4c66f0f6,0xf4cf3c1f6380f4c66f8f6380f4cf300,0x48cdf6380f4cf3cdf6380f4c66c5f638,0x1b848d2af0f490000000100000001ba
+.octa 0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148d0014cc9f6abe2c4ff,0xde8349ed1949cc1949c32949ed114800,0xd18349d0014900da834800df834900
+.octa 0xc4ed31000002f8978b4800000000ba41,0x4c66d8f6380f4cf3000005208ff6fbe2,0xf4cf3000005288ff6fbe2c4e1f6380f,0x5308ff6fbe2c4e9f6380f4c66e0f638
+.octa 0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000005388ff6fb,0x380f4cf3000005408ff6fbe2c4f9f638,0x5488ff6fbe2c4c1f6380f4c66f8f6
+.octa 0xf4cf3c9f6380f4c66c0f6380f4cf300,0x48d5f6380f4cf3d5f6380f4c66cdf638,0x1b848d3af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000
+.octa 0xbdd11148d8014cc9f6a3e2c4ff,0xdf8349ee1949cd1949c42949ed114800,0xd28349d1014900da834800d8834900,0xc4ed3100000300978b4800000000bb41
+.octa 0x4c66e0f6380f4cf3000005208ff6fbe2,0xf4cf3000005288ff6fbe2c4e9f6380f,0x5308ff6fbe2c4f1f6380f4c66e8f638,0xe2c4f9f6380f4c66f0f6380f4cf30000
+.octa 0xf4c66f8f6380f4cf3000005388ff6fb,0x380f4cf3000005408ff6fbe2c4c1f638,0x5488ff6fbe2c4c9f6380f4c66c0f6,0xf4cf3d1f6380f4c66c8f6380f4cf300
+.octa 0x48ddf6380f4cf3ddf6380f4c66d5f638,0x1b848d4af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148e0014cc9f69be2c4ff
+.octa 0xd88349ef1949ce1949c52949ed114800,0xd38349d2014900da834800d9834900,0xc4ed3100000308978b4800000000bc41,0x4c66e8f6380f4cf3000005208ff6fbe2
+.octa 0xf4cf3000005288ff6fbe2c4f1f6380f,0x5308ff6fbe2c4f9f6380f4c66f0f638,0xe2c4c1f6380f4c66f8f6380f4cf30000,0xf4c66c0f6380f4cf3000005388ff6fb
+.octa 0x380f4cf3000005408ff6fbe2c4c9f638,0x5488ff6fbe2c4d1f6380f4c66c8f6,0xf4cf3d9f6380f4c66d0f6380f4cf300,0x48e5f6380f4cf3e5f6380f4c66ddf638
+.octa 0x1b848d5af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148e8014cc9f693e2c4ff,0xd98349e81949cf1949c62949ed114800
+.octa 0xd48349d3014900da834800da834900,0x1b4c487f1b4c40772b4c00000000bd41,0x8349685f1b4c60571b4c584f1b4c5047,0x894820e2c148c28948c189c0194800dc
+.octa 0xc11149e81149d71149ce0149e5d148c5,0xbf894c00000520b7894cc31149c21149,0x5388f894c0000053087894c00000528,0x5489f894c0000054097894c0000
+.octa 0x4f88ff6bb62c4ed31000004f0978b48,0xf6380f4c660000050097f6fb62c40000,0xd0f6380f4c66000005089ff6fb62c4c8,0xc4d8f6380f4c6600000510a7f6fb62c4
+.octa 0x4c66e0f6380f4c6600000518aff6fb62,0xfe08f894c00000fd887894cedf6380f,0x8ff6fbe2c4ed31000004f8978b480000,0xd9f6380f4c66d0f6380f4cf300000500
+.octa 0x66d8f6380f4cf3000005088ff6fbe2c4,0x4cf3000005108ff6fbe2c4e1f6380f4c,0x18b7f6fb62c4e9f6380f4c66e0f6380f,0xf3f5f6380f4c66e8f6380f4cf3000005
+.octa 0xe2c4ed3100000500978b48f5f6380f4c,0xf4c66e0f6380f4cf3000005088ff6fb,0x380f4cf3000005108ff6fbe2c4e9f638,0x518bff6fb62c4f1f6380f4c66e8f6
+.octa 0xf4cf3fdf6380f4c66f0f6380f4cf300,0xf6fbe2c4ed3100000508978b48fdf638,0xf6380f4c66f0f6380f4cf3000005108f,0xf8f6380f4cf30000051887f6fb62c4f9
+.octa 0x10978b48c5f6380f4cf3c5f6380f4c66,0x4cf3000005188ff6fb62c4ed31000005,0xcdf6380f4cf3cdf6380f4c66c0f6380f,0x4866caf6fbe2c4000004f0978b48ed31
+.octa 0xfd0af8948e8f6380f48f3edf6380f,0x48f3d2f6380f486600000fd8978b4800,0x4f8978b4800000fd8978948d1f6380f,0x486600000fe0978b48caf6fbe2c40000
+.octa 0xfe0978948d0f6380f48f3d2f6380f,0x978b48d1f6380f4cf3d2f6380f4d6600,0xf3dbf6380f4d66caf6fbe2c400000500,0xf6380f4cf3e4f6380f4d66d8f6380f4c
+.octa 0xf4d66caf6fbe2c400000508978b48e1,0xf3f6f6380f4d66e8f6380f4cf3edf638,0xf6fbe2c400000510978b48f1f6380f4c,0xf4d66f8f6380f4cf3fff6380f4d66ca
+.octa 0x518978b48c1f6380f4cf3c0f638,0xf6380f4cf3c9f6380f4d66caf6fbe2c4,0x380f48f3caf6380f486600000000bac8,0x378b7894c00000370af894ccaf6
+.octa 0x894c0000038887894c00000380bf894c,0xd0af8b4c000003988f8948000003908f,0xfe0bf8b4c00000fd8b78b4c00000f,0x48d5af0f490000000100000001ba4800
+.octa 0xffb9c0f6f3e2c4ffffffff00000001b8,0xbdd11148e8014cc9f693e2c4ffffff,0x49ea1949cf1949c62949ed1148000000,0xba4800dd8349d5894900dc834900db83
+.octa 0x1b848d6af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148f0014cc9f68be2c4,0xdc8349eb1949ca1949c72949ed1148
+.octa 0x1ba4800de8349d6894900dd8349,0xff00000001b848d7af0f490000000100,0x83e2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148f8014cc9f6
+.octa 0xde834900dd8349ec1949cb1949c22949,0x100000001ba4800df8349d7894900,0xffffffff00000001b848d2af0f490000,0x4cc9f6abe2c4ffffffffb9c0f6f3e2c4
+.octa 0xc32949ed114800000000bdd11148d001,0x894900df834900de8349ed1949cc1949,0x490000000100000001ba4800da8349d2,0xf3e2c4ffffffff00000001b848d3af0f
+.octa 0x48d8014cc9f6a3e2c4ffffffffb9c0f6,0xcd1949c42949ed114800000000bdd111,0x8349d3894900da834900df8349ee1949,0xd4af0f490000000100000001ba4800db
+.octa 0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e0014cc9f69be2c4ffffffff,0xef1949ce1949c52949ed114800000000,0x4100dc8349d4894900db834900da8349
+.octa 0x78b7134c00000370af034c00000000b8,0x38897134c00000380bf134c000003,0x4900000398a7134c000003909f134c00,0x4c507f1b4c48771b4c406f2b4c00d083
+.octa 0x4800d8834968671b4c605f1b4c58571b,0xd148c5894820e2c148c28948c189c019,0xc31149c21149ef1149d61149cd0149e5,0x378b7894c00000370af894cc41149
+.octa 0x4c0000038897894c00000380bf894c00,0x878b4c00000398a7894c000003909f89,0x380978b4c000003788f8b4c00000370,0x390a78b4c000003889f8b4c0000
+.octa 0x1b4c00000550872b4c00000398af8b4c,0x689f1b4c00000560971b4c000005588f,0x578af1b4c00000570a71b4c000005,0xc5894820e2c148c28948c189c0194800
+.octa 0x49c31149ea1149d11149c80149e5d148,0x788f894c0000037087894cc51149c411,0x3889f894c0000038097894c000003,0x4c00000398af894c00000390a7894c00
+.octa 0x978b4c000005288f8b4c00000520878b,0x540a78b4c000005389f8b4c00000530,0x4c00000000be4100000548af8b4c0000,0x97134c000005288f134c000005208703
+.octa 0x540a7134c000005389f134c00000530,0x472b4c00d6834900000548af134c0000,0x671b4c585f1b4c50571b4c484f1b4c40,0x8948c189c0194800de8349686f1b4c60
+.octa 0x1149c80149e5d148c5894820e2c148c2,0x87894cc51149c41149c31149ea1149d1,0x59097894c000005888f894c00000580,0x5a0a7894c000005989f894c0000
+.octa 0x8b4c00000370878b4c000005a8af894c,0x889f8b4c00000380978b4c000003788f,0x398af8b4c00000390a78b4c000003,0x4c000005888f1b4c00000580872b4c00
+.octa 0xa71b4c000005989f1b4c00000590971b,0xc189c01948000005a8af1b4c000005a0,0xc80149e5d148c5894820e2c148c28948,0x4cc51149c41149c31149ea1149d11149
+.octa 0x97894c000003788f894c000003708789,0x390a7894c000003889f894c00000380,0x520878b4c00000398af894c0000,0x8b4c00000530978b4c000005288f8b4c
+.octa 0x48af8b4c00000540a78b4c000005389f,0x3788f1b4c00000370872b4c000005,0x4c000003889f1b4c00000380971b4c00,0xc0194800000398af1b4c00000390a71b
+.octa 0x49e5d148c5894820e2c148c28948c189,0x1149c41149c31149ea1149d11149c801,0x4c000005288f894c0000052087894cc5,0xa7894c000005389f894c000005309789
+.octa 0x4f0978b4800000548af894c00000540,0xfb62c4000005208ff6bb62c4ed310000,0xf6fb62c4c8f6380f4c660000052897f6,0xa7f6fb62c4d0f6380f4c66000005309f
+.octa 0x40aff6fb62c4d8f6380f4c6600000538,0x548b7f6fb62c4e0f6380f4c66000005,0xbf41f5f6380f4c66e8f6380f4c660000,0xf490000000100000001ba4800000000
+.octa 0xf6f3e2c4ffffffff00000001b848d0af,0x1148c0014cc9f6bbe2c4ffffffffb9c0,0x49ca1949c12949ed114800000000bdd1,0x14900da834800dd834900dc8349eb19
+.octa 0x4f8978b4800000000b84100d78349d6,0xf4cf3000005208ff6fbe2c4ed310000,0x5288ff6fbe2c4d1f6380f4c66c8f638,0xe2c4d9f6380f4c66d0f6380f4cf30000
+.octa 0xf4c66d8f6380f4cf3000005308ff6fb,0x380f4cf3000005388ff6fbe2c4e1f638,0x5408ff6fbe2c4e9f6380f4c66e0f6,0xfbe2c4f1f6380f4c66e8f6380f4cf300
+.octa 0x380f4c66f0f6380f4cf3000005488ff6,0x4cf3c5f6380f4c66fdf6380f4cf3f9f6,0xf490000000100000001ba48c5f6380f,0xf6f3e2c4ffffffff00000001b848d1af
+.octa 0x1148c8014cc9f6b3e2c4ffffffffb9c0,0x49cb1949c22949ed114800000000bdd1,0x14900da834800de834900dd8349ec19,0x500978b4800000000b94100d08349d7
+.octa 0xf4cf3000005208ff6fbe2c4ed310000,0x5288ff6fbe2c4d9f6380f4c66d0f638,0xe2c4e1f6380f4c66d8f6380f4cf30000,0xf4c66e0f6380f4cf3000005308ff6fb
+.octa 0x380f4cf3000005388ff6fbe2c4e9f638,0x5408ff6fbe2c4f1f6380f4c66e8f6,0xfbe2c4f9f6380f4c66f0f6380f4cf300,0x380f4c66f8f6380f4cf3000005488ff6
+.octa 0x4cf3cdf6380f4c66c5f6380f4cf3c1f6,0xf490000000100000001ba48cdf6380f,0xf6f3e2c4ffffffff00000001b848d2af,0x1148d0014cc9f6abe2c4ffffffffb9c0
+.octa 0x49cc1949c32949ed114800000000bdd1,0x14900da834800df834900de8349ed19,0x508978b4800000000ba4100d18349d0,0xf4cf3000005208ff6fbe2c4ed310000
+.octa 0x5288ff6fbe2c4e1f6380f4c66d8f638,0xe2c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf3000005308ff6fb,0x380f4cf3000005388ff6fbe2c4f1f638
+.octa 0x5408ff6fbe2c4f9f6380f4c66f0f6,0xfbe2c4c1f6380f4c66f8f6380f4cf300,0x380f4c66c0f6380f4cf3000005488ff6,0x4cf3d5f6380f4c66cdf6380f4cf3c9f6
+.octa 0xf490000000100000001ba48d5f6380f,0xf6f3e2c4ffffffff00000001b848d3af,0x1148d8014cc9f6a3e2c4ffffffffb9c0,0x49cd1949c42949ed114800000000bdd1
+.octa 0x14900da834800d8834900df8349ee19,0x510978b4800000000bb4100d28349d1,0xf4cf3000005208ff6fbe2c4ed310000,0x5288ff6fbe2c4e9f6380f4c66e0f638
+.octa 0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000005308ff6fb,0x380f4cf3000005388ff6fbe2c4f9f638,0x5408ff6fbe2c4c1f6380f4c66f8f6
+.octa 0xfbe2c4c9f6380f4c66c0f6380f4cf300,0x380f4c66c8f6380f4cf3000005488ff6,0x4cf3ddf6380f4c66d5f6380f4cf3d1f6,0xf490000000100000001ba48ddf6380f
+.octa 0xf6f3e2c4ffffffff00000001b848d4af,0x1148e0014cc9f69be2c4ffffffffb9c0,0x49ce1949c52949ed114800000000bdd1,0x14900da834800d9834900d88349ef19
+.octa 0x518978b4800000000bc4100d38349d2,0xf4cf3000005208ff6fbe2c4ed310000,0x5288ff6fbe2c4f1f6380f4c66e8f638,0xe2c4f9f6380f4c66f0f6380f4cf30000
+.octa 0xf4c66f8f6380f4cf3000005308ff6fb,0x380f4cf3000005388ff6fbe2c4c1f638,0x5408ff6fbe2c4c9f6380f4c66c0f6,0xfbe2c4d1f6380f4c66c8f6380f4cf300
+.octa 0x380f4c66d0f6380f4cf3000005488ff6,0x4cf3e5f6380f4c66ddf6380f4cf3d9f6,0xf490000000100000001ba48e5f6380f,0xf6f3e2c4ffffffff00000001b848d5af
+.octa 0x1148e8014cc9f693e2c4ffffffffb9c0,0x49cf1949c62949ed114800000000bdd1,0x14900da834800da834900d98349e819,0x4c40772b4c00000000bd4100d48349d3
+.octa 0x4c60571b4c584f1b4c50471b4c487f1b,0x48c28948c189c0194800dc8349685f1b,0x49d71149ce0149e5d148c5894820e2c1,0x520b7894cc31149c21149c11149e811
+.octa 0x53087894c00000528bf894c0000,0x894c0000054097894c000005388f894c,0x62c4ed3100000310978b48000005489f,0x55897f6fb62c4000005508ff6bb
+.octa 0x66000005609ff6fb62c4c8f6380f4c66,0x4c6600000568a7f6fb62c4d0f6380f4c,0xf4c6600000570aff6fb62c4d8f6380f,0x380f4c6600000578b7f6fb62c4e0f638
 .octa 0xba4800000000bf41f5f6380f4c66e8f6,0x1b848d0af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148c0014cc9f6bbe2c4
-.octa 0xdc8349eb1949ca1949c12949ed1148,0x4100d78349d6014900da834800dd8349,0xe2c4ed3100000348978b4800000000b8,0xf4c66c8f6380f4cf3000004c08ff6fb
-.octa 0x380f4cf3000004c88ff6fbe2c4d1f638,0x4d08ff6fbe2c4d9f6380f4c66d0f6,0xfbe2c4e1f6380f4c66d8f6380f4cf300,0x380f4c66e0f6380f4cf3000004d88ff6
-.octa 0xf6380f4cf3000004e08ff6fbe2c4e9f6,0x4e88ff6fbe2c4f1f6380f4c66e8,0x380f4cf3f9f6380f4c66f0f6380f4cf3,0xba48c5f6380f4cf3c5f6380f4c66fdf6
+.octa 0xdc8349eb1949ca1949c12949ed1148,0x4100d78349d6014900da834800dd8349,0xe2c4ed3100000318978b4800000000b8,0xf4c66c8f6380f4cf3000005508ff6fb
+.octa 0x380f4cf3000005588ff6fbe2c4d1f638,0x5608ff6fbe2c4d9f6380f4c66d0f6,0xfbe2c4e1f6380f4c66d8f6380f4cf300,0x380f4c66e0f6380f4cf3000005688ff6
+.octa 0xf6380f4cf3000005708ff6fbe2c4e9f6,0x5788ff6fbe2c4f1f6380f4c66e8,0x380f4cf3f9f6380f4c66f0f6380f4cf3,0xba48c5f6380f4cf3c5f6380f4c66fdf6
 .octa 0x1b848d1af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148c8014cc9f6b3e2c4,0xdd8349ec1949cb1949c22949ed1148
-.octa 0x4100d08349d7014900da834800de8349,0xe2c4ed3100000350978b4800000000b9,0xf4c66d0f6380f4cf3000004c08ff6fb,0x380f4cf3000004c88ff6fbe2c4d9f638
-.octa 0x4d08ff6fbe2c4e1f6380f4c66d8f6,0xfbe2c4e9f6380f4c66e0f6380f4cf300,0x380f4c66e8f6380f4cf3000004d88ff6,0xf6380f4cf3000004e08ff6fbe2c4f1f6
-.octa 0x4e88ff6fbe2c4f9f6380f4c66f0,0x380f4cf3c1f6380f4c66f8f6380f4cf3,0xba48cdf6380f4cf3cdf6380f4c66c5f6,0x1b848d2af0f490000000100000001
+.octa 0x4100d08349d7014900da834800de8349,0xe2c4ed3100000320978b4800000000b9,0xf4c66d0f6380f4cf3000005508ff6fb,0x380f4cf3000005588ff6fbe2c4d9f638
+.octa 0x5608ff6fbe2c4e1f6380f4c66d8f6,0xfbe2c4e9f6380f4c66e0f6380f4cf300,0x380f4c66e8f6380f4cf3000005688ff6,0xf6380f4cf3000005708ff6fbe2c4f1f6
+.octa 0x5788ff6fbe2c4f9f6380f4c66f0,0x380f4cf3c1f6380f4c66f8f6380f4cf3,0xba48cdf6380f4cf3cdf6380f4c66c5f6,0x1b848d2af0f490000000100000001
 .octa 0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148d0014cc9f6abe2c4,0xde8349ed1949cc1949c32949ed1148,0x4100d18349d0014900da834800df8349
-.octa 0xe2c4ed3100000358978b4800000000ba,0xf4c66d8f6380f4cf3000004c08ff6fb,0x380f4cf3000004c88ff6fbe2c4e1f638,0x4d08ff6fbe2c4e9f6380f4c66e0f6
-.octa 0xfbe2c4f1f6380f4c66e8f6380f4cf300,0x380f4c66f0f6380f4cf3000004d88ff6,0xf6380f4cf3000004e08ff6fbe2c4f9f6,0x4e88ff6fbe2c4c1f6380f4c66f8
+.octa 0xe2c4ed3100000328978b4800000000ba,0xf4c66d8f6380f4cf3000005508ff6fb,0x380f4cf3000005588ff6fbe2c4e1f638,0x5608ff6fbe2c4e9f6380f4c66e0f6
+.octa 0xfbe2c4f1f6380f4c66e8f6380f4cf300,0x380f4c66f0f6380f4cf3000005688ff6,0xf6380f4cf3000005708ff6fbe2c4f9f6,0x5788ff6fbe2c4c1f6380f4c66f8
 .octa 0x380f4cf3c9f6380f4c66c0f6380f4cf3,0xba48d5f6380f4cf3d5f6380f4c66cdf6,0x1b848d3af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000
-.octa 0xbdd11148d8014cc9f6a3e2c4,0xdf8349ee1949cd1949c42949ed1148,0x4100d28349d1014900da834800d88349,0xe2c4ed3100000360978b4800000000bb
-.octa 0xf4c66e0f6380f4cf3000004c08ff6fb,0x380f4cf3000004c88ff6fbe2c4e9f638,0x4d08ff6fbe2c4f1f6380f4c66e8f6,0xfbe2c4f9f6380f4c66f0f6380f4cf300
-.octa 0x380f4c66f8f6380f4cf3000004d88ff6,0xf6380f4cf3000004e08ff6fbe2c4c1f6,0x4e88ff6fbe2c4c9f6380f4c66c0,0x380f4cf3d1f6380f4c66c8f6380f4cf3
+.octa 0xbdd11148d8014cc9f6a3e2c4,0xdf8349ee1949cd1949c42949ed1148,0x4100d28349d1014900da834800d88349,0xe2c4ed3100000330978b4800000000bb
+.octa 0xf4c66e0f6380f4cf3000005508ff6fb,0x380f4cf3000005588ff6fbe2c4e9f638,0x5608ff6fbe2c4f1f6380f4c66e8f6,0xfbe2c4f9f6380f4c66f0f6380f4cf300
+.octa 0x380f4c66f8f6380f4cf3000005688ff6,0xf6380f4cf3000005708ff6fbe2c4c1f6,0x5788ff6fbe2c4c9f6380f4c66c0,0x380f4cf3d1f6380f4c66c8f6380f4cf3
 .octa 0xba48ddf6380f4cf3ddf6380f4c66d5f6,0x1b848d4af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148e0014cc9f69be2c4
-.octa 0xd88349ef1949ce1949c52949ed1148,0x4100d38349d2014900da834800d98349,0xe2c4ed3100000368978b4800000000bc,0xf4c66e8f6380f4cf3000004c08ff6fb
-.octa 0x380f4cf3000004c88ff6fbe2c4f1f638,0x4d08ff6fbe2c4f9f6380f4c66f0f6,0xfbe2c4c1f6380f4c66f8f6380f4cf300,0x380f4c66c0f6380f4cf3000004d88ff6
-.octa 0xf6380f4cf3000004e08ff6fbe2c4c9f6,0x4e88ff6fbe2c4d1f6380f4c66c8,0x380f4cf3d9f6380f4c66d0f6380f4cf3,0xba48e5f6380f4cf3e5f6380f4c66ddf6
+.octa 0xd88349ef1949ce1949c52949ed1148,0x4100d38349d2014900da834800d98349,0xe2c4ed3100000338978b4800000000bc,0xf4c66e8f6380f4cf3000005508ff6fb
+.octa 0x380f4cf3000005588ff6fbe2c4f1f638,0x5608ff6fbe2c4f9f6380f4c66f0f6,0xfbe2c4c1f6380f4c66f8f6380f4cf300,0x380f4c66c0f6380f4cf3000005688ff6
+.octa 0xf6380f4cf3000005708ff6fbe2c4c9f6,0x5788ff6fbe2c4d1f6380f4c66c8,0x380f4cf3d9f6380f4c66d0f6380f4cf3,0xba48e5f6380f4cf3e5f6380f4c66ddf6
 .octa 0x1b848d5af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148e8014cc9f693e2c4,0xd98349e81949cf1949c62949ed1148
 .octa 0x4100d48349d3014900da834800da8349,0x471b4c487f1b4c40772b4c00000000bd,0xdc8349685f1b4c60571b4c584f1b4c50,0xc5894820e2c148c28948c189c0194800
-.octa 0x49c11149e81149d71149ce0149e5d148,0xd8bf894c000003d0b7894cc31149c211,0x3e88f894c000003e087894c000003,0x48000003f89f894c000003f097894c00
-.octa 0x870b4800000348870b4800000340878b,0x360870b4800000358870b4800000350,0x294800000000b900000368870b480000,0x370978b4800000400878b48c91948c1
-.octa 0x370878948d03148ca2148c231480000,0x378978b4800000408878b480000,0x378878948d03148ca2148c23148,0x314800000380978b4800000410878b48
-.octa 0x8b4800000380878948d03148ca2148c2,0x48c2314800000388978b480000041887,0x20878b4800000388878948d03148ca21,0xca2148c2314800000390978b48000004
-.octa 0x428878b4800000390878948d03148,0x3148ca2148c2314800000398978b4800,0x4800000430878b4800000398878948d0,0x48d03148ca2148c23148000003a0978b
-.octa 0x978b4800000438878b48000003a08789,0x878948d03148ca2148c23148000003a8,0x3b0978b4800000440878b48000003a8,0x3b0878948d03148ca2148c231480000
-.octa 0x3b8978b4800000448878b480000,0x3b8878948d03148ca2148c23148,0x3148000003c0978b4800000450878b48,0x8b48000003c0878948d03148ca2148c2
-.octa 0x48c23148000003c8978b480000045887,0x60878b48000003c8878948d03148ca21,0xca2148c23148000003d0978b48000004,0x468878b48000003d0878948d03148
-.octa 0x3148ca2148c23148000003d8978b4800,0x4800000470878b48000003d8878948d0,0x48d03148ca2148c23148000003e0978b,0x978b4800000478878b48000003e08789
-.octa 0x878948d03148ca2148c23148000003e8,0x3f0978b4800000480878b48000003e8,0x3f0878948d03148ca2148c231480000,0x3f8978b4800000488878b480000
-.octa 0x3f8878948d03148ca2148c23148,0xb8c18948e1f74800000007b9d88948,0x148000008b60f94b60fc00148000000,0x48d00148000008b50f94b60fc00148d0
-.octa 0xc00148d00148000008b40f94b60fc001,0xb60fc00148d00148000008b30f94b60f,0xf94b60fc00148d00148000008b20f94,0x8b00f94b60fc00148d00148000008b1
-.octa 0xd00148000008af0f94b60fd001480000,0x294900000000b841000008b60f94b60f,0x14c00000080e08149c0294cc0314cd0,0x1f98348c1314c00000000b9c08949c0
-.octa 0x2e0978b4800000370878b48c91948,0x2e0878948d03148ca2148c2314800,0x48000002e8978b4800000378878b4800,0x48000002e8878948d03148ca2148c231
-.octa 0xc23148000002f0978b4800000380878b,0x878b48000002f0878948d03148ca2148,0x2148c23148000002f8978b4800000388,0x390878b48000002f8878948d03148ca
-.octa 0x48ca2148c2314800000300978b480000,0x398878b4800000300878948d031,0xd03148ca2148c2314800000308978b48,0x8b48000003a0878b4800000308878948
-.octa 0x8948d03148ca2148c231480000031097,0x18978b48000003a8878b480000031087,0x18878948d03148ca2148c23148000003,0x320978b48000003b0878b48000003
-.octa 0x320878948d03148ca2148c2314800,0x4800000328978b48000003b8878b4800,0x4800000328878948d03148ca2148c231,0xc2314800000330978b48000003c0878b
-.octa 0x878b4800000330878948d03148ca2148,0x2148c2314800000338978b48000003c8,0x3d0878b4800000338878948d03148ca,0x48ca2148c2314800000340978b480000
-.octa 0x3d8878b4800000340878948d031,0xd03148ca2148c2314800000348978b48,0x8b48000003e0878b4800000348878948,0x8948d03148ca2148c231480000035097
-.octa 0x58978b48000003e8878b480000035087,0x58878948d03148ca2148c23148000003,0x360978b48000003f0878b48000003,0x360878948d03148ca2148c2314800
-.octa 0x4800000368978b48000003f8878b4800,0x4800000368878948d03148ca2148c231,0xb4800000340878b4837fb834801c383,0x58870b4800000350870b480000034887
-.octa 0x368870b4800000360870b48000003,0xd0878b48c91948c1294800000000b900,0xca2148c2314800000310978b48000000,0xd8878b4800000310878948d03148
-.octa 0x3148ca2148c2314800000318978b4800,0x48000000e0878b4800000318878948d0,0x48d03148ca2148c2314800000320978b,0x978b48000000e8878b48000003208789
-.octa 0x878948d03148ca2148c2314800000328,0x330978b48000000f0878b4800000328,0x330878948d03148ca2148c231480000,0x338978b48000000f8878b480000
-.octa 0x338878948d03148ca2148c23148,0x2148ffffffff00000001b848fff18348,0x480000031087894800000310870b48c8,0x18870b48c8214800000000ffffffffb8
-.octa 0x1b84800000318878948000003,0x894800000320870b48c8214800000000,0x480000000000000000b8480000032087,0x32887894800000328870b48c821
-.octa 0x870b48c821480000000000000000b848,0xb8480000033087894800000330,0x4800000338870b48c821480000000000,0xc4ed31000002e0978b48000003388789
-.octa 0x34897f6fb62c4000003408ff6bb62,0x3509ff6fb62c4c8f6380f4c6600,0x6600000358a7f6fb62c4d0f6380f4c66,0x4c6600000360aff6fb62c4d8f6380f4c
-.octa 0xf4c6600000368b7f6fb62c4e0f6380f,0x4800000000bf41f5f6380f4c66e8f638,0x1b848d0af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000
-.octa 0xbdd11148c0014cc9f6bbe2c4ff,0xdc8349eb1949ca1949c12949ed114800,0xd78349d6014900da834800dd834900,0xc4ed31000002e8978b4800000000b841
-.octa 0x4c66c8f6380f4cf3000003408ff6fbe2,0xf4cf3000003488ff6fbe2c4d1f6380f,0x3508ff6fbe2c4d9f6380f4c66d0f638,0xe2c4e1f6380f4c66d8f6380f4cf30000
-.octa 0xf4c66e0f6380f4cf3000003588ff6fb,0x380f4cf3000003608ff6fbe2c4e9f638,0x3688ff6fbe2c4f1f6380f4c66e8f6,0xf4cf3f9f6380f4c66f0f6380f4cf300
-.octa 0x48c5f6380f4cf3c5f6380f4c66fdf638,0x1b848d1af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148c8014cc9f6b3e2c4ff
-.octa 0xdd8349ec1949cb1949c22949ed114800,0xd08349d7014900da834800de834900,0xc4ed31000002f0978b4800000000b941,0x4c66d0f6380f4cf3000003408ff6fbe2
-.octa 0xf4cf3000003488ff6fbe2c4d9f6380f,0x3508ff6fbe2c4e1f6380f4c66d8f638,0xe2c4e9f6380f4c66e0f6380f4cf30000,0xf4c66e8f6380f4cf3000003588ff6fb
-.octa 0x380f4cf3000003608ff6fbe2c4f1f638,0x3688ff6fbe2c4f9f6380f4c66f0f6,0xf4cf3c1f6380f4c66f8f6380f4cf300,0x48cdf6380f4cf3cdf6380f4c66c5f638
-.octa 0x1b848d2af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148d0014cc9f6abe2c4ff,0xde8349ed1949cc1949c32949ed114800
-.octa 0xd18349d0014900da834800df834900,0xc4ed31000002f8978b4800000000ba41,0x4c66d8f6380f4cf3000003408ff6fbe2,0xf4cf3000003488ff6fbe2c4e1f6380f
-.octa 0x3508ff6fbe2c4e9f6380f4c66e0f638,0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000003588ff6fb,0x380f4cf3000003608ff6fbe2c4f9f638
-.octa 0x3688ff6fbe2c4c1f6380f4c66f8f6,0xf4cf3c9f6380f4c66c0f6380f4cf300,0x48d5f6380f4cf3d5f6380f4c66cdf638,0x1b848d3af0f490000000100000001ba
-.octa 0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148d8014cc9f6a3e2c4ff,0xdf8349ee1949cd1949c42949ed114800,0xd28349d1014900da834800d8834900
-.octa 0xc4ed3100000300978b4800000000bb41,0x4c66e0f6380f4cf3000003408ff6fbe2,0xf4cf3000003488ff6fbe2c4e9f6380f,0x3508ff6fbe2c4f1f6380f4c66e8f638
-.octa 0xe2c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf3000003588ff6fb,0x380f4cf3000003608ff6fbe2c4c1f638,0x3688ff6fbe2c4c9f6380f4c66c0f6
-.octa 0xf4cf3d1f6380f4c66c8f6380f4cf300,0x48ddf6380f4cf3ddf6380f4c66d5f638,0x1b848d4af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000
-.octa 0xbdd11148e0014cc9f69be2c4ff,0xd88349ef1949ce1949c52949ed114800,0xd38349d2014900da834800d9834900,0xc4ed3100000308978b4800000000bc41
-.octa 0x4c66e8f6380f4cf3000003408ff6fbe2,0xf4cf3000003488ff6fbe2c4f1f6380f,0x3508ff6fbe2c4f9f6380f4c66f0f638,0xe2c4c1f6380f4c66f8f6380f4cf30000
-.octa 0xf4c66c0f6380f4cf3000003588ff6fb,0x380f4cf3000003608ff6fbe2c4c9f638,0x3688ff6fbe2c4d1f6380f4c66c8f6,0xf4cf3d9f6380f4c66d0f6380f4cf300
-.octa 0x48e5f6380f4cf3e5f6380f4c66ddf638,0x1b848d5af0f490000000100000001ba,0xffffffb9c0f6f3e2c4ffffffff000000,0xbdd11148e8014cc9f693e2c4ff
-.octa 0xd98349e81949cf1949c62949ed114800,0xd48349d3014900da834800da834900,0x1b4c487f1b4c40772b4c00000000bd41,0x8349685f1b4c60571b4c584f1b4c5047
-.octa 0x894820e2c148c28948c189c0194800dc,0xc11149e81149d71149ce0149e5d148c5,0xbf894c000002e0b7894cc31149c21149,0x2f88f894c000002f087894c000002e8
-.octa 0x3089f894c0000030097894c0000,0x3488ff6bb62c4ed3100000340978b48,0xf6380f4c660000035097f6fb62c40000,0xd0f6380f4c66000003589ff6fb62c4c8
-.octa 0xc4d8f6380f4c6600000360a7f6fb62c4,0x4c66e0f6380f4c6600000368aff6fb62,0xfe08f894c00000fd887894cedf6380f,0x8ff6fbe2c4ed3100000348978b480000
-.octa 0xd9f6380f4c66d0f6380f4cf300000350,0x66d8f6380f4cf3000003588ff6fbe2c4,0x4cf3000003608ff6fbe2c4e1f6380f4c,0x68b7f6fb62c4e9f6380f4c66e0f6380f
-.octa 0xf3f5f6380f4c66e8f6380f4cf3000003,0xe2c4ed3100000350978b48f5f6380f4c,0xf4c66e0f6380f4cf3000003588ff6fb,0x380f4cf3000003608ff6fbe2c4e9f638
-.octa 0x368bff6fb62c4f1f6380f4c66e8f6,0xf4cf3fdf6380f4c66f0f6380f4cf300,0xf6fbe2c4ed3100000358978b48fdf638,0xf6380f4c66f0f6380f4cf3000003608f
-.octa 0xf8f6380f4cf30000036887f6fb62c4f9,0x60978b48c5f6380f4cf3c5f6380f4c66,0x4cf3000003688ff6fb62c4ed31000003,0xcdf6380f4cf3cdf6380f4c66c0f6380f
-.octa 0x4866caf6fbe2c400000340978b48ed31,0xfd0af8948e8f6380f48f3edf6380f,0x48f3d2f6380f486600000fd8978b4800,0x348978b4800000fd8978948d1f6380f
-.octa 0x486600000fe0978b48caf6fbe2c40000,0xfe0978948d0f6380f48f3d2f6380f,0x978b48d1f6380f4cf3d2f6380f4d6600,0xf3dbf6380f4d66caf6fbe2c400000350
-.octa 0xf6380f4cf3e4f6380f4d66d8f6380f4c,0xf4d66caf6fbe2c400000358978b48e1,0xf3f6f6380f4d66e8f6380f4cf3edf638,0xf6fbe2c400000360978b48f1f6380f4c
-.octa 0xf4d66f8f6380f4cf3fff6380f4d66ca,0x368978b48c1f6380f4cf3c0f638,0xf6380f4cf3c9f6380f4d66caf6fbe2c4,0x380f48f3caf6380f486600000000bac8
-.octa 0x498b7894c00000490af894ccaf6,0x894c000004a887894c000004a0bf894c,0xd0af8b4c000004b88f8948000004b08f,0xfe0bf8b4c00000fd8b78b4c00000f
-.octa 0x48d5af0f490000000100000001ba4800,0xffb9c0f6f3e2c4ffffffff00000001b8,0xbdd11148e8014cc9f693e2c4ffffff,0x49ea1949cf1949c62949ed1148000000
-.octa 0xba4800dd8349d5894900dc834900db83,0x1b848d6af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148f0014cc9f68be2c4
-.octa 0xdc8349eb1949ca1949c72949ed1148,0x1ba4800de8349d6894900dd8349,0xff00000001b848d7af0f490000000100,0x83e2c4ffffffffb9c0f6f3e2c4ffffff
-.octa 0xed114800000000bdd11148f8014cc9f6,0xde834900dd8349ec1949cb1949c22949,0x100000001ba4800df8349d7894900,0xffffffff00000001b848d2af0f490000
-.octa 0x4cc9f6abe2c4ffffffffb9c0f6f3e2c4,0xc32949ed114800000000bdd11148d001,0x894900df834900de8349ed1949cc1949,0x490000000100000001ba4800da8349d2
-.octa 0xf3e2c4ffffffff00000001b848d3af0f,0x48d8014cc9f6a3e2c4ffffffffb9c0f6,0xcd1949c42949ed114800000000bdd111,0x8349d3894900da834900df8349ee1949
-.octa 0xd4af0f490000000100000001ba4800db,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e0014cc9f69be2c4ffffffff,0xef1949ce1949c52949ed114800000000
-.octa 0x4100dc8349d4894900db834900da8349,0x98b7134c00000490af034c00000000b8,0x4a897134c000004a0bf134c000004,0x49000004b8a7134c000004b09f134c00
-.octa 0x4c507f1b4c48771b4c406f2b4c00d083,0x4800d8834968671b4c605f1b4c58571b,0xd148c5894820e2c148c28948c189c019,0xc31149c21149ef1149d61149cd0149e5
-.octa 0x498b7894c00000490af894cc41149,0x4c000004a897894c000004a0bf894c00,0x978b48000004b8a7894c000004b09f89,0xc4000003408ff6bb62c4ed3100000490
-.octa 0x62c4c8f6380f4c660000034897f6fb62,0xfb62c4d0f6380f4c66000003509ff6fb,0xf6fb62c4d8f6380f4c6600000358a7f6,0xb7f6fb62c4e0f6380f4c6600000360af
-.octa 0xf5f6380f4c66e8f6380f4c6600000368,0x100000001ba4800000000bf41,0xe2c4ffffffff00000001b848d0af0f49,0xc0014cc9f6bbe2c4ffffffffb9c0f6f3
-.octa 0x1949c12949ed114800000000bdd11148,0xda834800dd834900dc8349eb1949ca,0x978b4800000000b84100d78349d60149,0xf3000003408ff6fbe2c4ed3100000498
-.octa 0x8ff6fbe2c4d1f6380f4c66c8f6380f4c,0xd9f6380f4c66d0f6380f4cf300000348,0x66d8f6380f4cf3000003508ff6fbe2c4,0x4cf3000003588ff6fbe2c4e1f6380f4c
-.octa 0x608ff6fbe2c4e9f6380f4c66e0f6380f,0xc4f1f6380f4c66e8f6380f4cf3000003,0x4c66f0f6380f4cf3000003688ff6fbe2,0xc5f6380f4c66fdf6380f4cf3f9f6380f
-.octa 0x100000001ba48c5f6380f4cf3,0xe2c4ffffffff00000001b848d1af0f49,0xc8014cc9f6b3e2c4ffffffffb9c0f6f3,0x1949c22949ed114800000000bdd11148
-.octa 0xda834800de834900dd8349ec1949cb,0x978b4800000000b94100d08349d70149,0xf3000003408ff6fbe2c4ed31000004a0,0x8ff6fbe2c4d9f6380f4c66d0f6380f4c
-.octa 0xe1f6380f4c66d8f6380f4cf300000348,0x66e0f6380f4cf3000003508ff6fbe2c4,0x4cf3000003588ff6fbe2c4e9f6380f4c,0x608ff6fbe2c4f1f6380f4c66e8f6380f
-.octa 0xc4f9f6380f4c66f0f6380f4cf3000003,0x4c66f8f6380f4cf3000003688ff6fbe2,0xcdf6380f4c66c5f6380f4cf3c1f6380f,0x100000001ba48cdf6380f4cf3
-.octa 0xe2c4ffffffff00000001b848d2af0f49,0xd0014cc9f6abe2c4ffffffffb9c0f6f3,0x1949c32949ed114800000000bdd11148,0xda834800df834900de8349ed1949cc
-.octa 0x978b4800000000ba4100d18349d00149,0xf3000003408ff6fbe2c4ed31000004a8,0x8ff6fbe2c4e1f6380f4c66d8f6380f4c,0xe9f6380f4c66e0f6380f4cf300000348
-.octa 0x66e8f6380f4cf3000003508ff6fbe2c4,0x4cf3000003588ff6fbe2c4f1f6380f4c,0x608ff6fbe2c4f9f6380f4c66f0f6380f,0xc4c1f6380f4c66f8f6380f4cf3000003
-.octa 0x4c66c0f6380f4cf3000003688ff6fbe2,0xd5f6380f4c66cdf6380f4cf3c9f6380f,0x100000001ba48d5f6380f4cf3,0xe2c4ffffffff00000001b848d3af0f49
-.octa 0xd8014cc9f6a3e2c4ffffffffb9c0f6f3,0x1949c42949ed114800000000bdd11148,0xda834800d8834900df8349ee1949cd,0x978b4800000000bb4100d28349d10149
-.octa 0xf3000003408ff6fbe2c4ed31000004b0,0x8ff6fbe2c4e9f6380f4c66e0f6380f4c,0xf1f6380f4c66e8f6380f4cf300000348,0x66f0f6380f4cf3000003508ff6fbe2c4
-.octa 0x4cf3000003588ff6fbe2c4f9f6380f4c,0x608ff6fbe2c4c1f6380f4c66f8f6380f,0xc4c9f6380f4c66c0f6380f4cf3000003,0x4c66c8f6380f4cf3000003688ff6fbe2
-.octa 0xddf6380f4c66d5f6380f4cf3d1f6380f,0x100000001ba48ddf6380f4cf3,0xe2c4ffffffff00000001b848d4af0f49,0xe0014cc9f69be2c4ffffffffb9c0f6f3
-.octa 0x1949c52949ed114800000000bdd11148,0xda834800d9834900d88349ef1949ce,0x978b4800000000bc4100d38349d20149,0xf3000003408ff6fbe2c4ed31000004b8
-.octa 0x8ff6fbe2c4f1f6380f4c66e8f6380f4c,0xf9f6380f4c66f0f6380f4cf300000348,0x66f8f6380f4cf3000003508ff6fbe2c4,0x4cf3000003588ff6fbe2c4c1f6380f4c
-.octa 0x608ff6fbe2c4c9f6380f4c66c0f6380f,0xc4d1f6380f4c66c8f6380f4cf3000003,0x4c66d0f6380f4cf3000003688ff6fbe2,0xe5f6380f4c66ddf6380f4cf3d9f6380f
-.octa 0x100000001ba48e5f6380f4cf3,0xe2c4ffffffff00000001b848d5af0f49,0xe8014cc9f693e2c4ffffffffb9c0f6f3,0x1949c62949ed114800000000bdd11148
-.octa 0xda834800da834900d98349e81949cf,0x772b4c00000000bd4100d48349d30149,0x571b4c584f1b4c50471b4c487f1b4c40,0x8948c189c0194800dc8349685f1b4c60
-.octa 0x1149ce0149e5d148c5894820e2c148c2,0xb7894cc31149c21149c11149e81149d7,0x35087894c00000348bf894c00000340,0x36097894c000003588f894c0000
-.octa 0x8b48000005b09f8b48000003689f894c,0xc8af8b4c000005c0a78b4c000005b8af,0x5d8bf8b4c000005d0b78b4c000005
-.byte 0,195",
-        r".p2align 6",
+.octa 0x49c11149e81149d71149ce0149e5d148,0x58bf894c00000550b7894cc31149c211,0x5688f894c0000056087894c000005,0x4c000005789f894c0000057097894c00
+.octa 0x978b4c000005288f8b4c00000520878b,0x540a78b4c000005389f8b4c00000530,0x550872b4c00000548af8b4c0000,0x1b4c00000560971b4c000005588f1b4c
+.octa 0x78af1b4c00000570a71b4c000005689f,0x4820e2c148c28948c189c01948000005,0x1149ea1149d11149c80149e5d148c589,0x894c000003a087894cc51149c41149c3
+.octa 0xb89f894c000003b097894c000003a88f,0x3c8af894c000003c0a7894c000003,0xc08ff6bb62c4ed3100000340978b4800,0x380f4c66000004c897f6fb62c4000004
+.octa 0xf6380f4c66000004d09ff6fb62c4c8f6,0xd8f6380f4c66000004d8a7f6fb62c4d0,0xc4e0f6380f4c66000004e0aff6fb62c4,0x4c66e8f6380f4c66000004e8b7f6fb62
+.octa 0x1ba4800000000bf41f5f6380f,0xffff00000001b848d0af0f4900000001,0xf6bbe2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148c0014cc9
+.octa 0xdd834900dc8349eb1949ca1949c129,0xb84100d78349d6014900da8348,0xc08ff6fbe2c4ed3100000348978b4800,0xc4d1f6380f4c66c8f6380f4cf3000004
+.octa 0x4c66d0f6380f4cf3000004c88ff6fbe2,0xf4cf3000004d08ff6fbe2c4d9f6380f,0x4d88ff6fbe2c4e1f6380f4c66d8f638,0xe2c4e9f6380f4c66e0f6380f4cf30000
+.octa 0xf4c66e8f6380f4cf3000004e08ff6fb,0x380f4cf3000004e88ff6fbe2c4f1f638,0x4c66fdf6380f4cf3f9f6380f4c66f0f6,0x1ba48c5f6380f4cf3c5f6380f
+.octa 0xffff00000001b848d1af0f4900000001,0xf6b3e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148c8014cc9,0xde834900dd8349ec1949cb1949c229
+.octa 0xb94100d08349d7014900da8348,0xc08ff6fbe2c4ed3100000350978b4800,0xc4d9f6380f4c66d0f6380f4cf3000004,0x4c66d8f6380f4cf3000004c88ff6fbe2
+.octa 0xf4cf3000004d08ff6fbe2c4e1f6380f,0x4d88ff6fbe2c4e9f6380f4c66e0f638,0xe2c4f1f6380f4c66e8f6380f4cf30000,0xf4c66f0f6380f4cf3000004e08ff6fb
+.octa 0x380f4cf3000004e88ff6fbe2c4f9f638,0x4c66c5f6380f4cf3c1f6380f4c66f8f6,0x1ba48cdf6380f4cf3cdf6380f,0xffff00000001b848d2af0f4900000001
+.octa 0xf6abe2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148d0014cc9,0xdf834900de8349ed1949cc1949c329,0xba4100d18349d0014900da8348
+.octa 0xc08ff6fbe2c4ed3100000358978b4800,0xc4e1f6380f4c66d8f6380f4cf3000004,0x4c66e0f6380f4cf3000004c88ff6fbe2,0xf4cf3000004d08ff6fbe2c4e9f6380f
+.octa 0x4d88ff6fbe2c4f1f6380f4c66e8f638,0xe2c4f9f6380f4c66f0f6380f4cf30000,0xf4c66f8f6380f4cf3000004e08ff6fb,0x380f4cf3000004e88ff6fbe2c4c1f638
+.octa 0x4c66cdf6380f4cf3c9f6380f4c66c0f6,0x1ba48d5f6380f4cf3d5f6380f,0xffff00000001b848d3af0f4900000001,0xf6a3e2c4ffffffffb9c0f6f3e2c4ffff
+.octa 0x49ed114800000000bdd11148d8014cc9,0xd8834900df8349ee1949cd1949c429,0xbb4100d28349d1014900da8348,0xc08ff6fbe2c4ed3100000360978b4800
+.octa 0xc4e9f6380f4c66e0f6380f4cf3000004,0x4c66e8f6380f4cf3000004c88ff6fbe2,0xf4cf3000004d08ff6fbe2c4f1f6380f,0x4d88ff6fbe2c4f9f6380f4c66f0f638
+.octa 0xe2c4c1f6380f4c66f8f6380f4cf30000,0xf4c66c0f6380f4cf3000004e08ff6fb,0x380f4cf3000004e88ff6fbe2c4c9f638,0x4c66d5f6380f4cf3d1f6380f4c66c8f6
+.octa 0x1ba48ddf6380f4cf3ddf6380f,0xffff00000001b848d4af0f4900000001,0xf69be2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148e0014cc9
+.octa 0xd9834900d88349ef1949ce1949c529,0xbc4100d38349d2014900da8348,0xc08ff6fbe2c4ed3100000368978b4800,0xc4f1f6380f4c66e8f6380f4cf3000004
+.octa 0x4c66f0f6380f4cf3000004c88ff6fbe2,0xf4cf3000004d08ff6fbe2c4f9f6380f,0x4d88ff6fbe2c4c1f6380f4c66f8f638,0xe2c4c9f6380f4c66c0f6380f4cf30000
+.octa 0xf4c66c8f6380f4cf3000004e08ff6fb,0x380f4cf3000004e88ff6fbe2c4d1f638,0x4c66ddf6380f4cf3d9f6380f4c66d0f6,0x1ba48e5f6380f4cf3e5f6380f
+.octa 0xffff00000001b848d5af0f4900000001,0xf693e2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148e8014cc9,0xda834900d98349e81949cf1949c629
+.octa 0xbd4100d48349d3014900da8348,0x4f1b4c50471b4c487f1b4c40772b4c00,0xc0194800dc8349685f1b4c60571b4c58,0x49e5d148c5894820e2c148c28948c189
+.octa 0x1149c21149c11149e81149d71149ce01,0x4c000003d8bf894c000003d0b7894cc3,0x97894c000003e88f894c000003e08789,0x340878b48000003f89f894c000003f0
+.octa 0x350870b4800000348870b480000,0xb4800000360870b4800000358870b48,0xc91948c1294800000000b90000036887,0x314800000370978b4800000400878b48
+.octa 0x8b4800000370878948d03148ca2148c2,0x48c2314800000378978b480000040887,0x10878b4800000378878948d03148ca21,0xca2148c2314800000380978b48000004
+.octa 0x418878b4800000380878948d03148,0x3148ca2148c2314800000388978b4800,0x4800000420878b4800000388878948d0,0x48d03148ca2148c2314800000390978b
+.octa 0x978b4800000428878b48000003908789,0x878948d03148ca2148c2314800000398,0x3a0978b4800000430878b4800000398,0x3a0878948d03148ca2148c231480000
+.octa 0x3a8978b4800000438878b480000,0x3a8878948d03148ca2148c23148,0x3148000003b0978b4800000440878b48,0x8b48000003b0878948d03148ca2148c2
+.octa 0x48c23148000003b8978b480000044887,0x50878b48000003b8878948d03148ca21,0xca2148c23148000003c0978b48000004,0x458878b48000003c0878948d03148
+.octa 0x3148ca2148c23148000003c8978b4800,0x4800000460878b48000003c8878948d0,0x48d03148ca2148c23148000003d0978b,0x978b4800000468878b48000003d08789
+.octa 0x878948d03148ca2148c23148000003d8,0x3e0978b4800000470878b48000003d8,0x3e0878948d03148ca2148c231480000,0x3e8978b4800000478878b480000
+.octa 0x3e8878948d03148ca2148c23148,0x3148000003f0978b4800000480878b48,0x8b48000003f0878948d03148ca2148c2,0x48c23148000003f8978b480000048887
+.octa 0xb9d88948000003f8878948d03148ca21,0x4800000000b8c18948e1f74800000007,0xc00148d00148000008b60f94b60fc001,0xb60fc00148d00148000008b50f94b60f
+.octa 0xf94b60fc00148d00148000008b40f94,0x8b20f94b60fc00148d00148000008b3,0x8b10f94b60fc00148d001480000,0x148000008b00f94b60fc00148d00148
+.octa 0xf94b60fd00148000008af0f94b60fd0,0xc0314cd0294900000000b841000008b6,0xc08949c0014c00000080e08149c0294c,0x48c9194801f98348c1314c00000000b9
+.octa 0xc23148000002e0978b4800000370878b,0x878b48000002e0878948d03148ca2148,0x2148c23148000002e8978b4800000378,0x380878b48000002e8878948d03148ca
+.octa 0x48ca2148c23148000002f0978b480000,0x388878b48000002f0878948d031,0xd03148ca2148c23148000002f8978b48,0x8b4800000390878b48000002f8878948
+.octa 0x8948d03148ca2148c231480000030097,0x8978b4800000398878b480000030087,0x8878948d03148ca2148c23148000003,0x310978b48000003a0878b48000003
+.octa 0x310878948d03148ca2148c2314800,0x4800000318978b48000003a8878b4800,0x4800000318878948d03148ca2148c231,0xc2314800000320978b48000003b0878b
+.octa 0x878b4800000320878948d03148ca2148,0x2148c2314800000328978b48000003b8,0x3c0878b4800000328878948d03148ca,0x48ca2148c2314800000330978b480000
+.octa 0x3c8878b4800000330878948d031,0xd03148ca2148c2314800000338978b48,0x8b48000003d0878b4800000338878948,0x8948d03148ca2148c231480000034097
+.octa 0x48978b48000003d8878b480000034087,0x48878948d03148ca2148c23148000003,0x350978b48000003e0878b48000003,0x350878948d03148ca2148c2314800
+.octa 0x4800000358978b48000003e8878b4800,0x4800000358878948d03148ca2148c231,0xc2314800000360978b48000003f0878b,0x878b4800000360878948d03148ca2148
+.octa 0x2148c2314800000368978b48000003f8,0x4801c3834800000368878948d03148ca,0x348870b4800000340878b4837fb83,0x4800000358870b4800000350870b4800
+.octa 0xb900000368870b4800000360870b,0x48000000d0878b48c91948c129480000,0x48d03148ca2148c2314800000310978b,0x978b48000000d8878b48000003108789
+.octa 0x878948d03148ca2148c2314800000318,0x320978b48000000e0878b4800000318,0x320878948d03148ca2148c231480000,0x328978b48000000e8878b480000
+.octa 0x328878948d03148ca2148c23148,0x314800000330978b48000000f0878b48,0x8b4800000330878948d03148ca2148c2,0x48c2314800000338978b48000000f887
+.octa 0xfff1834800000338878948d03148ca21,0x870b48c82148ffffffff00000001b848,0xffffffb8480000031087894800000310,0x4800000318870b48c8214800000000ff
+.octa 0x1b848000003188789,0x32087894800000320870b48c82148,0xb48c821480000000000000000b84800,0xb848000003288789480000032887
+.octa 0x330870b48c82148000000000000,0xb84800000330878948,0x33887894800000338870b48c8214800,0x8ff6bb62c4ed31000002e0978b480000
+.octa 0xf4c660000034897f6fb62c400000340,0x380f4c66000003509ff6fb62c4c8f638,0xf6380f4c6600000358a7f6fb62c4d0f6,0xe0f6380f4c6600000360aff6fb62c4d8
+.octa 0x66e8f6380f4c6600000368b7f6fb62c4,0x1ba4800000000bf41f5f6380f4c,0xff00000001b848d0af0f490000000100,0xbbe2c4ffffffffb9c0f6f3e2c4ffffff
+.octa 0xed114800000000bdd11148c0014cc9f6,0xdd834900dc8349eb1949ca1949c12949,0xb84100d78349d6014900da834800,0x8ff6fbe2c4ed31000002e8978b480000
+.octa 0xd1f6380f4c66c8f6380f4cf300000340,0x66d0f6380f4cf3000003488ff6fbe2c4,0x4cf3000003508ff6fbe2c4d9f6380f4c,0x588ff6fbe2c4e1f6380f4c66d8f6380f
+.octa 0xc4e9f6380f4c66e0f6380f4cf3000003,0x4c66e8f6380f4cf3000003608ff6fbe2,0xf4cf3000003688ff6fbe2c4f1f6380f,0x66fdf6380f4cf3f9f6380f4c66f0f638
+.octa 0x1ba48c5f6380f4cf3c5f6380f4c,0xff00000001b848d1af0f490000000100,0xb3e2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148c8014cc9f6
+.octa 0xde834900dd8349ec1949cb1949c22949,0xb94100d08349d7014900da834800,0x8ff6fbe2c4ed31000002f0978b480000,0xd9f6380f4c66d0f6380f4cf300000340
+.octa 0x66d8f6380f4cf3000003488ff6fbe2c4,0x4cf3000003508ff6fbe2c4e1f6380f4c,0x588ff6fbe2c4e9f6380f4c66e0f6380f,0xc4f1f6380f4c66e8f6380f4cf3000003
+.octa 0x4c66f0f6380f4cf3000003608ff6fbe2,0xf4cf3000003688ff6fbe2c4f9f6380f,0x66c5f6380f4cf3c1f6380f4c66f8f638,0x1ba48cdf6380f4cf3cdf6380f4c
+.octa 0xff00000001b848d2af0f490000000100,0xabe2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148d0014cc9f6,0xdf834900de8349ed1949cc1949c32949
+.octa 0xba4100d18349d0014900da834800,0x8ff6fbe2c4ed31000002f8978b480000,0xe1f6380f4c66d8f6380f4cf300000340,0x66e0f6380f4cf3000003488ff6fbe2c4
+.octa 0x4cf3000003508ff6fbe2c4e9f6380f4c,0x588ff6fbe2c4f1f6380f4c66e8f6380f,0xc4f9f6380f4c66f0f6380f4cf3000003,0x4c66f8f6380f4cf3000003608ff6fbe2
+.octa 0xf4cf3000003688ff6fbe2c4c1f6380f,0x66cdf6380f4cf3c9f6380f4c66c0f638,0x1ba48d5f6380f4cf3d5f6380f4c,0xff00000001b848d3af0f490000000100
+.octa 0xa3e2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148d8014cc9f6,0xd8834900df8349ee1949cd1949c42949,0xbb4100d28349d1014900da834800
+.octa 0x8ff6fbe2c4ed3100000300978b480000,0xe9f6380f4c66e0f6380f4cf300000340,0x66e8f6380f4cf3000003488ff6fbe2c4,0x4cf3000003508ff6fbe2c4f1f6380f4c
+.octa 0x588ff6fbe2c4f9f6380f4c66f0f6380f,0xc4c1f6380f4c66f8f6380f4cf3000003,0x4c66c0f6380f4cf3000003608ff6fbe2,0xf4cf3000003688ff6fbe2c4c9f6380f
+.octa 0x66d5f6380f4cf3d1f6380f4c66c8f638,0x1ba48ddf6380f4cf3ddf6380f4c,0xff00000001b848d4af0f490000000100,0x9be2c4ffffffffb9c0f6f3e2c4ffffff
+.octa 0xed114800000000bdd11148e0014cc9f6,0xd9834900d88349ef1949ce1949c52949,0xbc4100d38349d2014900da834800,0x8ff6fbe2c4ed3100000308978b480000
+.octa 0xf1f6380f4c66e8f6380f4cf300000340,0x66f0f6380f4cf3000003488ff6fbe2c4,0x4cf3000003508ff6fbe2c4f9f6380f4c,0x588ff6fbe2c4c1f6380f4c66f8f6380f
+.octa 0xc4c9f6380f4c66c0f6380f4cf3000003,0x4c66c8f6380f4cf3000003608ff6fbe2,0xf4cf3000003688ff6fbe2c4d1f6380f,0x66ddf6380f4cf3d9f6380f4c66d0f638
+.octa 0x1ba48e5f6380f4cf3e5f6380f4c,0xff00000001b848d5af0f490000000100,0x93e2c4ffffffffb9c0f6f3e2c4ffffff,0xed114800000000bdd11148e8014cc9f6
+.octa 0xda834900d98349e81949cf1949c62949,0xbd4100d48349d3014900da834800,0x1b4c50471b4c487f1b4c40772b4c0000,0x194800dc8349685f1b4c60571b4c584f
+.octa 0xe5d148c5894820e2c148c28948c189c0,0x49c21149c11149e81149d71149ce0149,0x2e8bf894c000002e0b7894cc311,0x894c000002f88f894c000002f087894c
+.octa 0x40978b48000003089f894c0000030097,0x62c4000003488ff6bb62c4ed31000003,0xfb62c4c8f6380f4c660000035097f6fb,0xf6fb62c4d0f6380f4c66000003589ff6
+.octa 0xaff6fb62c4d8f6380f4c6600000360a7,0xedf6380f4c66e0f6380f4c6600000368,0x8b4800000fe08f894c00000fd887894c,0x3508ff6fbe2c4ed310000034897
+.octa 0xf6fbe2c4d9f6380f4c66d0f6380f4cf3,0xf6380f4c66d8f6380f4cf3000003588f,0xe0f6380f4cf3000003608ff6fbe2c4e1,0xf300000368b7f6fb62c4e9f6380f4c66
+.octa 0xf6380f4cf3f5f6380f4c66e8f6380f4c,0x588ff6fbe2c4ed3100000350978b48f5,0xc4e9f6380f4c66e0f6380f4cf3000003,0x4c66e8f6380f4cf3000003608ff6fbe2
+.octa 0xf4cf300000368bff6fb62c4f1f6380f,0x48fdf6380f4cf3fdf6380f4c66f0f638,0x3608ff6fbe2c4ed3100000358978b,0xfb62c4f9f6380f4c66f0f6380f4cf300
+.octa 0x380f4c66f8f6380f4cf30000036887f6,0x3100000360978b48c5f6380f4cf3c5f6,0xc0f6380f4cf3000003688ff6fb62c4ed,0x8b48ed31cdf6380f4cf3cdf6380f4c66
+.octa 0xedf6380f4866caf6fbe2c40000034097,0x978b4800000fd0af8948e8f6380f48f3,0xd1f6380f48f3d2f6380f486600000fd8,0xe2c400000348978b4800000fd8978948
+.octa 0xd2f6380f486600000fe0978b48caf6fb,0xf4d6600000fe0978948d0f6380f48f3,0x350978b48d1f6380f4cf3d2f638,0xf6380f4cf3dbf6380f4d66caf6fbe2c4
+.octa 0x978b48e1f6380f4cf3e4f6380f4d66d8,0xf3edf6380f4d66caf6fbe2c400000358,0xf6380f4cf3f6f6380f4d66e8f6380f4c,0xf4d66caf6fbe2c400000360978b48f1
+.octa 0xf3c0f6380f4d66f8f6380f4cf3fff638,0xf6fbe2c400000368978b48c1f6380f4c,0xbac8f6380f4cf3c9f6380f4d66ca,0x894ccaf6380f48f3caf6380f48660000
+.octa 0xa0bf894c00000498b7894c00000490af,0x4b08f894c000004a887894c000004,0x4c00000fd0af8b4c000004b88f894800,0x1ba4800000fe0bf8b4c00000fd8b78b
+.octa 0x1b848d5af0f4900000001000000,0xc4ffffffffb9c0f6f3e2c4ffffffff00,0x4800000000bdd11148e8014cc9f693e2,0x4900db8349ea1949cf1949c62949ed11
+.octa 0x1ba4800dd8349d5894900dc83,0xffff00000001b848d6af0f4900000001,0xf68be2c4ffffffffb9c0f6f3e2c4ffff,0x49ed114800000000bdd11148f0014cc9
+.octa 0xdd834900dc8349eb1949ca1949c729,0x100000001ba4800de8349d68949,0xc4ffffffff00000001b848d7af0f4900,0x14cc9f683e2c4ffffffffb9c0f6f3e2
+.octa 0x49c22949ed114800000000bdd11148f8,0xd7894900de834900dd8349ec1949cb19,0xf490000000100000001ba4800df8349,0xf6f3e2c4ffffffff00000001b848d2af
+.octa 0x1148d0014cc9f6abe2c4ffffffffb9c0,0x49cc1949c32949ed114800000000bdd1,0xda8349d2894900df834900de8349ed19,0x48d3af0f490000000100000001ba4800
+.octa 0xffb9c0f6f3e2c4ffffffff00000001b8,0xbdd11148d8014cc9f6a3e2c4ffffff,0x49ee1949cd1949c42949ed1148000000,0xba4800db8349d3894900da834900df83
+.octa 0x1b848d4af0f490000000100000001,0xffffffffb9c0f6f3e2c4ffffffff0000,0xbdd11148e0014cc9f69be2c4,0xda8349ef1949ce1949c52949ed1148
+.octa 0xb84100dc8349d4894900db8349,0x4c00000498b7134c00000490af034c00,0x9f134c000004a897134c000004a0bf13,0x4c00d08349000004b8a7134c000004b0
+.octa 0x4c58571b4c507f1b4c48771b4c406f2b,0xc189c0194800d8834968671b4c605f1b,0xcd0149e5d148c5894820e2c148c28948,0x4cc41149c31149c21149ef1149d61149
+.octa 0xbf894c00000498b7894c00000490af89,0x4b09f894c000004a897894c000004a0,0x490978b48000004b8a7894c0000,0x97f6fb62c4000003408ff6bb62c4ed31
+.octa 0x509ff6fb62c4c8f6380f4c6600000348,0x358a7f6fb62c4d0f6380f4c66000003,0x360aff6fb62c4d8f6380f4c660000,0x368b7f6fb62c4e0f6380f4c6600
+.octa 0xbf41f5f6380f4c66e8f6380f4c66,0xd0af0f490000000100000001ba480000,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148c0014cc9f6bbe2c4ffffffff
+.octa 0xeb1949ca1949c12949ed114800000000,0x49d6014900da834800dd834900dc8349,0x498978b4800000000b84100d783,0xf6380f4cf3000003408ff6fbe2c4ed31
+.octa 0x3488ff6fbe2c4d1f6380f4c66c8,0xf6fbe2c4d9f6380f4c66d0f6380f4cf3,0xf6380f4c66d8f6380f4cf3000003508f,0xe0f6380f4cf3000003588ff6fbe2c4e1
+.octa 0xf3000003608ff6fbe2c4e9f6380f4c66,0x8ff6fbe2c4f1f6380f4c66e8f6380f4c,0xf9f6380f4c66f0f6380f4cf300000368,0x380f4cf3c5f6380f4c66fdf6380f4cf3
+.octa 0xd1af0f490000000100000001ba48c5f6,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148c8014cc9f6b3e2c4ffffffff,0xec1949cb1949c22949ed114800000000
+.octa 0x49d7014900da834800de834900dd8349,0x4a0978b4800000000b94100d083,0xf6380f4cf3000003408ff6fbe2c4ed31,0x3488ff6fbe2c4d9f6380f4c66d0
+.octa 0xf6fbe2c4e1f6380f4c66d8f6380f4cf3,0xf6380f4c66e0f6380f4cf3000003508f,0xe8f6380f4cf3000003588ff6fbe2c4e9,0xf3000003608ff6fbe2c4f1f6380f4c66
+.octa 0x8ff6fbe2c4f9f6380f4c66f0f6380f4c,0xc1f6380f4c66f8f6380f4cf300000368,0x380f4cf3cdf6380f4c66c5f6380f4cf3,0xd2af0f490000000100000001ba48cdf6
+.octa 0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148d0014cc9f6abe2c4ffffffff,0xed1949cc1949c32949ed114800000000,0x49d0014900da834800df834900de8349
+.octa 0x4a8978b4800000000ba4100d183,0xf6380f4cf3000003408ff6fbe2c4ed31,0x3488ff6fbe2c4e1f6380f4c66d8,0xf6fbe2c4e9f6380f4c66e0f6380f4cf3
+.octa 0xf6380f4c66e8f6380f4cf3000003508f,0xf0f6380f4cf3000003588ff6fbe2c4f1,0xf3000003608ff6fbe2c4f9f6380f4c66,0x8ff6fbe2c4c1f6380f4c66f8f6380f4c
+.octa 0xc9f6380f4c66c0f6380f4cf300000368,0x380f4cf3d5f6380f4c66cdf6380f4cf3,0xd3af0f490000000100000001ba48d5f6,0xb9c0f6f3e2c4ffffffff00000001b848
+.octa 0xbdd11148d8014cc9f6a3e2c4ffffffff,0xee1949cd1949c42949ed114800000000,0x49d1014900da834800d8834900df8349,0x4b0978b4800000000bb4100d283
+.octa 0xf6380f4cf3000003408ff6fbe2c4ed31,0x3488ff6fbe2c4e9f6380f4c66e0,0xf6fbe2c4f1f6380f4c66e8f6380f4cf3,0xf6380f4c66f0f6380f4cf3000003508f
+.octa 0xf8f6380f4cf3000003588ff6fbe2c4f9,0xf3000003608ff6fbe2c4c1f6380f4c66,0x8ff6fbe2c4c9f6380f4c66c0f6380f4c,0xd1f6380f4c66c8f6380f4cf300000368
+.octa 0x380f4cf3ddf6380f4c66d5f6380f4cf3,0xd4af0f490000000100000001ba48ddf6,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e0014cc9f69be2c4ffffffff
+.octa 0xef1949ce1949c52949ed114800000000,0x49d2014900da834800d9834900d88349,0x4b8978b4800000000bc4100d383,0xf6380f4cf3000003408ff6fbe2c4ed31
+.octa 0x3488ff6fbe2c4f1f6380f4c66e8,0xf6fbe2c4f9f6380f4c66f0f6380f4cf3,0xf6380f4c66f8f6380f4cf3000003508f,0xc0f6380f4cf3000003588ff6fbe2c4c1
+.octa 0xf3000003608ff6fbe2c4c9f6380f4c66,0x8ff6fbe2c4d1f6380f4c66c8f6380f4c,0xd9f6380f4c66d0f6380f4cf300000368,0x380f4cf3e5f6380f4c66ddf6380f4cf3
+.octa 0xd5af0f490000000100000001ba48e5f6,0xb9c0f6f3e2c4ffffffff00000001b848,0xbdd11148e8014cc9f693e2c4ffffffff,0xe81949cf1949c62949ed114800000000
+.octa 0x49d3014900da834800da834900d98349,0x7f1b4c40772b4c00000000bd4100d483,0x5f1b4c60571b4c584f1b4c50471b4c48,0xe2c148c28948c189c0194800dc834968
+.octa 0xe81149d71149ce0149e5d148c5894820,0x340b7894cc31149c21149c11149,0x894c0000035087894c00000348bf894c,0x689f894c0000036097894c000003588f
+.octa 0x5b8af8b48000005b09f8b48000003,0x4c000005c8af8b4c000005c0a78b4c00
+.byte 0x8b,0xb7,0xd0,0x05,0x00,0x00,0x4c,0x8b,0xbf,0xd8,0x05,0x00,0x00,0xc3
+.p2align 6",
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
 }

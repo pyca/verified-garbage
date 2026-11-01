@@ -9,7 +9,10 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_selftest_add(a: u64, b: u64) -> u64 {
     core::arch::naked_asm!(
-        r".byte 72,137,248,72,1,240,195",
-        r".p2align 6",
+        // mov rax, rdi
+        // add rax, rsi
+        // ret
+        r".byte 0x48,0x89,0xf8,0x48,0x01,0xf0,0xc3
+.p2align 6",
     )
 }

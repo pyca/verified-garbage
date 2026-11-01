@@ -14,8 +14,36 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0xeb0274c83949f0894900000000c0c748,0xb60f461b74f0394900000000c0c7492f,0xc08349c8094cd1314d0214b60f46070c,0x3fe8c14801e8834800ebe775f0394901
-.byte 195",
-        r".p2align 6",
+        // mov rax, 0
+        // mov r8, rsi
+        // cmp r8, rcx
+        r".byte 0x48,0xc7,0xc0,0x00,0x00,0x00,0x00,0x49,0x89,0xf0,0x49,0x39,0xc8
+je 20f
+jmp 21f
+20:",
+        // mov r8, 0
+        // cmp r8, rsi
+        r".byte 0x49,0xc7,0xc0,0x00,0x00,0x00,0x00,0x49,0x39,0xf0
+je 22f
+24:",
+        // movzx r9d, BYTE PTR [rdi+r8*1]
+        // movzx r10d, BYTE PTR [rdx+r8*1]
+        // xor r9, r10
+        // or rax, r9
+        // add r8, 1
+        // cmp r8, rsi
+        r".octa 0xc8094cd1314d0214b60f46070cb60f46
+.byte 0x49,0x83,0xc0,0x01,0x49,0x39,0xf0
+jne 24b
+jmp 23f
+22:
+23:",
+        // sub rax, 1
+        // shr rax, 63
+        r".byte 0x48,0x83,0xe8,0x01,0x48,0xc1,0xe8,0x3f
+21:",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
