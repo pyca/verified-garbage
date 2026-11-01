@@ -218,22 +218,26 @@ theorem initHead_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : 
       (k₇.gpr .x14 (by decide)).trans ((k₆.gpr .x14 (by decide)).trans h14), by rw [c₇, c₆, c₅]⟩,
       ((k16.trans k₇)).mono (by decide)⟩
 
-/-- The start's last block: `b`'s word 0 set, `-m⁻¹` into lane 1 of `v18`
-and `d = 1` into lane 0, and `x15 := 3 n + 2`. -/
+/-- The start's last block: `b`'s word 0 set, `-(m | 1)⁻¹` into lane 1 of
+`v18` and `d = 1` into lane 0, `f`'s word 0 or'ed with 1, and
+`x15 := 3 n + 2`. -/
 theorem initLast_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
     (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
-    (hn : n ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) {iB iM : Nat} (hB : iB < 16) (hM : iM < 16)
-    (dBM : iB ≠ iM) (hodd : (word s.mem B (slot w iM)).toNat % 2 = 1) :
+    (hn : n ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) {iB iM iF : Nat} (hB : iB < 16) (hM : iM < 16)
+    (hF : iF < 16) (dBM : iB ≠ iM) (dFB : iF ≠ iB) :
     WP isa (.block (base iB .x16 ++ ([movi .x3 1, st .x3 .x16] : List Instr) ++ base iM .x3 ++
-      ([ld .x3 .x3] : List Instr) ++ minv ++ [.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] ++
-      batchCount)) s fun t =>
-      (t.mem = s.mem.writeW (off B (slot w iB)) 1#64 ∧ laneOf t .v18 0 = 1#64 ∧
-        ((word s.mem B (slot w iM)).toNat * (laneOf t .v18 1).toNat + 1) % 2 ^ 64 = 0 ∧
+      ([ld .x3 .x3, movi .x4 1, .logic .orr .x .x3 .x3 .x4] : List Instr) ++ minv ++
+      [.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] ++ base iF .x16 ++
+      ([ld .x4 .x16, .logic .orr .x .x4 .x4 .x3, st .x4 .x16] : List Instr) ++ batchCount)) s fun t =>
+      (t.mem = (s.mem.writeW (off B (slot w iB)) 1#64).writeW (off B (slot w iF))
+          (word s.mem B (slot w iF) ||| 1#64) ∧ laneOf t .v18 0 = 1#64 ∧
+        ((word s.mem B (slot w iM) ||| 1#64).toNat * (laneOf t .v18 1).toNat + 1) % 2 ^ 64 = 0 ∧
         (∀ r, r ≠ .v18 → t.v r = s.v r) ∧ t.gpr .x15 = BitVec.ofNat 64 (3 * n + 2)) ∧
       Keep [.x3, .x4, .x5, .x6, .x15, .x16] s t := by
   have hn' := hs.nowrap
   have sB := Nat.le_trans (slot_lt (w := w) hB) hZ
   have sM := Nat.le_trans (slot_lt (w := w) hM) hZ
+  have sF := Nat.le_trans (slot_lt (w := w) hF) hZ
   have bv : ∀ j r, (Code.block (base j r) : Prog isa).allInstrs (fun i => (vdstOf i).isNone) = true := fun j r => by
     simp only [Code.allInstrs_eq, instrs, base_vnone]
   simp only [List.append_assoc]
@@ -250,26 +254,46 @@ theorem initLast_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : 
   have wM : word s₃.mem B (slot w iM) = word s.mem B (slot w iM) := by
     rw [m₃, m₂, (writeW_outside _ B _ (by omega)).word (by
       rcases slot_apart (w := w) (a := 8) (b := 8) dBM.symm (by omega) (by omega) with h | h <;> omega) (by omega)]
-  refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x3] (Q := fun t =>
-      t.gpr .x3 = word s.mem B (slot w iM) ∧ t.mem = s₃.mem ∧ t.v = s₃.v)
-    (by brun [h3, (hs.congr k13.wr).ld (show slot w iM + 8 ≤ Z by omega), wM, RegUpd.v_write])
+  refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x3, .x4] (Q := fun t =>
+      t.gpr .x3 = word s.mem B (slot w iM) ||| 1#64 ∧ t.mem = s₃.mem ∧ t.v = s₃.v)
+    (by brun [h3, (hs.congr k13.wr).ld (show slot w iM + 8 ≤ Z by omega), wM, RegUpd.v_write]; rfl)
     (by decide) (by decide) (by decide +kernel)) fun s₄ ⟨⟨h3', m₄, v₄⟩, k₄⟩ => ?_)
   have k14 := k13.trans k₄
-  refine WP.block_append_iff.mpr (WP.mono (WP.vfix (minv_ok s₄ (by rw [h3']; exact hodd)) (by decide +kernel))
+  have odd : (s₄.gpr .x3).toNat % 2 = 1 := by
+    rw [h3', BitVec.toNat_or, BitVec.toNat_ofNat]
+    exact Nat.or_mod_two_eq_one.mpr (.inr rfl)
+  refine WP.block_append_iff.mpr (WP.mono (WP.vfix (minv_ok s₄ odd) (by decide +kernel))
     fun s₅ ⟨⟨hmi, k₅, m₅⟩, v₅⟩ => ?_)
   have k15 := k14.trans k₅
-  refine WP.mono (WP.keep [.x3, .x15] (Q := fun t => laneOf t .v18 0 = 1#64 ∧ laneOf t .v18 1 = s₅.gpr .x15 ∧
-      (∀ r, r ≠ .v18 → t.v r = s₅.v r) ∧ t.mem = s₅.mem ∧ t.gpr .x15 = BitVec.ofNat 64 (3 * n + 2))
+  refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x3] (Q := fun t => laneOf t .v18 0 = 1#64 ∧
+      laneOf t .v18 1 = s₅.gpr .x15 ∧ (∀ r, r ≠ .v18 → t.v r = s₅.v r) ∧ t.mem = s₅.mem ∧ t.gpr .x3 = 1#64)
     (by
-      unfold batchCount
-      brun [exec_ins, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_write, (k15.gpr .x12 (by decide)).trans h12]
+      brun [exec_ins, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_write]
       simp (config := { decide := true }) only [laneOf, RegUpd.v_write, RegUpd.v_setV, ite_true, Nat.mul_zero,
         Nat.mul_one, extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide),
         extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide),
         extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide),
-        extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), ite_false, true_and,
-        off, BitVec.ofNat_add_ofNat]
-      refine ⟨fun r h => by simp only [h, ite_false], by congr 1; omega⟩) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨l0, l1, lv, m₆, h15⟩, k₆⟩ =>
-    ⟨⟨by rw [m₆, m₅, m₄, m₃, m₂], l0, by rw [l1]; exact hmi ▸ (by rw [h3']), fun r hr => by
-      rw [lv r hr, v₅, v₄, v₃, v₂, v₁], h15⟩, (k15.trans k₆).mono (by decide)⟩
+        extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), ite_false, true_and]
+      exact fun r h => by simp only [h, ite_false]) (by decide) (by decide) (by decide +kernel))
+    fun s₆ ⟨⟨l0, l1, lv, m₆, h3₆⟩, k₆⟩ => ?_)
+  have k16 := k15.trans k₆
+  refine WP.block_append_iff.mpr (WP.mono (WP.vfix (base_ok iF .x16 ((k16.gpr .x0 (by decide)).trans h0)
+    ((k16.gpr .x11 (by decide)).trans h11)) (bv _ _)) fun s₇ ⟨⟨⟨h16₇, m₇, _⟩, k₇⟩, v₇⟩ => ?_)
+  have k17 := k16.trans k₇
+  have hm₇ : s₇.mem = s.mem.writeW (off B (slot w iB)) 1#64 := by rw [m₇, m₆, m₅, m₄, m₃, m₂]
+  have wF : word s₇.mem B (slot w iF) = word s.mem B (slot w iF) := by
+    rw [hm₇, (writeW_outside _ B _ (by omega)).word (by
+      rcases slot_apart (w := w) (a := 8) (b := 8) dFB (by omega) (by omega) with h | h <;> omega) (by omega)]
+  refine WP.mono (WP.keep [.x4, .x15] (Q := fun t => t.mem = s₇.mem.writeW (off B (slot w iF))
+      (word s.mem B (slot w iF) ||| 1#64) ∧ t.v = s₇.v ∧ t.gpr .x15 = BitVec.ofNat 64 (3 * n + 2))
+    (by
+      unfold batchCount
+      brun [h16₇, (hs.congr k17.wr).ld (show slot w iF + 8 ≤ Z by omega),
+        (hs.congr k17.wr).st (show slot w iF + 8 ≤ Z by omega), wF, (k₇.gpr .x3 (by decide)).trans h3₆,
+        RegUpd.v_write, (k17.gpr .x12 (by decide)).trans h12]
+      simp only [off, BitVec.ofNat_add_ofNat]
+      congr 1; omega) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨m₈, v₈, h15⟩, k₈⟩ =>
+    ⟨⟨by rw [m₈, hm₇], by rw [laneOf, v₈, v₇, ← laneOf]; exact l0,
+      by rw [laneOf, v₈, v₇, ← laneOf, l1, ← h3']; exact hmi,
+      fun r hr => by rw [v₈, v₇, lv r hr, v₅, v₄, v₃, v₂, v₁], h15⟩, (k17.trans k₈).mono (by decide)⟩
 end VG.Proof.Rsa.AArch64

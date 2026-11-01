@@ -34,12 +34,21 @@ theorem invRunS_d {p m x : Int} : ∀ k, |(invRunS 59 p m x k).d| ≤ 1 + 118 * 
     push_cast at this h ⊢
     linarith
 
-theorem batch64 {n k : Nat} {p m x : Int} (hp : p % 2 = 1) (hp1 : 1 < p) (hm : (p * m + 1) % 2 ^ 64 = 0)
+/-- `invRunS`'s `d`, `f`, `g` are `invRun`'s, whatever `m`. -/
+theorem invRunS_dfg' {N : Nat} {p m x : Int} : ∀ B, (invRunS N p m x B).d = (invRun N p m x B).d ∧
+    (invRunS N p m x B).f = (invRun N p m x B).f ∧ (invRunS N p m x B).g = (invRun N p m x B).g
+  | 0 => ⟨rfl, rfl, rfl⟩
+  | B + 1 => by
+    obtain ⟨hd, hf, hg⟩ := invRunS_dfg' (N := N) (p := p) (m := m) (x := x) B
+    simp only [invRunS, invRun, batchS, batch]
+    rw [hd, hf, hg]
+    exact ⟨rfl, rfl, rfl⟩
+
+/-- The `d`, `f`, `g` half of `batch64`: for any odd `p` and any `m`. -/
+theorem batch64fg {n k : Nat} {p m x : Int} (hp : p % 2 = 1) (hp0 : 0 ≤ p)
     (hx : 0 ≤ x) (hpC : p < 2 ^ (64 * n + 1)) (hxC : x < 2 ^ (64 * n + 1)) (hd : 1 + 118 * k ≤ 2 ^ 30) :
     (invRunS 59 p m x k).f % 2 = 1 ∧ |(invRunS 59 p m x k).d| ≤ 2 ^ 30 ∧
     |(invRunS 59 p m x k).f| < 2 ^ (64 * n + 1) ∧ |(invRunS 59 p m x k).g| < 2 ^ (64 * n + 1) ∧
-    (-p < (invRunS 59 p m x k).a ∧ (invRunS 59 p m x k).a < 2 * p ∧
-      -p < (invRunS 59 p m x k).b ∧ (invRunS 59 p m x k).b < 2 * p) ∧
     |(msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).u| +
       |(msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).v| ≤ 2 ^ 59 ∧
     |(msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).q| +
@@ -52,6 +61,34 @@ theorem batch64 {n k : Nat} {p m x : Int} (hp : p % 2 = 1) (hp1 : 1 < p) (hm : (
         (invRunS 59 p m x k).f +
       (msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).r *
         (invRunS 59 p m x k).g = 2 ^ 59 * (invRunS 59 p m x (k + 1)).g ∧
+    (invRunS 59 p m x (k + 1)).d =
+      (msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).d := by
+  set s := invRunS 59 p m x k with hs
+  set t := msteps 59 (MSt.init s.d s.f s.g) with ht
+  obtain ⟨rd, rf, rg⟩ := invRunS_dfg' (N := 59) (p := p) (m := m) (x := x) k
+  obtain ⟨dfg, fodd⟩ := invRun_dfg (N := 59) (m := m) (x := x) hp k
+  have hf : s.f % 2 = 1 := by rw [rf]; exact fodd
+  -- `|f|, |g|` stay below the start's bound.
+  have hle := divsteps_le (M := 2 ^ (64 * n + 1) - 1) (d := 1) (f := p) (g := x) (by decide) hp
+    (by rw [abs_of_nonneg hp0]; omega) (by rw [abs_of_nonneg hx]; omega) (59 * k)
+  rw [← dfg] at hle
+  simp only at hle
+  rw [← rf, ← rg] at hle
+  obtain ⟨bu, bq⟩ := msteps_bnd s.d s.f s.g 59
+  obtain ⟨m1, m2⟩ := msteps_mat (d := s.d) (g := s.g) hf 59
+  have hd' := invRunS_d (p := p) (m := m) (x := x) k
+  have hpos : (0 : Int) < 2 ^ 59 := by decide
+  refine ⟨hf, hd'.trans (by exact_mod_cast hd), by linarith [hle.1], by linarith [hle.2], bu, bq, ?_, ?_,
+    by simp only [invRunS, batchS, hs, ht]⟩
+  · show t.u * s.f + t.v * s.g = 2 ^ 59 * ((t.u * s.f + t.v * s.g) / 2 ^ 59)
+    rw [← m1, Int.mul_ediv_cancel_left _ hpos.ne']
+  · show t.q * s.f + t.r * s.g = 2 ^ 59 * ((t.q * s.f + t.r * s.g) / 2 ^ 59)
+    rw [← m2, Int.mul_ediv_cancel_left _ hpos.ne']
+
+/-- The `a`, `b` half of `batch64`: for an odd `p > 1` and `m = -p⁻¹`. -/
+theorem batch64ab {k : Nat} {p m x : Int} (hp1 : 1 < p) (hm : (p * m + 1) % 2 ^ 64 = 0) :
+    (-p < (invRunS 59 p m x k).a ∧ (invRunS 59 p m x k).a < 2 * p ∧
+      -p < (invRunS 59 p m x k).b ∧ (invRunS 59 p m x k).b < 2 * p) ∧
     (invRunS 59 p m x (k + 1)).a = mredRaw p m
       ((msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).u *
         (invRunS 59 p m x k).a +
@@ -61,31 +98,9 @@ theorem batch64 {n k : Nat} {p m x : Int} (hp : p % 2 = 1) (hp1 : 1 < p) (hm : (
       ((msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).q *
         (invRunS 59 p m x k).a +
        (msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).r *
-        (invRunS 59 p m x k).b) ∧
-    (invRunS 59 p m x (k + 1)).d =
-      (msteps 59 (MSt.init (invRunS 59 p m x k).d (invRunS 59 p m x k).f (invRunS 59 p m x k).g)).d := by
-  set s := invRunS 59 p m x k with hs
-  set t := msteps 59 (MSt.init s.d s.f s.g) with ht
-  obtain ⟨rd, rf, rg, -, -⟩ := invRunS_rel (N := 59) (x := x) hp (by omega) hm k
-  obtain ⟨dfg, fodd⟩ := invRun_dfg (N := 59) (m := m) (x := x) hp k
-  have hf : s.f % 2 = 1 := by rw [rf]; exact fodd
-  -- `|f|, |g|` stay below the start's bound.
-  have hle := divsteps_le (M := 2 ^ (64 * n + 1) - 1) (d := 1) (f := p) (g := x) (by decide) hp
-    (by rw [abs_of_nonneg (by omega)]; omega) (by rw [abs_of_nonneg hx]; omega) (59 * k)
-  rw [← dfg] at hle
-  simp only at hle
-  rw [← rf, ← rg] at hle
-  obtain ⟨bu, bq⟩ := msteps_bnd s.d s.f s.g 59
-  obtain ⟨m1, m2⟩ := msteps_mat (d := s.d) (g := s.g) hf 59
-  have hd' := invRunS_d (p := p) (m := m) (x := x) k
-  have hpos : (0 : Int) < 2 ^ 59 := by decide
-  refine ⟨hf, hd'.trans (by exact_mod_cast hd), by linarith [hle.1], by linarith [hle.2],
-    invRunS_range (x := x) (by decide) hp1 hm k, bu, bq, ?_, ?_, by simp only [invRunS, batchS, hs, ht], by simp only [invRunS, batchS, hs, ht],
-    by simp only [invRunS, batchS, hs, ht]⟩
-  · show t.u * s.f + t.v * s.g = 2 ^ 59 * ((t.u * s.f + t.v * s.g) / 2 ^ 59)
-    rw [← m1, Int.mul_ediv_cancel_left _ hpos.ne']
-  · show t.q * s.f + t.r * s.g = 2 ^ 59 * ((t.q * s.f + t.r * s.g) / 2 ^ 59)
-    rw [← m2, Int.mul_ediv_cancel_left _ hpos.ne']
+        (invRunS 59 p m x k).b) :=
+  ⟨invRunS_range (x := x) (by decide) hp1 hm k, by simp only [invRunS, batchS],
+    by simp only [invRunS, batchS]⟩
 
 /-- A matrix row on numbers below `M` in magnitude. -/
 theorem comb_bound {u v f g M : Int} (hu : |u| + |v| ≤ 2 ^ 59) (hf : |f| ≤ M) (hg : |g| ≤ M) :

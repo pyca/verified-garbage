@@ -79,14 +79,18 @@ structure ICfg.Ok (C : ICfg) : Prop where
   dX₂M : C.iX₂ ≠ C.iM
   dX₂T : C.iX₂ ≠ C.iT
   dMT : C.iM ≠ C.iT
-  podd : C.p % 2 = 1
-  p1 : 1 < C.p
   pC : C.p < 2 ^ (64 * C.n)
   xC : C.x < 2 ^ (64 * C.n + 1)
-  hm : ((C.p : Int) * C.mi.toNat + 1) % 2 ^ 64 = 0
+  hm : ((C.p + (1 - C.p % 2) : Nat) * C.mi.toNat + 1 : Int) % 2 ^ 64 = 0
+
+/-- The odd start of `f`: `p`, or `p + 1` for an even `p`. -/
+def ICfg.pf (C : ICfg) : Nat := C.p + (1 - C.p % 2)
+
+/-- The modulus the inverse is right for: odd and above 1. -/
+def ICfg.Good (C : ICfg) : Prop := C.p % 2 = 1 ∧ 1 < C.p
 
 /-- The state after `k` batches. -/
-def ICfg.st (C : ICfg) (k : Nat) : Divstep.IState := Divstep.invRunS 59 C.p C.mi.toNat C.x k
+def ICfg.st (C : ICfg) (k : Nat) : Divstep.IState := Divstep.invRunS 59 C.pf C.mi.toNat C.x k
 
 /-- The arrays the batches change. -/
 def ICfg.ranges (C : ICfg) : List (Nat × Nat) :=
@@ -101,8 +105,8 @@ structure LInv (C : ICfg) (s₀ : State) (k : Nat) (s : State) : Prop where
   x12 : s.gpr .x12 = BitVec.ofNat 64 C.n
   f : sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iV) (C.n + 1)) = (C.st k).f
   g : sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iU) (C.n + 1)) = (C.st k).g
-  a : sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iX₂) (C.n + 1)) = (C.st k).a
-  b : sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iX₁) (C.n + 1)) = (C.st k).b
+  a : C.Good → sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iX₂) (C.n + 1)) = (C.st k).a
+  b : C.Good → sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iX₁) (C.n + 1)) = (C.st k).b
   d : laneOf s .v18 0 = BitVec.ofInt 64 (C.st k).d
   mi : laneOf s .v18 1 = C.mi
   m : wv s.mem C.B (slot C.w C.iM) C.n = C.p
@@ -143,14 +147,14 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
   have hn' := hI.scr.nowrap
   have hZ' : slot C.w 16 + C.B.toNat ≤ 2 ^ 64 := by have := hC.hZ; omega
   have hL : (1 : Nat) ≤ C.n + 1 := by omega
-  have hpC : (C.p : Int) < 2 ^ (64 * C.n + 1) := by
-    have := hC.pC; have : C.p < 2 ^ (64 * C.n + 1) := by rw [Nat.pow_succ]; omega
+  have hpC : (C.pf : Int) < 2 ^ (64 * C.n + 1) := by
+    have := hC.pC; have : C.pf < 2 ^ (64 * C.n + 1) := by
+      unfold ICfg.pf; rw [Nat.pow_succ]; omega
     exact_mod_cast this
   have hxC : (C.x : Int) < 2 ^ (64 * C.n + 1) := by exact_mod_cast hC.xC
-  obtain ⟨fodd, dbnd, bf, bg, ⟨a0, a1, b0, b1⟩, buv, bqr, ef, eg, ea, eb, ed⟩ :=
-    Rsa.Divstep.batch64 (n := C.n) (k := k) (p := C.p) (m := C.mi.toNat) (x := C.x)
-      (by exact_mod_cast hC.podd) (by exact_mod_cast hC.p1) hC.hm (by omega) hpC hxC
-      (by have := hC.n21; omega)
+  obtain ⟨fodd, dbnd, bf, bg, buv, bqr, ef, eg, ed⟩ :=
+    Rsa.Divstep.batch64fg (n := C.n) (k := k) (p := C.pf) (m := C.mi.toNat) (x := C.x)
+      (by unfold ICfg.pf; omega) (by omega) (by omega) hpC hxC (by have := hC.n21; omega)
   -- The low words of `f` and `g`.
   have low : ∀ {j : Nat} {y : Int}, sgn (C.n + 1) (wv s.mem C.B (slot C.w j) (C.n + 1)) = y →
       ((word s.mem C.B (slot C.w j)).toNat : Int) % 2 ^ 64 = y % 2 ^ 64 := fun {j y} h => by
@@ -183,17 +187,35 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
   have lmi : laneOf s₂ .v18 1 = C.mi := by rw [laneOf, v₂, ← laneOf, l2, hI.mi]
   have lv' : ∀ (r : VReg) (i : Nat), r = .v16 ∨ r = .v17 → laneOf s₂ r i = laneOf s₁ r i := fun r i _ => by
     rw [laneOf, v₂]
-  obtain ⟨ra0, ra1, rb0, rb1⟩ := Divstep.invRunS_range (N := 59) (p := C.p) (m := C.mi.toNat) (x := C.x) (by decide)
-    (by exact_mod_cast hC.p1) hC.hm (k + 1)
+  have hpm : wv s₂.mem C.B (slot C.w C.iM) C.n = C.p := by
+    rw [keepFG hC.dMT hC.dUM.symm hC.dVM.symm (by have := hC.nw; omega) hC.hM]; exact hI.m
   refine WP.mono (abStage_ok (hI.scr.congr k12.wr) ((k12.gpr .x0 (by decide)).trans hI.x0)
     ((k₂.gpr .x11 (by decide)).trans (h11.trans hI.x11)) ((k₂.gpr .x12 (by decide)).trans (h12.trans hI.x12))
     hC.n1 hC.nw hC.w24 hC.hZ hC.hX₂ hC.hX₁ hC.hT hC.hM hC.dX.symm hC.dX₂T hC.dX₁T hC.dX₂M hC.dX₁M hC.dMT.symm hC.pC
     buv bqr (by rw [lv' _ _ (.inl rfl)]; exact l3) (by rw [lv' _ _ (.inl rfl)]; exact l4)
-    (by rw [lv' _ _ (.inr rfl)]; exact l5) (by rw [lv' _ _ (.inr rfl)]; exact l6) (by rw [lmi]; exact hC.hm)
-    (by rw [keepFG hC.dMT hC.dUM.symm hC.dVM.symm (by have := hC.nw; omega) hC.hM]; exact hI.m)
-    (by rw [keepFG hC.dX₂T hC.dUX₂.symm hC.dVX₂.symm (by have := hC.nw; omega) hC.hX₂]; exact hI.a)
-    (by rw [keepFG hC.dX₁T hC.dUX₁.symm hC.dVX₁.symm (by have := hC.nw; omega) hC.hX₁]; exact hI.b)
-    ⟨a0, a1⟩ ⟨b0, b1⟩ (by rw [lmi]; exact ea) (by rw [lmi]; exact eb) ⟨ra0, ra1⟩ ⟨rb0, rb1⟩) fun t ⟨a₃, b₃, fr₃, k₃, v₃⟩ => ?_
+    (by rw [lv' _ _ (.inr rfl)]; exact l5) (by rw [lv' _ _ (.inr rfl)]; exact l6)
+    (a := (C.st k).a) (b := (C.st k).b) rfl rfl)
+    fun t ⟨abv, fr₃, k₃, v₃⟩ => ?_
+  -- For a good `p`: `pf = p`, and `a`, `b` are those of the next batch.
+  have ab₃ : C.Good → sgn (C.n + 1) (wv t.mem C.B (slot C.w C.iX₂) (C.n + 1)) = (C.st (k + 1)).a ∧
+      sgn (C.n + 1) (wv t.mem C.B (slot C.w C.iX₁) (C.n + 1)) = (C.st (k + 1)).b := fun G => by
+    have hpf : C.pf = C.p := by unfold ICfg.pf; have := G.1; omega
+    have hm' : ((C.p : Int) * C.mi.toNat + 1) % 2 ^ 64 = 0 := by
+      have := hC.hm; rw [show C.p + (1 - C.p % 2) = C.p by have := G.1; omega] at this; exact this
+    have hp1 : (1 : Int) < C.p := by exact_mod_cast G.2
+    obtain ⟨⟨a0, a1, b0, b1⟩, ea, eb⟩ := Rsa.Divstep.batch64ab (k := k) (x := (C.x : Int)) hp1 hm'
+    obtain ⟨ra0, ra1, rb0, rb1⟩ := Divstep.invRunS_range (N := 59) (p := C.p) (m := C.mi.toNat) (x := C.x)
+      (by decide) hp1 hm' (k + 1)
+    have ha := hI.a G
+    have hb := hI.b G
+    simp only [ICfg.st] at ha hb abv ⊢
+    rw [hpf] at ha hb abv ⊢
+    rw [lmi] at abv
+    rw [ea] at ra0 ra1; rw [eb] at rb0 rb1; rw [ea, eb]
+    exact abv ⟨hm', hpm,
+      by rw [keepFG hC.dX₂T hC.dUX₂.symm hC.dVX₂.symm (by have := hC.nw; omega) hC.hX₂]; exact ha,
+      by rw [keepFG hC.dX₁T hC.dUX₁.symm hC.dVX₁.symm (by have := hC.nw; omega) hC.hX₁]; exact hb,
+      ⟨a0, a1⟩, ⟨b0, b1⟩, ⟨ra0, ra1⟩, ⟨rb0, rb1⟩⟩
   have k13 := k12.trans k₃
   have keepAB : ∀ {j : Nat} {L : Nat}, j ≠ C.iT → j ≠ C.iX₂ → j ≠ C.iX₁ → L ≤ C.w + 2 → j < 16 →
       wv t.mem C.B (slot C.w j) L = wv s₂.mem C.B (slot C.w j) L := fun {j L} a b c hL' hj =>
@@ -206,7 +228,8 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
     (k₃.gpr .x11 (by decide)).trans ((k₂.gpr .x11 (by decide)).trans (h11.trans hI.x11)),
     (k₃.gpr .x12 (by decide)).trans ((k₂.gpr .x12 (by decide)).trans (h12.trans hI.x12)),
     by rw [keepAB hC.dVT hC.dVX₂ hC.dVX₁ (by have := hC.nw; omega) hC.hV]; exact f₂,
-    by rw [keepAB hC.dUT hC.dUX₂ hC.dUX₁ (by have := hC.nw; omega) hC.hU]; exact g₂, a₃, b₃,
+    by rw [keepAB hC.dUT hC.dUX₂ hC.dUX₁ (by have := hC.nw; omega) hC.hU]; exact g₂, fun G => (ab₃ G).1,
+    fun G => (ab₃ G).2,
     by rw [laneOf, v₃, v₂, ← laneOf, l1]; exact congrArg _ ed.symm,
     by rw [laneOf, v₃, v₂, ← laneOf, l2, hI.mi],
     by rw [keepAB hC.dMT hC.dX₂M.symm hC.dX₁M.symm (by have := hC.nw; omega) hC.hM,

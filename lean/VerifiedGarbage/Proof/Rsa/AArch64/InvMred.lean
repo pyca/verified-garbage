@@ -177,12 +177,12 @@ theorem copyLoop_ok {s : State} {B : Addr} {Z L eS eO : Nat} (hs : Scr s B Z)
 theorem mredP_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
     (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
     (hn1 : 1 ≤ n) (hn : n ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) {iA iM iO : Nat}
-    (hA : iA < 16) (hM : iM < 16) (hO : iO < 16) (dAM : iA ≠ iM) (dOM : iO ≠ iM)
-    (hm : ((wv s.mem B (slot w iM) n : Int) * ((s.v .v18).extractLsb' 64 64).toNat + 1) % 2 ^ 64 = 0) :
+    (hA : iA < 16) (hM : iM < 16) (hO : iO < 16) (dAM : iA ≠ iM) (dOM : iO ≠ iM) :
     WP isa (seqs (mredP iA iM iO)) s fun t =>
-      (wv t.mem B (slot w iO) (n + 1) : Int) = Divstep.mredRaw (wv s.mem B (slot w iM) n)
+      (((wv s.mem B (slot w iM) n : Int) * ((s.v .v18).extractLsb' 64 64).toNat + 1) % 2 ^ 64 = 0 →
+        (wv t.mem B (slot w iO) (n + 1) : Int) = Divstep.mredRaw (wv s.mem B (slot w iM) n)
         ((s.v .v18).extractLsb' 64 64).toNat (Divstep.sgn (n + 1) (wv s.mem B (slot w iA) (n + 1))) %
-          2 ^ (64 * (n + 1)) ∧
+          2 ^ (64 * (n + 1))) ∧
       Frm B [(slot w iA, 8 * (n + 2)), (slot w iO, 8 * (n + 1))] s.mem t.mem ∧
       Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x14, .x16, .x17] s t ∧ t.v = s.v := by
   have hn' := hs.nowrap
@@ -198,9 +198,10 @@ theorem mredP_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.g
   have hvn : (seqs (mredP iA iM iO)).allInstrs (fun i => (vdstOf i).isNone) = true := by
     simp only [mredP, seqs, mulAddRow, Code.allInstrs_eq, instrs, List.all_append, base_vnone]; decide
   suffices h : WP isa (seqs (mredP iA iM iO)) s fun t =>
-      (wv t.mem B (slot w iO) (n + 1) : Int) = Divstep.mredRaw (wv s.mem B (slot w iM) n)
+      (((wv s.mem B (slot w iM) n : Int) * ((s.v .v18).extractLsb' 64 64).toNat + 1) % 2 ^ 64 = 0 →
+        (wv t.mem B (slot w iO) (n + 1) : Int) = Divstep.mredRaw (wv s.mem B (slot w iM) n)
         ((s.v .v18).extractLsb' 64 64).toNat (Divstep.sgn (n + 1) (wv s.mem B (slot w iA) (n + 1))) %
-          2 ^ (64 * (n + 1)) ∧
+          2 ^ (64 * (n + 1))) ∧
       Frm B [(slot w iA, 8 * (n + 2)), (slot w iO, 8 * (n + 1))] s.mem t.mem ∧
       Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x14, .x16, .x17] s t from
     WP.mono (WP.vfix h hvn) fun t ⟨⟨a, b, c⟩, v⟩ => ⟨a, b, c, v⟩
@@ -243,7 +244,7 @@ theorem mredP_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.g
   have hm₉ : s₉.mem = s₅.mem := by rw [m₉, m₈, m₇, m₆]
   refine WP.mono (copyLoop_ok (hs.congr ((((k15.trans k₆).trans k₇).trans k₈).trans k₉).wr)
     ((k₉.gpr .x16 (by decide)).trans ((k₈.gpr .x16 (by decide)).trans h16')) ((k₉.gpr .x17 (by decide)).trans h17)
-    h14 (by omega) (by omega) (by omega) (by omega) sep) fun t hI => ⟨?_, ?_, ?_⟩
+    h14 (by omega) (by omega) (by omega) (by omega) sep) fun t hI => ⟨fun hm => ?_, ?_, ?_⟩
   · have hO := hI.val
     rw [hm₉] at hO
     -- The sign extension.

@@ -305,7 +305,10 @@ def batch (iF iG iA iB iT iM : Nat) : Prog isa := seqs ([
 
 /-- The start: `x1`, `x2` saved, `f = m` (its word `n` cleared),
 `g = a + (m if a is even)`, `a = 0`, `b = 1`, `-m⁻¹` and `d = 1` into
-`v18`, and `x15 := 3 n + 2`. -/
+`v18`, and `x15 := 3 n + 2`. `m`'s word 0 is or'ed with 1 for `-m⁻¹`, and
+`f`'s with 1, so that the divsteps start from an odd `f` and every batch
+runs as for an odd `m` whatever `m` is: an even `m` changes the result
+alone, never what the code writes or reads. -/
 def batchInit (iF iG iA iB iM : Nat) : List (Prog isa) := [
   .block ([.vop (.ins .d2 .v19 0 .x1), .vop (.ins .d2 .v19 1 .x2)] ++ zeroTop iF ++ zeroTop iG ++ base iG .x8 ++
     ([ld .x3 .x8, movi .x4 1, .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1, movi .x7 0, mov .x14 .x12,
@@ -314,8 +317,10 @@ def batchInit (iF iG iA iB iM : Nat) : List (Prog isa) := [
   .block [.adc .x .x3 .x7 .x7, st .x3 .x5],
   .seq (.block (base iA .x8 ++ ([movi .x7 0] : List Instr))) zeroAcc,
   .seq (.block (base iB .x8 ++ ([movi .x7 0] : List Instr))) zeroAcc,
-  .block (base iB .x16 ++ ([movi .x3 1, st .x3 .x16] : List Instr) ++ base iM .x3 ++ ([ld .x3 .x3] : List Instr) ++
-    minv ++ [.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] ++ batchCount)]
+  .block (base iB .x16 ++ ([movi .x3 1, st .x3 .x16] : List Instr) ++ base iM .x3 ++
+    ([ld .x3 .x3, movi .x4 1, .logic .orr .x .x3 .x3 .x4] : List Instr) ++ minv ++
+    [.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] ++ base iF .x16 ++
+    ([ld .x4 .x16, .logic .orr .x .x4 .x4 .x3, st .x4 .x16] : List Instr) ++ batchCount)]
 
 /-- `[x] := -[x]` (`n + 1` words) where the mask `x15` is all ones. -/
 def cnegP (iX : Nat) : Prog isa :=

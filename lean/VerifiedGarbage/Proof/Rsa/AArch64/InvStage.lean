@@ -128,7 +128,8 @@ theorem Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm 
     have := hx r' hr'
     omega
 
-/-- The `a`, `b` half of a batch: `(a, b) := (mredRaw (u a + v b), mredRaw (q a + r b))`. -/
+/-- The `a`, `b` half of a batch: `(a, b) := (mredRaw (u a + v b), mredRaw (q a + r b))`
+where `-m⁻¹` is right and `a`, `b` and the results are in `(-p, 2p)`. -/
 theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
     (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
     (hn1 : 1 ≤ n) (hn : n ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) {iA iB iT iM : Nat}
@@ -137,26 +138,20 @@ theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s
     {u v q r a b a' b' : Int} {p : Nat} (hp : p < 2 ^ (64 * n)) (huv : |u| + |v| ≤ 2 ^ 59) (hqr : |q| + |r| ≤ 2 ^ 59)
     (lu : laneOf s .v16 0 = BitVec.ofInt 64 u) (lv : laneOf s .v16 1 = BitVec.ofInt 64 v)
     (lq : laneOf s .v17 0 = BitVec.ofInt 64 q) (lr : laneOf s .v17 1 = BitVec.ofInt 64 r)
-    (hm : ((p : Int) * (laneOf s .v18 1).toNat + 1) % 2 ^ 64 = 0) (hpm : wv s.mem B (slot w iM) n = p)
-    (ha : sgn (n + 1) (wv s.mem B (slot w iA) (n + 1)) = a) (hb : sgn (n + 1) (wv s.mem B (slot w iB) (n + 1)) = b)
-    (ra : -(p : Int) < a ∧ a < 2 * p) (rb : -(p : Int) < b ∧ b < 2 * p)
     (ea : a' = Divstep.mredRaw p (laneOf s .v18 1).toNat (u * a + v * b))
-    (eb : b' = Divstep.mredRaw p (laneOf s .v18 1).toNat (q * a + r * b))
-    (ra' : -(p : Int) < a' ∧ a' < 2 * p) (rb' : -(p : Int) < b' ∧ b' < 2 * p) :
+    (eb : b' = Divstep.mredRaw p (laneOf s .v18 1).toNat (q * a + r * b)) :
     WP isa (seqs ([rowP .v16 iA iB iT, rowP .v17 iA iB iB] ++ mredP iT iM iA ++ mredP iB iM iB)) s fun t =>
-      sgn (n + 1) (wv t.mem B (slot w iA) (n + 1)) = a' ∧ sgn (n + 1) (wv t.mem B (slot w iB) (n + 1)) = b' ∧
+      ((((p : Int) * (laneOf s .v18 1).toNat + 1) % 2 ^ 64 = 0 ∧ wv s.mem B (slot w iM) n = p ∧
+        sgn (n + 1) (wv s.mem B (slot w iA) (n + 1)) = a ∧ sgn (n + 1) (wv s.mem B (slot w iB) (n + 1)) = b ∧
+        (-(p : Int) < a ∧ a < 2 * p) ∧ (-(p : Int) < b ∧ b < 2 * p) ∧
+        (-(p : Int) < a' ∧ a' < 2 * p) ∧ (-(p : Int) < b' ∧ b' < 2 * p)) →
+        sgn (n + 1) (wv t.mem B (slot w iA) (n + 1)) = a' ∧ sgn (n + 1) (wv t.mem B (slot w iB) (n + 1)) = b') ∧
       Frm B [(slot w iT, 8 * (w + 2)), (slot w iA, 8 * (w + 2)), (slot w iB, 8 * (w + 2))] s.mem t.mem ∧
       Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x13, .x14, .x16, .x17] s t ∧ t.v = s.v := by
   have hn' := hs.nowrap
   have hZ' : slot w 16 + B.toNat ≤ 2 ^ 64 := by omega
   obtain ⟨u0, u1, v0, v1, uvA⟩ := Rsa.Divstep.row_parts huv
   obtain ⟨q0, q1, r0, r1, qrA⟩ := Rsa.Divstep.row_parts hqr
-  obtain ⟨baa, -, -⟩ := Rsa.Divstep.range_parts ra hp
-  obtain ⟨bbb, -, -⟩ := Rsa.Divstep.range_parts rb hp
-  obtain ⟨-, ra0, ra1⟩ := Rsa.Divstep.range_parts ra' hp
-  obtain ⟨-, rb0, rb1⟩ := Rsa.Divstep.range_parts rb' hp
-  obtain ⟨cr10, cr11⟩ := Rsa.Divstep.comb_range huv baa bbb
-  obtain ⟨cr20, cr21⟩ := Rsa.Divstep.comb_range hqr baa bbb
   have tu : (laneOf s .v16 0).toInt = u := by rw [lu]; exact Divstep.toInt_ofInt64 (by omega) (by omega)
   have tv : (laneOf s .v16 1).toInt = v := by rw [lv]; exact Divstep.toInt_ofInt64 (by omega) (by omega)
   have tq : (laneOf s .v17 0).toInt = q := by rw [lq]; exact Divstep.toInt_ofInt64 (by omega) (by omega)
@@ -172,8 +167,13 @@ theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s
   have A₁ := wv_out (L := n + 1) o₁ dAT.symm (by omega) (by omega) hZ' hA
   have B₁ := wv_out (L := n + 1) o₁ dBT.symm (by omega) (by omega) hZ' hB
   have M₁ := wv_out (L := n) o₁ dTM (by omega) (by omega) hZ' hM
-  have sT : sgn (n + 1) (wv s₁.mem B (slot w iT) (n + 1)) = u * a + v * b := by
-    rw [tu, tv] at e₁
+  rw [tu, tv] at e₁
+  have sT : sgn (n + 1) (wv s.mem B (slot w iA) (n + 1)) = a → sgn (n + 1) (wv s.mem B (slot w iB) (n + 1)) = b →
+      (-(p : Int) < a ∧ a < 2 * p) → (-(p : Int) < b ∧ b < 2 * p) →
+      sgn (n + 1) (wv s₁.mem B (slot w iT) (n + 1)) = u * a + v * b := fun ha hb ra rb => by
+    obtain ⟨baa, -, -⟩ := Rsa.Divstep.range_parts ra hp
+    obtain ⟨bbb, -, -⟩ := Rsa.Divstep.range_parts rb hp
+    obtain ⟨cr10, cr11⟩ := Rsa.Divstep.comb_range huv baa bbb
     rw [← ha, ← hb]
     exact Divstep.lin_sgn hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (wv_lt _ _ _ _) e₁ (by rw [ha, hb]; exact cr10)
       (by rw [ha, hb]; exact cr11)
@@ -184,8 +184,13 @@ theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s
   have tr' : ((s₁.v .v17).extractLsb' 64 64).toInt = r := by rw [v₁]; exact tr
   refine WP.mono (rowP_ok (hs.congr k₁.wr) e0 e11 e12 hn hw hZ (.inr rfl) hA hB hB
     (by rw [tq', tr']; exact qrA)) fun s₂ ⟨c₂, e₂, o₂, k₂, v₂⟩ => ?_
-  have sB₂ : sgn (n + 1) (wv s₂.mem B (slot w iB) (n + 1)) = q * a + r * b := by
-    rw [tq', tr', A₁, B₁] at e₂
+  rw [tq', tr', A₁, B₁] at e₂
+  have sB₂ : sgn (n + 1) (wv s.mem B (slot w iA) (n + 1)) = a → sgn (n + 1) (wv s.mem B (slot w iB) (n + 1)) = b →
+      (-(p : Int) < a ∧ a < 2 * p) → (-(p : Int) < b ∧ b < 2 * p) →
+      sgn (n + 1) (wv s₂.mem B (slot w iB) (n + 1)) = q * a + r * b := fun ha hb ra rb => by
+    obtain ⟨baa, -, -⟩ := Rsa.Divstep.range_parts ra hp
+    obtain ⟨bbb, -, -⟩ := Rsa.Divstep.range_parts rb hp
+    obtain ⟨cr20, cr21⟩ := Rsa.Divstep.comb_range hqr baa bbb
     rw [← ha, ← hb]
     exact Divstep.lin_sgn hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (wv_lt _ _ _ _) e₂ (by rw [ha, hb]; exact cr20)
       (by rw [ha, hb]; exact cr21)
@@ -196,11 +201,8 @@ theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s
   -- `[a] := mredRaw [t]`.
   refine wp_seqs_append (by simp [mredP]) (by simp [mredP]) (WP.mono (mredP_ok (hs.congr k12.wr)
     ((k12.gpr .x0 (by decide)).trans h0) ((k12.gpr .x11 (by decide)).trans h11)
-    ((k12.gpr .x12 (by decide)).trans h12) hn1 hn hw hZ hT hM hA dTM dAM
-    (by rw [lm, M₂, M₁, hpm]; exact hm)) fun s₃ ⟨e₃, f₃, k₃, v₃⟩ => ?_)
-  rw [lm, M₂, M₁, hpm, T₂, sT, ← ea] at e₃
-  have sA₃ : sgn (n + 1) (wv s₃.mem B (slot w iA) (n + 1)) = a' :=
-    Divstep.sgn_of_emod hL ra0 ra1 e₃
+    ((k12.gpr .x12 (by decide)).trans h12) hn1 hn hw hZ hT hM hA dTM dAM) fun s₃ ⟨e₃, f₃, k₃, v₃⟩ => ?_)
+  rw [lm, M₂, M₁, T₂] at e₃
   have B₃ : wv s₃.mem B (slot w iB) (n + 1) = wv s₂.mem B (slot w iB) (n + 1) :=
     f₃.wv_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -225,10 +227,12 @@ theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s
   have lm' : (s₃.v .v18).extractLsb' 64 64 = laneOf s .v18 1 := by rw [v₃, lm]
   -- `[b] := mredRaw [b]`.
   refine WP.mono (mredP_ok (hs.congr k13.wr) ((k13.gpr .x0 (by decide)).trans h0)
-    ((k13.gpr .x11 (by decide)).trans h11) ((k13.gpr .x12 (by decide)).trans h12) hn1 hn hw hZ hB hM hB dBM dBM
-    (by rw [lm', M₃, M₂, M₁, hpm]; exact hm)) fun t ⟨e₄, f₄, k₄, v₄⟩ => ⟨?_, ?_, ?_, (k13.trans k₄).mono (by decide),
+    ((k13.gpr .x11 (by decide)).trans h11) ((k13.gpr .x12 (by decide)).trans h12) hn1 hn hw hZ hB hM hB dBM dBM)
+    fun t ⟨e₄, f₄, k₄, v₄⟩ => ⟨fun ⟨hm, hpm, ha, hb, ra, rb, ra', rb'⟩ => ⟨?_, ?_⟩, ?_, (k13.trans k₄).mono (by decide),
       by rw [v₄, v₃, v₂, v₁]⟩
-  · rw [f₄.wv_eq (fun r hr => by
+  · obtain ⟨-, ra0, ra1⟩ := Rsa.Divstep.range_parts ra' hp
+    rw [hpm, sT ha hb ra rb, ← ea] at e₃
+    rw [f₄.wv_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rcases slot_apart (w := w) (a := 8 * (n + 1)) (b := 8 * (n + 2)) dAB (by omega) (by omega) with h | h
@@ -237,9 +241,10 @@ theorem abStage_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s
       · rcases slot_apart (w := w) (a := 8 * (n + 1)) (b := 8 * (n + 1)) dAB (by omega) (by omega) with h | h
         · exact .inl h
         · exact .inr h) (by have := slot_lt (w := w) hA; omega)]
-    exact sA₃
-  · rw [lm', M₃, M₂, M₁, hpm, B₃, sB₂, ← eb] at e₄
-    exact Divstep.sgn_of_emod hL rb0 rb1 e₄
+    exact Divstep.sgn_of_emod hL ra0 ra1 (e₃ hm)
+  · obtain ⟨-, rb0, rb1⟩ := Rsa.Divstep.range_parts rb' hp
+    rw [lm', M₃, M₂, M₁, hpm, B₃, sB₂ ha hb ra rb, ← eb] at e₄
+    exact Divstep.sgn_of_emod hL rb0 rb1 (e₄ hm)
   · refine (((Frm.widen (Frm.of_outside o₁ (List.mem_singleton.mpr rfl)) ?_).trans
       (Frm.widen (Frm.of_outside o₂ (List.mem_singleton.mpr rfl)) ?_)).trans (Frm.widen f₃ ?_)).trans
       (Frm.widen f₄ ?_)
