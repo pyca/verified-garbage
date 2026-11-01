@@ -76,7 +76,7 @@ theorem ite_not_odd {α : Sort _} (v : Nat) (a b : α) :
 theorem gcdUV_eq : gcdUV = ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++
       base aU .rbx ++ base aV .r10), wordLoop 0 cswapBody] : List (Prog isa)) ++ (constA 2 ++ (ltA aV aC ++
     (([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 3 ++ (selC aV ++
-    ([zeroA aM, copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂, inverse aU aV aX₁ aX₂ aM aT] ++
+    ([zeroA aM, copyA aM aV, inverse aU aV aX₂ aM] ++
     (constA 1 ++ (([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
       selC aV)))))))) := by
   simp only [gcdUV, List.append_assoc]
@@ -86,7 +86,8 @@ theorem gcdUV_eq : gcdUV = ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu
 theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop I s.mem aU = 0)
     (hodd : let v := if av I s.mem aV % 2 = 0 then av I s.mem aU else av I s.mem aV; 2 ≤ v → v % 2 = 1) :
     WP isa (seqs gcdUV) s fun t => KS I m₀ t ∧
-      KF I.B I.W [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk] s.mem t.mem ∧
+      KF I.B I.W [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk, .priv]
+        s.mem t.mem ∧
       av I t.mem aV =
         (let u := if av I s.mem aV % 2 = 0 then av I s.mem aV else av I s.mem aU
          let v := if av I s.mem aV % 2 = 0 then av I s.mem aU else av I s.mem aV
@@ -183,48 +184,26 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
   simp only [seqs]
   refine WP.seq (WP.mono (zeroA_k h₇ (j := aM) (by decide)) fun s₇' ⟨h₇', f₇', _, _⟩ =>
     WP.seq (WP.mono (copyA_k h₇' (o := aM) (a := aV) (by decide) (by decide) (by decide))
-    fun s₈ ⟨h₈, f₈', vM₈, _, _⟩ => WP.seq (WP.mono (zeroA_k h₈ (j := aX₁) (by decide)) fun s₉ ⟨h₉, f₉, z₉, _⟩ =>
-      WP.seq (WP.mono (setOne_k h₉ (j := aX₁) (by decide) z₉) fun s₁₀ ⟨h₁₀, f₁₀, o₁₀, _⟩ =>
-        WP.seq (WP.mono (zeroA_k h₁₀ (j := aX₂) (by decide)) fun s₁₁ ⟨h₁₁, f₁₁, z₁₁, _⟩ => ?_)))))
+    fun s₈ ⟨h₈, f₈', vM₈, _, _⟩ => ?_))
   have f₈ : KF I.B I.W [.arr aM] s₇.mem s₈.mem := (f₇'.trans f₈').mono (by decide)
   rw [f₇'.av (by decide) (j := aV) (by decide) (by decide) hZ] at vM₈
   have hokM : [Rc.arr aM].all Rc.ok = true := by decide
-  have hok1 : [Rc.arr aX₁].all Rc.ok = true := by decide
-  have hok2 : [Rc.arr aX₂].all Rc.ok = true := by decide
-  have pres : ∀ j, j < 16 → j ≠ aM → j ≠ aX₁ → j ≠ aX₂ → av I s₁₁.mem j = av I s₇.mem j := fun j hj h1 h2 h3 => by
-    rw [f₁₁.av hok2 hj (by simp [h3]) hZ, f₁₀.av hok1 hj (by simp [h2]) hZ, f₉.av hok1 hj (by simp [h2]) hZ,
-      f₈.av hokM hj (by simp [h1]) hZ]
-  have vU₁₁ : av I s₁₁.mem aU = u1 := by
-    rw [pres aU (by decide) (by decide) (by decide) (by decide), ← hX,
+  have vU₈ : av I s₈.mem aU = u1 := by
+    rw [f₈.av hokM (by decide) (by decide) hZ, ← hX,
       f₇.av (by decide) (j := aU) (by decide) (by decide) hZ, f₆.av hokC (by decide) (by decide) hZ,
       f₅.av hokO (by decide) (by decide) hZ, m₄, f₃.av hokC (by decide) (by decide) hZ]
-  have vV₁₁ : av I s₁₁.mem aV = M := by rw [pres aV (by decide) (by decide) (by decide) (by decide), vV₇]
-  have vM₁₁ : av I s₁₁.mem aM = M := by
-    rw [f₁₁.av hok2 (by decide) (by decide) hZ, f₁₀.av hok1 (by decide) (by decide) hZ,
-      f₉.av hok1 (by decide) (by decide) hZ, vM₈, vV₇]
-  have vX₁ : av I s₁₁.mem aX₁ = 1 := by
-    rw [f₁₁.av hok2 (by decide) (by decide) hZ]
-    exact av_of_full o₁₀ (Nat.one_lt_two_pow (by omega_using [hw1]))
-  have vX₂ : av I s₁₁.mem aX₂ = 0 := (wv_zero2 z₁₁).1
-  have tU₁₁ : atop I s₁₁.mem aU = 0 := by
-    rw [f₁₁.at hok2 (by decide) (by decide) hZ, f₁₀.at hok1 (by decide) (by decide) hZ,
-      f₉.at hok1 (by decide) (by decide) hZ, f₈.at hokM (by decide) (by decide) hZ,
-      f₇.at (by decide) (j := aU) (by decide) (by decide) hZ, f₆.at hokC (by decide) (by decide) hZ,
-      f₅.at hokO (by decide) (by decide) hZ, m₄, f₃.at hokC (by decide) (by decide) hZ, tU₂]
-  refine WP.mono (inverse_k h₁₁ (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aM) (iT := aT)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) tU₁₁ (by rw [vV₁₁, vM₁₁]) vX₁ vX₂) fun s₁₂ ⟨h₁₂, f₁₂, hinv⟩ => ?_
-  rw [vM₁₁, vU₁₁] at hinv
-  have hg := (hinv hMo.1 hMo.2).1
+  have vM₈' : av I s₈.mem aM = M := by rw [vM₈, vV₇]
+  refine WP.mono (inverse_k h₈ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₁₂ ⟨h₁₂, f₁₂, hinv⟩ => ?_
+  rw [vM₈', vU₈] at hinv
+  have hg := (hinv hMo.1).1
   -- The result 1 for `v ≤ 1`.
   refine wp_seqs_append (by simp [constA]) (by simp) (WP.mono (constA_k h₁₂ 1) fun s₁₃ ⟨h₁₃, f₁₃, c₁₃, k₁₃⟩ => ?_)
   have c1 : av I s₁₃.mem aC = 1 := av_of_full c₁₃ (Nat.one_lt_two_pow (by omega_using [hw1]))
-  have hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.hdr sMo].all Rc.ok = true := by decide
+  have hokI : [Rc.arr aV, Rc.arr aX₂, Rc.priv].all Rc.ok = true := by decide
   have ok₁₃ : word s₁₃.mem I.B (8 * kOk) = mask (decide (v1 < 2)) := by
     rw [f₁₃.word hokC (by decide) (by decide), f₁₂.word hokI (by decide) (by decide),
-      f₁₁.word hok2 (by decide) (by decide), f₁₀.word hok1 (by decide) (by decide),
-      f₉.word hok1 (by decide) (by decide), f₈.word hokM (by decide) (by decide),
+      f₈.word hokM (by decide) (by decide),
       f₇.word (by decide) (by decide) (by decide), f₆.word hokC (by decide) (by decide), ok₅]
   refine wp_seqs_append (by simp) (by simp [selC]) ?_
   simp only [seqs]
@@ -236,7 +215,7 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
   have f₅' : KF I.B I.W [.hdr kOk] s₃.mem s₅.mem := by rw [← m₄]; exact f₅
   have f₁₅' : KF I.B I.W [.arr aV] s₁₃.mem t.mem := by rw [← m₁₄]; exact f₁₅
   refine ⟨ht, ?_, ?_⟩
-  · exact (((((((((((f₂.trans f₃).trans f₅').trans f₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans
+  · exact ((((((((f₂.trans f₃).trans f₅').trans f₆).trans f₇).trans f₈).trans
       f₁₂).trans f₁₃).trans f₁₅').mono (by decide)
   · rw [vV, m₁₄, c1, f₁₃.av hokC (by decide) (by decide) hZ, hg]
     by_cases hv : v1 < 2
@@ -268,7 +247,7 @@ theorem lcm_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (hW
     (hb' : b < 2 ^ (64 * w)) :
     WP isa (seqs lcmPart) s fun t => KS I m₀ t ∧
       KF I.B I.W [.arr aL, .arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .arr aR, .hdr sMo,
-        .hdr kOk] s.mem t.mem ∧ av I t.mem aL = Nat.lcm a b := by
+        .hdr kOk, .priv] s.mem t.mem ∧ av I t.mem aL = Nat.lcm a b := by
   have hZ := h.hZ
   have hw1 := h.ws.w1
   have hab : a * b < 2 ^ (64 * I.W) := by
