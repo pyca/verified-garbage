@@ -16,6 +16,7 @@ meta import VerifiedGarbage.TCB.PPC64LE.Isa
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Impl.Gcm.PPC64LE.Vpmsum
 meta import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 /-! # GHASH using POWER8 polynomial multiplication -/
 
@@ -448,9 +449,9 @@ def satState : State where
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩]
 
 theorem ghash_verified :
-    Verified PPC64LE.target Impl.Gcm.PPC64LE.Vpmsum.ghash (Spec.Gcm.ghashContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Gcm.PPC64LE.Vpmsum.ghash (Proof.Gcm.ghashContract PPC64LE.abi) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, Proof.Gcm.ghashPPC64LE, PPC64LE.abi,
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashPPC64LE, PPC64LE.abi,
       PPC64LE.argRegs] [Proof.Gcm.PPC64LE.Vpmsum.satState] using Proof.Gcm.PPC64LE.Vpmsum.satState)
 
 end VG.Proof.Gcm.PPC64LE.Vpmsum

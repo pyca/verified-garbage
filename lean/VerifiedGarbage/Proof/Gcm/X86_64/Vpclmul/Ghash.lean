@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 /-!
 # GHASH with VPCLMULQDQ
@@ -944,9 +945,9 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub ghash := by
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
 
 theorem ghash_verified :
-    Verified X86_64.target ghash (Spec.Gcm.ghashContract X86_64.abi) :=
+    Verified X86_64.target ghash (Proof.Gcm.ghashContract X86_64.abi) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, Proof.Gcm.X86_64.Pclmul.ghashX86_64,
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.X86_64.Pclmul.ghashX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Gcm.X86_64.Pclmul.satState] using
       Proof.Gcm.X86_64.Pclmul.satState)
 

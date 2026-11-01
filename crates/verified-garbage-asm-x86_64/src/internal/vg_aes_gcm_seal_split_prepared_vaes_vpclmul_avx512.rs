@@ -679,7 +679,7 @@ jmp 2199f
 .p2align 6"#,
         vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
-        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

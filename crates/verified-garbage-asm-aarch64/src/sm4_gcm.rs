@@ -404,7 +404,7 @@ bl {vg_sm4_ctr32}
 .inst 0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -807,7 +807,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c43ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1035,7 +1035,7 @@ b 244f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1263,7 +1263,7 @@ b 255f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1349,7 +1349,7 @@ bl {vg_sm4_ctr32}
 .inst 0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1480,7 +1480,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1568,7 +1568,7 @@ b 21f
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
 
@@ -1663,7 +1663,7 @@ b 210f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
 
@@ -2035,7 +2035,7 @@ bl {vg_sm4_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x910c43ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -2432,7 +2432,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c43ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -2654,7 +2654,7 @@ b 244f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -2876,7 +2876,7 @@ b 255f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -2956,7 +2956,7 @@ bl {vg_sm4_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -3081,7 +3081,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -3163,7 +3163,7 @@ b 21f
 .inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -3252,6 +3252,6 @@ b 210f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }

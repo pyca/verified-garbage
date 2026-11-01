@@ -3,165 +3,15 @@
 //! `assembly/gcm.s`.
 #![allow(dead_code)]
 
-/// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
-///
-/// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
-///
-/// # Safety
-///
-/// * `h` must be valid for reads of 16 bytes.
-/// * `y` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `y` and `scratch` must not overlap each other, `h` or `data` (distinct Rust objects never do).
-/// * None of `h`, `y`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"cbz x3, 20f
-22:
-.inst 0xf9400025,0xdac00ca5,0xf940004c,0xdac00d8c,0xca0c00a5,0xf9400426,0xdac00cc6,0xf940044c
-.inst 0xdac00d8c,0xca0c00c6,0xf9400009,0xdac00d29,0xf940040a,0xdac00d4a,0xd2800007,0xd2800008
-.inst 0xd2fc200d,0xd280000f,0xd280020e
-23:
-.inst 0xd37ffcac,0xcb0c01eb,0xd37ff8a5,0xd37ffccc,0xaa0c00a5,0xd37ff8c6,0x8a0b012c,0xca0c00e7
-.inst 0x8a0b014c,0xca0c0108,0xd341014c,0xd37ffd8c,0xcb0c01eb,0xd341fd4a,0xd341012c,0xaa0c014a
-.inst 0xd341fd29,0x8a0d016b,0xca0b0129,0xd37ffcac,0xcb0c01eb,0xd37ff8a5,0xd37ffccc,0xaa0c00a5
-.inst 0xd37ff8c6,0x8a0b012c,0xca0c00e7,0x8a0b014c,0xca0c0108,0xd341014c,0xd37ffd8c,0xcb0c01eb
-.inst 0xd341fd4a,0xd341012c,0xaa0c014a,0xd341fd29,0x8a0d016b,0xca0b0129,0xd37ffcac,0xcb0c01eb
-.inst 0xd37ff8a5,0xd37ffccc,0xaa0c00a5,0xd37ff8c6,0x8a0b012c,0xca0c00e7,0x8a0b014c,0xca0c0108
-.inst 0xd341014c,0xd37ffd8c,0xcb0c01eb,0xd341fd4a,0xd341012c,0xaa0c014a,0xd341fd29,0x8a0d016b
-.inst 0xca0b0129,0xd37ffcac,0xcb0c01eb,0xd37ff8a5,0xd37ffccc,0xaa0c00a5,0xd37ff8c6,0x8a0b012c
-.inst 0xca0c00e7,0x8a0b014c,0xca0c0108,0xd341014c,0xd37ffd8c,0xcb0c01eb,0xd341fd4a,0xd341012c
-.inst 0xaa0c014a,0xd341fd29,0x8a0d016b,0xca0b0129,0xd37ffcac,0xcb0c01eb,0xd37ff8a5,0xd37ffccc
-.inst 0xaa0c00a5,0xd37ff8c6,0x8a0b012c,0xca0c00e7,0x8a0b014c,0xca0c0108,0xd341014c,0xd37ffd8c
-.inst 0xcb0c01eb,0xd341fd4a,0xd341012c,0xaa0c014a,0xd341fd29,0x8a0d016b,0xca0b0129,0xd37ffcac
-.inst 0xcb0c01eb,0xd37ff8a5,0xd37ffccc,0xaa0c00a5,0xd37ff8c6,0x8a0b012c,0xca0c00e7,0x8a0b014c
-.inst 0xca0c0108,0xd341014c,0xd37ffd8c,0xcb0c01eb,0xd341fd4a,0xd341012c,0xaa0c014a,0xd341fd29
-.inst 0x8a0d016b,0xca0b0129,0xd37ffcac,0xcb0c01eb,0xd37ff8a5,0xd37ffccc,0xaa0c00a5,0xd37ff8c6
-.inst 0x8a0b012c,0xca0c00e7,0x8a0b014c,0xca0c0108,0xd341014c,0xd37ffd8c,0xcb0c01eb,0xd341fd4a
-.inst 0xd341012c,0xaa0c014a,0xd341fd29,0x8a0d016b,0xca0b0129,0xd37ffcac,0xcb0c01eb,0xd37ff8a5
-.inst 0xd37ffccc,0xaa0c00a5,0xd37ff8c6,0x8a0b012c,0xca0c00e7,0x8a0b014c,0xca0c0108,0xd341014c
-.inst 0xd37ffd8c,0xcb0c01eb,0xd341fd4a,0xd341012c,0xaa0c014a,0xd341fd29,0x8a0d016b,0xca0b0129
-.inst 0xd10005ce
-cbnz x14, 23b
-.inst 0xdac00ce7,0xf9000027,0xdac00d08,0xf9000428,0x91004042,0xd1000463
-cbnz x3, 22b
-b 21f
-20:
-21:
-.inst 0xd65f03c0
-.p2align 6",
-    )
-}
-
-/// The CPU features `vg_ghash_aes` requires (`Artifact.features`).
-pub const VG_GHASH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
-///
-/// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
-///
-/// # Safety
-///
-/// * `h` must be valid for reads of 16 bytes.
-/// * `y` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `y` and `scratch` must not overlap each other, `h` or `data` (distinct Rust objects never do).
-/// * None of `h`, `y`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ghash_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc00006,0x4e2008c6,0xd2f84005,0x4e080ca1,0x6f4104c7,0x4f4154c3,0x6e0740e4,0x6e241c63
-.inst 0x0ee1e0e5,0x6e251c78,0x6e184310,0x3dc00020,0x4e200800,0xd343fc65
-cbz x5, 20f
-.inst 0x0ef8e305,0x4ef8e303,0x0ee1e067,0x6e034063,0x6e271c64,0x0ee1e087,0x6e0540a5,0x6e241ca5
-.inst 0x6e0740e7,0x6e271cb9,0x6e194331,0x0ef8e325,0x4ef8e323,0x0ef0e324,0x4ef0e327,0x6e271c84
-.inst 0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7
-.inst 0x6e271cba,0x6e1a4352,0x0ef9e325,0x4ef9e323,0x0ee1e067,0x6e034063,0x6e271c64,0x0ee1e087
-.inst 0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271cbb,0x6e1b4373,0x0ef9e345,0x4ef9e343,0x0ef1e344
-.inst 0x4ef1e347,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5
-.inst 0x6e241ca5,0x6e0740e7,0x6e271cbc,0x6e1c4394,0x0efae345,0x4efae343,0x0ee1e067,0x6e034063
-.inst 0x6e271c64,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271cbd,0x6e1d43b5,0x0efae365
-.inst 0x4efae363,0x0ef2e364,0x4ef2e367,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84
-.inst 0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271cbe,0x6e1e43d6,0x0efbe365,0x4efbe363
-.inst 0x0ee1e067,0x6e034063,0x6e271c64,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271cbf
-.inst 0x6e1f43f7
-22:
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0efee0c7,0x6e271ca5,0x4efee0c7
-.inst 0x6e271c63,0x0ef6e0c7,0x6e271c84,0x4ef6e0c7,0x6e271c84,0x3dc00846,0x4e2008c6,0x0efde0c7
-.inst 0x6e271ca5,0x4efde0c7,0x6e271c63,0x0ef5e0c7,0x6e271c84,0x4ef5e0c7,0x6e271c84,0x3dc00c46
-.inst 0x4e2008c6,0x0efce0c7,0x6e271ca5,0x4efce0c7,0x6e271c63,0x0ef4e0c7,0x6e271c84,0x4ef4e0c7
-.inst 0x6e271c84,0x3dc01046,0x4e2008c6,0x0efbe0c7,0x6e271ca5,0x4efbe0c7,0x6e271c63,0x0ef3e0c7
-.inst 0x6e271c84,0x4ef3e0c7,0x6e271c84,0x3dc01446,0x4e2008c6,0x0efae0c7,0x6e271ca5,0x4efae0c7
-.inst 0x6e271c63,0x0ef2e0c7,0x6e271c84,0x4ef2e0c7,0x6e271c84,0x3dc01846,0x4e2008c6,0x0ef9e0c7
-.inst 0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84,0x3dc01c46
-.inst 0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7
-.inst 0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0effe0c7,0x6e271ca5,0x4effe0c7,0x6e271c63
-.inst 0x0ef7e0c7,0x6e271c84,0x4ef7e0c7,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84
-.inst 0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91020042,0xd1002063,0xd343fc65
-cbnz x5, 22b
-.inst 0xd342fc66
-cbz x6, 23f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0efae0c7,0x6e271ca5,0x4efae0c7
-.inst 0x6e271c63,0x0ef2e0c7,0x6e271c84,0x4ef2e0c7,0x6e271c84,0x3dc00846,0x4e2008c6,0x0ef9e0c7
-.inst 0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84,0x3dc00c46
-.inst 0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7
-.inst 0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0efbe0c7,0x6e271ca5,0x4efbe0c7,0x6e271c63
-.inst 0x0ef3e0c7,0x6e271c84,0x4ef3e0c7,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84
-.inst 0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91010042,0xd1001063,0xd343fc65
-b 24f
-23:
-24:
-.inst 0xd341fc66
-cbz x6, 25f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7
-.inst 0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6
-.inst 0x0ef9e0c7,0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84
-.inst 0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7
-.inst 0x6e271ca0,0x91008042,0xd1000863,0xd343fc65
-b 26f
-25:
-26:
-cbz x3, 27f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0ef8e0c7,0x6e271ca5
-.inst 0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x0ee1e067,0x6e034063
-.inst 0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91004042
-.inst 0xd1000463,0xd343fc65
-b 28f
-27:
-28:
-b 21f
-20:
-cbz x3, 29f
-211:
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0ef8e0c7,0x6e271ca5
-.inst 0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x0ee1e067,0x6e034063
-.inst 0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91004042
-.inst 0xd1000463,0xd343fc65
-cbnz x3, 211b
-b 210f
-29:
-210:
-21:
-.inst 0x4e200800,0x3d800020,0xd65f03c0
-.arch_extension noaes
-.p2align 6",
-    )
-}
-
 /// The CPU features `vg_ghash_store_powers_aes` requires (`Artifact.features`).
 pub const VG_GHASH_STORE_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// The bytes of `scratch` that `vg_ghash_store_powers_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN: usize = 0;
 
-/// `vg_ghash`, which also writes to `*pw` the 8 prepared powers of its hash subkey `H`: at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`). Its other results are those of `vg_ghash`. The powers are secret, as the hash subkey is: they may not affect timing. Contract: `VG.Spec.Gcm.ghashStorePowersContract`. Only the pointers and `n` may affect timing.
+/// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3); it also writes to `*pw` the 8 prepared powers of `H`: at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`).
+///
+/// Contract: `VG.Spec.Gcm.ghashStorePowersContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y`, the data or the powers.
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -888,7 +738,7 @@ bl {vg_aes_ctr32_aes}
 .inst 0x912843ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -1544,7 +1394,7 @@ b 2131f
 .inst 0x912883ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -1633,7 +1483,7 @@ b 21f
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
 
@@ -1728,7 +1578,7 @@ b 210f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
 
@@ -1956,7 +1806,7 @@ b 244f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
@@ -2185,7 +2035,7 @@ b 255f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
@@ -2273,7 +2123,7 @@ bl {vg_aes_ctr32_aes}
 .inst 0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
@@ -2406,7 +2256,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
@@ -3067,7 +2917,7 @@ bl {vg_aes_ctr32_aes}
 .inst 0x912883ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
@@ -3728,7 +3578,7 @@ b 2131f
 .inst 0x912883ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
@@ -5533,7 +5383,7 @@ bl {vg_aes_ctr32_aes}
 .arch_extension noaes
 .arch_extension nosha3
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
@@ -7203,7 +7053,7 @@ b 2378f
 .arch_extension noaes
 .arch_extension nosha3
 .p2align 6",
-        vg_ghash_aes = sym super::gcm::vg_ghash_aes,
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
@@ -7610,7 +7460,7 @@ bl {vg_aes_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -8010,7 +7860,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -8092,7 +7942,7 @@ b 21f
 .inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -8181,7 +8031,7 @@ b 210f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -8403,7 +8253,7 @@ b 244f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -8626,7 +8476,7 @@ b 255f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -8708,7 +8558,7 @@ bl {vg_aes_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -8835,7 +8685,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

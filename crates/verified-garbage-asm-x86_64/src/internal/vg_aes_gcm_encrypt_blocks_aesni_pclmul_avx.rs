@@ -98,6 +98,6 @@ jmp 225f
 .base64 "ww=="
 .p2align 6"#,
         vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash_pclmul = sym crate::gcm::vg_ghash_pclmul,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }

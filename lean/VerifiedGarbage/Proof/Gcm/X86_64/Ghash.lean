@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -1764,9 +1766,9 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashX86_64.pre Proof.Gcm.ghashX86
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ghash_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.ghash (Spec.Gcm.ghashContract X86_64.abi) :=
+    Verified X86_64.target Impl.Gcm.X86_64.ghash (Proof.Gcm.ghashContract X86_64.abi) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, Proof.Gcm.ghashX86_64, X86_64.abi,
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashX86_64, X86_64.abi,
       X86_64.argRegs] [Proof.Gcm.X86_64.satState] using Proof.Gcm.X86_64.satState)
 
 end VG.Proof.Gcm.X86_64

@@ -14,7 +14,7 @@ of its own. It is a storage convention, not a change to GCM's field
 arithmetic (NIST SP 800-38D §6.3).
 
 No function computes the buffer on its own. Each `*_store_powers` function is
-a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, `vg_ghash`), with its
+a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, or GHASH over whole blocks), with its
 unchanged postcondition, that also writes to a 128-byte buffer the powers of
 the hash subkey that it computes for its own GHASH. `vg_aes_gcm_seal_store_powers`
 and `vg_aes_gcm_open_store_powers` require the lengths of a TLS record (a
@@ -223,12 +223,16 @@ def openWithPowersApi : Api where
 /-! ## GHASH -/
 
 /-- `vg_ghash_store_powers(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *mut [u64; 16])`:
-`ghashSig` and the powers' buffer. `scratch` is working space. -/
+`scratch` is working space. -/
 def ghashStorePowersSig : Sig where
-  params := ghashSig.params ++ [storePowersParam]
+  params := [("h", .array false .u8 16), ("y", .array true .u8 16),
+    ("data", .slice false (.array .u8 16) "n"), ("scratch", .array true .u64 32),
+    storePowersParam]
 
-/-- `ghashContract`'s postcondition, and the powers of the hash subkey at `h`
-at `pw`. -/
+/-- With the hash subkey `H` at `h` and a block `Y` at `y`: replaces `Y`
+with `GHASH_H` continued from `Y` over the `n` blocks at `data`
+(`Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H`), and writes the powers of `H` at `pw`. The hash
+subkey, `Y`, the data and the powers are secret. -/
 def ghashStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ghashStorePowersSig.contract A
     (post := fun h y data n _scratch pw m m' _ =>
@@ -242,8 +246,15 @@ def ghashStorePowersApi : Api where
   name := "vg_ghash_store_powers"
   sig := ghashStorePowersSig
   contracts := some fun A stack => ghashStorePowersContract A stack
-  summary := storePowersSummary "vg_ghash" "ghashStorePowersContract" ++
-    " Only the pointers and `n` may affect timing."
-  safety := ghashApi.safety
+  summary := "GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` \
+    the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and \
+    `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks \
+    big-endian, `•` the multiplication of §6.3); it also writes to `*pw` the 8 prepared powers \
+    of `H`: at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then \
+    `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words \
+    (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`).\n\n\
+    Contract: `VG.Spec.Gcm.ghashStorePowersContract`. Constant time: only the pointers and `n` \
+    may affect timing, not `H`, `Y`, the data or the powers."
+  safety := ["The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Gcm

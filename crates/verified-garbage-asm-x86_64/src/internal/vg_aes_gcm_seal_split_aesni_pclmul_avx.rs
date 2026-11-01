@@ -150,7 +150,7 @@ jmp 224f
 224:
 .base64 "WEiLfCQoSYsHSYtXCEiJB0iJVwhJi5+AAAAASYuviAAAAE2Lp5AAAABNi6+YAAAATYu3oAAAAE2Lv6gAAABIjaQkOAoAAMM="
 .p2align 6"#,
-        vg_ghash_pclmul = sym crate::gcm::vg_ghash_pclmul,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,

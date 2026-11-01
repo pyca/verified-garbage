@@ -10,14 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Gcm.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Gcm.ghashApi.artifact AArch64.target {
-    code := Impl.Gcm.AArch64.ghash
-    verified := Proof.Gcm.AArch64.ghash_verified },
-  Spec.Gcm.ghashApi.artifact AArch64.target {
-    suffix := "_aes"
-    code := Impl.Gcm.AArch64.Pmull.ghash
-    verified := Proof.Gcm.AArch64.Pmull.ghash_verified
-    features := ["aes"] },
   Spec.Gcm.ghashStorePowersApi.artifact AArch64.target {
     suffix := "_aes"
     written := [("scratch", 0)]

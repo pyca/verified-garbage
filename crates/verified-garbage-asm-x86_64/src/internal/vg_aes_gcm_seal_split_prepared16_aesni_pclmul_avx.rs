@@ -361,7 +361,7 @@ jmp 288f
 .p2align 6"#,
         vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx,
         vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
-        vg_ghash_pclmul = sym crate::gcm::vg_ghash_pclmul,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

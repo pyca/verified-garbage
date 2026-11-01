@@ -340,7 +340,7 @@ bl {vg_ghash}
 bl {vg_aes_ctr32}
 241:
 .base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrcAAhOIAKITggAIBO""#,
-        vg_ghash = sym crate::gcm::vg_ghash,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks_split = sym crate::aes::vg_aes_gcm_encrypt_blocks_split::vg_aes_gcm_encrypt_blocks_split,
         vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )

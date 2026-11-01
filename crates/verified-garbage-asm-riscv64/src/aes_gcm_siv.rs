@@ -747,7 +747,7 @@ j 232f
 .option pop",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -1524,6 +1524,10 @@ j 235f
 .option pop",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash.rs"]
+pub(crate) mod vg_ghash;

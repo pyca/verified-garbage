@@ -1,0 +1,421 @@
+// The functions of `src/internal/vg_ghash.rs` of `verified-garbage-asm-x86`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_ghash:
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [eax+32], ebx
+	mov DWORD PTR [eax+36], esi
+	mov DWORD PTR [eax+40], edi
+	mov DWORD PTR [eax+44], ebp
+	mov edi, eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [edi+48], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [edi+52], eax
+	test eax, eax
+	je 20f
+22:
+	mov esi, DWORD PTR [edi+48]
+	mov ebp, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [ebp]
+	bswap eax
+	mov ebx, DWORD PTR [esi]
+	bswap ebx
+	xor eax, ebx
+	mov DWORD PTR [edi], eax
+	mov eax, DWORD PTR [ebp+4]
+	bswap eax
+	mov ebx, DWORD PTR [esi+4]
+	bswap ebx
+	xor eax, ebx
+	mov DWORD PTR [edi+4], eax
+	mov eax, DWORD PTR [ebp+8]
+	bswap eax
+	mov ebx, DWORD PTR [esi+8]
+	bswap ebx
+	xor eax, ebx
+	mov DWORD PTR [edi+8], eax
+	mov eax, DWORD PTR [ebp+12]
+	bswap eax
+	mov ebx, DWORD PTR [esi+12]
+	bswap ebx
+	xor eax, ebx
+	mov DWORD PTR [edi+12], eax
+	mov eax, 0
+	mov DWORD PTR [edi+16], eax
+	mov DWORD PTR [edi+20], eax
+	mov DWORD PTR [edi+24], eax
+	mov DWORD PTR [edi+28], eax
+	mov ebp, DWORD PTR [esp+4]
+	mov eax, DWORD PTR [ebp]
+	bswap eax
+	mov ebx, DWORD PTR [ebp+4]
+	bswap ebx
+	mov ecx, DWORD PTR [ebp+8]
+	bswap ecx
+	mov edx, DWORD PTR [ebp+12]
+	bswap edx
+	mov esi, 4
+	mov DWORD PTR [edi+56], esi
+23:
+	mov esi, 4
+	mov DWORD PTR [edi+60], esi
+24:
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi]
+	add esi, esi
+	mov DWORD PTR [edi], esi
+	sbb ebp, ebp
+	mov esi, eax
+	and esi, ebp
+	xor esi, DWORD PTR [edi+16]
+	mov DWORD PTR [edi+16], esi
+	mov esi, ebx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+20]
+	mov DWORD PTR [edi+20], esi
+	mov esi, ecx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+24]
+	mov DWORD PTR [edi+24], esi
+	mov esi, edx
+	and esi, ebp
+	xor esi, DWORD PTR [edi+28]
+	mov DWORD PTR [edi+28], esi
+	shr edx, 1
+	sbb ebp, ebp
+	mov esi, ecx
+	ror esi, 1
+	and esi, -2147483648
+	or edx, esi
+	shr ecx, 1
+	mov esi, ebx
+	ror esi, 1
+	and esi, -2147483648
+	or ecx, esi
+	shr ebx, 1
+	mov esi, eax
+	ror esi, 1
+	and esi, -2147483648
+	or ebx, esi
+	shr eax, 1
+	and ebp, -520093696
+	xor eax, ebp
+	mov esi, DWORD PTR [edi+60]
+	sub esi, 1
+	mov DWORD PTR [edi+60], esi
+	jne 24b
+	mov esi, DWORD PTR [edi+4]
+	mov DWORD PTR [edi], esi
+	mov esi, DWORD PTR [edi+8]
+	mov DWORD PTR [edi+4], esi
+	mov esi, DWORD PTR [edi+12]
+	mov DWORD PTR [edi+8], esi
+	mov esi, DWORD PTR [edi+56]
+	sub esi, 1
+	mov DWORD PTR [edi+56], esi
+	jne 23b
+	mov esi, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [edi+16]
+	bswap eax
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edi+20]
+	bswap eax
+	mov DWORD PTR [esi+4], eax
+	mov eax, DWORD PTR [edi+24]
+	bswap eax
+	mov DWORD PTR [esi+8], eax
+	mov eax, DWORD PTR [edi+28]
+	bswap eax
+	mov DWORD PTR [esi+12], eax
+	mov esi, DWORD PTR [edi+48]
+	add esi, 16
+	mov DWORD PTR [edi+48], esi
+	mov esi, DWORD PTR [edi+52]
+	sub esi, 1
+	mov DWORD PTR [edi+52], esi
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov ebx, DWORD PTR [edi+32]
+	mov esi, DWORD PTR [edi+36]
+	mov ebp, DWORD PTR [edi+44]
+	mov edi, DWORD PTR [edi+40]
+	ret
+	.p2align 6

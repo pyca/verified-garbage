@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 # GHASH with PCLMULQDQ on x86-64
 
 `vg_ghash_pclmul(h = rdi, y = rsi, data = rdx, n = rcx, scratch = r8)`, with
-the contract of `vg_ghash` (`Spec.Gcm.ghashContract`), for CPUs with
+the contract of `vg_ghash` (`Proof.Gcm.ghashContract`), for CPUs with
 PCLMULQDQ and SSSE3 (for `pshufb`).
 
 A block is loaded and byte-reversed with `pshufb`, so that the register

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Gcm.Clmul -- shake: keep (exports the existin
 # GHASH with PMULL on AArch64
 
 `vg_ghash_aes(h = x0, y = x1, data = x2, n = x3, scratch = x4)`, with the
-contract of `vg_ghash` (`Spec.Gcm.ghashContract`), for CPUs with FEAT_PMULL
+contract of `vg_ghash` (`Proof.Gcm.ghashContract`), for CPUs with FEAT_PMULL
 (Rust's `aes` feature, hence the suffix: see `Artifacts/Gcm/AArch64.lean`).
 
 The arithmetic is that of `Impl.Gcm.X86_64.Pclmul`. A block is loaded with

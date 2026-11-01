@@ -28,6 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Blocks`.
 
@@ -946,9 +947,9 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ghash_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.Pclmul.ghash (Spec.Gcm.ghashContract X86_64.abi) :=
+    Verified X86_64.target Impl.Gcm.X86_64.Pclmul.ghash (Proof.Gcm.ghashContract X86_64.abi) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, Proof.Gcm.X86_64.Pclmul.ghashX86_64,
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.X86_64.Pclmul.ghashX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Gcm.X86_64.Pclmul.satState] using
       Proof.Gcm.X86_64.Pclmul.satState)
 

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Mul
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
@@ -196,7 +198,7 @@ theorem blockAt_store (m : Mem) (q : Addr) (z0 z1 : BitVec 64) :
 /-! ## The function -/
 
 /-- The contract the proof of `vg_ghash` is written against: as
-`Spec.Gcm.ghashContract`, with the frame of 2048 bytes below the stack
+`Proof.Gcm.ghashContract`, with the frame of 2048 bytes below the stack
 pointer. -/
 def ghashX : Contract isa where
   pre s :=
@@ -361,9 +363,9 @@ def ghashSat : State where
   rd := [⟨0x1000, 16⟩, ⟨0x3000, 16⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩]
 
-theorem ghash_verified : Verified RISCV64.target ghash (Spec.Gcm.ghashContract RISCV64.abi 2048) :=
+theorem ghash_verified : Verified RISCV64.target ghash (Proof.Gcm.ghashContract RISCV64.abi 2048) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, ghashX, RISCV64.abi, RISCV64.argRegs]
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, ghashX, RISCV64.abi, RISCV64.argRegs]
       [ghashSat]
       using ghashSat)
 

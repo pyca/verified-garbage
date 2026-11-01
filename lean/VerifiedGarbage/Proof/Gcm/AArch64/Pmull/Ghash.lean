@@ -28,6 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 
 @[expose] public section
@@ -834,9 +835,9 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAA
   · exact h5
 
 theorem ghash_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghash (Spec.Gcm.ghashContract AArch64.abi) :=
+    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghash (Proof.Gcm.ghashContract AArch64.abi) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, Proof.Gcm.ghashAArch64, AArch64.abi,
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashAArch64, AArch64.abi,
       AArch64.argRegs] [Proof.Gcm.AArch64.satState] using Proof.Gcm.AArch64.satState)
 
 /-! ## With the prepared powers
@@ -1304,18 +1305,18 @@ theorem ghashW_verified :
   Verified.of_correct ghashW_correct ghashW_ct
     { pre := by
         sig_implies_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
-          Spec.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
+          Proof.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       post := by
         sig_implies_post [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
-          Spec.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
+          Proof.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       pub := by
         sig_implies_pub [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
-          Spec.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
+          Proof.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       sat := ⟨satStateW, by
-        sig_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig, Spec.Gcm.ghashSig,
+        sig_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig, Proof.Gcm.ghashSig,
           Spec.Gcm.withPowersParam, AArch64.abi, AArch64.argRegs, satStateW,
           Proof.Gcm.AArch64.satState]
         sig_and_intros
@@ -1559,18 +1560,18 @@ private theorem ghashS_implies :
     Proof.Gcm.ghashStoreAArch64.Implies (Spec.Gcm.ghashStorePowersContract AArch64.abi) :=
     { pre := by
         sig_implies_pre [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
-          Spec.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
+          Proof.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       post := by
         sig_implies_post [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
-          Spec.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
+          Proof.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       pub := by
         sig_implies_pub [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
-          Spec.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
+          Proof.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       sat := ⟨satStateS, by
-        sig_pre [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig, Spec.Gcm.ghashSig,
+        sig_pre [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig, Proof.Gcm.ghashSig,
           Spec.Gcm.storePowersParam, AArch64.abi, AArch64.argRegs, satStateS,
           Proof.Gcm.AArch64.satState]
         sig_and_intros
@@ -1591,7 +1592,7 @@ theorem ghashS_written (s : State) (t : List Leak) (s' : State)
   obtain ⟨t', s'', he', -, -, hsc⟩ := correctS (ghashS_implies.pre s hs)
   obtain ⟨-, rfl⟩ := Exec.det he he'
   simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Gcm.ghashStorePowersSig,
-    Spec.Gcm.ghashSig, Spec.Gcm.storePowersParam, Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+    Spec.Gcm.storePowersParam, Sig.words, Sig.arrays, Param.words, ArgWord.bits]
   intro i hi
   have hi' : i < 256 := by simpa [Elem.size] using hi
   exact hsc _ (Offset.contains_base _ (by omega) (by omega))

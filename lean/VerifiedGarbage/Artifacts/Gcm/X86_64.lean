@@ -18,19 +18,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Gcm.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Gcm.ghashApi.artifact X86_64.target {
-    code := Impl.Gcm.X86_64.ghash
-    verified := Proof.Gcm.X86_64.ghash_verified },
-  Spec.Gcm.ghashApi.artifact X86_64.target {
-    suffix := "_pclmul"
-    code := Impl.Gcm.X86_64.Pclmul.ghash
-    verified := Proof.Gcm.X86_64.Pclmul.ghash_verified
-    features := ["pclmulqdq", "ssse3"] },
-  Spec.Gcm.ghashApi.artifact X86_64.target {
-    suffix := "_vpclmul"
-    code := Impl.Gcm.X86_64.Vpclmul.ghash
-    verified := Proof.Gcm.X86_64.Vpclmul.ghash_verified
-    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul_avx512"
     code := Impl.Gcm.X86_64.PrepareZ.prepare
