@@ -15,88 +15,212 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p384_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x38a00ba038800d60f8030d207c0802a6
-.byte 48,12,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 144,13,128,56,208,11,160,56,96,12,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 192,13,128,56,0,12,160,56,144,12,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 240,13,128,56,160,11,160,56,208,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,14,128,56,48,12,160,56,96,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 240,13,128,56,240,13,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 32,14,128,56,96,13,160,56,144,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 240,13,128,56,240,13,160,56,32,14,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 32,14,128,56,160,11,160,56,0,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 80,14,128,56,48,12,160,56,144,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,14,128,56,32,14,160,56,80,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 80,14,128,56,96,13,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,14,128,56,32,14,160,56,80,14,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 80,14,128,56,208,11,160,56,0,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 16,11,128,56,96,12,160,56,144,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 80,14,128,56,80,14,160,56,16,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,144,13,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 80,14,128,56,80,14,160,56,16,11,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 112,11,128,56,192,12,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,240,12,160,56,192,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 112,11,128,56,16,11,160,56,112,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 16,11,128,56,144,13,160,56,112,11,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 112,11,128,56,144,13,160,56,112,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 64,11,128,56,16,11,160,56,112,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 144,13,128,56,96,13,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 144,13,128,56,144,13,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 192,13,128,56,192,12,160,56,192,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 32,14,128,56,240,12,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 144,13,128,56,144,13,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 192,13,128,56,96,13,160,56,192,13,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 192,13,128,56,192,12,160,56,192,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 32,14,128,56,32,14,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 96,13,128,56,144,13,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 64,11,128,56,64,11,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 96,13,128,56,80,14,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,240,13,160,56,16,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,16,11,160,56,96,13,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 96,13,128,56,240,13,160,56,144,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 112,11,128,56,80,14,160,56,112,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 112,11,128,56,112,11,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,13,3,232,166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 3360(%r3)
+        // li %r4, 3424
+        // li %r5, 2976
+        // li %r6, 3120
+        r".long 0x7c0802a6,0xf8030d20,0x38800d60,0x38a00ba0,0x38c00c30
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3024
+        // li %r6, 3168
+        r".long 0x38800d90,0x38a00bd0,0x38c00c60
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3072
+        // li %r6, 3216
+        r".long 0x38800dc0,0x38a00c00,0x38c00c90
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3568
+        // li %r5, 2976
+        // li %r6, 3024
+        r".long 0x38800df0,0x38a00ba0,0x38c00bd0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3120
+        // li %r6, 3168
+        r".long 0x38800e20,0x38a00c30,0x38c00c60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3568
+        // li %r5, 3568
+        // li %r6, 3616
+        r".long 0x38800df0,0x38a00df0,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3424
+        // li %r6, 3472
+        r".long 0x38800e20,0x38a00d60,0x38c00d90
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3568
+        // li %r5, 3568
+        // li %r6, 3616
+        r".long 0x38800df0,0x38a00df0,0x38c00e20
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3616
+        // li %r5, 2976
+        // li %r6, 3072
+        r".long 0x38800e20,0x38a00ba0,0x38c00c00
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3120
+        // li %r6, 3216
+        r".long 0x38800e50,0x38a00c30,0x38c00c90
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3616
+        // li %r6, 3664
+        r".long 0x38800e20,0x38a00e20,0x38c00e50
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3424
+        // li %r6, 3520
+        r".long 0x38800e50,0x38a00d60,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3616
+        // li %r6, 3664
+        r".long 0x38800e20,0x38a00e20,0x38c00e50
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3024
+        // li %r6, 3072
+        r".long 0x38800e50,0x38a00bd0,0x38c00c00
+bl {vg_p384_add_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3168
+        // li %r6, 3216
+        r".long 0x38800b10,0x38a00c60,0x38c00c90
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3664
+        // li %r6, 2832
+        r".long 0x38800e50,0x38a00e50,0x38c00b10
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3472
+        // li %r6, 3520
+        r".long 0x38800b10,0x38a00d90,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3664
+        // li %r6, 2832
+        r".long 0x38800e50,0x38a00e50,0x38c00b10
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 2928
+        // li %r5, 3264
+        // li %r6, 3616
+        r".long 0x38800b70,0x38a00cc0,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3312
+        // li %r6, 3520
+        r".long 0x38800b10,0x38a00cf0,0x38c00dc0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2928
+        // li %r5, 2832
+        // li %r6, 2928
+        r".long 0x38800b70,0x38a00b10,0x38c00b70
+bl {vg_p384_add_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3472
+        // li %r6, 2928
+        r".long 0x38800b10,0x38a00d90,0x38c00b70
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 2928
+        // li %r5, 3472
+        // li %r6, 2928
+        r".long 0x38800b70,0x38a00d90,0x38c00b70
+bl {vg_p384_add_mod_p}",
+        // li %r4, 2880
+        // li %r5, 2832
+        // li %r6, 2928
+        r".long 0x38800b40,0x38a00b10,0x38c00b70
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3424
+        // li %r6, 3424
+        r".long 0x38800d90,0x38a00d60,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3472
+        // li %r6, 3424
+        r".long 0x38800d90,0x38a00d90,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3264
+        // li %r6, 3520
+        r".long 0x38800dc0,0x38a00cc0,0x38c00dc0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3312
+        // li %r6, 3616
+        r".long 0x38800e20,0x38a00cf0,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3472
+        // li %r6, 3520
+        r".long 0x38800d90,0x38a00d90,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3424
+        // li %r6, 3520
+        r".long 0x38800dc0,0x38a00d60,0x38c00dc0
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3264
+        // li %r6, 3520
+        r".long 0x38800dc0,0x38a00cc0,0x38c00dc0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3616
+        // li %r6, 3520
+        r".long 0x38800e20,0x38a00e20,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3424
+        // li %r5, 3472
+        // li %r6, 3616
+        r".long 0x38800d60,0x38a00d90,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2880
+        // li %r5, 2880
+        // li %r6, 3424
+        r".long 0x38800b40,0x38a00b40,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3424
+        // li %r5, 3664
+        // li %r6, 3616
+        r".long 0x38800d60,0x38a00e50,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3568
+        // li %r6, 2832
+        r".long 0x38800b10,0x38a00df0,0x38c00b10
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 2832
+        // li %r6, 3424
+        r".long 0x38800b10,0x38a00b10,0x38c00d60
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3424
+        // li %r5, 3568
+        // li %r6, 3472
+        r".long 0x38800d60,0x38a00df0,0x38c00d90
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2928
+        // li %r5, 3664
+        // li %r6, 2928
+        r".long 0x38800b70,0x38a00e50,0x38c00b70
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2928
+        // li %r5, 2928
+        // li %r6, 3424
+        r".long 0x38800b70,0x38a00b70,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // ld %r0, 3360(%r3)
+        // mtlr %r0
+        // blr
+        r".long 0xe8030d20,0x7c0803a6,0x4e800020",
         vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::p384_mont::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
@@ -116,88 +240,212 @@ pub unsafe extern "C" fn vg_p384_point_add(ws: *mut [u64; 1024]) {
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p384_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x38a00ba038800d60f8030d207c0802a6
-.byte 160,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 144,13,128,56,208,11,160,56,208,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 192,13,128,56,0,12,160,56,0,12,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 240,13,128,56,160,11,160,56,208,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,14,128,56,160,11,160,56,208,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 240,13,128,56,240,13,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 32,14,128,56,96,13,160,56,144,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 240,13,128,56,240,13,160,56,32,14,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 32,14,128,56,160,11,160,56,0,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 80,14,128,56,160,11,160,56,0,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,14,128,56,32,14,160,56,80,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 80,14,128,56,96,13,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,14,128,56,32,14,160,56,80,14,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 80,14,128,56,208,11,160,56,0,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 16,11,128,56,208,11,160,56,0,12,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 80,14,128,56,80,14,160,56,16,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,144,13,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 80,14,128,56,80,14,160,56,16,11,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 112,11,128,56,192,12,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,240,12,160,56,192,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 112,11,128,56,16,11,160,56,112,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 16,11,128,56,144,13,160,56,112,11,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 112,11,128,56,144,13,160,56,112,11,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 64,11,128,56,16,11,160,56,112,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 144,13,128,56,96,13,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 144,13,128,56,144,13,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 192,13,128,56,192,12,160,56,192,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 32,14,128,56,240,12,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 144,13,128,56,144,13,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 192,13,128,56,96,13,160,56,192,13,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 192,13,128,56,192,12,160,56,192,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 32,14,128,56,32,14,160,56,192,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 96,13,128,56,144,13,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 64,11,128,56,64,11,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 96,13,128,56,80,14,160,56,32,14,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,240,13,160,56,16,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 16,11,128,56,16,11,160,56,96,13,192,56",
-        r"bl {vg_p384_sub_mod_p}",
-        r".byte 96,13,128,56,240,13,160,56,144,13,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 112,11,128,56,80,14,160,56,112,11,192,56",
-        r"bl {vg_p384_mul_mod_p}",
-        r".byte 112,11,128,56,112,11,160,56,96,13,192,56",
-        r"bl {vg_p384_add_mod_p}",
-        r".byte 32,13,3,232,166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 3360(%r3)
+        // li %r4, 3424
+        // li %r5, 2976
+        // li %r6, 2976
+        r".long 0x7c0802a6,0xf8030d20,0x38800d60,0x38a00ba0,0x38c00ba0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3024
+        // li %r6, 3024
+        r".long 0x38800d90,0x38a00bd0,0x38c00bd0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3072
+        // li %r6, 3072
+        r".long 0x38800dc0,0x38a00c00,0x38c00c00
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3568
+        // li %r5, 2976
+        // li %r6, 3024
+        r".long 0x38800df0,0x38a00ba0,0x38c00bd0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3616
+        // li %r5, 2976
+        // li %r6, 3024
+        r".long 0x38800e20,0x38a00ba0,0x38c00bd0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3568
+        // li %r5, 3568
+        // li %r6, 3616
+        r".long 0x38800df0,0x38a00df0,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3424
+        // li %r6, 3472
+        r".long 0x38800e20,0x38a00d60,0x38c00d90
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3568
+        // li %r5, 3568
+        // li %r6, 3616
+        r".long 0x38800df0,0x38a00df0,0x38c00e20
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3616
+        // li %r5, 2976
+        // li %r6, 3072
+        r".long 0x38800e20,0x38a00ba0,0x38c00c00
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3664
+        // li %r5, 2976
+        // li %r6, 3072
+        r".long 0x38800e50,0x38a00ba0,0x38c00c00
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3616
+        // li %r6, 3664
+        r".long 0x38800e20,0x38a00e20,0x38c00e50
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3424
+        // li %r6, 3520
+        r".long 0x38800e50,0x38a00d60,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3616
+        // li %r6, 3664
+        r".long 0x38800e20,0x38a00e20,0x38c00e50
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3024
+        // li %r6, 3072
+        r".long 0x38800e50,0x38a00bd0,0x38c00c00
+bl {vg_p384_add_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3024
+        // li %r6, 3072
+        r".long 0x38800b10,0x38a00bd0,0x38c00c00
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3664
+        // li %r6, 2832
+        r".long 0x38800e50,0x38a00e50,0x38c00b10
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3472
+        // li %r6, 3520
+        r".long 0x38800b10,0x38a00d90,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3664
+        // li %r5, 3664
+        // li %r6, 2832
+        r".long 0x38800e50,0x38a00e50,0x38c00b10
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 2928
+        // li %r5, 3264
+        // li %r6, 3616
+        r".long 0x38800b70,0x38a00cc0,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3312
+        // li %r6, 3520
+        r".long 0x38800b10,0x38a00cf0,0x38c00dc0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2928
+        // li %r5, 2832
+        // li %r6, 2928
+        r".long 0x38800b70,0x38a00b10,0x38c00b70
+bl {vg_p384_add_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3472
+        // li %r6, 2928
+        r".long 0x38800b10,0x38a00d90,0x38c00b70
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 2928
+        // li %r5, 3472
+        // li %r6, 2928
+        r".long 0x38800b70,0x38a00d90,0x38c00b70
+bl {vg_p384_add_mod_p}",
+        // li %r4, 2880
+        // li %r5, 2832
+        // li %r6, 2928
+        r".long 0x38800b40,0x38a00b10,0x38c00b70
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3424
+        // li %r6, 3424
+        r".long 0x38800d90,0x38a00d60,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3472
+        // li %r6, 3424
+        r".long 0x38800d90,0x38a00d90,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3264
+        // li %r6, 3520
+        r".long 0x38800dc0,0x38a00cc0,0x38c00dc0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3312
+        // li %r6, 3616
+        r".long 0x38800e20,0x38a00cf0,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3472
+        // li %r5, 3472
+        // li %r6, 3520
+        r".long 0x38800d90,0x38a00d90,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3424
+        // li %r6, 3520
+        r".long 0x38800dc0,0x38a00d60,0x38c00dc0
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3520
+        // li %r5, 3264
+        // li %r6, 3520
+        r".long 0x38800dc0,0x38a00cc0,0x38c00dc0
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 3616
+        // li %r5, 3616
+        // li %r6, 3520
+        r".long 0x38800e20,0x38a00e20,0x38c00dc0
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3424
+        // li %r5, 3472
+        // li %r6, 3616
+        r".long 0x38800d60,0x38a00d90,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2880
+        // li %r5, 2880
+        // li %r6, 3424
+        r".long 0x38800b40,0x38a00b40,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // li %r4, 3424
+        // li %r5, 3664
+        // li %r6, 3616
+        r".long 0x38800d60,0x38a00e50,0x38c00e20
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 3568
+        // li %r6, 2832
+        r".long 0x38800b10,0x38a00df0,0x38c00b10
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2832
+        // li %r5, 2832
+        // li %r6, 3424
+        r".long 0x38800b10,0x38a00b10,0x38c00d60
+bl {vg_p384_sub_mod_p}",
+        // li %r4, 3424
+        // li %r5, 3568
+        // li %r6, 3472
+        r".long 0x38800d60,0x38a00df0,0x38c00d90
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2928
+        // li %r5, 3664
+        // li %r6, 2928
+        r".long 0x38800b70,0x38a00e50,0x38c00b70
+bl {vg_p384_mul_mod_p}",
+        // li %r4, 2928
+        // li %r5, 2928
+        // li %r6, 3424
+        r".long 0x38800b70,0x38a00b70,0x38c00d60
+bl {vg_p384_add_mod_p}",
+        // ld %r0, 3360(%r3)
+        // mtlr %r0
+        // blr
+        r".long 0xe8030d20,0x7c0803a6,0x4e800020",
         vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::p384_mont::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,

@@ -13,8 +13,38 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x7c84383838e000077886e8c238a00000,0x38630008f8a300004182001c28260000,0x480000044082fff02826000038c6ffff,0x98a300004182001c2826000038c40000
-.octa 0x4082fff02826000038c6ffff38630001
-.byte 4,0,0,72,32,0,128,78",
+        // li %r5, 0
+        // rldicl %r6, %r4, 61, 3
+        // li %r7, 7
+        // and %r4, %r4, %r7
+        // cmpldi %cr0, %r6, 0
+        r".long 0x38a00000,0x7886e8c2,0x38e00007,0x7c843838,0x28260000
+beq %cr0, 20f
+22:",
+        // std %r5, 0(%r3)
+        // addi %r3, %r3, 8
+        // addi %r6, %r6, -1
+        // cmpldi %cr0, %r6, 0
+        r".long 0xf8a30000,0x38630008,0x38c6ffff,0x28260000
+bne %cr0, 22b
+b 21f
+20:
+21:",
+        // addi %r6, %r4, 0
+        // cmpldi %cr0, %r6, 0
+        r".long 0x38c40000,0x28260000
+beq %cr0, 23f
+25:",
+        // stb %r5, 0(%r3)
+        // addi %r3, %r3, 1
+        // addi %r6, %r6, -1
+        // cmpldi %cr0, %r6, 0
+        r".long 0x98a30000,0x38630001,0x38c6ffff,0x28260000
+bne %cr0, 25b
+b 24f
+23:
+24:",
+        // blr
+        r".long 0x4e800020",
     )
 }

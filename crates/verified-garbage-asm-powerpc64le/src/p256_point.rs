@@ -15,88 +15,212 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p256_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x38a00d0038800e40f8030e007c0802a6
-.byte 96,13,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 96,14,128,56,32,13,160,56,128,13,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 128,14,128,56,64,13,160,56,160,13,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,14,128,56,0,13,160,56,32,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,14,128,56,96,13,160,56,128,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,14,128,56,160,14,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,14,128,56,64,14,160,56,96,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,14,128,56,160,14,160,56,192,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 192,14,128,56,0,13,160,56,64,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 224,14,128,56,96,13,160,56,160,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,14,128,56,192,14,160,56,224,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,14,128,56,64,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,14,128,56,192,14,160,56,224,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 224,14,128,56,32,13,160,56,64,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,12,128,56,128,13,160,56,160,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 224,14,128,56,224,14,160,56,160,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,96,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 224,14,128,56,224,14,160,56,160,12,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 224,12,128,56,192,13,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,224,13,160,56,128,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,12,128,56,160,12,160,56,224,12,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,12,128,56,96,14,160,56,224,12,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 224,12,128,56,96,14,160,56,224,12,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,12,128,56,160,12,160,56,224,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 96,14,128,56,64,14,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 96,14,128,56,96,14,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 128,14,128,56,192,13,160,56,128,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,14,128,56,224,13,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 96,14,128,56,96,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 128,14,128,56,64,14,160,56,128,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 128,14,128,56,192,13,160,56,128,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,14,128,56,192,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 64,14,128,56,96,14,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,12,128,56,192,12,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 64,14,128,56,224,14,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,160,14,160,56,160,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,160,12,160,56,64,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 64,14,128,56,160,14,160,56,96,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,12,128,56,224,14,160,56,224,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,12,128,56,224,12,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 0,14,3,232,166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 3584(%r3)
+        // li %r4, 3648
+        // li %r5, 3328
+        // li %r6, 3424
+        r".long 0x7c0802a6,0xf8030e00,0x38800e40,0x38a00d00,0x38c00d60
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3360
+        // li %r6, 3456
+        r".long 0x38800e60,0x38a00d20,0x38c00d80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3392
+        // li %r6, 3488
+        r".long 0x38800e80,0x38a00d40,0x38c00da0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3744
+        // li %r5, 3328
+        // li %r6, 3360
+        r".long 0x38800ea0,0x38a00d00,0x38c00d20
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3424
+        // li %r6, 3456
+        r".long 0x38800ec0,0x38a00d60,0x38c00d80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3744
+        // li %r5, 3744
+        // li %r6, 3776
+        r".long 0x38800ea0,0x38a00ea0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3648
+        // li %r6, 3680
+        r".long 0x38800ec0,0x38a00e40,0x38c00e60
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3744
+        // li %r5, 3744
+        // li %r6, 3776
+        r".long 0x38800ea0,0x38a00ea0,0x38c00ec0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3328
+        // li %r6, 3392
+        r".long 0x38800ec0,0x38a00d00,0x38c00d40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3424
+        // li %r6, 3488
+        r".long 0x38800ee0,0x38a00d60,0x38c00da0
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3776
+        // li %r6, 3808
+        r".long 0x38800ec0,0x38a00ec0,0x38c00ee0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3648
+        // li %r6, 3712
+        r".long 0x38800ee0,0x38a00e40,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3776
+        // li %r6, 3808
+        r".long 0x38800ec0,0x38a00ec0,0x38c00ee0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3360
+        // li %r6, 3392
+        r".long 0x38800ee0,0x38a00d20,0x38c00d40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3456
+        // li %r6, 3488
+        r".long 0x38800ca0,0x38a00d80,0x38c00da0
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3808
+        // li %r6, 3232
+        r".long 0x38800ee0,0x38a00ee0,0x38c00ca0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3680
+        // li %r6, 3712
+        r".long 0x38800ca0,0x38a00e60,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3808
+        // li %r6, 3232
+        r".long 0x38800ee0,0x38a00ee0,0x38c00ca0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3520
+        // li %r6, 3776
+        r".long 0x38800ce0,0x38a00dc0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3552
+        // li %r6, 3712
+        r".long 0x38800ca0,0x38a00de0,0x38c00e80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3232
+        // li %r6, 3296
+        r".long 0x38800ce0,0x38a00ca0,0x38c00ce0
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3680
+        // li %r6, 3296
+        r".long 0x38800ca0,0x38a00e60,0x38c00ce0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3680
+        // li %r6, 3296
+        r".long 0x38800ce0,0x38a00e60,0x38c00ce0
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3264
+        // li %r5, 3232
+        // li %r6, 3296
+        r".long 0x38800cc0,0x38a00ca0,0x38c00ce0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3648
+        // li %r6, 3648
+        r".long 0x38800e60,0x38a00e40,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3680
+        // li %r6, 3648
+        r".long 0x38800e60,0x38a00e60,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3520
+        // li %r6, 3712
+        r".long 0x38800e80,0x38a00dc0,0x38c00e80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3552
+        // li %r6, 3776
+        r".long 0x38800ec0,0x38a00de0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3680
+        // li %r6, 3712
+        r".long 0x38800e60,0x38a00e60,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3648
+        // li %r6, 3712
+        r".long 0x38800e80,0x38a00e40,0x38c00e80
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3520
+        // li %r6, 3712
+        r".long 0x38800e80,0x38a00dc0,0x38c00e80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3776
+        // li %r6, 3712
+        r".long 0x38800ec0,0x38a00ec0,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3648
+        // li %r5, 3680
+        // li %r6, 3776
+        r".long 0x38800e40,0x38a00e60,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3264
+        // li %r5, 3264
+        // li %r6, 3648
+        r".long 0x38800cc0,0x38a00cc0,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3648
+        // li %r5, 3808
+        // li %r6, 3776
+        r".long 0x38800e40,0x38a00ee0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3744
+        // li %r6, 3232
+        r".long 0x38800ca0,0x38a00ea0,0x38c00ca0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3232
+        // li %r6, 3648
+        r".long 0x38800ca0,0x38a00ca0,0x38c00e40
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3648
+        // li %r5, 3744
+        // li %r6, 3680
+        r".long 0x38800e40,0x38a00ea0,0x38c00e60
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3808
+        // li %r6, 3296
+        r".long 0x38800ce0,0x38a00ee0,0x38c00ce0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3296
+        // li %r6, 3648
+        r".long 0x38800ce0,0x38a00ce0,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // ld %r0, 3584(%r3)
+        // mtlr %r0
+        // blr
+        r".long 0xe8030e00,0x7c0803a6,0x4e800020",
         vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
         vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
         vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
@@ -116,88 +240,212 @@ pub unsafe extern "C" fn vg_p256_point_add(ws: *mut [u64; 1024]) {
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p256_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x38a00d0038800e40f8030e007c0802a6
-.byte 0,13,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 96,14,128,56,32,13,160,56,32,13,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 128,14,128,56,64,13,160,56,64,13,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,14,128,56,0,13,160,56,32,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,14,128,56,0,13,160,56,32,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,14,128,56,160,14,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,14,128,56,64,14,160,56,96,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,14,128,56,160,14,160,56,192,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 192,14,128,56,0,13,160,56,64,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 224,14,128,56,0,13,160,56,64,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,14,128,56,192,14,160,56,224,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,14,128,56,64,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,14,128,56,192,14,160,56,224,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 224,14,128,56,32,13,160,56,64,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,12,128,56,32,13,160,56,64,13,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 224,14,128,56,224,14,160,56,160,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,96,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 224,14,128,56,224,14,160,56,160,12,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 224,12,128,56,192,13,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,224,13,160,56,128,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,12,128,56,160,12,160,56,224,12,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 160,12,128,56,96,14,160,56,224,12,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 224,12,128,56,96,14,160,56,224,12,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 192,12,128,56,160,12,160,56,224,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 96,14,128,56,64,14,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 96,14,128,56,96,14,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 128,14,128,56,192,13,160,56,128,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,14,128,56,224,13,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 96,14,128,56,96,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 128,14,128,56,64,14,160,56,128,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 128,14,128,56,192,13,160,56,128,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,14,128,56,192,14,160,56,128,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 64,14,128,56,96,14,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 192,12,128,56,192,12,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 64,14,128,56,224,14,160,56,192,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,160,14,160,56,160,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 160,12,128,56,160,12,160,56,64,14,192,56",
-        r"bl {vg_p256_sub_mod_p}",
-        r".byte 64,14,128,56,160,14,160,56,96,14,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,12,128,56,224,14,160,56,224,12,192,56",
-        r"bl {vg_p256_mul_mod_p}",
-        r".byte 224,12,128,56,224,12,160,56,64,14,192,56",
-        r"bl {vg_p256_add_mod_p}",
-        r".byte 0,14,3,232,166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 3584(%r3)
+        // li %r4, 3648
+        // li %r5, 3328
+        // li %r6, 3328
+        r".long 0x7c0802a6,0xf8030e00,0x38800e40,0x38a00d00,0x38c00d00
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3360
+        // li %r6, 3360
+        r".long 0x38800e60,0x38a00d20,0x38c00d20
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3392
+        // li %r6, 3392
+        r".long 0x38800e80,0x38a00d40,0x38c00d40
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3744
+        // li %r5, 3328
+        // li %r6, 3360
+        r".long 0x38800ea0,0x38a00d00,0x38c00d20
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3328
+        // li %r6, 3360
+        r".long 0x38800ec0,0x38a00d00,0x38c00d20
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3744
+        // li %r5, 3744
+        // li %r6, 3776
+        r".long 0x38800ea0,0x38a00ea0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3648
+        // li %r6, 3680
+        r".long 0x38800ec0,0x38a00e40,0x38c00e60
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3744
+        // li %r5, 3744
+        // li %r6, 3776
+        r".long 0x38800ea0,0x38a00ea0,0x38c00ec0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3328
+        // li %r6, 3392
+        r".long 0x38800ec0,0x38a00d00,0x38c00d40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3328
+        // li %r6, 3392
+        r".long 0x38800ee0,0x38a00d00,0x38c00d40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3776
+        // li %r6, 3808
+        r".long 0x38800ec0,0x38a00ec0,0x38c00ee0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3648
+        // li %r6, 3712
+        r".long 0x38800ee0,0x38a00e40,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3776
+        // li %r6, 3808
+        r".long 0x38800ec0,0x38a00ec0,0x38c00ee0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3360
+        // li %r6, 3392
+        r".long 0x38800ee0,0x38a00d20,0x38c00d40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3360
+        // li %r6, 3392
+        r".long 0x38800ca0,0x38a00d20,0x38c00d40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3808
+        // li %r6, 3232
+        r".long 0x38800ee0,0x38a00ee0,0x38c00ca0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3680
+        // li %r6, 3712
+        r".long 0x38800ca0,0x38a00e60,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3808
+        // li %r6, 3232
+        r".long 0x38800ee0,0x38a00ee0,0x38c00ca0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3520
+        // li %r6, 3776
+        r".long 0x38800ce0,0x38a00dc0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3552
+        // li %r6, 3712
+        r".long 0x38800ca0,0x38a00de0,0x38c00e80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3232
+        // li %r6, 3296
+        r".long 0x38800ce0,0x38a00ca0,0x38c00ce0
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3680
+        // li %r6, 3296
+        r".long 0x38800ca0,0x38a00e60,0x38c00ce0
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3680
+        // li %r6, 3296
+        r".long 0x38800ce0,0x38a00e60,0x38c00ce0
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3264
+        // li %r5, 3232
+        // li %r6, 3296
+        r".long 0x38800cc0,0x38a00ca0,0x38c00ce0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3648
+        // li %r6, 3648
+        r".long 0x38800e60,0x38a00e40,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3680
+        // li %r6, 3648
+        r".long 0x38800e60,0x38a00e60,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3520
+        // li %r6, 3712
+        r".long 0x38800e80,0x38a00dc0,0x38c00e80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3552
+        // li %r6, 3776
+        r".long 0x38800ec0,0x38a00de0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3680
+        // li %r5, 3680
+        // li %r6, 3712
+        r".long 0x38800e60,0x38a00e60,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3648
+        // li %r6, 3712
+        r".long 0x38800e80,0x38a00e40,0x38c00e80
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3712
+        // li %r5, 3520
+        // li %r6, 3712
+        r".long 0x38800e80,0x38a00dc0,0x38c00e80
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3776
+        // li %r5, 3776
+        // li %r6, 3712
+        r".long 0x38800ec0,0x38a00ec0,0x38c00e80
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3648
+        // li %r5, 3680
+        // li %r6, 3776
+        r".long 0x38800e40,0x38a00e60,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3264
+        // li %r5, 3264
+        // li %r6, 3648
+        r".long 0x38800cc0,0x38a00cc0,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // li %r4, 3648
+        // li %r5, 3808
+        // li %r6, 3776
+        r".long 0x38800e40,0x38a00ee0,0x38c00ec0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3744
+        // li %r6, 3232
+        r".long 0x38800ca0,0x38a00ea0,0x38c00ca0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3232
+        // li %r5, 3232
+        // li %r6, 3648
+        r".long 0x38800ca0,0x38a00ca0,0x38c00e40
+bl {vg_p256_sub_mod_p}",
+        // li %r4, 3648
+        // li %r5, 3744
+        // li %r6, 3680
+        r".long 0x38800e40,0x38a00ea0,0x38c00e60
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3808
+        // li %r6, 3296
+        r".long 0x38800ce0,0x38a00ee0,0x38c00ce0
+bl {vg_p256_mul_mod_p}",
+        // li %r4, 3296
+        // li %r5, 3296
+        // li %r6, 3648
+        r".long 0x38800ce0,0x38a00ce0,0x38c00e40
+bl {vg_p256_add_mod_p}",
+        // ld %r0, 3584(%r3)
+        // mtlr %r0
+        // blr
+        r".long 0xe8030e00,0x7c0803a6,0x4e800020",
         vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
         vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
         vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,

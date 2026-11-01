@@ -16,15 +16,57 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".octa 0xf80602107c0802a638c10020f821fd61,0x7cde33787c7f1b78fbe60228fbc60220
-.byte 120,35,131,124,120,43,164,124,120,251,229,127",
-        r"bl {vg_triple_des_expand_key}",
-        r".octa 0x38000000389e02007fc5f3787fe3fb78
-.byte 0,0,4,248",
-        r"bl {vg_triple_des_encrypt_block}",
-        r".octa 0x7d28305078e80fe07ce4342838c00000,0x7ce74a7878e70fa47d2950383940001b,0x7d28305078e80fe07ce35d2839600180,0x7ce74a7878e70fa47d2950383940001b
-.octa 0xf8030190380000007ce35d2839600188,0x7c0803a6ebde0220ebfe0228e81e0210
-.byte 160,2,33,56,32,0,128,78",
+        // stdu %r1, -672(%r1)
+        // addi %r6, %r1, 32
+        // mflr %r0
+        // std %r0, 528(%r6)
+        // std %r30, 544(%r6)
+        // std %r31, 552(%r6)
+        // or %r31, %r3, %r3
+        // or %r30, %r6, %r6
+        // or %r3, %r4, %r4
+        // or %r4, %r5, %r5
+        // or %r5, %r31, %r31
+        r".long 0xf821fd61,0x38c10020,0x7c0802a6,0xf8060210,0xfbc60220,0xfbe60228,0x7c7f1b78,0x7cde3378
+.long 0x7c832378,0x7ca42b78,0x7fe5fb78
+bl {vg_triple_des_expand_key}",
+        // or %r3, %r31, %r31
+        // or %r5, %r30, %r30
+        // addi %r4, %r30, 512
+        // li %r0, 0
+        // std %r0, 0(%r4)
+        r".long 0x7fe3fb78,0x7fc5f378,0x389e0200,0x38000000,0xf8040000
+bl {vg_triple_des_encrypt_block}",
+        // li %r6, 0
+        // ldbrx %r7, %r4, %r6
+        // rldicl %r8, %r7, 1, 63
+        // subf %r9, %r8, %r6
+        // li %r10, 27
+        // and %r9, %r9, %r10
+        // rldicr %r7, %r7, 1, 62
+        // xor %r7, %r7, %r9
+        // li %r11, 384
+        // stdbrx %r7, %r3, %r11
+        // rldicl %r8, %r7, 1, 63
+        // subf %r9, %r8, %r6
+        // li %r10, 27
+        // and %r9, %r9, %r10
+        // rldicr %r7, %r7, 1, 62
+        // xor %r7, %r7, %r9
+        // li %r11, 392
+        // stdbrx %r7, %r3, %r11
+        // li %r0, 0
+        // std %r0, 400(%r3)
+        // ld %r0, 528(%r30)
+        // ld %r31, 552(%r30)
+        // ld %r30, 544(%r30)
+        // mtlr %r0
+        // addi %r1, %r1, 672
+        // blr
+        r".long 0x38c00000,0x7ce43428,0x78e80fe0,0x7d283050,0x3940001b,0x7d295038,0x78e70fa4,0x7ce74a78
+.long 0x39600180,0x7ce35d28,0x78e80fe0,0x7d283050,0x3940001b,0x7d295038,0x78e70fa4,0x7ce74a78
+.long 0x39600188,0x7ce35d28,0x38000000,0xf8030190,0xe81e0210,0xebfe0228,0xebde0220,0x7c0803a6
+.long 0x382102a0,0x4e800020",
         vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
     )
@@ -43,17 +85,140 @@ pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], k
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0xf80702107c0802a638e10020f821fd31,0x7cbd2b78fbe70228fbc70220fba70218,0x3904ffff41820018282400007ce53b78,0x48000008390800017d08483839200007
-.octa 0x78cae1027d2848503920000839000000,0x282a00007d4a5b78796b0fe07d664850,0x7faaeb787d6b42143963019840820040,0x880a000041820024282c00007ccc3378
-.octa 0x398cffff396b0001394a0001980b0000,0x480000dc480000044082ffe8282c0000,0x7d2c4b787faaeb787d6b421439630198,0x980b0000880a000041820024282c0000
-.octa 0x282c0000398cffff396b0001394a0001,0x7fc930507d5d5378480000044082ffe8,0x7bcc1f247fe930507bdee8c23bdeffff,0x7ce74a78e9230198e8e301907fecf850
-.byte 0,2,229,248,0,2,133,56",
-        r"bl {vg_triple_des_encrypt_block}",
-        r".octa 0xe93d0000e8e502004182002c283e0000,0x3bdeffff3bbd0008f8e502007ce74a78",
-        r"bl {vg_triple_des_encrypt_block}",
-        r".octa 0xe8e50200480000044082ffe0283e0000,0x7fecfb787faaeb7839630198f8e30190,0x980b0000880a000041820024282c0000,0x282c0000398cffff396b0001394a0001
-.octa 0xeba50218e8050210480000044082ffe8,0x382102d07c0803a6ebe50228ebc50220
-.byte 32,0,128,78",
+        // stdu %r1, -720(%r1)
+        // addi %r7, %r1, 32
+        // mflr %r0
+        // std %r0, 528(%r7)
+        // std %r29, 536(%r7)
+        // std %r30, 544(%r7)
+        // std %r31, 552(%r7)
+        // or %r29, %r5, %r5
+        // or %r5, %r7, %r7
+        // cmpldi %cr0, %r4, 0
+        r".long 0xf821fd31,0x38e10020,0x7c0802a6,0xf8070210,0xfba70218,0xfbc70220,0xfbe70228,0x7cbd2b78
+.long 0x7ce53b78,0x28240000
+beq %cr0, 20f",
+        // addi %r8, %r4, -1
+        // li %r9, 7
+        // and %r8, %r8, %r9
+        // addi %r8, %r8, 1
+        r".long 0x3904ffff,0x39200007,0x7d084838,0x39080001
+b 21f
+20:",
+        // li %r8, 0
+        r".long 0x39000000
+21:",
+        // li %r9, 8
+        // subf %r9, %r8, %r9
+        // rldicl %r10, %r6, 60, 4
+        // subf %r11, %r6, %r9
+        // rldicl %r11, %r11, 1, 63
+        // or %r10, %r10, %r11
+        // cmpldi %cr0, %r10, 0
+        r".long 0x39200008,0x7d284850,0x78cae102,0x7d664850,0x796b0fe0,0x7d4a5b78,0x282a0000
+bne %cr0, 22f",
+        // addi %r11, %r3, 408
+        // add %r11, %r11, %r8
+        // or %r10, %r29, %r29
+        // or %r12, %r6, %r6
+        // cmpldi %cr0, %r12, 0
+        r".long 0x39630198,0x7d6b4214,0x7faaeb78,0x7ccc3378,0x282c0000
+beq %cr0, 24f
+26:",
+        // lbz %r0, 0(%r10)
+        // stb %r0, 0(%r11)
+        // addi %r10, %r10, 1
+        // addi %r11, %r11, 1
+        // addi %r12, %r12, -1
+        // cmpldi %cr0, %r12, 0
+        r".long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+bne %cr0, 26b
+b 25f
+24:
+25:
+b 23f
+22:",
+        // addi %r11, %r3, 408
+        // add %r11, %r11, %r8
+        // or %r10, %r29, %r29
+        // or %r12, %r9, %r9
+        // cmpldi %cr0, %r12, 0
+        r".long 0x39630198,0x7d6b4214,0x7faaeb78,0x7d2c4b78,0x282c0000
+beq %cr0, 27f
+29:",
+        // lbz %r0, 0(%r10)
+        // stb %r0, 0(%r11)
+        // addi %r10, %r10, 1
+        // addi %r11, %r11, 1
+        // addi %r12, %r12, -1
+        // cmpldi %cr0, %r12, 0
+        r".long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+bne %cr0, 29b
+b 28f
+27:
+28:",
+        // or %r29, %r10, %r10
+        // subf %r30, %r9, %r6
+        // addi %r30, %r30, -1
+        // rldicl %r30, %r30, 61, 3
+        // subf %r31, %r9, %r6
+        // rldicr %r12, %r30, 3, 60
+        // subf %r31, %r12, %r31
+        // ld %r7, 400(%r3)
+        // ld %r9, 408(%r3)
+        // xor %r7, %r7, %r9
+        // std %r7, 512(%r5)
+        // addi %r4, %r5, 512
+        r".long 0x7d5d5378,0x7fc93050,0x3bdeffff,0x7bdee8c2,0x7fe93050,0x7bcc1f24,0x7fecf850,0xe8e30190
+.long 0xe9230198,0x7ce74a78,0xf8e50200,0x38850200
+bl {vg_triple_des_encrypt_block}",
+        // cmpldi %cr0, %r30, 0
+        r".long 0x283e0000
+beq %cr0, 210f
+212:",
+        // ld %r7, 512(%r5)
+        // ld %r9, 0(%r29)
+        // xor %r7, %r7, %r9
+        // std %r7, 512(%r5)
+        // addi %r29, %r29, 8
+        // addi %r30, %r30, -1
+        r".long 0xe8e50200,0xe93d0000,0x7ce74a78,0xf8e50200,0x3bbd0008,0x3bdeffff
+bl {vg_triple_des_encrypt_block}",
+        // cmpldi %cr0, %r30, 0
+        r".long 0x283e0000
+bne %cr0, 212b
+b 211f
+210:
+211:",
+        // ld %r7, 512(%r5)
+        // std %r7, 400(%r3)
+        // addi %r11, %r3, 408
+        // or %r10, %r29, %r29
+        // or %r12, %r31, %r31
+        // cmpldi %cr0, %r12, 0
+        r".long 0xe8e50200,0xf8e30190,0x39630198,0x7faaeb78,0x7fecfb78,0x282c0000
+beq %cr0, 213f
+215:",
+        // lbz %r0, 0(%r10)
+        // stb %r0, 0(%r11)
+        // addi %r10, %r10, 1
+        // addi %r11, %r11, 1
+        // addi %r12, %r12, -1
+        // cmpldi %cr0, %r12, 0
+        r".long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+bne %cr0, 215b
+b 214f
+213:
+214:
+23:",
+        // ld %r0, 528(%r5)
+        // ld %r29, 536(%r5)
+        // ld %r30, 544(%r5)
+        // ld %r31, 552(%r5)
+        // mtlr %r0
+        // addi %r1, %r1, 720
+        // blr
+        r".long 0xe8050210,0xeba50218,0xebc50220,0xebe50228,0x7c0803a6,0x382102d0,0x4e800020",
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
     )
 }
@@ -72,13 +237,80 @@ pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
-        r".octa 0xf80602107c0802a638c10020f821fd61,0x282400007cc533787cbf2b78fbe60228,0x7d084838392000073904ffff41820018,0x3928fff8390000004800000839080001
-.octa 0xf8050208380000004182006428290000,0x282c00007d0c43783965020839430198,0x394a0001980b0000880a000041820024,0x4082ffe8282c0000398cffff396b0001
-.octa 0xe8e50208992b00003920008048000004,0x7ce74a78e92301907ce74a78e9230188,0xe9230180e8e301984800001cf8e50200,0xf8e502007ce74a78e92301907ce74a78
-.byte 0,2,133,56",
-        r"bl {vg_triple_des_encrypt_block}",
-        r".octa 0xebe50228e8050210f8ff0000e8e50200
-.byte 166,3,8,124,160,2,33,56,32,0,128,78",
+        // stdu %r1, -672(%r1)
+        // addi %r6, %r1, 32
+        // mflr %r0
+        // std %r0, 528(%r6)
+        // std %r31, 552(%r6)
+        // or %r31, %r5, %r5
+        // or %r5, %r6, %r6
+        // cmpldi %cr0, %r4, 0
+        r".long 0xf821fd61,0x38c10020,0x7c0802a6,0xf8060210,0xfbe60228,0x7cbf2b78,0x7cc53378,0x28240000
+beq %cr0, 20f",
+        // addi %r8, %r4, -1
+        // li %r9, 7
+        // and %r8, %r8, %r9
+        // addi %r8, %r8, 1
+        r".long 0x3904ffff,0x39200007,0x7d084838,0x39080001
+b 21f
+20:",
+        // li %r8, 0
+        r".long 0x39000000
+21:",
+        // addi %r9, %r8, -8
+        // cmpldi %cr0, %r9, 0
+        r".long 0x3928fff8,0x28290000
+beq %cr0, 22f",
+        // li %r0, 0
+        // std %r0, 520(%r5)
+        // addi %r10, %r3, 408
+        // addi %r11, %r5, 520
+        // or %r12, %r8, %r8
+        // cmpldi %cr0, %r12, 0
+        r".long 0x38000000,0xf8050208,0x39430198,0x39650208,0x7d0c4378,0x282c0000
+beq %cr0, 24f
+26:",
+        // lbz %r0, 0(%r10)
+        // stb %r0, 0(%r11)
+        // addi %r10, %r10, 1
+        // addi %r11, %r11, 1
+        // addi %r12, %r12, -1
+        // cmpldi %cr0, %r12, 0
+        r".long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+bne %cr0, 26b
+b 25f
+24:
+25:",
+        // li %r9, 128
+        // stb %r9, 0(%r11)
+        // ld %r7, 520(%r5)
+        // ld %r9, 392(%r3)
+        // xor %r7, %r7, %r9
+        // ld %r9, 400(%r3)
+        // xor %r7, %r7, %r9
+        // std %r7, 512(%r5)
+        r".long 0x39200080,0x992b0000,0xe8e50208,0xe9230188,0x7ce74a78,0xe9230190,0x7ce74a78,0xf8e50200
+b 23f
+22:",
+        // ld %r7, 408(%r3)
+        // ld %r9, 384(%r3)
+        // xor %r7, %r7, %r9
+        // ld %r9, 400(%r3)
+        // xor %r7, %r7, %r9
+        // std %r7, 512(%r5)
+        r".long 0xe8e30198,0xe9230180,0x7ce74a78,0xe9230190,0x7ce74a78,0xf8e50200
+23:",
+        // addi %r4, %r5, 512
+        r".long 0x38850200
+bl {vg_triple_des_encrypt_block}",
+        // ld %r7, 512(%r5)
+        // std %r7, 0(%r31)
+        // ld %r0, 528(%r5)
+        // ld %r31, 552(%r5)
+        // mtlr %r0
+        // addi %r1, %r1, 672
+        // blr
+        r".long 0xe8e50200,0xf8ff0000,0xe8050210,0xebe50228,0x7c0803a6,0x382102a0,0x4e800020",
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
     )
 }

@@ -15,88 +15,212 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p192_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x38a00db038800eb0f8030e707c0802a6
-.byte 248,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 200,14,128,56,200,13,160,56,16,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 224,14,128,56,224,13,160,56,40,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 248,14,128,56,176,13,160,56,200,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 16,15,128,56,248,13,160,56,16,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 248,14,128,56,248,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 16,15,128,56,176,14,160,56,200,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 248,14,128,56,248,14,160,56,16,15,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 16,15,128,56,176,13,160,56,224,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 40,15,128,56,248,13,160,56,40,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 16,15,128,56,16,15,160,56,40,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 40,15,128,56,176,14,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 16,15,128,56,16,15,160,56,40,15,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 40,15,128,56,200,13,160,56,224,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 104,13,128,56,16,14,160,56,40,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 40,15,128,56,40,15,160,56,104,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,200,14,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 40,15,128,56,40,15,160,56,104,13,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 152,13,128,56,64,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,88,14,160,56,224,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 152,13,128,56,104,13,160,56,152,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 104,13,128,56,200,14,160,56,152,13,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 152,13,128,56,200,14,160,56,152,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 128,13,128,56,104,13,160,56,152,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 200,14,128,56,176,14,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 200,14,128,56,200,14,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 224,14,128,56,64,14,160,56,224,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 16,15,128,56,88,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 200,14,128,56,200,14,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 224,14,128,56,176,14,160,56,224,14,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 224,14,128,56,64,14,160,56,224,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 16,15,128,56,16,15,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 176,14,128,56,200,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 128,13,128,56,128,13,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 176,14,128,56,40,15,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,248,14,160,56,104,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,104,13,160,56,176,14,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 176,14,128,56,248,14,160,56,200,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 152,13,128,56,40,15,160,56,152,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 152,13,128,56,152,13,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 112,14,3,232,166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 3696(%r3)
+        // li %r4, 3760
+        // li %r5, 3504
+        // li %r6, 3576
+        r".long 0x7c0802a6,0xf8030e70,0x38800eb0,0x38a00db0,0x38c00df8
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3528
+        // li %r6, 3600
+        r".long 0x38800ec8,0x38a00dc8,0x38c00e10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3552
+        // li %r6, 3624
+        r".long 0x38800ee0,0x38a00de0,0x38c00e28
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3832
+        // li %r5, 3504
+        // li %r6, 3528
+        r".long 0x38800ef8,0x38a00db0,0x38c00dc8
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3576
+        // li %r6, 3600
+        r".long 0x38800f10,0x38a00df8,0x38c00e10
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3832
+        // li %r5, 3832
+        // li %r6, 3856
+        r".long 0x38800ef8,0x38a00ef8,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3760
+        // li %r6, 3784
+        r".long 0x38800f10,0x38a00eb0,0x38c00ec8
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3832
+        // li %r5, 3832
+        // li %r6, 3856
+        r".long 0x38800ef8,0x38a00ef8,0x38c00f10
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3504
+        // li %r6, 3552
+        r".long 0x38800f10,0x38a00db0,0x38c00de0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3576
+        // li %r6, 3624
+        r".long 0x38800f28,0x38a00df8,0x38c00e28
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3856
+        // li %r6, 3880
+        r".long 0x38800f10,0x38a00f10,0x38c00f28
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3760
+        // li %r6, 3808
+        r".long 0x38800f28,0x38a00eb0,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3856
+        // li %r6, 3880
+        r".long 0x38800f10,0x38a00f10,0x38c00f28
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3528
+        // li %r6, 3552
+        r".long 0x38800f28,0x38a00dc8,0x38c00de0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3600
+        // li %r6, 3624
+        r".long 0x38800d68,0x38a00e10,0x38c00e28
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3880
+        // li %r6, 3432
+        r".long 0x38800f28,0x38a00f28,0x38c00d68
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3784
+        // li %r6, 3808
+        r".long 0x38800d68,0x38a00ec8,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3880
+        // li %r6, 3432
+        r".long 0x38800f28,0x38a00f28,0x38c00d68
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3648
+        // li %r6, 3856
+        r".long 0x38800d98,0x38a00e40,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3672
+        // li %r6, 3808
+        r".long 0x38800d68,0x38a00e58,0x38c00ee0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3432
+        // li %r6, 3480
+        r".long 0x38800d98,0x38a00d68,0x38c00d98
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3784
+        // li %r6, 3480
+        r".long 0x38800d68,0x38a00ec8,0x38c00d98
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3784
+        // li %r6, 3480
+        r".long 0x38800d98,0x38a00ec8,0x38c00d98
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3456
+        // li %r5, 3432
+        // li %r6, 3480
+        r".long 0x38800d80,0x38a00d68,0x38c00d98
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3760
+        // li %r6, 3760
+        r".long 0x38800ec8,0x38a00eb0,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3784
+        // li %r6, 3760
+        r".long 0x38800ec8,0x38a00ec8,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3648
+        // li %r6, 3808
+        r".long 0x38800ee0,0x38a00e40,0x38c00ee0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3672
+        // li %r6, 3856
+        r".long 0x38800f10,0x38a00e58,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3784
+        // li %r6, 3808
+        r".long 0x38800ec8,0x38a00ec8,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3760
+        // li %r6, 3808
+        r".long 0x38800ee0,0x38a00eb0,0x38c00ee0
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3648
+        // li %r6, 3808
+        r".long 0x38800ee0,0x38a00e40,0x38c00ee0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3856
+        // li %r6, 3808
+        r".long 0x38800f10,0x38a00f10,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3760
+        // li %r5, 3784
+        // li %r6, 3856
+        r".long 0x38800eb0,0x38a00ec8,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3456
+        // li %r5, 3456
+        // li %r6, 3760
+        r".long 0x38800d80,0x38a00d80,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3760
+        // li %r5, 3880
+        // li %r6, 3856
+        r".long 0x38800eb0,0x38a00f28,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3832
+        // li %r6, 3432
+        r".long 0x38800d68,0x38a00ef8,0x38c00d68
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3432
+        // li %r6, 3760
+        r".long 0x38800d68,0x38a00d68,0x38c00eb0
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3760
+        // li %r5, 3832
+        // li %r6, 3784
+        r".long 0x38800eb0,0x38a00ef8,0x38c00ec8
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3880
+        // li %r6, 3480
+        r".long 0x38800d98,0x38a00f28,0x38c00d98
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3480
+        // li %r6, 3760
+        r".long 0x38800d98,0x38a00d98,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // ld %r0, 3696(%r3)
+        // mtlr %r0
+        // blr
+        r".long 0xe8030e70,0x7c0803a6,0x4e800020",
         vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::p192_mont::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::p192_mont::vg_p192_sub_mod_p,
@@ -116,88 +240,212 @@ pub unsafe extern "C" fn vg_p192_point_add(ws: *mut [u64; 1024]) {
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_p192_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".octa 0x38a00db038800eb0f8030e707c0802a6
-.byte 176,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 200,14,128,56,200,13,160,56,200,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 224,14,128,56,224,13,160,56,224,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 248,14,128,56,176,13,160,56,200,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 16,15,128,56,176,13,160,56,200,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 248,14,128,56,248,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 16,15,128,56,176,14,160,56,200,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 248,14,128,56,248,14,160,56,16,15,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 16,15,128,56,176,13,160,56,224,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 40,15,128,56,176,13,160,56,224,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 16,15,128,56,16,15,160,56,40,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 40,15,128,56,176,14,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 16,15,128,56,16,15,160,56,40,15,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 40,15,128,56,200,13,160,56,224,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 104,13,128,56,200,13,160,56,224,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 40,15,128,56,40,15,160,56,104,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,200,14,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 40,15,128,56,40,15,160,56,104,13,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 152,13,128,56,64,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,88,14,160,56,224,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 152,13,128,56,104,13,160,56,152,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 104,13,128,56,200,14,160,56,152,13,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 152,13,128,56,200,14,160,56,152,13,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 128,13,128,56,104,13,160,56,152,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 200,14,128,56,176,14,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 200,14,128,56,200,14,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 224,14,128,56,64,14,160,56,224,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 16,15,128,56,88,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 200,14,128,56,200,14,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 224,14,128,56,176,14,160,56,224,14,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 224,14,128,56,64,14,160,56,224,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 16,15,128,56,16,15,160,56,224,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 176,14,128,56,200,14,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 128,13,128,56,128,13,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 176,14,128,56,40,15,160,56,16,15,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,248,14,160,56,104,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 104,13,128,56,104,13,160,56,176,14,192,56",
-        r"bl {vg_p192_sub_mod_p}",
-        r".byte 176,14,128,56,248,14,160,56,200,14,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 152,13,128,56,40,15,160,56,152,13,192,56",
-        r"bl {vg_p192_mul_mod_p}",
-        r".byte 152,13,128,56,152,13,160,56,176,14,192,56",
-        r"bl {vg_p192_add_mod_p}",
-        r".byte 112,14,3,232,166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 3696(%r3)
+        // li %r4, 3760
+        // li %r5, 3504
+        // li %r6, 3504
+        r".long 0x7c0802a6,0xf8030e70,0x38800eb0,0x38a00db0,0x38c00db0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3528
+        // li %r6, 3528
+        r".long 0x38800ec8,0x38a00dc8,0x38c00dc8
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3552
+        // li %r6, 3552
+        r".long 0x38800ee0,0x38a00de0,0x38c00de0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3832
+        // li %r5, 3504
+        // li %r6, 3528
+        r".long 0x38800ef8,0x38a00db0,0x38c00dc8
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3504
+        // li %r6, 3528
+        r".long 0x38800f10,0x38a00db0,0x38c00dc8
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3832
+        // li %r5, 3832
+        // li %r6, 3856
+        r".long 0x38800ef8,0x38a00ef8,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3760
+        // li %r6, 3784
+        r".long 0x38800f10,0x38a00eb0,0x38c00ec8
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3832
+        // li %r5, 3832
+        // li %r6, 3856
+        r".long 0x38800ef8,0x38a00ef8,0x38c00f10
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3504
+        // li %r6, 3552
+        r".long 0x38800f10,0x38a00db0,0x38c00de0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3504
+        // li %r6, 3552
+        r".long 0x38800f28,0x38a00db0,0x38c00de0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3856
+        // li %r6, 3880
+        r".long 0x38800f10,0x38a00f10,0x38c00f28
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3760
+        // li %r6, 3808
+        r".long 0x38800f28,0x38a00eb0,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3856
+        // li %r6, 3880
+        r".long 0x38800f10,0x38a00f10,0x38c00f28
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3528
+        // li %r6, 3552
+        r".long 0x38800f28,0x38a00dc8,0x38c00de0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3528
+        // li %r6, 3552
+        r".long 0x38800d68,0x38a00dc8,0x38c00de0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3880
+        // li %r6, 3432
+        r".long 0x38800f28,0x38a00f28,0x38c00d68
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3784
+        // li %r6, 3808
+        r".long 0x38800d68,0x38a00ec8,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3880
+        // li %r5, 3880
+        // li %r6, 3432
+        r".long 0x38800f28,0x38a00f28,0x38c00d68
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3648
+        // li %r6, 3856
+        r".long 0x38800d98,0x38a00e40,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3672
+        // li %r6, 3808
+        r".long 0x38800d68,0x38a00e58,0x38c00ee0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3432
+        // li %r6, 3480
+        r".long 0x38800d98,0x38a00d68,0x38c00d98
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3784
+        // li %r6, 3480
+        r".long 0x38800d68,0x38a00ec8,0x38c00d98
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3784
+        // li %r6, 3480
+        r".long 0x38800d98,0x38a00ec8,0x38c00d98
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3456
+        // li %r5, 3432
+        // li %r6, 3480
+        r".long 0x38800d80,0x38a00d68,0x38c00d98
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3760
+        // li %r6, 3760
+        r".long 0x38800ec8,0x38a00eb0,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3784
+        // li %r6, 3760
+        r".long 0x38800ec8,0x38a00ec8,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3648
+        // li %r6, 3808
+        r".long 0x38800ee0,0x38a00e40,0x38c00ee0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3672
+        // li %r6, 3856
+        r".long 0x38800f10,0x38a00e58,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3784
+        // li %r5, 3784
+        // li %r6, 3808
+        r".long 0x38800ec8,0x38a00ec8,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3760
+        // li %r6, 3808
+        r".long 0x38800ee0,0x38a00eb0,0x38c00ee0
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3808
+        // li %r5, 3648
+        // li %r6, 3808
+        r".long 0x38800ee0,0x38a00e40,0x38c00ee0
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3856
+        // li %r5, 3856
+        // li %r6, 3808
+        r".long 0x38800f10,0x38a00f10,0x38c00ee0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3760
+        // li %r5, 3784
+        // li %r6, 3856
+        r".long 0x38800eb0,0x38a00ec8,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3456
+        // li %r5, 3456
+        // li %r6, 3760
+        r".long 0x38800d80,0x38a00d80,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // li %r4, 3760
+        // li %r5, 3880
+        // li %r6, 3856
+        r".long 0x38800eb0,0x38a00f28,0x38c00f10
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3832
+        // li %r6, 3432
+        r".long 0x38800d68,0x38a00ef8,0x38c00d68
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3432
+        // li %r5, 3432
+        // li %r6, 3760
+        r".long 0x38800d68,0x38a00d68,0x38c00eb0
+bl {vg_p192_sub_mod_p}",
+        // li %r4, 3760
+        // li %r5, 3832
+        // li %r6, 3784
+        r".long 0x38800eb0,0x38a00ef8,0x38c00ec8
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3880
+        // li %r6, 3480
+        r".long 0x38800d98,0x38a00f28,0x38c00d98
+bl {vg_p192_mul_mod_p}",
+        // li %r4, 3480
+        // li %r5, 3480
+        // li %r6, 3760
+        r".long 0x38800d98,0x38a00d98,0x38c00eb0
+bl {vg_p192_add_mod_p}",
+        // ld %r0, 3696(%r3)
+        // mtlr %r0
+        // blr
+        r".long 0xe8030e70,0x7c0803a6,0x4e800020",
         vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::p192_mont::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::p192_mont::vg_p192_sub_mod_p,

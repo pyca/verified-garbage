@@ -19,13 +19,85 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0xf9e80818f9c80810f80808407c0802a6,0xfa680838fa480830fa280828fa080820,0x7cd133787cb02b787c8f23787c6e1b78,0x418200a8283200007d1343787cf23b78
-.octa 0xf93100007d295278e9500000e9310000,0xf93100087d295278e9500008e9310008,0x38c000017e258b787de47b787dc37378
-.byte 120,155,103,126",
-        r"bl {vg_aes_encrypt_blocks}",
-        r".octa 0xf93100007d295278e9500000e9310000,0xf93100087d295278e9500008e9310008,0x39800000794b0fe0e9500008e9300000,0x792c0fe07d6b6038398000877d6b6050
-.octa 0x7d4a6378794a0fa47d295a7879290fa4,0x3a52ffff3a310010f9500008f9300000,0xe8130840480000044082ff6428320000,0xea330828ea130820e9f30818e9d30810
-.octa 0x4e8000207c0803a6ea730838ea530830",
+        // mflr %r0
+        // std %r0, 2112(%r8)
+        // std %r14, 2064(%r8)
+        // std %r15, 2072(%r8)
+        // std %r16, 2080(%r8)
+        // std %r17, 2088(%r8)
+        // std %r18, 2096(%r8)
+        // std %r19, 2104(%r8)
+        // or %r14, %r3, %r3
+        // or %r15, %r4, %r4
+        // or %r16, %r5, %r5
+        // or %r17, %r6, %r6
+        // or %r18, %r7, %r7
+        // or %r19, %r8, %r8
+        // cmpldi %cr0, %r18, 0
+        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
+.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+beq %cr0, 20f
+22:",
+        // ld %r9, 0(%r17)
+        // ld %r10, 0(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 0(%r17)
+        // ld %r9, 8(%r17)
+        // ld %r10, 8(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 8(%r17)
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // or %r5, %r17, %r17
+        // li %r6, 1
+        // or %r7, %r19, %r19
+        r".long 0xe9310000,0xe9500000,0x7d295278,0xf9310000,0xe9310008,0xe9500008,0x7d295278,0xf9310008
+.long 0x7dc37378,0x7de47b78,0x7e258b78,0x38c00001,0x7e679b78
+bl {vg_aes_encrypt_blocks}",
+        // ld %r9, 0(%r17)
+        // ld %r10, 0(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 0(%r17)
+        // ld %r9, 8(%r17)
+        // ld %r10, 8(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 8(%r17)
+        // ld %r9, 0(%r16)
+        // ld %r10, 8(%r16)
+        // rldicl %r11, %r10, 1, 63
+        // li %r12, 0
+        // subf %r11, %r11, %r12
+        // li %r12, 135
+        // and %r11, %r11, %r12
+        // rldicl %r12, %r9, 1, 63
+        // rldicr %r9, %r9, 1, 62
+        // xor %r9, %r9, %r11
+        // rldicr %r10, %r10, 1, 62
+        // or %r10, %r10, %r12
+        // std %r9, 0(%r16)
+        // std %r10, 8(%r16)
+        // addi %r17, %r17, 16
+        // addi %r18, %r18, -1
+        // cmpldi %cr0, %r18, 0
+        r".long 0xe9310000,0xe9500000,0x7d295278,0xf9310000,0xe9310008,0xe9500008,0x7d295278,0xf9310008
+.long 0xe9300000,0xe9500008,0x794b0fe0,0x39800000,0x7d6b6050,0x39800087,0x7d6b6038,0x792c0fe0
+.long 0x79290fa4,0x7d295a78,0x794a0fa4,0x7d4a6378,0xf9300000,0xf9500008,0x3a310010,0x3a52ffff
+.long 0x28320000
+bne %cr0, 22b
+b 21f
+20:
+21:",
+        // ld %r0, 2112(%r19)
+        // ld %r14, 2064(%r19)
+        // ld %r15, 2072(%r19)
+        // ld %r16, 2080(%r19)
+        // ld %r17, 2088(%r19)
+        // ld %r18, 2096(%r19)
+        // ld %r19, 2104(%r19)
+        // mtlr %r0
+        // blr
+        r".long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
+.long 0x4e800020",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -47,13 +119,85 @@ pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0xf9e80818f9c80810f80808407c0802a6,0xfa680838fa480830fa280828fa080820,0x7cd133787cb02b787c8f23787c6e1b78,0x418200a8283200007d1343787cf23b78
-.octa 0xf93100007d295278e9500000e9310000,0xf93100087d295278e9500008e9310008,0x38c000017e258b787de47b787dc37378
-.byte 120,155,103,126",
-        r"bl {vg_aes_decrypt_blocks}",
-        r".octa 0xf93100007d295278e9500000e9310000,0xf93100087d295278e9500008e9310008,0x39800000794b0fe0e9500008e9300000,0x792c0fe07d6b6038398000877d6b6050
-.octa 0x7d4a6378794a0fa47d295a7879290fa4,0x3a52ffff3a310010f9500008f9300000,0xe8130840480000044082ff6428320000,0xea330828ea130820e9f30818e9d30810
-.octa 0x4e8000207c0803a6ea730838ea530830",
+        // mflr %r0
+        // std %r0, 2112(%r8)
+        // std %r14, 2064(%r8)
+        // std %r15, 2072(%r8)
+        // std %r16, 2080(%r8)
+        // std %r17, 2088(%r8)
+        // std %r18, 2096(%r8)
+        // std %r19, 2104(%r8)
+        // or %r14, %r3, %r3
+        // or %r15, %r4, %r4
+        // or %r16, %r5, %r5
+        // or %r17, %r6, %r6
+        // or %r18, %r7, %r7
+        // or %r19, %r8, %r8
+        // cmpldi %cr0, %r18, 0
+        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
+.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+beq %cr0, 20f
+22:",
+        // ld %r9, 0(%r17)
+        // ld %r10, 0(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 0(%r17)
+        // ld %r9, 8(%r17)
+        // ld %r10, 8(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 8(%r17)
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // or %r5, %r17, %r17
+        // li %r6, 1
+        // or %r7, %r19, %r19
+        r".long 0xe9310000,0xe9500000,0x7d295278,0xf9310000,0xe9310008,0xe9500008,0x7d295278,0xf9310008
+.long 0x7dc37378,0x7de47b78,0x7e258b78,0x38c00001,0x7e679b78
+bl {vg_aes_decrypt_blocks}",
+        // ld %r9, 0(%r17)
+        // ld %r10, 0(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 0(%r17)
+        // ld %r9, 8(%r17)
+        // ld %r10, 8(%r16)
+        // xor %r9, %r9, %r10
+        // std %r9, 8(%r17)
+        // ld %r9, 0(%r16)
+        // ld %r10, 8(%r16)
+        // rldicl %r11, %r10, 1, 63
+        // li %r12, 0
+        // subf %r11, %r11, %r12
+        // li %r12, 135
+        // and %r11, %r11, %r12
+        // rldicl %r12, %r9, 1, 63
+        // rldicr %r9, %r9, 1, 62
+        // xor %r9, %r9, %r11
+        // rldicr %r10, %r10, 1, 62
+        // or %r10, %r10, %r12
+        // std %r9, 0(%r16)
+        // std %r10, 8(%r16)
+        // addi %r17, %r17, 16
+        // addi %r18, %r18, -1
+        // cmpldi %cr0, %r18, 0
+        r".long 0xe9310000,0xe9500000,0x7d295278,0xf9310000,0xe9310008,0xe9500008,0x7d295278,0xf9310008
+.long 0xe9300000,0xe9500008,0x794b0fe0,0x39800000,0x7d6b6050,0x39800087,0x7d6b6038,0x792c0fe0
+.long 0x79290fa4,0x7d295a78,0x794a0fa4,0x7d4a6378,0xf9300000,0xf9500008,0x3a310010,0x3a52ffff
+.long 0x28320000
+bne %cr0, 22b
+b 21f
+20:
+21:",
+        // ld %r0, 2112(%r19)
+        // ld %r14, 2064(%r19)
+        // ld %r15, 2072(%r19)
+        // ld %r16, 2080(%r19)
+        // ld %r17, 2088(%r19)
+        // ld %r18, 2096(%r19)
+        // ld %r19, 2104(%r19)
+        // mtlr %r0
+        // blr
+        r".long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
+.long 0x4e800020",
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )
 }
@@ -77,19 +221,87 @@ pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
-        r".octa 0xf9e908a8f9c908a0f80908d07c0802a6,0xfa6908c8fa4908c0fa2908b8fa0908b0,0x7d1243787cf13b787caf2b787c6e1b78,0xe9260008f9330880e92600007d334b78
-.octa 0xf9330898f933089039200000f9330888,0x38d3088038b308907de47b787c832378
-.byte 1,0,224,56,120,155,104,126",
-        r"bl {vg_aes_xts_encrypt}",
-        r".octa 0x7e268b7838b308807de47b787dc37378
-.byte 2,225,71,122,120,155,104,126",
-        r"bl {vg_aes_xts_encrypt}",
-        r".octa 0x282b00007d6a9050794a26e47a4ae102,0x890c0000398cfff07d91521441820050,0x398c0001990c0010992c0000892c0010,0x7cd152144082ffe4282b0000396bffff
-.octa 0x38b308807de47b787dc3737838c6fff0
-.byte 1,0,224,56,120,155,104,126",
-        r"bl {vg_aes_xts_encrypt}",
-        r".octa 0xe9f308a8e9d308a0e81308d048000004,0xea7308c8ea5308c0ea3308b8ea1308b0
-.byte 166,3,8,124,32,0,128,78",
+        // mflr %r0
+        // std %r0, 2256(%r9)
+        // std %r14, 2208(%r9)
+        // std %r15, 2216(%r9)
+        // std %r16, 2224(%r9)
+        // std %r17, 2232(%r9)
+        // std %r18, 2240(%r9)
+        // std %r19, 2248(%r9)
+        // or %r14, %r3, %r3
+        // or %r15, %r5, %r5
+        // or %r17, %r7, %r7
+        // or %r18, %r8, %r8
+        // or %r19, %r9, %r9
+        // ld %r9, 0(%r6)
+        // std %r9, 2176(%r19)
+        // ld %r9, 8(%r6)
+        // std %r9, 2184(%r19)
+        // li %r9, 0
+        // std %r9, 2192(%r19)
+        // std %r9, 2200(%r19)
+        // or %r3, %r4, %r4
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2192
+        // addi %r6, %r19, 2176
+        // li %r7, 1
+        // or %r8, %r19, %r19
+        r".long 0x7c0802a6,0xf80908d0,0xf9c908a0,0xf9e908a8,0xfa0908b0,0xfa2908b8,0xfa4908c0,0xfa6908c8
+.long 0x7c6e1b78,0x7caf2b78,0x7cf13b78,0x7d124378,0x7d334b78,0xe9260000,0xf9330880,0xe9260008
+.long 0xf9330888,0x39200000,0xf9330890,0xf9330898,0x7c832378,0x7de47b78,0x38b30890,0x38d30880
+.long 0x38e00001,0x7e689b78
+bl {vg_aes_xts_encrypt}",
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2176
+        // or %r6, %r17, %r17
+        // rldicl %r7, %r18, 60, 4
+        // or %r8, %r19, %r19
+        r".long 0x7dc37378,0x7de47b78,0x38b30880,0x7e268b78,0x7a47e102,0x7e689b78
+bl {vg_aes_xts_encrypt}",
+        // rldicl %r10, %r18, 60, 4
+        // rldicr %r10, %r10, 4, 59
+        // subf %r11, %r10, %r18
+        // cmpldi %cr0, %r11, 0
+        r".long 0x7a4ae102,0x794a26e4,0x7d6a9050,0x282b0000
+beq %cr0, 20f",
+        // add %r12, %r17, %r10
+        // addi %r12, %r12, -16
+        r".long 0x7d915214,0x398cfff0
+22:",
+        // lbz %r8, 0(%r12)
+        // lbz %r9, 16(%r12)
+        // stb %r9, 0(%r12)
+        // stb %r8, 16(%r12)
+        // addi %r12, %r12, 1
+        // addi %r11, %r11, -1
+        // cmpldi %cr0, %r11, 0
+        r".long 0x890c0000,0x892c0010,0x992c0000,0x990c0010,0x398c0001,0x396bffff,0x282b0000
+bne %cr0, 22b",
+        // add %r6, %r17, %r10
+        // addi %r6, %r6, -16
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2176
+        // li %r7, 1
+        // or %r8, %r19, %r19
+        r".long 0x7cd15214,0x38c6fff0,0x7dc37378,0x7de47b78,0x38b30880,0x38e00001,0x7e689b78
+bl {vg_aes_xts_encrypt}
+b 21f
+20:
+21:",
+        // ld %r0, 2256(%r19)
+        // ld %r14, 2208(%r19)
+        // ld %r15, 2216(%r19)
+        // ld %r16, 2224(%r19)
+        // ld %r17, 2232(%r19)
+        // ld %r18, 2240(%r19)
+        // ld %r19, 2248(%r19)
+        // mtlr %r0
+        // blr
+        r".long 0xe81308d0,0xe9d308a0,0xe9f308a8,0xea1308b0,0xea3308b8,0xea5308c0,0xea7308c8,0x7c0803a6
+.long 0x4e800020",
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
     )
 }
@@ -113,24 +325,133 @@ pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], twe
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
-        r".octa 0xf9e908a8f9c908a0f80908d07c0802a6,0xfa6908c8fa4908c0fa2908b8fa0908b0,0x7d1243787cf13b787caf2b787c6e1b78,0xe9260008f9330880e92600007d334b78
-.octa 0xf9330898f933089039200000f9330888,0x38d3088038b308907de47b787c832378
-.byte 1,0,224,56,120,155,104,126",
-        r"bl {vg_aes_xts_encrypt}",
-        r".octa 0x282b00007d6a9050794a26e47a4ae102,0x38b308807de47b787dc37378418200f4,0x38e7ffff7e689b787a47e1027e268b78",
-        r"bl {vg_aes_xts_decrypt}",
-        r".octa 0xe9330888f9330890e93308803a130890,0x794b0fe0e9500008e9300000f9330898,0x7d6b6038398000877d6b605039800000,0x794a0fa47d295a7879290fa4792c0fe0
-.octa 0x7a4ae102f9500008f93000007d4a6378,0x38c6fff07cd152147d6a9050794a26e4,0x38e0000138b308907de47b787dc37378
-.byte 120,155,104,126",
-        r"bl {vg_aes_xts_decrypt}",
-        r".octa 0x7d9152147d6a9050794a26e47a4ae102,0x992c0000892c0010890c0000398cfff0,0x282b0000396bffff398c0001990c0010,0x7dc3737838c6fff07cd152144082ffe4
-.octa 0x7e689b7838e0000138b308807de47b78",
-        r"bl {vg_aes_xts_decrypt}",
-        r".octa 0x38b308807de47b787dc3737848000020
-.byte 120,139,38,126,2,225,71,122,120,155,104,126",
-        r"bl {vg_aes_xts_decrypt}",
-        r".octa 0xea1308b0e9f308a8e9d308a0e81308d0,0x7c0803a6ea7308c8ea5308c0ea3308b8
-.byte 32,0,128,78",
+        // mflr %r0
+        // std %r0, 2256(%r9)
+        // std %r14, 2208(%r9)
+        // std %r15, 2216(%r9)
+        // std %r16, 2224(%r9)
+        // std %r17, 2232(%r9)
+        // std %r18, 2240(%r9)
+        // std %r19, 2248(%r9)
+        // or %r14, %r3, %r3
+        // or %r15, %r5, %r5
+        // or %r17, %r7, %r7
+        // or %r18, %r8, %r8
+        // or %r19, %r9, %r9
+        // ld %r9, 0(%r6)
+        // std %r9, 2176(%r19)
+        // ld %r9, 8(%r6)
+        // std %r9, 2184(%r19)
+        // li %r9, 0
+        // std %r9, 2192(%r19)
+        // std %r9, 2200(%r19)
+        // or %r3, %r4, %r4
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2192
+        // addi %r6, %r19, 2176
+        // li %r7, 1
+        // or %r8, %r19, %r19
+        r".long 0x7c0802a6,0xf80908d0,0xf9c908a0,0xf9e908a8,0xfa0908b0,0xfa2908b8,0xfa4908c0,0xfa6908c8
+.long 0x7c6e1b78,0x7caf2b78,0x7cf13b78,0x7d124378,0x7d334b78,0xe9260000,0xf9330880,0xe9260008
+.long 0xf9330888,0x39200000,0xf9330890,0xf9330898,0x7c832378,0x7de47b78,0x38b30890,0x38d30880
+.long 0x38e00001,0x7e689b78
+bl {vg_aes_xts_encrypt}",
+        // rldicl %r10, %r18, 60, 4
+        // rldicr %r10, %r10, 4, 59
+        // subf %r11, %r10, %r18
+        // cmpldi %cr0, %r11, 0
+        r".long 0x7a4ae102,0x794a26e4,0x7d6a9050,0x282b0000
+beq %cr0, 20f",
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2176
+        // or %r6, %r17, %r17
+        // rldicl %r7, %r18, 60, 4
+        // or %r8, %r19, %r19
+        // addi %r7, %r7, -1
+        r".long 0x7dc37378,0x7de47b78,0x38b30880,0x7e268b78,0x7a47e102,0x7e689b78,0x38e7ffff
+bl {vg_aes_xts_decrypt}",
+        // addi %r16, %r19, 2192
+        // ld %r9, 2176(%r19)
+        // std %r9, 2192(%r19)
+        // ld %r9, 2184(%r19)
+        // std %r9, 2200(%r19)
+        // ld %r9, 0(%r16)
+        // ld %r10, 8(%r16)
+        // rldicl %r11, %r10, 1, 63
+        // li %r12, 0
+        // subf %r11, %r11, %r12
+        // li %r12, 135
+        // and %r11, %r11, %r12
+        // rldicl %r12, %r9, 1, 63
+        // rldicr %r9, %r9, 1, 62
+        // xor %r9, %r9, %r11
+        // rldicr %r10, %r10, 1, 62
+        // or %r10, %r10, %r12
+        // std %r9, 0(%r16)
+        // std %r10, 8(%r16)
+        // rldicl %r10, %r18, 60, 4
+        // rldicr %r10, %r10, 4, 59
+        // subf %r11, %r10, %r18
+        // add %r6, %r17, %r10
+        // addi %r6, %r6, -16
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2192
+        // li %r7, 1
+        // or %r8, %r19, %r19
+        r".long 0x3a130890,0xe9330880,0xf9330890,0xe9330888,0xf9330898,0xe9300000,0xe9500008,0x794b0fe0
+.long 0x39800000,0x7d6b6050,0x39800087,0x7d6b6038,0x792c0fe0,0x79290fa4,0x7d295a78,0x794a0fa4
+.long 0x7d4a6378,0xf9300000,0xf9500008,0x7a4ae102,0x794a26e4,0x7d6a9050,0x7cd15214,0x38c6fff0
+.long 0x7dc37378,0x7de47b78,0x38b30890,0x38e00001,0x7e689b78
+bl {vg_aes_xts_decrypt}",
+        // rldicl %r10, %r18, 60, 4
+        // rldicr %r10, %r10, 4, 59
+        // subf %r11, %r10, %r18
+        // add %r12, %r17, %r10
+        // addi %r12, %r12, -16
+        r".long 0x7a4ae102,0x794a26e4,0x7d6a9050,0x7d915214,0x398cfff0
+22:",
+        // lbz %r8, 0(%r12)
+        // lbz %r9, 16(%r12)
+        // stb %r9, 0(%r12)
+        // stb %r8, 16(%r12)
+        // addi %r12, %r12, 1
+        // addi %r11, %r11, -1
+        // cmpldi %cr0, %r11, 0
+        r".long 0x890c0000,0x892c0010,0x992c0000,0x990c0010,0x398c0001,0x396bffff,0x282b0000
+bne %cr0, 22b",
+        // add %r6, %r17, %r10
+        // addi %r6, %r6, -16
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2176
+        // li %r7, 1
+        // or %r8, %r19, %r19
+        r".long 0x7cd15214,0x38c6fff0,0x7dc37378,0x7de47b78,0x38b30880,0x38e00001,0x7e689b78
+bl {vg_aes_xts_decrypt}
+b 21f
+20:",
+        // or %r3, %r14, %r14
+        // or %r4, %r15, %r15
+        // addi %r5, %r19, 2176
+        // or %r6, %r17, %r17
+        // rldicl %r7, %r18, 60, 4
+        // or %r8, %r19, %r19
+        r".long 0x7dc37378,0x7de47b78,0x38b30880,0x7e268b78,0x7a47e102,0x7e689b78
+bl {vg_aes_xts_decrypt}
+21:",
+        // ld %r0, 2256(%r19)
+        // ld %r14, 2208(%r19)
+        // ld %r15, 2216(%r19)
+        // ld %r16, 2224(%r19)
+        // ld %r17, 2232(%r19)
+        // ld %r18, 2240(%r19)
+        // ld %r19, 2248(%r19)
+        // mtlr %r0
+        // blr
+        r".long 0xe81308d0,0xe9d308a0,0xe9f308a8,0xea1308b0,0xea3308b8,0xea5308c0,0xea7308c8,0x7c0803a6
+.long 0x4e800020",
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,
     )

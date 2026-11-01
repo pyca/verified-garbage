@@ -16,72 +16,1178 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
-        r".octa 0xfa240058fa040050f9e40048f9c40040,0xfaa40078fa840070fa640068fa440060,0x8103000c80e3000880c3000480a30000,0x8183001c816300188143001481230010
-.octa 0x8223002c8203002881e3002481c30020,0x82a3003c828300388263003482430030,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x7dce92145652803e7e522a787ca54a14,0x7e522a787ca54a145529603e7d297278
-.octa 0x5529383e7d2972787dce92145652403e,0x7def9a145673803e7e7332787cc65214,0x7e7332787cc65214554a603e7d4a7a78,0x554a383e7d4a7a787def9a145673403e
-.octa 0x7e10a2145694803e7e943a787ce75a14,0x7e943a787ce75a14556b603e7d6b8278,0x556b383e7d6b82787e10a2145694403e,0x7e31aa1456b5803e7eb542787d086214
-.octa 0x7eb542787d086214558c603e7d8c8a78,0x558c383e7d8c8a787e31aa1456b5403e,0x7e10aa1456b5803e7eb52a787ca55214,0x7eb52a787ca55214554a603e7d4a8278
-.octa 0x554a383e7d4a82787e10aa1456b5403e,0x7e3192145652803e7e5232787cc65a14,0x7e5232787cc65a14556b603e7d6b8a78,0x556b383e7d6b8a787e3192145652403e
-.octa 0x7dce9a145673803e7e733a787ce76214,0x7e733a787ce76214558c603e7d8c7278,0x558c383e7d8c72787dce9a145673403e,0x7defa2145694803e7e9442787d084a14
-.octa 0x7e9442787d084a145529603e7d297a78,0x5529383e7d297a787defa2145694403e,0x8003000490a400007ca5021480030000,0x7ce702148003000890c400047cc60214
-.octa 0x9104000c7d0802148003000c90e40008,0x80030014912400107d29021480030010,0x7d6b021480030018914400147d4a0214,0x9184001c7d8c02148003001c91640018
-.octa 0x8003002491c400207dce021480030020,0x7e1002148003002891e400247def0214,0x9224002c7e3102148003002c92040028,0x80030034924400307e52021480030030
-.octa 0x7e94021480030038926400347e730214,0x92a4003c7eb502148003003c92840038,0xea240058ea040050e9e40048e9c40040,0xeaa40078ea840070ea640068ea440060
-.byte 32,0,128,78",
+        // std %r14, 64(%r4)
+        // std %r15, 72(%r4)
+        // std %r16, 80(%r4)
+        // std %r17, 88(%r4)
+        // std %r18, 96(%r4)
+        // std %r19, 104(%r4)
+        // std %r20, 112(%r4)
+        // std %r21, 120(%r4)
+        // lwz %r5, 0(%r3)
+        // lwz %r6, 4(%r3)
+        // lwz %r7, 8(%r3)
+        // lwz %r8, 12(%r3)
+        // lwz %r9, 16(%r3)
+        // lwz %r10, 20(%r3)
+        // lwz %r11, 24(%r3)
+        // lwz %r12, 28(%r3)
+        // lwz %r14, 32(%r3)
+        // lwz %r15, 36(%r3)
+        // lwz %r16, 40(%r3)
+        // lwz %r17, 44(%r3)
+        // lwz %r18, 48(%r3)
+        // lwz %r19, 52(%r3)
+        // lwz %r20, 56(%r3)
+        // lwz %r21, 60(%r3)
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r5, %r5, %r9
+        // xor %r18, %r18, %r5
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r14, %r14, %r18
+        // xor %r9, %r9, %r14
+        // rlwinm %r9, %r9, 7, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r6, %r6, %r10
+        // xor %r19, %r19, %r6
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r15, %r15, %r19
+        // xor %r10, %r10, %r15
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r7, %r7, %r11
+        // xor %r20, %r20, %r7
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r16, %r16, %r20
+        // xor %r11, %r11, %r16
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r8, %r8, %r12
+        // xor %r21, %r21, %r8
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r17, %r17, %r21
+        // xor %r12, %r12, %r17
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 16, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 12, 0, 31
+        // add %r5, %r5, %r10
+        // xor %r21, %r21, %r5
+        // rlwinm %r21, %r21, 8, 0, 31
+        // add %r16, %r16, %r21
+        // xor %r10, %r10, %r16
+        // rlwinm %r10, %r10, 7, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 16, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 12, 0, 31
+        // add %r6, %r6, %r11
+        // xor %r18, %r18, %r6
+        // rlwinm %r18, %r18, 8, 0, 31
+        // add %r17, %r17, %r18
+        // xor %r11, %r11, %r17
+        // rlwinm %r11, %r11, 7, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 16, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 12, 0, 31
+        // add %r7, %r7, %r12
+        // xor %r19, %r19, %r7
+        // rlwinm %r19, %r19, 8, 0, 31
+        // add %r14, %r14, %r19
+        // xor %r12, %r12, %r14
+        // rlwinm %r12, %r12, 7, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 16, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 12, 0, 31
+        // add %r8, %r8, %r9
+        // xor %r20, %r20, %r8
+        // rlwinm %r20, %r20, 8, 0, 31
+        // add %r15, %r15, %r20
+        // xor %r9, %r9, %r15
+        // rlwinm %r9, %r9, 7, 0, 31
+        // lwz %r0, 0(%r3)
+        // add %r5, %r5, %r0
+        // stw %r5, 0(%r4)
+        // lwz %r0, 4(%r3)
+        // add %r6, %r6, %r0
+        // stw %r6, 4(%r4)
+        // lwz %r0, 8(%r3)
+        // add %r7, %r7, %r0
+        // stw %r7, 8(%r4)
+        // lwz %r0, 12(%r3)
+        // add %r8, %r8, %r0
+        // stw %r8, 12(%r4)
+        // lwz %r0, 16(%r3)
+        // add %r9, %r9, %r0
+        // stw %r9, 16(%r4)
+        // lwz %r0, 20(%r3)
+        // add %r10, %r10, %r0
+        // stw %r10, 20(%r4)
+        // lwz %r0, 24(%r3)
+        // add %r11, %r11, %r0
+        // stw %r11, 24(%r4)
+        // lwz %r0, 28(%r3)
+        // add %r12, %r12, %r0
+        // stw %r12, 28(%r4)
+        // lwz %r0, 32(%r3)
+        // add %r14, %r14, %r0
+        // stw %r14, 32(%r4)
+        // lwz %r0, 36(%r3)
+        // add %r15, %r15, %r0
+        // stw %r15, 36(%r4)
+        // lwz %r0, 40(%r3)
+        // add %r16, %r16, %r0
+        // stw %r16, 40(%r4)
+        // lwz %r0, 44(%r3)
+        // add %r17, %r17, %r0
+        // stw %r17, 44(%r4)
+        // lwz %r0, 48(%r3)
+        // add %r18, %r18, %r0
+        // stw %r18, 48(%r4)
+        // lwz %r0, 52(%r3)
+        // add %r19, %r19, %r0
+        // stw %r19, 52(%r4)
+        // lwz %r0, 56(%r3)
+        // add %r20, %r20, %r0
+        // stw %r20, 56(%r4)
+        // lwz %r0, 60(%r3)
+        // add %r21, %r21, %r0
+        // stw %r21, 60(%r4)
+        // ld %r14, 64(%r4)
+        // ld %r15, 72(%r4)
+        // ld %r16, 80(%r4)
+        // ld %r17, 88(%r4)
+        // ld %r18, 96(%r4)
+        // ld %r19, 104(%r4)
+        // ld %r20, 112(%r4)
+        // ld %r21, 120(%r4)
+        // blr
+        r".long 0xf9c40040,0xf9e40048,0xfa040050,0xfa240058,0xfa440060,0xfa640068,0xfa840070,0xfaa40078
+.long 0x80a30000,0x80c30004,0x80e30008,0x8103000c,0x81230010,0x81430014,0x81630018,0x8183001c
+.long 0x81c30020,0x81e30024,0x82030028,0x8223002c,0x82430030,0x82630034,0x82830038,0x82a3003c
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x7ca54a14,0x7e522a78,0x5652803e,0x7dce9214,0x7d297278,0x5529603e,0x7ca54a14,0x7e522a78
+.long 0x5652403e,0x7dce9214,0x7d297278,0x5529383e,0x7cc65214,0x7e733278,0x5673803e,0x7def9a14
+.long 0x7d4a7a78,0x554a603e,0x7cc65214,0x7e733278,0x5673403e,0x7def9a14,0x7d4a7a78,0x554a383e
+.long 0x7ce75a14,0x7e943a78,0x5694803e,0x7e10a214,0x7d6b8278,0x556b603e,0x7ce75a14,0x7e943a78
+.long 0x5694403e,0x7e10a214,0x7d6b8278,0x556b383e,0x7d086214,0x7eb54278,0x56b5803e,0x7e31aa14
+.long 0x7d8c8a78,0x558c603e,0x7d086214,0x7eb54278,0x56b5403e,0x7e31aa14,0x7d8c8a78,0x558c383e
+.long 0x7ca55214,0x7eb52a78,0x56b5803e,0x7e10aa14,0x7d4a8278,0x554a603e,0x7ca55214,0x7eb52a78
+.long 0x56b5403e,0x7e10aa14,0x7d4a8278,0x554a383e,0x7cc65a14,0x7e523278,0x5652803e,0x7e319214
+.long 0x7d6b8a78,0x556b603e,0x7cc65a14,0x7e523278,0x5652403e,0x7e319214,0x7d6b8a78,0x556b383e
+.long 0x7ce76214,0x7e733a78,0x5673803e,0x7dce9a14,0x7d8c7278,0x558c603e,0x7ce76214,0x7e733a78
+.long 0x5673403e,0x7dce9a14,0x7d8c7278,0x558c383e,0x7d084a14,0x7e944278,0x5694803e,0x7defa214
+.long 0x7d297a78,0x5529603e,0x7d084a14,0x7e944278,0x5694403e,0x7defa214,0x7d297a78,0x5529383e
+.long 0x80030000,0x7ca50214,0x90a40000,0x80030004,0x7cc60214,0x90c40004,0x80030008,0x7ce70214
+.long 0x90e40008,0x8003000c,0x7d080214,0x9104000c,0x80030010,0x7d290214,0x91240010,0x80030014
+.long 0x7d4a0214,0x91440014,0x80030018,0x7d6b0214,0x91640018,0x8003001c,0x7d8c0214,0x9184001c
+.long 0x80030020,0x7dce0214,0x91c40020,0x80030024,0x7def0214,0x91e40024,0x80030028,0x7e100214
+.long 0x92040028,0x8003002c,0x7e310214,0x9224002c,0x80030030,0x7e520214,0x92440030,0x80030034
+.long 0x7e730214,0x92640034,0x80030038,0x7e940214,0x92840038,0x8003003c,0x7eb50214,0x92a4003c
+.long 0xe9c40040,0xe9e40048,0xea040050,0xea240058,0xea440060,0xea640068,0xea840070,0xeaa40078
+.long 0x4e800020",
     )
 }
 
@@ -101,13 +1207,74 @@ pub unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        r".octa 0xf80601107c0802a6fae60108fac60100,0x28370000388600003ae500003ac40000
-.byte 152,0,130,65",
-        r"bl {vg_chacha20_block}",
-        r".octa 0x4182000c2829000038b700007ae9d182,0x38e400007ee5b8504800000438a00040,0xe8d600004182002c2829000078a9d182,0x3ad60008f8d600007cc64278e9070000
-.octa 0x4082ffe02825000038a5fff838e70008,0x7cc642788907000088d6000048000028,0x38a5ffff38e700013ad6000198d60000,0x39080001810300304082ffe028250000
-.octa 0x480000044082ff742837000091030030,0xeae40108eac401007c0803a6e8040110
-.byte 32,0,128,78",
+        // std %r22, 256(%r6)
+        // std %r23, 264(%r6)
+        // mflr %r0
+        // std %r0, 272(%r6)
+        // addi %r22, %r4, 0
+        // addi %r23, %r5, 0
+        // addi %r4, %r6, 0
+        // cmpldi %cr0, %r23, 0
+        r".long 0xfac60100,0xfae60108,0x7c0802a6,0xf8060110,0x3ac40000,0x3ae50000,0x38860000,0x28370000
+beq %cr0, 20f
+22:
+bl {vg_chacha20_block}",
+        // rldicl %r9, %r23, 58, 6
+        // addi %r5, %r23, 0
+        // cmpldi %cr0, %r9, 0
+        r".long 0x7ae9d182,0x38b70000,0x28290000
+beq %cr0, 23f",
+        // li %r5, 64
+        r".long 0x38a00040
+b 24f
+23:
+24:",
+        // subf %r23, %r5, %r23
+        // addi %r7, %r4, 0
+        // rldicl %r9, %r5, 58, 6
+        // cmpldi %cr0, %r9, 0
+        r".long 0x7ee5b850,0x38e40000,0x78a9d182,0x28290000
+beq %cr0, 25f
+27:",
+        // ld %r6, 0(%r22)
+        // ld %r8, 0(%r7)
+        // xor %r6, %r6, %r8
+        // std %r6, 0(%r22)
+        // addi %r22, %r22, 8
+        // addi %r7, %r7, 8
+        // addi %r5, %r5, -8
+        // cmpldi %cr0, %r5, 0
+        r".long 0xe8d60000,0xe9070000,0x7cc64278,0xf8d60000,0x3ad60008,0x38e70008,0x38a5fff8,0x28250000
+bne %cr0, 27b
+b 26f
+25:
+28:",
+        // lbz %r6, 0(%r22)
+        // lbz %r8, 0(%r7)
+        // xor %r6, %r6, %r8
+        // stb %r6, 0(%r22)
+        // addi %r22, %r22, 1
+        // addi %r7, %r7, 1
+        // addi %r5, %r5, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x88d60000,0x89070000,0x7cc64278,0x98d60000,0x3ad60001,0x38e70001,0x38a5ffff,0x28250000
+bne %cr0, 28b
+26:",
+        // lwz %r8, 48(%r3)
+        // addi %r8, %r8, 1
+        // stw %r8, 48(%r3)
+        // cmpldi %cr0, %r23, 0
+        r".long 0x81030030,0x39080001,0x91030030,0x28370000
+bne %cr0, 22b
+b 21f
+20:
+21:",
+        // ld %r0, 272(%r4)
+        // mtlr %r0
+        // ld %r22, 256(%r4)
+        // ld %r23, 264(%r4)
+        // blr
+        r".long 0xe8040110,0x7c0803a6,0xeac40100,0xeae40108,0x4e800020",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
@@ -126,9 +1293,46 @@ pub unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, l
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0xe9840018e9640010e9440008e9240000,0xf9830028f9630020f9430018f9230010,0x81640008814400048124000038850000,0x9163003891430034912300308184000c
-.octa 0x91430000614a78653d4061709183003c,0x3d40796291430004614a646e3d403320,0x614a65743d406b2091430008614a2d32,0x7d896050798c07c6398000019143000c
-.byte 100,54,140,121,128,0,131,249,32,0,128,78",
+        // ld %r9, 0(%r4)
+        // ld %r10, 8(%r4)
+        // ld %r11, 16(%r4)
+        // ld %r12, 24(%r4)
+        // std %r9, 16(%r3)
+        // std %r10, 24(%r3)
+        // std %r11, 32(%r3)
+        // std %r12, 40(%r3)
+        // addi %r4, %r5, 0
+        // lwz %r9, 0(%r4)
+        // lwz %r10, 4(%r4)
+        // lwz %r11, 8(%r4)
+        // lwz %r12, 12(%r4)
+        // stw %r9, 48(%r3)
+        // stw %r10, 52(%r3)
+        // stw %r11, 56(%r3)
+        // stw %r12, 60(%r3)
+        // lis %r10, 24944
+        // ori %r10, %r10, 30821
+        // stw %r10, 0(%r3)
+        // lis %r10, 13088
+        // ori %r10, %r10, 25710
+        // stw %r10, 4(%r3)
+        // lis %r10, 31074
+        // ori %r10, %r10, 11570
+        // stw %r10, 8(%r3)
+        // lis %r10, 27424
+        // ori %r10, %r10, 25972
+        // stw %r10, 12(%r3)
+        // li %r12, 1
+        // rldicr %r12, %r12, 32, 31
+        // subf %r12, %r9, %r12
+        // rldicr %r12, %r12, 6, 57
+        // std %r12, 128(%r3)
+        // blr
+        r".long 0xe9240000,0xe9440008,0xe9640010,0xe9840018,0xf9230010,0xf9430018,0xf9630020,0xf9830028
+.long 0x38850000,0x81240000,0x81440004,0x81640008,0x8184000c,0x91230030,0x91430034,0x91630038
+.long 0x9183003c,0x3d406170,0x614a7865,0x91430000,0x3d403320,0x614a646e,0x91430004,0x3d407962
+.long 0x614a2d32,0x91430008,0x3d406b20,0x614a6574,0x9143000c,0x39800001,0x798c07c6,0x7d896050
+.long 0x798c3664,0xf9830080,0x4e800020",
     )
 }
 
@@ -145,9 +1349,36 @@ pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x8184000c816400088144000481240000,0x9183003c916300389143003491230030,0x3d40332091430000614a78653d406170,0x614a2d323d40796291430004614a646e
-.octa 0x9143000c614a65743d406b2091430008,0x798c36647d896050798c07c639800001
-.byte 128,0,131,249,32,0,128,78",
+        // lwz %r9, 0(%r4)
+        // lwz %r10, 4(%r4)
+        // lwz %r11, 8(%r4)
+        // lwz %r12, 12(%r4)
+        // stw %r9, 48(%r3)
+        // stw %r10, 52(%r3)
+        // stw %r11, 56(%r3)
+        // stw %r12, 60(%r3)
+        // lis %r10, 24944
+        // ori %r10, %r10, 30821
+        // stw %r10, 0(%r3)
+        // lis %r10, 13088
+        // ori %r10, %r10, 25710
+        // stw %r10, 4(%r3)
+        // lis %r10, 31074
+        // ori %r10, %r10, 11570
+        // stw %r10, 8(%r3)
+        // lis %r10, 27424
+        // ori %r10, %r10, 25972
+        // stw %r10, 12(%r3)
+        // li %r12, 1
+        // rldicr %r12, %r12, 32, 31
+        // subf %r12, %r9, %r12
+        // rldicr %r12, %r12, 6, 57
+        // std %r12, 128(%r3)
+        // blr
+        r".long 0x81240000,0x81440004,0x81640008,0x8184000c,0x91230030,0x91430034,0x91630038,0x9183003c
+.long 0x3d406170,0x614a7865,0x91430000,0x3d403320,0x614a646e,0x91430004,0x3d407962,0x614a2d32
+.long 0x91430008,0x3d406b20,0x614a6574,0x9143000c,0x39800001,0x798c07c6,0x7d896050,0x798c3664
+.long 0xf9830080,0x4e800020",
     )
 }
 
@@ -164,19 +1395,161 @@ pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *co
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0x7d27383838e0003f39800001e9230080,0x7d2b60387d4b505078abf842792af842,0x7d4b5050796b0fe07d6658507ca66038,0x7d0b405078abf84278e8f842794a0fe0
-.octa 0x796b0fe07d6658507ca660387ceb6038,0x40820178282a000079080fe07d0b4050,0x7c0802a6fb430250fb230248fb030240,0x3b4500003b2400003b030000f8030258
-.octa 0x4082000828280000f93802607d254850,0x7c8720503898008038a7000048000008,0x89440000893900004182003028250000,0x388400013b390001993900007d295278
-.octa 0x4082ffdc282500003b5affff38a5ffff,0x2825000078a536647b45d18248000004,0xe9780010e9580008e938000041820070,0xf97800d0f95800c8f93800c0e9980018
-.octa 0xe9780030e9580028e9380020f99800d8,0xf97800f0f95800e8f93800e0e9980038,0x7d4a4a148158003078a9d182f99800f8,0x38d8010038990000387800c091580030
-.byte 20,42,57,127,80,208,69,127",
-        r"bl {vg_chacha20_xor}",
-        r".octa 0x387800004182005c283a000048000004
-.byte 64,0,152,56",
-        r"bl {vg_chacha20_block}",
-        r".octa 0x38980040913800303929000181380030,0x89390000418200302825000038ba0000,0x3b390001993900007d29527889440000,0x282500003b5affff38a5ffff38840001
-.octa 0xe938026048000004480000044082ffdc,0xeb3802487c0803a6e8180258f9380080,0x4800000838600001eb180240eb580250
-.byte 0,0,96,56,32,0,128,78",
+        // ld %r9, 128(%r3)
+        // li %r12, 1
+        // li %r7, 63
+        // and %r7, %r9, %r7
+        // rldicl %r10, %r9, 63, 1
+        // rldicl %r11, %r5, 63, 1
+        // subf %r10, %r11, %r10
+        // and %r11, %r9, %r12
+        // and %r6, %r5, %r12
+        // subf %r11, %r6, %r11
+        // rldicl %r11, %r11, 1, 63
+        // subf %r10, %r11, %r10
+        // rldicl %r10, %r10, 1, 63
+        // rldicl %r8, %r7, 63, 1
+        // rldicl %r11, %r5, 63, 1
+        // subf %r8, %r11, %r8
+        // and %r11, %r7, %r12
+        // and %r6, %r5, %r12
+        // subf %r11, %r6, %r11
+        // rldicl %r11, %r11, 1, 63
+        // subf %r8, %r11, %r8
+        // rldicl %r8, %r8, 1, 63
+        // cmpldi %cr0, %r10, 0
+        r".long 0xe9230080,0x39800001,0x38e0003f,0x7d273838,0x792af842,0x78abf842,0x7d4b5050,0x7d2b6038
+.long 0x7ca66038,0x7d665850,0x796b0fe0,0x7d4b5050,0x794a0fe0,0x78e8f842,0x78abf842,0x7d0b4050
+.long 0x7ceb6038,0x7ca66038,0x7d665850,0x796b0fe0,0x7d0b4050,0x79080fe0,0x282a0000
+bne %cr0, 20f",
+        // std %r24, 576(%r3)
+        // std %r25, 584(%r3)
+        // std %r26, 592(%r3)
+        // mflr %r0
+        // std %r0, 600(%r3)
+        // addi %r24, %r3, 0
+        // addi %r25, %r4, 0
+        // addi %r26, %r5, 0
+        // subf %r9, %r5, %r9
+        // std %r9, 608(%r24)
+        // cmpldi %cr0, %r8, 0
+        r".long 0xfb030240,0xfb230248,0xfb430250,0x7c0802a6,0xf8030258,0x3b030000,0x3b240000,0x3b450000
+.long 0x7d254850,0xf9380260,0x28280000
+bne %cr0, 22f
+b 23f
+22:",
+        // addi %r5, %r7, 0
+        r".long 0x38a70000
+23:",
+        // addi %r4, %r24, 128
+        // subf %r4, %r7, %r4
+        // cmpldi %cr0, %r5, 0
+        r".long 0x38980080,0x7c872050,0x28250000
+beq %cr0, 24f
+26:",
+        // lbz %r9, 0(%r25)
+        // lbz %r10, 0(%r4)
+        // xor %r9, %r9, %r10
+        // stb %r9, 0(%r25)
+        // addi %r25, %r25, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // addi %r26, %r26, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x89390000,0x89440000,0x7d295278,0x99390000,0x3b390001,0x38840001,0x38a5ffff,0x3b5affff
+.long 0x28250000
+bne %cr0, 26b
+b 25f
+24:
+25:",
+        // rldicl %r5, %r26, 58, 6
+        // rldicr %r5, %r5, 6, 57
+        // cmpldi %cr0, %r5, 0
+        r".long 0x7b45d182,0x78a53664,0x28250000
+beq %cr0, 27f",
+        // ld %r9, 0(%r24)
+        // ld %r10, 8(%r24)
+        // ld %r11, 16(%r24)
+        // ld %r12, 24(%r24)
+        // std %r9, 192(%r24)
+        // std %r10, 200(%r24)
+        // std %r11, 208(%r24)
+        // std %r12, 216(%r24)
+        // ld %r9, 32(%r24)
+        // ld %r10, 40(%r24)
+        // ld %r11, 48(%r24)
+        // ld %r12, 56(%r24)
+        // std %r9, 224(%r24)
+        // std %r10, 232(%r24)
+        // std %r11, 240(%r24)
+        // std %r12, 248(%r24)
+        // rldicl %r9, %r5, 58, 6
+        // lwz %r10, 48(%r24)
+        // add %r10, %r10, %r9
+        // stw %r10, 48(%r24)
+        // addi %r3, %r24, 192
+        // addi %r4, %r25, 0
+        // addi %r6, %r24, 256
+        // add %r25, %r25, %r5
+        // subf %r26, %r5, %r26
+        r".long 0xe9380000,0xe9580008,0xe9780010,0xe9980018,0xf93800c0,0xf95800c8,0xf97800d0,0xf99800d8
+.long 0xe9380020,0xe9580028,0xe9780030,0xe9980038,0xf93800e0,0xf95800e8,0xf97800f0,0xf99800f8
+.long 0x78a9d182,0x81580030,0x7d4a4a14,0x91580030,0x387800c0,0x38990000,0x38d80100,0x7f392a14
+.long 0x7f45d050
+bl {vg_chacha20_xor}
+b 28f
+27:
+28:",
+        // cmpldi %cr0, %r26, 0
+        r".long 0x283a0000
+beq %cr0, 29f",
+        // addi %r3, %r24, 0
+        // addi %r4, %r24, 64
+        r".long 0x38780000,0x38980040
+bl {vg_chacha20_block}",
+        // lwz %r9, 48(%r24)
+        // addi %r9, %r9, 1
+        // stw %r9, 48(%r24)
+        // addi %r4, %r24, 64
+        // addi %r5, %r26, 0
+        // cmpldi %cr0, %r5, 0
+        r".long 0x81380030,0x39290001,0x91380030,0x38980040,0x38ba0000,0x28250000
+beq %cr0, 211f
+213:",
+        // lbz %r9, 0(%r25)
+        // lbz %r10, 0(%r4)
+        // xor %r9, %r9, %r10
+        // stb %r9, 0(%r25)
+        // addi %r25, %r25, 1
+        // addi %r4, %r4, 1
+        // addi %r5, %r5, -1
+        // addi %r26, %r26, -1
+        // cmpldi %cr0, %r5, 0
+        r".long 0x89390000,0x89440000,0x7d295278,0x99390000,0x3b390001,0x38840001,0x38a5ffff,0x3b5affff
+.long 0x28250000
+bne %cr0, 213b
+b 212f
+211:
+212:
+b 210f
+29:
+210:",
+        // ld %r9, 608(%r24)
+        // std %r9, 128(%r24)
+        // ld %r0, 600(%r24)
+        // mtlr %r0
+        // ld %r25, 584(%r24)
+        // ld %r26, 592(%r24)
+        // ld %r24, 576(%r24)
+        // li %r3, 1
+        r".long 0xe9380260,0xf9380080,0xe8180258,0x7c0803a6,0xeb380248,0xeb580250,0xeb180240,0x38600001
+b 21f
+20:",
+        // li %r3, 0
+        r".long 0x38600000
+21:",
+        // blr
+        r".long 0x4e800020",
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
