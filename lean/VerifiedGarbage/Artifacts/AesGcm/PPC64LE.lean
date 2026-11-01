@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
 
 /-! # AES-GCM (NIST SP 800-38D) on PPC64LE -/
@@ -16,6 +18,9 @@ namespace VG.Artifacts.AesGcm.PPC64LE
 open VG.Proof.AesGcm.PPC64LE
 
 def artifacts : List Artifact := [
+  Spec.Gcm.encryptBlocksApi.artifact PPC64LE.target {
+    code := Impl.AesGcm.PPC64LE.Blocks.encrypt
+    verified := Blocks.encrypt_verified },
   Spec.Gcm.initApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init
     stack := 2592
