@@ -14,7 +14,7 @@
 //! On ARMv7, x86, PPC64LE and RISC-V, the whole derivation is the one for every streaming hash
 //! function, calling SHA-256's verified streaming functions, HMAC-SHA-256's
 //! `init` and `finalize` and `vg_pbkdf2_hmac_sha256_iterate` (contract
-//! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
+//! `VG.Proof.Pbkdf2.Instance.iterateContract`), the one PBKDF2 iteration for
 //! every Merkle–Damgård hash function: each step is two calls of SHA-256's
 //! verified compression function.
 

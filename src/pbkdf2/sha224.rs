@@ -16,7 +16,7 @@
 //! streaming hash function, calling SHA-224's `init`, SHA-256's verified streaming
 //! functions, HMAC-SHA-224's `init` and `finalize` and
 //! `vg_pbkdf2_hmac_sha224_iterate` (contract
-//! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
+//! `VG.Proof.Pbkdf2.Instance.iterateContract`), the one PBKDF2 iteration for
 //! every Merkle–Damgård hash function: each step is two calls of SHA-256's
 //! verified compression function.
 
