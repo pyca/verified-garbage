@@ -100,29 +100,13 @@ theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
       (eqA_ct (by decide) (by decide) (by taint_decide)))
     (ct_cons (by simp) andZero_ct (ct_one (andOdd_ct (by decide) (by taint_decide))))
 
-theorem invSetup_ct : RelCT isa (Two GA) (seqs invSetup) (Two GI) := by
-  refine two_post ((?_ : RelCT isa (Two GA) (seqs invSetup) (Two GA)).mono (fun _ _ h => h) fun _ _ _ => trivial)
-    fun p s h => ?_
-  · unfold invSetup
-    exact ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-      (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
-      (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-      (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
-      (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-      (ct_cons (by simp) (setOneA_ct (by decide) (by taint_decide))
-      (ct_one (zeroA_ct (by decide) (by taint_decide))))))))
-  · obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
-    exact WP.mono (invSetup_ok h' L) fun t ⟨ht, mt, u0, _, vm, x1, x2, _⟩ =>
-      ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩, u0, vm, x1, x2⟩
-
 theorem invPart_ct : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
   unfold invPart
-  exact ct_app (by simp [invSetup]) (by simp) invSetup_ct
-    (ct_app (by simp) (by simp [eqA])
-      (ct_cons (by simp) (inverse_ct (by taint_decide))
-        (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-          (ct_one (setOneA_ct (by decide) (by taint_decide)))))
-      (ct_app (by simp [eqA]) (by simp) (eqA_ct (by decide) (by decide) (by taint_decide)) (ct_one andZero_ct)))
+  exact ct_app (by simp) (by simp [eqA])
+    (ct_cons (by simp) (inverse_ct (by taint_decide))
+      (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
+        (ct_one (setOneA_ct (by decide) (by taint_decide)))))
+    (ct_app (by simp [eqA]) (by simp) (eqA_ct (by decide) (by decide) (by taint_decide)) (ct_one andZero_ct))
 
 theorem divisor_ct {j : Nat} (hj : j < 16) (hjC : aC ≠ j) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .rsi ++ base aC .rbx)) copyWords)
@@ -256,8 +240,8 @@ theorem cvMain_ct : RelCT isa (Two GM) main fun _ _ => True := by
   rw [main_eq]
   exact (ct_app (by simp) (by simp [loadA]) (ct_one head_ct)
     (ct_app (by simp [loadA]) (by simp [pqCheck]) loads_ct
-    (ct_app (by simp [pqCheck]) (by simp [invPart, invSetup]) pqCheck_ct
-    (ct_app (by simp [invPart, invSetup]) (by simp [divisor]) invPart_ct
+    (ct_app (by simp [pqCheck]) (by simp [invPart]) pqCheck_ct
+    (ct_app (by simp [invPart]) (by simp [divisor]) invPart_ct
     (ct_app (by simp [divisor]) (by simp)
       (ct_app (by simp [divisor]) (by simp) (divisor_ct (by decide) (by decide) (by taint_decide))
         (ct_one (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)

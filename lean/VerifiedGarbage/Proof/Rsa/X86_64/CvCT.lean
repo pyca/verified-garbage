@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,6 +13,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -245,38 +247,38 @@ theorem decA_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     rw [← e]
     exact WP.mono (decA_ok h.ws hj) fun _ ⟨hm, k⟩ => h.word hj hm k (by decide)
 
-/-- `GA` with `inverse`'s start. -/
-def GI (p : CvP) (s : State) : Prop :=
-  GA p s ∧ Bignum.word s.mem p.B (slot (wk p.k) aU + 8 * wk p.k) = 0 ∧
-    wv s.mem p.B (slot (wk p.k) aV) (wk p.k) = wv s.mem p.B (slot (wk p.k) aP) (wk p.k) ∧
-    wv s.mem p.B (slot (wk p.k) aX₁) (wk p.k) = 1 ∧ wv s.mem p.B (slot (wk p.k) aX₂) (wk p.k) = 0
-
 theorem inverse_ct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (([.mov .r11 (.reg .r12)] : List Instr) ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep aU aV aX₁ aX₂ aP aT) .ne)) hc).isSome = true) :
-    RelCT isa (Two GI) (inverse aU aV aX₁ aX₂ aP aT) (Two GA) := by
-  have e : inverse aU aV aX₁ aX₂ aP aT = .seq (.block (ws ++ ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)]))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep aU aV aX₁ aX₂ aP aT) .ne) := by
-    simp only [inverse, invInit, List.append_assoc]
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
+      (inverseN aQ aV aX₂ aP)) hc).isSome = true) :
+    RelCT isa (Two GA) (inverse aQ aV aX₂ aP) (Two GA) := by
+  have e : inverse aQ aV aX₂ aP = .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr)))
+      (inverseN aQ aV aX₂ aP) := rfl
   rw [e]
-  exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) ht fun _ _ ⟨h, u0, vm, x1, x2⟩ => by
+  exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
     rw [← e]
-    have hw := h.ws
-    exact WP.mono (inverse_ok hw.scr hw.rdi hw.hw hw.hS (by have := hw.w1; omega_arith) hw.w2 hw.hZ
-      (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      u0 vm x1 x2) fun _ ⟨_, f, k, _⟩ => h.frm f (fun r hr => by
+    obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
+    have hn := h'.ws.scr.nowrap
+    have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
+      have := InvB.slot_eq (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
+    have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
+    have e16 := InvB.slot_eq (wk I.k) 16
+    exact WP.mono (InvB.inverse_ok h'.ws hZ26 hw20 (iU := aQ) (iV := aV) (iX₂ := aX₂) (iM := aP)
+      (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨_, f, k, _⟩ =>
+      ⟨I, m₀, c, rfl, h'.step f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-        · exact .inl ⟨aU, by decide, .inr rfl⟩
-        · exact .inl ⟨aV, by decide, .inr rfl⟩
-        · exact .inl ⟨aX₁, by decide, .inr rfl⟩
-        · exact .inl ⟨aX₂, by decide, .inr rfl⟩
-        · exact .inl ⟨aT, by decide, .inl rfl⟩
-        · exact .inr rfl) k (by decide)
+        rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> dsimp only
+        · have := h'.ws.sl (j := aV) (by decide); omega_arith
+        · have := h'.ws.sl (j := aX₂) (by decide); omega_arith
+        · have := InvB.slot_eq (wk I.k) 26; omega_arith) k (by decide), L, O,
+        (f.word_eq (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl <;> dsimp only
+          · have := hdr_lt_slot (wk I.k) aV (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith
+          · have := hdr_lt_slot (wk I.k) aX₂ (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith
+          · have := hdr_lt_slot (wk I.k) 16 (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith)
+          (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)).trans hm⟩
 
 /-! ## The loads -/
 
