@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Hmac.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -91,7 +92,7 @@ scratch space. -/
 
 variable (S : StreamingHash) (W : Nat)
 
-/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initScratchContract`. -/
+/-- `init(inner, outer, key, key_len, scratch)`: `Proof.Hmac.initScratchContract`. -/
 def initG : Contract isa where
   pre s :=
     let inner : Region := ⟨s.gpr .x0, S.stateBytes⟩
@@ -110,7 +111,7 @@ def initG : Contract isa where
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
 
-/-- `finalize(inner, outer, count, out, scratch)`: `VG.Spec.Hmac.finalizeScratchContract`. -/
+/-- `finalize(inner, outer, count, out, scratch)`: `Proof.Hmac.finalizeScratchContract`. -/
 def finG : Contract isa where
   pre s :=
     let inner : Region := ⟨s.gpr .x0, S.stateBytes⟩

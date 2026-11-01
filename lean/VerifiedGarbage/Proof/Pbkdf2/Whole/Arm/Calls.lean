@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -277,7 +279,7 @@ variable {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc : BitVec 32} {
 include h
 
 /-- `init`'s precondition on entry. -/
-theorem pre : (Spec.Hmac.initScratchContract S Wi Arm.abi 16).pre
+theorem pre : (Proof.Hmac.initScratchContract S Wi Arm.abi 16).pre
     ((pushed fr1 s).callEntry.withRegions (HiArgs.rd s.sp k kl) (HiArgs.wr S Wi inn out sc)) := by
   have e := h.sp
   have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
@@ -285,7 +287,7 @@ theorem pre : (Spec.Hmac.initScratchContract S Wi Arm.abi 16).pre
   have sR := p2_csub (s := s) e
   have cA := p2_cdisj (s := s) e (n := 4) (by decide)
   have sA4 : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ (stk s) := fun x hx => sA x (Region.sub_prefix (by decide) x hx)
-  sig_pre [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  sig_pre [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [h.r0, h.r1, h.r2, h.r3, p2_arg0 (s := s) (by omega), p2_argAddr, h.r12, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt h.kl32]
   exact ⟨by rw [h8]; omega, by rw [h8]; have := s.sp.isLt; omega, rfl, rfl, h.i_o, h.i_k, h.i_s,
@@ -317,14 +319,14 @@ theorem covW : Covers (HiArgs.wr S Wi inn out sc) (pushed fr1 s).wr := by
 end HiArgs
 
 theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Spec.Hmac.initScratchContract S Wi Arm.abi 16)) (hst : armStack c ≤ 16)
+    (hv : Sound c (Proof.Hmac.initScratchContract S Wi Arm.abi 16)) (hst : armStack c ≤ 16)
     {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : HiArgs S Wi s inn out k sc kl) {Q : State → Prop}
     (hQ : ∀ s', After s (HiArgs.wr S Wi inn out sc) s' →
       S.Repr s'.mem (State.addr inn) (xorPad (blockKey S.H (bytesAt s.mem (State.addr k) kl)) ipad) →
       S.Repr s'.mem (State.addr out) (xorPad (blockKey S.H (bytesAt s.mem (State.addr k) kl)) opad) → Q s') :
     WP isa (.frame (.push fr1) (.call n c) (.pop .r12 8)) s Q := by
   refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
-  sig_post [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at post
+  sig_post [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at post
   simp only [
     h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.kl32] at post
   have ek : bytesAt (storeWords s.mem (s.sp - BitVec.ofNat 32 8) [s.gpr .r12, s.gpr .lr]) (BitVec.setWidth 64 k) kl =
@@ -334,7 +336,7 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
   exact hQ _ a (by rw [popped_mem]; exact post.1) (by rw [popped_mem]; exact post.2)
 
 theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Spec.Hmac.initScratchContract S Wi Arm.abi 16)) {P : State → State → Prop}
+    (hv : Sound c (Proof.Hmac.initScratchContract S Wi Arm.abi 16)) {P : State → State → Prop}
     {sp inn out k sc : BitVec 32} {kl : Nat}
     (h : ∀ s s', P s s' → HiArgs S Wi s inn out k sc kl ∧ HiArgs S Wi s' inn out k sc kl ∧
       s.sp = sp ∧ s'.sp = sp) :
@@ -346,7 +348,7 @@ theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
   have v := a.cov; have v' := a'.cov
   rw [e] at v; rw [e'] at v'
   refine ⟨e.trans e'.symm, c, c', ?_, v, a.covW, v', a'.covW⟩
-  sig_pub [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  sig_pub [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [
     a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega),
     p2_arg0 (s := s') (by have := a'.sp; omega), a.r12, a'.r12, e, e', and_self]
@@ -394,14 +396,14 @@ variable {S : StreamingHash} {Wf : Nat} {s : State} {inn ou o sc : BitVec 32}
   (h : HfArgs S Wf s inn ou o sc)
 include h
 
-theorem pre : (Spec.Hmac.finalizeScratchContract S Wf Arm.abi 16).pre
+theorem pre : (Proof.Hmac.finalizeScratchContract S Wf Arm.abi 16).pre
     ((pushed fr2 s).callEntry.withRegions (HfArgs.rd S s.sp ou) (HfArgs.wr S Wf inn o sc)) := by
   have e := h.sp
   have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
   have sA := p2_sub (s := s) e
   have sR := p2_csub (s := s) e
   have cA := p2_cdisj (s := s) e (n := 8) (by decide)
-  sig_pre [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pre [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   simp only [h.r0, h.r1, p2_arg0 (s := s) (by omega), p2_arg1, p2_argAddr, h.r10, h.r12]
   exact ⟨by rw [h8]; omega, by rw [h8]; have := s.sp.isLt; omega, rfl, rfl, h.i_u, h.i_o, h.i_s,
@@ -431,7 +433,7 @@ theorem covW : Covers (HfArgs.wr S Wf inn o sc) (pushed fr2 s).wr := by
 end HfArgs
 
 theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
-    (hSn : S.stateBytes ≤ 2 ^ 64) (hv : Sound c (Spec.Hmac.finalizeScratchContract S Wf Arm.abi 16))
+    (hSn : S.stateBytes ≤ 2 ^ 64) (hv : Sound c (Proof.Hmac.finalizeScratchContract S Wf Arm.abi 16))
     (hst : armStack c ≤ 16) {s : State} {inn ou o sc : BitVec 32} (h : HfArgs S Wf s inn ou o sc)
     {Q : State → Prop}
     (hQ : ∀ s', After s (HfArgs.wr S Wf inn o sc) s' →
@@ -442,7 +444,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
         bytesAt s'.mem (State.addr o) S.digestBytes = hmacBlockKey S.H k0 text) → Q s') :
     WP isa (.frame (.push fr2) (.call n c) (.pop .r12 8)) s Q := by
   refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
-  sig_post [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_post [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at post
   simp only [h.r0, h.r1, p2_arg0 (s := s) (by have := h.sp; omega)] at post
   refine hQ _ a fun k0 text hk hl hi hc ho => ?_
@@ -451,7 +453,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
     (p2_repr (ra := .r10) (rb := .r12) hR hSn h.sp h.b_u ho)
 
 theorem hf_rel {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Spec.Hmac.finalizeScratchContract S Wf Arm.abi 16)) {P : State → State → Prop}
+    (hv : Sound c (Proof.Hmac.finalizeScratchContract S Wf Arm.abi 16)) {P : State → State → Prop}
     {sp inn ou o sc : BitVec 32}
     (h : ∀ s s', P s s' → HfArgs S Wf s inn ou o sc ∧ HfArgs S Wf s' inn ou o sc ∧
       s.gpr .r2 = s'.gpr .r2 ∧ s.gpr .r3 = s'.gpr .r3 ∧ s.sp = sp ∧ s'.sp = sp) :
@@ -463,7 +465,7 @@ theorem hf_rel {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa}
   have v := a.cov; have v' := a'.cov
   rw [e] at v; rw [e'] at v'
   refine ⟨e.trans e'.symm, c, c', ?_, v, a.covW, v', a'.covW⟩
-  sig_pub [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pub [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   simp only [
     a.r0, a'.r0, a.r1, a'.r1, c2, c3, p2_arg0 (s := s) (by have := a.sp; omega),
@@ -509,7 +511,7 @@ variable {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc : BitVec 32}
   (h : ItArgs S Wt s key u n tt sc)
 include h
 
-theorem pre : (Spec.Pbkdf2.iterateContract S Wt Arm.abi 16).pre
+theorem pre : (Proof.Pbkdf2.iterateContract S Wt Arm.abi 16).pre
     ((pushed fr1 s).callEntry.withRegions (ItArgs.rd S s.sp key u) (ItArgs.wr S Wt tt sc)) := by
   have e := h.sp
   have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
@@ -517,7 +519,7 @@ theorem pre : (Spec.Pbkdf2.iterateContract S Wt Arm.abi 16).pre
   have sR := p2_csub (s := s) e
   have cA := p2_cdisj (s := s) e (n := 4) (by decide)
   have sA4 : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ (stk s) := fun x hx => sA x (Region.sub_prefix (by decide) x hx)
-  sig_pre [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pre [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   simp only [h.r0, h.r1, h.r3, p2_arg0 (s := s) (by omega), p2_argAddr, h.r12]
   exact ⟨by rw [h8]; omega, by rw [h8]; have := s.sp.isLt; omega, rfl, rfl, h.k_t, h.k_s, h.u_t, h.u_s,
@@ -554,7 +556,7 @@ end ItArgs
 
 theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR : ReprOK S)
     (hSn : 2 * S.stateBytes ≤ 2 ^ 32) (hDn : S.digestBytes ≤ 2 ^ 32)
-    (hv : Sound c (Spec.Pbkdf2.iterateContract S Wt Arm.abi 16)) (hst : armStack c ≤ 16)
+    (hv : Sound c (Proof.Pbkdf2.iterateContract S Wt Arm.abi 16)) (hst : armStack c ≤ 16)
     {s : State} {key u n tt sc : BitVec 32} (h : ItArgs S Wt s key u n tt sc) {Q : State → Prop}
     (hQ : ∀ s', After s (ItArgs.wr S Wt tt sc) s' →
       (∀ k0, k0.length = S.H.blockSize → S.Repr s.mem (State.addr key) (xorPad k0 ipad) →
@@ -564,7 +566,7 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
             (bytesAt s.mem (State.addr tt) S.digestBytes)) → Q s') :
     WP isa (.frame (.push fr1) (.call nm c) (.pop .r12 8)) s Q := by
   refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
-  sig_post [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_post [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at post
   simp only [h.r0, h.r1, h.r2, h.r3] at post
   refine hQ _ a fun k0 hk hi ho => ?_
@@ -584,7 +586,7 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
   exact this
 
 theorem it_rel {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa}
-    (hv : Sound c (Spec.Pbkdf2.iterateContract S Wt Arm.abi 16)) {P : State → State → Prop}
+    (hv : Sound c (Proof.Pbkdf2.iterateContract S Wt Arm.abi 16)) {P : State → State → Prop}
     {sp key u n tt sc : BitVec 32}
     (h : ∀ s s', P s s' → ItArgs S Wt s key u n tt sc ∧ ItArgs S Wt s' key u n tt sc ∧ s.sp = sp ∧ s'.sp = sp) :
     RelCT isa P (.frame (.push fr1) (.call nm c) (.pop .r12 8)) fun _ _ => True := by
@@ -595,7 +597,7 @@ theorem it_rel {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa}
   have v := a.cov; have v' := a'.cov
   rw [e] at v; rw [e'] at v'
   refine ⟨e.trans e'.symm, c, c', ?_, v, a.covW, v', a'.covW⟩
-  sig_pub [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pub [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   simp only [
     a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega),

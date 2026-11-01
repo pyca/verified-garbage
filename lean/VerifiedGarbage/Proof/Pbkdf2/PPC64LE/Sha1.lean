@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Hmac.Generic.Common
@@ -59,9 +60,9 @@ theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.sha1S (8 * Spec.Hmac.sha1
     (iterK Spec.Hmac.sha1S (8 * Spec.Hmac.sha1I.scratch)).pub code :=
   ct _ _ _ _ _ _ (by taint_decide)
 
-theorem iterate : Verified PPC64LE.target code (Spec.Hmac.sha1I.iterateContract PPC64LE.abi 0) :=
+theorem iterate : Verified PPC64LE.target code (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I PPC64LE.abi 0) :=
   verified (I := Spec.Hmac.sha1I) hashOk Proof.Sha1.PPC64LE.Stream.callee (Nat.le_refl _) iterate_ct (by
-    inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
       Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, PPC64LE.abi, PPC64LE.argRegs]
       using iterSat 84 20 448)
 

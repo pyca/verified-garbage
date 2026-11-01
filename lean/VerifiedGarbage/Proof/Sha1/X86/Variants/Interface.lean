@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha1
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
 
 /-!
@@ -112,13 +114,13 @@ abbrev F : Impl.Pbkdf2.Whole.X86.Fns := pbkdf2Fns v.stream v.cmpN v.cmpC
 call it. -/
 theorem comp : Proof.Pbkdf2.Md.X86.CompOk Proof.Sha1.md 112 v.cmpC := ⟨v.cmp, v.cmpSp, v.cmpStack⟩
 
-theorem hmacInit : Verified X86.target v.M.hmacInit (Spec.Hmac.sha1I.initScratchContract X86.abi 48) :=
+theorem hmacInit : Verified X86.target v.M.hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha1I X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha1_init v.stream v.cmpN v.comp
 
-theorem hmacFin : Verified X86.target v.M.hmacFin (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) :=
+theorem hmacFin : Verified X86.target v.M.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha1I X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha1_finalize v.stream v.cmpN v.comp
 
-theorem iterate : Verified X86.target v.M.iterate (Spec.Hmac.sha1I.iterateContract X86.abi 48) :=
+theorem iterate : Verified X86.target v.M.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha1_iterate v.stream v.cmpN v.comp
 
 end Backend

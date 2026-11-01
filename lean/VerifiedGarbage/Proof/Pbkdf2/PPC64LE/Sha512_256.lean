@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
@@ -57,9 +58,9 @@ theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.sha512_256S (8 * Spec.Hma
     (iterK Spec.Hmac.sha512_256S (8 * Spec.Hmac.sha512_256I.scratch)).pub code :=
   ct _ _ _ _ _ _ (by taint_decide)
 
-theorem iterate : Verified PPC64LE.target code (Spec.Hmac.sha512_256I.iterateContract PPC64LE.abi 0) :=
+theorem iterate : Verified PPC64LE.target code (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512_256I PPC64LE.abi 0) :=
   verified (I := Spec.Hmac.sha512_256I) hashOk Proof.Sha512.PPC64LE.Md.callee512_256 (Nat.le_refl _) iterate_ct (by
-    inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
       Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, PPC64LE.abi, PPC64LE.argRegs]
       using iterSat 192 32 1872)
 

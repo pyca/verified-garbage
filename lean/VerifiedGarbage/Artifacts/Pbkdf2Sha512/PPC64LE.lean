@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Pbkdf2Sha512.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha512I.iterateApi.artifact PPC64LE.target {
-    code := Proof.Pbkdf2.PPC64LE.Sha512.code
-    verified := Proof.Pbkdf2.PPC64LE.Sha512.iterate },
   Spec.Hmac.sha512I.pbkdf2Api.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Pbkdf2.Whole.PPC64LE.pbkFrame Spec.Hmac.sha512I) .r10
       Proof.Pbkdf2.Whole.PPC64LE.Sha512.F.pbkdf2

@@ -3,41 +3,7 @@
 //! `assembly/pbkdf2_sha512_256.s`.
 #![allow(dead_code)]
 
-/// Runs `n` steps of PBKDF2-HMAC-SHA-512/256's iteration: if, for a 128-byte key `K₀`, the SHA-512/256 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha512_256_init` leaves them), repeats `U ← HMAC-SHA-512/256 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 384 bytes.
-/// * `u` must be valid for reads of 32 bytes.
-/// * `t` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha512_256_iterate(key: *const [u8; 384], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAATYnHSYn8SYnNQYnWTInDSIHDYAUAAEyJxUiBxaAFAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGItGHIlFHLiAAAAAiUUguAAAAACJRSSJRSiJRSyJRTCJRTSJRTiJRTyJRUCJRUSJRUiJRUyJRVCJRVSJRViJRVyJRWCJRWSJRWiJRWxBvKAAAABMieBIweg9SA/ISImDsAAAAEyJ4EgBwEgBwEgBwEgPyEiJg7gAAABJifxNhfY="
-je 20f
-22:
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi0QkIIlDIEGLRCQkiUMkQYtEJCiJQyhBi0QkLIlDLEGLRCQwiUMwQYtEJDSJQzRBi0QkOIlDOEGLRCQ8iUM8SInuSInfugEAAABMifk="
-call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4uIAAAACJRSC4AAAAAIlFJIlFKIlFLIlFMIlFNIlFOIlFPEGLhCTAAAAAiQNBi4QkxAAAAIlDBEGLhCTIAAAAiUMIQYuEJMwAAACJQwxBi4Qk0AAAAIlDEEGLhCTUAAAAiUMUQYuEJNgAAACJQxhBi4Qk3AAAAIlDHEGLhCTgAAAAiUMgQYuEJOQAAACJQyRBi4Qk6AAAAIlDKEGLhCTsAAAAiUMsQYuEJPAAAACJQzBBi4Qk9AAAAIlDNEGLhCT4AAAAiUM4QYuEJPwAAACJQzxIie5Iid+6AQAAAEyJ+Q=="
-call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4uIAAAACJRSC4AAAAAIlFJIlFKIlFLIlFMIlFNIlFOIlFPItFAEEzRQBBiUUAi0UEQTNFBEGJRQSLRQhBM0UIQYlFCItFDEEzRQxBiUUMi0UQQTNFEEGJRRCLRRRBM0UUQYlFFItFGEEzRRhBiUUYi0UcQTNFHEGJRRxJg+4B"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions and `vg_pbkdf2_hmac_sha512_256_iterate`.
+/// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -110,54 +76,16 @@ jmp 24f
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
-        vg_hmac_sha512_256_finalize_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch,
-        vg_pbkdf2_hmac_sha512_256_iterate = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate,
-    )
-}
-
-/// The CPU features `vg_pbkdf2_hmac_sha512_256_iterate_avx2` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA512_256_ITERATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// Runs `n` steps of PBKDF2-HMAC-SHA-512/256's iteration: if, for a 128-byte key `K₀`, the SHA-512/256 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha512_256_init` leaves them), repeats `U ← HMAC-SHA-512/256 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 384 bytes.
-/// * `u` must be valid for reads of 32 bytes.
-/// * `t` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha512_256_iterate_avx2(key: *const [u8; 384], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAATYnHSYn8SYnNQYnWTInDSIHDYAUAAEyJxUiBxaAFAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGItGHIlFHLiAAAAAiUUguAAAAACJRSSJRSiJRSyJRTCJRTSJRTiJRTyJRUCJRUSJRUiJRUyJRVCJRVSJRViJRVyJRWCJRWSJRWiJRWxBvKAAAABMieBIweg9SA/ISImDsAAAAEyJ4EgBwEgBwEgBwEgPyEiJg7gAAABJifxNhfY="
-je 20f
-22:
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi0QkIIlDIEGLRCQkiUMkQYtEJCiJQyhBi0QkLIlDLEGLRCQwiUMwQYtEJDSJQzRBi0QkOIlDOEGLRCQ8iUM8SInuSInfugEAAABMifk="
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4uIAAAACJRSC4AAAAAIlFJIlFKIlFLIlFMIlFNIlFOIlFPEGLhCTAAAAAiQNBi4QkxAAAAIlDBEGLhCTIAAAAiUMIQYuEJMwAAACJQwxBi4Qk0AAAAIlDEEGLhCTUAAAAiUMUQYuEJNgAAACJQxhBi4Qk3AAAAIlDHEGLhCTgAAAAiUMgQYuEJOQAAACJQyRBi4Qk6AAAAIlDKEGLhCTsAAAAiUMsQYuEJPAAAACJQzBBi4Qk9AAAAIlDNEGLhCT4AAAAiUM4QYuEJPwAAACJQzxIie5Iid+6AQAAAEyJ+Q=="
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4uIAAAACJRSC4AAAAAIlFJIlFKIlFLIlFMIlFNIlFOIlFPItFAEEzRQBBiUUAi0UEQTNFBEGJRQSLRQhBM0UIQYlFCItFDEEzRQxBiUUMi0UQQTNFEEGJRRCLRRRBM0UUQYlFFItFGEEzRRhBiUUYi0UcQTNFHEGJRRxJg+4B"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_hmac_sha512_256_init_scratch = sym super::internal::vg_hmac_sha512_256_init_scratch::vg_hmac_sha512_256_init_scratch,
+        vg_hmac_sha512_256_finalize_scratch = sym super::internal::vg_hmac_sha512_256_finalize_scratch::vg_hmac_sha512_256_finalize_scratch,
+        vg_pbkdf2_hmac_sha512_256_iterate = sym super::internal::vg_pbkdf2_hmac_sha512_256_iterate::vg_pbkdf2_hmac_sha512_256_iterate,
     )
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha512_256_avx2` requires (`Artifact.features`).
 pub const VG_PBKDF2_HMAC_SHA512_256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
-/// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions and `vg_pbkdf2_hmac_sha512_256_iterate`.
+/// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -231,54 +159,16 @@ jmp 24f
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_hmac_sha512_256_init_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx2,
-        vg_hmac_sha512_256_finalize_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_avx2,
-        vg_pbkdf2_hmac_sha512_256_iterate_avx2 = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate_avx2,
-    )
-}
-
-/// The CPU features `vg_pbkdf2_hmac_sha512_256_iterate_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA512_256_ITERATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// Runs `n` steps of PBKDF2-HMAC-SHA-512/256's iteration: if, for a 128-byte key `K₀`, the SHA-512/256 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha512_256_init` leaves them), repeats `U ← HMAC-SHA-512/256 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 384 bytes.
-/// * `u` must be valid for reads of 32 bytes.
-/// * `t` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha512_256_iterate_shani(key: *const [u8; 384], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAATYnHSYn8SYnNQYnWTInDSIHDYAUAAEyJxUiBxaAFAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGItGHIlFHLiAAAAAiUUguAAAAACJRSSJRSiJRSyJRTCJRTSJRTiJRTyJRUCJRUSJRUiJRUyJRVCJRVSJRViJRVyJRWCJRWSJRWiJRWxBvKAAAABMieBIweg9SA/ISImDsAAAAEyJ4EgBwEgBwEgBwEgPyEiJg7gAAABJifxNhfY="
-je 20f
-22:
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi0QkIIlDIEGLRCQkiUMkQYtEJCiJQyhBi0QkLIlDLEGLRCQwiUMwQYtEJDSJQzRBi0QkOIlDOEGLRCQ8iUM8SInuSInfugEAAABMifk="
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4uIAAAACJRSC4AAAAAIlFJIlFKIlFLIlFMIlFNIlFOIlFPEGLhCTAAAAAiQNBi4QkxAAAAIlDBEGLhCTIAAAAiUMIQYuEJMwAAACJQwxBi4Qk0AAAAIlDEEGLhCTUAAAAiUMUQYuEJNgAAACJQxhBi4Qk3AAAAIlDHEGLhCTgAAAAiUMgQYuEJOQAAACJQyRBi4Qk6AAAAIlDKEGLhCTsAAAAiUMsQYuEJPAAAACJQzBBi4Qk9AAAAIlDNEGLhCT4AAAAiUM4QYuEJPwAAACJQzxIie5Iid+6AQAAAEyJ+Q=="
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4uIAAAACJRSC4AAAAAIlFJIlFKIlFLIlFMIlFNIlFOIlFPItFAEEzRQBBiUUAi0UEQTNFBEGJRQSLRQhBM0UIQYlFCItFDEEzRQxBiUUMi0UQQTNFEEGJRRCLRRRBM0UUQYlFFItFGEEzRRhBiUUYi0UcQTNFHEGJRRxJg+4B"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_hmac_sha512_256_init_scratch_avx2 = sym super::internal::vg_hmac_sha512_256_init_scratch_avx2::vg_hmac_sha512_256_init_scratch_avx2,
+        vg_hmac_sha512_256_finalize_scratch_avx2 = sym super::internal::vg_hmac_sha512_256_finalize_scratch_avx2::vg_hmac_sha512_256_finalize_scratch_avx2,
+        vg_pbkdf2_hmac_sha512_256_iterate_avx2 = sym super::internal::vg_pbkdf2_hmac_sha512_256_iterate_avx2::vg_pbkdf2_hmac_sha512_256_iterate_avx2,
     )
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha512_256_shani` requires (`Artifact.features`).
 pub const VG_PBKDF2_HMAC_SHA512_256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
-/// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions and `vg_pbkdf2_hmac_sha512_256_iterate`.
+/// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -352,8 +242,8 @@ jmp 24f
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_hmac_sha512_256_init_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_shani,
-        vg_pbkdf2_hmac_sha512_256_iterate_shani = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate_shani,
+        vg_hmac_sha512_256_init_scratch_shani = sym super::internal::vg_hmac_sha512_256_init_scratch_shani::vg_hmac_sha512_256_init_scratch_shani,
+        vg_hmac_sha512_256_finalize_scratch_shani = sym super::internal::vg_hmac_sha512_256_finalize_scratch_shani::vg_hmac_sha512_256_finalize_scratch_shani,
+        vg_pbkdf2_hmac_sha512_256_iterate_shani = sym super::internal::vg_pbkdf2_hmac_sha512_256_iterate_shani::vg_pbkdf2_hmac_sha512_256_iterate_shani,
     )
 }

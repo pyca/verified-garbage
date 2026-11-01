@@ -75,9 +75,9 @@ bl {vg_hmac_sha256_finalize_scratch}
 .base64 "AAAsKA=="
 bne %cr0, 20b
 .base64 "AABhOQAAgDkgAIv5KACL+TAAi/k4AIv5QACL+UgAi/lQAIv5WACL+WAAi/loAIv5cACL+XgAi/mAAIv5iACL+ZAAi/mYAIv5oACL+agAi/mwAIv5uACL+cAAi/nIAIv5AAEhOCAAAegwACE4pgMIfCAAgE4=""#,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_init_scratch = sym super::internal::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch,
+        vg_hmac_sha256_finalize_scratch = sym super::internal::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
         vg_ecdsa_secp256k1_sign = sym super::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign,
     )
 }

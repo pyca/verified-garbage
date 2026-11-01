@@ -17,10 +17,6 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 namespace VG.Artifacts.Pbkdf2Md5.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.md5I.iterateApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Md.Arm.md5Md.iterate
-    stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.md5_iterate },
   Spec.Hmac.md5I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.md5I) 3
       Proof.Pbkdf2.Whole.Arm.md5F.pbkdf2

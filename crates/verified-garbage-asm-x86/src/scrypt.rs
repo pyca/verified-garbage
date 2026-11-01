@@ -137,7 +137,7 @@ jne 20b
 call {vg_pbkdf2_hmac_sha256_scratch}
 .base64 "WFhYWFhYWFhYww=="
 .p2align 6"#,
-        vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::internal::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }
@@ -179,7 +179,7 @@ jne 20b
 call {vg_pbkdf2_hmac_sha256_scratch_shani}
 .base64 "WFhYWFhYWFhYww=="
 .p2align 6"#,
-        vg_pbkdf2_hmac_sha256_scratch_shani = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch_shani,
+        vg_pbkdf2_hmac_sha256_scratch_shani = sym super::internal::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }

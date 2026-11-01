@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 public import VerifiedGarbage.Proof.Hmac.Scratch
@@ -50,24 +51,24 @@ variable {H : Hash} (hH : HashOK H) {I : Spec.Hmac.Instance} (hSH : hH.SH = I.S)
 
 /-! ## `init` and `finalize` with their working space as an argument -/
 
-theorem initImp (hs : ∃ s, (I.initScratchContract PPC64LE.abi 96).pre s) :
-    (initG I.S (8 * I.scratch) 96).Implies (I.initScratchContract PPC64LE.abi 96) := by
-  generic_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract,
-    Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, initG, PPC64LE.abi,
+theorem initImp (hs : ∃ s, (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96).pre s) :
+    (initG I.S (8 * I.scratch) 96).Implies (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96) := by
+  generic_implies [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
+    Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, initG, PPC64LE.abi,
     PPC64LE.argRegs] using hs
 
-theorem finImp (hs : ∃ s, (I.finalizeScratchContract PPC64LE.abi 96).pre s) :
-    (finG I.S (8 * I.scratch) 96).Implies (I.finalizeScratchContract PPC64LE.abi 96) := by
-  generic_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, finG, PPC64LE.abi, PPC64LE.argRegs] using hs
+theorem finImp (hs : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96).pre s) :
+    (finG I.S (8 * I.scratch) 96).Implies (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96) := by
+  generic_implies [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, finG, PPC64LE.abi, PPC64LE.argRegs] using hs
 
 include hSH in
 /-- `init` with its working space in `scratch`, against the shared contract,
 given its constant time. -/
 theorem initScratch (hfit : H.W + 48 ≤ 8 * I.scratch)
     (ct : ConstantTime isa (initG hH.SH (H.W + 48) 96).pre (initG hH.SH (H.W + 48) 96).pub H.init)
-    (hs : ∃ s, (I.initScratchContract PPC64LE.abi 96).pre s) :
-    Verified PPC64LE.target H.init (I.initScratchContract PPC64LE.abi 96) := by
+    (hs : ∃ s, (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96).pre s) :
+    Verified PPC64LE.target H.init (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96) := by
   have imp := initImp hs
   rw [← hSH] at imp
   have wide : ∀ s, (initG hH.SH (8 * I.scratch) 96).pre s →
@@ -92,8 +93,8 @@ contract, given its constant time. -/
 theorem finalizeScratch (hfit : H.W + 48 + H.FD ≤ 8 * I.scratch)
     (ct : ConstantTime isa (finG hH.SH (H.W + 48 + H.FD) 96).pre (finG hH.SH (H.W + 48 + H.FD) 96).pub
       H.finalize)
-    (hs : ∃ s, (I.finalizeScratchContract PPC64LE.abi 96).pre s) :
-    Verified PPC64LE.target H.finalize (I.finalizeScratchContract PPC64LE.abi 96) := by
+    (hs : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96).pre s) :
+    Verified PPC64LE.target H.finalize (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96) := by
   have imp := finImp hs
   rw [← hSH] at imp
   have wide : ∀ s, (finG hH.SH (8 * I.scratch) 96).pre s →
@@ -135,7 +136,7 @@ theorem longPre_local (S : Spec.Hmac.StreamingHash) (pb : Nat) : ∀ vs m₁ m�
 /-- `initLong`'s contract, with its working space passed in `scratch` (`n`
 doublewords). -/
 def longScratchContract (S : Spec.Hmac.StreamingHash) (n : Nat) : Contract PPC64LE.isa :=
-  (Spec.Hmac.initScratchSig S n).contract PPC64LE.abi
+  (Proof.Hmac.initScratchSig S n).contract PPC64LE.abi
     (pre := fun inner outer key keyLen _scratch => longPre S PPC64LE.abi.ptrBits inner outer key keyLen)
     (post := fun inner outer key keyLen _scratch => Spec.Hmac.initPost S PPC64LE.abi.ptrBits inner outer key keyLen)
     (writeArgs := true) (stack := 144)
@@ -148,7 +149,7 @@ def longContract (S : Spec.Hmac.StreamingHash) (bytes : Nat) : Contract PPC64LE.
 
 theorem longImp (S : Spec.Hmac.StreamingHash) (n : Nat) (hs : ∃ s, (longScratchContract S n).pre s) :
     (longG S (8 * n) 144).Implies (longScratchContract S n) := by
-  generic_implies [longScratchContract, longPre, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, longG, initG,
+  generic_implies [longScratchContract, longPre, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, longG, initG,
     PPC64LE.abi, PPC64LE.argRegs] using hs
 
 /-- `initLong` with its working space in `scratch` (`n` doublewords, all of
@@ -167,7 +168,7 @@ theorem longScratch {n : Nat} (hn : 8 * n = H.lbytes)
 /-! ## The functions with their working space in a frame of their own -/
 
 /-- `init` with its working space in a frame of `bytes` bytes. -/
-theorem initFrame {bytes : Nat} (h : Verified PPC64LE.target H.init (I.initScratchContract PPC64LE.abi 96))
+theorem initFrame {bytes : Nat} (h : Verified PPC64LE.target H.init (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96))
     (hb : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ I.scratch * 8 + 32 ≤ bytes)
     (hsat : ∃ s, (I.initContract PPC64LE.abi (96 + bytes)).pre s) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch bytes .r7 H.init)
@@ -179,7 +180,7 @@ theorem initFrame {bytes : Nat} (h : Verified PPC64LE.target H.init (I.initScrat
 
 /-- `finalize` with its working space in a frame of `bytes` bytes. -/
 theorem finalizeFrame {bytes : Nat}
-    (h : Verified PPC64LE.target H.finalize (I.finalizeScratchContract PPC64LE.abi 96))
+    (h : Verified PPC64LE.target H.finalize (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96))
     (hb : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ I.scratch * 8 + 32 ≤ bytes)
     (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
     (hsat : ∃ s, (I.finalizeContract PPC64LE.abi (96 + bytes)).pre s) :

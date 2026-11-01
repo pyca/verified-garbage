@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
@@ -39,9 +41,9 @@ structure FnsOK (F : Fns) where
   Wi : Nat
   Wf : Nat
   Wt : Nat
-  hi : Sound F.hiC (Spec.Hmac.initScratchContract hH.SH Wi Arm.abi 16)
-  hf : Sound F.hfC (Spec.Hmac.finalizeScratchContract hH.SH Wf Arm.abi 16)
-  it : Sound F.itC (Spec.Pbkdf2.iterateContract hH.SH Wt Arm.abi 16)
+  hi : Sound F.hiC (Proof.Hmac.initScratchContract hH.SH Wi Arm.abi 16)
+  hf : Sound F.hfC (Proof.Hmac.finalizeScratchContract hH.SH Wf Arm.abi 16)
+  it : Sound F.itC (Proof.Pbkdf2.iterateContract hH.SH Wt Arm.abi 16)
   hiSt : armStack F.hiC ≤ 16
   hfSt : armStack F.hfC ≤ 16
   itSt : armStack F.itC ≤ 16
@@ -128,8 +130,8 @@ structure Pre (F : Fns) (s₀ : State) : Prop where
   olD : ol s₀ ≤ (2 ^ 32 - 1) * F.H.D
 
 theorem pre_of (hF : FnsOK F) {s₀ : State}
-    (h : (Spec.Pbkdf2.pbkdf2ScratchContract hF.hH.SH (F.W + F.H.S) Arm.abi 24).pre s₀) : Pre F s₀ := by
-  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (h : (Proof.Pbkdf2.pbkdf2ScratchContract hF.hH.SH (F.W + F.H.S) Arm.abi 24).pre s₀) : Pre F s₀ := by
+  sig_pre [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
     h21⟩ := h

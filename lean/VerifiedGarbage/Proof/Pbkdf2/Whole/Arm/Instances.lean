@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -41,11 +42,11 @@ by the names they are registered with. -/
 def fnsOf (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.Arm.Hash) : Fns where
   H := M.st
   W := I.scratch
-  hiN := I.initScratchApi.name
+  hiN := s!"vg_hmac_{I.rust}_init_scratch"
   hiC := M.hmacInit
-  hfN := I.finalizeScratchApi.name
+  hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
   hfC := M.hmacFin
-  itN := I.iterateApi.name
+  itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
   itC := M.iterate
 
 /-- Memory holding the stack arguments `1, 0x1200, 0, 0x2000` of `pbkdf2` at `0x8000`. -/
@@ -101,12 +102,12 @@ def sha1OKF : FnsOK sha1F := by
     encD := by decide }
   taint_decide_all
 
-theorem sha1_sat : ∃ s, (Spec.Hmac.sha1I.pbkdf2ScratchContract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha1_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha1I Arm.abi 24).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 140
 
-theorem sha1 : Verified Arm.target sha1F.pbkdf2 (Spec.Hmac.sha1I.pbkdf2ScratchContract Arm.abi 24) :=
+theorem sha1 : Verified Arm.target sha1F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha1I Arm.abi 24) :=
   verified sha1OKF sha1_checks rfl rfl sha1_sat
 
 /-! ## MD5 -/
@@ -143,12 +144,12 @@ def md5OKF : FnsOK md5F := by
     encD := by decide }
   taint_decide_all
 
-theorem md5_sat : ∃ s, (Spec.Hmac.md5I.pbkdf2ScratchContract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem md5_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I Arm.abi 24).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 128
 
-theorem md5 : Verified Arm.target md5F.pbkdf2 (Spec.Hmac.md5I.pbkdf2ScratchContract Arm.abi 24) :=
+theorem md5 : Verified Arm.target md5F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I Arm.abi 24) :=
   verified md5OKF md5_checks rfl rfl md5_sat
 
 /-! ## SHA-384 -/
@@ -185,12 +186,12 @@ def sha384OKF : FnsOK sha384F := by
     encD := by decide }
   taint_decide_all
 
-theorem sha384_sat : ∃ s, (Spec.Hmac.sha384I.pbkdf2ScratchContract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha384_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha384I Arm.abi 24).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 426
 
-theorem sha384 : Verified Arm.target sha384F.pbkdf2 (Spec.Hmac.sha384I.pbkdf2ScratchContract Arm.abi 24) :=
+theorem sha384 : Verified Arm.target sha384F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha384I Arm.abi 24) :=
   verified sha384OKF sha384_checks rfl rfl sha384_sat
 
 /-! ## SHA-512 -/
@@ -227,12 +228,12 @@ def sha512OKF : FnsOK sha512F := by
     encD := by decide }
   taint_decide_all
 
-theorem sha512_sat : ∃ s, (Spec.Hmac.sha512I.pbkdf2ScratchContract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha512_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512I Arm.abi 24).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I, Spec.Hmac.sha512S, Spec.Hmac.sha512, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 426
 
-theorem sha512 : Verified Arm.target sha512F.pbkdf2 (Spec.Hmac.sha512I.pbkdf2ScratchContract Arm.abi 24) :=
+theorem sha512 : Verified Arm.target sha512F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512I Arm.abi 24) :=
   verified sha512OKF sha512_checks rfl rfl sha512_sat
 
 /-! ## SHA-512/224 -/
@@ -269,12 +270,12 @@ def sha512_224OKF : FnsOK sha512_224F := by
     encD := by decide }
   taint_decide_all
 
-theorem sha512_224_sat : ∃ s, (Spec.Hmac.sha512_224I.pbkdf2ScratchContract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha512_224_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_224I Arm.abi 24).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 426
 
-theorem sha512_224 : Verified Arm.target sha512_224F.pbkdf2 (Spec.Hmac.sha512_224I.pbkdf2ScratchContract Arm.abi 24) :=
+theorem sha512_224 : Verified Arm.target sha512_224F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_224I Arm.abi 24) :=
   verified sha512_224OKF sha512_224_checks rfl rfl sha512_224_sat
 
 /-! ## SHA-512/256 -/
@@ -311,12 +312,12 @@ def sha512_256OKF : FnsOK sha512_256F := by
     encD := by decide }
   taint_decide_all
 
-theorem sha512_256_sat : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2ScratchContract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha512_256_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_256I Arm.abi 24).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 426
 
-theorem sha512_256 : Verified Arm.target sha512_256F.pbkdf2 (Spec.Hmac.sha512_256I.pbkdf2ScratchContract Arm.abi 24) :=
+theorem sha512_256 : Verified Arm.target sha512_256F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_256I Arm.abi 24) :=
   verified sha512_256OKF sha512_256_checks rfl rfl sha512_256_sat
 
 end VG.Proof.Pbkdf2.Whole.Arm

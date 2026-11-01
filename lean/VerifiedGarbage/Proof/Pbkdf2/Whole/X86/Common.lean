@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
@@ -36,9 +38,9 @@ structure FnsOK (F : Fns) where
   Wi : Nat
   Wf : Nat
   Wt : Nat
-  hi : Sound F.hiC (Spec.Hmac.initScratchContract hH.SH Wi X86.abi 48)
-  hf : Sound F.hfC (Spec.Hmac.finalizeScratchContract hH.SH Wf X86.abi 48)
-  it : Sound F.itC (Spec.Pbkdf2.iterateContract hH.SH Wt X86.abi 48)
+  hi : Sound F.hiC (Proof.Hmac.initScratchContract hH.SH Wi X86.abi 48)
+  hf : Sound F.hfC (Proof.Hmac.finalizeScratchContract hH.SH Wf X86.abi 48)
+  it : Sound F.itC (Proof.Pbkdf2.iterateContract hH.SH Wt X86.abi 48)
   hiSp : NoSp F.hiC
   hfSp : NoSp F.hfC
   itSp : NoSp F.itC

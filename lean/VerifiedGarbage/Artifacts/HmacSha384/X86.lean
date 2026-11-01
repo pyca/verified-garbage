@@ -22,14 +22,6 @@ def artifacts : List Artifact := [
       Proof.Pbkdf2.Md.X86.sha384M.hmacFin
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha384I
     verified := Proof.Pbkdf2.Md.X86.finFramed Proof.Pbkdf2.Md.X86.Instances.sha384_finalize Proof.Hmac.sha384_local
-      Proof.Pbkdf2.Md.X86.sha384_finFrameSat },
-  Spec.Hmac.sha384I.initScratchApi.artifact X86.target {
-    code := Proof.Pbkdf2.Md.X86.sha384M.hmacInit
-    stack := 48
-    verified := Proof.Pbkdf2.Md.X86.Instances.sha384_init },
-  Spec.Hmac.sha384I.finalizeScratchApi.artifact X86.target {
-    code := Proof.Pbkdf2.Md.X86.sha384M.hmacFin
-    stack := 48
-    verified := Proof.Pbkdf2.Md.X86.Instances.sha384_finalize }]
+      Proof.Pbkdf2.Md.X86.sha384_finFrameSat }]
 
 end VG.Artifacts.HmacSha384.X86

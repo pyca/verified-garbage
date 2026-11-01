@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
+public import VerifiedGarbage.Proof.Hmac.Contract
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
@@ -24,8 +25,8 @@ open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 
 /-- The `Kit` of a streaming hash function. -/
 def Kit.ofStream (H : Hash) (hH : HashOK H) (I : Spec.Hmac.Instance) (hIS : I.S = hH.SH)
-    (hi : Verified PPC64LE.target H.init (I.initScratchContract PPC64LE.abi 96))
-    (hf : Verified PPC64LE.target H.finalize (I.finalizeScratchContract PPC64LE.abi 96))
+    (hi : Verified PPC64LE.target H.init (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96))
+    (hf : Verified PPC64LE.target H.finalize (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96))
     (hu : ConstantTime isa (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pre
       (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pub H.updC)
     (hScr : Impl.Ecdsa.Rfc6979.PPC64LE.sWork + I.scratch * 8 ≤ Impl.Ecdsa.Rfc6979.PPC64LE.sMsg)

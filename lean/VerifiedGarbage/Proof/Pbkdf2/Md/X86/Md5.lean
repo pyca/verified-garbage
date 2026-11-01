@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
@@ -51,24 +53,24 @@ theorem md5_finChecks : HmacFin.Checks md5M := by
     out := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem md5_iterImp : (iterW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.iterateContract X86.abi 48) := by
+theorem md5_iterImp : (iterW Spec.Hmac.md5S 48).Implies (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.md5I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 80 16 48
-  sig_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+  sig_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, iterW, iterG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 80 16 48
 
-theorem md5_finImp : (finW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.finalizeScratchContract X86.abi 48) := by
+theorem md5_finImp : (finW Spec.Hmac.md5S 48).Implies (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 80 16 48
-  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
+  sig_implies [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 80 16 48
 
-theorem md5_iterate : Verified X86.target md5M.iterate (Spec.Hmac.md5I.iterateContract X86.abi 48) :=
+theorem md5_iterate : Verified X86.target md5M.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.md5I X86.abi 48) :=
   (Iterate.verifiedW md5Ok md5_iterChecks (by decide) md5_iterImp.sat_left).of_implies md5_iterImp
 
-theorem md5_finalize : Verified X86.target md5M.hmacFin (Spec.Hmac.md5I.finalizeScratchContract X86.abi 48) :=
+theorem md5_finalize : Verified X86.target md5M.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I X86.abi 48) :=
   (HmacFin.verifiedW md5Ok md5_finChecks (by decide) md5_finImp.sat_left).of_implies md5_finImp
 
 theorem md5_initChecks : HmacInit.Checks md5M := by
@@ -79,14 +81,14 @@ theorem md5_initChecks : HmacInit.Checks md5M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem md5_initImp : (initW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initScratchContract X86.abi 48) := by
+theorem md5_initImp : (initW Spec.Hmac.md5S 48).Implies (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 80 48
-  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+  sig_implies [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 80 48
 
-theorem md5_init : Verified X86.target md5M.hmacInit (Spec.Hmac.md5I.initScratchContract X86.abi 48) :=
+theorem md5_init : Verified X86.target md5M.hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I X86.abi 48) :=
   (HmacInit.verifiedW md5Ok md5_initChecks (by decide) md5_initImp.sat_left).of_implies md5_initImp
 
 end VG.Proof.Pbkdf2.Md.X86.Instances

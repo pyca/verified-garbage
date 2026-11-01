@@ -46,26 +46,11 @@ import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 namespace VG.Generic.MdHash.AArch64.Pbkdf2
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
-  v.I.iterateApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := v.H.iterate
-    verified := v.iterate
-    features := v.features },
   v.I.pbkdf2Api.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
     stack := 16 + Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I
     verified := v.pbkdf2F
-    features := v.features }] ++
-  -- Scrypt's code calls `pbkdf2` of SHA-256 with its own working space.
-  match v.sha256 with
-  | none => []
-  | some _ => [
-    v.I.pbkdf2ScratchApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := v.H.pbkdf2
-      stack := 16
-      verified := v.pbkdf2
-      features := v.features }]
+    features := v.features }]
 
 end VG.Generic.MdHash.AArch64.Pbkdf2

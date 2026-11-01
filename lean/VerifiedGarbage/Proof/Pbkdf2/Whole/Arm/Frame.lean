@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
@@ -31,7 +32,7 @@ saved registers and the working space, rounded up to a multiple of 32. -/
 def pbkFrame (I : Spec.Hmac.Instance) : Nat := (12 + 8 + 8 * I.pbkdf2Scratch + 31) / 32 * 32
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
-    (h : Verified Arm.target c (I.pbkdf2ScratchContract Arm.abi 24))
+    (h : Verified Arm.target c (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I Arm.abi 24))
     (hsat : ∃ s, (I.pbkdf2Contract Arm.abi (24 + bytes)).pre s)
     (hb : Fits 3 bytes .u64 I.pbkdf2Scratch := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 3 c)

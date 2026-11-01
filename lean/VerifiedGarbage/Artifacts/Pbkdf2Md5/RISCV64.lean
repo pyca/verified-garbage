@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Pbkdf2Md5.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Hmac.md5I.iterateApi.artifact RISCV64.target {
-    code := Proof.Pbkdf2.RISCV64.Md5.code
-    verified := Proof.Pbkdf2.RISCV64.Md5.iterate },
   Spec.Hmac.md5I.pbkdf2Api.artifact RISCV64.target {
     code := Proof.Pbkdf2.Whole.RISCV64.Md5.F.pbkdf2
     stack := Proof.Pbkdf2.Whole.RISCV64.Md5.F.itB + Proof.Pbkdf2.Whole.RISCV64.Md5.F.frB +

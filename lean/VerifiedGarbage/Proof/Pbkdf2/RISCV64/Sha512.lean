@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Correct
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Sha512.Md
 public import VerifiedGarbage.Impl.Sha512.RISCV64
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Sha512Out
@@ -83,9 +84,9 @@ theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.sha512S (8 * Spec.Hmac.sh
     (iterK Spec.Hmac.sha512S (8 * Spec.Hmac.sha512I.scratch)).pub code :=
   ctW _
 
-theorem iterate : Verified RISCV64.target code (Spec.Hmac.sha512I.iterateContract RISCV64.abi 0) :=
+theorem iterate : Verified RISCV64.target code (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512I RISCV64.abi 0) :=
   verified (I := Spec.Hmac.sha512I) hashOk callee (Nat.le_refl _) iterate_ct (by
-    inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
       Spec.Hmac.sha512I, Spec.Hmac.sha512S, Spec.Hmac.sha512, RISCV64.abi, RISCV64.argRegs]
       using iterSat 192 64 1872)
 

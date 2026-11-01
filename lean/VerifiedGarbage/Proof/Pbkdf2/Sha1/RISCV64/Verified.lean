@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Sha1.RISCV64.Fin
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Correct
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -77,9 +78,9 @@ theorem verifiedW (Wi : Nat) (h₁ : 227 ≤ Wi) (h₂ : Wi ≤ 8192) :
   exact ⟨t, s', he, h₁, h₂⟩
 
 /-- `iterate` against the shared contract of `Spec.Hmac.sha1I`. -/
-theorem iterate_verified : Verified RISCV64.target iterate (Spec.Hmac.sha1I.iterateContract RISCV64.abi 0) := by
-  have hs : ∃ s, (Spec.Hmac.sha1I.iterateContract RISCV64.abi 0).pre s := by
-    inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+theorem iterate_verified : Verified RISCV64.target iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I RISCV64.abi 0) := by
+  have hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I RISCV64.abi 0).pre s := by
+    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
       Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, RISCV64.abi, RISCV64.argRegs]
       using iterSat 84 20 448
   have imp := iterImp hs

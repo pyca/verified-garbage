@@ -3,41 +3,7 @@
 //! `assembly/pbkdf2_sha224.s`.
 #![allow(dead_code)]
 
-/// Runs `n` steps of PBKDF2-HMAC-SHA-224's iteration: if, for a 64-byte key `K₀`, the SHA-224 streaming state in bytes 0 to 95 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 96 to 191 represents `K₀ ⊕ opad` (as `vg_hmac_sha224_init` leaves them), repeats `U ← HMAC-SHA-224 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 192 bytes.
-/// * `u` must be valid for reads of 28 bytes.
-/// * `t` must be valid for reads and writes of 28 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAATYnHSYn8SYnNQYnWTInDSIHDYAIAAEyJxUiBxYACAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGLiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSYn8TYX2"
-je 20f
-22:
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxIie5Iid+6AQAAAEyJ+Q=="
-call {vg_sha256_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcuIAAAACJRRy4AAAAAEGLRCRgiQNBi0QkZIlDBEGLRCRoiUMIQYtEJGyJQwxBi0QkcIlDEEGLRCR0iUMUQYtEJHiJQxhBi0QkfIlDHEiJ7kiJ37oBAAAATIn5"
-call {vg_sha256_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcuIAAAACJRRy4AAAAAItFAEEzRQBBiUUAi0UEQTNFBEGJRQSLRQhBM0UIQYlFCItFDEEzRQxBiUUMi0UQQTNFEEGJRRCLRRRBM0UUQYlFFItFGEEzRRhBiUUYSYPuAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAAww=="
-.p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions and `vg_pbkdf2_hmac_sha224_iterate`.
+/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -110,54 +76,16 @@ jmp 24f
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch,
-        vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch,
-        vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate,
-    )
-}
-
-/// The CPU features `vg_pbkdf2_hmac_sha224_iterate_avx2` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA224_ITERATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// Runs `n` steps of PBKDF2-HMAC-SHA-224's iteration: if, for a 64-byte key `K₀`, the SHA-224 streaming state in bytes 0 to 95 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 96 to 191 represents `K₀ ⊕ opad` (as `vg_hmac_sha224_init` leaves them), repeats `U ← HMAC-SHA-224 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 192 bytes.
-/// * `u` must be valid for reads of 28 bytes.
-/// * `t` must be valid for reads and writes of 28 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_iterate_avx2(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAATYnHSYn8SYnNQYnWTInDSIHDYAIAAEyJxUiBxYACAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGLiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSYn8TYX2"
-je 20f
-22:
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxIie5Iid+6AQAAAEyJ+Q=="
-call {vg_sha256_compress_avx2}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcuIAAAACJRRy4AAAAAEGLRCRgiQNBi0QkZIlDBEGLRCRoiUMIQYtEJGyJQwxBi0QkcIlDEEGLRCR0iUMUQYtEJHiJQxhBi0QkfIlDHEiJ7kiJ37oBAAAATIn5"
-call {vg_sha256_compress_avx2}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcuIAAAACJRRy4AAAAAItFAEEzRQBBiUUAi0UEQTNFBEGJRQSLRQhBM0UIQYlFCItFDEEzRQxBiUUMi0UQQTNFEEGJRRCLRRRBM0UUQYlFFItFGEEzRRhBiUUYSYPuAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAAww=="
-.p2align 6"#,
-        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2,
+        vg_hmac_sha224_init_scratch = sym super::internal::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
+        vg_hmac_sha224_finalize_scratch = sym super::internal::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
+        vg_pbkdf2_hmac_sha224_iterate = sym super::internal::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
     )
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha224_avx2` requires (`Artifact.features`).
 pub const VG_PBKDF2_HMAC_SHA224_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
-/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions and `vg_pbkdf2_hmac_sha224_iterate`.
+/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -231,54 +159,16 @@ jmp 24f
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
-        vg_hmac_sha224_init_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_avx2,
-        vg_hmac_sha224_finalize_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_avx2,
-        vg_pbkdf2_hmac_sha224_iterate_avx2 = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_avx2,
-    )
-}
-
-/// The CPU features `vg_pbkdf2_hmac_sha224_iterate_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA224_ITERATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// Runs `n` steps of PBKDF2-HMAC-SHA-224's iteration: if, for a 64-byte key `K₀`, the SHA-224 streaming state in bytes 0 to 95 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 96 to 191 represents `K₀ ⊕ opad` (as `vg_hmac_sha224_init` leaves them), repeats `U ← HMAC-SHA-224 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 192 bytes.
-/// * `u` must be valid for reads of 28 bytes.
-/// * `t` must be valid for reads and writes of 28 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_iterate_shani(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAATYnHSYn8SYnNQYnWTInDSIHDYAIAAEyJxUiBxYACAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGLiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSYn8TYX2"
-je 20f
-22:
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxIie5Iid+6AQAAAEyJ+Q=="
-call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcuIAAAACJRRy4AAAAAEGLRCRgiQNBi0QkZIlDBEGLRCRoiUMIQYtEJGyJQwxBi0QkcIlDEEGLRCR0iUMUQYtEJHiJQxhBi0QkfIlDHEiJ7kiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcuIAAAACJRRy4AAAAAItFAEEzRQBBiUUAi0UEQTNFBEGJRQSLRQhBM0UIQYlFCItFDEEzRQxBiUUMi0UQQTNFEEGJRRCLRRRBM0UUQYlFFItFGEEzRRhBiUUYSYPuAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAAww=="
-.p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+        vg_hmac_sha224_init_scratch_avx2 = sym super::internal::vg_hmac_sha224_init_scratch_avx2::vg_hmac_sha224_init_scratch_avx2,
+        vg_hmac_sha224_finalize_scratch_avx2 = sym super::internal::vg_hmac_sha224_finalize_scratch_avx2::vg_hmac_sha224_finalize_scratch_avx2,
+        vg_pbkdf2_hmac_sha224_iterate_avx2 = sym super::internal::vg_pbkdf2_hmac_sha224_iterate_avx2::vg_pbkdf2_hmac_sha224_iterate_avx2,
     )
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha224_shani` requires (`Artifact.features`).
 pub const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
-/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions and `vg_pbkdf2_hmac_sha224_iterate`.
+/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -352,8 +242,8 @@ jmp 24f
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_pbkdf2_hmac_sha224_iterate_shani = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_shani,
+        vg_hmac_sha224_init_scratch_shani = sym super::internal::vg_hmac_sha224_init_scratch_shani::vg_hmac_sha224_init_scratch_shani,
+        vg_hmac_sha224_finalize_scratch_shani = sym super::internal::vg_hmac_sha224_finalize_scratch_shani::vg_hmac_sha224_finalize_scratch_shani,
+        vg_pbkdf2_hmac_sha224_iterate_shani = sym super::internal::vg_pbkdf2_hmac_sha224_iterate_shani::vg_pbkdf2_hmac_sha224_iterate_shani,
     )
 }

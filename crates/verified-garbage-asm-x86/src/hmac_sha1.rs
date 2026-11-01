@@ -63,7 +63,7 @@ jmp 21b
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
+        vg_hmac_sha1_init_scratch = sym super::internal::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
 
@@ -89,78 +89,6 @@ call {vg_sha1_finalize_scratch}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi42wAAAAiUsUi420AAAAiUsYi424AAAAiUsci428AAAAiUsgi43AAAAAiUskuYAAAACJSyi5AAAAAIlLLLkAAAAAiUswuQAAAACJSzS5AAAAAIlLOLkAAAAAiUs8uQAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAACoIlLUInYg8AUuQEAAABVUVBT"
 call {vg_sha1_compress}
 .base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJNwBAADD"
-.p2align 6"#,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-    )
-}
-
-/// `vg_hmac_sha1_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads and writes of 84 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 448 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha1_init}
-.base64 "WFY="
-call {vg_sha1_init}
-.base64 "WLk2NjY2iUsUiUsYiUsciUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQi3wkDItMJBCJ2oPCFIXJ"
-je 20f
-22:
-.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0MUNWpqamqJRhSLQxg1ampqaolGGItDHDVqampqiUYci0MgNWpqamqJRiCLQyQ1ampqaolGJItDKDVqampqiUYoi0MsNWpqamqJRiyLQzA1ampqaolGMItDNDVqampqiUY0i0M4NWpqamqJRjiLQzw1ampqaolGPItDQDVqampqiUZAi0NENWpqamqJRkSLQ0g1ampqaolGSItDTDVqampqiUZMi0NQNWpqamqJRlCJ2IPAFLkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWInzidiDwBS5AQAAAFVRUFM="
-call {vg_sha1_compress}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-    )
-}
-
-/// `vg_hmac_sha1_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * `scratch` must be valid for reads and writes of 448 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAiLfCQUi0QkDItMJBCJ6oHCsAAAAFVSUVBT"
-call {vg_sha1_finalize_scratch}
-.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi42wAAAAiUsUi420AAAAiUsYi424AAAAiUsci428AAAAiUsgi43AAAAAiUskuYAAAACJSyi5AAAAAIlLLLkAAAAAiUswuQAAAACJSzS5AAAAAIlLOLkAAAAAiUs8uQAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAACoIlLUInYg8AUuQEAAABVUVBT"
-call {vg_sha1_compress}
-.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAMM="
 .p2align 6"#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
@@ -231,7 +159,7 @@ jmp 21b
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
+        vg_hmac_sha1_init_scratch_shani = sym super::internal::vg_hmac_sha1_init_scratch_shani::vg_hmac_sha1_init_scratch_shani,
     )
 }
 
@@ -261,86 +189,6 @@ call {vg_sha1_finalize_scratch_shani}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi42wAAAAiUsUi420AAAAiUsYi424AAAAiUsci428AAAAiUsgi43AAAAAiUskuYAAAACJSyi5AAAAAIlLLLkAAAAAiUswuQAAAACJSzS5AAAAAIlLOLkAAAAAiUs8uQAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAACoIlLUInYg8AUuQEAAABVUVBT"
 call {vg_sha1_compress_shani}
 .base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJNwBAADD"
-.p2align 6"#,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha1_init_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA1_INIT_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// `vg_hmac_sha1_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads and writes of 84 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 448 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_init_scratch_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha1_init}
-.base64 "WFY="
-call {vg_sha1_init}
-.base64 "WLk2NjY2iUsUiUsYiUsciUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQi3wkDItMJBCJ2oPCFIXJ"
-je 20f
-22:
-.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0MUNWpqamqJRhSLQxg1ampqaolGGItDHDVqampqiUYci0MgNWpqamqJRiCLQyQ1ampqaolGJItDKDVqampqiUYoi0MsNWpqamqJRiyLQzA1ampqaolGMItDNDVqampqiUY0i0M4NWpqamqJRjiLQzw1ampqaolGPItDQDVqampqiUZAi0NENWpqamqJRkSLQ0g1ampqaolGSItDTDVqampqiUZMi0NQNWpqamqJRlCJ2IPAFLkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWInzidiDwBS5AQAAAFVRUFM="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha1_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// `vg_hmac_sha1_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * `scratch` must be valid for reads and writes of 448 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_finalize_scratch_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAiLfCQUi0QkDItMJBCJ6oHCsAAAAFVSUVBT"
-call {vg_sha1_finalize_scratch_shani}
-.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi42wAAAAiUsUi420AAAAiUsYi424AAAAiUsci428AAAAiUsgi43AAAAAiUskuYAAAACJSyi5AAAAAIlLLLkAAAAAiUswuQAAAACJSzS5AAAAAIlLOLkAAAAAiUs8uQAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAACoIlLUInYg8AUuQEAAABVUVBT"
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAMM="
 .p2align 6"#,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,

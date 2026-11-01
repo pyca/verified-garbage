@@ -70,20 +70,6 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
     stack := 16 + Proof.Pbkdf2.Md.X86_64.hmacFrame v.I
     verified := v.hmacFinF
     spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp
-    features := v.features },
-  v.I.initScratchApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := v.H.hmacInit
-    stack := 16
-    verified := v.hmacInit
-    spSafe := v.hmacInitSp
-    features := v.features },
-  v.I.finalizeScratchApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := v.H.hmacFin
-    stack := 16
-    verified := v.hmacFin
-    spSafe := v.hmacFinSp
     features := v.features }]
 
 end VG.Generic.MdHash.X86_64.Hmac

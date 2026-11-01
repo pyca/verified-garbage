@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
@@ -39,7 +40,7 @@ open VG.Spec.Hmac (StreamingHash xorPad ipad opad hmacBlockKey)
 
 /-! ## The contract -/
 
-/-- The contract the proof is written against: `VG.Spec.Pbkdf2.iterateContract`
+/-- The contract the proof is written against: `Proof.Pbkdf2.iterateContract`
 of the streaming hash function `S` with `W` words of scratch space, on
 x86-64, with the 8 bytes of stack below the return address that the calls
 of the compression function use. -/

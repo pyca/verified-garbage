@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.PPC64LE.Whole.Correct
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -255,7 +256,7 @@ theorem save_ct : RelCT isa Entered (.block setup) (Two fun L _ t => Entry L t) 
   exact hlk
 
 section
-variable {pbk : Prog isa} (hv : Verified PPC64LE.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract PPC64LE.abi 1008))
+variable {pbk : Prog isa} (hv : Verified PPC64LE.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I PPC64LE.abi 1008))
   (hd : sdepth pbk ≤ 1008) (name : String)
 include hv hd
 
@@ -319,10 +320,10 @@ end
 abbrev pbkCode : Prog isa := Proof.Pbkdf2.Whole.PPC64LE.Sha256.F.pbkdf2
 
 /-- Its name. -/
-abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2ScratchApi.name
+abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch"
 
 theorem pbk_verified :
-    Verified PPC64LE.target pbkCode (Spec.Hmac.sha256I.pbkdf2ScratchContract PPC64LE.abi 1008) :=
+    Verified PPC64LE.target pbkCode (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I PPC64LE.abi 1008) :=
   Proof.Pbkdf2.Whole.PPC64LE.Sha256.scratch
 
 theorem pbk_sdepth : sdepth pbkCode ≤ 1008 := by

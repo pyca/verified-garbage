@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -84,12 +86,12 @@ theorem sha224_iterChecks : Iterate.Checks sha224Md :=
 theorem sha224_finChecks : Fin.Checks sha224Md :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem sha224_iterImp : (iterG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.iterateContract Arm.abi 16) :=
+theorem sha224_iterImp : (iterG Spec.Hmac.sha224S 104).Implies (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I Arm.abi 16) :=
   iterImp Spec.Hmac.sha224S 104 (by
-    inst_sat [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, iterG,
+    inst_sat [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, iterG,
       below, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using iterSat 96 28 104)
 
-theorem sha224_iterate : Verified Arm.target sha224Md.iterate (Spec.Hmac.sha224I.iterateContract Arm.abi 16) :=
+theorem sha224_iterate : Verified Arm.target sha224Md.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I Arm.abi 16) :=
   (Iterate.verified sha224MdOK sha224_iterChecks (by decide) sha224_iterImp.sat_left).of_implies sha224_iterImp
 
 theorem sha224_initChecks : HmacInit.Checks sha224Md :=
@@ -98,20 +100,20 @@ theorem sha224_initChecks : HmacInit.Checks sha224Md :=
     rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩⟩
 
-theorem sha224_initImp : (initG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.initScratchContract Arm.abi 16) :=
+theorem sha224_initImp : (initG Spec.Hmac.sha224S 104).Implies (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha224I Arm.abi 16) :=
   initImp Spec.Hmac.sha224S 104 (by
-    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, initG, below,
+    inst_sat [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 96 104)
 
-theorem sha224_finImp : (finG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.finalizeScratchContract Arm.abi 16) :=
+theorem sha224_finImp : (finG Spec.Hmac.sha224S 104).Implies (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha224I Arm.abi 16) :=
   finImp Spec.Hmac.sha224S 104 (by
-    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, finG,
+    inst_sat [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 96 28 104)
 
-theorem sha224_init : Verified Arm.target sha224Md.hmacInit (Spec.Hmac.sha224I.initScratchContract Arm.abi 16) :=
+theorem sha224_init : Verified Arm.target sha224Md.hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha224I Arm.abi 16) :=
   (HmacInit.verified sha224MdOK sha224_initChecks (by decide) sha224_initImp.sat_left).of_implies sha224_initImp
 
-theorem sha224_finalize : Verified Arm.target sha224Md.hmacFin (Spec.Hmac.sha224I.finalizeScratchContract Arm.abi 16) :=
+theorem sha224_finalize : Verified Arm.target sha224Md.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha224I Arm.abi 16) :=
   (Fin.verified sha224MdOK sha224_finChecks (by decide) sha224_finImp.sat_left).of_implies
     sha224_finImp
 

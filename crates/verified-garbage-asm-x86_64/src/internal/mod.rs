@@ -3,6 +3,204 @@
 #![allow(dead_code)]
 
 #[rustfmt::skip]
+pub(crate) mod vg_hmac_md5_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_md5_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha1_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha1_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha224_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha224_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha224_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha224_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha224_init_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha224_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha256_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha256_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha256_init_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha256_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha384_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha384_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha384_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha384_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha384_init_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha384_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_224_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_224_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_224_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_224_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_224_init_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_224_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_256_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_256_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_256_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_256_init_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_256_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_finalize_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_init_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_init_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_hmac_sha512_init_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_md5_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha1_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha1_iterate_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha224_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha224_iterate_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha224_iterate_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_iterate_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_iterate_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_scratch;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_scratch_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_scratch_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha384_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha384_iterate_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha384_iterate_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_256_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_256_iterate_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_256_iterate_shani;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate_avx2;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate_shani;
+
+#[rustfmt::skip]
 pub(crate) mod vg_poly1305_finalize_scratch;
 
 #[rustfmt::skip]

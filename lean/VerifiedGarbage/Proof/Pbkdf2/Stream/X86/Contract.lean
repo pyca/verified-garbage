@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Spec.Pbkdf2
@@ -131,7 +133,7 @@ scratch space. -/
 
 variable (S : StreamingHash) (W : Nat)
 
-/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initScratchContract`,
+/-- `init(inner, outer, key, key_len, scratch)`: `Proof.Hmac.initScratchContract`,
 reading its arguments only. -/
 def initG : Contract isa where
   pre s :=
@@ -158,7 +160,7 @@ def initG : Contract isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
 /-- `finalize(inner, outer, count, out, scratch)`:
-`VG.Spec.Hmac.finalizeScratchContract`, reading its arguments only. -/
+`Proof.Hmac.finalizeScratchContract`, reading its arguments only. -/
 def finG : Contract isa where
   pre s :=
     let inner : Region := ⟨(arg s 0).setWidth 64, S.stateBytes⟩
@@ -184,7 +186,7 @@ def finG : Contract isa where
     bytesAt s'.mem ((arg s 4).setWidth 64) S.digestBytes = hmacBlockKey S.H k0 text
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 6, arg s₁ i = arg s₂ i
 
-/-- `iterate(key, u, n, t, scratch)`: `VG.Spec.Pbkdf2.iterateContract`,
+/-- `iterate(key, u, n, t, scratch)`: `Proof.Pbkdf2.iterateContract`,
 reading its arguments only. -/
 def iterG : Contract isa where
   pre s :=
@@ -213,7 +215,7 @@ def iterG : Contract isa where
 
 /-! ## With the arguments writable -/
 
-/-- `initG`, with the arguments writable, as `VG.Spec.Hmac.initScratchContract` has
+/-- `initG`, with the arguments writable, as `Proof.Hmac.initScratchContract` has
 them. -/
 def initW : Contract isa where
   pre s :=
@@ -236,7 +238,7 @@ def initW : Contract isa where
   post := (initG S W).post
   pub := (initG S W).pub
 
-/-- `finG`, with the arguments writable, as `VG.Spec.Hmac.finalizeScratchContract`
+/-- `finG`, with the arguments writable, as `Proof.Hmac.finalizeScratchContract`
 has them. -/
 def finW : Contract isa where
   pre s :=
@@ -259,7 +261,7 @@ def finW : Contract isa where
   post := (finG S W).post
   pub := (finG S W).pub
 
-/-- `iterG`, with the arguments writable, as `VG.Spec.Pbkdf2.iterateContract`
+/-- `iterG`, with the arguments writable, as `Proof.Pbkdf2.iterateContract`
 has them. -/
 def iterW : Contract isa where
   pre s :=

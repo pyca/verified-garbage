@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
@@ -51,24 +53,24 @@ theorem sha384_finChecks : HmacFin.Checks sha384M := by
     out := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha384_iterImp : (iterW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.iterateContract X86.abi 48) := by
+theorem sha384_iterImp : (iterW Spec.Hmac.sha384S 234).Implies (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha384I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 192 48 234
-  sig_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+  sig_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, iterW, iterG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 192 48 234
 
-theorem sha384_finImp : (finW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.finalizeScratchContract X86.abi 48) := by
+theorem sha384_finImp : (finW Spec.Hmac.sha384S 234).Implies (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha384I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 192 48 234
-  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
+  sig_implies [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 192 48 234
 
-theorem sha384_iterate : Verified X86.target sha384M.iterate (Spec.Hmac.sha384I.iterateContract X86.abi 48) :=
+theorem sha384_iterate : Verified X86.target sha384M.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha384I X86.abi 48) :=
   (Iterate.verifiedW sha384Ok sha384_iterChecks (by decide) sha384_iterImp.sat_left).of_implies sha384_iterImp
 
-theorem sha384_finalize : Verified X86.target sha384M.hmacFin (Spec.Hmac.sha384I.finalizeScratchContract X86.abi 48) :=
+theorem sha384_finalize : Verified X86.target sha384M.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha384I X86.abi 48) :=
   (HmacFin.verifiedW sha384Ok sha384_finChecks (by decide) sha384_finImp.sat_left).of_implies sha384_finImp
 
 theorem sha384_initChecks : HmacInit.Checks sha384M := by
@@ -79,14 +81,14 @@ theorem sha384_initChecks : HmacInit.Checks sha384M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha384_initImp : (initW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initScratchContract X86.abi 48) := by
+theorem sha384_initImp : (initW Spec.Hmac.sha384S 234).Implies (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha384I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
-  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+  sig_implies [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 192 234
 
-theorem sha384_init : Verified X86.target sha384M.hmacInit (Spec.Hmac.sha384I.initScratchContract X86.abi 48) :=
+theorem sha384_init : Verified X86.target sha384M.hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha384I X86.abi 48) :=
   (HmacInit.verifiedW sha384Ok sha384_initChecks (by decide) sha384_initImp.sat_left).of_implies sha384_initImp
 
 end VG.Proof.Pbkdf2.Md.X86.Instances

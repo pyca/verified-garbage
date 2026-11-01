@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -10,10 +12,10 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the shared contracts
 
 `pbkG` is the contract the proof of `pbkdf2` is written against:
-`VG.Spec.Pbkdf2.pbkdf2ScratchContract` with its facts spelt out, which it implies for
+`Proof.Pbkdf2.pbkdf2ScratchContract` with its facts spelt out, which it implies for
 any streaming hash function and scratch space (`generic_implies`), as HMAC's
-`initG` and `finG` (`Calls.lean`) imply `VG.Spec.Hmac.initScratchContract` and
-`VG.Spec.Hmac.finalizeScratchContract` (`initImp`, `finImp`). `initSat` and `finSat`
+`initG` and `finG` (`Calls.lean`) imply `Proof.Hmac.initScratchContract` and
+`Proof.Hmac.finalizeScratchContract` (`initImp`, `finImp`). `initSat` and `finSat`
 are states satisfying HMAC's shared contracts' preconditions, from which each
 hash function's instance shows them satisfiable.
 -/
@@ -69,27 +71,27 @@ theorem map_range2 {α : Type} (f : Nat → α) : List.map f (List.range 2) = [f
 
 /-- `pbkG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24).pre s) :
-    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24) := by
+theorem pbkImp (h : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24).pre s) :
+    (pbkG S W).Implies (Proof.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24) := by
   exact
     { pre := by
         intro s h
         -- Twice: the stack arguments' list evaluates only on the second pass.
-        sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
-        sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pre [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pre [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         sig_split h
-        sig_reduce [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
+        sig_reduce [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
         sig_and_intros
         sig_close
         all_goals with_reducible assumption
       post := by
         rintro s s' - h
-        sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
-        sig_reduce [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_post [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
+        sig_reduce [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         exact h
       pub := by
         rintro s₁ s₂ - - h
-        sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pub [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         simp only [List.getD_cons_succ, List.getD_cons_zero] at h
         sig_split h
         rename_i h1 h2 h3 h4 h5 h6 h7 h8
@@ -130,16 +132,16 @@ def finSat (S D sc : Nat) : State where
 
 /-- `initG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem initImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.initScratchContract S W X86_64.abi 16).pre s) :
-    (initG S W).Implies (Spec.Hmac.initScratchContract S W X86_64.abi 16) := by
+theorem initImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Proof.Hmac.initScratchContract S W X86_64.abi 16).pre s) :
+    (initG S W).Implies (Proof.Hmac.initScratchContract S W X86_64.abi 16) := by
   generic_implies [
-    Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, initG, X86_64.abi, X86_64.argRegs] using h
+    Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, initG, X86_64.abi, X86_64.argRegs] using h
 
 /-- `finG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem finImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.finalizeScratchContract S W X86_64.abi 16).pre s) :
-    (finG S W).Implies (Spec.Hmac.finalizeScratchContract S W X86_64.abi 16) := by
+theorem finImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Proof.Hmac.finalizeScratchContract S W X86_64.abi 16).pre s) :
+    (finG S W).Implies (Proof.Hmac.finalizeScratchContract S W X86_64.abi 16) := by
   generic_implies [
-    Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, finG, X86_64.abi, X86_64.argRegs] using h
+    Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, finG, X86_64.abi, X86_64.argRegs] using h
 
 end VG.Proof.Pbkdf2.Md.X86_64

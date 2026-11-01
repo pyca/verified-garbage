@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Iterate
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -408,9 +409,9 @@ theorem iterate_noFrames (P : Params) (D : Nat) (name : String) {code : Prog isa
 
 /-! ## The shared contract -/
 
-theorem iterImp {I : Spec.Hmac.Instance} (hs : ∃ s, (I.iterateContract PPC64LE.abi 0).pre s) :
-    (iterK I.S (8 * I.scratch)).Implies (I.iterateContract PPC64LE.abi 0) := by
-  generic_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+theorem iterImp {I : Spec.Hmac.Instance} (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0).pre s) :
+    (iterK I.S (8 * I.scratch)).Implies (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0) := by
+  generic_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     iterK, PPC64LE.abi, PPC64LE.argRegs] using hs
 
 /-- `iterate` against the shared contract of an instance `I` of the hash
@@ -420,8 +421,8 @@ theorem verified {P : Params} {D Wi : Nat} {H : Md P.B P.N P.L} {iv : H.HV} {I :
     (ho : HashOk P D Wi I.S H iv) {name : String} {code : Prog isa} (hf : CalleeOk H code)
     (hfit : Wi ≤ 8 * I.scratch)
     (ct : ConstantTime isa (iterK I.S Wi).pre (iterK I.S Wi).pub (iterate P D name code))
-    (hs : ∃ s, (I.iterateContract PPC64LE.abi 0).pre s) :
-    Verified PPC64LE.target (iterate P D name code) (I.iterateContract PPC64LE.abi 0) := by
+    (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0).pre s) :
+    Verified PPC64LE.target (iterate P D name code) (Proof.Pbkdf2.Instance.iterateContract I PPC64LE.abi 0) := by
   have imp := iterImp hs
   have hS : I.S.stateBytes = P.N + P.B := ho.link.hS
   have hD : I.S.digestBytes = D := ho.link.hD

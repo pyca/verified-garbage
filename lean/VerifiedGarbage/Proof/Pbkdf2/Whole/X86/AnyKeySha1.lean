@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -48,7 +49,7 @@ theorem sha1Shape_anyNoEsp :
   decide +kernel
 
 theorem sha1_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha1I.S Spec.Hmac.sha1I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 84 140
 

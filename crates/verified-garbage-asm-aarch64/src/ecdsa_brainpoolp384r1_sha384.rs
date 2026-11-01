@@ -110,9 +110,9 @@ cbnz x12, 20b
 .inst 0xf90039ee,0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee,0xf9004dee,0xf90051ee,0xf90055ee
 .inst 0x910383ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_init_scratch = sym super::internal::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
+        vg_hmac_sha384_finalize_scratch = sym super::internal::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
         vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign,
     )
 }
@@ -230,9 +230,9 @@ cbnz x12, 20b
 .inst 0x910383ff,0xf84107fe,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_hmac_sha384_init_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_sha3,
+        vg_hmac_sha384_init_scratch_sha3 = sym super::internal::vg_hmac_sha384_init_scratch_sha3::vg_hmac_sha384_init_scratch_sha3,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
-        vg_hmac_sha384_finalize_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_sha3,
+        vg_hmac_sha384_finalize_scratch_sha3 = sym super::internal::vg_hmac_sha384_finalize_scratch_sha3::vg_hmac_sha384_finalize_scratch_sha3,
         vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign,
     )
 }

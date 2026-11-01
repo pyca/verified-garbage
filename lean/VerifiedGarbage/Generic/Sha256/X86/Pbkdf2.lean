@@ -25,13 +25,6 @@ import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 namespace VG.Generic.Sha256.X86.Pbkdf2
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  Spec.Hmac.sha256I.iterateApi.artifact X86.target {
-    suffix := v.suffix
-    code := v.M.iterate
-    stack := 48
-    verified := v.iterate
-    spSafe := v.iterSp
-    features := v.features },
   Spec.Hmac.sha256I.pbkdf2Api.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha256I) 7 v.F.pbkdf2
@@ -40,14 +33,6 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
       Proof.Pbkdf2.Whole.X86.sha256_pbkFrameSat
       (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha256_stack v)
     spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2Sp
-    features := v.features },
-  -- Scrypt's code calls `pbkdf2` with its own working space.
-  Spec.Hmac.sha256I.pbkdf2ScratchApi.artifact X86.target {
-    suffix := v.suffix
-    code := v.F.pbkdf2
-    stack := 76
-    verified := Proof.Pbkdf2.Whole.X86.sha256_verified v
-    spSafe := v.pbkdf2Sp
     features := v.features }]
 
 end VG.Generic.Sha256.X86.Pbkdf2

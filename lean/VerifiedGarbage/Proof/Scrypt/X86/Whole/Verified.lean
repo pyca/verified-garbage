@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
@@ -129,7 +130,7 @@ theorem toNat_blen (hL : L.Ok) : (BitVec.ofNat 32 (L.blen.toNat * 128)).toNat = 
 /-! ## Step 1 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -265,7 +266,7 @@ theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa romixLoo
 /-! ## Step 3 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -372,7 +373,7 @@ theorem pop_esp (B : BitVec 32) : B + BitVec.ofNat 32 80 + BitVec.ofNat 32 (4 * 
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -633,7 +634,7 @@ theorem loop_ct :
 /-! ## The whole function -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -773,7 +774,7 @@ theorem scrypt_implies : Proof.Scrypt.scryptX86.Implies (Spec.Scrypt.scryptContr
           X86.argVal, X86.argBytes] [satState, satMem] using satState }
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -792,7 +793,7 @@ variable (v : Backend)
 abbrev pbkOf : Prog isa := v.F.pbkdf2
 
 /-- Its name. -/
-abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2ScratchApi.name ++ v.suffix
+abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch" ++ v.suffix
 
 /-- `vg_scrypt` made with `v`. -/
 theorem scrypt_verified :

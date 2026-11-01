@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Pbkdf2Sha224.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha224I.iterateApi.artifact RISCV64.target {
-    code := Proof.Pbkdf2.RISCV64.Sha224.code
-    verified := Proof.Pbkdf2.RISCV64.Sha224.iterate },
   Spec.Hmac.sha224I.pbkdf2Api.artifact RISCV64.target {
     code := Proof.Pbkdf2.Whole.RISCV64.Sha224.F.pbkdf2
     stack := Proof.Pbkdf2.Whole.RISCV64.Sha224.F.itB + Proof.Pbkdf2.Whole.RISCV64.Sha224.F.frB +

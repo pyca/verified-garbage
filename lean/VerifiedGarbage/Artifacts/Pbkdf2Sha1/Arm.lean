@@ -11,10 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Pbkdf2Sha1.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha1I.iterateApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Md.Arm.sha1Md.iterate
-    stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha1_iterate },
   Spec.Hmac.sha1I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha1I) 3
       Proof.Pbkdf2.Whole.Arm.sha1F.pbkdf2

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
+public import VerifiedGarbage.Proof.Hmac.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
 import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Hmac.Scratch
@@ -30,7 +31,7 @@ open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 
 /-- SHA-512/256's streaming functions. -/
 def hash : Hash :=
-  Sha512Family.hash Spec.Sha512.H0_512_256 32 Spec.Sha512.init512_256Api.name Spec.Hmac.sha512_256I.initScratchApi.name
+  Sha512Family.hash Spec.Sha512.H0_512_256 32 Spec.Sha512.init512_256Api.name "vg_hmac_sha512_256_init_scratch"
 
 /-- What the proofs need of them. -/
 def ok : HashOK hash :=
@@ -56,23 +57,23 @@ theorem long_ct : ConstantTime isa (longG ok.SH hash.lbytes 144).pre (longG ok.S
 
 /-! ## The shared contracts -/
 
-theorem initScratch : Verified PPC64LE.target hash.init (Spec.Hmac.sha512_256I.initScratchContract PPC64LE.abi 96) :=
+theorem initScratch : Verified PPC64LE.target hash.init (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_256I PPC64LE.abi 96) :=
   Shared.initScratch ok rfl (by decide) init_ct (by
-    inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig,
+    inst_sat [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig,
       Spec.Hmac.initPre, Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, PPC64LE.abi, PPC64LE.argRegs]
       using initSat 192 1872)
 
 theorem finalizeScratch :
-    Verified PPC64LE.target hash.finalize (Spec.Hmac.sha512_256I.finalizeScratchContract PPC64LE.abi 96) :=
+    Verified PPC64LE.target hash.finalize (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_256I PPC64LE.abi 96) :=
   Shared.finalizeScratch ok rfl (by decide) fin_ct (by
-    inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
-      Spec.Hmac.finalizeScratchSig, Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, PPC64LE.abi,
+    inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
+      Proof.Hmac.finalizeScratchSig, Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, PPC64LE.abi,
       PPC64LE.argRegs]
       using finSat 192 32 1872)
 
 theorem longScratch : Verified PPC64LE.target hash.initLong (Shared.longScratchContract ok.SH (hash.lbytes / 8)) :=
   Shared.longScratch ok (by decide) long_ct (by
-    inst_sat [Shared.longScratchContract, Shared.longPre, Spec.Hmac.initScratchSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256,
+    inst_sat [Shared.longScratchContract, Shared.longPre, Proof.Hmac.initScratchSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256,
       PPC64LE.abi, PPC64LE.argRegs]
       using longSat 192 576)
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyCT
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Hmac.AnyKey
@@ -103,10 +105,10 @@ structure MdHash where
   /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
   hash function, once for each hash function. -/
   pss : Proof.RsaPss.AArch64.PssChecks H.P H.D
-  hmacInit : Verified AArch64.target H.hmacInit (I.initScratchContract AArch64.abi 16)
-  hmacFin : Verified AArch64.target H.hmacFin (I.finalizeScratchContract AArch64.abi 16)
-  iterate : Verified AArch64.target H.iterate (I.iterateContract AArch64.abi)
-  pbkdf2 : Verified AArch64.target H.pbkdf2 (I.pbkdf2ScratchContract AArch64.abi 16)
+  hmacInit : Verified AArch64.target H.hmacInit (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16)
+  hmacFin : Verified AArch64.target H.hmacFin (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16)
+  iterate : Verified AArch64.target H.iterate (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi)
+  pbkdf2 : Verified AArch64.target H.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I AArch64.abi 16)
   /-- HMAC's `init` for a key of any length (`initEntry`): for a key of at
   most a block, `init_scratch` with its working space in a frame of its own;
   for a longer key, `hmacInitAny` with its working space in a frame of its
@@ -155,39 +157,39 @@ variable {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H
   (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
 include hH C hSH hW
 
-theorem hmacInit_of (hs : ∃ s, (I.initScratchContract AArch64.abi 16).pre s) :
-    Verified AArch64.target H.hmacInit (I.initScratchContract AArch64.abi 16) := by
-  simp only [Spec.Hmac.Instance.initScratchContract, ← hSH, ← hW] at hs ⊢
+theorem hmacInit_of (hs : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s) :
+    Verified AArch64.target H.hmacInit (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16) := by
+  simp only [Proof.Hmac.Instance.initScratchContract, ← hSH, ← hW] at hs ⊢
   exact hmacInit_verified hH C hs
 
-theorem hmacFin_of (hs : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s) :
-    Verified AArch64.target H.hmacFin (I.finalizeScratchContract AArch64.abi 16) := by
-  simp only [Spec.Hmac.Instance.finalizeScratchContract, ← hSH, ← hW] at hs ⊢
+theorem hmacFin_of (hs : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16).pre s) :
+    Verified AArch64.target H.hmacFin (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16) := by
+  simp only [Proof.Hmac.Instance.finalizeScratchContract, ← hSH, ← hW] at hs ⊢
   exact hmacFin_verified hH C hs
 
-theorem iterate_of (hs : ∃ s, (I.iterateContract AArch64.abi).pre s) :
-    Verified AArch64.target H.iterate (I.iterateContract AArch64.abi) := by
-  simp only [Spec.Hmac.Instance.iterateContract, ← hSH, ← hW] at hs ⊢
+theorem iterate_of (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi).pre s) :
+    Verified AArch64.target H.iterate (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi) := by
+  simp only [Proof.Pbkdf2.Instance.iterateContract, ← hSH, ← hW] at hs ⊢
   exact iterate_verified hH C hs
 
-theorem pbkdf2_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
-    (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
-    (hsT : ∃ s, (I.iterateContract AArch64.abi).pre s)
-    (hs : ∃ s, (I.pbkdf2ScratchContract AArch64.abi 16).pre s) :
-    Verified AArch64.target H.pbkdf2 (I.pbkdf2ScratchContract AArch64.abi 16) := by
-  simp only [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.Instance.finalizeScratchContract,
-    Spec.Hmac.Instance.iterateContract, Spec.Hmac.Instance.pbkdf2ScratchContract,
+theorem pbkdf2_of (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
+    (hsF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16).pre s)
+    (hsT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi).pre s)
+    (hs : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I AArch64.abi 16).pre s) :
+    Verified AArch64.target H.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I AArch64.abi 16) := by
+  simp only [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.Instance.finalizeScratchContract,
+    Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.Instance.pbkdf2ScratchContract,
     Spec.Hmac.Instance.pbkdf2Scratch, ← hSH, ← hW, hH.hS] at hsI hsF hsT hs ⊢
   exact pbkdf2_verified hH C hsI hsF hsT hs
 
-theorem hmacInitAny_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
+theorem hmacInitAny_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
     (hs : ∃ s, (Any.anyScratchContract I.S I.initAnyKeyScratch).pre s) :
     Verified AArch64.target H.hmacInitAny (Any.anyScratchContract I.S I.initAnyKeyScratch) := by
-  simp only [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, ← hSH, ← hW,
+  simp only [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, ← hSH, ← hW,
     hH.hS] at hsI hs ⊢
   exact Any.hmacInitAny_verified hH C A hsI hs
 
-theorem hmacInitAnyF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
+theorem hmacInitAnyF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
     (hs : ∃ s, (Any.anyScratchContract I.S I.initAnyKeyScratch).pre s)
     (ha : 0 < I.initAnyKeyScratch ∧ I.initAnyKeyScratch < 512 ∧ I.initAnyKeyScratch % 2 = 0)
     (hR : Proof.Hmac.ReprLocal I.S)
@@ -203,7 +205,7 @@ theorem hmacInitAnyF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchCon
       rw [← hSH, hH.hS]; have := hH.N_le; have := hH.B_le
       omega_arith)) hsat
 
-theorem hmacShortF_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
+theorem hmacShortF_of (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
     (hsat : ∃ s, (I.initContract AArch64.abi (16 + hmacFrame I)).pre s) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (hmacFrame I) .x4 H.hmacInit)
@@ -214,7 +216,7 @@ theorem hmacShortF_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s
     (bytes := hmacFrame I) (hmacInit_of hH C hSH hW hsI) (by exact (by decide : 4 < 8))
     (by simp only [hmacFrame, Elem.size]; omega_arith) hsat
 
-theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
+theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
     (hsIF : ∃ s, (I.initContract AArch64.abi (16 + hmacFrame I)).pre s)
     (hsA : ∃ s, (Any.anyScratchContract I.S I.initAnyKeyScratch).pre s)
@@ -225,7 +227,7 @@ theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (I.initScratchContra
   initEntry_verified (hmacShortF_of hH C hSH hW hsI hs hsIF) (hmacInitAnyF_of hH C hSH hW A hsI hsA ha hR hsat)
     (by omega_arith) (by simp only [hmacFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega_arith) hB hsat
 
-theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
+theorem hmacFinF_of (hsF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
     (hsat : ∃ s, (I.finalizeContract AArch64.abi (16 + hmacFrame I)).pre s) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (hmacFrame I) .x4 H.hmacFin)
@@ -235,10 +237,10 @@ theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre
     (bytes := hmacFrame I) (hmacFin_of hH C hSH hW hsF) (by exact (by decide : 4 < 8))
     (by simp only [hmacFrame, Elem.size]; omega_arith) hsat
 
-theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
-    (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
-    (hsT : ∃ s, (I.iterateContract AArch64.abi).pre s)
-    (hsP : ∃ s, (I.pbkdf2ScratchContract AArch64.abi 16).pre s)
+theorem pbkdf2F_of (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
+    (hsF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16).pre s)
+    (hsT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi).pre s)
+    (hsP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I AArch64.abi 16).pre s)
     (hp : 0 < I.pbkdf2Scratch ∧ I.pbkdf2Scratch < 512 ∧ I.pbkdf2Scratch % 2 = 0)
     (hsat : ∃ s, (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)).pre s) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (pbkdf2Frame I) .x7 H.pbkdf2)
@@ -256,10 +258,10 @@ need of it and the satisfiability of the shared contracts. -/
 def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (lk : MgfLink H hH)
     (pss : Proof.RsaPss.AArch64.PssChecks H.P H.D)
     (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
-    (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
-    (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
-    (hsT : ∃ s, (I.iterateContract AArch64.abi).pre s)
-    (hsP : ∃ s, (I.pbkdf2ScratchContract AArch64.abi 16).pre s)
+    (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
+    (hsF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16).pre s)
+    (hsT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi).pre s)
+    (hsP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
     (A : Any.AnyOK (core H)) (hsA : ∃ s, (Any.anyScratchContract I.S I.initAnyKeyScratch).pre s)
     (ha : 0 < I.initAnyKeyScratch ∧ I.initAnyKeyScratch < 512 ∧ I.initAnyKeyScratch % 2 = 0)

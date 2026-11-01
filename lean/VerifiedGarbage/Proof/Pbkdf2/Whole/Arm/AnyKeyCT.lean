@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKey
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Hmac.Scratch
@@ -330,7 +331,7 @@ end
 /-- The public arguments of the contract. -/
 theorem pub_of {S : Spec.Hmac.StreamingHash} {W : Nat} {s₁ s₂ : State}
     (h : (anyScratchContract S W).pub s₁ s₂) : PubEq s₁ s₂ := by
-  sig_pub [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
+  sig_pub [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6⟩

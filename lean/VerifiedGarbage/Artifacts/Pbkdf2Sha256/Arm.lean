@@ -11,20 +11,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Pbkdf2Sha256.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha256I.iterateApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Md.Arm.sha256Md.iterate
-    stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_iterate },
   Spec.Hmac.sha256I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I) 3
       Proof.Pbkdf2.Whole.Arm.sha256F.pbkdf2
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I
     verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha256
-      Proof.Pbkdf2.Whole.Arm.sha256_pbkFrameSat },
-  -- Scrypt's code calls `pbkdf2` with its own working space.
-  Spec.Hmac.sha256I.pbkdf2ScratchApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Whole.Arm.sha256F.pbkdf2
-    stack := 24
-    verified := Proof.Pbkdf2.Whole.Arm.sha256 }]
+      Proof.Pbkdf2.Whole.Arm.sha256_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Sha256.Arm

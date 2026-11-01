@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Md5.X86.Lit
@@ -93,15 +94,15 @@ theorem sha1Shape_checks : Checks sha1Shape := by
 
 theorem sha1_checks (v : Backend) : Checks v.F := checks_of_shape (F := v.F) sha1Shape_checks
 
-theorem sha1_sat : ∃ s, (Spec.Hmac.sha1I.pbkdf2ScratchContract X86.abi 76).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract,
-    Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha1_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha1I X86.abi 76).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract,
+    Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes] [pbkSat, pbkMem] using pbkSat 140
 
 /-- `pbkdf2` for SHA-1 with the backend `v`, verified. -/
 theorem sha1_verified (v : Backend) :
-    Verified X86.target v.F.pbkdf2 (Spec.Hmac.sha1I.pbkdf2ScratchContract X86.abi 76) :=
+    Verified X86.target v.F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha1I X86.abi 76) :=
   verified (sha1OKF v) (sha1_checks v) rfl rfl sha1_sat
 
 /-- PBKDF2-HMAC-SHA1 made with the backend `v` uses at most 76 bytes of

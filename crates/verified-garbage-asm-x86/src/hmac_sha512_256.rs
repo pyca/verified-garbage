@@ -63,7 +63,7 @@ jmp 21b
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
+        vg_hmac_sha512_256_init_scratch = sym super::internal::vg_hmac_sha512_256_init_scratch::vg_hmac_sha512_256_init_scratch,
     )
 }
 
@@ -89,78 +89,6 @@ call {vg_sha512_finalize_scratch}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci04giUsgi04kiUski04oiUsoi04siUssi04wiUswi040iUs0i044iUs4i048iUs8i40gAQAAiUtAi40kAQAAiUtEi40oAQAAiUtIi40sAQAAiUtMi40wAQAAiUtQi400AQAAiUtUi404AQAAiUtYi408AQAAiUtcuYAAAACJS2C5AAAAAIlLZLkAAAAAiUtouQAAAACJS2y5AAAAAIlLcLkAAAAAiUt0uQAAAACJS3i5AAAAAIlLfLkAAAAAiYuAAAAAuQAAAACJi4QAAAC5AAAAAImLiAAAALkAAAAAiYuMAAAAuQAAAACJi5AAAAC5AAAAAImLlAAAALkAAAAAiYuYAAAAuQAAAACJi5wAAAC5AAAAAImLoAAAALkAAAAAiYukAAAAuQAAAACJi6gAAAC5AAAAAImLrAAAALkAAAAAiYuwAAAAuQAAAACJi7QAAAC5AAAAAImLuAAAALkAAAUAiYu8AAAAidiDwEC5AQAAAFVRUFM="
 call {vg_sha512_compress}
 .base64 "WFhYWInYg8BAi0sED8mJCIsLD8mJSASLSwwPyYlICItLCA/JiUgMi0sUD8mJSBCLSxAPyYlIFItLHA/JiUgYi0sYD8mJSByLSyQPyYlIIItLIA/JiUgki0ssD8mJSCiLSygPyYlILItLNA/JiUgwi0swD8mJSDSLSzwPyYlIOItLOA/JiUg8i0tAiQ+LS0SJTwSLS0iJTwiLS0yJTwyLS1CJTxCLS1SJTxSLS1iJTxiLS1yJTxyJ6IuYEAEAAIuwFAEAAIu4GAEAAIuoHAEAAI2kJGwHAADD"
-.p2align 6"#,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_hmac_sha512_256_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads and writes of 192 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * `key_len` must be at most 128.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_256_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImYEAEAAImwFAEAAIm4GAEAAImoHAEAAInFi1wkBIt0JAhT"
-call {vg_sha512_256_init}
-.base64 "WFY="
-call {vg_sha512_256_init}
-.base64 "WLk2NjY2iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtciUtgiUtkiUtoiUtsiUtwiUt0iUt4iUt8iYuAAAAAiYuEAAAAiYuIAAAAiYuMAAAAiYuQAAAAiYuUAAAAiYuYAAAAiYucAAAAiYugAAAAiYukAAAAiYuoAAAAiYusAAAAiYuwAAAAiYu0AAAAiYu4AAAAiYu8AAAAi3wkDItMJBCJ2oPCQIXJ"
-je 20f
-22:
-.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0NANWpqamqJRkCLQ0Q1ampqaolGRItDSDVqampqiUZIi0NMNWpqamqJRkyLQ1A1ampqaolGUItDVDVqampqiUZUi0NYNWpqamqJRliLQ1w1ampqaolGXItDYDVqampqiUZgi0NkNWpqamqJRmSLQ2g1ampqaolGaItDbDVqampqiUZsi0NwNWpqamqJRnCLQ3Q1ampqaolGdItDeDVqampqiUZ4i0N8NWpqamqJRnyLg4AAAAA1ampqaomGgAAAAIuDhAAAADVqampqiYaEAAAAi4OIAAAANWpqamqJhogAAACLg4wAAAA1ampqaomGjAAAAIuDkAAAADVqampqiYaQAAAAi4OUAAAANWpqamqJhpQAAACLg5gAAAA1ampqaomGmAAAAIuDnAAAADVqampqiYacAAAAi4OgAAAANWpqamqJhqAAAACLg6QAAAA1ampqaomGpAAAAIuDqAAAADVqampqiYaoAAAAi4OsAAAANWpqamqJhqwAAACLg7AAAAA1ampqaomGsAAAAIuDtAAAADVqampqiYa0AAAAi4O4AAAANWpqamqJhrgAAACLg7wAAAA1ampqaomGvAAAAInYg8BAuQEAAABVUVBT"
-call {vg_sha512_compress}
-.base64 "WFhYWInzidiDwEC5AQAAAFVRUFM="
-call {vg_sha512_compress}
-.base64 "WFhYWInoi5gQAQAAi7AUAQAAi7gYAQAAi6gcAQAAww=="
-.p2align 6"#,
-        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_hmac_sha512_256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_256_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAEAAImwFAEAAIm4GAEAAImoHAEAAInFi1wkBIt0JAiLfCQUi0QkDItMJBCJ6oHCIAEAAFVSUVBT"
-call {vg_sha512_finalize_scratch}
-.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci04giUsgi04kiUski04oiUsoi04siUssi04wiUswi040iUs0i044iUs4i048iUs8i40gAQAAiUtAi40kAQAAiUtEi40oAQAAiUtIi40sAQAAiUtMi40wAQAAiUtQi400AQAAiUtUi404AQAAiUtYi408AQAAiUtcuYAAAACJS2C5AAAAAIlLZLkAAAAAiUtouQAAAACJS2y5AAAAAIlLcLkAAAAAiUt0uQAAAACJS3i5AAAAAIlLfLkAAAAAiYuAAAAAuQAAAACJi4QAAAC5AAAAAImLiAAAALkAAAAAiYuMAAAAuQAAAACJi5AAAAC5AAAAAImLlAAAALkAAAAAiYuYAAAAuQAAAACJi5wAAAC5AAAAAImLoAAAALkAAAAAiYukAAAAuQAAAACJi6gAAAC5AAAAAImLrAAAALkAAAAAiYuwAAAAuQAAAACJi7QAAAC5AAAAAImLuAAAALkAAAUAiYu8AAAAidiDwEC5AQAAAFVRUFM="
-call {vg_sha512_compress}
-.base64 "WFhYWInYg8BAi0sED8mJCIsLD8mJSASLSwwPyYlICItLCA/JiUgMi0sUD8mJSBCLSxAPyYlIFItLHA/JiUgYi0sYD8mJSByLSyQPyYlIIItLIA/JiUgki0ssD8mJSCiLSygPyYlILItLNA/JiUgwi0swD8mJSDSLSzwPyYlIOItLOA/JiUg8i0tAiQ+LS0SJTwSLS0iJTwiLS0yJTwyLS1CJTxCLS1SJTxSLS1iJTxiLS1yJTxyJ6IuYEAEAAIuwFAEAAIu4GAEAAIuoHAEAAMM="
 .p2align 6"#,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,

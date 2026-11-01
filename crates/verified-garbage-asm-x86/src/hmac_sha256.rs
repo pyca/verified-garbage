@@ -63,7 +63,7 @@ jmp 21b
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_init_scratch = sym super::internal::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
     )
 }
 
@@ -89,78 +89,6 @@ call {vg_sha256_finalize_scratch}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4i43MAAAAiUs8uYAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAAAAIlLULkAAAAAiUtUuQAAAACJS1i5AAADAIlLXInYg8AguQEAAABVUVBT"
 call {vg_sha256_compress}
 .base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJFwDAADD"
-.p2align 6"#,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// `vg_hmac_sha256_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads and writes of 96 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha256_init}
-.base64 "WFY="
-call {vg_sha256_init}
-.base64 "WLk2NjY2iUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtci3wkDItMJBCJ2oPCIIXJ"
-je 20f
-22:
-.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0MgNWpqamqJRiCLQyQ1ampqaolGJItDKDVqampqiUYoi0MsNWpqamqJRiyLQzA1ampqaolGMItDNDVqampqiUY0i0M4NWpqamqJRjiLQzw1ampqaolGPItDQDVqampqiUZAi0NENWpqamqJRkSLQ0g1ampqaolGSItDTDVqampqiUZMi0NQNWpqamqJRlCLQ1Q1ampqaolGVItDWDVqampqiUZYi0NcNWpqamqJRlyJ2IPAILkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWInzidiDwCC5AQAAAFVRUFM="
-call {vg_sha256_compress}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
-.p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// `vg_hmac_sha256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAiLfCQUi0QkDItMJBCJ6oHCsAAAAFVSUVBT"
-call {vg_sha256_finalize_scratch}
-.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4i43MAAAAiUs8uYAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAAAAIlLULkAAAAAiUtUuQAAAACJS1i5AAADAIlLXInYg8AguQEAAABVUVBT"
-call {vg_sha256_compress}
-.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAMM="
 .p2align 6"#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
@@ -231,7 +159,7 @@ jmp 21b
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
+        vg_hmac_sha256_init_scratch_shani = sym super::internal::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
     )
 }
 
@@ -261,86 +189,6 @@ call {vg_sha256_finalize_scratch_shani}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4i43MAAAAiUs8uYAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAAAAIlLULkAAAAAiUtUuQAAAACJS1i5AAADAIlLXInYg8AguQEAAABVUVBT"
 call {vg_sha256_compress_shani}
 .base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJFwDAADD"
-.p2align 6"#,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha256_init_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA256_INIT_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// `vg_hmac_sha256_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads and writes of 96 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_init_scratch_shani(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha256_init}
-.base64 "WFY="
-call {vg_sha256_init}
-.base64 "WLk2NjY2iUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtci3wkDItMJBCJ2oPCIIXJ"
-je 20f
-22:
-.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0MgNWpqamqJRiCLQyQ1ampqaolGJItDKDVqampqiUYoi0MsNWpqamqJRiyLQzA1ampqaolGMItDNDVqampqiUY0i0M4NWpqamqJRjiLQzw1ampqaolGPItDQDVqampqiUZAi0NENWpqamqJRkSLQ0g1ampqaolGSItDTDVqampqiUZMi0NQNWpqamqJRlCLQ1Q1ampqaolGVItDWDVqampqiUZYi0NcNWpqamqJRlyJ2IPAILkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWInzidiDwCC5AQAAAFVRUFM="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
-.p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha256_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA256_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// `vg_hmac_sha256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_finalize_scratch_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAiLfCQUi0QkDItMJBCJ6oHCsAAAAFVSUVBT"
-call {vg_sha256_finalize_scratch_shani}
-.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4i43MAAAAiUs8uYAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAAAAIlLULkAAAAAiUtUuQAAAACJS1i5AAADAIlLXInYg8AguQEAAABVUVBT"
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAMM="
 .p2align 6"#,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,

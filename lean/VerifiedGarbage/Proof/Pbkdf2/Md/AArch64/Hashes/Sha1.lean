@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
 public import VerifiedGarbage.Spec.Sha1.Contract
@@ -52,9 +54,9 @@ def hash (v : Compress) : Hash where
   updC := v.update
   finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
-  hmacInitN := Spec.Hmac.sha1I.initScratchApi.name ++ v.suffix
-  hmacFinN := Spec.Hmac.sha1I.finalizeScratchApi.name ++ v.suffix
-  iterN := Spec.Hmac.sha1I.iterateApi.name ++ v.suffix
+  hmacInitN := "vg_hmac_sha1_init_scratch" ++ v.suffix
+  hmacFinN := "vg_hmac_sha1_finalize_scratch" ++ v.suffix
+  iterN := "vg_pbkdf2_hmac_sha1_iterate" ++ v.suffix
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha1.AArch64.Stream.params, 20, 56, "", .block [], "",
@@ -153,26 +155,26 @@ def ok : HashOK (hash v) where
   hPad := by simp only [hash] <;> decide
   L816 := by simp only [hash] <;> decide
 
-theorem satI : ∃ s, (Spec.Hmac.sha1I.initScratchContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha1I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha1I AArch64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using initSat 84 56
 
-theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeScratchContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha1I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using finSat 84 20 56
+theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha1I AArch64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha1I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using finSat 84 20 56
 
-theorem satT : ∃ s, (Spec.Hmac.sha1I.iterateContract AArch64.abi).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha1I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs]
+theorem satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I AArch64.abi).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha1I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs]
     using Pbkdf2.AArch64.iterSat 84 20 56
 
 theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha1I.S Spec.Hmac.sha1I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using initSat 84 140
 
-theorem satP : ∃ s, (Spec.Hmac.sha1I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi,
+theorem satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha1I AArch64.abi 16).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi,
     AArch64.argRegs] using pbkSat 140
 
 theorem satPF :

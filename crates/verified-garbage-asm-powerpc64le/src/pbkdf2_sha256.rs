@@ -3,40 +3,7 @@
 //! `assembly/pbkdf2_sha256.s`.
 #![allow(dead_code)]
 
-/// Runs `n` steps of PBKDF2-HMAC-SHA-256's iteration: if, for a 64-byte key `K₀`, the SHA-256 streaming state in bytes 0 to 95 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 96 to 191 represents `K₀ ⊕ opad` (as `vg_hmac_sha256_init` leaves them), repeats `U ← HMAC-SHA-256 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 192 bytes.
-/// * `u` must be valid for reads of 32 bytes.
-/// * `t` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha256_iterate(key: *const [u8; 192], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfMYHpXgiAKV4cABH+3gAZ/uAAIf7iACn+5AAx/uYAOf7oAAH+KgARzsAAGc7yACHOwAAxjsAAOU7AAAEgQAAHJEEAASBBAAckQgABIEIAByRDAAEgQwAHJEQAASBEAAckRQABIEUAByRGAAEgRgAHJEcAASBHAAckYAAADkgAByRAAAAOSQAHJEoAByRLAAckTAAHJE0AByRYACgOxTqHX0UQgh9FEIIfVgAYDkoXRp9AACjOwAAPyg="
-beq %cr0, 20f
-22:
-.base64 "AAAdgQAAGpEEAB2BBAAakQgAHYEIABqRDAAdgQwAGpEQAB2BEAAakRQAHYEUABqRGAAdgRgAGpEcAB2BHAAakQAAnDgAAHo4AQCgOAAA2zg="
-bl {vg_sha256_compress}
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9YAAdgQAAGpFkAB2BBAAakWgAHYEIABqRbAAdgQwAGpFwAB2BEAAakXQAHYEUABqReAAdgRgAGpF8AB2BHAAakQAAnDgAAHo4AQCgOAAA2zg="
-bl {vg_sha256_compress}
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9AAAcgQAAPoF4Sgh9AAAekQQAHIEEAD6BeEoIfQQAHpEIAByBCAA+gXhKCH0IAB6RDAAcgQwAPoF4Sgh9DAAekRAAHIEQAD6BeEoIfRAAHpEUAByBFAA+gXhKCH0UAB6RGAAcgRgAPoF4Sgh9GAAekRwAHIEcAD6BeEoIfRwAHpH///87AAA/KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "oAAb6HAAW+uAAJvriAC765AA2+uYAPvreAB766YDCHwgAIBO""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// PBKDF2-HMAC-SHA-256 (RFC 8018 §5.2, with HMAC-SHA-256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-256 and HMAC-SHA-256 functions and `vg_pbkdf2_hmac_sha256_iterate`.
+/// PBKDF2-HMAC-SHA-256 (RFC 8018 §5.2, with HMAC-SHA-256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-256 and HMAC-SHA-256 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -82,60 +49,7 @@ b 21f
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8YAYhOCAAgE4=""#,
         vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch,
-        vg_pbkdf2_hmac_sha256_iterate = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_iterate,
-    )
-}
-
-/// `vg_pbkdf2_hmac_sha256`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.pbkdf2ScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1600 bytes.
-/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 32`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha256_scratch(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 200]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4AACK+ggAqvoQAMr6GADq+iAACvsoACr7AACqOgAAhjoAAMc6AADoOgAACTsAACU7AACjOAAAxDhwA3U40AOVOA=="
-bl {vg_hmac_sha256_init}
-.base64 "AQCAOdAEYDksXZV9AAA4KA=="
-beq %cr0, 20f
-22:
-.base64 "cAMVgTAEFZF0AxWBNAQVkXgDFYE4BBWRfAMVgTwEFZGAAxWBQAQVkYQDFYFEBBWRiAMVgUgEFZGMAxWBTAQVkZADFYFQBBWRlAMVgVQEFZGYAxWBWAQVkZwDFYFcBBWRoAMVgWAEFZGkAxWBZAQVkagDFYFoBBWRrAMVgWwEFZGwAxWBcAQVkbQDFYF0BBWRuAMVgXgEFZG8AxWBfAQVkcADFYGABBWRxAMVgYQEFZHIAxWBiAQVkcwDFYGMBBWRMAR1OEAAgDgAALk4AADUODAA9Tg="
-bl {vg_sha256_update_scratch}
-.base64 "MAR1OEAAlDjQBLU4BADAODAA9Tg="
-bl {vg_sha256_update_scratch}
-.base64 "MAR1ONADlThEALQ4kATVODAA9Tg="
-bl {vg_hmac_sha256_finalize_scratch}
-.base64 "kAQVgbAEFZGUBBWBtAQVkZgEFYG4BBWRnAQVgbwEFZGgBBWBwAQVkaQEFYHEBBWRqAQVgcgEFZGsBBWBzAQVkXADdTiQBJU4//+2OLAE1TgwAPU4"
-bl {vg_pbkdf2_hmac_sha256_iterate}
-.base64 "4P+YOeAPjHkAADg5AAAsKA=="
-bne %cr0, 23f
-.base64 "IAAgOQ=="
-b 24f
-23:
-24:
-.base64 "AAAAOQ=="
-25:
-.base64 "FEJ1fbAEi4kUQnd9AACLmQEACDn//yk5AAApKA=="
-bne %cr0, 25b
-.base64 "FEL3flDACH/QBGA5LFyVfQEAjDksXZV9AAA4KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IACATg==""#,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch,
-        vg_pbkdf2_hmac_sha256_iterate = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_iterate,
+        vg_hmac_sha256_finalize_scratch = sym super::internal::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+        vg_pbkdf2_hmac_sha256_iterate = sym super::internal::vg_pbkdf2_hmac_sha256_iterate::vg_pbkdf2_hmac_sha256_iterate,
     )
 }

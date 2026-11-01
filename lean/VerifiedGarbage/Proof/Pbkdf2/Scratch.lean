@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
 
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 `vg_pbkdf2_hmac_<hash>` keeps its working space in a frame of its own
 (`Verified.stackScratch`, or `Verified.stackArgScratch` on x86-64, where it
 was a stack argument), around code proved with the working space as an
-argument (`Spec.Pbkdf2.pbkdf2ScratchContract`, which
+argument (`Proof.Pbkdf2.pbkdf2ScratchContract`, which
 `vg_pbkdf2_hmac_<hash>_scratch` is emitted with).
 
 On x86-64, x86 and ARMv7 the frame also holds a copy of the arguments passed

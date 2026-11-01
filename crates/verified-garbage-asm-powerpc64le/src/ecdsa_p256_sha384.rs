@@ -75,9 +75,9 @@ bl {vg_hmac_sha384_finalize_scratch}
 .base64 "AAAsKA=="
 bne %cr0, 20b
 .base64 "AABhOQAAgDkgAIv5KACL+TAAi/k4AIv5QACL+UgAi/lQAIv5WACL+WAAi/loAIv5cACL+XgAi/mAAIv5iACL+ZAAi/mYAIv5oACL+agAi/mwAIv5uACL+cAAi/nIAIv5AAEhOCAAAegwACE4pgMIfCAAgE4=""#,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_init_scratch = sym super::internal::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
+        vg_hmac_sha384_finalize_scratch = sym super::internal::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
         vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
     )
 }

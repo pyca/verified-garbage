@@ -1268,7 +1268,7 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::internal::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }

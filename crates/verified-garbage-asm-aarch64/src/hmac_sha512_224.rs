@@ -113,7 +113,7 @@ b 21b
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_224_init_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch,
+        vg_hmac_sha512_224_init_scratch = sym super::internal::vg_hmac_sha512_224_init_scratch::vg_hmac_sha512_224_init_scratch,
     )
 }
 
@@ -146,100 +146,6 @@ bl {vg_sha512_compress}
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
 .inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff,0xd65f03c0
-.p2align 6",
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_hmac_sha512_224_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads and writes of 192 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * `key_len` must be at most 128.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e,0xf9017097,0x91000013
-.inst 0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
-bl {vg_sha512_224_init}
-.inst 0x910002a0
-bl {vg_sha512_224_init}
-.inst 0x5286c6ce,0x72a6c6ce,0xb900426e,0xb900466e,0xb9004a6e,0xb9004e6e,0xb900526e,0xb900566e
-.inst 0xb9005a6e,0xb9005e6e,0xb900626e,0xb900666e,0xb9006a6e,0xb9006e6e,0xb900726e,0xb900766e
-.inst 0xb9007a6e,0xb9007e6e,0xb900826e,0xb900866e,0xb9008a6e,0xb9008e6e,0xb900926e,0xb900966e
-.inst 0xb9009a6e,0xb9009e6e,0xb900a26e,0xb900a66e,0xb900aa6e,0xb900ae6e,0xb900b26e,0xb900b66e
-.inst 0xb900ba6e,0xb900be6e,0xd280000a
-cbz x24, 20f
-22:
-.inst 0x8b0a02cd,0x394001a9,0xca0e0129,0x8b0a026c,0x39010189,0x9100054a,0xcb0a030b
-cbnz x11, 22b
-b 21f
-20:
-21:
-.inst 0x528d4d4f,0x72ad4d4f,0xb9404269,0xca0f0129,0xb90042a9,0xb9404669,0xca0f0129,0xb90046a9
-.inst 0xb9404a69,0xca0f0129,0xb9004aa9,0xb9404e69,0xca0f0129,0xb9004ea9,0xb9405269,0xca0f0129
-.inst 0xb90052a9,0xb9405669,0xca0f0129,0xb90056a9,0xb9405a69,0xca0f0129,0xb9005aa9,0xb9405e69
-.inst 0xca0f0129,0xb9005ea9,0xb9406269,0xca0f0129,0xb90062a9,0xb9406669,0xca0f0129,0xb90066a9
-.inst 0xb9406a69,0xca0f0129,0xb9006aa9,0xb9406e69,0xca0f0129,0xb9006ea9,0xb9407269,0xca0f0129
-.inst 0xb90072a9,0xb9407669,0xca0f0129,0xb90076a9,0xb9407a69,0xca0f0129,0xb9007aa9,0xb9407e69
-.inst 0xca0f0129,0xb9007ea9,0xb9408269,0xca0f0129,0xb90082a9,0xb9408669,0xca0f0129,0xb90086a9
-.inst 0xb9408a69,0xca0f0129,0xb9008aa9,0xb9408e69,0xca0f0129,0xb9008ea9,0xb9409269,0xca0f0129
-.inst 0xb90092a9,0xb9409669,0xca0f0129,0xb90096a9,0xb9409a69,0xca0f0129,0xb9009aa9,0xb9409e69
-.inst 0xca0f0129,0xb9009ea9,0xb940a269,0xca0f0129,0xb900a2a9,0xb940a669,0xca0f0129,0xb900a6a9
-.inst 0xb940aa69,0xca0f0129,0xb900aaa9,0xb940ae69,0xca0f0129,0xb900aea9,0xb940b269,0xca0f0129
-.inst 0xb900b2a9,0xb940b669,0xca0f0129,0xb900b6a9,0xb940ba69,0xca0f0129,0xb900baa9,0xb940be69
-.inst 0xca0f0129,0xb900bea9,0x91010261,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress}
-.inst 0x910002b3,0x910102a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress}
-.inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
-.p2align 6",
-        vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_hmac_sha512_224_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e,0xf9017097,0x91000013
-.inst 0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
-bl {vg_sha512_finalize_scratch}
-.inst 0xa9402a89,0xa9002a69,0xa9412a89,0xa9012a69,0xa9422a89,0xa9022a69,0xa9432a89,0xa9032a69
-.inst 0xf94176e9,0xf9417aea,0xa9042a69,0xf9417ee9,0xf9002a69,0xb94302e9,0xb9005a69,0x910002b8
-.inst 0x91010275,0x910002f4,0xd2801009,0xb9001ea9,0xd2800009,0xd280000a,0xa9022aaa,0xa9032aaa
-.inst 0xa9042aaa,0xa9052aaa,0xa9062aaa,0xd2801396,0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9
-.inst 0x8b090129,0x8b090129,0xdac00d29,0xf9005e69,0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress}
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
-.inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
 .p2align 6",
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -362,7 +268,7 @@ b 21b
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha512_224_init_scratch_sha3 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_sha3,
+        vg_hmac_sha512_224_init_scratch_sha3 = sym super::internal::vg_hmac_sha512_224_init_scratch_sha3::vg_hmac_sha512_224_init_scratch_sha3,
     )
 }
 
@@ -400,112 +306,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
 .inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff,0xd65f03c0
-.arch_extension nosha3
-.p2align 6",
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
-    )
-}
-
-/// The CPU features `vg_hmac_sha512_224_init_scratch_sha3` requires (`Artifact.features`).
-pub const VG_HMAC_SHA512_224_INIT_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// `vg_hmac_sha512_224_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads and writes of 192 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * `key_len` must be at most 128.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_init_scratch_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e,0xf9017097,0x91000013
-.inst 0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
-bl {vg_sha512_224_init}
-.inst 0x910002a0
-bl {vg_sha512_224_init}
-.inst 0x5286c6ce,0x72a6c6ce,0xb900426e,0xb900466e,0xb9004a6e,0xb9004e6e,0xb900526e,0xb900566e
-.inst 0xb9005a6e,0xb9005e6e,0xb900626e,0xb900666e,0xb9006a6e,0xb9006e6e,0xb900726e,0xb900766e
-.inst 0xb9007a6e,0xb9007e6e,0xb900826e,0xb900866e,0xb9008a6e,0xb9008e6e,0xb900926e,0xb900966e
-.inst 0xb9009a6e,0xb9009e6e,0xb900a26e,0xb900a66e,0xb900aa6e,0xb900ae6e,0xb900b26e,0xb900b66e
-.inst 0xb900ba6e,0xb900be6e,0xd280000a
-cbz x24, 20f
-22:
-.inst 0x8b0a02cd,0x394001a9,0xca0e0129,0x8b0a026c,0x39010189,0x9100054a,0xcb0a030b
-cbnz x11, 22b
-b 21f
-20:
-21:
-.inst 0x528d4d4f,0x72ad4d4f,0xb9404269,0xca0f0129,0xb90042a9,0xb9404669,0xca0f0129,0xb90046a9
-.inst 0xb9404a69,0xca0f0129,0xb9004aa9,0xb9404e69,0xca0f0129,0xb9004ea9,0xb9405269,0xca0f0129
-.inst 0xb90052a9,0xb9405669,0xca0f0129,0xb90056a9,0xb9405a69,0xca0f0129,0xb9005aa9,0xb9405e69
-.inst 0xca0f0129,0xb9005ea9,0xb9406269,0xca0f0129,0xb90062a9,0xb9406669,0xca0f0129,0xb90066a9
-.inst 0xb9406a69,0xca0f0129,0xb9006aa9,0xb9406e69,0xca0f0129,0xb9006ea9,0xb9407269,0xca0f0129
-.inst 0xb90072a9,0xb9407669,0xca0f0129,0xb90076a9,0xb9407a69,0xca0f0129,0xb9007aa9,0xb9407e69
-.inst 0xca0f0129,0xb9007ea9,0xb9408269,0xca0f0129,0xb90082a9,0xb9408669,0xca0f0129,0xb90086a9
-.inst 0xb9408a69,0xca0f0129,0xb9008aa9,0xb9408e69,0xca0f0129,0xb9008ea9,0xb9409269,0xca0f0129
-.inst 0xb90092a9,0xb9409669,0xca0f0129,0xb90096a9,0xb9409a69,0xca0f0129,0xb9009aa9,0xb9409e69
-.inst 0xca0f0129,0xb9009ea9,0xb940a269,0xca0f0129,0xb900a2a9,0xb940a669,0xca0f0129,0xb900a6a9
-.inst 0xb940aa69,0xca0f0129,0xb900aaa9,0xb940ae69,0xca0f0129,0xb900aea9,0xb940b269,0xca0f0129
-.inst 0xb900b2a9,0xb940b669,0xca0f0129,0xb900b6a9,0xb940ba69,0xca0f0129,0xb900baa9,0xb940be69
-.inst 0xca0f0129,0xb900bea9,0x91010261,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
-.inst 0x910002b3,0x910102a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
-.inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
-.arch_extension nosha3
-.p2align 6",
-        vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
-    )
-}
-
-/// The CPU features `vg_hmac_sha512_224_finalize_scratch_sha3` requires (`Artifact.features`).
-pub const VG_HMAC_SHA512_224_FINALIZE_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// `vg_hmac_sha512_224_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_finalize_scratch_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e,0xf9017097,0x91000013
-.inst 0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
-bl {vg_sha512_finalize_scratch_sha3}
-.inst 0xa9402a89,0xa9002a69,0xa9412a89,0xa9012a69,0xa9422a89,0xa9022a69,0xa9432a89,0xa9032a69
-.inst 0xf94176e9,0xf9417aea,0xa9042a69,0xf9417ee9,0xf9002a69,0xb94302e9,0xb9005a69,0x910002b8
-.inst 0x91010275,0x910002f4,0xd2801009,0xb9001ea9,0xd2800009,0xd280000a,0xa9022aaa,0xa9032aaa
-.inst 0xa9042aaa,0xa9052aaa,0xa9062aaa,0xd2801396,0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9
-.inst 0x8b090129,0x8b090129,0xdac00d29,0xf9005e69,0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
-.inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,

@@ -57,18 +57,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
     stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
     verified := v.hmacFinF
-    features := v.features },
-  v.I.initScratchApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := v.H.hmacInit
-    stack := 16
-    verified := v.hmacInit
-    features := v.features },
-  v.I.finalizeScratchApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := v.H.hmacFin
-    stack := 16
-    verified := v.hmacFin
     features := v.features }]
 
 end VG.Generic.MdHash.AArch64.Hmac

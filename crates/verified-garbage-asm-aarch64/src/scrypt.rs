@@ -310,7 +310,7 @@ cbnz x11, 20b
 bl {vg_pbkdf2_hmac_sha256_scratch}
 .inst 0x910103ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::internal::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }
@@ -355,7 +355,7 @@ bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
 .inst 0x910103ff,0xf84107fe,0xd65f03c0
 .arch_extension nosha2
 .p2align 6",
-        vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch_sha2,
+        vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::internal::vg_pbkdf2_hmac_sha256_scratch_sha2::vg_pbkdf2_hmac_sha256_scratch_sha2,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }

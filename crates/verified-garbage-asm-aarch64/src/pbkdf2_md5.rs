@@ -3,51 +3,7 @@
 //! `assembly/pbkdf2_md5.s`.
 #![allow(dead_code)]
 
-/// Runs `n` steps of PBKDF2-HMAC-MD5's iteration: if, for a 64-byte key `K₀`, the MD5 streaming state in bytes 0 to 79 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 80 to 159 represents `K₀ ⊕ opad` (as `vg_hmac_md5_init` leaves them), repeats `U ← HMAC-MD5 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 160 bytes.
-/// * `u` must be valid for reads of 16 bytes.
-/// * `t` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 384 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160], u: *const [u8; 16], n: u32, t: *mut [u8; 16], scratch: *mut [u64; 48]) {
-    core::arch::naked_asm!(
-        r".inst 0x11000042,0xf9002093,0xf9002494,0xf9002895,0xf9002c96,0xf9003097,0xf9003498,0xf900389e
-.inst 0x9101e093,0x91000094,0x91022095,0x91000077,0x91000058,0xb9400029,0xb90002a9,0xb9400429
-.inst 0xb90006a9,0xb9400829,0xb9000aa9,0xb9400c29,0xb9000ea9,0xd2801009,0xb90012a9,0xd2800009
-.inst 0xb90016a9,0xb9001aa9,0xb9001ea9,0xb90022a9,0xb90026a9,0xb9002aa9,0xb9002ea9,0xb90032a9
-.inst 0xb90036a9,0xd2800a16,0x8b1602c9,0x8b090129,0x8b090129,0xf9002669,0x91000016
-cbz x24, 20f
-22:
-.inst 0xb94002c9,0xb9000269,0xb94006c9,0xb9000669,0xb9400ac9,0xb9000a69,0xb9400ec9,0xb9000e69
-.inst 0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_md5_compress}
-.inst 0xb9400269,0xb90002a9,0xb9400669,0xb90006a9,0xb9400a69,0xb9000aa9,0xb9400e69,0xb9000ea9
-.inst 0xb94052c9,0xb9000269,0xb94056c9,0xb9000669,0xb9405ac9,0xb9000a69,0xb9405ec9,0xb9000e69
-.inst 0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_md5_compress}
-.inst 0xb9400269,0xb90002a9,0xb9400669,0xb90006a9,0xb9400a69,0xb9000aa9,0xb9400e69,0xb9000ea9
-.inst 0xb94002a9,0xb94002ea,0xca0a0129,0xb90002e9,0xb94006a9,0xb94006ea,0xca0a0129,0xb90006e9
-.inst 0xb9400aa9,0xb9400aea,0xca0a0129,0xb9000ae9,0xb9400ea9,0xb9400eea,0xca0a0129,0xb9000ee9
-.inst 0xd1000718
-cbnz x24, 22b
-b 21f
-20:
-21:
-.inst 0xf9403a9e,0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xd65f03c0
-.p2align 6",
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
-
-/// PBKDF2-HMAC-MD5 (RFC 8018 §5.2, with HMAC-MD5 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified MD5 and HMAC-MD5 functions and `vg_pbkdf2_hmac_md5_iterate`.
+/// PBKDF2-HMAC-MD5 (RFC 8018 §5.2, with HMAC-MD5 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified MD5 and HMAC-MD5 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -128,8 +84,8 @@ b 25f
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
-        vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch,
-        vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate,
+        vg_hmac_md5_init_scratch = sym super::internal::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_finalize_scratch = sym super::internal::vg_hmac_md5_finalize_scratch::vg_hmac_md5_finalize_scratch,
+        vg_pbkdf2_hmac_md5_iterate = sym super::internal::vg_pbkdf2_hmac_md5_iterate::vg_pbkdf2_hmac_md5_iterate,
     )
 }

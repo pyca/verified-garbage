@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -29,18 +30,18 @@ open VG.Impl.Pbkdf2.Whole.PPC64LE (Fns)
 variable {F : Fns}
 
 theorem pbkImp (S : Spec.Hmac.StreamingHash) (n X : Nat)
-    (hs : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S n PPC64LE.abi (X + 144)).pre s) :
-    (pbkG S (8 * n) (X + 144)).Implies (Spec.Pbkdf2.pbkdf2ScratchContract S n PPC64LE.abi (X + 144)) := by
-  generic_implies [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre,
+    (hs : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract S n PPC64LE.abi (X + 144)).pre s) :
+    (pbkG S (8 * n) (X + 144)).Implies (Proof.Pbkdf2.pbkdf2ScratchContract S n PPC64LE.abi (X + 144)) := by
+  generic_implies [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre,
     Spec.Pbkdf2.pbkdf2Post, pbkG, PPC64LE.abi, PPC64LE.argRegs] using hs
 
 /-- `pbkdf2` with its working space as an argument, against the shared contract. -/
 theorem scratch (hF : FnsOK F) (hc : Checks F) {I : Spec.Hmac.Instance} (hSH : hF.hH.SH = I.S)
     (hfit : F.bytes ≤ 8 * I.pbkdf2Scratch)
-    (hs : ∃ s, (I.pbkdf2ScratchContract PPC64LE.abi (hF.X + 144)).pre s) :
-    Verified PPC64LE.target F.pbkdf2 (I.pbkdf2ScratchContract PPC64LE.abi (hF.X + 144)) := by
+    (hs : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I PPC64LE.abi (hF.X + 144)).pre s) :
+    Verified PPC64LE.target F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I PPC64LE.abi (hF.X + 144)) := by
   have imp : (pbkG I.S (8 * I.pbkdf2Scratch) (hF.X + 144)).Implies
-      (I.pbkdf2ScratchContract PPC64LE.abi (hF.X + 144)) := pbkImp I.S I.pbkdf2Scratch hF.X hs
+      (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I PPC64LE.abi (hF.X + 144)) := pbkImp I.S I.pbkdf2Scratch hF.X hs
   rw [← hSH] at imp
   have wide : ∀ s, (pbkG hF.hH.SH (8 * I.pbkdf2Scratch) (hF.X + 144)).pre s →
       (pbkG hF.hH.SH F.bytes (hF.X + 144)).pre (s.withRegions s.rd [⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
@@ -64,7 +65,7 @@ def pbkFrame (I : Spec.Hmac.Instance) : Nat := (8 * I.pbkdf2Scratch + 32 + 15) /
 
 /-- `pbkdf2` with its working space in a frame of `bytes` bytes. -/
 theorem framed {I : Spec.Hmac.Instance} {c : Prog isa} {stack bytes : Nat}
-    (h : Verified PPC64LE.target c (I.pbkdf2ScratchContract PPC64LE.abi stack))
+    (h : Verified PPC64LE.target c (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I PPC64LE.abi stack))
     (hb : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ I.pbkdf2Scratch * 8 + 32 ≤ bytes)
     (hsat : ∃ s, (I.pbkdf2Contract PPC64LE.abi (stack + bytes)).pre s) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch bytes .r10 c)

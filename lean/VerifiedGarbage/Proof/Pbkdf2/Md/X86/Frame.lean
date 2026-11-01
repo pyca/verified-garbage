@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Scratch
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
@@ -35,7 +36,7 @@ slots. -/
 def finFrame (I : Spec.Hmac.Instance) : Nat := 8 + 20 + 8 * I.scratch
 
 theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
-    (h : Verified X86.target c (I.initScratchContract X86.abi 48))
+    (h : Verified X86.target c (Proof.Hmac.Instance.initScratchContract I X86.abi 48))
     (hsat : ∃ s, (I.initContract X86.abi (48 + initFrame I)).pre s)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
     (hd : stackUse c ≤ 48 := by lit_decide)
@@ -53,7 +54,7 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
-    (h : Verified X86.target c (I.finalizeScratchContract X86.abi 48))
+    (h : Verified X86.target c (Proof.Hmac.Instance.finalizeScratchContract I X86.abi 48))
     (hR : Hmac.ReprLocal I.S)
     (hsat : ∃ s, (I.finalizeContract X86.abi (48 + finFrame I)).pre s)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)

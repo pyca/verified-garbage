@@ -31,7 +31,7 @@ def F : Impl.Pbkdf2.Whole.RISCV64.Fns where
   H := hash256
   hiN := Spec.Hmac.sha256I.initAnyKeyApi.name
   hfN := Spec.Hmac.sha256I.finalizeApi.name
-  itN := Spec.Hmac.sha256I.iterateApi.name
+  itN := "vg_pbkdf2_hmac_sha256_iterate"
   itC := Pbkdf2.RISCV64.Sha256.code
   itW := 240
 
