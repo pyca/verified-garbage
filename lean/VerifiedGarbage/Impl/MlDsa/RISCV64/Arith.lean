@@ -12,14 +12,16 @@ zero-extended (`lwu`) and stored as the low word (`sw`), and the arithmetic
 is on all 64 bits.
 
 Multiplications are what the code counts, as ML-KEM's does. A product of two
-reduced values (or that plus a reduced value) is less than `2⁴⁷`, and is
-reduced without a multiplication: as `2²³ ≡ 2¹³ − 1 (mod q)`, `fold` takes
-`x` to `(x mod 2²³) + ⌊x / 2²³⌋ · (2¹³ − 1)`, congruent to `x`, by a mask, two
-shifts, an addition and a subtraction. Three folds leave a value less than
-`2²³ + 2¹⁸ < 2q`, and a subtraction of `q` and a `fixup`
-(`Impl/MlKem/RISCV64/Poly.lean`) finish it (`reduce`). A butterfly thus
-multiplies once, and a coefficient of `multiplyNTT` once.
-`a5 = 2²³ − 1` and `a6 = q` throughout (`consts`).
+reduced values (or that plus a reduced value) `x` is reduced by Barrett's
+method with `mulhu`: `t = ⌊x · m / 2⁶⁴⌋` for `m = ⌊2⁶⁴ / q⌋` is `⌊x / q⌋` or
+one less, so `x - t·q` is less than `2q` and congruent to `x`; as
+`q = 2²³ − 2¹³ + 1`, the product `t·q` is two shifts, an addition and two
+subtractions, and a subtraction of `q` and a `fixup`
+(`Impl/MlKem/RISCV64/Poly.lean`) finish it (`reduce`). A reduction thus
+multiplies once (against three folds of `x` by `2²³ ≡ 2¹³ − 1`, multiplying
+none, but with ten more instructions), so a butterfly multiplies twice, and a
+coefficient of `multiplyNTT` twice.
+`a5 = m` and `a6 = q` throughout (`consts`).
 
 The tables of the 256 zetas `ζ^BitRev8(m) mod q` (`zetaTab`) and of their
 negations (`negZetaTab`, the `z` of Algorithm 42) are stored in `scratch`,
@@ -66,17 +68,17 @@ def hi20 (v : Nat) : Nat := (v + 2048) / 4096
 def loadImm (r : Reg) (v : Nat) : List Instr :=
   [.lui r (BitVec.ofNat 20 (hi20 v)), .addi r r ((v : Int) - 4096 * hi20 v)]
 
-/-- `a5 = 2²³ − 1`, `a6 = q`. -/
-def consts : List Instr := loadImm .a5 8388607 ++ loadImm .a6 8380417
+/-- `r ← m = ⌊2⁶⁴ / q⌋ = 2201172575745 = 537395648 · 2¹² + 1537`. -/
+def loadM (r : Reg) : List Instr := loadImm r 537395648 ++ [.shift .sll .d r r 12, .addi r r 1537]
 
-/-- `d ← (d mod 2²³) + ⌊d / 2²³⌋ · (2¹³ − 1)`, with `2²³ − 1` in `a5` and
-`t` a temporary. -/
-def fold (d t : Reg) : List Instr :=
-  [.shift .srl .d t d 23, .logic .and d d .a5, .sub d d t, .shift .sll .d t t 13, .add d d t]
+/-- `a5 = m`, `a6 = q`. -/
+def consts : List Instr := loadM .a5 ++ loadImm .a6 8380417
 
-/-- `d ← d mod q` for `d < 2⁴⁷`, with `2²³ − 1` in `a5`, `q` in `a6` and `t`
-a temporary. -/
-def reduce (d t : Reg) : List Instr := fold d t ++ fold d t ++ fold d t ++ [.sub d d .a6] ++ fixup d t .a6
+/-- `d ← d mod q`, with `m` in `a5`, `q` in `a6` and `t` a temporary:
+`t = ⌊d · m / 2⁶⁴⌋`, then `d - t + 2¹³ t - 2²³ t - q`, fixed up. -/
+def reduce (d t : Reg) : List Instr :=
+  [.mulhu t d .a5, .sub d d t, .shift .sll .d t t 13, .add d d t, .shift .sll .d t t 10, .sub d d t,
+    .sub d d .a6] ++ fixup d t .a6
 
 /-- Entry `k` of the table `T`, through `t2`, at `[b + 4k]`. -/
 def tabStep (T : Nat → Nat) (b : Reg) (k : Nat) : List Instr :=

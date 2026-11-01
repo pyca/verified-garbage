@@ -83,13 +83,13 @@ theorem polyIs_bfly {m : Mem} {F : Addr} {f : Poly} (h : PolyIs m F f) {j len : 
 section
 variable {s : State} {x y z c : BitVec 64}
 
-theorem bfly_ok (h5 : s.gpr .a2 = x) (h6 : s.gpr .a3 = y) (h7 : s.gpr .a4 = z) (h8 : s.gpr .a5 = 8388607)
+theorem bfly_ok (h5 : s.gpr .a2 = x) (h6 : s.gpr .a3 = y) (h7 : s.gpr .a4 = z) (h8 : s.gpr .a5 = 2201172575745)
     (h9 : s.gpr .a6 = 8380417) (h11 : s.gpr .t1 = c)
     (ia : InRegions (s.rd ++ s.wr) x 4) (ib : InRegions (s.rd ++ s.wr) y 4)
     (oa : InRegions s.wr x 4) (ob : InRegions s.wr y 4) (ax : x.toNat % 4 = 0) (ay : y.toNat % 4 = 0) :
     WP isa (.block bflyBody) s fun s' =>
       s'.gpr .a2 = x + 4 ∧ s'.gpr .a3 = y + 4 ∧ s'.gpr .t1 = c - 1 ∧ s'.gpr .a0 = s.gpr .a0 ∧
-      s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a4 = z ∧ s'.gpr .a5 = 8388607 ∧ s'.gpr .a6 = 8380417 ∧
+      s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a4 = z ∧ s'.gpr .a5 = 2201172575745 ∧ s'.gpr .a6 = 8380417 ∧
       s'.gpr .a7 = s.gpr .a7 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = (s.mem.writeW y ((fixd ((s.mem.readW x 32).setWidth 64 -
@@ -102,7 +102,7 @@ theorem bfly_ok (h5 : s.gpr .a2 = x) (h6 : s.gpr .a3 = y) (h7 : s.gpr .a4 = z) (
       simp only [bflyBody, List.append_assoc]]
   refine WP.block_append ?_
   crun [h5, h6, h7, ia, ib, ax, ay]
-  refine reduce_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by simp [h8]) (by simp [h9])
+  refine reduce_ok (by decide) (by decide) (by decide) (by simp [h8]) (by simp [h9])
     fun s' k => ?_
   have g := k.other
   crun [fixup, fixd, kept, k.gpr, g, k.mem, k.rd, k.wr, k.sp, h5, h6, h7, h8, h9, h11, oa, ob, ax, ay,
@@ -140,7 +140,7 @@ structure Setup (s₀ : State) (m₁ : Mem) : Prop where
 /-- What every loop keeps. -/
 structure Env (s₀ : State) (m₁ : Mem) (s : State) : Prop where
   a0 : s.gpr .a0 = F s₀ + BitVec.ofNat 64 1024
-  a5 : s.gpr .a5 = 8388607
+  a5 : s.gpr .a5 = 2201172575745
   a6 : s.gpr .a6 = 8380417
   kept : ∀ r ∈ kept, s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
@@ -388,9 +388,9 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
 theorem tail_ok {s : State} :
     WP isa (.block (consts ++ ([.addi .a0 .a0 1024, .addi .a1 .a1 4, .li .a7 512] : List Instr))) s
       fun s' => s'.gpr .a0 = s.gpr .a0 + BitVec.ofNat 64 1024 ∧ s'.gpr .a1 = s.gpr .a1 + 4 ∧
-        s'.gpr .a5 = 8388607 ∧ s'.gpr .a6 = 8380417 ∧ s'.gpr .a7 = 512 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+        s'.gpr .a5 = 2201172575745 ∧ s'.gpr .a6 = 8380417 ∧ s'.gpr .a7 = 512 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
         s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  simp only [consts, loadImm_mask, loadImm_q, List.cons_append, List.nil_append]
+  simp only [consts, loadM_eq, loadImm_q, List.cons_append, List.nil_append]
   crun [kept, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
   all_goals decide
 

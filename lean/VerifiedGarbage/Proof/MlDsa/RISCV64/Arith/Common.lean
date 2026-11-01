@@ -18,12 +18,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 The values the pieces of `Impl/MlDsa/RISCV64/Arith.lean` compute:
 
 * `loadImm r v` leaves `v` in `r` (`loadImm_val`), and `consts` leaves
-  `2²³ − 1` in `a5` and `q` in `a6`;
+  `m = ⌊2⁶⁴ / q⌋` in `a5` and `q` in `a6`;
 * `fixup` leaves `fixd u`: `u + q` if `u` is negative, `u` otherwise, which
   reduces a sum or a difference of reduced values (`fixd_add`, `fixd_sub`);
-* `fold` leaves `bfold x`, `(x mod 2²³) + ⌊x / 2²³⌋ · (2¹³ − 1)`, congruent
-  to `x` (`foldN_mod`), and `reduce` leaves `red x = x mod q` for every
-  `x < 2⁴⁷` (`red_toNat`): three folds bring it below `2q` (`fold3_lt`);
+* `reduce` leaves `red x = x mod q` for every `x` (`red_toNat`): the
+  quotient's estimate `bar x = ⌊x · m / 2⁶⁴⌋` is `⌊x / q⌋` or one less
+  (`bar_le`, `lt_bar`), so `x - bar x · q < 2q`;
 * `table T b` stores the 256 entries of `T`, each less than `2²³`
   (`table_ok`).
 -/
@@ -67,9 +67,6 @@ theorem loadImm_val {v : Nat} (hv : v < 2 ^ 31 - 2048) :
 theorem loadImm_imm (v : Nat) : imm12 ((v : Int) - 4096 * hi20 v) := by
   unfold imm12 hi20; omega
 
-theorem mask_val : sext32 (BitVec.ofNat 20 (hi20 8388607) ++ (0 : BitVec 12)) +
-    BitVec.ofInt 64 ((8388607 : Nat) - 4096 * hi20 8388607 : Int) = 8388607 := loadImm_val (by decide)
-
 theorem q_val : sext32 (BitVec.ofNat 20 (hi20 8380417) ++ (0 : BitVec 12)) +
     BitVec.ofInt 64 ((8380417 : Nat) - 4096 * hi20 8380417 : Int) = 8380417 := loadImm_val (by decide)
 
@@ -77,16 +74,18 @@ theorem q_val : sext32 (BitVec.ofNat 20 (hi20 8380417) ++ (0 : BitVec 12)) +
 theorem loadImm_q (r : Reg) : loadImm r 8380417 = [.lui r 0x7FE, .addi r r 1] := by
   simp only [loadImm, hi20]; rfl
 
-theorem loadImm_mask (r : Reg) : loadImm r 8388607 = [.lui r 0x800, .addi r r (-1)] := by
-  simp only [loadImm, hi20]; rfl
+/-- `loadM r`, as instructions with their immediates. -/
+theorem loadM_eq (r : Reg) :
+    loadM r = [.lui r 0x20080, .addi r r 448, .shift .sll .d r r 12, .addi r r 1537] := by
+  simp only [loadM, loadImm, hi20]; rfl
 
 theorem loadImm_inv (r : Reg) : loadImm r 8347681 = [.lui r 0x7F6, .addi r r 33] := by
   simp only [loadImm, hi20]; rfl
 
 theorem q_lui : sext32 ((0x7FE : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 1 = 8380417 := by decide
 
-theorem mask_lui : sext32 ((0x800 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 (-1) = 8388607 := by
-  decide
+theorem m_lui : (sext32 ((0x20080 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 448) <<< 12 +
+    BitVec.ofInt 64 1537 = 2201172575745 := by decide
 
 theorem inv_lui : sext32 ((0x7F6 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 33 = 8347681 := by decide
 
@@ -130,57 +129,70 @@ theorem fixd_subq {x : BitVec 64} (hx : x.toNat < 2 * q) : (fixd (x - 8380417)).
   rw [fixd_toNat (by bv_omega)]
   split <;> bv_omega
 
-/-- A fold of `x`: `2²³ ≡ 2¹³ − 1 (mod q)`. -/
-def foldN (x : Nat) : Nat := x % 2 ^ 23 + x / 2 ^ 23 * 8191
+/-- `m = ⌊2⁶⁴ / q⌋`, and `m q + 2365951 = 2⁶⁴`. -/
+theorem m_q : 2201172575745 * q + 2365951 = 2 ^ 64 := by rw [q_eq]
 
-theorem foldN_mod (x : Nat) : foldN x % q = x % q := by
-  unfold foldN
-  rw [q_eq]
-  omega
+/-- The quotient's estimate, `⌊x · m / 2⁶⁴⌋`, as `mulhu` computes it. -/
+def bar (x : BitVec 64) : BitVec 64 := BitVec.ofNat 64 (x.toNat * 2201172575745 / 2 ^ 64)
 
-theorem foldN_le (x : Nat) : foldN x ≤ 8388607 + x / 2 ^ 23 * 8191 := by
-  unfold foldN; have := Nat.mod_lt x (show 0 < 2 ^ 23 by decide); omega
-
-/-- Three folds of `x < 2⁴⁷` leave less than `2q`. -/
-theorem fold3_lt {x : Nat} (hx : x < 2 ^ 47) : foldN (foldN (foldN x)) < 2 * q := by
-  have h1 := foldN_le x
-  have h2 := foldN_le (foldN x)
-  have h3 := foldN_le (foldN (foldN x))
-  rw [q_eq]
-  omega
-
-/-- What `fold d t` leaves in `d`. -/
-def bfold (x : BitVec 64) : BitVec 64 := (x &&& 8388607) - x >>> 23 + (x >>> 23) <<< 13
-
-theorem bfold_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 47) : (bfold x).toNat = foldN x.toNat := by
-  have hl : (x &&& 8388607).toNat = x.toNat % 2 ^ 23 := by
-    rw [BitVec.toNat_and, show (8388607 : BitVec 64).toNat = 2 ^ 23 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  have hh : (x >>> 23).toNat = x.toNat / 2 ^ 23 := by
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  have hs : ((x >>> 23) <<< 13).toNat = x.toNat / 2 ^ 23 * 8192 := by
-    rw [BitVec.toNat_shiftLeft, hh, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
-  unfold bfold foldN
-  generalize x &&& 8388607 = l at *
-  generalize (x >>> 23) <<< 13 = u at *
-  generalize x >>> 23 = h at *
-  have := Nat.mod_lt x.toNat (show 0 < 2 ^ 23 by decide)
-  bv_omega
-
-theorem foldN_lt {x : Nat} (hx : x < 2 ^ 47) : foldN x < 2 ^ 47 := by
-  have := foldN_le x; omega
+/-- `x = bar x · q + e / 2⁶⁴` for `e = (x m mod 2⁶⁴) q + 2365951 x`, which is
+less than `2q · 2⁶⁴`. -/
+theorem bar_spec (x : Nat) (hx : x < 2 ^ 64) :
+    x * 2201172575745 / 2 ^ 64 * q ≤ x ∧
+      x < x * 2201172575745 / 2 ^ 64 * q + 2 * q := by
+  have hd := Nat.div_add_mod (x * 2201172575745) (2 ^ 64)
+  have hr := Nat.mod_lt (x * 2201172575745) (show 0 < 2 ^ 64 by decide)
+  generalize x * 2201172575745 / 2 ^ 64 = T at *
+  generalize x * 2201172575745 % 2 ^ 64 = R at *
+  -- `x 2⁶⁴ = x (m q + 2365951) = (2⁶⁴ T + R) q + 2365951 x`
+  have key : x * 2 ^ 64 = T * q * 2 ^ 64 + (R * q + 2365951 * x) := by
+    have := m_q
+    calc x * 2 ^ 64 = x * (2201172575745 * q + 2365951) := by rw [this]
+      _ = (x * 2201172575745) * q + 2365951 * x := by rw [Nat.mul_add, Nat.mul_assoc, Nat.mul_comm 2365951 x]
+      _ = (2 ^ 64 * T + R) * q + 2365951 * x := by rw [hd]
+      _ = T * q * 2 ^ 64 + (R * q + 2365951 * x) := by
+        rw [Nat.add_mul, Nat.add_assoc, Nat.mul_comm (2 ^ 64) T, Nat.mul_right_comm T (2 ^ 64) q]
+  have hq : 2365951 < q := by rw [q_eq]; decide
+  -- `q` kept abstract: unifying with its value is what is slow
+  generalize q = Q at *
+  have e1 : R * Q < 2 ^ 64 * Q := Nat.mul_lt_mul_of_pos_right hr (by omega)
+  have e2 : 2365951 * x < Q * 2 ^ 64 := Nat.mul_lt_mul_of_le_of_lt (by omega) hx (by omega)
+  have hle : T * Q ≤ x :=
+    Nat.le_of_mul_le_mul_right (show T * Q * 2 ^ 64 ≤ x * 2 ^ 64 by omega) (Nat.two_pow_pos 64)
+  have h2 : x * 2 ^ 64 < T * Q * 2 ^ 64 + 2 * Q * 2 ^ 64 := by omega
+  rw [← Nat.add_mul] at h2
+  exact ⟨hle, Nat.lt_of_mul_lt_mul_right h2⟩
 
 /-- What `reduce d t` leaves in `d`. -/
-def red (x : BitVec 64) : BitVec 64 := fixd (bfold (bfold (bfold x)) - 8380417)
+def red (x : BitVec 64) : BitVec 64 :=
+  fixd (x - bar x + bar x <<< 13 - bar x <<< 13 <<< 10 - 8380417)
 
-theorem red_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 47) : (red x).toNat = x.toNat % q := by
-  have e1 := bfold_toNat hx
-  have e2 := bfold_toNat (x := bfold x) (by rw [e1]; exact foldN_lt hx)
-  have e3 := bfold_toNat (x := bfold (bfold x)) (by rw [e2, e1]; exact foldN_lt (foldN_lt hx))
+theorem red_toNat (x : BitVec 64) : (red x).toNat = x.toNat % q := by
+  obtain ⟨hle, hlt⟩ := bar_spec x.toNat x.isLt
+  have hx := x.isLt
+  have hT : (bar x).toNat = x.toNat * 2201172575745 / 2 ^ 64 := by
+    unfold bar; rw [BitVec.toNat_ofNat]
+    exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega)
   unfold red
-  rw [fixd_subq (by rw [e3, e2, e1]; exact fold3_lt hx), e3, e2, e1, foldN_mod, foldN_mod, foldN_mod]
+  generalize bar x = B at hT ⊢
+  generalize x.toNat * 2201172575745 / 2 ^ 64 = T at hle hlt hT
+  subst hT
+  rw [q_eq] at hle hlt ⊢
+  have s13 : (B <<< 13).toNat = B.toNat * 8192 := by
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
+  have s23 : (B <<< 13 <<< 10).toNat = B.toNat * 8388608 % 2 ^ 64 := by
+    rw [BitVec.toNat_shiftLeft, s13, Nat.shiftLeft_eq]; omega
+  have v : (x - B + B <<< 13 - B <<< 13 <<< 10).toNat = x.toNat - B.toNat * 8380417 := by
+    generalize B <<< 13 <<< 10 = U at *
+    generalize B <<< 13 = V at *
+    bv_omega
+  rw [fixd_subq (by rw [v, q_eq]; omega), v, q_eq]
+  have e : x.toNat = (x.toNat - B.toNat * 8380417) + 8380417 * B.toNat := by omega
+  conv => rhs; rw [e]
+  rw [Nat.add_mul_mod_self_left]
 
-theorem red_lt {x : BitVec 64} (hx : x.toNat < 2 ^ 47) : (red x).toNat < q := by
-  rw [red_toNat hx]; exact Nat.mod_lt _ (by decide)
+theorem red_lt (x : BitVec 64) : (red x).toNat < q := by
+  rw [red_toNat]; exact Nat.mod_lt _ (by decide)
 
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
@@ -192,7 +204,7 @@ theorem red_mul (a b : Zq) : (red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val
   have hp : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val).toNat = a.val * b.val := by
     rw [BitVec.toNat_mul, toNat_val64, toNat_val64]
     exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega)
-  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega), hp, val_mul]
+  rw [red_toNat, hp, val_mul]
 
 /-- A product of reduced values plus a reduced value, reduced. -/
 theorem red_mulAdd (a b c : Zq) :
@@ -205,7 +217,7 @@ theorem red_mulAdd (a b c : Zq) :
     rw [BitVec.toNat_add, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64]
     have := mul_lt_q2 ha hb
     rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega), hp, val_add', val_mul,
+  rw [red_toNat, hp, val_add', val_mul,
     Nat.add_comm (a.val * b.val), Nat.add_mod_mod]
 
 /-- A reduced coefficient, as loaded. -/
@@ -247,23 +259,6 @@ theorem Kept2.trans {s s₁ s₂ : State} {d t : Reg} {v w : BitVec 64} (h₁ : 
   ⟨h₂.gpr, fun r h1 h2 => (h₂.other r h1 h2).trans (h₁.other r h1 h2), h₂.mem.trans h₁.mem,
     h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
 
-/-- `fold d t`. -/
-theorem fold_ok {d t : Reg} (hdt : d ≠ t) (h5t : t ≠ .a5) (h5 : s.gpr .a5 = 8388607)
-    (k : ∀ s', Kept2 s s' d t (bfold (s.gpr d)) → WP isa (.block is) s' Q) :
-    WP isa (.block (fold d t ++ is)) s Q := by
-  simp only [fold, List.cons_append, List.nil_append]
-  refine Steps.wp_srl (by decide) fun s₁ u₁ => wp_and fun s₂ u₂ => Steps.wp_sub fun s₃ u₃ =>
-    Steps.wp_sll (by decide) fun s₄ u₄ => Steps.wp_add fun s₅ u₅ => k s₅ ⟨?_, fun r h1 h2 => ?_, ?_, ?_, ?_, ?_⟩
-  · have e1 : s₁.gpr d = s.gpr d := u₁.other _ hdt
-    have e2 : s₂.gpr t = s.gpr d >>> 23 := by rw [u₂.other _ hdt.symm, u₁.gpr]
-    rw [u₅.gpr, u₄.other _ hdt, u₄.gpr, u₃.gpr, u₃.other _ hdt.symm, u₂.gpr, e2, e1, u₁.other _ h5t.symm, h5]
-    rfl
-  · rw [u₅.other _ h1, u₄.other _ h2, u₃.other _ h1, u₂.other _ h1, u₁.other _ h2]
-  · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
-
 /-- `fixup d t rq`: `d + (d >> 63 & rq)`. -/
 theorem fixup_ok {d t rq : Reg} (hdt : d ≠ t) (hrq : t ≠ rq)
     (k : ∀ s', Kept2 s s' d t (s.gpr d + ((s.gpr d).sshiftRight 63 &&& s.gpr rq)) → WP isa (.block is) s' Q) :
@@ -279,25 +274,43 @@ theorem fixup_ok {d t rq : Reg} (hdt : d ≠ t) (hrq : t ≠ rq)
   · rw [u₃.sp, u₂.sp, u₁.sp]
 
 /-- `reduce d t`: `red` of `d`. -/
-theorem reduce_ok {d t : Reg} (hdt : d ≠ t) (h5d : d ≠ .a5) (h5t : t ≠ .a5) (h6d : d ≠ .a6) (h6t : t ≠ .a6)
-    (h5 : s.gpr .a5 = 8388607) (h6 : s.gpr .a6 = 8380417)
+theorem reduce_ok {d t : Reg} (hdt : d ≠ t) (h6d : d ≠ .a6) (h6t : t ≠ .a6)
+    (h5 : s.gpr .a5 = 2201172575745) (h6 : s.gpr .a6 = 8380417)
     (k : ∀ s', Kept2 s s' d t (red (s.gpr d)) → WP isa (.block is) s' Q) :
     WP isa (.block (reduce d t ++ is)) s Q := by
-  simp only [reduce, List.append_assoc]
-  refine fold_ok hdt h5t h5 fun s₁ k₁ => fold_ok hdt h5t (by rw [k₁.other _ h5d.symm h5t.symm, h5])
-    fun s₂ k₂ => fold_ok hdt h5t (by rw [k₂.other _ h5d.symm h5t.symm, k₁.other _ h5d.symm h5t.symm, h5])
-    fun s₃ k₃ => ?_
-  rw [List.cons_append]
-  refine Steps.wp_sub fun s₄ u₄ => fixup_ok hdt h6t fun s₅ k₅ => k s₅ ?_
-  have k₄ : Kept2 s₃ s₄ d t (s₃.gpr d - 8380417) :=
-    ⟨by rw [u₄.gpr, k₃.other _ h6d.symm h6t.symm, k₂.other _ h6d.symm h6t.symm, k₁.other _ h6d.symm h6t.symm, h6],
-      fun r h1 _ => u₄.other r h1, u₄.mem, u₄.rd, u₄.wr, u₄.sp⟩
-  have e6 : s₄.gpr .a6 = 8380417 := by
-    rw [u₄.other _ h6d.symm, k₃.other _ h6d.symm h6t.symm, k₂.other _ h6d.symm h6t.symm,
-      k₁.other _ h6d.symm h6t.symm, h6]
-  refine (k₁.trans (k₂.trans (k₃.trans (k₄.trans k₅)))) |> fun K => ⟨?_, K.other, K.mem, K.rd, K.wr, K.sp⟩
-  rw [K.gpr, k₄.gpr, k₃.gpr, k₂.gpr, k₁.gpr, e6]
-  rfl
+  simp only [reduce, List.cons_append, List.nil_append]
+  refine Steps.WP.cons exec_mulhu (Steps.wp_sub fun s₂ u₂ => Steps.wp_sll (by decide) fun s₃ u₃ =>
+    Steps.wp_add fun s₄ u₄ => Steps.wp_sll (by decide) fun s₅ u₅ => Steps.wp_sub fun s₆ u₆ =>
+    Steps.wp_sub fun s₇ u₇ => fixup_ok hdt h6t fun s₈ k₈ => k s₈ ⟨?_, fun r h1 h2 => ?_, ?_, ?_, ?_, ?_⟩)
+  · let s₁ := s.write t (BitVec.ofNat 64 ((s.gpr d).toNat * (s.gpr .a5).toNat / 2 ^ 64))
+    have e1t : s₁.gpr t = bar (s.gpr d) := by
+      simp only [s₁, State.write, ite_true, h5, bar]; rfl
+    have e1d : s₁.gpr d = s.gpr d := by simp only [s₁, State.write, hdt, ite_false]
+    have e16 : s₁.gpr .a6 = 8380417 := by simp only [s₁, State.write, h6t.symm, ite_false, h6]
+    have e2t : s₂.gpr t = bar (s.gpr d) := by rw [u₂.other _ hdt.symm, e1t]
+    have e3d : s₃.gpr d = s.gpr d - bar (s.gpr d) := by rw [u₃.other _ hdt, u₂.gpr, e1d, e1t]
+    have e3t : s₃.gpr t = bar (s.gpr d) <<< 13 := by rw [u₃.gpr, e2t]
+    have e5t : s₅.gpr t = bar (s.gpr d) <<< 13 <<< 10 := by
+      rw [u₅.gpr, u₄.other _ hdt.symm, e3t]
+    have e5d : s₅.gpr d = s.gpr d - bar (s.gpr d) + bar (s.gpr d) <<< 13 := by
+      rw [u₅.other _ hdt, u₄.gpr, e3d, e3t]
+    have e66 : s₆.gpr .a6 = 8380417 := by
+      rw [u₆.other _ h6d.symm, u₅.other _ h6t.symm, u₄.other _ h6d.symm, u₃.other _ h6t.symm,
+        u₂.other _ h6d.symm, e16]
+    have e7 : s₇.gpr d = s.gpr d - bar (s.gpr d) + bar (s.gpr d) <<< 13 - bar (s.gpr d) <<< 13 <<< 10 -
+        8380417 := by
+      rw [u₇.gpr, u₆.other _ h6d.symm, u₆.gpr, e5d, e5t, u₅.other _ h6t.symm, u₄.other _ h6d.symm,
+        u₃.other _ h6t.symm, u₂.other _ h6d.symm, e16]
+    have e76 : s₇.gpr .a6 = 8380417 := by rw [u₇.other _ h6d.symm, e66]
+    rw [k₈.gpr, e7, e76]
+    rfl
+  · rw [k₈.other _ h1 h2, u₇.other _ h1, u₆.other _ h1, u₅.other _ h2, u₄.other _ h1, u₃.other _ h2,
+      u₂.other _ h1]
+    simp only [State.write, h2, ite_false]
+  · rw [k₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]; rfl
+  · rw [k₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd]; rfl
+  · rw [k₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; rfl
+  · rw [k₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp]; rfl
 
 end
 
