@@ -15,8 +15,6 @@
 //! Returning `Result`s instead made each field's read return early, past
 //! code dropping every field read before it: four times as much code.
 
-use std::collections::BTreeMap;
-
 use serde_json::{Map, Value};
 
 /// A type read from a JSON value.
@@ -163,17 +161,6 @@ impl<T: FromJson> FromJson for Vec<T> {
         let mut all = Vec::with_capacity(items.len());
         for x in items {
             all.push(T::from_json(x, key));
-        }
-        all
-    }
-}
-
-/// An object, its keys in order.
-impl<T: FromJson> FromJson for BTreeMap<String, T> {
-    fn from_json(v: &Value, key: &str) -> Self {
-        let mut all = BTreeMap::new();
-        for (k, x) in object(v, key) {
-            all.insert(k.clone(), T::from_json(x, k));
         }
         all
     }
