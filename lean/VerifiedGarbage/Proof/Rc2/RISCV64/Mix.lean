@@ -97,20 +97,34 @@ theorem mask16 (x : BitVec 64) : (x <<< 48) >>> 48 = (x.setWidth 16).setWidth 64
   · simp [h, hi]; intro _; omega
   · simp [h]; intro _; omega
 
-theorem rot16 (y : BitVec 16) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
-    (((y.setWidth 64 >>> (16 - s)) ||| (y.setWidth 64 <<< s)) <<< 48) >>> 48 = (y.rotateLeft s).setWidth 64 := by
-  rw [mask16]
-  congr 1
+/-- `rotateSum`: the low 16 bits of `x` rotated left by `s`, zero-extended. -/
+theorem rotSum16 (x : BitVec 64) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
+    (x <<< 48) >>> (64 - s) ||| (x <<< (48 + s)) >>> 48 = ((x.setWidth 16).rotateLeft s).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt h2]
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
-    hi, decide_true, Bool.true_and, show i < 64 by omega]
-  by_cases h : i < s
-  · rw [ite_eq_left h]
-    simp [h, show 16 - s + i < 64 by omega, show 16 - s + i < 16 by omega]
-  · rw [ite_eq_right h]
-    simp [h, show 16 - s + i < 64 by omega, show i - s < 64 by omega, show i - s < 16 by omega,
-      BitVec.getLsbD_of_ge y (16 - s + i) (by omega)]
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
+  by_cases h16 : i < 16
+  · rw [BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt h2]
+    by_cases h : i < s
+    · rw [ite_eq_left h]
+      simp [hi, show 64 - s + i < 64 by omega, show ¬ 64 - s + i < 48 by omega,
+        show 64 - s + i - 48 = 16 - s + i by omega, show 16 - s + i < 16 by omega, show 48 + i < 48 + s by omega]
+    · rw [ite_eq_right h]
+      simp [h16, hi, show ¬ 64 - s + i < 64 by omega, show 48 + i < 64 by omega,
+        show ¬ 48 + i < 48 + s by omega, show 48 + i - (48 + s) = i - s by omega, show i - s < 16 by omega]
+  · simp [h16, Nat.mod_eq_of_lt h2, show ¬ i < s by omega, show ¬ 64 - s + i < 64 by omega,
+      show ¬ 48 + i < 64 by omega]
+
+/-- `rotate16`: the zero-extended `y` rotated left by `s`. -/
+theorem rot16 (y : BitVec 16) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
+    y.setWidth 64 >>> (16 - s) ||| (y.setWidth 64 <<< (48 + s)) >>> 48 = (y.rotateLeft s).setWidth 64 := by
+  have e : y.setWidth 64 >>> (16 - s) = (y.setWidth 64 <<< 48) >>> (64 - s) := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
+    by_cases h : i < s
+    · simp [show 16 - s + i < 64 by omega, show 64 - s + i < 64 by omega, show ¬ 64 - s + i < 48 by omega,
+        show 64 - s + i - 48 = 16 - s + i by omega]
+    · simp [show ¬ 64 - s + i < 64 by omega, BitVec.getLsbD_of_ge y (16 - s + i) (by omega)]
+  rw [e, rotSum16 _ h1 h2, lo16_ext]
 
 theorem al2 {T : Addr} (hT : T.toNat % 8 = 0) (j : Nat) : (T + BitVec.ofNat 64 (2 * j)).toNat % 2 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]

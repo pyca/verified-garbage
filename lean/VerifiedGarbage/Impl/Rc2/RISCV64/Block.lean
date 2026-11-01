@@ -19,7 +19,8 @@ start of the working space, which is aligned, and read there. The block is read
 and written a byte at a time, as a little-endian doubleword. The four words
 are kept zero-extended in `a3`–`a6`. A mix computes `a & b` and `c & ~a`
 (as `c XOR (a & c)`) from the neighbouring words, adds them and the key
-word, masks the sum to 16 bits and rotates it with two shifts. Only
+word, and rotates the sum's low 16 bits with four shifts, whatever its
+other bits, which leaves it zero-extended. Only
 temporaries and argument registers are written, and no stack is used.
 -/
 
@@ -53,9 +54,19 @@ def blockStore : List Instr :=
 /-- Key word `j` of the schedule's copy into `t2`. -/
 def loadKey (j : Nat) : List Instr := [.load .h .t2 .a2 (2 * j)]
 
-/-- Rotate the (zero-extended) word in `r` left by `s` bits, through `a7`. -/
+/-- Rotate the (zero-extended) word in `r` left by `s` bits, through `a7`:
+its low `16 - s` bits shifted to the top of the word (`a7`), ORed with its
+high `s` bits shifted to the bottom. -/
 def rotate16 (r : Reg) (s : Nat) : List Instr :=
-  [.shift .sll .d .a7 r s, .shift .srl .d r r (16 - s), .logic .or r r .a7] ++ mask r 16
+  [.shift .sll .d .a7 r (48 + s), .shift .srl .d .a7 .a7 48, .shift .srl .d r r (16 - s), .logic .or r r .a7]
+
+/-- Rotate the low 16 bits of `r` left by `s` bits, zero-extended, whatever
+its other bits, through `a7`: the low `16 - s` bits shifted to the top of the
+word (`a7`), ORed with the high `s` of the 16 shifted to the bottom (by way
+of the top of the register, which drops the bits above them). -/
+def rotateSum (r : Reg) (s : Nat) : List Instr :=
+  [.shift .sll .d .a7 r (48 + s), .shift .srl .d .a7 .a7 48, .shift .sll .d r r 48,
+   .shift .srl .d r r (64 - s), .logic .or r r .a7]
 
 /-- `a & b` into `t0`, `c & ~a` into `t1` (`a`, `b`, `c` the words before
 `i`), and key word `j` into `t2`. -/
@@ -64,14 +75,14 @@ def mixInputs (j i : Nat) : List Instr :=
     .logic .and .t1 (wordReg (i + 3)) (wordReg (i + 1)),
     .logic .xor .t1 (wordReg (i + 1)) .t1] : List Instr) ++ loadKey j
 
-def addInputs (r : Reg) : List Instr :=
-  ([.add r r .t2, .add r r .t0, .add r r .t1] : List Instr) ++ mask r 16
+/-- The sum, not reduced to 16 bits: `rotateSum` takes its low 16. -/
+def addInputs (r : Reg) : List Instr := [.add r r .t2, .add r r .t0, .add r r .t1]
 
 def subInputs (r : Reg) : List Instr :=
   ([.sub r r .t2, .sub r r .t0, .sub r r .t1] : List Instr) ++ mask r 16
 
 def mix (j i : Nat) : List Instr :=
-  mixInputs j i ++ addInputs (wordReg i) ++ rotate16 (wordReg i) (Spec.Rc2.rotation i)
+  mixInputs j i ++ addInputs (wordReg i) ++ rotateSum (wordReg i) (Spec.Rc2.rotation i)
 
 def reverseMix (j i : Nat) : List Instr :=
   rotate16 (wordReg i) (16 - Spec.Rc2.rotation i) ++ mixInputs j i ++ subInputs (wordReg i)
