@@ -180,7 +180,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State}
   · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]
     exact count_nz hi (by decide)
 
-theorem init_ok {s₀ : State} : WP isa (.block ([.li .a2 128] ++ liq .a5 3329)) s₀ (Inv s₀ 0) := by
+theorem init_ok {s₀ : State} : WP isa (.block (([.li .a2 128] : List Instr) ++ liq .a5 3329)) s₀ (Inv s₀ 0) := by
   simp only [liq, Nat.reduceLT, ite_false, List.cons_append, List.nil_append,
     Int.reduceSub, Int.reduceNeg, Int.cast_ofNat_Int]
   crun []

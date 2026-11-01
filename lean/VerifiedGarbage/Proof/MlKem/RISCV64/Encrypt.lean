@@ -575,7 +575,7 @@ theorem er5_ok {f : Poly} {s₄ : State} (r : RB K L b s₀ i s f s₄) (g3 : s�
 omit hp hi h in
 theorem cArgs_ok (hK : K.WF) {s : State} {P C : BitVec 64} {i : Nat} (h11 : s.gpr .s11 = P)
     (h7 : s.gpr .s7 = C) (h6 : s.gpr .s6 = BitVec.ofNat 64 i) :
-    WP isa (.block (atMul .a2 .s7 .s6 K.uLen ++ polyAddr .a0 K.jAcc ++ [.li .a1 K.du, .li .a3 K.uLen])) s
+    WP isa (.block (atMul .a2 .s7 .s6 K.uLen ++ polyAddr .a0 K.jAcc ++ ([.li .a1 K.du, .li .a3 K.uLen] : List Instr))) s
       fun s' => Only s s' ∧ s'.gpr .a0 = P + BitVec.ofNat 64 K.oAcc ∧ s'.gpr .a1 = BitVec.ofNat 64 K.du ∧
         s'.gpr .a2 = C + BitVec.ofNat 64 (K.uLen * i) ∧ s'.gpr .a3 = BitVec.ofNat 64 (32 * K.du) := by
   have k4 := hK.k4
@@ -597,7 +597,7 @@ theorem cArgs_ok (hK : K.WF) {s : State} {P C : BitVec 64} {i : Nat} (h11 : s.gp
 
 omit hi in
 theorem er6_ok {f : Poly} {s₅ : State} (r : RB K L b s₀ i s f s₅) :
-    WP isa (.block (atMul .a2 .s7 .s6 K.uLen ++ polyAddr .a0 K.jAcc ++ [.li .a1 K.du, .li .a3 K.uLen])) s₅
+    WP isa (.block (atMul .a2 .s7 .s6 K.uLen ++ polyAddr .a0 K.jAcc ++ ([.li .a1 K.du, .li .a3 K.uLen] : List Instr))) s₅
       fun s₆ => RB K L b s₀ i s f s₆ ∧ s₆.gpr .a0 = L.A 0 K.oAcc ∧
         s₆.gpr .a1 = BitVec.ofNat 64 K.du ∧ s₆.gpr .a2 = L.A b.iC (b.oC + K.uLen * i) ∧
         s₆.gpr .a3 = BitVec.ofNat 64 (32 * K.du) := by
@@ -776,7 +776,7 @@ theorem evAdd_ok {s : State} {f g : Poly} {k : Nat} (hk : k = 3 * K.k ∨ k = 3 
 
 omit hp in
 theorem vArgs_ok (hK : K.WF) {s : State} {P C : BitVec 64} (h11 : s.gpr .s11 = P) (h7 : s.gpr .s7 = C) :
-    WP isa (.block (polyAddr .a0 K.jAcc ++ [.li .a1 K.dv, .addi .a2 .s7 (K.uLen * K.k), .li .a3 K.vLen])) s
+    WP isa (.block (polyAddr .a0 K.jAcc ++ ([.li .a1 K.dv, .addi .a2 .s7 (K.uLen * K.k), .li .a3 K.vLen] : List Instr))) s
       fun s' => Only s s' ∧ s'.gpr .a0 = P + BitVec.ofNat 64 K.oAcc ∧ s'.gpr .a1 = BitVec.ofNat 64 K.dv ∧
         s'.gpr .a2 = C + BitVec.ofNat 64 (K.uLen * K.k) ∧ s'.gpr .a3 = BitVec.ofNat 64 (32 * K.dv) := by
   have k4 := hK.k4
@@ -796,7 +796,7 @@ theorem vArgs_ok (hK : K.WF) {s : State} {P C : BitVec 64} (h11 : s.gpr .s11 = P
   · rw [h₄.gpr]
 
 theorem ev8_ok {s : State} {f : Poly} (h : VEnv K L b s₀ s ∧ PolyIs s.mem (L.A 0 K.oAcc) f) :
-    WP isa (.block (polyAddr .a0 K.jAcc ++ [.li .a1 K.dv, .addi .a2 .s7 (K.uLen * K.k), .li .a3 K.vLen])) s
+    WP isa (.block (polyAddr .a0 K.jAcc ++ ([.li .a1 K.dv, .addi .a2 .s7 (K.uLen * K.k), .li .a3 K.vLen] : List Instr))) s
       fun s' => (VEnv K L b s₀ s' ∧ PolyIs s'.mem (L.A 0 K.oAcc) f) ∧ s'.gpr .a0 = L.A 0 K.oAcc ∧
         s'.gpr .a1 = BitVec.ofNat 64 K.dv ∧ s'.gpr .a2 = L.A b.iC (b.oC + K.uLen * K.k) ∧
         s'.gpr .a3 = BitVec.ofNat 64 (32 * K.dv) := by

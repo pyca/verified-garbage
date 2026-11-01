@@ -86,7 +86,7 @@ theorem kargs_ok {s : State} {rate : Nat} (first : Bool) {p : Piece} (hb : p.bas
   obtain ⟨b0, b1, b2, b3, b4, b5⟩ := pres_ne hb
   have k : ∀ u : State, Only s u → u.gpr .a2 = (if first then BitVec.ofNat 64 0 else s.gpr .a0) →
       u.gpr .s11 = s.gpr .s11 → u.gpr p.base = s.gpr p.base →
-      WP isa (.block (mov .a0 .s11 :: .li .a1 rate :: (addrOf .a3 p.base p.off ++ [.li .a4 p.len]))) u fun s' =>
+      WP isa (.block (mov .a0 .s11 :: .li .a1 rate :: (addrOf .a3 p.base p.off ++ ([.li .a4 p.len] : List Instr)))) u fun s' =>
         Only s s' ∧ s'.gpr .a0 = s.gpr .s11 ∧ s'.gpr .a1 = BitVec.ofNat 64 rate ∧
         s'.gpr .a2 = (if first then BitVec.ofNat 64 0 else s.gpr .a0) ∧
         s'.gpr .a3 = s.gpr p.base + BitVec.ofNat 64 p.off ∧ s'.gpr .a4 = BitVec.ofNat 64 p.len := by

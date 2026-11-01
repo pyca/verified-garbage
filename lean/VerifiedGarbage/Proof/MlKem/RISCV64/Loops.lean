@@ -237,7 +237,7 @@ theorem copy_loop {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64) 
 
 theorem copy_setup {s : State} {sb db : Reg} {so dO len : Nat} (hdb : db ∈ preserved) (hsb : sb ≠ .a0)
     (hse : so < 32768) (hde : dO < 32768) (hle : len < 2048) :
-    WP isa (.block (addrOf .a0 sb so ++ addrOf .a1 db dO ++ [.li .a2 len])) s fun s' =>
+    WP isa (.block (addrOf .a0 sb so ++ addrOf .a1 db dO ++ ([.li .a2 len] : List Instr))) s fun s' =>
       Only s s' ∧ s'.gpr .a0 = s.gpr sb + BitVec.ofNat 64 so ∧ s'.gpr .a1 = s.gpr db + BitVec.ofNat 64 dO ∧
       s'.gpr .a2 = BitVec.ofNat 64 len := by
   obtain ⟨-, n1, n2, -, -, -⟩ := pres_ne hdb

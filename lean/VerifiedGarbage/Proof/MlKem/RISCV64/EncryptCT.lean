@@ -154,7 +154,7 @@ theorem v_ct {x y : State} (hx : VEnv K L b s₀₁ x) (hy : VEnv K L b s₀₂ 
       .seq callAdd <|
       .seq (.block (polyAddr .a0 K.jAcc ++ polyAddr .a1 (3 * K.k + 1))) <|
       .seq callAdd <|
-      .seq (.block (polyAddr .a0 K.jAcc ++ [.li .a1 K.dv, .addi .a2 .s7 (K.uLen * K.k), .li .a3 K.vLen]))
+      .seq (.block (polyAddr .a0 K.jAcc ++ ([.li .a1 K.dv, .addi .a2 .s7 (K.uLen * K.k), .li .a3 K.vLen] : List Instr)))
         K.callCU)
       fun _ _ => True := by
   have hK := hp₁.wf

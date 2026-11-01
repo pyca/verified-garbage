@@ -715,8 +715,8 @@ theorem body_ok {s₀ s : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) (h : I
 
 theorem init_ok {s₀ s : State} (hp : Pre s₀) (h : SEnv s₀ s)
     (hb : Spec.Sha3.bytesAt s.mem (S s₀ + BitVec.ofNat 64 840) 840 = xof (B s₀) 840) :
-    WP isa (.block ([.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 280] ++ liq .t3 3329)) s (Inv s₀ 0) := by
-  have hk : WP isa (.block ([.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 280] ++ liq .t3 3329)) s
+    WP isa (.block (([.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 280] : List Instr) ++ liq .t3 3329)) s (Inv s₀ 0) := by
+  have hk : WP isa (.block (([.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 280] : List Instr) ++ liq .t3 3329)) s
       fun s' => s'.gpr .a0 = S s₀ + BitVec.ofNat 64 840 ∧ s'.gpr .a1 = A s₀ ∧ s'.gpr .a2 = BitVec.ofNat 64 0 ∧
         s'.gpr .a3 = BitVec.ofNat 64 280 ∧ s'.gpr .t3 = 3329 ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧
         s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by

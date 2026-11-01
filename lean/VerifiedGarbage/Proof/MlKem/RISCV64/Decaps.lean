@@ -381,7 +381,7 @@ theorem DD.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : DD K s�
 
 theorem uArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P C : Addr} {j : Nat} (hj : j < K.k)
     (h11 : s.gpr .s11 = P) (h8 : s.gpr .s8 = C) (h6 : s.gpr .s6 = BitVec.ofNat 64 j) :
-    WP isa (.block (atMul .a0 .s8 .s6 K.uLen ++ [.li .a1 K.uLen, .li .a2 K.du] ++ slotAt .a3 .s6 K.k)) s
+    WP isa (.block (atMul .a0 .s8 .s6 K.uLen ++ ([.li .a1 K.uLen, .li .a2 K.du] : List Instr) ++ slotAt .a3 .s6 K.k)) s
       fun s' => Only s s' ∧
       s'.gpr .a0 = C + BitVec.ofNat 64 (K.uLen * j) ∧ s'.gpr .a1 = BitVec.ofNat 64 (32 * K.du) ∧
       s'.gpr .a2 = BitVec.ofNat 64 K.du ∧
@@ -448,7 +448,7 @@ variable {K : KemLay} {s₀ : State} (hp : Pre K s₀) {s₁ : State} (h₁ : DD
   (hj : j < K.k) {s : State} (h : UInv K s₀ s₁ j s)
 include hp h₁ hj h
 
-theorem u1_ok : WP isa (.block (atMul .a0 .s8 .s6 K.uLen ++ [.li .a1 K.uLen, .li .a2 K.du] ++
+theorem u1_ok : WP isa (.block (atMul .a0 .s8 .s6 K.uLen ++ ([.li .a1 K.uLen, .li .a2 K.du] : List Instr) ++
       slotAt .a3 .s6 K.k)) s fun s' =>
       Only s s' ∧ s'.gpr .a0 = (lay s₀ K).A 0 (oCin + K.uLen * j) ∧
       s'.gpr .a1 = BitVec.ofNat 64 (32 * K.du) ∧ s'.gpr .a2 = BitVec.ofNat 64 K.du ∧
@@ -627,7 +627,7 @@ theorem dInv_ok {s : State} {f : Poly} (h : DV K s₀ f s)
 
 omit hp in
 theorem vDArgs_ok (hK : K.WF) {s : State} {P C : Addr} (h11 : s.gpr .s11 = P) (h8 : s.gpr .s8 = C) :
-    WP isa (.block ([.addi .a0 .s8 (K.uLen * K.k), .li .a1 K.vLen, .li .a2 K.dv] ++ polyAddr .a3 (3 * K.k))) s
+    WP isa (.block (([.addi .a0 .s8 (K.uLen * K.k), .li .a1 K.vLen, .li .a2 K.dv] : List Instr) ++ polyAddr .a3 (3 * K.k))) s
       fun s' => Only s s' ∧
       s'.gpr .a0 = C + BitVec.ofNat 64 (K.uLen * K.k) ∧ s'.gpr .a1 = BitVec.ofNat 64 (32 * K.dv) ∧
       s'.gpr .a2 = BitVec.ofNat 64 K.dv ∧ s'.gpr .a3 = P + BitVec.ofNat 64 (oPoly (3 * K.k)) := by
@@ -651,7 +651,7 @@ theorem vDArgs_ok (hK : K.WF) {s : State} {P C : Addr} (h11 : s.gpr .s11 = P) (h
   · rw [h₄.gpr, h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide), h11]
 
 theorem dV1_ok {s : State} {f : Poly} (h : DV K s₀ f s) :
-    WP isa (.block ([.addi .a0 .s8 (K.uLen * K.k), .li .a1 K.vLen, .li .a2 K.dv] ++ polyAddr .a3 (3 * K.k))) s
+    WP isa (.block (([.addi .a0 .s8 (K.uLen * K.k), .li .a1 K.vLen, .li .a2 K.dv] : List Instr) ++ polyAddr .a3 (3 * K.k))) s
       fun s' => DV K s₀ f s' ∧
       s'.gpr .a0 = (lay s₀ K).A 0 (oCin + K.uLen * K.k) ∧
       s'.gpr .a1 = BitVec.ofNat 64 (32 * K.dv) ∧ s'.gpr .a2 = BitVec.ofNat 64 K.dv ∧
@@ -696,7 +696,7 @@ theorem dV4_ok {s : State} {f : Poly} (h : DV K s₀ f s)
 
 omit hp in
 theorem mArgs_ok (hK : K.WF) {s : State} {P : Addr} (h11 : s.gpr .s11 = P) :
-    WP isa (.block (polyAddr .a0 (3 * K.k) ++ [.li .a1 1, .addi .a2 .s11 oMsg, .li .a3 32])) s fun s' =>
+    WP isa (.block (polyAddr .a0 (3 * K.k) ++ ([.li .a1 1, .addi .a2 .s11 oMsg, .li .a3 32] : List Instr))) s fun s' =>
       Only s s' ∧ s'.gpr .a0 = P + BitVec.ofNat 64 (oPoly (3 * K.k)) ∧
       s'.gpr .a1 = BitVec.ofNat 64 1 ∧ s'.gpr .a2 = P + BitVec.ofNat 64 oMsg ∧
       s'.gpr .a3 = BitVec.ofNat 64 (32 * 1) := by
@@ -712,7 +712,7 @@ theorem mArgs_ok (hK : K.WF) {s : State} {P : Addr} (h11 : s.gpr .s11 = P) :
 
 theorem dM1_ok {s : State} {g : Poly} (h : DD K s₀ s)
     (hg : PolyIs s.mem ((lay s₀ K).A 0 (oPoly (3 * K.k))) g) :
-    WP isa (.block (polyAddr .a0 (3 * K.k) ++ [.li .a1 1, .addi .a2 .s11 oMsg, .li .a3 32])) s fun s' =>
+    WP isa (.block (polyAddr .a0 (3 * K.k) ++ ([.li .a1 1, .addi .a2 .s11 oMsg, .li .a3 32] : List Instr))) s fun s' =>
       (DD K s₀ s' ∧ PolyIs s'.mem ((lay s₀ K).A 0 (oPoly (3 * K.k))) g) ∧
       s'.gpr .a0 = (lay s₀ K).A 0 (oPoly (3 * K.k)) ∧ s'.gpr .a1 = BitVec.ofNat 64 1 ∧
       s'.gpr .a2 = (lay s₀ K).A 0 oMsg ∧ s'.gpr .a3 = BitVec.ofNat 64 (32 * 1) :=
@@ -922,7 +922,7 @@ theorem hashJ_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DD K s₀ 
 /-! ## The re-encryption -/
 
 theorem ptrs_ok {K : KemLay} (hK : K.WF) {s : State} :
-    WP isa (.block ([.addi .s10 .s10 (384 * K.k), .addi .s9 .s11 oMsg] ++ polyAddr .s7 K.jCt)) s
+    WP isa (.block (([.addi .s10 .s10 (384 * K.k), .addi .s9 .s11 oMsg] : List Instr) ++ polyAddr .s7 K.jCt)) s
       fun s' => KeptX [.s10, .s9, .s7] [] s s' ∧
       s'.gpr .s10 = s.gpr .s10 + BitVec.ofNat 64 (384 * K.k) ∧
       s'.gpr .s9 = s.gpr .s11 + BitVec.ofNat 64 oMsg ∧
@@ -959,7 +959,7 @@ theorem ptrs_dp {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : DD K s₀ s
     (hk : bytesAt s.mem ((lay s₀ K).A 0 oG) 32 = K1 K s₀)
     (hr : bytesAt s.mem ((lay s₀ K).A 0 oSigma) 32 = R1 K s₀)
     (hb : bytesAt s.mem ((lay s₀ K).A 0 oKbar) 32 = KB K s₀) :
-    WP isa (.block ([.addi .s10 .s10 (384 * K.k), .addi .s9 .s11 oMsg] ++ polyAddr .s7 K.jCt)) s
+    WP isa (.block (([.addi .s10 .s10 (384 * K.k), .addi .s9 .s11 oMsg] : List Instr) ++ polyAddr .s7 K.jCt)) s
       (DP K s₀) :=
   WP.mono (ptrs_ok hp.wf) fun _ ⟨k, g30, g29, g27, m⟩ =>
     ⟨h.env.keep hp (W := []) k (by decide) rfl, by rw [g30, h.s10]; rfl, by rw [g29, h.env.ctx.s11],

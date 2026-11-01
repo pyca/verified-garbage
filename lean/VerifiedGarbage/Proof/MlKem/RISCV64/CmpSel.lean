@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: as on PPC64LE, the comparison and selection loops are proven once here, so that
+-- a change to the proof of decapsulation, the largest module, does not re-prove them
+
 /-!
 # ML-KEM on RISC-V: comparing `c` with `c'`, and selecting the key
 

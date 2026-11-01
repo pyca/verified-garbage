@@ -211,7 +211,7 @@ theorem end_ok {s : State} {n : Nat} (h5 : s.gpr .a2 = BitVec.ofNat 64 n) :
   crun [h5, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
 
 theorem init_ok {s₀ : State} :
-    WP isa (.block ([.li .a1 384, .li .a2 0] ++ liq .a5 3328)) s₀ (Inv s₀ 0) := by
+    WP isa (.block (([.li .a1 384, .li .a2 0] : List Instr) ++ liq .a5 3328)) s₀ (Inv s₀ 0) := by
   simp only [liq, Nat.reduceLT, ite_false, List.cons_append, List.nil_append,
     Int.reduceSub, Int.reduceNeg, Int.cast_ofNat_Int]
   crun []
