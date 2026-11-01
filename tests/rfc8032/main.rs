@@ -14,7 +14,10 @@ mod ed448;
 
 use verified_garbage::ed25519::{Error, SigningKey, VerifyingKey};
 
-const TEXT: &str = include_str!("../../vectors/rfc8032/rfc8032.txt");
+/// The vectors' file (`crate::vectors`).
+fn text() -> String {
+    crate::vectors::text("vectors/rfc8032/rfc8032.txt")
+}
 
 fn hex_lines(text: &str) -> Vec<u8> {
     text.lines()
@@ -31,7 +34,8 @@ fn hex_lines(text: &str) -> Vec<u8> {
 
 #[test]
 fn ed25519_vectors() {
-    let section = TEXT
+    let text = text();
+    let section = text
         .split_once("\n7.1.  Test Vectors for Ed25519\n")
         .unwrap()
         .1
@@ -71,7 +75,8 @@ fn ed25519_vectors() {
 }
 
 fn rfc_seed() -> [u8; 32] {
-    let section = TEXT
+    let text = text();
+    let section = text
         .split_once("\n7.1.  Test Vectors for Ed25519\n")
         .unwrap()
         .1;

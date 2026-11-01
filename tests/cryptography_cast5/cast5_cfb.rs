@@ -9,11 +9,11 @@
 
 use verified_garbage::cast5_cfb::{Cast5Cfb64, InvalidKeyLength};
 
-const VECTORS: &str = include_str!("../../vectors/cryptography-cast5-cfb/cast5-cfb.txt");
-
 #[test]
 fn vectors() {
-    let records = super::records(VECTORS);
+    let records = super::records(&crate::vectors::text(
+        "vectors/cryptography-cast5-cfb/cast5-cfb.txt",
+    ));
     assert_eq!(records.len(), 20);
     for (key, iv, plaintext, ciphertext) in records {
         let cipher = Cast5Cfb64::new(&key).unwrap();

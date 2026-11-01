@@ -57,7 +57,7 @@ fn params(variant: Variant, iterations: u32, memory_kib: u32, lanes: u32) -> Par
 
 #[test]
 fn rfc9106_vectors() {
-    let text = include_str!("../../vectors/rfc9106/rfc9106.txt");
+    let text = crate::vectors::text("vectors/rfc9106/rfc9106.txt");
     for (variant, name) in [
         (Variant::Argon2d, "Argon2d"),
         (Variant::Argon2i, "Argon2i"),
@@ -203,7 +203,7 @@ fn check_verify<const N: usize>(key: &[u8; N], check: impl Fn(&[u8; N]) -> Resul
 /// password other than the RFC's.
 #[test]
 fn rfc9106_verify_keyed() {
-    let text = include_str!("../../vectors/rfc9106/rfc9106.txt");
+    let text = crate::vectors::text("vectors/rfc9106/rfc9106.txt");
     for (variant, name) in [
         (Variant::Argon2d, "Argon2d"),
         (Variant::Argon2i, "Argon2i"),

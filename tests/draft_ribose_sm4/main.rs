@@ -2,8 +2,8 @@
 //! draft-ribose-cfrg-sm4-10 (a draft, not an RFC; SM4 is GB/T 32907-2016,
 //! and is not in NIST's CAVP), vendored unmodified under
 //! `vectors/draft-ribose-cfrg-sm4/` (see
-//! `vectors/sources/draft-ribose-cfrg-sm4.toml`) and compiled into the test
-//! binary, so these tests always run.
+//! `vectors/sources/draft-ribose-cfrg-sm4.toml`) and read at run time
+//! (`tests/vectors.rs`), so these tests always run.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -20,9 +20,6 @@ mod sm4_ctr;
 mod sm4_ecb;
 mod sm4_ofb;
 
-const DRAFT: &str =
-    include_str!("../../vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt");
-
 fn unhex(s: &str) -> Vec<u8> {
     (0..s.len())
         .step_by(2)
@@ -31,14 +28,15 @@ fn unhex(s: &str) -> Vec<u8> {
 }
 
 /// The text of the appendix between the headings starting `from` and `to`.
-fn section(from: &str, to: &str) -> &'static str {
-    let appendix = DRAFT
+fn section(from: &str, to: &str) -> String {
+    let draft = crate::vectors::text("vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt");
+    let appendix = draft
         .split("Appendix A.  Appendix A: Example Calculations")
         .last()
         .unwrap();
     let start = appendix.find(from).unwrap();
     let end = start + appendix[start..].find(to).unwrap();
-    &appendix[start..end]
+    appendix[start..end].to_owned()
 }
 
 /// The bytes after the label `label` (e.g. `"Plaintext:"`), from the lines

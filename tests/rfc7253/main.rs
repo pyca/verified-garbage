@@ -4,8 +4,8 @@
 //! of §3.1 (AES-128, AES-192 and AES-256, with tags of 128, 96 and 64 bits).
 //!
 //! The RFC is vendored under `vectors/rfc7253/` (see
-//! `vectors/sources/rfc7253.toml` for where it comes from) and compiled into
-//! the test binary, so these tests always run. Each value is read from the
+//! `vectors/sources/rfc7253.toml` for where it comes from) and read at run time
+//! (`tests/vectors.rs`), so these tests always run. Each value is read from the
 //! RFC's text: a field `X: hex` of a tuple, continued on the rows of hex
 //! after it, and the `Output` lines of the iterative test.
 
@@ -19,15 +19,16 @@
 
 use verified_garbage::aes_ocb::{AesOcb, Error};
 
-const TEXT: &str = include_str!("../../vectors/rfc7253/rfc7253.txt");
-
 /// The lines of Appendix A, without the page breaks.
-fn appendix() -> impl Iterator<Item = &'static str> {
-    TEXT.lines()
+fn appendix() -> Vec<String> {
+    crate::vectors::text("vectors/rfc7253/rfc7253.txt")
+        .lines()
         .skip_while(|l| !l.starts_with("Appendix A.  Sample Results"))
         .take_while(|l| !l.starts_with("Authors' Addresses"))
         .map(str::trim)
         .filter(|l| !(l.starts_with("Krovetz & Rogaway") || l.starts_with("RFC 7253 ")))
+        .map(str::to_owned)
+        .collect()
 }
 
 fn unhex(s: &str) -> Option<Vec<u8>> {
@@ -70,7 +71,7 @@ fn tuples() -> Vec<Tuple> {
         if let Some((i, value)) = field {
             fields[i] = value;
             current = Some(i);
-        } else if let (Some(i), Some(row)) = (current, unhex(line).filter(|r| !r.is_empty())) {
+        } else if let (Some(i), Some(row)) = (current, unhex(&line).filter(|r| !r.is_empty())) {
             fields[i].extend(row);
         } else {
             if current == Some(4) {

@@ -59,7 +59,7 @@ fn draft_examples() {
         ("A.2.2.1.  Example 1", "A.2.2.2.  Example 2"),
         ("A.2.2.2.  Example 2", "A.2.3.  SM4-OFB Examples"),
     ] {
-        let text = section(from, to);
+        let text = &section(from, to);
         let key: [u8; 16] = field(text, "Encryption Key:").try_into().unwrap();
         let iv: [u8; 16] = field(text, "IV:").try_into().unwrap();
         let plaintext = field(text, "Plaintext:");
