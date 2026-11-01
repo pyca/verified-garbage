@@ -661,14 +661,14 @@ structure InvInv (s : State) (B : Addr) (Z w iU iV iX₁ iX₂ iT a m : Nat) (j 
 /-- `inverse`: from `(a, m, 1, 0)` in `[u], [v], [x₁], [x₂]` (the word `w`
 of `[u]` zero), `[m]` odd and above 1: `[v] = gcd(a, m)` and
 `[x₂] a ≡ [v] (mod m)`, `[x₂] < m`. -/
-theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (h : Ws s B Z w)
+theorem inverseBits_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (h : Ws s B Z w)
     (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
     (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
     (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
     (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hU0 : word s.mem B (slot w iU + 8 * w) = 0)
     (hVM : wv s.mem B (slot w iV) w = wv s.mem B (slot w iM) w) (hX1 : wv s.mem B (slot w iX₁) w = 1)
     (hX2 : wv s.mem B (slot w iX₂) w = 0) :
-    WP isa (inverse iU iV iX₁ iX₂ iM iT) s fun t =>
+    WP isa (inverseBits iU iV iX₁ iX₂ iM iT) s fun t =>
       t.gpr .x0 = B ∧ Frm B (invRanges w iU iV iX₁ iX₂ iT) s.mem t.mem ∧ Keep (.x11 :: .x12 :: stepRegs) s t ∧
       (wv s.mem B (slot w iM) w % 2 = 1 → 1 < wv s.mem B (slot w iM) w →
         wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w) ∧
@@ -682,7 +682,7 @@ theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT :
   have hw := h.w2
   have sU := Nat.le_trans (slot_lt (w := w) hU) hZ
   have sM := Nat.le_trans (slot_lt (w := w) hM) hZ
-  unfold inverse invInit
+  unfold inverseBits invInit
   -- The registers.
   refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨⟨h12₁, h11₁, m₁, _⟩, k₁⟩ =>
     WP.mono (WP.keep [.x6] (Q := fun t => t.gpr .x6 = BitVec.ofNat 64 (128 * w) ∧ t.mem = s₁.mem)
