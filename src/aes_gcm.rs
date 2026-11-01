@@ -89,10 +89,6 @@
 //! others have a path for TLS records, a 12-byte nonce and at most 16 bytes
 //! of additional data, or loops that take two blocks or more).
 //!
-//! On PPC64LE, `encrypt` copies messages of at least 128 bytes with the
-//! platform copy and seals them through `encrypt_in_place`, avoiding the
-//! gatherer's doubleword loop. Short messages keep the gatherer.
-//!
 //! On AArch64, the `_aes` instances of `seal` and `open` have
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
 //! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
@@ -1381,14 +1377,6 @@ impl AesGcm {
         if let Some(p) = &self.fns.powers {
             return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
         }
-        // The PPC64LE gatherer copies eight bytes per loop iteration.
-        // Use the platform copy for longer messages, then the same seal
-        // function as the in-place API. All lengths have been checked.
-        #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-        if len >= 128 {
-            copy_pieces(plaintext, out);
-            return self.encrypt_in_place(nonce, aad, out);
-        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -1536,23 +1524,13 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Block {
-        copy_pieces(plaintext, out);
+        let mut rest = &mut *out;
+        for piece in plaintext {
+            let (dst, tail) = rest.split_at_mut(piece.len());
+            dst.copy_from_slice(piece);
+            rest = tail;
+        }
         self.seal_prepared(p, nonce, aad, out)
-    }
-}
-
-/// Copies already length-checked pieces into their shared output buffer.
-#[cfg(any(
-    target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little")
-))]
-#[inline]
-fn copy_pieces(plaintext: &[&[u8]], out: &mut [u8]) {
-    let mut rest = out;
-    for piece in plaintext {
-        let (dst, tail) = rest.split_at_mut(piece.len());
-        dst.copy_from_slice(piece);
-        rest = tail;
     }
 }
 
