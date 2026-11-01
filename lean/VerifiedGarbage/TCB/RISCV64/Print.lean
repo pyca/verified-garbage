@@ -11,8 +11,8 @@ public import VerifiedGarbage.TCB.Print
 
 Each straight-line instruction, and the return, is printed as its machine
 code (`Encode.lean`), one `.insn 4, <word>` per base instruction, each after
-a line `// <the instruction's text>`, which the emitter writes in the module's listing, not in its code
-(`Rust.listing`): the assembler only copies the words. The text
+a line `// <the instruction's text>`, which the emitter writes in the module's assembly file, not in its code
+(`Rust.assembly`): the assembler only copies the words. The text
 (`Instr.asm`) is the base instruction the model's semantics describes, with
 registers written by their ABI names (`a0`, `sp`, `zero`); a frame of 2048
 bytes or more (`alloc`, `free`) is its two `addi`s (see `push` in

@@ -4,7 +4,7 @@ name: Label
 # for a rename, the path it was renamed from) is an implementation
 # (`lean/VerifiedGarbage/Impl/`), a proof (`lean/VerifiedGarbage/Proof/`) or
 # generated code (`crates/verified-garbage-asm-<target>/src/`, and its
-# `listing/`), and removes the label otherwise: such a pull request changes
+# `assembly/`), and removes the label otherwise: such a pull request changes
 # nothing that Lean does not check (lean/README.md, "What you need to
 # trust").
 #
@@ -38,7 +38,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           CHANGED: ${{ github.event.pull_request.changed_files }}
           LABEL: untrusted-only
-          UNTRUSTED: '^(lean/VerifiedGarbage/(Impl|Proof)/|crates/verified-garbage-asm-[a-z0-9_]+/(src|listing)/)'
+          UNTRUSTED: '^(lean/VerifiedGarbage/(Impl|Proof)/|crates/verified-garbage-asm-[a-z0-9_]+/(src|assembly)/)'
         run: |
           set -euo pipefail
           files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" \
