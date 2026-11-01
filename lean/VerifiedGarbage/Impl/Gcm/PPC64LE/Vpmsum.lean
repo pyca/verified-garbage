@@ -131,9 +131,13 @@ def bulk : Prog isa :=
 def finish : Prog isa :=
   .seq (.ite (.zero .d .r6) (.block []) (.loop (.block body) (.nonzero .d .r6))) (.block epilogue)
 
+/-- Nonempty short messages go directly to the hardware loop. -/
+def serial : Prog isa :=
+  .seq (.loop (.block body) (.nonzero .d .r6)) (.block epilogue)
+
 def ghash : Prog isa :=
   .ite (.zero .d .r6) (.block [])
     (.seq (.block (prologue ++ [.lsr .d .r10 .r6 4]))
-      (.seq (.ite (.zero .d .r10) (.block []) bulk) finish))
+      (.ite (.zero .d .r10) serial (.seq bulk finish)))
 
 end VG.Impl.Gcm.PPC64LE.Vpmsum
