@@ -145,10 +145,7 @@ fn counter_carries_and_wraps() {
         for start in starts {
             let ctr = start.to_be_bytes();
             let message: Vec<_> = crate::bytes::pattern(16 * 5 + 7, 11, 5);
-            let blocks = message.len().div_ceil(16);
-            let mut stream: Vec<u8> = (0..blocks)
-                .flat_map(|j| start.wrapping_add(j as u128).to_be_bytes())
-                .collect();
+            let mut stream = crate::bytes::counter_blocks(start, message.len().div_ceil(16));
             ecb.encrypt(&mut stream).unwrap();
             let expected: Vec<_> = crate::bytes::xor(&message, &stream);
             check(&ctx, &ctr, &message, &expected);

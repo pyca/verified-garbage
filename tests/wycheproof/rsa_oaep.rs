@@ -160,10 +160,10 @@ fn rsa_oaep_every_pair() {
     let k = public.modulus_len();
     assert_eq!(n.len(), k);
     // Each hash function with MGF1 over itself and over SHA-1.
-    let mut pairs: Vec<(Hash, Hash)> = HASHES
-        .iter()
-        .flat_map(|&(_, h)| [(h, h), (h, Hash::Sha1)])
-        .collect();
+    let mut pairs: Vec<(Hash, Hash)> = Vec::new();
+    for (_, h) in HASHES {
+        pairs.extend([(h, h), (h, Hash::Sha1)]);
+    }
     pairs.dedup();
     assert_eq!(pairs.len(), 13);
     for (i, &(h, g)) in pairs.iter().enumerate() {

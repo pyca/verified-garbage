@@ -226,9 +226,7 @@ fn ctr() {
         let ctx = Sm4Ecb::new(&e.key);
         let iv = u128::from_be_bytes(field(text, "IV:").try_into().unwrap());
         // All the counter blocks at once.
-        let mut keystream: Vec<u8> = (0..e.plaintext.len() as u128 / 16)
-            .flat_map(|i| iv.wrapping_add(i).to_be_bytes())
-            .collect();
+        let mut keystream = crate::bytes::counter_blocks(iv, e.plaintext.len() / 16);
         ctx.encrypt(&mut keystream).unwrap();
         assert_eq!(xor(&e.plaintext, &keystream), e.ciphertext);
     }

@@ -411,9 +411,12 @@ fn par_group_tests(
     tests: &dyn Fn(usize) -> usize,
     f: &(dyn Fn(usize, usize) + Sync),
 ) {
-    let all: Vec<(usize, usize)> = (0..groups)
-        .flat_map(|g| (0..tests(g)).map(move |t| (g, t)))
-        .collect();
+    let mut all: Vec<(usize, usize)> = Vec::new();
+    for g in 0..groups {
+        for t in 0..tests(g) {
+            all.push((g, t));
+        }
+    }
     par_indices(all.len(), &|i| f(all[i].0, all[i].1));
 }
 

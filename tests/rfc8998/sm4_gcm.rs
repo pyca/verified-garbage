@@ -213,14 +213,11 @@ fn reference(key: &[u8; 16], nonce: &[u8], aad: &[u8], pt: &[u8]) -> (Vec<u8>, [
         )
     };
     let inc32 = |x: u128, k: u32| (x & !0xFFFF_FFFF) | (x as u32).wrapping_add(k) as u128;
-    let ct: Vec<u8> = pt
-        .chunks(16)
-        .enumerate()
-        .flat_map(|(i, c)| {
-            let ks = ciph(inc32(j0, i as u32 + 1)).to_be_bytes();
-            crate::bytes::xor(c, &ks)
-        })
-        .collect();
+    let mut ct = Vec::with_capacity(pt.len());
+    for (i, c) in pt.chunks(16).enumerate() {
+        let ks = ciph(inc32(j0, i as u32 + 1)).to_be_bytes();
+        ct.extend(crate::bytes::xor(c, &ks));
+    }
     let lens = ((8 * aad.len() as u128) << 64) | (8 * ct.len() as u128);
     let s = mul(ghash(h, ghash(h, 0, aad), &ct) ^ lens, h);
     (ct, (s ^ ciph(j0)).to_be_bytes())

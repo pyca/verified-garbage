@@ -35,11 +35,16 @@ fn example(label: &str) -> Vec<u8> {
     let text = text();
     let start = text.find(label).unwrap() + label.len();
     let rest = text[start..].trim_start().strip_prefix('=').unwrap();
-    rest.lines()
-        .take_while(|l| !l.trim().is_empty())
-        .flat_map(str::split_whitespace)
-        .map(|b| u8::from_str_radix(b, 16).unwrap())
-        .collect()
+    let mut bytes = Vec::new();
+    for line in rest.lines() {
+        if line.trim().is_empty() {
+            break;
+        }
+        for byte in line.split_whitespace() {
+            bytes.push(u8::from_str_radix(byte, 16).unwrap());
+        }
+    }
+    bytes
 }
 
 /// The elements of the C array `name` in Appendix E (`name[n] = { ... };`),

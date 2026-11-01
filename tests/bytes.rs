@@ -66,3 +66,13 @@ pub fn all_equal(bytes: &[u8], value: u8) -> bool {
 pub fn trim_zeros(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
+
+/// The counter blocks `start`, `start + 1`, … (modulo 2¹²⁸), `blocks` of
+/// them, big endian: a CTR keystream before it is encrypted.
+pub fn counter_blocks(start: u128, blocks: usize) -> Vec<u8> {
+    let mut out = Vec::with_capacity(16 * blocks);
+    for i in 0..blocks {
+        out.extend_from_slice(&start.wrapping_add(i as u128).to_be_bytes());
+    }
+    out
+}

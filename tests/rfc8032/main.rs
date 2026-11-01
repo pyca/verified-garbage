@@ -20,16 +20,14 @@ fn text() -> String {
 }
 
 fn hex_lines(text: &str) -> Vec<u8> {
-    text.lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty() && line.bytes().all(|b| b.is_ascii_hexdigit()))
-        .flat_map(|line| {
-            assert_eq!(line.len() % 2, 0);
-            (0..line.len())
-                .step_by(2)
-                .map(|i| u8::from_str_radix(&line[i..i + 2], 16).unwrap())
-        })
-        .collect()
+    let mut bytes = Vec::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if !line.is_empty() && line.bytes().all(|b| b.is_ascii_hexdigit()) {
+            bytes.extend(crate::bytes::unhex(line));
+        }
+    }
+    bytes
 }
 
 #[test]

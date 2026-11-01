@@ -94,12 +94,14 @@ fn check_group(
 fn check_all(names: &[&str], pkcs1: bool) -> Vec<(usize, usize)> {
     let files: Vec<TestFile<RsaPrivateKeyGroup, EncryptCase>> =
         names.iter().map(|n| harness::load(n)).collect();
-    let groups: Vec<(usize, &TestGroup<RsaPrivateKeyGroup, EncryptCase>)> = files
-        .iter()
-        .enumerate()
-        .flat_map(|(i, f)| f.test_groups.iter().map(move |g| (i, g)))
-        .filter(|(_, g)| harness::rsa_key_tested(&g.params.private_key.modulus.0))
-        .collect();
+    let mut groups: Vec<(usize, &TestGroup<RsaPrivateKeyGroup, EncryptCase>)> = Vec::new();
+    for (i, f) in files.iter().enumerate() {
+        for g in &f.test_groups {
+            if harness::rsa_key_tested(&g.params.private_key.modulus.0) {
+                groups.push((i, g));
+            }
+        }
+    }
     let results = Mutex::new(vec![(0, 0); names.len()]);
     harness::par_each(&groups, |&(i, group)| {
         let (done, refused) = check_group(names[i], group, pkcs1);

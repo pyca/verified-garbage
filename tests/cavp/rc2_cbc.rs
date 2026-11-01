@@ -89,10 +89,10 @@ fn check_one<C: Cbc>(key: &[u8], iv: &[u8], bits: usize, input: &[u8], expected:
         }
         for chunk in [1, 3, 8, 13] {
             let mut ctx = C::with_bits(key, iv, bits).unwrap();
-            let output: Vec<_> = input
-                .chunks(chunk)
-                .flat_map(|part| feed(&mut ctx, part, extra))
-                .collect();
+            let mut output = Vec::new();
+            for part in input.chunks(chunk) {
+                output.extend(feed(&mut ctx, part, extra));
+            }
             assert_eq!(output, expected);
             ctx.finalize().unwrap();
         }
