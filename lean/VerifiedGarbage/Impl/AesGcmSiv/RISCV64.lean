@@ -162,12 +162,12 @@ def chunkLen : Prog isa :=
   .seq (.block [.shift .srl .d .s11 .s10 10])
     (.ite (.zero .s11) (.block [.shift .srl .d .s11 .s10 4]) (.block [.li .s11 64]))
 
-/-- The `a3` (at least 1) blocks at `s9` copied to `a4`, the bytes of each
+/-- The `a0` (at least 1) blocks at `s9` copied to `a1`, the bytes of each
 reversed, advancing both. -/
 def revLoop : Prog isa :=
-  .loop (.block (loadBE64 .a5 .t0 .s9 8 ++ loadBE64 .a6 .t0 .s9 0 ++
-    ([.store .d .a5 .a4 0, .store .d .a6 .a4 8, .addi .s9 .s9 16, .addi .a4 .a4 16, .addi .a3 .a3 (-1)] :
-      List Instr))) (.nonzero .a3)
+  .loop (.block (loadBE64 .a2 .t0 .s9 8 ++ loadBE64 .a3 .t0 .s9 0 ++
+    ([.store .d .a2 .a1 0, .store .d .a3 .a1 8, .addi .s9 .s9 16, .addi .a1 .a1 16, .addi .a0 .a0 (-1)] :
+      List Instr))) (.nonzero .a0)
 
 /-- After the copies: `s10` past the blocks, and the arguments of
 `vg_ghash`. -/
@@ -179,7 +179,7 @@ def chunkArgs : List Instr :=
 `W + 496`, `s9` and `s10` past them, and the arguments of `vg_ghash`. -/
 def chunkPre : Prog isa :=
   .seq chunkLen
-  (.seq (.block [.addi .a4 .s0 revO, mov .a3 .s11])
+  (.seq (.block [.addi .a1 .s0 revO, mov .a0 .s11])
   (.seq revLoop (.block chunkArgs)))
 
 /-- `a7` zero iff fewer than 16 of the `s10` bytes are left. -/
