@@ -98,9 +98,9 @@ theorem fn_ct {core : Prog isa} {Pre : State → Prop} {Pub : State → State �
     (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂)
     (h : RelCT isa (VG.RISCV64.Taint.Agree (Taint.ofRegs [.a0, .a1, .a2, .a3]))
       (.seq (.block ptrs) (.ite (.zero .t0) core
-        (.seq (.block ([.addi .t1 .t2 0] ++ VG.Impl.Ed25519.RISCV64.unpackField .t4 SA 0 ++
+        (.seq (.block (([.addi .t1 .t2 0] : List Instr) ++ VG.Impl.Ed25519.RISCV64.unpackField .t4 SA 0 ++
             VG.Impl.Ed25519.RISCV64.unpackField .t5 SB 0 ++
-            [.addi .t4 .a3 SA, .addi .t5 .a3 SB, .addi .t2 .a3 SO])) <|
+            ([.addi .t4 .a3 SA, .addi .t5 .a3 SB, .addi .t2 .a3 SO] : List Instr))) <|
           .seq core (.block (VG.Impl.Ed25519.RISCV64.packField .t1 SO 0))))) fun _ _ => True) :
     ConstantTime isa Pre Pub (fn core) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_

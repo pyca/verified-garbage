@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Setup
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Check
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulVerified
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulLit
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ECDH and public keys over P-256 on RISC-V: the multiplication and after
@@ -19,6 +24,123 @@ out of Montgomery's form (`affine_ok`). The callees' `Keeps` are frames
 
 @[expose] public section
 
+/-!
+## ECDH and public keys over P-256 on RISC-V: the setup
+
+The constants (`consts_ok`: `setConst` for each, apart), and what both
+functions' setups share.
+-/
+
+namespace VG.Proof.Ecdh.RISCV64.P256
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64
+open VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdh.RISCV64 VG.Impl.Ecdh.RISCV64.Cfg
+open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64 VG.Proof.Ecdsa.RISCV64.P256
+open VG.Proof.X25519.RISCV64 (Rest)
+
+/-- Constants to slots below 44, each its own. -/
+theorem consts_ok : ∀ (L : List (Nat × Nat)) {s : State} {base : Addr}, WsReg s base → (∀ e ∈ L, e.1 < 44) →
+    (L.map Prod.fst).Nodup →
+    WP isa (.block (L.flatMap fun e => setConst 4 (p256.sl e.1) e.2)) s fun s' =>
+      Rest [.t0, .t1] s s' ∧ Unch base (L.map fun e => (p256.sl e.1, 32)) s.mem s'.mem ∧
+      ∀ e ∈ L, sv base s' e.1 = e.2 % 2 ^ 256
+  | [], s, _, _, _, _ => WP.block_nil ⟨Rest.refl _ _, Unch.refl _ _ _, by simp⟩
+  | (i, x) :: L, s, base, hw, hlt, hnd => by
+    simp only [List.mem_cons, forall_eq_or_imp] at hlt
+    simp only [List.map_cons, List.nodup_cons, List.mem_map] at hnd
+    rw [List.flatMap_cons]
+    refine WP.block_append (WP.mono (setConst_ok 4 hw (o := p256.sl i) (x := x) (by rw [sl_eq]; omega)
+      (by rw [sl_eq]; omega)) fun s₁ ⟨r₁, O₁, e₁⟩ => ?_)
+    refine WP.mono (consts_ok L (hw.of_rest r₁) hlt.2 hnd.2) fun s₂ ⟨r₂, U₂, e₂⟩ => ⟨r₁.trans r₂, ?_, ?_⟩
+    · exact O₁.unch.trans U₂
+    · intro e he
+      simp only [List.mem_cons] at he
+      rcases he with rfl | he
+      · show wordsVal _ _ _ _ = _
+        rw [U₂.wordsVal (fun w hw => by
+          simp only [List.mem_map] at hw
+          obtain ⟨e', he', rfl⟩ := hw
+          have hne : e'.1 ≠ i := fun h => hnd.1 ⟨e', he', h⟩
+          have := hlt.2 e' he'
+          simp only [sl_eq]; omega) (by rw [sl_eq]; omega)]
+        exact e₁
+      · exact e₂ e he
+
+/-- The constants, as `consts_ok` takes them. -/
+theorem constCode_eq : constCode p256 = (consts p256).flatMap fun e => setConst 4 (p256.sl e.1) e.2 := rfl
+
+/-- The constants' slots. -/
+theorem consts_slots : ∀ e ∈ consts p256, e.1 < 44 := by decide
+
+theorem consts_nodup : ((consts p256).map Prod.fst).Nodup := by decide
+
+/-- The constants are below `2²⁵⁶`. -/
+theorem consts_lt : ∀ e ∈ consts p256, e.2 < 2 ^ 256 := by decide
+
+/-- `sd t, d(r)` at the working space's base, in `r`. -/
+theorem sd_reg {s : State} {base : Addr} {is : List Instr} {Q : State → Prop} {r : Reg} (h0 : s.gpr r = base)
+    (hwr : (⟨base, 8192⟩ : Region) ∈ s.wr) (hal : base.toNat % 8 = 0)
+    {t : Reg} {d : Nat} (hd : d + 8 ≤ 2048) (hd8 : d % 8 = 0)
+    (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.store .d t r d :: is)) s Q :=
+  wp_sd (by omega) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
+    ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
+
+/-- The saves, `s0 = s3 = r` and `s2 = a0`. -/
+theorem save_ok {s : State} {r : Reg} {base : Addr} (h0 : s.gpr r = base)
+    (hwr : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : base.toNat + 8192 ≤ 2 ^ 64) (hal : base.toNat % 8 = 0) :
+    WP isa (.block (saveCode r)) s fun s' => WsReg s' base ∧ s'.gpr .s3 = base ∧ s'.gpr .s2 = s.gpr .a0 ∧
+      (∀ x, x ≠ .s0 → x ≠ .s2 → x ≠ .s3 → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp ∧ Unch base [(0, 40)] s.mem s'.mem ∧
+      word s'.mem base 0 = s.gpr .s0 ∧ word s'.mem base 8 = s.gpr .s1 ∧ word s'.mem base 16 = s.gpr .s2 ∧
+      word s'.mem base 24 = s.gpr .ra ∧ word s'.mem base 32 = s.gpr .s3 := by
+  rw [saveCode]
+  refine sd_reg h0 hwr hal (d := 0) (by decide) (by decide) fun s₁ u₁ => ?_
+  refine sd_reg (by rw [u₁.gpr]; exact h0) (by rw [u₁.wr]; exact hwr) hal (d := 8) (by decide) (by decide)
+    fun s₂ u₂ => ?_
+  refine sd_reg (by rw [u₂.gpr, u₁.gpr]; exact h0) (by rw [u₂.wr, u₁.wr]; exact hwr) hal (d := 16) (by decide)
+    (by decide) fun s₃ u₃ => ?_
+  refine sd_reg (by rw [u₃.gpr, u₂.gpr, u₁.gpr]; exact h0) (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hwr) hal (d := 24)
+    (by decide) (by decide) fun s₄ u₄ => ?_
+  refine sd_reg (by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact h0) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr)
+    hal (d := 32) (by decide) (by decide) fun s₅ u₅ =>
+    wp_mv fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => WP.block_nil ?_
+  have g₅ : ∀ x, s₅.gpr x = s.gpr x := fun x => by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
+  have m₅ : s₅.mem = ((((s.mem.writeW (off base 0) (s.gpr .s0)).writeW (off base 8) (s.gpr .s1)).writeW
+      (off base 16) (s.gpr .s2)).writeW (off base 24) (s.gpr .ra)).writeW (off base 32) (s.gpr .s3) := by
+    simp only [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
+  have m₈ : s₈.mem = s₅.mem := by rw [u₈.mem, u₇.mem, u₆.mem]
+  have O : ∀ {d} {m : Mem} {v : BitVec 64}, d ≤ 32 → Outside base d 8 m (m.writeW (off base d) v) :=
+    fun h => writeW_outside _ _ _ (by omega)
+  have hw₈ : WsReg s₈ base := by
+    refine ⟨by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g₅, h0], ?_, hn, hal⟩
+    rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr
+  have w0 : ∀ {d e} {m : Mem} {v : BitVec 64}, d ≤ 32 → e ≤ 32 → d + 8 ≤ e ∨ e + 8 ≤ d →
+      word (m.writeW (off base e) v) base d = word m base d :=
+    fun hd he h => (O he).word h (by omega)
+  have e₆ : s₆.gpr r = s₅.gpr r := by
+    by_cases h : r = .s0
+    · subst h; exact u₆.gpr
+    · exact u₆.other _ h
+  refine ⟨hw₈, by rw [u₈.other _ (by decide), u₇.gpr, e₆, g₅, h0],
+    by rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), g₅], fun x h1 h2 h3 => by
+      rw [u₈.other _ h2, u₇.other _ h3, u₆.other _ h1, g₅],
+    by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
+    by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [m₈, m₅]
+    exact (((((O (by decide)).unch.trans (O (by decide)).unch).trans (O (by decide)).unch).trans
+      (O (by decide)).unch).trans (O (by decide)).unch).cover (by decide)
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide),
+      w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide),
+      w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, word_writeW_self]
+
+end VG.Proof.Ecdh.RISCV64.P256
+
 namespace VG.Proof.Ecdh.RISCV64.P256
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64
@@ -26,6 +148,8 @@ open VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdh.RISCV64 VG.Impl.Ecdh.RISCV64.Cfg
 open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64 VG.Proof.Ecdsa.RISCV64.P256
 open VG.Proof.X25519.RISCV64 (Rest)
 open VG.Spec.Weierstrass (Curve Fe Point)
+open VG.Spec.Ecdsa (bytesAt)
+open VG.WriteBytes (writeBytes)
 
 /-- What `vg_p256_mul` may write, as ranges of offsets. -/
 abbrev mulKW : List (Nat × Nat) := [(512, 96), (608, 448), (128, 32), (1344, 32), (1504, 2 ^ 64)]
@@ -317,5 +441,48 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
     exact ⟨rep_of_represents hrep, bx, by', bz⟩
   · rw [v₄, v₃', e₄ RX (by simp), e₄ RZ (by simp),
       show sv base s₃ RX = sv base s₂ RX from sv_unch U₃ RX (by decide)]
+
+
+/-- A byte of a region apart from the working space. -/
+theorem out_of_disj {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) (hn : p.toNat + n ≤ 2 ^ 64)
+    {off i : Nat} (hi : off + i < n) : ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 (off + i)) 1 :=
+  hd _ (Offset.contains_base p (by omega) (by omega))
+
+/-- Eight bytes of a region. -/
+theorem in_rd8 {rs : List Region} {p : Addr} {n : Nat} (hr : (⟨p, n⟩ : Region) ∈ rs) {off : Nat} (ho : off + 8 ≤ n)
+    (hn : n ≤ 8192 := by decide) :
+    InRegions rs (p + BitVec.ofNat 64 off) 8 :=
+  ⟨_, hr, Offset.contains_base p ho (by omega)⟩
+
+/-- Bytes apart from the working space survive changes within it. -/
+theorem bytesAt_unch {base q : Addr} {W : List (Nat × Nat)} {n : Nat} {m m' : Mem} (U : Unch base W m m')
+    (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192)
+    (hsep : ∀ i < n, ¬ (⟨base, 8192⟩ : Region).Contains (q + BitVec.ofNat 64 i) 1) :
+    bytesAt m' q n = bytesAt m q n := by
+  simp only [bytesAt]
+  apply List.map_congr_left
+  intro i hi
+  rw [List.mem_range] at hi
+  have := hsep i hi
+  simp only [Region.Contains] at this
+  exact U _ fun w hw => .inr (by have := hW w hw; simp only [ofs]; omega)
+
+/-- The value of a constant's slot. -/
+theorem const_at {base : Addr} {s : State} (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2) (k : Nat)
+    (hk : k < (consts p256).length := by decide) : sv base s (consts p256)[k].1 = (consts p256)[k].2 :=
+  hc _ (List.getElem_mem hk)
+
+/-- The bytes just written. -/
+theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length ≤ 2 ^ 64) :
+    bytesAt (writeBytes m q xs) q xs.length = xs := by
+  apply List.ext_getElem
+  · simp [bytesAt]
+  · intro i h₁ h₂
+    have hi : i < xs.length := h₂
+    simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
+      Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hi h), hi,
+      ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
+
+theorem and_one (b : Bool) : maskOf b &&& BitVec.ofInt 64 1 = if b then 1 else 0 := by cases b <;> decide
 
 end VG.Proof.Ecdh.RISCV64.P256

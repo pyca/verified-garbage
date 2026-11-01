@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Exchange
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Tail
 public import VerifiedGarbage.Spec.EcKey
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Framework.Omega
@@ -68,7 +68,7 @@ theorem finPk_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .
     (hout : ∀ i < 65, InRegions s.wr (out + BitVec.ofNat 64 i) 1)
     (hdis : (⟨out, 65⟩ : Region).Disjoint ⟨base, 8192⟩)
     {c : Bool} (hF : word s.mem base FL = maskOf c) :
-    WP isa (.block (zCode p256 ++ [.li .t0 4, .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++
+    WP isa (.block (zCode p256 ++ ([.li .t0 4, .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] : List Instr) ++
       storeNum p256.n (p256.sl XO) .s2 1 ++ storeNum p256.n (p256.sl YO) .s2 (1 + 8 * p256.n) ++
       retCode p256)) s fun s' =>
       s'.gpr .a0 = (if c && !decide (sv base s RZ = 0) then 1 else 0) ∧

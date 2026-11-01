@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Weierstrass.Mont
 public import VerifiedGarbage.TCB.RISCV64.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The functions of `Spec/Weierstrass/Mont.lean` on RISC-V, by register

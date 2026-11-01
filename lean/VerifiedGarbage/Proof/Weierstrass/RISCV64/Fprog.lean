@@ -24,6 +24,9 @@ The complete addition `rcb` is such a program, and computes `rcbAdd`
 (`rcb_ok`).
 -/
 
+-- separate module: its proofs (about 2 s) cost more than its imports, and its importer's
+-- changes need not re-check them
+
 @[expose] public section
 
 namespace VG.Proof.Weierstrass.RISCV64

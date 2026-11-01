@@ -72,17 +72,6 @@ def ecdhRV : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3
 
-/-- A byte of a region apart from the working space. -/
-theorem out_of_disj {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) (hn : p.toNat + n ≤ 2 ^ 64)
-    {off i : Nat} (hi : off + i < n) : ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 (off + i)) 1 :=
-  hd _ (Offset.contains_base p (by omega) (by omega))
-
-/-- Eight bytes of a region. -/
-theorem in_rd8 {rs : List Region} {p : Addr} {n : Nat} (hr : (⟨p, n⟩ : Region) ∈ rs) {off : Nat} (ho : off + 8 ≤ n)
-    (hn : n ≤ 8192 := by decide) :
-    InRegions rs (p + BitVec.ofNat 64 off) 8 :=
-  ⟨_, hr, Offset.contains_base p ho (by omega)⟩
-
 /-- What the setup leaves. -/
 structure SetupPost (s s' : State) : Prop where
   ws : WsReg s' (s.gpr .a3)
@@ -103,22 +92,9 @@ structure SetupPost (s s' : State) : Prop where
   flag : word s'.mem (s.gpr .a3) FL = maskOf (decide (s.mem (s.gpr .a2) = 4))
   consts : ∀ e ∈ consts p256, sv (s.gpr .a3) s' e.1 = e.2
 
-/-- Bytes apart from the working space survive changes within it. -/
-theorem bytesAt_unch {base q : Addr} {W : List (Nat × Nat)} {n : Nat} {m m' : Mem} (U : Unch base W m m')
-    (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192)
-    (hsep : ∀ i < n, ¬ (⟨base, 8192⟩ : Region).Contains (q + BitVec.ofNat 64 i) 1) :
-    bytesAt m' q n = bytesAt m q n := by
-  simp only [bytesAt]
-  apply List.map_congr_left
-  intro i hi
-  rw [List.mem_range] at hi
-  have := hsep i hi
-  simp only [Region.Contains] at this
-  exact U _ fun w hw => .inr (by have := hW w hw; simp only [ofs]; omega)
-
 theorem setup_ok {s : State} (hs : EPre s) :
     WP isa (.block (saveCode .a3 ++ loadNum p256.n (p256.sl K) .a1 0 ++ loadNum p256.n (p256.sl CX) .a2 1 ++
-      loadNum p256.n (p256.sl CY) .a2 (1 + 8 * p256.n) ++ leadMask .a2 ++ [.store .d .a7 wb (p256.sl FLAG)] ++
+      loadNum p256.n (p256.sl CY) .a2 (1 + 8 * p256.n) ++ leadMask .a2 ++ ([.store .d .a7 wb (p256.sl FLAG)] : List Instr) ++
       constCode p256)) s fun s' => SetupPost s s' := by
   generalize hb : s.gpr .a3 = base
   have hwr : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr, ← hb]; simp
@@ -217,11 +193,6 @@ theorem setup_ok {s : State} (hs : EPre s) :
   · intro e he
     rw [e₇ e he, Nat.mod_eq_of_lt (consts_lt e he)]
 
-/-- The value of a constant's slot. -/
-theorem const_at {base : Addr} {s : State} (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2) (k : Nat)
-    (hk : k < (consts p256).length := by decide) : sv base s (consts p256)[k].1 = (consts p256)[k].2 :=
-  hc _ (List.getElem_mem hk)
-
 /-- The check of the peer's point, by its call. -/
 theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base) (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2)
     (hf : word s.mem base FL = 0 ∨ word s.mem base FL = BitVec.allOnes 64) :
@@ -253,19 +224,6 @@ theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 =
     rw [ex, ey, egx, flag_eq, epx, ← hF] at hx
     rw [ex, ey, egy, flag_eq, epy, ← hF] at hy
     exact ⟨K, unch_of_checkKeeps hK, hF, hx, hy⟩
-
-/-- The bytes just written. -/
-theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length ≤ 2 ^ 64) :
-    bytesAt (writeBytes m q xs) q xs.length = xs := by
-  apply List.ext_getElem
-  · simp [bytesAt]
-  · intro i h₁ h₂
-    have hi : i < xs.length := h₂
-    simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-      Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hi h), hi,
-      ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
-
-theorem and_one (b : Bool) : maskOf b &&& BitVec.ofInt 64 1 = if b then 1 else 0 := by cases b <;> decide
 
 /-- The end: the flag `&=` the mask of `Z ≠ 0`, `x` (or zeros) to `out`, the
 flag's low bit to `a0`, and the saved registers restored. -/

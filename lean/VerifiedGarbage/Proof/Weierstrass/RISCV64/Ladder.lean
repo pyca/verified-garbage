@@ -32,6 +32,9 @@ the exponent's bit is set (`powBody_ok`), as on PPC64LE
 (`Proof/Weierstrass/PPC64LE/Pow.lean`).
 -/
 
+-- separate module: curve-generic, and its proofs (about 3 s) build in parallel with those of
+-- the field functions that its importer also imports
+
 @[expose] public section
 
 namespace VG.Proof.Weierstrass.RISCV64
