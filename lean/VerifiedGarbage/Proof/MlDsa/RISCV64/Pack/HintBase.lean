@@ -97,6 +97,27 @@ theorem word_w_zero (v : BitVec 32) : (v.setWidth 64 == 0) = (v == 0) := by
 
 theorem eval_zero_w (s : State) (r : Reg) : isa.eval (.zero r) s = some (s.gpr r == 0) := rfl
 
+/-- `beqz` of a register holding a number. -/
+theorem eval_zero_ofNat (s : State) (r : Reg) {k : Nat} (hk : k < 2 ^ 64)
+    (h : s.gpr r = BitVec.ofNat 64 k) : isa.eval (.zero r) s = some (decide (k = 0)) := by
+  show some (s.gpr r == 0) = _
+  rw [h, Option.some.injEq]
+  by_cases e : k = 0
+  · subst e; rfl
+  · rw [decide_eq_false e]
+    refine beq_false_of_ne fun h0 => e ?_
+    have := congrArg BitVec.toNat h0
+    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk] at this
+
+/-- `bnez` of a register holding a number. -/
+theorem eval_nonzero_ofNat' (s : State) (r : Reg) {k : Nat} (hk : k < 2 ^ 64)
+    (h : s.gpr r = BitVec.ofNat 64 k) : isa.eval (.nonzero r) s = some (decide (k ≠ 0)) := by
+  have e := eval_zero_ofNat s r hk h
+  change some (s.gpr r == 0) = _ at e
+  show some (s.gpr r != 0) = _
+  rw [bne, Option.some.inj e]
+  by_cases e' : k = 0 <;> simp [e']
+
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
 
