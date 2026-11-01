@@ -108,6 +108,41 @@ structure SealAccess (s : State) : Prop where
   reads : Covers (sealReads s++sealWrites s) (s.rd++s.wr)
   writes : Covers (sealWrites s) s.wr
 
+theorem oneAad_entry_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₁ : State}
+    (h : SealAccess s₀) (h1 : SO1 (stackArg s₀ 1) (stackArg s₀ 0) s₀ s₁) :
+    WP isa oneAad s₁ (OA s₁.gpr s₀.sp (ctxH s₀.mem (s₀.gpr .r3))
+      (bytesAt s₁.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat)
+      (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat) s₁.mem) := by
+  obtain ⟨_,_,_,dcW,_,dnW,_,daW,_,_,_,_,_,fc,fn,fa,_,fW,_⟩ := h.pre
+  have L₀ := oneLay fc fW dcW
+  have hC : Covers [⟨s₀.gpr .r3,256⟩] (s₀.rd++s₀.wr) :=
+    Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
+  have hW : Covers [⟨stackArg s₀ 1,2560⟩] s₀.wr :=
+    Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
+  have hNr : Covers [⟨s₀.gpr .r5,(s₀.gpr .r6).toNat⟩] (s₀.rd++s₀.wr) :=
+    Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
+  have hAr : Covers [⟨s₀.gpr .r7,(s₀.gpr .r8).toNat⟩] (s₀.rd++s₀.wr) :=
+    Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
+  have hk₁ := h1.en.keeps
+  have he₁ := one_env h1 hC hW
+  have L := L₀.v h1.r29 h1.r30 h1.r31
+  have f₁ := h1.en.frame
+  have hk₁ := h1.en.keeps
+  -- `oneAad`
+  have hH₁ : blockAt s₁.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
+    rw [h1.r29]; exact ctxH_keep f₁ (ctx_saved L₀)
+  have hN : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₀.gpr .r5) (s₀.gpr .r6).toNat := by
+    rw [h1.r30, h1.r31]
+    exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hNr, (s₀.gpr .r6).isLt,
+      fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
+  have hAd : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₁.gpr .r21) (s₁.gpr .r22).toNat := by
+    rw [h1.r30, h1.r31, h1.r21, h1.r22]
+    exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hAr, (s₀.gpr .r8).isLt,
+      fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
+  have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
+  exact oneAad_ok L he₁ hH₁ h1.r24 (by rw [h1.r25]; exact toN)
+    (by rw [h1.r18]; exact toN) hN hAd
+
 /-- The shared entry, nonce/AAD and return stages allow a caller-specific
 text proof and additional writable frame regions. -/
 theorem sealStages_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
@@ -137,15 +172,9 @@ theorem sealStages_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
   have h' := h.pre
   obtain ⟨_,_,dcd,dcW,dnd,dnW,dad,daW,ddt,ddW,ddA,dtW,dWA,fc,fn,fa,fd,fW,fsp,hR⟩ := h'
   have L₀ := oneLay fc fW dcW
-  have hC : Covers [⟨s₀.gpr .r3,256⟩] (s₀.rd++s₀.wr) :=
-    Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
   have hW : Covers [⟨stackArg s₀ 1,2560⟩] s₀.wr :=
     Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
   have hA : Covers [args s₀ 2] (s₀.rd++s₀.wr) :=
-    Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
-  have hNr : Covers [⟨s₀.gpr .r5,(s₀.gpr .r6).toNat⟩] (s₀.rd++s₀.wr) :=
-    Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
-  have hAr : Covers [⟨s₀.gpr .r7,(s₀.gpr .r8).toNat⟩] (s₀.rd++s₀.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
   have hDw : Covers [⟨s₀.gpr .r9,(s₀.gpr .r10).toNat⟩] s₀.wr :=
     Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
@@ -156,24 +185,11 @@ theorem sealStages_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
       (Region.sub_prefix (show 8 ≤ 8 * 2 by decide))).symm
   refine WP.seq (WP.mono (one1_wp (off := 104) (W := stackArg s₀ 1) (T := stackArg s₀ 0) (.inl rfl) hW
     (args_in hA (by decide) (i := 1) (by decide)) rfl (args_in hA (by decide) (i := 0) (by decide)) rfl hTd) fun s₁ h1 => ?_)
-  have he₁ := one_env h1 hC hW
   have L := L₀.v h1.r29 h1.r30 h1.r31
   have f₁ := h1.en.frame
   have hk₁ := h1.en.keeps
-  -- `oneAad`
-  have hH₁ : blockAt s₁.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
-    rw [h1.r29]; exact ctxH_keep f₁ (ctx_saved L₀)
-  have hN : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₀.gpr .r5) (s₀.gpr .r6).toNat := by
-    rw [h1.r30, h1.r31]
-    exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hNr, (s₀.gpr .r6).isLt,
-      fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
-  have hAd : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₁.gpr .r21) (s₁.gpr .r22).toNat := by
-    rw [h1.r30, h1.r31, h1.r21, h1.r22]
-    exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hAr, (s₀.gpr .r8).isLt,
-      fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
   have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
-  refine WP.seq (WP.mono (WP.with_rdwr (oneAad_ok L he₁ hH₁ h1.r24 (by rw [h1.r25]; exact toN)
-    (by rw [h1.r18]; exact toN) hN hAd)) fun s₂ ⟨oa, rd₂, wr₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (oneAad_entry_wp h h1)) fun s₂ ⟨oa,rd₂,wr₂,_⟩ => ?_)
   -- `oneCrypt`
   have hd₂ : DataW (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) s₂ (s₁.gpr .r27) (s₁.gpr .r23).toNat := by
     rw [h1.r29, h1.r30, h1.r31, h1.r27, h1.r23]
