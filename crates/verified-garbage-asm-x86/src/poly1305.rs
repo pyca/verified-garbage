@@ -135,34 +135,3 @@ jmp 21f
 .p2align 6"#,
     )
 }
-
-/// `vg_poly1305_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkBIlYdIlweIl4fIloFInHi0cYJf///w+JR0iLRxwl/P//D4lHTInBwekCAciJR1iLRyAl/P//D4lHUInBwekCAciJR1yLRyQl/P//D4lHVInBwekCAciJR2CLVCQIg+IPhdI="
-je 20f
-.base64 "uAAAAACJ0QH5"
-22:
-.base64 "iEE4g8EBg8IBg/oQ"
-jne 22b
-.base64 "uAEAAACLTCQIg+EPAfmIQTiLBwNHOIkHi0cEE0c8iUcEi0cIE0dAiUcIi0cME0dEiUcMi0cQg9AAiUcQuwAAAAC9AAAAAIsHi09I9+EBwxHVi0cEi09g9+EBwxHVi0cIi09c9+EBwxHVi0cMi09Y9+EBwxHViV9kieu9AAAAAIsHi09M9+EBwxHVi0cEi09I9+EBwxHVi0cIi09g9+EBwxHVi0cMi09c9+EBwxHVi0cQi09Y9+EBwxHViV9oieu9AAAAAIsHi09Q9+EBwxHVi0cEi09M9+EBwxHVi0cIi09I9+EBwxHVi0cMi09g9+EBwxHVi0cQi09c9+EBwxHViV9sieu9AAAAAIsHi09U9+EBwxHVi0cEi09Q9+EBwxHVi0cIi09M9+EBwxHVi0cMi09I9+EBwxHVi0cQi09g9+EBwxHViV9wieu9AAAAAItHEItPSPfhAcMR1YnYwegCicEBwAHAAciD4wMDR2SJB4tHaIPQAIlHBItHbIPQAIlHCItHcIPQAIlHDIPTAIlfEA=="
-jmp 21f
-20:
-21:
-.base64 "iweDwAWJR2SLRwSD0ACJR2iLRwiD0ACJR2yLRwyD0ACJR3CLRxCD0ACJwsHoAr0AAAAAKcWLB4tPZDHBIekxyIkHi0cEi09oMcEh6THIiUcEi0cIi09sMcEh6THIiUcIi0cMi09wMcEh6THIiUcMi0cQMcIh6jHQg+ADiUcQi3QkEIsHA0coiQaLRwQTRyyJRgSLRwgTRzCJRgiLRwwTRzSJRgyJ+ItYdItweIt4fItoFLkAAAAAiUgUww=="
-.p2align 6"#,
-    )
-}

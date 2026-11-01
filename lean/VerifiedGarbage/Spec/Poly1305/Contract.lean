@@ -21,9 +21,7 @@ bytes of any length, buffering in the state the ones that do not fill a
 block, and `vg_poly1305_finalize` absorbs the buffered bytes and computes the
 tag, as the hashes' `update` and `finalize` do; like theirs, they keep 128
 bytes of working space on the stack, since the state's own working space
-(bytes 72–127) is too small for some targets. `vg_poly1305_finalize_scratch`
-is `finalize` with its working space passed in `scratch`, for functions that
-call it with theirs (ChaCha20-Poly1305's). `vg_poly1305_blocks` absorbs
+(bytes 72–127) is too small for some targets. `vg_poly1305_blocks` absorbs
 whole blocks into the state of a message of whole blocks, for callers that
 pad their message themselves (e.g. ChaCha20-Poly1305).
 
@@ -133,19 +131,6 @@ def finalizePost (pb : Nat) : finalizeSig.Post pb := fun state count out m m' _ 
 def finalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   finalizeSig.contract A (post := finalizePost A.ptrBits) (stack := stack)
 
-/-- `vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16])`:
-`vg_poly1305_finalize` with its working space passed in `scratch`, for
-functions that call it with theirs (ChaCha20-Poly1305's). -/
-def finalizeScratchSig : Sig where
-  params := [("state", .array true .u64 16), ("count", .int .u64 true),
-    ("out", .array true .u8 16), ("scratch", .array true .u64 16)]
-
-/-- `finalizePost`, whatever `scratch` is. -/
-def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeScratchSig.contract A
-    (post := fun state count out _scratch => finalizePost A.ptrBits state count out)
-    (stack := stack)
-
 /-- `vg_poly1305_finalize` on every target. -/
 def finalizeApi : Api where
   module := "poly1305"
@@ -158,18 +143,5 @@ def finalizeApi : Api where
     Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` \
     may affect timing, not the state."
   safety := ["The contents of `state` on return are unspecified."]
-
-/-- `vg_poly1305_finalize_scratch` on every target. -/
-def finalizeScratchApi : Api where
-  module := "poly1305"
-  name := "vg_poly1305_finalize_scratch"
-  sig := finalizeScratchSig
-  contracts := some fun A stack => finalizeScratchContract A stack
-  summary := "`vg_poly1305_finalize`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and \
-    `count` may affect timing, not the state."
-  safety := [
-    "The contents of `state` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Poly1305

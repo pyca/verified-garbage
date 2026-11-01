@@ -195,37 +195,6 @@ jmp 21f
     )
 }
 
-/// `vg_poly1305_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SInRSInySIPiD0iJX0hIiW9QTIlnWEyJb2BMiXdoTIl/cEi4////D/z//w9Mi0cYSSHASLj8//8P/P//D0yLTyBJIcFNicpJweoCTQHKTIsfSItfCEiLbxBIhdI="
-je 20f
-.base64 "uAAAAABJidQ="
-22:
-.base64 "QohEJzhJg8QBSYP8EA=="
-jne 22b
-.base64 "uAEAAACIRBc4TANfOEgTX0BIg9UATInYSffhSYnGSYnXTInYSffgSYnDSYnVSInYSffgSQHGSRHXSInYSffiSQHDSRHVSInrSQ+v2kkB3kmD1wBMietJD6/oTAHzSRHvTIn4SIPg/EyJ/UiD5QNJwe8CTAH4SQHDSIPTAEiD1QA="
-jmp 21f
-20:
-21:
-.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3DD"
-.p2align 6"#,
-    )
-}
-
 /// The CPU features `vg_poly1305_update_avx2` requires (`Artifact.features`).
 pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 

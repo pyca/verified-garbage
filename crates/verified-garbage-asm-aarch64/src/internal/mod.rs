@@ -3,6 +3,9 @@
 #![allow(dead_code)]
 
 #[rustfmt::skip]
+pub(crate) mod vg_poly1305_finalize_scratch;
+
+#[rustfmt::skip]
 pub(crate) mod vg_rc2_cbc_decrypt;
 
 #[rustfmt::skip]

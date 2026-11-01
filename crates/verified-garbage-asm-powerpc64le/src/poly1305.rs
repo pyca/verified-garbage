@@ -136,33 +136,3 @@ b 21f
 .base64 "gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9BQCHOYI2knk4oIx9FJLIfYI20nk4oM59FJLpfYI28nk4oO99FJIKfoI2Eno4oBB+FJIrfoI2Mno4oDF+//9SOnhi83w4kHN+eJqHfXhyE304kHN+eJrIfXh6M304kHN+eJrpfXiCU304kHN+eJoKfniKc304kHN+eJorfigAQ+owAGPqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehRi53wUcgh9FHopfRSCSn0Uimt9gjbyeDig53wUkgh9gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9ZNEMeRRiR37Goix5FGJSfgKjM3lkdEx5FGJzfsZFbHkUYnN+AkZgeQAARvoIAGb6AADV6QgA9ekQABXqGAA16iAAVeooAHXqMACV6jgAteqgACE4IACATg==""#,
     )
 }
-
-/// `vg_poly1305_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "AADG+QgA5vkQAAb6GAAm+iAARvooAGb6MACG+jgApvoAAKY6AADFOA8AoDg4KIV8/wOAPv//lGIYAEPqIABj6v8PADz8/wBgxgcAeP8PAGT//wBgOABSfv8PADz8/wBgxgcAeP8PAGT8/wBgOABzfjigTH6CNk56OKDOfSBlT3rkZGB6FALvfTig732Ck3B6OKAQfiDCcXpkF8d5FHLnfGQX6HkUegh9ZBcJehSCKX1kFyp6FIpKfUgAg5FMAMORUADjkVQAA5JYACOSXADjkGAAA5FkACORaABDkQAAQ+oIAGPqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehAAA+jkwQB4AADsOAAADjkAAC85AABQORQCcX0AACUo"
-beq %cr0, 20f
-.base64 "AADgORQqg30QAMA5UHDFfQ=="
-22:
-.base64 "OADsmQEAjDn//845AAAuKA=="
-bne %cr0, 22b
-.base64 "AQDgORQqg304AOyZOACDOAAAROoIAGTqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehRi53wUcgh9FHopfRSCSn0Uimt9SABDgtKRh31oAEOC0pFIfhSSjH1kAEOC0pFJfhSSjH1gAEOC0pFKfhSSjH1cAEOC0pFLfhSSjH1MAEOC0pHHfUgAQ4LSkUh+FJLOfWgAQ4LSkUl+FJLOfWQAQ4LSkUp+FJLOfWAAQ4LSkUt+FJLOfVAAQ4LSked9TABDgtKRSH4Uku99SABDgtKRSX4Uku99aABDgtKRSn4Uku99ZABDgtKRS34Uku99VABDgtKRB35QAEOC0pFIfhSSEH5MAEOC0pFJfhSSEH5IAEOC0pFKfhSSEH5oAEOC0pFLfhSSEH5YAEOC0pEnflQAQ4LSkUh+FJIxflAAQ4LSkUl+FJIxfkwAQ4LSkUp+FJIxfkgAQ4LSkUt+FJIxfoI2knk4oId9FJLOfYI20nk4oMh9FJLvfYI28nk4oOl9FJIQfoI2Eno4oAp+FJIxfoI2Mno4oCt+ZBdTehSaUn4Ukud8gjbyeDig53wUkgh9"
-b 21f
-20:
-21:
-.base64 "gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9BQCHOYI2knk4oIx9FJLIfYI20nk4oM59FJLpfYI28nk4oO99FJIKfoI2Eno4oBB+FJIrfoI2Mno4oDF+//9SOnhi83w4kHN+eJqHfXhyE304kHN+eJrIfXh6M304kHN+eJrpfXiCU304kHN+eJoKfniKc304kHN+eJorfigAQ+owAGPqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehRi53wUcgh9FHopfRSCSn0Uimt9gjbyeDig53wUkgh9gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9ZNEMeRRiR37Goix5FGJSfgKjM3lkdEx5FGJzfsZFbHkUYnN+AkZgeQAARvoIAGb6AADV6QgA9ekQABXqGAA16iAAVeooAHXqMACV6jgAteogAIBO""#,
-    )
-}

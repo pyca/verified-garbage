@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Poly1305.PPC64LE.Finalize
 public import VerifiedGarbage.Proof.Poly1305.BlocksScratch
 public import VerifiedGarbage.Proof.Poly1305.Scratch
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.Contract
@@ -26,7 +27,7 @@ shared contracts, which the artifacts are emitted with.
 they save the nonvolatile registers they use) in a frame of their own: they
 are the shared contracts with the working space as an argument
 (`Proof/Poly1305/BlocksScratch.lean`, `Proof/Poly1305/Scratch.lean` and
-`Spec.Poly1305.finalizeScratchContract`) run in a frame that allocates it
+`Proof.Poly1305.finalizeScratchContract`) run in a frame that allocates it
 (`Verified.stackScratch`).
 -/
 
@@ -70,22 +71,22 @@ theorem updateScratch : Verified PPC64LE.target Impl.Poly1305.PPC64LE.update
           using updateSat }
 
 theorem finalizeScratch : Verified PPC64LE.target Impl.Poly1305.PPC64LE.finalize
-    (Spec.Poly1305.finalizeScratchContract PPC64LE.abi) :=
+    (Proof.Poly1305.finalizeScratchContract PPC64LE.abi) :=
   finalize_verified.of_implies
     { pre := by
-        sig_implies_pre [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_implies_pre [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, Proof.Poly1305.finalizePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_eval [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, PPC64LE.abi, PPC64LE.argRegs]
         intro key msg hb hc
         exact h key msg hb (count_mod hc)
       pub := by
-        sig_implies_pub [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_implies_pub [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, Proof.Poly1305.finalizePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       sat := by
-        sig_implies_sat [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_implies_sat [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, PPC64LE.abi, PPC64LE.argRegs, finalizeSat] [finalizeSat]
           using finalizeSat }
 

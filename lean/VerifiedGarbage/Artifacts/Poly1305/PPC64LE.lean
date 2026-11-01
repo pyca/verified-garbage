@@ -24,9 +24,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.finalizeApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.Poly1305.PPC64LE.finalize
     stack := 160
-    verified := Proof.Poly1305.PPC64LE.Shared.finalize },
-  Spec.Poly1305.finalizeScratchApi.artifact PPC64LE.target {
-    code := Impl.Poly1305.PPC64LE.finalize
-    verified := Proof.Poly1305.PPC64LE.Shared.finalizeScratch }]
+    verified := Proof.Poly1305.PPC64LE.Shared.finalize }]
 
 end VG.Artifacts.Poly1305.PPC64LE

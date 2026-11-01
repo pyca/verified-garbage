@@ -23,9 +23,6 @@ def artifacts : List Artifact := [
     verified := Proof.Poly1305.RISCV64.Shared.update },
   Spec.Poly1305.finalizeApi.artifact RISCV64.target {
     code := Impl.Poly1305.RISCV64.finalize
-    verified := Proof.Poly1305.RISCV64.Shared.finalize },
-  Spec.Poly1305.finalizeScratchApi.artifact RISCV64.target {
-    code := Impl.Poly1305.RISCV64.finalize
-    verified := Proof.Poly1305.RISCV64.Shared.finalizeScratch }]
+    verified := Proof.Poly1305.RISCV64.Shared.finalize }]
 
 end VG.Artifacts.Poly1305.RISCV64

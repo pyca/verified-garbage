@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 a frame of their own (`Verified.stackScratch`), around code proved with the
 working space as an argument: `updateScratchContract` is `update`'s shared
 contract with a 128-byte `scratch` buffer appended, whatever it holds (and
-`Spec.Poly1305.finalizeScratchContract` is `finalize`'s, which
+`Proof.Poly1305.finalizeScratchContract` is `finalize`'s, which
 ChaCha20-Poly1305's code calls).
 
 On x86 and ARMv7 the frame also holds a copy of the arguments passed on the

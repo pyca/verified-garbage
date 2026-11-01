@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Poly1305.RISCV64.Finalize
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Buffer
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
 public import VerifiedGarbage.Impl.Poly1305.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
 
@@ -76,24 +77,24 @@ theorem finalize :
           using finalizeSat }
 
 theorem finalizeScratch : Verified RISCV64.target Impl.Poly1305.RISCV64.finalize
-    (Spec.Poly1305.finalizeScratchContract RISCV64.abi) :=
+    (Proof.Poly1305.finalizeScratchContract RISCV64.abi) :=
   finalizeScratch_verified.of_implies
     { pre := by
-        sig_implies_pre [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_implies_pre [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, Proof.Poly1305.finalizeScratchRISCV64, RISCV64.abi,
           RISCV64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_eval [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, RISCV64.abi, RISCV64.argRegs]
         intro key msg hb hc
         exact h key msg hb (count_mod hc)
       pub := by
-        sig_implies_pub [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_implies_pub [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, Proof.Poly1305.finalizeScratchRISCV64, RISCV64.abi,
           RISCV64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig,
+        sig_implies_sat [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig,
           Spec.Poly1305.finalizePost, RISCV64.abi, RISCV64.argRegs, finalizeScratchSat]
           [finalizeScratchSat] using finalizeScratchSat }
 
