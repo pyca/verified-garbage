@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -18,6 +19,9 @@ namespace VG.Artifacts.AesGcm.PPC64LE
 open VG.Proof.AesGcm.PPC64LE
 
 def artifacts : List Artifact := [
+  Spec.Gcm.encryptBlocksSplitApi.artifact PPC64LE.target {
+    code := Impl.AesGcm.PPC64LE.SplitBlocks.encrypt
+    verified := SplitBlocks.encrypt_verified },
   Spec.Gcm.encryptBlocksApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.Blocks.encrypt
     verified := Blocks.encrypt_verified },
