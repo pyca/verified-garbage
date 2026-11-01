@@ -210,11 +210,14 @@ def signF : List Instr :=
   ptr .r6 aF ++ cntN ++ [.lsl .r8 .r8 2, .add .r6 .r6 .r8, .load .w .r9 .r6 0, .lsr .d .r9 .r9 31, .li .r0 0,
     .sub .r9 .r0 .r9]
 
+/-- `[o] = [b]` if `f < 0`, else `[a]`, `n + 1` digits. -/
+def signSel (o a b : Nat) : Prog isa :=
+  .seq (.block (signF ++ ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ cntN1)) (countLoop .r8 selBody)
+
 /-- `a := (m - a) mod m` if `f < 0`. -/
 def normalize : Prog isa := seqs [
   .block (ptr .r5 aT3 ++ ptr .r6 aMz ++ ptr .r7 aA ++ cntN1 ++ [.li .r9 0]), countLoop .r8 subBody,
-  .block (signF ++ ptr .r5 aA ++ ptr .r6 aA ++ ptr .r7 aT3 ++ cntN1), countLoop .r8 selBody,
-  csub aA aA aT1]
+  signSel aA aA aT3, csub aA aA aT1]
 
 /-- `a := 2 a mod m`. -/
 def double : Prog isa := seqs [
@@ -233,7 +236,7 @@ def zeroW (j : Nat) : Prog isa := .seq (.block (ptr .r5 j ++ [.addi .r8 .r29 0, 
 def finish : Prog isa := seqs [
   zeroW aGcd,
   .block (ptr .r5 aT1 ++ ptr .r6 aGcd ++ ptr .r7 aF ++ cntN1 ++ [.li .r9 0]), countLoop .r8 subBody,
-  .block (signF ++ ptr .r5 aGcd ++ ptr .r6 aF ++ ptr .r7 aT1 ++ cntN1), countLoop .r8 selBody,
+  signSel aGcd aF aT1,
   zeroW aY,
   .block (ptr .r5 aY ++ ptr .r6 aA ++ cntN1), countLoop .r8 copyBody]
 
