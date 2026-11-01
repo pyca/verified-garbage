@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Checks that the generated x86 code only runs the instructions affected by
 MXCSR-configuration-dependent timing (MCDT) under Intel's mitigation, from
-the generated code in `src/asm/x86_64/` and `src/asm/x86/`.
+the generated code of `crates/verified-garbage-asm-x86_64/` and
+`crates/verified-garbage-asm-x86/`: the text of each instruction, which for
+an instruction the printer encodes is the comment above its bytes (`TOKEN`).
 
 On some Intel processors, a few vector multiplies (Intel's list, "MCDT Data
 Operand Independent Timing Instructions": `pmuludq`, `pmullw`, `pmulhw`,
@@ -55,11 +57,21 @@ FN = re.compile(
     r"^pub(?:\(crate\))? unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
     re.MULTILINE | re.DOTALL,
 )
-# A string literal of the template: one line of it, or several separated by
-# newlines (`Rust.template`).
+# A comment of the template, `// <an instruction's text>`, which the emitter
+# writes above the string literal holding that instruction's machine code
+# (`Rust.template`, from the printer's `// ` lines: `TCB/X86/Print.lean` and
+# `TCB/X86_64/Print.lean` print each straight-line instruction as its text,
+# then its bytes, `Encode.lean`), or a string literal of the template: one
+# line of it, or several separated by newlines. A literal's comments are
+# those of the encoded instructions at its start, so the function's
+# instructions, in order, are each literal's comments, then the lines of it
+# that are not those instructions' bytes (`DATA`): labels, branches, calls
+# and the text the printer does not encode.
 # (Unrolled, `[^"\\]*(?:\\.[^"\\]*)*` rather than `(?:[^"\\]|\\.)*`, which
 # matches the same strings a character at a time: 20 times slower.)
-STRING = re.compile(r'"([^"\\]*(?:\\.[^"\\]*)*)"', re.DOTALL)
+TOKEN = re.compile(r'^[ \t]*// ([^\n]*)$|"([^"\\]*(?:\\.[^"\\]*)*)"', re.MULTILINE | re.DOTALL)
+# The directives of encoded instructions' bytes, whose text is the comments.
+DATA = (".byte ", ".octa ")
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
 
@@ -70,16 +82,20 @@ def code(body, first_line):
     instrs, lines, labels = [], [], {}
     offset = 0
     line_number = first_line
-    for m in STRING.finditer(body):
+    for m in TOKEN.finditer(body):
         # Count each newline once, rather than rescanning the growing prefix
         # for every literal in large generated functions.
-        line_number += body.count("\n", offset, m.start(1))
-        offset = m.start(1)
-        for i, line in enumerate(m.group(1).split("\n")):
+        line_number += body.count("\n", offset, m.start())
+        offset = m.start()
+        if m.group(1) is not None:
+            instrs.append(m.group(1))
+            lines.append(line_number)
+            continue
+        for i, line in enumerate(m.group(2).split("\n")):
             label = line.endswith(":") and LABEL.match(line)
             if label:
                 labels.setdefault(label.group(1), []).append(len(instrs))
-            else:
+            elif not line.startswith(DATA):
                 instrs.append(line)
                 lines.append(line_number + i)
     return instrs, lines, labels

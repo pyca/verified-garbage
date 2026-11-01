@@ -16,7 +16,6 @@ class InstructionLocations(unittest.TestCase):
             '    naked_asm!(',
             '        "2:",',
             '',
-            '        // ignored comment',
             '        "mov eax, 8127",',
             '        "3:",',
             '        "3:",',
@@ -29,7 +28,7 @@ class InstructionLocations(unittest.TestCase):
         self.assertEqual(
             check_mcdt.code(body, 10),
             (["mov eax, 8127", "pmuludq xmm0, xmm1", "ret"],
-             [14, 18, 20], {"2": [0, 2], "3": [1, 1]}),
+             [13, 17, 19], {"2": [0, 2], "3": [1, 1]}),
         )
 
     def test_multiline_literals(self):
@@ -49,6 +48,27 @@ class InstructionLocations(unittest.TestCase):
             check_mcdt.code(body, 10),
             (["mov eax, 8127", "pmuludq xmm0, xmm1", "call {vg_f}", "ret"],
              [12, 14, 15, 16], {"2": [0], "3": [1]}),
+        )
+
+    def test_encoded_instructions(self):
+        # An encoded instruction is a comment of its text above the literal
+        # holding its bytes; the literal's other lines come after them.
+        body = '\n'.join([
+            '    naked_asm!(',
+            '        ".p2align 6",',
+            '        // mov eax, 8127',
+            '        // pmuludq xmm0, xmm1',
+            '        r".byte 0xb8,0xbf,0x1f,0x00,0x00,0x66,0x0f,0xf4,0xc1',
+            '2:',
+            'jne 2b",',
+            '        // ret',
+            '        r".octa 0xc3",',
+            '    );',
+        ])
+        self.assertEqual(
+            check_mcdt.code(body, 10),
+            ([".p2align 6", "mov eax, 8127", "pmuludq xmm0, xmm1", "jne 2b", "ret"],
+             [11, 12, 13, 16, 17], {"2": [3]}),
         )
 
     def test_diagnostics_across_functions_and_files(self):
