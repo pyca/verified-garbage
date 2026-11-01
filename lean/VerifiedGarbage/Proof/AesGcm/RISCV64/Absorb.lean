@@ -211,7 +211,7 @@ theorem headPre_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
       s₂.gpr .s6 = BitVec.ofNat 64 (x.length % 16 + k) ∧ s₂.gpr .a2 = BitVec.ofNat 64 k ∧
       (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .s4 → r ≠ .s5 → r ≠ .s6 → s₂.gpr r = s₁.gpr r) ∧
       Keeps s₁ s₂) := by
-    crun [e30, e24, e25, e26, h5, mov, BitVec.or_self]
+    crun [e30, e24, e25, e26, h5, mov]
     exact ⟨by rw [add_ofNat_assoc], ofNat_sub64 hkn hn64, ofNat_add64 _ _,
       fun r a b c d e => by simp [a, b, c, d, e], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₂ fun s₂ ⟨h3, h4, h24, h25, h26, h5', hg₂, hk₂⟩ => ?_)
@@ -319,7 +319,7 @@ theorem split_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 2 ^
       BitVec.ofNat 64 (16 * ((n - j) / 16)) := by
     rw [ofNat_sub64 (Nat.mod_le _ _) (by omega_arith)]; congr 1; omega_arith
   simp only [splitWhole]
-  crun [h24, h25, mov, BitVec.or_self, hand, hsub, shr4 (show n - j < 2 ^ 64 by omega_arith), add_ofNat_assoc]
+  crun [h24, h25, mov, hand, hsub, shr4 (show n - j < 2 ^ 64 by omega_arith), add_ofNat_assoc]
   refine ⟨by congr 1; omega_arith, fun r _ b c d e f g => by simp [b, c, d, e, f, g],
     ⟨rfl, rfl, rfl, rfl⟩⟩
 
@@ -422,7 +422,7 @@ theorem tail_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j
         s₂.gpr .a0 = D + BitVec.ofNat 64 j ∧ s₂.gpr .a1 = V .s1 + BitVec.ofNat 64 32 ∧
         s₂.gpr .a2 = BitVec.ofNat 64 (n - j) ∧
         (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂) := by
-      crun [mov, BitVec.or_self, h.s4, h.s5, h30]
+      crun [mov, h.s4, h.s5, h30]
       exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl⟩⟩
     refine WP.seq (WP.mono h₂ fun s₂ ⟨h3', h4', h5', hg₂, hk₂⟩ => ?_)
     have lp : LoopPre s₂ (D + BitVec.ofNat 64 j) (V .s1 + BitVec.ofNat 64 32) (n - j) := by

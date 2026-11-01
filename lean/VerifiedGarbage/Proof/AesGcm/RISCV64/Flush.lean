@@ -139,7 +139,7 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn V sp H s)
       s₂.gpr .a0 = V .s1 + BitVec.ofNat 64 32 ∧ s₂.gpr .a1 = V .s0 + BitVec.ofNat 64 96 ∧
       s₂.gpr .a2 = BitVec.ofNat 64 o ∧ (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → s₂.gpr r = s₁.gpr r) ∧
       Keeps s₁ s₂) := by
-    crun [tO, e30, e31, e26, mov, BitVec.or_self, Int.reduceNatCast']
+    crun [tO, e30, e31, e26, mov, Int.reduceNatCast']
     exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.mono h₂ fun s₂ ⟨h3, h4, h5, hg₂, hk₂⟩ => ?_
   have lp : LoopPre s₂ (V .s1 + BitVec.ofNat 64 32) (V .s0 + BitVec.ofNat 64 96) o := by

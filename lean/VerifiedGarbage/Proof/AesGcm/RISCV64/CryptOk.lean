@@ -58,7 +58,7 @@ theorem cryptHead_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s :
       s₂.gpr .s4 = D + BitVec.ofNat 64 k ∧ s₂.gpr .s5 = BitVec.ofNat 64 (n - k) ∧
       s₂.gpr .a2 = BitVec.ofNat 64 k ∧
       (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .s4 → r ≠ .s5 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂) := by
-    crun [Int.reduceNatCast', e30, e24, e25, e26, h5, mov, BitVec.or_self]
+    crun [Int.reduceNatCast', e30, e24, e25, e26, h5, mov]
     exact ⟨by rw [add_ofNat_assoc], ofNat_sub64 hkn hn', fun r a b c d => by simp [a, b, c, d],
       ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₂ fun s₂ ⟨h3, h4, h24, h25, h5', hg₂, hk₂⟩ => ?_)
@@ -130,8 +130,8 @@ theorem splitCtr_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 
       BitVec.ofNat 64 (16 * ((n - j) / 16)) := by
     rw [ofNat_sub64 (Nat.mod_le _ _) (by omega_arith)]; congr 1; omega_arith
   simp only [splitCtr]
-  crun [Int.reduceNatCast', h24, h25, mov, BitVec.or_self, hand, hsub, shr4 (show n - j < 2 ^ 64 by omega_arith), add_ofNat_assoc]
-  refine ⟨by congr 1; omega_arith, fun r a b c d e f g => by simp [a, b, c, d, e, f, g],
+  crun [Int.reduceNatCast', h24, h25, mov, hand, hsub, shr4 (show n - j < 2 ^ 64 by omega_arith), add_ofNat_assoc]
+  refine ⟨by congr 1; omega_arith, fun r _ b c d e f g => by simp [b, c, d, e, f, g],
     ⟨rfl, rfl, rfl, rfl⟩⟩
 
 omit L in
@@ -143,7 +143,7 @@ theorem ctrArgs_ok {s : State} (he : Env V sp s) {R : Nat} (hR : V .s3 = BitVec.
       (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a5 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
   have h28 := he.s3; have h29 := he.s2; have h30 := he.s1; have h31 := he.s0
   simp only [ctrArgs]
-  crun [Int.reduceNatCast', scrO, h28, h29, h30, h31, hR, mov, BitVec.or_self]
+  crun [Int.reduceNatCast', scrO, h28, h29, h30, h31, hR, mov]
   exact ⟨fun r a b c d => by simp [a, b, c, d], ⟨rfl, rfl, rfl, rfl⟩⟩
 
 /-- The arguments of `vg_aes_ctr32` on `nb` whole blocks at `D + j`. -/
@@ -266,7 +266,7 @@ theorem tailArgs_ok {s : State} (he : Env V sp s) {R : Nat} (hR : V .s3 = BitVec
   have a₀ := L.stal (d := 64) (by decide) (by decide)
   have a₁ := L.stal (d := 72) (by decide) (by decide)
   simp only [tailArgs, ctrArgs, List.cons_append, List.nil_append]
-  crun [Int.reduceNatCast', scrO, h28, h29, h30, h31, hR, w₀, w₁, a₀, a₁, mov, BitVec.or_self, write_8]
+  crun [Int.reduceNatCast', scrO, h28, h29, h30, h31, hR, w₀, w₁, a₀, a₁, mov, write_8]
   exact ⟨by simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.reduceAdd],
     fun r a b c d e f i => by simp [a, b, c, d, e, f, i], ⟨rfl, rfl, rfl⟩⟩
 
@@ -362,7 +362,7 @@ theorem tailXor_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ 
       s₄.gpr .a0 = V .s1 + BitVec.ofNat 64 64 ∧ s₄.gpr .a1 = D + BitVec.ofNat 64 j ∧
       s₄.gpr .a2 = BitVec.ofNat 64 (n - j) ∧
       (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → s₄.gpr r = s.gpr r) ∧ Keeps s s₄ := by
-    crun [Int.reduceNatCast', h30, h.s4, h.s5, mov, BitVec.or_self]
+    crun [Int.reduceNatCast', h30, h.s4, h.s5, mov]
     exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₄ fun s₄ ⟨h3, h4, h5, hg₄, hk₄⟩ => ?_)
   have lp : LoopPre s₄ (V .s1 + BitVec.ofNat 64 64) (D + BitVec.ofNat 64 j) (n - j) := by
