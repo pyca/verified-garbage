@@ -63,10 +63,10 @@ theorem args_two {σ₁ σ₂ : State} (A₂ : Args (cxOf σ₂) σ₂) (hq : on
   exact A₂
 
 /-- The arguments' registers. -/
-abbrev argRegs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
+abbrev inRegs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
 
 theorem Args.agree {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) :
-    ∀ r ∈ argRegs, σ₁.gpr r = σ₂.gpr r := by
+    ∀ r ∈ inRegs, σ₁.gpr r = σ₂.gpr r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -98,7 +98,7 @@ theorem entry_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : A
   rw [e]
   refine RelCT.block_append (rel_seqR (rel_taint [] hsp (by simp) (by taint_decide))
     (Runs.of_wp (entryLd_wp A₁)) (Runs.of_wp (entryLd_wp A₂)) fun τ₁ τ₂ ⟨a₁, b₁, c₁⟩ ⟨a₂, b₂, c₂⟩ => ?_)
-  refine rel_taint (.t1 :: argRegs) (by rw [c₁, c₂, hsp]) (fun r hr => ?_) (by taint_decide)
+  refine rel_taint (.t1 :: inRegs) (by rw [c₁, c₂, hsp]) (fun r hr => ?_) (by taint_decide)
   rcases List.mem_cons.mp hr with rfl | hr
   · rw [a₁, a₂]
   · have h : r ≠ .t1 := by
