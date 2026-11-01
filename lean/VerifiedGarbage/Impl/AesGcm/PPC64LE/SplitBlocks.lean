@@ -40,8 +40,10 @@ def extraSaved : List (Reg × Nat) := [(.r17,152),(.r19,160)]
 
 def argsHead : List Instr := [.addSp .r12 0,.load .d .r11 .r12 96]
 
-def argsRest : List Instr := extraSaved.map (fun (r,o) => .store .d r .r11 o) ++
+def argsConfig : List Instr :=
  [mov .r17 .r7,mov .r19 .r8,mov .r7 .r9,mov .r8 .r10,mov .r9 .r11]
+
+def argsRest : List Instr := extraSaved.map (fun (r,o) => .store .d r .r11 o) ++ argsConfig
 
 def bulk : Prog isa := .seq (.block bulkArgs) (.seq code (.block bulkRest))
 
@@ -56,11 +58,14 @@ def copyPrefix : Prog isa := .ite (.zero .d .r19) (.block [])
 
 def restoreExtra : List Instr := extraSaved.map (fun (r,o) => .load .d r .r31 o)
 
+def maybeBulk : Prog isa := .ite (.zero .d .r12) (.block []) bulk
+
+def body : Prog isa := .seq (.block wrapperEntry) (.seq maybeBulk
+ (.seq copyPrefix (.seq (.block restoreExtra) (.seq tail (.block wrapperExit)))))
+
 /-- Nine-argument whole-block helper; `scratch` is at the incoming `sp+96`.
 Restore the extra saves before the leaf calls reuse the core's scratch. -/
 def encrypt : Prog isa := .ite (.zero .d .r10) (.block [])
- (.seq (.block argsHead) (.seq (.block argsRest) (.seq (.block wrapperEntry)
- (.seq (.ite (.zero .d .r12) (.block []) bulk)
- (.seq copyPrefix (.seq (.block restoreExtra) (.seq tail (.block wrapperExit))))))))
+ (.seq (.block argsHead) (.seq (.block argsRest) body))
 
 end VG.Impl.AesGcm.PPC64LE.SplitBlocks
