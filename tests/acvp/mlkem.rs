@@ -171,14 +171,19 @@ macro_rules! mlkem_tests {
 
         /// Decapsulation of the ciphertexts that encapsulation gives (with
         /// the randomness of the encapsulation vectors), and implicit
-        /// rejection of those ciphertexts with a byte changed.
+        /// rejection of those ciphertexts with a byte changed. Encapsulating
+        /// with the key of key generation (which keeps `H(ek)`) and with the
+        /// same key from its bytes (which hashes it) gives the same result.
         #[test]
         fn decapsulation() {
             let encaps = encap_decap($name, "encapsulation");
             for (v, e) in keygen_vectors($name).iter().zip(&encaps) {
                 let dk = key(v);
                 let ek = dk.encapsulation_key();
-                let (k, c) = ek.encapsulate_internal(&array(&e.m)).unwrap();
+                let m = array(&e.m);
+                let (k, c) = ek.encapsulate_internal(&m).unwrap();
+                let copy = $EncapsulationKey::from_bytes(ek.as_bytes()).unwrap();
+                assert_eq!(copy.encapsulate_internal(&m).unwrap(), (k, c));
                 assert_eq!(dk.decapsulate(&c).unwrap(), k);
                 for i in [0, 500, CT - 1] {
                     let mut bad = c;

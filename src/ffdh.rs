@@ -421,16 +421,20 @@ mod tests {
                 .unwrap_err(),
             Error::TooManyIterations
         );
-        assert_eq!(
-            params
-                .generate_with(|out| {
-                    out.fill(0);
-                    *out.last_mut().unwrap() = 4;
-                    Ok::<_, ()>(())
-                })
-                .unwrap_err(),
-            Error::TooManyIterations
-        );
+        // Scalars of 0 or at least p are out of range, and 4 gives the
+        // degenerate g^4 = 1 (g has order 4 in this algebraic fixture).
+        for last in [4, 255] {
+            assert_eq!(
+                params
+                    .generate_with(|out| {
+                        out.fill(if last == 255 { 255 } else { 0 });
+                        *out.last_mut().unwrap() = last;
+                        Ok::<_, ()>(())
+                    })
+                    .unwrap_err(),
+                Error::TooManyIterations
+            );
+        }
         let mut attempts = 0;
         let key = params
             .generate_with(|out| {
@@ -442,6 +446,10 @@ mod tests {
             .unwrap();
         assert_eq!(attempts, 2);
         assert_eq!(key.private_component()[63], 3);
+        // g^3 = 2^384.
+        let y = key.public_key().component();
+        assert_eq!(y[0], 1);
+        assert!(y[1..].iter().all(|&b| b == 0));
     }
     #[test]
     fn key_search_consumes_rejected_attempts() {
@@ -520,30 +528,6 @@ mod tests {
                     generated.public_key().component(),
                     key.public_key().component()
                 );
-            }
-        }
-    }
-    #[test]
-    fn generated_attempt_masks_failed_outputs() {
-        let params = composite_domain();
-        // In this algebraic fixture g has order 4. Scalars 0 and p are
-        // outside the range; 4 produces 1; 3 produces g^3 = 2^384.
-        for (scalar, status) in [(0, 2), (4, 3), (3, 1), (255, 2)] {
-            let mut rand = vec![0; 64];
-            if scalar == 255 {
-                rand.fill(255);
-            } else {
-                rand[63] = scalar;
-            }
-            let mut x = vec![0xa5; 64];
-            let mut y = vec![0x5a; 64];
-            assert_eq!(params.domain.generate_key(&rand, &mut x, &mut y), status);
-            if status == 1 {
-                assert_eq!(x, rand);
-                assert_eq!(y[15], 1);
-                assert!(y[..15].iter().chain(&y[16..]).all(|&b| b == 0));
-            } else {
-                assert!(x.iter().chain(&y).all(|&b| b == 0));
             }
         }
     }

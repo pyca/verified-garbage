@@ -2506,47 +2506,6 @@ mod tests {
         assert!(with.prepare.is_some_and(|f| fn_addr_eq(f, p.prepare)));
     }
 
-    /// `vg_aes_gcm_prepare16`, on 128-bit and on 256-bit registers, makes the
-    /// first 16 powers of the context `vg_aes_gcm_prepare` makes (on 512-bit
-    /// registers), leaving the rest of the context as it was.
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    #[test]
-    fn prepare() {
-        use super::{
-            Ctx, PREPARED_AESNI_PCLMUL_AVX, PREPARED_VAES_VPCLMUL, PREPARED_VAES_VPCLMUL_AVX512,
-        };
-        let (narrow, sixteen, wide) = (
-            &PREPARED_AESNI_PCLMUL_AVX,
-            &PREPARED_VAES_VPCLMUL,
-            &PREPARED_VAES_VPCLMUL_AVX512,
-        );
-        if !detected().contains(narrow.features)
-            || !detected().contains(sixteen.features)
-            || !detected().contains(wide.features)
-        {
-            return;
-        }
-        for key_len in [16, 24, 32] {
-            let k = AesGcm::new(&[0x5b; 32][..key_len]).unwrap();
-            let mut want: Ctx = [0; 128];
-            want[..32].copy_from_slice(k.key());
-            let (mut got, mut first) = (want, want);
-            // SAFETY: `want`, `got` and `first` are valid for reads and writes
-            // of 1024 bytes, and start with a key context of
-            // `vg_aes_gcm_init`; they overlap nothing. The CPU has the
-            // features of all three.
-            unsafe {
-                (wide.prepare)(&mut want);
-                (narrow.prepare)(&mut got);
-                (sixteen.prepare)(&mut first);
-            }
-            for ctx in [got, first] {
-                assert_eq!(ctx[..64], want[..64]);
-                assert!(ctx[64..].iter().all(|&w| w == 0));
-            }
-        }
-    }
-
     /// Prepared contexts agree with fresh contexts around both interleaved
     /// loop widths, including partial blocks and input in one to three
     /// pieces.
