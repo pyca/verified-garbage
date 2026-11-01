@@ -1,0 +1,1047 @@
+diff --git a/lean/VerifiedGarbage/Impl/Aes/PPC64LE/Crypto.lean b/lean/VerifiedGarbage/Impl/Aes/PPC64LE/Crypto.lean
+index 43a2a2881..7c0eaa3a1 100644
+--- a/lean/VerifiedGarbage/Impl/Aes/PPC64LE/Crypto.lean
++++ b/lean/VerifiedGarbage/Impl/Aes/PPC64LE/Crypto.lean
+@@ -39,13 +39,18 @@ def setup : List Instr :=
+ def load (v : VReg) (p : Reg) : List Instr :=
+   Impl.Vector.PPC64LE.loadPerm v p mask
+ 
+-def store (v : VReg) (p : Reg) : List Instr :=
+-  [.vop (.perm v v v mask), .stxvd2x v p .r0]
++def storePerm (d n : VReg) (p offset : Reg) : List Instr :=
++  [.vop (.perm d n n mask), .stxvd2x d p offset]
++
++def store (v : VReg) (p : Reg) : List Instr := storePerm v v p .r0
+ 
+ def xorKey (rs : List VReg) : List Instr := rs.map fun v => .vop (.logic .xor v v key)
+ 
++def cipherRegs (inverse last : Bool) (k : VReg) (rs : List VReg) : List Instr :=
++  rs.map fun v => .vop (.cipher inverse last v v k)
++
+ def round (inverse last : Bool) (rs : List VReg) : List Instr :=
+-  load key .r9 ++ rs.map fun v => .vop (.cipher inverse last v v key)
++  load key .r9 ++ cipherRegs inverse last key rs
+ 
+ def keyStep (inverse : Bool) : Instr :=
+   if inverse then .subi .r9 .r9 16 else .addi .r9 .r9 16
+diff --git a/lean/VerifiedGarbage/Impl/AesGcm/PPC64LE/Blocks.lean b/lean/VerifiedGarbage/Impl/AesGcm/PPC64LE/Blocks.lean
+new file mode 100644
+index 000000000..b9505623f
+--- /dev/null
++++ b/lean/VerifiedGarbage/Impl/AesGcm/PPC64LE/Blocks.lean
+@@ -0,0 +1,173 @@
++module
++
++public import VerifiedGarbage.Impl.Aes.PPC64LE.Crypto
++public import VerifiedGarbage.Impl.Gcm.PPC64LE.Vpmsum
++public import VerifiedGarbage.Impl.Gcm.PPC64LE
++public import VerifiedGarbage.Impl.Aes.PPC64LE.Ctr32
++
++/-! # Fused POWER8 AES-CTR and GHASH bulk blocks
++
++Eight ciphertext vectors are stored and then folded directly into GHASH.
++The counter, hash powers and native-layout round keys use caller scratch.
++The nonzero block count is a multiple of eight. This internal kernel is
++not registered or used by the public API until its proof is complete.
++-/
++
++@[expose] public section
++
++namespace VG.Impl.AesGcm.PPC64LE.Blocks
++open VG.PPC64LE
++open VG.Impl.Aes.PPC64LE.Crypto
++abbrev Y : VReg := .v10
++abbrev U : VReg := .v17
++abbrev T : VReg := .v18
++abbrev LO : VReg := .v14
++abbrev MID : VReg := .v15
++abbrev HI : VReg := .v16
++
++abbrev reg := breg
++abbrev rs := batchRegs
++
++def reduce (d zero poly : VReg) : List Instr :=
++ Impl.Gcm.PPC64LE.Vpmsum.reduceWith LO MID HI T zero poly d
++
++def mul (d a key zero poly : VReg) : List Instr :=
++ Impl.Gcm.PPC64LE.Vpmsum.productsWith U LO MID HI zero a key ++ reduce d zero poly
++
++def saved : List (Reg × Nat) :=
++ [(.r14,0),(.r15,8),(.r16,16),(.r20,40),
++  (.r21,48),(.r22,56),(.r23,64),(.r24,72),(.r18,80)]
++
++def foldSetup : List Instr := [.vop (.logic .or .v12 .v11 .v11)] ++
++ (List.range 7).flatMap (fun j =>
++  let n := j+2
++  (if n%2=0 then [.vop (.logic .or .v8 .v12 .v12)] else []) ++
++  [.vop (.sldoi .v9 .v12 .v12 8)] ++ mul .v12 .v9 .v11 .v0 .v13 ++
++  [.vop (.sldoi .v12 .v12 .v12 8)] ++
++  (if n%2=0 then
++   [.vop (.sldoi .v9 .v8 .v8 8), .vop (.sldoi T .v9 .v12 8),
++    .vop (.sldoi T T T 8), .vop (.sldoi .v8 .v12 .v9 8),
++    .li .r11 (128+32*(4-n/2)), .stxvd2x .v8 .r16 .r11,
++    .li .r11 (144+32*(4-n/2)), .stxvd2x T .r16 .r11]
++   else []))
++
++def entry : List Instr := saved.map (fun (r,o) => .store .d r .r10 o) ++
++ [mov .r16 .r10, .addi .r16 .r16 128, mov .r14 .r9, .li .r15 112] ++ setup ++
++ [.li .r20 16, .addi .r24 .r16 256, .li .r18 96] ++
++ setMask U 1 ++ [.stxvd2x U .r16 .r20] ++
++ setMask .v13 (Impl.Gcm.Clmul.poly ++ Impl.Gcm.Clmul.poly) ++
++ setMask .v11 (Impl.Gcm.Clmul.xInv2Hi ++ 3#64) ++ load .v9 .r8 ++
++ [.vop (.sldoi .v9 .v9 .v9 8)] ++ mul .v11 .v9 .v11 .v0 .v13 ++
++ [.vop (.sldoi .v11 .v11 .v11 8)] ++ load Y .r14 ++
++ [.li .r11 12, .loadRev .w .r8 .r5 .r11, mov .r9 .r3] ++ foldSetup ++ [mov .r11 .r24, .addi .r12 .r4 1]
++
++def cache : Prog isa := .seq (.loop (.block (load .v8 .r9 ++
++ [.stxvd2x .v8 .r11 .r0, .addi .r9 .r9 16, .addi .r11 .r11 16, .subi .r12 .r12 1]))
++ (.nonzero .d .r12)) (.block ([mov .r3 .r24, .li .r23 64, .li .r24 80] ++ load .v0 .r5 ++ [.stxvd2x .v0 .r16 .r15]))
++
++def counters (n : Nat) : List Instr :=
++ [.lxvd2x .v0 .r16 .r15, .lxvd2x U .r16 .r20, .vop (.add false T U U),
++  .vop (.add false .v1 .v0 U)] ++
++ (List.range (n-2)).map (fun i => .vop (.add false (reg (i+2)) (reg i) T)) ++
++ [.vop (.add false T (reg (n-2)) T), .stxvd2x T .r16 .r15, .addi .r8 .r8 n]
++
++def initial (n : Nat) : List Instr := keyStart false ++ [.lxvd2x .v8 .r9 .r0] ++
++ (rs n).map (fun r => .vop (.logic .xor r r .v8)) ++ [keyStep false] ++ [.subi .r10 .r4 1]
++def roundRaw (n : Nat) (last : Bool) : List Instr := [.lxvd2x .v8 .r9 .r0] ++
++ cipherRegs false last .v8 (rs n)
++def middle (n : Nat) : List Instr := roundRaw n false ++ [keyStep false] ++ [.subi .r10 .r10 1]
++
++def ghPair (j : Nat) : List Instr :=
++ (if j=0 then [.vop (.logic .xor .v0 .v0 Y)] else []) ++
++ [.lxvd2x .v8 .r16 .r21, .lxvd2x .v9 .r16 .r22,
++  .addi .r21 .r21 32, .addi .r22 .r22 32] ++ Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith
++  (reg (2*j)) (reg (2*j+1)) U T LO MID HI .v8 .v9 true ++
++ (if j=0 then
++  [.vop (.logic .or Y LO LO), .vop (.logic .or .v11 MID MID), .vop (.logic .or .v12 HI HI)]
++ else if j=3 then
++  [.vop (.logic .xor LO LO Y), .vop (.logic .xor MID MID .v11), .vop (.logic .xor HI HI .v12),
++   .vop (.logic .xor U U U)] ++ reduce Y U .v13 ++ [.vop (.sldoi Y Y Y 8)]
++ else [.vop (.logic .xor Y Y LO), .vop (.logic .xor .v11 .v11 MID), .vop (.logic .xor .v12 .v12 HI)])
++
++def dataRegs : List VReg := [.v8,.v9,.v11,.v12,.v14,.v15,.v16,.v17]
++def dataOffsets : List Reg := [.r0,.r20,.r21,.r22,.r23,.r24,.r18,.r11]
++
++def stores (n : Nat) : List Instr :=
++ (dataRegs.zip dataOffsets).map (fun (v,r) => .lxvd2x v .r6 r) ++
++ (dataRegs.zip (rs n)).flatMap (fun (v,r) =>
++  [.vop (.perm v v v .v19), .vop (.logic .xor r r v)]) ++
++ ((dataRegs.zip (rs n)).zip dataOffsets).flatMap (fun ((v,r),o) =>
++  storePerm v r .r6 o) ++ [.addi .r6 .r6 128, .subi .r7 .r7 n]
++
++def keyOffsets : List Reg := [.r20,.r21,.r22,.r23,.r24,.r18,.r11,.r12]
++
++def roundKeyRegs : List VReg := dataRegs ++ [T]
++
++def keyReads : List Instr :=
++ (keyOffsets.zipIdx).flatMap (fun (r,i) =>
++  (if [.r21,.r22,.r11,.r12].contains r then [.li r (16*(i+1))] else []) ++
++  [.lxvd2x dataRegs[i]! .r3 r]) ++
++ [.addi .r9 .r3 144, .lxvd2x T .r9 .r0]
++
++def keyRounds : List Instr := roundKeyRegs.flatMap (fun k => cipherRegs false false k (rs 8))
++
++def firstNine : List Instr := keyReads ++ keyRounds
++
++def batch : Prog isa := .seq (.block (counters 8 ++ [.lxvd2x .v8 .r3 .r0] ++
++ xorKey (rs 8) ++ firstNine ++
++ [.addi .r9 .r3 160, .subi .r10 .r4 10]))
++ (.seq (.ite (.zero .d .r10) (.block []) (.loop (.block (middle 8)) (.nonzero .d .r10)))
++ (.block (roundRaw 8 true ++ stores 8 ++ [.li .r21 128, .li .r22 144] ++
++  (List.range 4).flatMap ghPair)))
++
++def exit : List Instr := [.li .r11 12, .storeRev .w .r8 .r5 .r11] ++ store Y .r14 ++
++ [.subi .r12 .r16 128] ++
++ saved.map (fun (r,o) => .load .d r .r12 o)
++
++def code : Prog isa := .ite (.zero .d .r7) (.block [])
++ (.seq (.block entry) (.seq cache
++ (.seq (.loop batch (.nonzero .d .r7)) (.block exit))))
++/-! The existing whole-block API emits the bulk kernel once. Its callers
++reuse it with a call; short inputs and the tail use the existing primitives.
++The seven nonvolatile argument registers are outside the bulk kernel's set. -/
++
++def wrapperSaved : List (Reg × Nat) :=
++ [(.r25,0),(.r26,8),(.r27,16),(.r28,24),(.r29,32),(.r30,40),(.r31,48)]
++
++def wrapperEntry : List Instr := wrapperSaved.map (fun (r,o) => .store .d r .r9 o) ++
++ [.mflr .r0, .store .d .r0 .r9 56, mov .r29 .r3, mov .r28 .r4, mov .r27 .r5,
++  mov .r26 .r6, mov .r30 .r7, mov .r25 .r8, mov .r31 .r9, .lsr .d .r12 .r25 5]
++
++def bulkArgs : List Instr :=
++ [mov .r3 .r29, mov .r4 .r28, mov .r5 .r27, mov .r6 .r30, .li .r0 7,
++  .logic .and .r11 .r25 .r0, .sub .r7 .r25 .r11, .addi .r8 .r29 240,
++  mov .r9 .r26, .addi .r10 .r31 64]
++
++def bulkRest : List Instr :=
++ [.li .r0 7, .logic .and .r11 .r25 .r0, .sub .r12 .r25 .r11, .lsl .r12 .r12 4,
++  .add .r30 .r30 .r12, mov .r25 .r11]
++
++def tailCtrArgs : List Instr :=
++ [mov .r3 .r29, mov .r4 .r28, mov .r5 .r27, mov .r6 .r30, mov .r7 .r25, .addi .r8 .r31 64]
++
++def tailGhArgs : List Instr :=
++ [.addi .r3 .r29 240, mov .r4 .r26, mov .r5 .r30, mov .r6 .r25, .addi .r7 .r31 64]
++
++def tail : Prog isa := .ite (.zero .d .r25) (.block [])
++ (.seq (.block tailCtrArgs)
++ (.seq (.call "vg_aes_ctr32" Impl.Aes.PPC64LE.ctr32)
++ (.seq (.block tailGhArgs) (.call "vg_ghash" Impl.Gcm.PPC64LE.ghash))))
++
++def wrapperExit : List Instr :=
++ [.load .d .r0 .r31 56, .mtlr .r0, mov .r12 .r31] ++
++ wrapperSaved.map (fun (r,o) => .load .d r .r12 o)
++
++/-- `vg_aes_gcm_encrypt_blocks(ctx, Nr, counter, y, data, n, scratch)`.
++The signature grants 2112 scratch bytes: 64 for the wrapper, 2048 for its code. -/
++def encrypt : Prog isa := .ite (.zero .d .r8) (.block [])
++ (.seq (.block wrapperEntry)
++ (.seq (.ite (.zero .d .r12) (.block [])
++   (.seq (.block bulkArgs) (.seq code (.block bulkRest))))
++ (.seq tail (.block wrapperExit))))
++
++end VG.Impl.AesGcm.PPC64LE.Blocks
+diff --git a/lean/VerifiedGarbage/Impl/Gcm/PPC64LE/Vpmsum.lean b/lean/VerifiedGarbage/Impl/Gcm/PPC64LE/Vpmsum.lean
+index 4a9fdb898..4ac636b11 100644
+--- a/lean/VerifiedGarbage/Impl/Gcm/PPC64LE/Vpmsum.lean
++++ b/lean/VerifiedGarbage/Impl/Gcm/PPC64LE/Vpmsum.lean
+@@ -47,17 +47,22 @@ def consts : List Instr :=
+ def loadRev (d : VReg) (p : Reg) : List Instr :=
+   Impl.Vector.PPC64LE.loadPerm d p MASK
+ 
+-def products (a key : VReg) : List Instr :=
+-  [.vop (.sldoi U a Z 8), .vop (.pmsumd HI U key),
+-   .vop (.sldoi U Z a 8), .vop (.pmsumd LO U key),
+-   .vop (.pmsumd MID a key)]
+-
+-def reduce (d : VReg) : List Instr :=
+-  [.vop (.sldoi T LO Z 8), .vop (.pmsumd T T C),
+-   .vop (.sldoi LO LO LO 8), .vop (.logic .xor MID MID LO), .vop (.logic .xor MID MID T),
+-   .vop (.sldoi T MID Z 8), .vop (.pmsumd T T C),
+-   .vop (.sldoi HI HI HI 8), .vop (.logic .xor HI HI MID),
+-   .vop (.sldoi T T T 8), .vop (.logic .xor d HI T)]
++/-- Polynomial product and reduction generators shared with fused ciphers. -/
++def productsWith (u lo mid hi zero a key : VReg) : List Instr :=
++  [.vop (.sldoi u a zero 8), .vop (.pmsumd hi u key),
++   .vop (.sldoi u zero a 8), .vop (.pmsumd lo u key),
++   .vop (.pmsumd mid a key)]
++
++def reduceWith (lo mid hi tmp zero poly d : VReg) : List Instr :=
++  [.vop (.sldoi tmp lo zero 8), .vop (.pmsumd tmp tmp poly),
++   .vop (.sldoi lo lo lo 8), .vop (.logic .xor mid mid lo), .vop (.logic .xor mid mid tmp),
++   .vop (.sldoi tmp mid zero 8), .vop (.pmsumd tmp tmp poly),
++   .vop (.sldoi hi hi hi 8), .vop (.logic .xor hi hi mid),
++   .vop (.sldoi tmp tmp tmp 8), .vop (.logic .xor d hi tmp)]
++
++def products (a key : VReg) : List Instr := productsWith U LO MID HI Z a key
++
++def reduce (d : VReg) : List Instr := reduceWith LO MID HI T Z C d
+ 
+ def mul (d a key : VReg) : List Instr := products a key ++ reduce d
+ 
+@@ -99,13 +104,18 @@ def packKeyStep (j : Nat) : List Instr :=
+ def packedKeys : List Instr := (List.range 4).flatMap packKeyStep
+ 
+ def packedAccs : List (VReg × VReg) := [(Y,LO),(.v16,MID),(.v17,HI)]
++def packedProductsWith (a b u t lo mid hi loKey hiKey : VReg) (canonical : Bool) : List Instr :=
++  let p := if canonical then t else u
++  let q := if canonical then u else t
++  [.vop (.sldoi hi b b 8),
++   .vop (.sldoi p a hi 8),
++   .vop (.sldoi q hi a 8), .vop (.sldoi q q q 8),
++   .vop (.pmsumd hi u hiKey), .vop (.pmsumd lo t loKey),
++   .vop (.pmsumd mid u loKey), .vop (.pmsumd u t hiKey),
++   .vop (.logic .xor mid mid u)]
++
+ def packedProducts (loKey hiKey : VReg) : List Instr :=
+-  [.vop (.sldoi HI HI HI 8),
+-   .vop (.sldoi U A HI 8),
+-   .vop (.sldoi T HI A 8), .vop (.sldoi T T T 8),
+-   .vop (.pmsumd HI U hiKey), .vop (.pmsumd LO T loKey),
+-   .vop (.pmsumd MID U loKey), .vop (.pmsumd U T hiKey),
+-   .vop (.logic .xor MID MID U)]
++  packedProductsWith A HI U T LO MID HI loKey hiKey false
+ 
+ def packedSave (j : Nat) : List Instr :=
+   if j=0 then packedAccs.map (fun (acc,p) => .vop (.logic .or acc p p))
+diff --git a/lean/VerifiedGarbage/Proof/Aes/PPC64LE/Crypto/Groups.lean b/lean/VerifiedGarbage/Proof/Aes/PPC64LE/Crypto/Groups.lean
+index 465dcbf6e..d6ef3146d 100644
+--- a/lean/VerifiedGarbage/Proof/Aes/PPC64LE/Crypto/Groups.lean
++++ b/lean/VerifiedGarbage/Proof/Aes/PPC64LE/Crypto/Groups.lean
+@@ -191,18 +191,26 @@ theorem readBlock_ok (ctr : Bool) (b : VReg) (s : State) (hb : b ≠ mask)
+     · exact hf.keep.gpr (by decide : Reg.r6 ∉ [Reg.r8])
+     · exact hf.weaken (by simp) (by simp)
+ 
++theorem storePerm_ok (d n : VReg) (p offset : Reg) (s : State) (hp : p ≠ .r0)
++    (hm : s.vpr mask = byteMask) (hw : InRegions s.wr (s.gpr p+s.gpr offset) 16) :
++    WP isa (.block (Impl.Aes.PPC64LE.Crypto.storePerm d n p offset)) s
++      (· = {s.writeV d (flip (s.vpr n)) with
++        mem := s.mem.write (s.gpr p+s.gpr offset) 16 (rev128 (s.vpr n))}) := by
++  have hw' : InRegions (s.writeV d (flip (s.vpr n))).wr
++      ((s.writeV d (flip (s.vpr n))).gpr p + (s.writeV d (flip (s.vpr n))).gpr offset) 16 := by
++    simpa only [wr_writeV, gpr_writeV] using hw
++  apply WP.of_runBlock
++  simp only [Impl.Aes.PPC64LE.Crypto.storePerm, runBlock_cons, runStep_some, runBlock_nil,
++    exec_flip d n s hm, exec_stxvd2x d p offset _ hp hw', gpr_writeV, mem_writeV,
++    vpr_writeV, ite_true, flip_store, Option.some.injEq, exists_eq_left']
++
+ theorem store_ok (b : VReg) (p : Reg) (s : State) (hp : p ≠ .r0)
+     (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask) (hw : InRegions s.wr (s.gpr p) 16) :
+     WP isa (.block (Impl.Aes.PPC64LE.Crypto.store b p)) s
+       (· = {s.writeV b (flip (s.vpr b)) with mem := s.mem.write (s.gpr p) 16 (rev128 (s.vpr b))}) := by
+-  have hw' : InRegions (s.writeV b (flip (s.vpr b))).wr
+-      ((s.writeV b (flip (s.vpr b))).gpr p + (s.writeV b (flip (s.vpr b))).gpr .r0) 16 := by
+-    simpa only [wr_writeV, gpr_writeV, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hw
+-  apply WP.of_runBlock
+-  simp only [Impl.Aes.PPC64LE.Crypto.store, runBlock_cons, runStep_some, runBlock_nil,
+-    exec_flip _ _ _ hm, exec_stxvd2x b p .r0 _ hp hw', gpr_writeV, mem_writeV,
+-    vpr_writeV, ite_true, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero, flip_store,
+-    Option.some.injEq, exists_eq_left']
++  have hs := storePerm_ok b b p .r0 s hp hm
++    (by simpa only [h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hw)
++  simpa only [Impl.Aes.PPC64LE.Crypto.store, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hs
+ 
+ 
+ structure Stored (b : VReg) (s t : State) (out : BitVec 128) : Prop where
+diff --git a/lean/VerifiedGarbage/Proof/AesGcm/PPC64LE/Blocks.lean b/lean/VerifiedGarbage/Proof/AesGcm/PPC64LE/Blocks.lean
+new file mode 100644
+index 000000000..90e3ebf0a
+--- /dev/null
++++ b/lean/VerifiedGarbage/Proof/AesGcm/PPC64LE/Blocks.lean
+@@ -0,0 +1,356 @@
++module
++
++public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
++public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
++import VerifiedGarbage.Proof.Aes.Blocks
++import VerifiedGarbage.Proof.Framework.Range
++import VerifiedGarbage.Proof.Framework.Offset
++import VerifiedGarbage.Proof.Framework.AddrArith
++import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
++import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
++meta import VerifiedGarbage.TCB.PPC64LE.Isa
++meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
++meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
++public import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Rounds
++
++/-! # Polynomial arithmetic for the fused POWER8 bulk loop -/
++
++@[expose] public section
++
++namespace VG.Proof.AesGcm.PPC64LE.Blocks
++open VG VG.PPC64LE
++open VG.Impl.AesGcm.PPC64LE.Blocks (U LO MID HI T)
++open VG.Proof.Gcm.PPC64LE.Vpmsum (productsWith_ok reduceWith_ok)
++open VG.Proof.Gcm.Clmul (mulV)
++open VG.Proof.Aes.PPC64LE.Crypto (aesState)
++open VG.Impl.Gcm.Clmul (poly)
++
++def multiplyRegs : Fin 5 → VReg
++  | ⟨0, _⟩ => U | ⟨1, _⟩ => LO | ⟨2, _⟩ => MID | ⟨3, _⟩ => HI | _ => .v0
++
++def reductionRegs : Fin 6 → VReg
++  | ⟨0, _⟩ => LO | ⟨1, _⟩ => MID | ⟨2, _⟩ => HI
++  | ⟨3, _⟩ => T | ⟨4, _⟩ => .v0 | _ => .v13
++
++theorem mul_ok (d a key : VReg) (s : State)
++    (ha : a ∉ [U, LO, MID, HI]) (hk : key ∉ [U, LO, MID, HI])
++    (hc : s.vpr .v13 = poly ++ poly) (hz : s.vpr .v0 = 0) :
++    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.mul d a key .v0 .v13)) s fun t =>
++      t.vpr d = mulV (s.vpr a) (s.vpr key) ∧ VOnly [U, LO, MID, HI, T, d] s t := by
++  rw [Impl.AesGcm.PPC64LE.Blocks.mul, WP.block_append_iff]
++  refine WP.mono (productsWith_ok multiplyRegs
++    (show ∀ i j : Fin 5, multiplyRegs i = multiplyRegs j → i = j from by decide)
++    a key s ha hk hz) fun u ⟨hp, ho⟩ => ?_
++  change (⟨u.vpr LO, u.vpr MID, u.vpr HI⟩ : VG.Proof.Gcm.Clmul.Prod) = _ at hp
++  change VOnly [U, LO, MID, HI] s u at ho
++  have hc' : u.vpr .v13 = poly ++ poly := (ho.v .v13 (by decide)).trans hc
++  have hz' : u.vpr .v0 = 0 := (ho.v .v0 (by decide)).trans hz
++  refine WP.mono (reduceWith_ok reductionRegs
++    (show ∀ i j : Fin 6, reductionRegs i = reductionRegs j → i = j from by decide)
++    d u hc' hz') fun t ⟨hv, hf⟩ => ?_
++  change t.vpr d = VG.Proof.Gcm.Clmul.reduce ⟨u.vpr LO, u.vpr MID, u.vpr HI⟩ at hv
++  change VOnly [LO, MID, HI, T, d] u t at hf
++  refine ⟨?_, ?_⟩
++  · rw [hv, hp]; rfl
++  · exact (ho.trans hf).weaken (by
++      intro r hr
++      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
++      rcases hr with (h | h | h | h) | (h | h | h | h | h) <;> simp_all)
++
++def pairedRegs : Fin 5 → VReg
++  | ⟨0, _⟩ => HI | ⟨1, _⟩ => U | ⟨2, _⟩ => T | ⟨3, _⟩ => LO | _ => MID
++
++def cipherAt (s : State) (i : Nat) : BitVec 128 := s.vpr (Impl.AesGcm.PPC64LE.Blocks.reg i)
++def hashAt (s : State) (i : Nat) : BitVec 128 :=
++  VG.Proof.Gcm.Clmul.ext8 (cipherAt s i) (cipherAt s i)
++
++def product (s : State) : VG.Proof.Gcm.Clmul.Prod := ⟨s.vpr LO, s.vpr MID, s.vpr HI⟩
++
++theorem paired_ok (j : Fin 4) (ka kb : BitVec 128) (s : State)
++    (hl : s.vpr .v8 = VG.Proof.Gcm.PPC64LE.Vpmsum.lowPair ka kb)
++    (hh : s.vpr .v9 = VG.Proof.Gcm.PPC64LE.Vpmsum.highPair ka kb) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith
++      (Impl.AesGcm.PPC64LE.Blocks.reg (2*j.val)) (Impl.AesGcm.PPC64LE.Blocks.reg (2*j.val+1))
++      U T LO MID HI .v8 .v9 true)) s fun t =>
++      product t = VG.Proof.Gcm.PPC64LE.Vpmsum.pairedProd
++        (hashAt s (2*j.val)) (hashAt s (2*j.val+1)) ka kb ∧
++      VOnly [HI, U, T, LO, MID] s t := by
++  have ha : ∀ j : Fin 4, ∀ i : Fin 5,
++      Impl.AesGcm.PPC64LE.Blocks.reg (2*j.val) ≠ pairedRegs i := by decide
++  exact VG.Proof.Gcm.PPC64LE.Vpmsum.packedProductsWith_ok pairedRegs
++    (show ∀ i k : Fin 5, pairedRegs i = pairedRegs k → i = k from by decide)
++    _ _ .v8 .v9 true ka kb s (ha j) (by decide) (by decide) hl hh
++
++private theorem zero_or128 (x : BitVec 128) : (0 : BitVec 128) ||| x = x := BitVec.zero_or
++
++theorem packed_words (f : Nat → BitVec 32) :
++    (List.range 4).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (32*(3-i)))) (0 : BitVec 128) =
++      f 0 ++ f 1 ++ f 2 ++ f 3 := by
++  simp only [show List.range 4 = [0,1,2,3] from rfl, List.foldl_cons, List.foldl_nil,
++    Nat.reduceSub, Nat.reduceMul, zero_or128, BitVec.shiftLeft_zero]
++  have h := BitVec.setWidth_append_append_append_eq_shiftLeft_setWidth_or
++    (b := f 0) (b' := f 1) (b'' := f 2) (b''' := f 3) (w'''' := 128)
++  rw [BitVec.setWidth_eq] at h
++  exact h.symm
++
++theorem word_offset (b : BitVec 32) (j : Nat) (hj : j < 4) :
++    vword ((0#96) ++ b) j = if j=3 then b else 0#32 := by
++  apply BitVec.eq_of_getLsbD_eq
++  intro i hi
++  by_cases he : j=3
++  · subst j
++    simp only [vword, Nat.reduceSub, Nat.mul_zero, Nat.zero_add,
++      BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true,
++      Bool.true_and, ite_true]
++  · have hge : ¬ 32*(3-j)+i < 32 := by omega
++    simp only [vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
++      BitVec.getLsbD_zero, he, ite_false, hge, Bool.and_false]
++
++def wordAdd (a b : BitVec 128) : BitVec 128 :=
++  (List.range 4).foldl (fun x i => x |||
++    ((vword a i+vword b i).setWidth 128 <<< (32*(3-i)))) 0
++
++theorem add_counter (a : BitVec 128) (b : BitVec 32) :
++    wordAdd a ((0#96) ++ b) = a.extractLsb' 32 96 ++ (a.extractLsb' 0 32 + b) := by
++  rw [wordAdd, packed_words]
++  simp only [word_offset b 0 (by decide), word_offset b 1 (by decide),
++    word_offset b 2 (by decide), word_offset b 3 (by decide), Nat.reduceEqDiff,
++    ite_false, ite_true, BitVec.add_zero]
++  simp only [vword, Nat.reduceSub, Nat.reduceMul]
++  rw [BitVec.extractLsb'_append_extractLsb'_eq_extractLsb' (by decide),
++    BitVec.extractLsb'_append_extractLsb'_eq_extractLsb' (by decide)]
++
++theorem counterValue (cb : Spec.Gcm.Block) (n : Nat) :
++    Nat.repeat Spec.Gcm.inc32 n cb =
++      cb.extractLsb' 32 96 ++ (cb.extractLsb' 0 32 + BitVec.ofNat 32 n) := by
++  rw [← VG.Proof.Aes.repeat_inc32_hi cb n, ← VG.Proof.Aes.repeat_inc32_lo cb n,
++    BitVec.extractLsb'_append_extractLsb'_eq_extractLsb' (by decide), BitVec.extractLsb'_eq_self]
++
++theorem exec_add_counter (d a inc : VReg) (b : BitVec 32) (s : State)
++    (hi : s.vpr inc = 0#96 ++ b) :
++    exec (.vop (.add false d a inc)) s = some (s.writeV d
++      ((s.vpr a).extractLsb' 32 96 ++ ((s.vpr a).extractLsb' 0 32 + b))) := by
++  change some (s.writeV d (wordAdd (s.vpr a) (s.vpr inc))) = _
++  rw [hi, add_counter]
++
++theorem rawLoad_ok (d : VReg) (p offset : Reg) (s : State) (hp : p ≠ .r0)
++    (hr : InRegions (s.rd ++ s.wr) (s.gpr p + s.gpr offset) 16) :
++    WP isa (.block [.lxvd2x d p offset]) s fun t =>
++      t.vpr d = swapDwords (s.mem.read (s.gpr p + s.gpr offset) 16) ∧ VOnly [d] s t :=
++  vector_step _ d _ s (exec_lxvd2x d p offset s hp hr)
++
++theorem rawStore_ok (v : VReg) (p offset : Reg) (s : State) (hp : p ≠ .r0)
++    (hw : InRegions s.wr (s.gpr p + s.gpr offset) 16) :
++    WP isa (.block [.stxvd2x v p offset]) s (· = {s with
++      mem := s.mem.write (s.gpr p + s.gpr offset) 16 (swapDwords (s.vpr v))}) := by
++  apply WP.of_runBlock
++  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_stxvd2x v p offset s hp hw,
++    Option.some.injEq, exists_eq_left']
++
++theorem cipherStates_ok (last : Bool) (k : VReg) (rs : List VReg) (s : State)
++    (hn : rs.Nodup) (hk : k ∉ rs) (rk : List Byte)
++    (hkey : VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr k) rk) :
++    WP isa (.block (Impl.Aes.PPC64LE.Crypto.cipherRegs false last k rs)) s fun t =>
++      (∀ b ∈ rs, aesState (t.vpr b) = VG.Proof.Aes.PPC64LE.Crypto.transform false last rk
++        (aesState (s.vpr b))) ∧ VOnly rs s t := by
++  refine WP.mono (vector_map (fun b => .vop (.cipher false last b b k)) (vcipher false last)
++    k (fun _ _ => rfl) rs s hn hk) fun t ⟨hv, hf⟩ => ⟨?_, hf⟩
++  intro b hb
++  rw [hv b hb, VG.Proof.Aes.PPC64LE.Crypto.vcipher_transform false last hkey]
++
++def keyReg (i : Nat) : VReg := Impl.AesGcm.PPC64LE.Blocks.roundKeyRegs.getD i .v8
++
++structure EarlyInv (base : State) (nr : Nat) (w : List Byte)
++    (input : Nat → Spec.Aes.State) (j : Nat) (s : State) : Prop where
++  effects : VOnly (Impl.AesGcm.PPC64LE.Blocks.rs 8) base s
++  val : ∀ i < 8, aesState (cipherAt s i) =
++    VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) j
++
++theorem early_step (base : State) (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State)
++    (keys : ∀ j < 9, VG.Proof.Aes.PPC64LE.Crypto.IsKey (base.vpr (keyReg j))
++      (Spec.Aes.roundKey w (j+1))) {j : Nat} (hj : j < 9) (s : State)
++    (hs : EarlyInv base nr w input j s) :
++    WP isa (.block (Impl.Aes.PPC64LE.Crypto.cipherRegs false false (keyReg j)
++      (Impl.AesGcm.PPC64LE.Blocks.rs 8))) s (EarlyInv base nr w input (j+1)) := by
++  have facts : ∀ j : Fin 9, keyReg j ∉ Impl.AesGcm.PPC64LE.Blocks.rs 8 := by decide
++  have hk := facts ⟨j, hj⟩
++  have hkey : VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)) := by
++    rw [hs.effects.v _ hk]
++    exact keys j hj
++  refine WP.mono (cipherStates_ok false (keyReg j) _ s (by decide) hk _ hkey) fun t ⟨hv, hf⟩ => ?_
++  refine ⟨(hs.effects.trans hf).weaken (by simp), ?_⟩
++  intro i hi
++  have hm : Impl.AesGcm.PPC64LE.Blocks.reg i ∈ Impl.AesGcm.PPC64LE.Blocks.rs 8 :=
++    List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩
++  rw [cipherAt, hv _ hm]
++  have hsi := hs.val i hi
++  rw [cipherAt] at hsi
++  rw [hsi]
++  exact VG.Proof.Aes.PPC64LE.Crypto.middle_succ false nr w (input i) j
++
++theorem keyRounds_ok (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State) (s : State)
++    (keys : ∀ j < 9, VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)))
++    (hval : ∀ i < 8, aesState (cipherAt s i) =
++      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 0) :
++    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.keyRounds) s (EarlyInv s nr w input 9) := by
++  have he : Impl.AesGcm.PPC64LE.Blocks.roundKeyRegs = (List.range 9).map keyReg := by decide
++  rw [Impl.AesGcm.PPC64LE.Blocks.keyRounds, he, List.flatMap_map]
++  exact wp_range_flatMap (M := isa) (EarlyInv s nr w input)
++    (fun j t hj ht => early_step s nr w input keys hj t ht) 9 (Nat.le_refl _) s ⟨VOnly.refl _ _, hval⟩
++
++theorem rawRound_ok (last : Bool) (s : State) (rk : List Byte)
++    (h0 : s.gpr .r0 = 0) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r9) 16)
++    (hk : VG.Proof.Aes.PPC64LE.Crypto.IsKey (swapDwords (s.mem.read (s.gpr .r9) 16)) rk) :
++    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.roundRaw 8 last)) s fun t =>
++      (∀ i < 8, aesState (cipherAt t i) = VG.Proof.Aes.PPC64LE.Crypto.transform false last rk
++        (aesState (cipherAt s i))) ∧ VOnly (.v8 :: Impl.AesGcm.PPC64LE.Blocks.rs 8) s t := by
++  rw [Impl.AesGcm.PPC64LE.Blocks.roundRaw, WP.block_append_iff]
++  refine WP.mono (rawLoad_ok .v8 .r9 .r0 s (by decide)
++    (by simpa only [h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hr)) fun u ⟨hv, hf⟩ => ?_
++  have hkey : VG.Proof.Aes.PPC64LE.Crypto.IsKey (u.vpr .v8) rk := by
++    rw [hv, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero]
++    exact hk
++  refine WP.mono (cipherStates_ok last .v8 (Impl.AesGcm.PPC64LE.Blocks.rs 8) u
++    (by decide) (by decide) rk hkey) fun t ⟨hval, ho⟩ => ⟨?_, hf.trans ho⟩
++  intro i hi
++  have hm : Impl.AesGcm.PPC64LE.Blocks.reg i ∈ Impl.AesGcm.PPC64LE.Blocks.rs 8 :=
++    List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩
++  have hne : Impl.AesGcm.PPC64LE.Blocks.reg i ≠ .v8 := by
++    have hn : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i ≠ .v8 := by decide
++    exact hn ⟨i, hi⟩
++  simpa only [cipherAt, hf.v _ (by simpa only [List.mem_singleton] using hne)] using hval _ hm
++
++structure RawCfg (base : State) (nr : Nat) (w : List Byte) : Prop where
++  zero : base.gpr .r0 = 0
++  min : 9 < nr
++  max : nr < 15
++  reads : ∀ j ≤ nr, InRegions (base.rd ++ base.wr) (base.gpr .r3 + BitVec.ofNat 64 (16*j)) 16
++  keys : ∀ j ≤ nr, VG.Proof.Aes.PPC64LE.Crypto.IsKey
++    (swapDwords (base.mem.read (base.gpr .r3 + BitVec.ofNat 64 (16*j)) 16)) (Spec.Aes.roundKey w j)
++
++structure RawInv (base : State) (nr : Nat) (w : List Byte)
++    (input : Nat → Spec.Aes.State) (j : Nat) (s : State) : Prop where
++  effects : VG.Proof.Aes.PPC64LE.Crypto.Local [.r9, .r10]
++    (.v8 :: Impl.AesGcm.PPC64LE.Blocks.rs 8) base s
++  ptr : s.gpr .r9 = base.gpr .r3 + BitVec.ofNat 64 (16*(j+1))
++  left : s.gpr .r10 = BitVec.ofNat 64 (nr-1-j)
++  val : ∀ i < 8, aesState (cipherAt s i) = VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) j
++
++theorem raw_middle_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → Spec.Aes.State}
++    (cfg : RawCfg base nr w) {j : Nat} (hj : j < nr-1) {s : State}
++    (h : RawInv base nr w input j s) :
++    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.middle 8)) s (RawInv base nr w input (j+1)) := by
++  have hz : s.gpr .r0 = 0 := (h.effects.keep.gpr (by decide)).trans cfg.zero
++  have hr : InRegions (s.rd ++ s.wr) (s.gpr .r9) 16 := by
++    rw [h.effects.keep.2.1, h.effects.keep.2.2, h.ptr]
++    exact cfg.reads _ (by omega)
++  have hk : VG.Proof.Aes.PPC64LE.Crypto.IsKey (swapDwords (s.mem.read (s.gpr .r9) 16))
++      (Spec.Aes.roundKey w (j+1)) := by
++    rw [h.effects.mem, h.ptr]
++    exact cfg.keys _ (by omega)
++  rw [Impl.AesGcm.PPC64LE.Blocks.middle, List.append_assoc, WP.block_append_iff]
++  refine WP.mono (rawRound_ok false s _ hz hr hk) fun u ⟨hv, ho⟩ => ?_
++  have hy : ∀ i < 8, aesState (cipherAt u i) =
++      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) (j+1) := by
++    intro i hi
++    rw [hv i hi, h.val i hi]
++    exact VG.Proof.Aes.PPC64LE.Crypto.middle_succ false nr w (input i) j
++  refine WP.mono (VG.Proof.Aes.PPC64LE.Crypto.advance_run false .r10 u (by decide) (by decide)) fun t ht => ?_
++  subst t
++  refine ⟨?_, ?_, ?_, ?_⟩
++  · have hf := (h.effects.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector ho)).trans
++      ((VG.Proof.Aes.PPC64LE.Crypto.Local.write u .r9 (u.gpr .r9+16)).trans
++        (VG.Proof.Aes.PPC64LE.Crypto.Local.write _ .r10 (u.gpr .r10-1)))
++    exact hf.weaken (by simp) (by simp [or_left_comm])
++  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, ho.gpr, h.ptr]
++    change base.gpr .r3 + BitVec.ofNat 64 (16*(j+1)) + BitVec.ofNat 64 16 = _
++    rw [Offset.add_add]
++    exact congrArg (fun i => base.gpr .r3 + BitVec.ofNat 64 i) (by omega)
++  · simp only [RegUpd.gpr_write_self, ho.gpr, h.left]
++    change BitVec.ofNat 64 (nr-1-j) - BitVec.ofNat 64 1 = _
++    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
++  · intro i hi
++    simpa only [cipherAt, vpr_write] using hy i hi
++
++theorem rawLoop_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → Spec.Aes.State}
++    (cfg : RawCfg base nr w) {j : Nat} (hj : j < nr-1) {s : State}
++    (h : RawInv base nr w input j s) :
++    WP isa (.loop (.block (Impl.AesGcm.PPC64LE.Blocks.middle 8)) (.nonzero .d .r10)) s
++      (RawInv base nr w input (nr-1)) := by
++  let I : Nat → State → Prop := fun m t => ∃ k, m = nr-1-k ∧ k < nr-1 ∧ RawInv base nr w input k t
++  have step : ∀ m t, I m t → WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.middle 8)) t fun u =>
++      (eval (.nonzero .d .r10) u = some false ∧ RawInv base nr w input (nr-1) u) ∨
++      (eval (.nonzero .d .r10) u = some true ∧ ∃ m' < m, I m' u) := by
++    rintro m t ⟨k, rfl, hk, ht⟩
++    refine WP.mono (raw_middle_ok cfg hk ht) fun u hu => ?_
++    have he : eval (.nonzero .d .r10) u = some (BitVec.ofNat 64 (nr-1-(k+1)) != 0) := by
++      simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hu.left]
++    by_cases hl : k+1 = nr-1
++    · left
++      rw [hl, Nat.sub_self] at he
++      exact ⟨he.trans (by decide), hl ▸ hu⟩
++    · right
++      have hne : BitVec.ofNat 64 (nr-1-(k+1)) ≠ 0 := by
++        intro hz
++        have hzero := congrArg BitVec.toNat hz
++        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := cfg.max; omega)] at hzero
++        have h0 : (0 : BitVec 64).toNat = 0 := rfl
++        rw [h0] at hzero
++        omega
++      exact ⟨he.trans (by simpa using hne), nr-1-(k+1), by omega, k+1, rfl, by omega, hu⟩
++  exact WP.loop (M := isa) I step (nr-1-j) s ⟨j, rfl, hj, h⟩
++
++theorem remaining_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → Spec.Aes.State}
++    (cfg : RawCfg base nr w) {j : Nat} (hj : j ≤ nr-1) {s : State}
++    (h : RawInv base nr w input j s) :
++    WP isa (.ite (.zero .d .r10) (.block [])
++      (.loop (.block (Impl.AesGcm.PPC64LE.Blocks.middle 8)) (.nonzero .d .r10))) s
++      (RawInv base nr w input (nr-1)) := by
++  by_cases heq : j = nr-1
++  · have hz : s.gpr .r10 = 0 := by rw [h.left, heq, Nat.sub_self]; rfl
++    refine WP.ite true (by simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hz]; rfl)
++      (fun _ => WP.block_nil (heq ▸ h)) (by simp)
++  · have hne : BitVec.ofNat 64 (nr-1-j) ≠ 0 := by
++      intro hz
++      have hzero := congrArg BitVec.toNat hz
++      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := cfg.max; omega)] at hzero
++      have h0 : (0 : BitVec 64).toNat = 0 := rfl
++      rw [h0] at hzero
++      omega
++    refine WP.ite false (by simpa only [eval, State.read, Size.bits, BitVec.setWidth_eq,
++      h.left, Option.some.injEq, beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
++    exact rawLoop_ok cfg (by omega) h
++
++theorem raw_last_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → Spec.Aes.State}
++    (cfg : RawCfg base nr w) {s : State} (h : RawInv base nr w input (nr-1) s) :
++    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.roundRaw 8 true)) s fun t =>
++      (∀ i < 8, aesState (cipherAt t i) = Spec.Aes.cipher nr w (input i)) ∧
++      VG.Proof.Aes.PPC64LE.Crypto.Local [.r9, .r10]
++        (.v8 :: Impl.AesGcm.PPC64LE.Blocks.rs 8) base t := by
++  have hz : s.gpr .r0 = 0 := (h.effects.keep.gpr (by decide)).trans cfg.zero
++  have he : nr-1+1 = nr := by have := cfg.min; omega
++  have hptr : s.gpr .r9 = base.gpr .r3 + BitVec.ofNat 64 (16*nr) := by
++    simpa only [he] using h.ptr
++  have hr : InRegions (s.rd ++ s.wr) (s.gpr .r9) 16 := by
++    rw [h.effects.keep.2.1, h.effects.keep.2.2, hptr]
++    exact cfg.reads _ (Nat.le_refl _)
++  have hk : VG.Proof.Aes.PPC64LE.Crypto.IsKey (swapDwords (s.mem.read (s.gpr .r9) 16))
++      (Spec.Aes.roundKey w nr) := by
++    rw [h.effects.mem, hptr]
++    exact cfg.keys _ (Nat.le_refl _)
++  refine WP.mono (rawRound_ok true s _ hz hr hk) fun t ⟨hv, ho⟩ => ⟨?_, ?_⟩
++  · intro i hi
++    rw [hv i hi, h.val i hi]
++    exact VG.Proof.Aes.PPC64LE.Crypto.middle_last false nr w (input i)
++  · exact (h.effects.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector ho)).weaken
++      (by simp) (by simp [or_left_comm])
++
++theorem code_taint : ∃ h, (VG.Taint.check vectorTaint
++    (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10])
++    Impl.AesGcm.PPC64LE.Blocks.code h).isSome = true := ⟨_, by taint_decide⟩
++
++theorem encrypt_taint : ∃ h, (VG.Taint.check vectorTaint
++    (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
++    Impl.AesGcm.PPC64LE.Blocks.encrypt h).isSome = true := ⟨_, by taint_decide⟩
++
++end VG.Proof.AesGcm.PPC64LE.Blocks
+diff --git a/lean/VerifiedGarbage/Proof/AesGcm/PPC64LE/Blocks/Lit.lean b/lean/VerifiedGarbage/Proof/AesGcm/PPC64LE/Blocks/Lit.lean
+new file mode 100644
+index 000000000..737971c1e
+--- /dev/null
++++ b/lean/VerifiedGarbage/Proof/AesGcm/PPC64LE/Blocks/Lit.lean
+@@ -0,0 +1,15 @@
++module
++
++public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
++meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
++import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
++meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
++import VerifiedGarbage.Proof.Framework.Lit
++
++/-! # Fused POWER8 AES-GCM code as a literal -/
++
++@[expose] public section
++namespace VG
++materialize_code Impl.AesGcm.PPC64LE.Blocks.code
++materialize_code Impl.AesGcm.PPC64LE.Blocks.encrypt
++end VG
+diff --git a/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Fold.lean b/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Fold.lean
+index 72830db91..9f946233d 100644
+--- a/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Fold.lean
++++ b/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Fold.lean
+@@ -20,18 +20,6 @@ open VG.Proof.Gcm.Clmul VG.Proof.Gcm.Poly
+ open VG.VectorCrypto (polyMul)
+ open VG.Impl.Gcm.PPC64LE.Vpmsum (Y C U LO MID HI A T H MASK Z)
+ 
+-def lowPair (a b : BitVec 128) : BitVec 128 := Clmul.vdword a 0 ++ Clmul.vdword b 0
+-
+-def highPair (a b : BitVec 128) : BitVec 128 := Clmul.vdword a 1 ++ Clmul.vdword b 1
+-
+-def pmPair (a b : BitVec 128) : BitVec 128 :=
+-  polyMul (Clmul.vdword a 0) (Clmul.vdword b 0) ^^^ polyMul (Clmul.vdword a 1) (Clmul.vdword b 1)
+-
+-def pairedProd (a b ka kb : BitVec 128) : VG.Proof.Gcm.Clmul.Prod :=
+-  ⟨pmPair (highPair a b) (lowPair ka kb),
+-   pmPair (lowPair a b) (lowPair ka kb) ^^^ pmPair (highPair a b) (highPair ka kb),
+-   pmPair (lowPair a b) (highPair ka kb)⟩
+-
+ theorem pairedProd_eq (a b ka kb : BitVec 128) :
+     pairedProd a b ka kb =
+       (VG.Proof.Gcm.Clmul.Prod.zero.acc a (ext8 ka ka) ka).acc b (ext8 kb kb) kb := by
+@@ -45,28 +33,10 @@ theorem pairedProd_val (a b ka kb : BitVec 128) :
+   rw [pairedProd_eq, VG.Proof.Gcm.Clmul.Prod.val_acc,
+     VG.Proof.Gcm.Clmul.Prod.val_acc, VG.Proof.Gcm.Clmul.Prod.val_zero, zero_add]
+ 
+-def addProd (p q : VG.Proof.Gcm.Clmul.Prod) : VG.Proof.Gcm.Clmul.Prod :=
+-  ⟨p.lo ^^^ q.lo, p.mid ^^^ q.mid, p.hi ^^^ q.hi⟩
+-
+ theorem addProd_val (p q : VG.Proof.Gcm.Clmul.Prod) : (addProd p q).val = p.val + q.val := by
+   simp only [addProd, VG.Proof.Gcm.Clmul.Prod.val, φ_xor]
+   ring
+ 
+-theorem half_swap_right (a b : BitVec 128) : half a (half b b) = lowPair a b := by
+-  rw [half, half, vdword_append_1]
+-  rfl
+-
+-theorem swap_half_swap_left (a b : BitVec 128) :
+-    half (half (half b b) a) (half (half b b) a) = highPair a b := by
+-  rw [half_self, ext8_eq, half, half, vdword_append_0, vdword_append_1, vdword_append_0]
+-  rfl
+-
+-
+-def keyValue (h : BitVec 128) : Nat → BitVec 128
+-  | 0 => h
+-  | n+1 => ext8 (mulV (ext8 (keyValue h n) (keyValue h n)) h)
+-      (mulV (ext8 (keyValue h n) (keyValue h n)) h)
+-
+ theorem keyValue_class (h : BitVec 128) (n : Nat) :
+     x * φ (keyValue h n) = (x * φ h)^(n+1) := by
+   induction n with
+@@ -77,26 +47,6 @@ theorem keyValue_class (h : BitVec 128) (n : Nat) :
+       x * (x * φ (keyValue h n) * φ h) = (x * φ (keyValue h n)) * (x * φ h) := by ring
+       _ = _ := by rw [ih]
+ 
+-theorem packedProducts_ok (loKey hiKey : VReg) (ka kb : BitVec 128) (s : State)
+-    (hl : Free loKey) (hh : Free hiKey)
+-    (hlo : s.vpr loKey = lowPair ka kb) (hhi : s.vpr hiKey = highPair ka kb) :
+-    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedProducts loKey hiKey)) s fun t =>
+-      prod t = pairedProd (s.vpr A) (s.vpr HI) ka kb ∧ VOnly [HI, U, T, LO, MID] s t := by
+-  obtain ⟨hl2, hl3, -, hl5, hl7⟩ := hl
+-  obtain ⟨hh2, hh3, hh4, hh5, hh7⟩ := hh
+-  apply WP.of_runBlock
+-  simp only [Impl.Gcm.PPC64LE.Vpmsum.packedProducts, runBlock_cons, runStep_some, runBlock_nil,
+-    exec_shift8, exec_pm, exec_xor, vpr_writeV, Option.some.injEq, exists_eq_left',
+-    hl2, hl3, hl5, hl7, hh2, hh3, hh4, hh5, hh7, ite_true, ite_false, reduceCtorEq]
+-  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
+-    by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
+-    by simp only [lr_writeV]⟩⟩
+-  · simp only [prod, vpr_writeV, ite_true, ite_false, reduceCtorEq, hlo, hhi,
+-      half_swap_right, swap_half_swap_left, pairedProd, pmPair]
+-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+-    simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+-
+-
+ theorem swap_ok (d n : VReg) (s : State) :
+     WP isa (.block [.vop (.sldoi d n n 8)]) s fun t =>
+       t.vpr d = ext8 (s.vpr n) (s.vpr n) ∧ VOnly [d] s t := by
+@@ -645,4 +595,35 @@ theorem recoverKey_ok (h : BitVec 128) (s : State) (hk : PackedKeys h 4 s) :
+   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+     simp only [vpr_writeV, hr.1, hr.2, ite_false]
+ 
++theorem adjustedKey_class (h : BitVec 128) : x * φ (adjustedKey h) = φ h := by
++  rw [adjustedKey, Clmul.φ_ext8_self, ρ_mulV, ρ_ext8_self]
++  calc
++    x * (x * φ h * φ xInv2) = φ h * (x^2 * φ xInv2) := by ring
++    _ = φ h := by rw [x2_φ_xInv2, mul_one]
++
++theorem foldedProducts_val (h y : BitVec 128) (f : Nat → BitVec 128) :
++    (foldedProducts h y f).val = hashField (x * φ h) (φ y) (fun j => φ (f j)) 8 := by
++  simp only [foldedProducts, show List.range 4 = [0,1,2,3] from rfl,
++    List.foldl_cons, List.foldl_nil, addProd_val, VG.Proof.Gcm.Clmul.Prod.val_zero,
++    canonicalTerm, pairedProd_val, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
++    Nat.reduceEqDiff, ↓reduceIte, ↓keyValue_term, ρ_ext8_self, φ_xor, hashField]
++  ring
++
++theorem hashField_list (h y : BitVec 128) (f : Nat → BitVec 128) (n : Nat) :
++    φ (Spec.Gcm.ghashFrom h y ((List.range n).map f)) =
++      hashField (φ h) (φ y) (fun j => φ (f j)) n := by
++  induction n with
++  | zero => simp only [List.range_zero, List.map_nil, Spec.Gcm.ghashFrom, List.foldl_nil, hashField]
++  | succ n ih =>
++    have he : Spec.Gcm.ghashFrom h y ((List.range (n+1)).map f) =
++        Spec.Gcm.mul (Spec.Gcm.ghashFrom h y ((List.range n).map f) ^^^ f n) h := by
++      simp only [List.range_succ, List.map_append, List.map_singleton, Spec.Gcm.ghashFrom,
++        List.foldl_append, List.foldl_cons, List.foldl_nil]
++    rw [he, φ_mul, φ_xor, ih, hashField]
++
++theorem folded_correct (h y : BitVec 128) (f : Nat → BitVec 128) :
++    canonicalFold (adjustedKey h) y f = Spec.Gcm.ghashFrom h y ((List.range 8).map f) := by
++  apply φ_inj
++  rw [canonicalFold, Clmul.φ_ext8_self, ρ_reduce, foldedProducts_val, adjustedKey_class, hashField_list]
++
+ end VG.Proof.Gcm.PPC64LE.Vpmsum
+diff --git a/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Groups.lean b/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Groups.lean
+index aa1711e6e..3143fb9bb 100644
+--- a/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Groups.lean
++++ b/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Groups.lean
+@@ -55,42 +55,87 @@ def prod (s : State) : VG.Proof.Gcm.Clmul.Prod := ⟨s.vpr LO, s.vpr MID, s.vpr
+ 
+ def Free (r : VReg) : Prop := r ≠ U ∧ r ≠ LO ∧ r ≠ MID ∧ r ≠ HI ∧ r ≠ T
+ 
+-theorem products_ok (a key : VReg) (s : State) (ha : Free a) (hk : Free key) (hz : s.vpr Z = 0) :
+-    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.products a key)) s fun s' =>
+-      prod s' = VG.Proof.Gcm.Clmul.Prod.zero.acc (s.vpr a) (ext8 (s.vpr key) (s.vpr key)) (s.vpr key) ∧
+-      VOnly [U, LO, MID, HI] s s' := by
+-  obtain ⟨ha2, ha3, ha4, ha5, -⟩ := ha
+-  obtain ⟨hk2, hk3, hk4, hk5, -⟩ := hk
++theorem productsWith_ok (reg : Fin 5 → VReg) (hinj : Function.Injective reg)
++    (a key : VReg) (s : State) (ha : a ∉ [reg 0, reg 1, reg 2, reg 3])
++    (hk : key ∉ [reg 0, reg 1, reg 2, reg 3]) (hz : s.vpr (reg 4) = 0) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.productsWith
++      (reg 0) (reg 1) (reg 2) (reg 3) (reg 4) a key)) s fun t =>
++      (⟨t.vpr (reg 1), t.vpr (reg 2), t.vpr (reg 3)⟩ : VG.Proof.Gcm.Clmul.Prod) =
++        VG.Proof.Gcm.Clmul.Prod.zero.acc (s.vpr a) (ext8 (s.vpr key) (s.vpr key)) (s.vpr key) ∧
++      VOnly [reg 0, reg 1, reg 2, reg 3] s t := by
++  have heq : ∀ i j : Fin 5, (reg i = reg j) ↔ i = j :=
++    fun _ _ => ⟨fun h => hinj h, congrArg reg⟩
++  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at ha hk
+   apply WP.of_runBlock
+-  simp only [Impl.Gcm.PPC64LE.Vpmsum.products, runBlock_cons, runStep_some, runBlock_nil,
++  simp only [Impl.Gcm.PPC64LE.Vpmsum.productsWith, runBlock_cons, runStep_some, runBlock_nil,
+     exec_shift8, exec_pm, vpr_writeV, Option.some.injEq, exists_eq_left',
+-    ha2, ha3, ha5, hk2, hk3, hk5, ite_true, ite_false, reduceCtorEq]
++    ha.1, ha.2.1, ha.2.2.2, hk.1, hk.2.1, hk.2.2.2,
++    heq, Fin.reduceEq, ite_true, ite_false]
+   refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
+     by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
+     by simp only [lr_writeV]⟩⟩
+-  · simp only [prod, vpr_writeV, ite_true, ite_false, reduceCtorEq, hz,
+-      VG.Proof.Gcm.Clmul.Prod.zero, VG.Proof.Gcm.Clmul.Prod.acc,
++  · simp only [hz, VG.Proof.Gcm.Clmul.Prod.zero, VG.Proof.Gcm.Clmul.Prod.acc,
+       half, vdword_append_0, vdword_append_1, vdword_ext8_0, vdword_ext8_1,
+       dw_zero, pm_zero, BitVec.ofNat_eq_ofNat, BitVec.zero_xor, BitVec.xor_zero]
+   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+     simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+ 
+-theorem reduce_ok (d : VReg) (s : State) (hc : s.vpr C = poly ++ poly) (hz : s.vpr Z = 0) :
+-    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.reduce d)) s fun s' =>
+-      s'.vpr d = VG.Proof.Gcm.Clmul.reduce (prod s) ∧ VOnly [LO, MID, HI, T, d] s s' := by
++def productRegs : Fin 5 → VReg
++  | ⟨0, _⟩ => U | ⟨1, _⟩ => LO | ⟨2, _⟩ => MID | ⟨3, _⟩ => HI | _ => Z
++
++theorem products_ok (a key : VReg) (s : State) (ha : Free a) (hk : Free key) (hz : s.vpr Z = 0) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.products a key)) s fun s' =>
++      prod s' = VG.Proof.Gcm.Clmul.Prod.zero.acc (s.vpr a) (ext8 (s.vpr key) (s.vpr key)) (s.vpr key) ∧
++      VOnly [U, LO, MID, HI] s s' := by
++  refine productsWith_ok productRegs
++    (show ∀ i j : Fin 5, productRegs i = productRegs j → i = j from by decide) a key s ?_ ?_ hz
++  · exact fun h => by
++      simp only [productRegs, List.mem_cons, List.not_mem_nil, or_false] at h
++      rcases h with h | h | h | h
++      · exact ha.1 h
++      · exact ha.2.1 h
++      · exact ha.2.2.1 h
++      · exact ha.2.2.2.1 h
++  · exact fun h => by
++      simp only [productRegs, List.mem_cons, List.not_mem_nil, or_false] at h
++      rcases h with h | h | h | h
++      · exact hk.1 h
++      · exact hk.2.1 h
++      · exact hk.2.2.1 h
++      · exact hk.2.2.2.1 h
++
++/-- A reduction can borrow any six distinct vector registers. -/
++theorem reduceWith_ok (reg : Fin 6 → VReg) (hinj : Function.Injective reg)
++    (d : VReg) (s : State) (hc : s.vpr (reg 5) = poly ++ poly) (hz : s.vpr (reg 4) = 0) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.reduceWith
++      (reg 0) (reg 1) (reg 2) (reg 3) (reg 4) (reg 5) d)) s fun t =>
++      t.vpr d = VG.Proof.Gcm.Clmul.reduce ⟨s.vpr (reg 0), s.vpr (reg 1), s.vpr (reg 2)⟩ ∧
++      VOnly [reg 0, reg 1, reg 2, reg 3, d] s t := by
++  have heq : ∀ i j : Fin 6, (reg i = reg j) ↔ i = j :=
++    fun _ _ => ⟨fun h => hinj h, congrArg reg⟩
+   apply WP.of_runBlock
+-  simp only [Impl.Gcm.PPC64LE.Vpmsum.reduce, runBlock_cons, runStep_some, runBlock_nil,
++  simp only [Impl.Gcm.PPC64LE.Vpmsum.reduceWith, runBlock_cons, runStep_some, runBlock_nil,
+     exec_shift8, exec_pm, exec_xor, vpr_writeV, Option.some.injEq, exists_eq_left',
+-    ite_true, ite_false, reduceCtorEq]
++    heq, Fin.reduceEq, ite_true, ite_false]
+   refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
+     by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
+     by simp only [lr_writeV]⟩⟩
+-  · simp only [prod, VG.Proof.Gcm.Clmul.reduce,
+-      hc, hz, half, vdword_append_0, vdword_append_1, dw_zero,
+-      pm_zero, BitVec.ofNat_eq_ofNat, BitVec.zero_xor, ext8_eq]
++  · simp only [VG.Proof.Gcm.Clmul.reduce, hc, hz, half,
++      vdword_append_0, vdword_append_1, dw_zero, pm_zero, BitVec.ofNat_eq_ofNat,
++      BitVec.zero_xor, ext8_eq]
+   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+     simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+ 
++def reduceRegs : Fin 6 → VReg
++  | ⟨0, _⟩ => LO | ⟨1, _⟩ => MID | ⟨2, _⟩ => HI
++  | ⟨3, _⟩ => T | ⟨4, _⟩ => Z | _ => C
++
++theorem reduce_ok (d : VReg) (s : State) (hc : s.vpr C = poly ++ poly) (hz : s.vpr Z = 0) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.reduce d)) s fun s' =>
++      s'.vpr d = VG.Proof.Gcm.Clmul.reduce (prod s) ∧ VOnly [LO, MID, HI, T, d] s s' :=
++  reduceWith_ok reduceRegs (by
++    exact (show ∀ i j : Fin 6, reduceRegs i = reduceRegs j → i = j from by decide)) d s hc hz
++
+ theorem mul_ok (d a key : VReg) (s : State) (ha : Free a) (hk : Free key)
+     (hc : s.vpr C = poly ++ poly) (hz : s.vpr Z = 0) :
+     WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.mul d a key)) s fun s' =>
+@@ -277,4 +322,113 @@ theorem Config.keep {rs : List VReg} {s t : State} (h : Config s) (ho : VOnly rs
+   ⟨(congrFun ho.gpr .r0).trans h.zero, (ho.v C hc).trans h.c,
+     (ho.v MASK hm).trans h.mask, (ho.v Z hz).trans h.z⟩
+ 
++
++/-! Pure packed products are shared by standalone GHASH and fused AES-GCM. -/
++
++def lowPair (a b : BitVec 128) : BitVec 128 := Clmul.vdword a 0 ++ Clmul.vdword b 0
++
++def highPair (a b : BitVec 128) : BitVec 128 := Clmul.vdword a 1 ++ Clmul.vdword b 1
++
++def pmPair (a b : BitVec 128) : BitVec 128 :=
++  polyMul (Clmul.vdword a 0) (Clmul.vdword b 0) ^^^ polyMul (Clmul.vdword a 1) (Clmul.vdword b 1)
++
++def pairedProd (a b ka kb : BitVec 128) : VG.Proof.Gcm.Clmul.Prod :=
++  ⟨pmPair (highPair a b) (lowPair ka kb),
++   pmPair (lowPair a b) (lowPair ka kb) ^^^ pmPair (highPair a b) (highPair ka kb),
++   pmPair (lowPair a b) (highPair ka kb)⟩
++
++
++def addProd (p q : VG.Proof.Gcm.Clmul.Prod) : VG.Proof.Gcm.Clmul.Prod :=
++  ⟨p.lo ^^^ q.lo, p.mid ^^^ q.mid, p.hi ^^^ q.hi⟩
++
++
++theorem half_swap_right (a b : BitVec 128) : half a (half b b) = lowPair a b := by
++  rw [half, half, vdword_append_1]
++  rfl
++
++theorem swap_half_swap_left (a b : BitVec 128) :
++    half (half (half b b) a) (half (half b b) a) = highPair a b := by
++  rw [half_self, ext8_eq, half, half, vdword_append_0, vdword_append_1, vdword_append_0]
++  rfl
++
++
++def keyValue (h : BitVec 128) : Nat → BitVec 128
++  | 0 => h
++  | n+1 => ext8 (mulV (ext8 (keyValue h n) (keyValue h n)) h)
++      (mulV (ext8 (keyValue h n) (keyValue h n)) h)
++
++
++/-- The paired product supports both loaded GHASH blocks and canonical AES vectors. -/
++theorem packedProductsWith_ok (reg : Fin 5 → VReg) (hinj : Function.Injective reg)
++    (a b loKey hiKey : VReg) (canonical : Bool) (ka kb : BitVec 128) (s : State)
++    (ha : ∀ i, a ≠ reg i) (hl : ∀ i, loKey ≠ reg i) (hh : ∀ i, hiKey ≠ reg i)
++    (hlo : s.vpr loKey = lowPair ka kb) (hhi : s.vpr hiKey = highPair ka kb) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith
++      a b (reg 1) (reg 2) (reg 3) (reg 4) (reg 0) loKey hiKey canonical)) s fun t =>
++      (⟨t.vpr (reg 3), t.vpr (reg 4), t.vpr (reg 0)⟩ : VG.Proof.Gcm.Clmul.Prod) =
++        pairedProd (if canonical then ext8 (s.vpr a) (s.vpr a) else s.vpr a)
++          (if canonical then ext8 (s.vpr b) (s.vpr b) else s.vpr b) ka kb ∧
++      VOnly [reg 0, reg 1, reg 2, reg 3, reg 4] s t := by
++  have heq : ∀ i j : Fin 5, (reg i = reg j) ↔ i = j :=
++    fun _ _ => ⟨fun h => hinj h, congrArg reg⟩
++  cases canonical <;> simp only [Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith,
++    Bool.false_eq_true, ite_false, ite_true]
++  all_goals
++    apply WP.of_runBlock
++    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_shift8, exec_pm, exec_xor,
++      vpr_writeV, Option.some.injEq, exists_eq_left', ha, hl, hh, heq, Fin.reduceEq, ite_true, ite_false]
++    refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
++      by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
++      by simp only [lr_writeV]⟩⟩
++    · simp only [hlo, hhi, pairedProd, pmPair, lowPair, highPair, half,
++        vdword_append_0, vdword_append_1, vdword_ext8_0, vdword_ext8_1]
++    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
++      simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
++
++def pairedRegs : Fin 5 → VReg
++  | ⟨0, _⟩ => HI | ⟨1, _⟩ => U | ⟨2, _⟩ => T | ⟨3, _⟩ => LO | _ => MID
++
++theorem free_pairedRegs (r : VReg) (h : Free r) : ∀ i, r ≠ pairedRegs i := by
++  have hc : ∀ i : Fin 5, pairedRegs i = U ∨ pairedRegs i = LO ∨ pairedRegs i = MID ∨
++      pairedRegs i = HI ∨ pairedRegs i = T := by decide
++  intro i
++  rcases hc i with he | he | he | he | he
++  · rw [he]; exact h.1
++  · rw [he]; exact h.2.1
++  · rw [he]; exact h.2.2.1
++  · rw [he]; exact h.2.2.2.1
++  · rw [he]; exact h.2.2.2.2
++
++theorem packedProducts_ok (loKey hiKey : VReg) (ka kb : BitVec 128) (s : State)
++    (hl : Free loKey) (hh : Free hiKey)
++    (hlo : s.vpr loKey = lowPair ka kb) (hhi : s.vpr hiKey = highPair ka kb) :
++    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedProducts loKey hiKey)) s fun t =>
++      prod t = pairedProd (s.vpr A) (s.vpr HI) ka kb ∧ VOnly [HI, U, T, LO, MID] s t :=
++  packedProductsWith_ok pairedRegs
++    (show ∀ i j : Fin 5, pairedRegs i = pairedRegs j → i = j from by decide)
++    A HI loKey hiKey false ka kb s (by decide) (free_pairedRegs loKey hl) (free_pairedRegs hiKey hh) hlo hhi
++
++
++/-- The adjusted hash key and the canonical eight-block folded result. -/
++def adjustedKey (h : BitVec 128) : BitVec 128 :=
++  let v := mulV (ext8 h h) xInv2
++  ext8 v v
++
++def canonicalTerm (h y : BitVec 128) (f : Nat → BitVec 128) (j : Nat) : VG.Proof.Gcm.Clmul.Prod :=
++  let a := if j=0 then f (2*j) ^^^ y else f (2*j)
++  let b := f (2*j+1)
++  pairedProd (ext8 a a) (ext8 b b) (keyValue h (7-2*j)) (keyValue h (6-2*j))
++
++def foldedProducts (h y : BitVec 128) (f : Nat → BitVec 128) : VG.Proof.Gcm.Clmul.Prod :=
++  (List.range 4).foldl (fun p j => addProd p (canonicalTerm h y f j)) VG.Proof.Gcm.Clmul.Prod.zero
++
++def canonicalFold (h y : BitVec 128) (f : Nat → BitVec 128) : BitVec 128 :=
++  let v := VG.Proof.Gcm.Clmul.reduce (foldedProducts h y f)
++  ext8 v v
++
++/-- Registration supplies the field proof, keeping polynomial algebra out of callers. -/
++class FoldLaw : Prop where
++  correct : ∀ h y f, canonicalFold (adjustedKey h) y f =
++    Spec.Gcm.ghashFrom h y ((List.range 8).map f)
++
+ end VG.Proof.Gcm.PPC64LE.Vpmsum
+diff --git a/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Law.lean b/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Law.lean
+index 90b6fa9f3..6ab4ab5fb 100644
+--- a/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Law.lean
++++ b/lean/VerifiedGarbage/Proof/Gcm/PPC64LE/Vpmsum/Law.lean
+@@ -1,11 +1,13 @@
+ module
+ 
+ public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
++public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
+ import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Ghash
+ 
+ /-! # The proved POWER8 GHASH contract -/
+ 
+ @[expose] public section
+ namespace VG.Proof.Gcm.PPC64LE
++instance : Vpmsum.FoldLaw := ⟨Vpmsum.folded_correct⟩
+ instance : GhashLaw := ⟨Vpmsum.ghash_correct, Vpmsum.ghash_ct⟩
+ end VG.Proof.Gcm.PPC64LE
