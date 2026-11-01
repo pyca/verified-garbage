@@ -424,9 +424,9 @@ pub(crate) mod tests {
 
     #[test]
     fn public_scratch_within_scratch() {
-        // `VG.Proof.Rsa.publicScratch_le`: over every modulus length the
-        // functions accept, the public-key operation's working space is no
-        // more than the private-key operation's.
+        // Over every modulus length the functions accept, the public-key
+        // operation's working space is no more than the private-key
+        // operation's.
         for n_len in MIN_MODULUS_LEN..=MAX_MODULUS_LEN {
             assert!(public_scratch_words(n_len) <= scratch_words(n_len));
         }

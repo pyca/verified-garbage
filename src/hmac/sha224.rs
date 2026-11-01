@@ -5,18 +5,13 @@
 //! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
 //! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
 //! keeping the two SHA-224 streaming states (SHA-256's, from SHA-224's initial
-//! hash value). `init` and `finalize` are the one HMAC implementation for every
-//! streaming hash function, calling SHA-224's verified `vg_sha224_init` and
-//! SHA-256's verified `update` and `finalize` (and, on x86-64, x86 and AArch64,
-//! `compress`).
+//! hash value).
 //!
-//! On x86-64 and x86, they follow the implementation of SHA-256's streaming
-//! functions that `Sha224` runs on this CPU: e.g. `vg_hmac_sha224_init_shani`
-//! and `vg_hmac_sha224_finalize_shani`, the same verified code calling
-//! `vg_sha256_update_shani`, `vg_sha256_finalize_shani` and
-//! `vg_sha256_compress_shani`, or on x86-64 the `_avx2` ones. On AArch64,
-//! the `_sha2` variants use the SHA-256 instructions through the same generic
-//! code.
+//! Their variants, with the same contracts, run with the hash function's
+//! backend of the same name, which `Sha224` chooses (see
+//! `crate::hashes::sha224`): on x86 and x86-64, `vg_hmac_sha224_init_shani` and
+//! `vg_hmac_sha224_finalize_shani`, on x86-64 the `_avx2` ones; on AArch64, the
+//! `_sha2` ones.
 
 #![cfg(any(
     target_arch = "x86_64",

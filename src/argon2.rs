@@ -1,10 +1,13 @@
 //! Argon2 version 1.3 (RFC 9106).
 //!
-//! The complete derivation is verified assembly (`VG.Spec.Argon2.deriveContract`),
-//! including H₀, memory initialization, every filling pass and final H′. Hashing
-//! follows the selected BLAKE2b backend, and every compression the selected
-//! implementation of G ([`CompressBackend`]). Rust only validates arguments, checks
-//! the memory limit and allocates the matrix and scratch (and, for
+//! The complete derivation is the verified `vg_argon2`
+//! (`VG.Spec.Argon2.deriveContract`). On x86-64, its variants, with the same
+//! contract, are one for each pair of a backend that `Blake2b` chooses (see
+//! `crate::hashes::blake2b`) and one that `CompressBackend::select` chooses
+//! (`_g_avx512`, then `_g_avx2`, on CPUs with the features their
+//! `VG_ARGON2_G_<SUFFIX>_FEATURES` name): `vg_argon2_blake2b_<b>_g_<g>`,
+//! without the part of a baseline backend. Rust only validates arguments,
+//! checks the memory limit and allocates the matrix and scratch (and, for
 //! [`verify`] and [`verify_keyed`], compares the derived key with the
 //! expected one).
 //!
@@ -41,19 +44,17 @@ use crate::arch::argon2::{
 use crate::hashes::blake2b::Blake2bBackend;
 use verified_garbage_cpu::Features;
 
-/// The implementations of Argon2's compression function G, which every
-/// derivation calls, with each BLAKE2b backend (`vg_argon2` and its
-/// variants).
+/// The implementations of Argon2's compression function G, which the
+/// variants of `vg_argon2` follow (their `_g_<suffix>`), with each BLAKE2b
+/// backend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CompressBackend {
-    /// Constant-time scalar code, for the target's baseline ISA.
+    /// The target's baseline ISA.
     Scalar,
-    /// AVX2: each row and column of G's permutations in four 256-bit
-    /// registers.
+    /// `_g_avx2`.
     #[cfg(target_arch = "x86_64")]
     Avx2,
-    /// AVX-512: two rows (or two columns) of G's permutations in each of
-    /// four 512-bit registers.
+    /// `_g_avx512`.
     #[cfg(target_arch = "x86_64")]
     Avx512,
 }

@@ -4,16 +4,13 @@
 //! `VG.Spec.Sha256.updateContract` and
 //! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
 //! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
-//! keeping the two SHA-256 streaming states. `init` and `finalize` are the one
-//! HMAC implementation for every Merkle–Damgård hash function, calling
-//! SHA-256's verified functions.
+//! keeping the two SHA-256 streaming states.
 //!
-//! They follow the implementation of SHA-256 that `Sha256` runs on this CPU:
-//! on x86-64 and x86, e.g. `vg_hmac_sha256_init_shani` and
-//! `vg_hmac_sha256_finalize_shani`, the same verified code calling SHA-256's
-//! `_shani` functions, with the same contracts, or on x86-64 the `_avx2`
-//! ones. On AArch64, the `_sha2` variants use the SHA-256 instructions
-//! through the same generic code.
+//! Their variants, with the same contracts, run with the hash function's
+//! backend of the same name, which `Sha256` chooses (see
+//! `crate::hashes::sha256`): on x86 and x86-64, `vg_hmac_sha256_init_shani` and
+//! `vg_hmac_sha256_finalize_shani`, on x86-64 the `_avx2` ones; on AArch64, the
+//! `_sha2` ones.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -7,9 +7,7 @@
 //! `VG.Spec.ChaCha20.initContract`) starts the keystream of a key and nonce,
 //! `vg_chacha20_set_nonce` (`VG.Spec.ChaCha20.setNonceContract`) restarts it
 //! for another nonce, and `vg_chacha20_apply`
-//! (`VG.Spec.ChaCha20.applyContract`) XORs the next bytes of it into data,
-//! calling the verified `vg_chacha20_xor` for whole blocks and
-//! `vg_chacha20_block` for a block it starts.
+//! (`VG.Spec.ChaCha20.applyContract`) XORs the next bytes of it into data.
 //!
 //! The 16-byte nonce is the initial block counter (4 bytes, little-endian)
 //! followed by the 12-byte RFC 8439 nonce, i.e. state words 12–15. As in
@@ -21,28 +19,13 @@
 //! 64 bytes from `c = 0xffffffff`). `vg_chacha20_apply` checks this itself,
 //! and leaves the data and the keystream unchanged if it fails.
 //!
-//! On x86-64, CPUs with AVX-512F run `vg_chacha20_apply_avx512` instead, which
-//! has the same contract and XORs sixteen blocks at a time
-//! (`vg_chacha20_xor_avx512`), and other CPUs with AVX2 run
-//! `vg_chacha20_apply_avx2`, which XORs eight (`vg_chacha20_xor_avx2`).
-//! CPUs with AVX-512VL but not AVX512_IFMA (Skylake-SP, Cascade Lake), whose
-//! clock a 512-bit instruction lowers for a while, run
-//! `vg_chacha20_apply_avx512vl`, whose `vg_chacha20_xor_avx512vl` XORs fewer
-//! than 513 bytes in `ymm` registers (the AVX2 code with AVX-512VL's
-//! `vprold`).
-//! On x86, `vg_chacha20_xor` XORs four blocks at a time with SSE2, and
-//! CPUs with SSSE3 run `vg_chacha20_apply_ssse3`, which XORs them with
-//! `vg_chacha20_xor_ssse3`: the same code with the rotations by 16 and 8
-//! bits `pshufb`.
-//! On AArch64, CPUs with AdvSIMD (the baseline) run `vg_chacha20_apply_neon`,
-//! which XORs whole blocks with `vg_chacha20_xor_neon`: eight independent
-//! blocks at a time, six in AdvSIMD lanes and two in the integer registers,
-//! then smaller AdvSIMD groups and the scalar block function for the tail.
-//! CPUs with SVE2 run `vg_chacha20_apply_sve2` instead, the same code with
-//! each XOR and rotation of the AdvSIMD blocks one SVE2 XAR
-//! (`vg_chacha20_xor_sve2`).
-//! On every target, the keystream of a partial block, which the streaming
-//! state buffers, comes from the scalar `vg_chacha20_block`.
+//! The variants of `vg_chacha20_apply`, with the same contract, are chosen
+//! by `Backend::select` on CPUs with the features their `_FEATURES`
+//! constants name: on x86-64, `vg_chacha20_apply_ifma` (with AVX512_IFMA
+//! too), `vg_chacha20_apply_avx512vl`, `vg_chacha20_apply_avx512` and
+//! `vg_chacha20_apply_avx2`, in this order; on x86,
+//! `vg_chacha20_apply_ssse3`; on AArch64, `vg_chacha20_apply_sve2` (with
+//! AdvSIMD), then `vg_chacha20_apply_neon` on CPUs with AdvSIMD.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -71,50 +54,46 @@ use crate::zeroize::zeroize_raw;
 use core::mem::MaybeUninit;
 use verified_garbage_cpu::Features;
 
-/// The implementations of `vg_chacha20_xor` (and of `vg_chacha20_apply`,
-/// which calls them), which ChaCha20-Poly1305 follows
-/// (`crate::chacha20poly1305`).
+/// The implementations of `vg_chacha20_apply`, which ChaCha20-Poly1305
+/// follows (`crate::chacha20poly1305`): each variant but `Scalar` is the
+/// one with its suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// Constant-time scalar code, for the target's baseline ISA.
+    /// The baseline implementation.
     Scalar,
-    /// Eight independent blocks at a time, six in baseline AArch64 AdvSIMD
-    /// lanes and two in the integer registers.
+    /// `_neon`.
     #[cfg(target_arch = "aarch64")]
     Neon,
-    /// The same, with each XOR and rotation of the AdvSIMD blocks one SVE2
-    /// XAR.
+    /// `_sve2`.
     #[cfg(target_arch = "aarch64")]
     Sve2,
-    /// AVX2, eight blocks at a time.
+    /// `_avx2`.
     #[cfg(target_arch = "x86_64")]
     Avx2,
-    /// AVX-512F, sixteen blocks at a time.
+    /// `_avx512`.
     #[cfg(target_arch = "x86_64")]
     Avx512,
-    /// The same, with fewer than 513 bytes on `ymm` registers with
-    /// AVX-512VL, on CPUs without AVX512_IFMA.
+    /// `_avx512vl`, on CPUs without AVX512_IFMA.
     #[cfg(target_arch = "x86_64")]
     Avx512Vl,
-    /// The same, on CPUs with AVX512_IFMA too, whose ChaCha20-Poly1305
-    /// authenticates with `vg_poly1305_blocks_ifma`.
+    /// `_ifma`, on CPUs with AVX512_IFMA.
     #[cfg(target_arch = "x86_64")]
     Ifma,
-    /// SSSE3: the SSE2 code with the rotations by 16 and 8 bits `pshufb`.
+    /// `_ssse3`.
     #[cfg(target_arch = "x86")]
     Ssse3,
 }
 
-/// AVX512_IFMA, which `vg_chacha20_apply_ifma` (the code of
-/// `vg_chacha20_apply_avx512`) does not use: it is chosen on the CPUs whose
-/// ChaCha20-Poly1305 runs its `_ifma` instances, which need it.
+/// AVX512_IFMA, which `VG_CHACHA20_APPLY_IFMA_FEATURES` does not name:
+/// `Backend::Ifma` is chosen on the CPUs whose ChaCha20-Poly1305 runs its
+/// `_ifma` variants, which need it.
 #[cfg(target_arch = "x86_64")]
 const IFMA: Features = Features(verified_garbage_cpu::feature::AVX512IFMA);
 
 impl Backend {
     /// AdvSIMD is part of our AArch64 baseline. Tracking it also lets
     /// `VG_CPU_FEATURES=none` exercise the scalar implementation. SVE2 is
-    /// not: its instances need `VG_CHACHA20_APPLY_SVE2_FEATURES` (which
+    /// not: its variants need `VG_CHACHA20_APPLY_SVE2_FEATURES` (which
     /// ChaCha20-Poly1305's need too, see its tests).
     #[cfg(target_arch = "aarch64")]
     pub(crate) fn select(f: Features) -> Backend {
@@ -142,12 +121,11 @@ impl Backend {
     }
 
     /// The best implementation a CPU with the features `f` can run, for
-    /// functions whose instances for AVX512_IFMA, AVX-512 with AVX-512VL,
-    /// AVX-512 and AVX2 need the features `ifma`, `avx512vl`, `avx512` and
-    /// `avx2` (ChaCha20-Poly1305's, which also call Poly1305 with AVX2, need
-    /// more than `vg_chacha20_apply`'s). The `ymm` code of `avx512vl` is for
-    /// the CPUs without AVX512_IFMA, the ones whose clock a 512-bit
-    /// instruction lowers.
+    /// functions whose variants `_ifma`, `_avx512vl`, `_avx512` and `_avx2`
+    /// need the features `ifma`, `avx512vl`, `avx512` and `avx2`
+    /// (ChaCha20-Poly1305's need more than `vg_chacha20_apply`'s). `ifma`
+    /// comes first, so `_avx512vl` is chosen only on CPUs without
+    /// AVX512_IFMA.
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select_for(
         f: Features,

@@ -9,9 +9,9 @@
 //! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
 //! digest.
 //!
-//! The implementations are SHA-256's, chosen the same way (see
-//! `super::sha256`): `vg_sha224_finalize` is made with each of SHA-256's
-//! compression functions.
+//! `vg_sha224_finalize` (and, on AArch64 and x86-64, `vg_sha224_digest`)
+//! has a variant for each of SHA-256's, chosen the same way (see
+//! `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",

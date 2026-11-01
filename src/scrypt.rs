@@ -1,21 +1,12 @@
 //! scrypt (RFC 7914 §6).
 //!
 //! The whole derivation is the verified `vg_scrypt` (contract
-//! `VG.Spec.Scrypt.scryptContract`): it calls the verified
-//! `vg_pbkdf2_hmac_sha256` for `B = PBKDF2-HMAC-SHA256 (P, S, 1, p · 128 · r)`
-//! and for the derived key `PBKDF2-HMAC-SHA256 (P, B, 1, dkLen)`, and in
-//! between the verified `vg_scrypt_romix` on each of the `p` blocks of `B`.
-//! It follows the implementation of SHA-256 that `Sha256` runs on this CPU:
-//! on x86-64 and x86, `vg_scrypt_shani` with the SHA extensions, the same
-//! verified code calling `vg_pbkdf2_hmac_sha256_shani`, with the same
-//! contract; likewise `vg_scrypt_avx2` with AVX2 on x86-64, and on AArch64
-//! `vg_scrypt_sha2` with the SHA-256 instructions.
-//!
-//! ROMix (`VG.Proof.Scrypt.roMixContract`) calls the verified
-//! `vg_scrypt_blockmix`, which calls `vg_salsa20_8` or computes Salsa20/8
-//! itself, depending on the target. This module only checks the parameters
-//! and allocates the memory scrypt works in (and, for [`verify`], compares
-//! the derived key with the expected one).
+//! `VG.Spec.Scrypt.scryptContract`). Its variants, with the same contract,
+//! are chosen with the backend `Sha256` chooses (see
+//! `crate::hashes::sha256`): on x86-64 and x86, `vg_scrypt_shani`, then on
+//! x86-64 `vg_scrypt_avx2`; on AArch64, `vg_scrypt_sha2`. This module only
+//! checks the parameters and allocates the memory scrypt works in (and, for
+//! [`verify`], compares the derived key with the expected one).
 //!
 //! scryptROMix reads its table `V` at indices derived from the password, so
 //! its memory accesses (and hence its timing, through the caches) depend on

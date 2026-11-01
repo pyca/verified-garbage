@@ -6,8 +6,7 @@
 //! `vg_mlkem768_decaps` (contracts `VG.Spec.MlKem.keyGenContract`,
 //! `encapsContract` and `decapsContract`): FIPS 203's internal algorithms
 //! `ML-KEM.KeyGen_internal`, `ML-KEM.Encaps_internal` and
-//! `ML-KEM.Decaps_internal` (§6), which compose the verified polynomial
-//! arithmetic and SHA-3. The encapsulation key check of §7.2 is
+//! `ML-KEM.Decaps_internal` (§6). The encapsulation key check of §7.2 is
 //! `vg_mlkem768_check_ek`. This module supplies their randomness and working
 //! space, and destroys the intermediate values (§3.3).
 //!
@@ -24,26 +23,18 @@
 //! entry of the matrix `Â`), so an operation reaches it with probability
 //! less than 2⁻²⁵⁸, and then fails with [`Error::SampleBound`].
 //!
-//! On x86-64, key generation, encapsulation and decapsulation have an
-//! instance for each implementation of `vg_mlkem_sample_ntt4`, which samples
-//! four entries of the matrix at once, and each operation calls the best one
-//! the CPU can run.
-//!
-//! On AArch64 with the SHA-3 extension, key generation, encapsulation and
-//! decapsulation sample the matrix two entries at a time with
-//! `vg_keccak_f1600_x2_sha3`, and have an instance for each single-state
-//! Keccak permutation they hash with otherwise: the `_x2_sha3` instances
-//! call the scalar `vg_keccak_f1600`, faster on Arm's cores, and the
-//! `_x2_sha3_keccak_sha3` ones the SHA-3 extension's
-//! `vg_keccak_f1600_sha3`, faster on Apple's, on which they are chosen.
+//! Their instances, with the same contracts, are chosen by
+//! `crate::mlkem_common::Backend::select`, on CPUs with the features their
+//! `_FEATURES` constants name: on x86-64, the `_avx512` ones, then the
+//! `_avx2` ones; on AArch64, the `_x2_sha3_keccak_sha3` ones on Apple's
+//! cores and the `_x2_sha3` ones on others.
 //!
 //! On x86-64, an [`EncapsulationKey768`] from key generation keeps the hash
 //! `H(ek)` of the key (FIPS 203 §4.1), which the decapsulation key holds,
 //! and encapsulation with it is `vg_mlkem768_encaps_h` (contract
 //! `encapsHContract`), which takes it rather than computing it each time.
 //! One from [`EncapsulationKey768::from_bytes`] does not, and encapsulation
-//! with it is `vg_mlkem768_encaps`, which computes it: with AVX2, in the fourth
-//! of the four Keccak states that sample the matrix three entries at a time.
+//! with it is `vg_mlkem768_encaps`, which computes it.
 
 #![cfg(any(
     target_arch = "x86_64",
