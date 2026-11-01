@@ -17,7 +17,7 @@
 // line it builds.
 #![allow(dead_code)]
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -197,25 +197,12 @@ fn expectation_from_json_refuses() {
     Expectation::from_json(&Value::from(1), "result");
 }
 
-crate::json_struct! {
-    /// A note describing a test flag.
-    #[derive(Debug, Clone)]
-    pub struct Note {
-        /// The class of bug the flagged tests look for.
-        #[json(rename = "bugType")]
-        pub bug_type: Option<String>,
-        /// A description of the flag.
-        pub description: Option<String>,
-    }
-}
-
 /// One test.
 #[derive(Debug, Clone)]
 pub struct Test<T> {
     /// The test's id, unique within the file.
     pub tc_id: u64,
-    pub comment: String,
-    /// Usually keys into [`TestFile::notes`].
+    /// What the test checks, by name: usually keys into the file's `notes`.
     pub flags: Vec<String>,
     pub result: Expectation,
     /// The algorithm-specific fields, read from the test's object (whose
@@ -228,7 +215,6 @@ impl<T: FromJson> FromJson for Test<T> {
         let o = json::object(v, key);
         Test {
             tc_id: json::field(o, "tcId"),
-            comment: json::field_or_default(o, "comment"),
             flags: json::field_or_default(o, "flags"),
             result: json::field(o, "result"),
             case: T::from_json(v, key),
@@ -256,15 +242,13 @@ impl<P: FromJson, T: FromJson> FromJson for TestGroup<P, T> {
 }
 
 crate::json_struct! {
-    /// A test vector file.
+    /// A test vector file: its tests, and how many it says it has. (It has
+    /// other fields, describing the algorithm and the tests' flags, which
+    /// no test reads.)
     #[derive(Debug, Clone)]
     pub struct TestFile<P, T> {
-        pub algorithm: Option<String>,
-        pub schema: String,
         #[json(rename = "numberOfTests")]
         pub number_of_tests: usize,
-        #[json(default)]
-        pub notes: BTreeMap<String, Note>,
         #[json(rename = "testGroups")]
         pub test_groups: Vec<TestGroup<P, T>>,
     }
