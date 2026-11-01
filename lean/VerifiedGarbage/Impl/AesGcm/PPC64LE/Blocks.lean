@@ -225,7 +225,10 @@ def ghCode : List Instr := (List.range 4).flatMap ghPair ++ ghRestore ++ ghFinis
 
 def batchWith (finish : Prog isa) : Prog isa := .seq (.block (counters 8)) (.seq aes8 finish)
 
-def batch : Prog isa := batchWith (.block (stores ++ ghStart ++ ghCode))
+def batchWithStore (store : Prog isa) : Prog isa := batchWith
+ (.seq store (.block (ghStart ++ ghCode)))
+
+def batch : Prog isa := batchWithStore (.block stores)
 
 def exit : List Instr := [.li .r11 12, .storeRev .w .r8 .r5 .r11] ++ store Y .r14 ++
  [.subi .r12 .r16 128] ++
