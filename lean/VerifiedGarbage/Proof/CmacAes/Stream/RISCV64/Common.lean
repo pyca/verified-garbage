@@ -226,9 +226,9 @@ theorem subkeys_noFrames : Impl.CmacAes.RISCV64.subkeys.noFrames = true := by
   exact Proof.AesCbc.RISCV64.encryptBlocks_noFrames
 
 theorem update_noFrames : Impl.CmacAes.RISCV64.update.noFrames = true := by
-  simp [Impl.CmacAes.RISCV64.update, Impl.CmacAes.RISCV64.body, Impl.AesCbc.RISCV64.whole,
-    Impl.AesCbc.RISCV64.encCall, Code.noFrames]
-  exact Proof.AesCbc.RISCV64.encryptBlocks_noFrames
+  simp only [Impl.CmacAes.RISCV64.update, Impl.Aes.RISCV64.macChainCall, Code.noFrames, Bool.and_true,
+    Bool.true_and]
+  exact Proof.AesCbc.RISCV64.chain_noFrames false
 
 theorem finalize_noFrames : Impl.CmacAes.RISCV64.finalize.noFrames = true := by
   simp [Impl.CmacAes.RISCV64.finalize, Impl.CmacAes.RISCV64.finPre, Impl.CmacAes.RISCV64.partialBlock,

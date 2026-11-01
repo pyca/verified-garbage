@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
 # AES-CBC on RISC-V: one block
 
-`encBody_ok` and `decBody_ok`: one run of `encBody` or `decBody` takes the
+`decBody_ok`: one run of `decBody` takes the
 loop invariant from `k` blocks to `k + 1` (`BodyOk`), as on PPC64LE
 (`Proof/AesCbc/PPC64LE/Body.lean`).
 -/
@@ -169,71 +169,6 @@ theorem callFrame {s₀ : State} {k : Nat} {m m' : Mem}
   hf.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp
-
-/-! ## Encryption -/
-
-theorem encBody_ok : BodyOk (cbcMode true) encBody := by
-  intro s₀ hp k hk s h
-  refine WP.seq (xorInto_wp (P := blk s₀ k) (Q := Iv s₀) (by decide) (by decide) (by decide) (by decide)
-    h.s4 h.s3 (h.rIv hp) (h.wBlk hp hk) (hp.blk_iv hk) fun s₁ g₁ x₁ f₁ rd₁ wr₁ sp₁ =>
-      WP.mono (callArgs_pre hp hk h (fun r hr => g₁ r (preserved_ne hr).2.2.1 (preserved_ne hr).2.2.2)
-        rfl rd₁ wr₁ sp₁) fun s₂ a => ?_)
-  refine WP.seq (WP.mono
-    (blk_call Proof.Aes.RISCV64.encryptBlocks_correct encryptBlocks_noFrames a.pre) fun s₃ c => ?_)
-  have g₃ (r : Reg) (hr : r ∈ preserved) : s₃.gpr r = s.gpr r := by rw [c.saved r hr, a.saved r hr]
-  have hW₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [c.wr, a.wr, h.wrs hp]
-  have hR₃ : s₃.rd ++ s₃.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
-    rw [c.rd, c.wr, a.rd, a.wr, h.regs hp]
-  refine copy_wp (P := Iv s₀) (Q := blk s₀ k) (by decide) (by decide)
-    (by rw [g₃ .s3 (by decide), h.s3]) (by rw [g₃ .s4 (by decide), h.s4])
-    ⟨dataR s₀, by rw [hR₃]; simp, UPre.data_sub hk⟩ ⟨ivR s₀, by rw [hW₃]; simp, fun _ h => h⟩
-    (hp.blk_iv hk).symm fun s₄ g₄ cp₄ f₄ rd₄ wr₄ sp₄ => advance_regs (s := s₄) hk
-      (by rw [g₄ _ (by decide), g₃ .s4 (by decide), h.s4])
-      (by rw [g₄ _ (by decide), g₃ .s5 (by decide), h.s5])
-      fun s₅ s4₅ s5₅ keep₅ mem₅ rd₅ wr₅ sp₅ => ?_
-  have g (r : Reg) (hr : r ∈ preserved) (h4 : r ≠ .s4) (h5 : r ≠ .s5) : s₅.gpr r = s.gpr r := by
-    rw [keep₅ r h4 h5, g₄ r (preserved_ne hr).2.2.1, g₃ r hr]
-  -- Memory.
-  have fc : Frame [⟨blk s₀ k, 16⟩, ⟨S s₀, 2048⟩] s₁.mem s₃.mem := by
-    have := c.frame; rwa [a.mem] at this
-  have fStep : Frame [⟨blk s₀ k, 16⟩, ivR s₀, wsR s₀, cR s₀] s.mem s₅.mem := by
-    rw [mem₅]
-    exact (f₁.mono (by simp)).trans ((callFrame fc).trans (f₄.mono (by simp)))
-  have big₂ : Frame (Big s₀) s₀.mem s₂.mem := by
-    rw [a.mem]
-    exact (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩)
-  -- The new block, and the chaining value.
-  have hblk := h.block hk
-  have newBlk : bytesAt s₅.mem (blk s₀ k) 16 =
-      Spec.Cbc.aesWith (R s₀) (bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)))
-        (Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
-          (Spec.Cbc.next (iv0 s₀) (outK (cbcMode true) s₀ k))) := by
-    rw [mem₅, bytesAt_frame f₄ (one (hp.blk_iv hk)) (by decide), c.out, ← UPre.sched_bytes hp big₂,
-      ← aesWith_state, a.mem, x₁, hblk, h.iv]
-    rfl
-  have newIv : bytesAt s₅.mem (Iv s₀) 16 = bytesAt s₅.mem (blk s₀ k) 16 := by
-    rw [mem₅, cp₄, bytesAt_frame f₄ (one (hp.blk_iv hk)) (by decide)]
-  have hl : (outK (cbcMode true) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
-  have outSucc :
-      outK (cbcMode true) s₀ (k + 1) = outK (cbcMode true) s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
-    rw [newBlk]
-    simp only [outK, cbcMode_out, cbc, ciphOf, ite_true, take_succ_blks s₀ hk, encrypt_snoc]
-  refine ⟨?_, ?_, ?_, s4₅, s5₅, ?_, fun r hr hv => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [g .s1 (by decide) (by decide) (by decide), h.s1]
-  · rw [g .s2 (by decide) (by decide) (by decide), h.s2]
-  · rw [g .s3 (by decide) (by decide) (by decide), h.s3]
-  · rw [g .s6 (by decide) (by decide) (by decide), h.s6]
-  · rw [g r hr (fun e => hv (by simp [e])) (fun e => hv (by simp [e])), h.keep r hr hv]
-  · rw [rd₅, rd₄, c.rd, a.rd, h.rd]
-  · rw [wr₅, wr₄, c.wr, a.wr, h.wr]
-  · rw [sp₅, sp₄, c.sp, a.sp, h.sp]
-  · exact h.frame.trans (stepFrame hk fStep)
-  · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
-      set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
-  · rw [newIv]
-    simp only [chainK, cbcMode_chain, cts, ite_true, outSucc, next_snoc]
 
 /-! ## Decryption -/
 
