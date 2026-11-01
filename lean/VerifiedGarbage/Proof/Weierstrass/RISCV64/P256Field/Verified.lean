@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Fn
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.FieldRV
 public import VerifiedGarbage.Spec.Weierstrass.Mont
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -35,11 +36,8 @@ namespace VG.Proof.Weierstrass.RISCV64.P256Field
 
 open VG VG.RISCV64 VG.Impl.Weierstrass.RISCV64.P256Field
 open VG.Spec.Weierstrass.Mont (numAt Keeps p256p Fits)
+open VG.Proof.Weierstrass.RISCV64 (offArg rvPre arg res rvPub mulRV addRV subRV)
 
-/-- An offset argument, the low word of its register. -/
-abbrev offArg (s : State) (r : Reg) : BitVec 32 := (s.gpr r).setWidth 32
-
-/-- `numAt` of an offset is the four doublewords there. -/
 theorem numAt_d4 (m : Mem) (W : Addr) (o : BitVec 32) : numAt m W o 4 = d4 m (W + BitVec.ofNat 64 o.toNat) := by
   rw [numAt, show 8 * 4 = 32 from rfl, VG.Proof.Ed25519.RISCV64.read_V, V_d4]
 
@@ -62,63 +60,31 @@ theorem keeps_of_frame {W : Addr} {o : BitVec 32} (ho : o.toNat + 32 ≤ 3840) {
 
 theorem p_eq : p256p.m = P := by decide
 
-/-- What the three contracts by register share. -/
-def rvPre (s : State) : Prop :=
-  s.rd = [] ∧ s.wr = [⟨s.gpr .a0, 8192⟩] ∧ (s.gpr .a0).toNat + 8192 ≤ 2 ^ 64 ∧
-    p256p.Fit (offArg s .a1) (offArg s .a2) (offArg s .a3) ∧ (s.gpr .a0).toNat % 8 = 0
-
-/-- The number at the offset in `r`. -/
-abbrev arg (s : State) (r : Reg) : Nat := numAt s.mem (s.gpr .a0) (offArg s r) 4
-
-/-- What two runs agree on. -/
-def rvPub (s₁ s₂ : State) : Prop :=
-  s₁.gpr .a0 = s₂.gpr .a0 ∧ offArg s₁ .a1 = offArg s₂ .a1 ∧ offArg s₁ .a2 = offArg s₂ .a2 ∧
-    offArg s₁ .a3 = offArg s₂ .a3 ∧ s₁.sp = s₂.sp
-
-def mulRV : Contract isa where
-  pre s := rvPre s ∧ arg s .a3 < p256p.m
-  post s s' := numAt s'.mem (s.gpr .a0) (offArg s .a1) 4 < p256p.m ∧
-    numAt s'.mem (s.gpr .a0) (offArg s .a1) 4 * p256p.R % p256p.m = arg s .a2 * arg s .a3 % p256p.m ∧
-    Keeps 4 (s.gpr .a0) (offArg s .a1) s.mem s'.mem
-  pub := rvPub
-
-def addRV : Contract isa where
-  pre s := rvPre s ∧ arg s .a2 + arg s .a3 < 2 * p256p.m
-  post s s' := numAt s'.mem (s.gpr .a0) (offArg s .a1) 4 = (arg s .a2 + arg s .a3) % p256p.m ∧
-    Keeps 4 (s.gpr .a0) (offArg s .a1) s.mem s'.mem
-  pub := rvPub
-
-def subRV : Contract isa where
-  pre s := rvPre s ∧ arg s .a2 < p256p.m ∧ arg s .a3 < p256p.m
-  post s s' := numAt s'.mem (s.gpr .a0) (offArg s .a1) 4 = (arg s .a2 + p256p.m - arg s .a3) % p256p.m ∧
-    Keeps 4 (s.gpr .a0) (offArg s .a1) s.mem s'.mem
-  pub := rvPub
-
 /-- `fn core` meets a contract by register, from `fn_ok`. -/
 theorem fn_rv {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop}
-    (hcore : CoreOk core pre res) {s : State} (hs : rvPre s) (hp : pre (arg s .a2) (arg s .a3)) :
+    (hcore : CoreOk core pre res) {s : State} (hs : rvPre p256p s) (hp : pre (arg p256p s .a2) (arg p256p s .a3)) :
     ∃ t s', Exec isa (fn core) s t s' ∧ abiPreserved s s' ∧
-      res (arg s .a2) (arg s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) 4) ∧
+      res (arg p256p s .a2) (arg p256p s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) 4) ∧
       Keeps 4 (s.gpr .a0) (offArg s .a1) s.mem s'.mem := by
   obtain ⟨-, hwr, hfit, ⟨fo, fa, fb⟩, hal⟩ := hs
   simp only [Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes] at fo fa fb
-  simp only [arg, numAt_d4] at hp ⊢
+  simp only [arg, show p256p.k = 4 from rfl, numAt_d4] at hp ⊢
   obtain ⟨t, s', he, v, f, g, -, -, sp⟩ := fn_ok hcore rfl hal (by rw [hwr]; simp) hfit fo fa fb hp
   refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
     keeps_of_frame fo f⟩
 
-theorem mul_rv (s : State) (hs : mulRV.pre s) :
-    ∃ t s', Exec isa mulFn s t s' ∧ abiPreserved s s' ∧ mulRV.post s s' := by
+theorem mul_rv (s : State) (hs : (mulRV p256p).pre s) :
+    ∃ t s', Exec isa mulFn s t s' ∧ abiPreserved s s' ∧ (mulRV p256p).post s s' := by
   obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fn_rv (@mulCore_core) hs.1 (by rw [← p_eq]; exact hs.2)
   exact ⟨t, s', he, a, by rw [p_eq]; exact v1, by rw [p_eq]; exact v2, k⟩
 
-theorem add_rv (s : State) (hs : addRV.pre s) :
-    ∃ t s', Exec isa addFn s t s' ∧ abiPreserved s s' ∧ addRV.post s s' := by
+theorem add_rv (s : State) (hs : (addRV p256p).pre s) :
+    ∃ t s', Exec isa addFn s t s' ∧ abiPreserved s s' ∧ (addRV p256p).post s s' := by
   obtain ⟨t, s', he, a, v, k⟩ := fn_rv (@addCore_core) hs.1 (by rw [← p_eq]; exact hs.2)
   exact ⟨t, s', he, a, by rw [p_eq]; exact v, k⟩
 
-theorem sub_rv (s : State) (hs : subRV.pre s) :
-    ∃ t s', Exec isa subFn s t s' ∧ abiPreserved s s' ∧ subRV.post s s' := by
+theorem sub_rv (s : State) (hs : (subRV p256p).pre s) :
+    ∃ t s', Exec isa subFn s t s' ∧ abiPreserved s s' ∧ (subRV p256p).post s s' := by
   obtain ⟨t, s', he, a, v, k⟩ := fn_rv (@subCore_core) hs.1 (by rw [← p_eq]; exact hs.2)
   exact ⟨t, s', he, a, by rw [p_eq]; exact v, k⟩
 
@@ -157,7 +123,7 @@ theorem subFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
     ConstantTime isa Pre Pub subFn :=
   fn_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
 
-theorem rvPub_agree : ∀ s₁ s₂ : State, rvPre s₁ → rvPre s₂ → rvPub s₁ s₂ → mulAgreeLo s₁ s₂ :=
+theorem rvPub_agree : ∀ s₁ s₂ : State, rvPre p256p s₁ → rvPre p256p s₂ → rvPub s₁ s₂ → mulAgreeLo s₁ s₂ :=
   fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, h0, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩
@@ -176,18 +142,18 @@ def satWs : State where
   rd := []
   wr := [⟨0x1000, 8192⟩]
 
-theorem sat_pre : rvPre satWs ∧ arg satWs .a2 = 0 ∧ arg satWs .a3 = 0 := by
+theorem sat_pre : rvPre p256p satWs ∧ arg p256p satWs .a2 = 0 ∧ arg p256p satWs .a3 = 0 := by
   refine ⟨⟨rfl, rfl, by decide, ⟨?_, ?_, ?_⟩, by decide⟩, read_zero _ _, read_zero _ _⟩ <;>
     simp [Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes, satWs, offArg, p256p]
 
 theorem mul_verified : Verified RISCV64.target mulFn (p256p.mulContract RISCV64.abi) :=
-  Verified.of_correct mul_rv (mulFn_ct (Pre := mulRV.pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
+  Verified.of_correct mul_rv (mulFn_ct (Pre := (mulRV p256p).pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
     { pre := by sig_implies_pre [Spec.Weierstrass.Mont.Modulus.mulContract, Spec.Weierstrass.Mont.sig, arg, mulRV,
-        rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       post := by sig_implies_post [Spec.Weierstrass.Mont.Modulus.mulContract, Spec.Weierstrass.Mont.sig, arg,
-        mulRV, rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        mulRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       pub := by sig_implies_pub [Spec.Weierstrass.Mont.Modulus.mulContract, Spec.Weierstrass.Mont.sig, arg, mulRV,
-        rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       sat := ⟨satWs, by
         sig_reduce [Sig.wfPre, Spec.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
         obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre
@@ -197,13 +163,13 @@ theorem mul_verified : Verified RISCV64.target mulFn (p256p.mulContract RISCV64.
         rw [numAt, read_zero]; decide⟩ }
 
 theorem add_verified : Verified RISCV64.target addFn (p256p.addContract RISCV64.abi) :=
-  Verified.of_correct add_rv (addFn_ct (Pre := addRV.pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
+  Verified.of_correct add_rv (addFn_ct (Pre := (addRV p256p).pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
     { pre := by sig_implies_pre [Spec.Weierstrass.Mont.Modulus.addContract, Spec.Weierstrass.Mont.sig, arg, addRV,
-        rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       post := by sig_implies_post [Spec.Weierstrass.Mont.Modulus.addContract, Spec.Weierstrass.Mont.sig, arg,
-        addRV, rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        addRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       pub := by sig_implies_pub [Spec.Weierstrass.Mont.Modulus.addContract, Spec.Weierstrass.Mont.sig, arg, addRV,
-        rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       sat := ⟨satWs, by
         sig_reduce [Sig.wfPre, Spec.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
         obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre
@@ -213,13 +179,13 @@ theorem add_verified : Verified RISCV64.target addFn (p256p.addContract RISCV64.
         rw [numAt, read_zero]; decide⟩ }
 
 theorem sub_verified : Verified RISCV64.target subFn (p256p.subContract RISCV64.abi) :=
-  Verified.of_correct sub_rv (subFn_ct (Pre := subRV.pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
+  Verified.of_correct sub_rv (subFn_ct (Pre := (subRV p256p).pre) fun s₁ s₂ h₁ h₂ hp => rvPub_agree s₁ s₂ h₁.1 h₂.1 hp)
     { pre := by sig_implies_pre [Spec.Weierstrass.Mont.Modulus.subContract, Spec.Weierstrass.Mont.sig, arg, subRV,
-        rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       post := by sig_implies_post [Spec.Weierstrass.Mont.Modulus.subContract, Spec.Weierstrass.Mont.sig, arg,
-        subRV, rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        subRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       pub := by sig_implies_pub [Spec.Weierstrass.Mont.Modulus.subContract, Spec.Weierstrass.Mont.sig, arg, subRV,
-        rvPre, rvPub, offArg, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
       sat := ⟨satWs, by
         sig_reduce [Sig.wfPre, Spec.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
         obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre
