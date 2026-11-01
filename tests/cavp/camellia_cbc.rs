@@ -55,7 +55,7 @@ fn check(ctx: &CamelliaCbc, iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
 
 #[test]
 fn openssl_vectors() {
-    let text = include_str!("../../vectors/cryptography-camellia-cbc/camellia-cbc.txt");
+    let text = crate::vectors::text("vectors/cryptography-camellia-cbc/camellia-cbc.txt");
     let mut key_lens = Vec::new();
     for record in text.split("COUNT = ").skip(1) {
         let get = |label: &str| {

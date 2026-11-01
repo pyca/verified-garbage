@@ -8,6 +8,7 @@
 //! `ci/check_arch_gates.py` checks that every one is.
 
 mod json;
+mod vectors;
 
 #[path = "acvp/main.rs"]
 mod acvp;

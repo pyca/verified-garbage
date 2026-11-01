@@ -22,7 +22,7 @@ use vectors::{hex, vectors};
 #[test]
 fn signatures() {
     for (i, v) in vectors(
-        include_str!("../../vectors/nist-cavp-dsa/SigVer.rsp"),
+        crate::vectors::text("vectors/nist-cavp-dsa/SigVer.rsp"),
         false,
     )
     .iter()

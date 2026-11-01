@@ -114,7 +114,7 @@ fn check(key: &[u8], iv: &[u8], bits: usize, plaintext: &[u8], ciphertext: &[u8]
 
 #[test]
 fn rfc2268() {
-    let text = include_str!("../../vectors/rfc2268/rfc2268.txt");
+    let text = crate::vectors::text("vectors/rfc2268/rfc2268.txt");
     let excerpt = text
         .split("5. Test vectors")
         .nth(1)
@@ -158,7 +158,7 @@ fn rfc2268() {
 
 #[test]
 fn openssl_cbc() {
-    let text = include_str!("../../vectors/openssl-rc2/evpciph_rc2.txt");
+    let text = crate::vectors::text("vectors/openssl-rc2/evpciph_rc2.txt");
     let mut count = 0;
     for record in text.split("\n\n") {
         let f = fields(record);
@@ -190,7 +190,7 @@ fn openssl_cbc() {
 
 #[test]
 fn cryptography_cbc_and_default_bits() {
-    let f = fields(include_str!("../../vectors/cryptography-rc2/rc2-cbc.txt"));
+    let f = fields(crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt"));
     let key = unhex(f["Key"]);
     let iv = unhex(f["IV"]);
     let plaintext = unhex(f["Plaintext"]);
@@ -233,7 +233,7 @@ fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8], input: &[u8], expected: &[
 
 #[test]
 fn output_too_small() {
-    let f = fields(include_str!("../../vectors/cryptography-rc2/rc2-cbc.txt"));
+    let f = fields(crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt"));
     let key = unhex(f["Key"]);
     let iv = unhex(f["IV"]);
     let plaintext = unhex(f["Plaintext"]);

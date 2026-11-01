@@ -3,7 +3,9 @@
 
 use super::{check, unhex};
 
-const DRAFT: &str = include_str!("../../vectors/draft-sca-cfrg-sm3/draft-sca-cfrg-sm3-02.txt");
+static DRAFT: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
+    crate::vectors::text("vectors/draft-sca-cfrg-sm3/draft-sca-cfrg-sm3-02.txt")
+});
 
 /// The text from the heading starting `from` (at the start of a line, unlike
 /// its entry in the table of contents) to the one starting `to`.

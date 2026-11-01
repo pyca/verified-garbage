@@ -17,7 +17,7 @@ use verified_garbage::hashes::sha512_224::Sha512_224;
 #[test]
 fn short_messages() {
     let n = check_messages(
-        include_str!("../../vectors/nist-cavp/sha512/SHA512_224ShortMsg.rsp"),
+        crate::vectors::text("vectors/nist-cavp/sha512/SHA512_224ShortMsg.rsp"),
         Sha512_224::digest,
     );
     assert_eq!(n, 129);
@@ -26,7 +26,7 @@ fn short_messages() {
 #[test]
 fn long_messages() {
     let n = check_messages(
-        include_str!("../../vectors/nist-cavp/sha512/SHA512_224LongMsg.rsp"),
+        crate::vectors::text("vectors/nist-cavp/sha512/SHA512_224LongMsg.rsp"),
         Sha512_224::digest,
     );
     assert_eq!(n, 128);
@@ -36,7 +36,7 @@ fn long_messages() {
 #[test]
 fn monte_carlo() {
     check_monte_carlo(
-        include_str!("../../vectors/nist-cavp/sha512/SHA512_224Monte.rsp"),
+        crate::vectors::text("vectors/nist-cavp/sha512/SHA512_224Monte.rsp"),
         Sha512_224::digest,
     );
 }

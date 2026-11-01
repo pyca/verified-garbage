@@ -4,8 +4,8 @@
 //! (§2.8.2, Appendix A.5).
 //!
 //! The RFC is vendored under `vectors/rfc8439/` (see
-//! `vectors/sources/rfc8439.toml` for where it comes from) and compiled into
-//! the test binary, so these tests always run. Each value is read from the
+//! `vectors/sources/rfc8439.toml` for where it comes from) and read at run time
+//! (`tests/vectors.rs`), so these tests always run. Each value is read from the
 //! RFC's text: the rows of hex after its label, or the `name = value` of a
 //! line.
 
@@ -22,7 +22,8 @@ mod chacha20;
 mod chacha20poly1305;
 mod poly1305;
 
-const TEXT: &str = include_str!("../../vectors/rfc8439/rfc8439.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc8439/rfc8439.txt"));
 
 /// A test vector: the lines of its text that are not rows of hex, each with
 /// the bytes of the rows of hex that follow it (none if it is not the label

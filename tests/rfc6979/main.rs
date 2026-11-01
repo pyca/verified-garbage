@@ -28,7 +28,8 @@ fn errors() {
     );
 }
 
-const TEXT: &str = include_str!("../../vectors/rfc6979/rfc6979.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc6979/rfc6979.txt"));
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");

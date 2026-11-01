@@ -30,7 +30,7 @@ fn reference(key: &[u8], iv: [u8; 16], data: &[u8]) -> (Vec<u8>, [u8; 16]) {
 
 #[test]
 fn pyca_vectors() {
-    let text = include_str!("../../vectors/cryptography-seed-ofb/seed-ofb.txt");
+    let text = crate::vectors::text("vectors/cryptography-seed-ofb/seed-ofb.txt");
     let mut key_lens = Vec::new();
     for record in text.split("COUNT = ").skip(1) {
         let get = |label: &str| {

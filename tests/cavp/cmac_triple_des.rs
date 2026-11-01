@@ -60,11 +60,11 @@ fn matches(v: &[(&str, &str)], keys: usize) -> bool {
 fn generate() {
     let files = [
         (
-            include_str!("../../vectors/nist-cavp/cmac-tdes/CMACGenTDES2.rsp"),
+            crate::vectors::text("vectors/nist-cavp/cmac-tdes/CMACGenTDES2.rsp"),
             2,
         ),
         (
-            include_str!("../../vectors/nist-cavp/cmac-tdes/CMACGenTDES3.rsp"),
+            crate::vectors::text("vectors/nist-cavp/cmac-tdes/CMACGenTDES3.rsp"),
             3,
         ),
     ];
@@ -82,11 +82,11 @@ fn generate() {
 fn verify() {
     let files = [
         (
-            include_str!("../../vectors/nist-cavp/cmac-tdes/CMACVerTDES2.rsp"),
+            crate::vectors::text("vectors/nist-cavp/cmac-tdes/CMACVerTDES2.rsp"),
             2,
         ),
         (
-            include_str!("../../vectors/nist-cavp/cmac-tdes/CMACVerTDES3.rsp"),
+            crate::vectors::text("vectors/nist-cavp/cmac-tdes/CMACVerTDES3.rsp"),
             3,
         ),
     ];

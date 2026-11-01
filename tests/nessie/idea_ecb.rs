@@ -14,7 +14,8 @@ use std::collections::BTreeMap;
 
 use verified_garbage::idea_ecb::{Error, IdeaEcb};
 
-const TEXT: &str = include_str!("../../vectors/cryptography-idea/idea-ecb.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/cryptography-idea/idea-ecb.txt"));
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0);

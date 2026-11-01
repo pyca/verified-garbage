@@ -28,7 +28,7 @@ json_struct! {
 }
 
 fn vectors() -> Vec<Case> {
-    let json = include_str!("../../vectors/secp256k1-ecdsa/ecdsa.json");
+    let json = crate::vectors::text("vectors/secp256k1-ecdsa/ecdsa.json");
     crate::json::parse::<Vectors>("ecdsa.json", json).valid
 }
 
