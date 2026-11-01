@@ -76,7 +76,7 @@ def addK (b : Addr) : Contract isa where
 theorem addK_ok (b : Addr) :
     ∀ t, (addK b).pre t → ∃ tr t', VG.Exec isa addFn t tr t' ∧ abiPreserved t t' ∧ (addK b).post t t' :=
   fun t ⟨hwr, h0, hal, hd⟩ => by
-    obtain ⟨tr, t', he, hp, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0]
+    obtain ⟨tr, t', he, hp, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t3, .t4, .t5, .t6]
       (addFn_ok (by rw [hwr, h0]) (by rw [h0]; exact hal) (by rw [h0]; exact hd)) (by decide +kernel)
     rw [h0] at hp
     exact ⟨tr, t', he, abiPreserved_of_keep he hk (by decide) (by decide), hp⟩

@@ -9,8 +9,8 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
-import VerifiedGarbage.Proof.X25519.RISCV64.AddSub
-import VerifiedGarbage.Proof.X25519.RISCV64.Mul
+import VerifiedGarbage.Proof.X25519.RISCV64.R64.Reduce
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
@@ -33,6 +33,7 @@ namespace VG.Proof.Ed25519.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISCV64
 open VG.Spec.X25519 (P)
+open VG.Proof.X448.RISCV64.R64 (clob64)
 open VG.Proof.X25519 (val32_congr)
 
 abbrev Env := Slot → Spec.X25519.Fe
@@ -153,7 +154,7 @@ theorem mulK_ok {b : Addr} (o a c : Slot) :
     ∀ t, (mulK b o a c).pre t → ∃ tr t', VG.Exec isa mulFn t tr t' ∧ abiPreserved t t' ∧
       (mulK b o a c).post t t' := fun t ⟨hrd, hwr, h0, hal, t1, t2, t3⟩ => by
   have ho := slot_range o
-  obtain ⟨tr, t', he, ⟨hV, hF⟩, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t3, .t4, .t5]
+  obtain ⟨tr, t', he, ⟨hV, hF⟩, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t2, .t3, .t4, .t5, .t6]
     (mulFn_ok hrd (by rw [hwr, h0]) (by rw [t1]; exact fits_slot o) (by rw [t2]; exact fits_slot a)
       (by rw [t3]; exact fits_slot c) (by rw [h0]; exact hal)) (by decide +kernel)
   refine ⟨tr, t', he, abiPreserved_of_keep he hk (by decide) (by decide), ?_⟩
@@ -233,15 +234,15 @@ theorem fieldOp_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (op : Fie
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (mul_ok (by omega) (by omega) (by omega) (by omega) (by decide) (by simp only [offset]; omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) hc) fun t ⟨hr, hf, hv⟩ => ?_
+    refine WP.mono (R64.mulAt_ok (by omega) (by omega) (by omega) (by omega) (by omega)
+      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc) fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) hf (Proof.X25519.toFe_mul hv)
   | mulc o a c => exact mulCall_ok hc hw o a c
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (R64.add_ok (by omega) (by omega) (by omega)
       (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_add hv)
@@ -249,7 +250,7 @@ theorem fieldOp_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (op : Fie
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (R64.sub_ok (by omega) (by omega) (by omega)
       (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_sub hv)
@@ -269,10 +270,10 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {b : Addr} (hc : Ctx b s) 
 def opOut : FieldOp → Slot
   | .copy o _ | .const o _ | .mul o _ _ | .mulc o _ _ | .add o _ _ | .sub o _ _ => o
 
-/-- An inline operation changes no register but X25519's `clob`, and no memory but its result
+/-- An inline operation changes no register but the field code's `clob64`, and no memory but its result
 and the product's limbs. -/
 theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : op.inline = true) :
-    WP isa op.code s fun t => Rest clob s t ∧ Frame (opFrame b (offset (opOut op))) s.mem t.mem ∧
+    WP isa op.code s fun t => Rest clob64 s t ∧ Frame (opFrame b (offset (opOut op))) s.mem t.mem ∧
       env t.mem b = evalOp op (env s.mem b) := by
   have hA := eACC_eq
   cases op with
@@ -286,15 +287,15 @@ theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : o
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (mul_ok (by omega) (by omega) (by omega) (by omega) (by decide) (by simp only [offset]; omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) hc) fun t ⟨hr, hf, hv⟩ => ⟨hr, hf, ?_⟩
+    refine WP.mono (R64.mulAt_ok (by omega) (by omega) (by omega) (by omega) (by omega)
+      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc) fun t ⟨hr, hf, hv⟩ => ⟨hr, hf, ?_⟩
     rw [field_update o (by omega) (by omega) hf]; exact congrArg _ (Proof.X25519.toFe_mul hv)
   | mulc => simp [FieldOp.inline] at hi
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (R64.add_ok (by omega) (by omega) (by omega)
       (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
       fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
     rw [field_update o (by omega) (by omega) (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_add hv)
@@ -302,7 +303,7 @@ theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : o
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+    refine WP.mono (R64.sub_ok (by omega) (by omega) (by omega)
       (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
       fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
     rw [field_update o (by omega) (by omega) (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_sub hv)
@@ -312,7 +313,7 @@ theorem fieldCodeW_ok (ops : List FieldOp) (hi : ops.all FieldOp.inline = true) 
     (R : List Region) (hR : ∀ op ∈ ops, ∀ r ∈ opFrame b (offset (opOut op)), ∃ r' ∈ R, r.Sub r')
     {s : State} (hc : Ctx b s) :
     WP isa (fieldCode ops) s fun t =>
-      Rest clob s t ∧ Frame R s.mem t.mem ∧ env t.mem b = evalOps ops (env s.mem b) := by
+      Rest clob64 s t ∧ Frame R s.mem t.mem ∧ env t.mem b = evalOps ops (env s.mem b) := by
   induction ops generalizing s with
   | nil => exact WP.block_nil ⟨Rest.refl _ _, Frame.refl _ _, rfl⟩
   | cons op ops ih =>
