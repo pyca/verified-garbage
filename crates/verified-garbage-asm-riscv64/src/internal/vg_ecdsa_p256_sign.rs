@@ -841,7 +841,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p256_sign() {
 .insn 4, 0x0112f2b3
 .insn 4, 0x5c543023
 .insn 2, 0x8522
-call {vg_p256_mul}
+call {vg_p256_mul_g}
 .insn 2, 0x844e
 .insn 4, 0x0e043283
 .insn 4, 0x3e543023
@@ -1196,7 +1196,7 @@ call {vg_p256_mul_mod_n}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p256_mul = sym crate::ec_p256::vg_p256_mul::vg_p256_mul,
+        vg_p256_mul_g = sym crate::ec_p256::vg_p256_mul_g::vg_p256_mul_g,
         vg_p256_mul_mod_p = sym crate::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
         vg_p256_add_mod_n = sym crate::ecdsa_p256::vg_p256_add_mod_n::vg_p256_add_mod_n,
         vg_p256_mul_mod_n = sym crate::ecdsa_p256::vg_p256_mul_mod_n::vg_p256_mul_mod_n,

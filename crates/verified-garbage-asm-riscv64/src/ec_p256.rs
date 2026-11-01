@@ -779,7 +779,23 @@ call {vg_p256_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p256_mul_g = sym super::p256_mul::vg_p256_mul_g::vg_p256_mul_g,
-        vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
+        vg_p256_mul_g = sym super::ec_p256::vg_p256_mul_g::vg_p256_mul_g,
+        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_add_mod_p.rs"]
+pub(crate) mod vg_p256_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_mul_g.rs"]
+pub(crate) mod vg_p256_mul_g;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_mul_mod_p.rs"]
+pub(crate) mod vg_p256_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_sub_mod_p.rs"]
+pub(crate) mod vg_p256_sub_mod_p;

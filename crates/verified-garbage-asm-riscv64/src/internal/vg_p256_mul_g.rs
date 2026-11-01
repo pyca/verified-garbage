@@ -2508,9 +2508,9 @@ bnez s1, 20b
 .insn 4, 0x5e043403
 .insn 2, 0x8082
 .option pop",
-        vg_p256_sub_mod_p = sym crate::p256_mont::vg_p256_sub_mod_p,
-        vg_p256_mul_mod_p = sym crate::p256_mont::vg_p256_mul_mod_p,
-        vg_p256_add_mod_p = sym crate::p256_mont::vg_p256_add_mod_p,
+        vg_p256_sub_mod_p = sym crate::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
+        vg_p256_mul_mod_p = sym crate::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_add_mod_p = sym crate::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
         VG_P256_COMB = sym crate::consts::VG_P256_COMB,
     )
 }
