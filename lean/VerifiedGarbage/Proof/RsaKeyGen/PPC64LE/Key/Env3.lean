@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvStep
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env
 public import VerifiedGarbage.Spec.Rsa
@@ -14,9 +13,10 @@ public import VerifiedGarbage.Spec.Rsa
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: the inverse and the loads as values
 
-`invOfE`: `invOf a m` (`inverse` from `(a, m, 1, 0)`): array 1 holds
-`gcd(a, m)` and array 3 an `x < m` with `m ∣ x a - gcd(a, m)`, for an odd
-`m > 1`. `loadE`: `load j` reads bytes into a zero array.
+`invOfE`: `invOf a m k` (the batched inverse, through `InvLaw`, at the
+width `n` that `k` sets: `nP_width`, `nTwo_width`, `nW_width`): array 1
+holds `gcd(a, m)` and array 3 an `x < m` with `m ∣ x a - gcd(a, m)`, for an
+odd `m > 1` and `a`, `m < 2^(32 n)`. `loadE`: `load j` reads bytes into a zero array.
 -/
 
 @[expose] public section
@@ -28,6 +28,7 @@ open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 inverse aM aNM aZero aT1 aT3 aT4 s
 open VG.Impl.Rsa.PPC64LE.CrtValues (load)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aOne invOf)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
+open VG.Proof.Rsa.PPC64LE (InvLaw invBatchArrs)
 
 /-- The arrays `invOf` writes. -/
 abbrev invOfArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, aM, aNM, aT1, VG.Impl.Rsa.PPC64LE.Keys.aT2, aT3, aT4]
@@ -35,72 +36,79 @@ abbrev invOfArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, aM, aNM, aT1, VG.Impl.Rs
 section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat → Nat}
 
-theorem invOf_eq (a m : Nat) : invOf a m =
-    .seq (copy aM m) (.seq (copy 0 a) (.seq (copy 1 aM) (.seq (copy 2 aOne) (.seq (copy 3 aZero)
-      (.seq (sub3 aNM aZero aM) inverse))))) := rfl
+theorem invOf_eq (a m : Nat) (k : List Instr) : invOf a m k =
+    .seq (copy aM m) (.seq (copy 0 a) (.seq (.block k) VG.Impl.Rsa.PPC64LE.InvBatch.inverse)) := rfl
 
-/-- `invOf a m`. -/
-theorem invOfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {a m : Nat} (ha : a < nArr := by decide)
-    (hm : m < nArr := by decide) (hma : a ∉ invOfArrs := by decide) (hmm : m ≠ aM := by decide)
-    (one : V aOne = 1) (zero : V aZero = 0) (odd : V m % 2 = 1) (gt : 1 < V m) :
-    WP isa (invOf a m) s fun u => Ws u B Z w nArr ∧
+/-- What a width block does: `r11 := n`, and nothing else. -/
+def Width (k : List Instr) (s : State) (n : Nat) : Prop :=
+  ∀ u : State, Keep opsRegs s u →
+    WP isa (.block k) u fun u' => (u'.gpr .r11 = BitVec.ofNat 64 n ∧ u'.mem = u.mem) ∧ Keep [.r11] u u'
+
+/-- `invOf a m k`, at the width `n` that `k` sets. -/
+theorem invOfE [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) {a m : Nat}
+    (ha : a < nArr := by decide) (hm : m < nArr := by decide) (hma : a ∉ invOfArrs := by decide)
+    (hmm : m ≠ aM := by decide) {k : List Instr} {n : Nat} (hk : Width k s n) (hn1 : 1 ≤ n)
+    (hnw : n ≤ w) (han : V a < 2 ^ (32 * n)) (hmn : V m < 2 ^ (32 * n))
+    (odd : V m % 2 = 1) (gt : 1 < V m) :
+    WP isa (invOf a m k) s fun u => Ws u B Z w nArr ∧
       (∃ V', KS u.mem B w V' F ∧ (∀ j < nArr, j ∉ invOfArrs → V' j = V j) ∧
         V' 1 = Nat.gcd (V a) (V m) ∧ ((V m : Nat) : Int) ∣ (V' 3 : Int) * V a - V' 1 ∧ V' 3 < V m) ∧
-      KK B w s.mem u.mem ∧ Keep opsRegs s u := by
+      KK B w s.mem u.mem ∧ Keep bodyRegs s u := by
   have ham : a ≠ aM := fun e => hma (by rw [e]; decide)
   have ha0 : a ≠ 0 := fun e => hma (by rw [e]; decide)
   rw [invOf_eq]
   refine WP.seq (WP.mono (copyE h ks (o := aM) (a := m) (by decide) hm (Ne.symm hmm)) fun t1 ⟨h1, k1, f1, r1⟩ => ?_)
   refine WP.seq (WP.mono (copyE h1 k1 (o := 0) (a := a) (by decide) ha (Ne.symm ha0)) fun t2 ⟨h2, k2, f2, r2⟩ => ?_)
-  refine WP.seq (WP.mono (copyE h2 k2 (o := 1) (a := aM)) fun t3 ⟨h3, k3, f3, r3⟩ => ?_)
-  refine WP.seq (WP.mono (copyE h3 k3 (o := 2) (a := aOne)) fun t4 ⟨h4, k4, f4, r4⟩ => ?_)
-  refine WP.seq (WP.mono (copyE h4 k4 (o := 3) (a := aZero)) fun t5 ⟨h5, k5, f5, r5⟩ => ?_)
-  refine WP.seq (WP.mono (sub3E h5 k5 (o := aNM) (a := aZero) (b := aM)) fun t6 ⟨h6, k6, _, f6, r6⟩ => ?_)
-  -- The values before `inverse`.
-  have zero' : V 10 = 0 := zero
-  have one' : V 15 = 1 := one
+  refine WP.seq (WP.mono (hk t2 (r1.trans' r2)) fun t3 ⟨⟨e11, m3⟩, r3⟩ => ?_)
+  have h3 : Ws t3 B Z w nArr := h2.of_keep r3
+  have k3 : KS t3.mem B w (upd (upd V aM (V m)) 0 (upd V aM (V m) a)) F := m3 ▸ k2
+  -- The values before the inverse.
   have ham' : a ≠ 8 := ham
-  have ha0' : a ≠ 0 := ha0
-  have vM : num t6.mem B w aM = V m := by rw [k6.arrs aM (by decide)]; simp [upd, aM, aNM]
-  have vNM : num t6.mem B w aNM = subW w 0 (V m) := by
-    rw [k6.arrs aNM (by decide)]; simp [upd, aM, aNM, aZero, zero']
-  have v0 : num t6.mem B w 0 = V a := by rw [k6.arrs 0 (by decide)]; simp [upd, aM, aNM, ham']
-  have v1 : num t6.mem B w 1 = V m := by rw [k6.arrs 1 (by decide)]; simp [upd, aM, aNM]
-  have v2 : num t6.mem B w 2 = 1 := by rw [k6.arrs 2 (by decide)]; simp [upd, aM, aNM, aOne, one']
-  have v3 : num t6.mem B w 3 = 0 := by rw [k6.arrs 3 (by decide)]; simp [upd, aM, aNM, aZero, zero']
-  have vZ : num t6.mem B w aZero = 0 := by rw [k6.arrs aZero (by decide)]; simp [upd, aM, aNM, aZero, zero']
-  have vO : ∀ j < nArr, j ∉ invOfArrs → num t6.mem B w j = V j := by
+  have v0 : num t3.mem B w 0 = V a := by rw [k3.arrs 0 (by decide)]; simp [upd, aM, ham']
+  have vM : num t3.mem B w aM = V m := by rw [k3.arrs aM (by decide)]; simp [upd, aM]
+  have vO : ∀ j < nArr, j ∉ invOfArrs → num t3.mem B w j = V j := by
     intro j hj hn
     simp only [invOfArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-    obtain ⟨n0, n1, n2, n3, -, -, -, -, nM, nNM, -⟩ := hn
-    rw [k6.arrs j hj]; simp [upd, n0, n1, n2, n3, nM, nNM]
-  refine WP.mono (inverse_ok h6 (by decide) nArr_le) fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ?_, ?_, ?_⟩
-  · have hlt := ks.lt hm
-    have hNM : num t6.mem B w aNM + num t6.mem B w aM = 2 ^ (32 * w) := by
-      rw [vNM, vM]
-      unfold subW
-      rw [Nat.zero_add, Nat.mod_eq_of_lt (Nat.sub_lt (Nat.two_pow_pos _) (by omega_arith))]
-      omega_arith
-    have hZ : num t6.mem B w aZero = 0 := vZ
-    have hod : num t6.mem B w aM % 2 = 1 := by rw [vM]; exact odd
-    have hgt : 1 < num t6.mem B w aM := by rw [vM]; exact gt
-    have hb : bank t6.mem B w 0 = (num t6.mem B w 0, num t6.mem B w aM, 1, 0) := by
-      simp only [bank, v1, v2, v3, vM]
-    obtain ⟨g, dv, lt⟩ := v hNM hZ hod hgt hb
-    simp only [v0, vM] at g dv lt
+    obtain ⟨n0, -, -, -, -, -, -, -, nM, -⟩ := hn
+    rw [k3.arrs j hj]; simp [upd, n0, nM]
+  refine WP.mono (InvLaw.inverse_ok h3 (by decide) nArr_le hw e11 hn1 hnw v0 han vM hmn odd) fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ?_, ?_, ?_⟩
+  · obtain ⟨g, dv, lt⟩ := v gt
     refine ⟨fun j => num u.mem B w j, ?_, fun j hj hn => ?_, g, dv, lt⟩
-    · refine k6.step ku (fit_of h6) (V' := fun j => num u.mem B w j) (fun j hj hn => ?_) (fun j _ => rfl)
-        (fun _ _ _ => rfl) (fun d hd hf => ?_) (fun hj => absurd hj (by decide))
-      · rw [← k6.arrs j hj]
-        exact ku.num (fun x hx e => hn (e ▸ hx)) (by decide) (fit_of h6 j hj)
-      · simp only [invSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
-        rcases hd with rfl | rfl | rfl <;> exact absurd hf (by decide)
-    · have sub : ∀ x ∈ invArrs, x ∈ invOfArrs := by decide
-      have hn' : j ∉ invArrs := fun hm' => hn (sub j hm')
+    · refine k3.step ku (fit_of h3) (V' := fun j => num u.mem B w j) (fun j hj hn => ?_) (fun j _ => rfl)
+        (fun _ _ _ => rfl) (fun d hd => by simp at hd) (fun hj => absurd hj (by decide))
+      rw [← k3.arrs j hj]
+      exact ku.num (fun x hx e => hn (e ▸ hx)) (by decide) (fit_of h3 j hj)
+    · have sub : ∀ x ∈ invBatchArrs, x ∈ invOfArrs := by decide
+      have hn' : j ∉ invBatchArrs := fun hm' => hn (sub j hm')
       show num u.mem B w j = V j
-      rw [ku.num (fun x hx e => hn' (by rw [← e]; exact hx)) (by decide) (fit_of h6 j hj), vO j hj hn]
-  · exact (((((f1.trans f2).trans f3).trans f4).trans f5).trans f6).trans (KK.of ku (by decide) (by decide))
-  · exact (((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6).trans' kr.mono
+      rw [ku.num (fun x hx e => hn' (by rw [← e]; exact hx)) (by decide) (fit_of h3 j hj), vO j hj hn]
+  · exact ((f1.trans f2).trans (m3 ▸ KK.refl B w t2.mem)).trans (KK.of ku (by decide) (by decide))
+  · exact (((r1.trans' r2).mono.trans' r3.mono).trans' kr.mono)
+
+/-- `nP`: the primes' width, `p_len / 4` digits, for `p_len` in `r22`. -/
+theorem nP_width {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L) (hL : L < 2 ^ 64) :
+    Width VG.Impl.RsaKeyGen.PPC64LE.Key.nP s (L / 4) := fun u k => by
+  have e : u.gpr .r22 = BitVec.ofNat 64 L := (k.gpr .r22 (by decide)).trans h22
+  unfold VG.Impl.RsaKeyGen.PPC64LE.Key.nP
+  refine WP.keep _ ?_ (by decide)
+  have v : BitVec.ofNat 64 L >>> 2 = BitVec.ofNat 64 (L / 4) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+      Nat.mod_eq_of_lt hL, Nat.mod_eq_of_lt (by omega_arith)]
+  prun [e, v]
+
+/-- `nTwo`: two digits. -/
+theorem nTwo_width : Width VG.Impl.RsaKeyGen.PPC64LE.Key.nTwo s 2 := fun u _ => by
+  unfold VG.Impl.RsaKeyGen.PPC64LE.Key.nTwo
+  refine WP.keep _ ?_ (by decide)
+  prun
+
+/-- `nW`: `w` digits, for `w` in `r29`. -/
+theorem nW_width (h : Ws s B Z w nArr) : Width VG.Impl.RsaKeyGen.PPC64LE.Key.nW s w := fun u k => by
+  have e : u.gpr .r29 = BitVec.ofNat 64 w := (k.gpr .r29 (by decide)).trans h.r29
+  unfold VG.Impl.RsaKeyGen.PPC64LE.Key.nW
+  refine WP.keep _ ?_ (by decide)
+  prun [e, BitVec.add_zero]
 
 /-- `load j` from `L` bytes at `P`, readable and apart from the working space, into a zero array. -/
 theorem loadE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j : Nat} (hj : j < nArr := by decide)

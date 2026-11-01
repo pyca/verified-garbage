@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Stores
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Init
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.DMath
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Primes
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Lcm
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.DPart
@@ -31,6 +32,7 @@ open VG.Impl.Rsa.PPC64LE.Keys (seqs aZero)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (body setup loads consts primes lcmPart dPart smallPart qinvPart crtPart
   nPart maskPart stores nArr aOne aTwo aThree aTop aC aC33 aE aP0 aQ0 aP aQ aPm aQm aL aD aDP aDQ aQi aN
   X0 X1 X3 X5 X6 X7 X8)
+open VG.Proof.Rsa.PPC64LE (InvLaw)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 /-- The primes, ordered, and `L = lcm(p - 1, q - 1)`. -/
@@ -51,7 +53,7 @@ instance (s0 : State) (D : Nat) : Decidable (kSmall s0 D) := by unfold kSmall; i
 instance (s0 : State) (D : Nat) : Decidable (kMask s0 D) := by unfold kMask; infer_instance
 
 /-- The registers the body changes. -/
-abbrev bodyAll : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r29, .r30]
+abbrev bodyAll : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .r29, .r30]
 
 /-- What the body establishes. -/
 def BodyPost (s0 t : State) : Prop :=
@@ -76,7 +78,7 @@ theorem slot_flag {m : Mem} {B : Addr} {d x : Nat} {c : Prop} [Decidable c] (h :
     (hx : x = if c then 1 else 0) : slot m B d = if decide c then 1 else 0 := by
   rw [h, hx]; by_cases hc : c <;> simp [hc]
 
-theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
+theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
     WP isa body s fun t => BodyPost s0 t ∧ Keep bodyAll s t := by
   have p := kpre h.pre
   obtain ⟨-, hw16, hw256, hlw, h4⟩ := pre_ws h.pre
@@ -133,7 +135,7 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   have h22 : t4.gpr .r22 = BitVec.ofNat 64 (kL s0) := by
     rw [a4.r22]; exact VG.Proof.Rsa.PPC64LE.CrtValues.ofNat_toNat64 _
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (lcmPart_ok w4 k4 h22 (by omega_arith) (by omega_arith) hW (by rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
+  refine WP.mono (lcmPart_ok w4 k4 h22 (by omega_arith) (by omega_arith) hW (by omega_arith) h4 (by rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
     (by rw [vQm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQ)
     (by vsimp [o4, one3]) (by vsimp [o4, o3, two3]) (by vsimp [o4, three3]) (by vsimp [o4, zero3]))
     fun t5 ⟨w5, ⟨V5, F5, k5, o5, p5, vL⟩, f5, r5⟩ => ?_
@@ -158,12 +160,13 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   simp only [x6, vC6] at x7
   -- `qInv`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (qinvPart_ok w7 k7 (by vsimp [o7, o6, o5, o4, one3]) (by vsimp [o7, o6, o5, o4, three3])
-    (by vsimp [o7, o6, o5, o4, zero3])) fun t8 ⟨w8, ⟨V8, F8, k8, o8, p8, y0, y1, xl, xd⟩, f8, r8⟩ => ?_
-  have b8 := b7.of_phase f8 r8
-  have a8 := a7.of_keep r8
   have vP7 : V7 aP = kP s0 := by vsimp [o7, o6, o5, vP]
   have vQ7 : V7 aQ = kQ s0 := by vsimp [o7, o6, o5, vQ]
+  refine WP.mono (qinvPart_ok w7 k7 (by vsimp [o7, o6, o5, o4, one3]) (by vsimp [o7, o6, o5, o4, three3])
+    (by vsimp [o7, o6, o5, o4, zero3]) (by omega_arith) (by rw [a7.r22, ← a4.r22]; exact h22) (by omega_arith) h4
+    (by omega_arith) (by omega_arith) (by rw [vP7]; exact hP) (by rw [vQ7]; exact hQ)) fun t8 ⟨w8, ⟨V8, F8, k8, o8, p8, y0, y1, xl, xd⟩, f8, r8⟩ => ?_
+  have b8 := b7.of_phase f8 r8
+  have a8 := a7.of_keep r8
   simp only [vP7, vQ7] at y0 y1 xl xd
   -- `dP`, `dQ`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]

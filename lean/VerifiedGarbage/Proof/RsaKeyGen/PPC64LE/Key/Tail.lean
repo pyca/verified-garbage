@@ -27,6 +27,7 @@ open VG.Impl.Rsa.PPC64LE.Div (div)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aT aS aOne aThree aE aP aQ aPm aQm aD aC aC33 aTop aN aQi aMq
   aDP aDQ aQd aDt X0 X1 X2 X3 X4 X5 X6 X7 X8 ltS andNotS invOf smallPart qinvPart crtOf crtPart nPart
   maskPart cnt8)
+open VG.Proof.Rsa.PPC64LE (InvLaw)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 /-- A flag is 1 exactly when its condition holds. -/
@@ -65,12 +66,13 @@ theorem smallPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (b6 : F X6 �
 abbrev qinvArrs : List Nat := [aT, aMq, aQi] ++ invOfArrs
 
 theorem qinvPart_eq : qinvPart = seqs (([.block (bitOf X0 aP ++ ([] : List Instr))] : List (Prog isa)) ++
-    (ltS X1 aP aThree ++ ([.block (andNotS X2 X1 X0 ++ ([] : List Instr)), sel aMq aThree aP X2, invOf aQ aMq,
+    (ltS X1 aP aThree ++ ([.block (andNotS X2 X1 X0 ++ ([] : List Instr)), sel aMq aThree aP X2, invOf aQ aMq VG.Impl.RsaKeyGen.PPC64LE.Key.nP,
       eqS X1 1 aOne, copy aQi 3] : List (Prog isa)))) := rfl
 
 /-- `qInv` modulo `mL p`, `X0` `p` odd, `X1` `gcd(q, mL p) = 1`. -/
-theorem qinvPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (three : V aThree = 3)
-    (zero : V aZero = 0) :
+theorem qinvPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (three : V aThree = 3)
+    (zero : V aZero = 0) (hw10 : 10 ≤ w) {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L) (hL' : 8 * L < 2 ^ 64)
+    (hL4 : L % 4 = 0) (hL1 : 4 ≤ L) (hLw : L ≤ 4 * w) (hp : V aP < 2 ^ (8 * L)) (hq : V aQ < 2 ^ (8 * L)) :
     WP isa qinvPart s fun t => Ws t B Z w nArr ∧
       (∃ V' F', KS t.mem B w V' F' ∧ (∀ j < nArr, j ∉ qinvArrs → V' j = V j) ∧
         (∀ d, d ≠ X0 → d ≠ X1 → d ≠ X2 → F' d = F d) ∧
@@ -106,7 +108,15 @@ theorem qinvPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne 
   have zero4 : V4 aZero = 0 := by rw [o4 aZero (by decide), o2 aZero (by decide), zero]
   have vQ4 : V4 aQ = V aQ := by rw [o4 aQ (by decide), o2 aQ (by decide)]
   rw [wp_seqs_cons (by simp)]
-  refine WP.mono (invOfE h4 k4 (a := aQ) (m := aMq) (one := one4) (zero := zero4)
+  have e32 : 32 * (L / 4) = 8 * L := by omega_arith
+  have K4 : Keep opsRegs s t4 := ((r1.trans' r2).trans' r3).trans' r4
+  refine WP.mono (invOfE h4 k4 hw10 (a := aQ) (m := aMq)
+    (hk := nP_width (by rw [K4.gpr .r22 (by decide)]; exact h22) (by omega_arith)) (hn1 := by omega_arith)
+    (hnw := by omega_arith) (han := by rw [vQ4, e32]; exact hq)
+    (hmn := by
+      rw [vMq, e32, mL]; split
+      · exact hp
+      · exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) (by omega_arith : 2 ≤ 8 * L)))
     (odd := by rw [vMq]; exact mo.1) (gt := by rw [vMq]; exact mo.2))
     fun t5 ⟨h5, ⟨V5, k5, o5, g5, d5, l5⟩, f5, r5⟩ => ?_
   simp only [vMq, vQ4] at g5 d5 l5
@@ -117,7 +127,7 @@ theorem qinvPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne 
   obtain ⟨V7, kt, e7, o7⟩ := kt.vx
   refine ⟨ht, ⟨V7, F6, kt, fun j hj hn => ?_, fun d a b c => ?_, ?_, by rw [g6, g5, one5], by rw [e7]; exact l5,
     by rw [e7, ← g5]; exact d5⟩, (((((f1.trans f2).trans f3).trans f4).trans f5).trans f6).trans ft,
-    ((((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6).trans' rt).mono⟩
+    ((K4.mono.trans' r5).trans' r6.mono).trans' rt.mono⟩
   · simp only [qinvArrs, invOfArrs, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false, not_or] at hn
     obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17⟩ := hn

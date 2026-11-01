@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -32,6 +33,7 @@ registers, and the taint analysis checks it from them.
 
 namespace VG.Proof.RsaKeyGen.PPC64LE.Key
 
+open VG.Proof.Rsa.PPC64LE (InvLaw)
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.RsaKeyGen.PPC64LE.Key (code entry body)
 open VG.Impl.Rsa.PPC64LE.CrtValues (restore)
@@ -120,11 +122,11 @@ theorem pins_E2 : Pins E2 brRegs := by
   · rw [a₁.r24, a₂.r24, ha.reg hb (by decide)]
   · rw [b₁.r31, b₂.r31]; exact ha.arg hb (by decide)
 
-theorem body_D {d : KD} {s : State} (h : E2 d s) : WP isa body s (D d) := by
+theorem body_D [InvLaw] {d : KD} {s : State} (h : E2 d s) : WP isa body s (D d) := by
   obtain ⟨s0, hs, b, a, -⟩ := h
   exact WP.mono (body_ok b a) fun _ ⟨⟨m, _, _, f, _⟩, _⟩ => ⟨s0, m, hs, f⟩
 
-theorem body_ct : RelCT isa (Two E2) body (Two D) :=
+theorem body_ct [InvLaw] : RelCT isa (Two E2) body (Two D) :=
   two_post (two_taint _ pins_E2 (by taint_decide)) fun _ _ h => body_D h
 
 theorem pins_D : Pins D [.r31] := by
@@ -133,11 +135,11 @@ theorem pins_D : Pins D [.r31] := by
   subst hr
   rw [f₁.r31, f₂.r31]; exact ha.arg hb (by decide)
 
-theorem key_rel : RelCT isa (Two KRel) code fun _ _ => True := by
+theorem key_rel [InvLaw] : RelCT isa (Two KRel) code fun _ _ => True := by
   unfold code
   exact RelCT.seq entry_ct (RelCT.seq body_ct (two_taint _ pins_D (by taint_decide)))
 
-theorem key_ct : ConstantTime isa keyP.pre keyP.pub code :=
+theorem key_ct [InvLaw] : ConstantTime isa keyP.pre keyP.pub code :=
   RelCT.constantTime (key_rel.mono (fun s t ⟨hs, ht, hr, hsp, hst⟩ =>
     ⟨pubOf s, ⟨hs, rfl⟩, ⟨ht, by
       simp only [pubOf, KD.mk.injEq]
