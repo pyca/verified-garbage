@@ -163,6 +163,14 @@ theorem rg_le {w Z : Nat} (hZ : slot w 16 ≤ Z) {js hs : List Nat} (hjs : ∀ j
   · have := slot_lt (w := w) (hjs j hj); dsimp only; omega
   · have := hdr_lt_slot w 16 (hhs i hi); dsimp only; omega
 
+theorem rg_le26 {w Z : Nat} (hZ : slot w 26 ≤ Z) {js hs : List Nat} (hjs : ∀ j ∈ js, j < 26)
+    (hhs : ∀ i ∈ hs, i < 32) : ∀ r ∈ rg w js hs, r.1 + r.2 ≤ Z := by
+  intro r hr
+  simp only [rg, List.mem_append, List.mem_map] at hr
+  rcases hr with ⟨j, hj, rfl⟩ | ⟨i, hi, rfl⟩
+  · have := slot_lt (w := w) (hjs j hj); dsimp only; omega
+  · have := hdr_lt_slot w 26 (hhs i hi); dsimp only; omega
+
 /-- The low `j` words of a number of `w ≥ j` words. -/
 theorem wv_mod (m : Mem) (B : Addr) (e : Nat) {j w : Nat} (hj : j ≤ w) :
     wv m B e w % 2 ^ (64 * j) = wv m B e j := by
