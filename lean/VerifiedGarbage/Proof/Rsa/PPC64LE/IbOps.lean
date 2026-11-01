@@ -126,6 +126,17 @@ theorem sv_of_eq {m : Mem} {B : Addr} {d k : Nat} {z q : Int}
   rw [this, Int.mul_zero] at h0
   omega
 
+/-- The first `k ≤ w + 2` digits of an array outside a frame. -/
+theorem keep_val {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
+    (h : KeyWorkspace.Keep B w js ds m m') {j k : Nat} (hk : k ≤ w + 2) (hj : ∀ x ∈ js, x ≠ j)
+    (hd : ∀ d ∈ ds, d + 4 ≤ KeyWorkspace.hdr) (fit : arr w j + S w ≤ 2 ^ 64) :
+    val32 m' B (arr w j) k = val32 m B (arr w j) k := by
+  refine Outs.val32 h (fun r hr => ?_) (by simp only [S] at fit; omega)
+  simp only [KeyWorkspace.ranges, List.mem_append, List.mem_map] at hr
+  rcases hr with ⟨x, hx, rfl⟩ | ⟨d, hd', rfl⟩
+  · have := arr_disj (w := w) (hj x hx); dsimp only; simp only [S] at *; omega
+  · have := hd d hd'; have : KeyWorkspace.hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
+
 /-! ## Blocks -/
 
 /-- `ldW r o`: `r` := the window's 64-bit word at `o`. -/
@@ -283,5 +294,224 @@ theorem lin_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n c) 
     push_cast
     generalize (2 : Int) ^ (32 * n) = P at qeq ⊢
     grind
+
+/-! ## `shr` -/
+
+theorem ofNat_succ (n : Nat) : BitVec.ofNat 64 n + BitVec.ofNat 64 1 = BitVec.ofNat 64 (n + 1) :=
+  (BitVec.ofNat_add n 1).symm
+
+/-- `[o] = [a] / 2^30` (`shr`), `n + 1` digits, for `[a]` (`n + 2` digits) a
+multiple of `2^30`. -/
+theorem shr_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n c) {o a : Nat}
+    (ho : o < N) (ha : a < N) (hN : N ≤ 256) (hoa : o ≠ a) {z : Int}
+    (hy : sv s.mem B (arr w a) (n + 1) = 2 ^ 30 * z) (hz1 : -2 ^ (32 * n + 31) ≤ z)
+    (hz2 : z < 2 ^ (32 * n + 31)) :
+    WP isa (shr o a) s fun t => Ctx t B Z w N n c ∧ KeyWorkspace.Keep B w [o] [] s.mem t.mem ∧
+      sv t.mem B (arr w o) n = z ∧ Keep kRegs s t := by
+  have fo := h.ws.arr_fit ho
+  have fa := h.ws.arr_fit ha
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.nw
+  have := h.npos
+  have := h.ws.wle
+  have hnw := h.ws.nowrap
+  have da := arr_disj (w := w) hoa
+  rw [shr, WP.seq_iff]
+  have hb1 : WP isa (.block (ptr .r5 o ++ ptr .r6 a ++ cntN1)) s fun t => Ctx t B Z w N n c ∧
+      t.mem = s.mem ∧ t.gpr .r5 = off B (arr w o) ∧ t.gpr .r6 = off B (arr w a) ∧
+      t.gpr .r8 = BitVec.ofNat 64 (n + 1) ∧ Keep kRegs s t := by
+    rw [List.append_assoc]
+    refine ptr_ok h.ws (by decide) (by decide) (by decide) (by omega) ?_
+    refine ptr_ok (h.ws.of_keep (Keep.write _ .r5 _)) (by decide) (by decide) (by decide) (by omega) ?_
+    refine WP.mono (WP.keep [.r8] (Q := fun x => x.gpr .r8 = BitVec.ofNat 64 (n + 1) ∧ x.mem = s.mem) ?_
+      (by decide)) fun x ⟨⟨x8, xm⟩, kx⟩ => ?_
+    · prun [cntN1, cntN, h.cnt, ofNat_succ]
+    have k0 : Keep kRegs s x := (((Keep.write _ .r5 _).trans (Keep.write _ .r6 _)).trans kx).mono (by decide)
+    refine ⟨h.of_keep k0, xm, ?_, ?_, x8, k0⟩
+    · rw [kx.gpr _ (by decide)]; simp only [gpr_write, reduceCtorEq, ↓reduceIte]
+    · rw [kx.gpr _ (by decide)]; simp only [gpr_write, ↓reduceIte]
+  refine WP.mono hb1 fun t1 ⟨h1, m1, p5, p6, p8, k1⟩ => ?_
+  refine WP.mono (shrLoop_ok h1.ws.scr p5 p6 p8 (by omega) (by omega) (by omega) (by omega) (by omega))
+    fun t2 ⟨veq, out2, k2⟩ => ?_
+  have k : Keep kRegs s t2 := k1.trans' (k2.mono (by decide))
+  rw [m1] at veq out2
+  refine ⟨h.of_keep k, KeyWorkspace.Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using out2)
+    (by omega) (by simp), ?_, k⟩
+  have e := val_sv s.mem B (arr w a) (n + 1)
+  rw [hy] at e
+  have hd := congrArg (fun x : Nat => (x : Int)) veq
+  push_cast at hd
+  rw [e] at hd
+  refine sv_of_eq (q := 4 * (if 2 ^ 31 ≤ w32 s.mem B (arr w a + 4 * (n + 1)) then 1 else 0) -
+    ((w32 s.mem B (arr w a + 4 * (n + 1)) / 2 ^ 30 : Nat) : Int)) ?_ hz1 hz2
+  have e1 : (2 : Int) ^ (32 * (n + 1 + 1)) = 2 ^ 30 * (4 * 2 ^ (32 * (n + 1))) := by
+    rw [show 32 * (n + 1 + 1) = 30 + (2 + 32 * (n + 1)) by omega, Int.pow_add, Int.pow_add]; rfl
+  rw [e1, Int.mul_assoc, ← Int.mul_add, show (1073741824 : Int) = 2 ^ 30 from rfl,
+    Int.mul_ediv_cancel_left _ (by decide)] at hd
+  generalize (2 : Int) ^ (32 * (n + 1)) = P at hd ⊢
+  push_cast at hd
+  grind
+
+/-! ## Counts -/
+
+theorem cntN_ok {t : State} {B : Addr} {Z w N n c : Nat} (h : Ctx t B Z w N n c) :
+    WP isa (.block cntN) t fun x => (x.gpr .r8 = BitVec.ofNat 64 n ∧ x.mem = t.mem) ∧ Keep [.r8] t x := by
+  refine WP.keep _ ?_ (by decide)
+  prun [cntN, h.cnt]
+
+theorem cntN1_ok {t : State} {B : Addr} {Z w N n c : Nat} (h : Ctx t B Z w N n c) :
+    WP isa (.block cntN1) t fun x => (x.gpr .r8 = BitVec.ofNat 64 (n + 1) ∧ x.mem = t.mem) ∧ Keep [.r8] t x := by
+  refine WP.keep _ ?_ (by decide)
+  prun [cntN1, cntN, h.cnt, ofNat_succ]
+
+/-- Arrays equal or apart: `o` is ahead of `a`, for `k ≤ w + 2` digits. -/
+theorem ahead_any (w o a k : Nat) (hk : k ≤ w + 2) : Ahead (arr w o) (arr w a) k := by
+  by_cases e : o = a
+  · subst e; exact .inl (Nat.le_refl _)
+  · exact ahead_k e hk
+
+/-- The pointers of three arrays, a count and no carry. -/
+theorem setup_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n c) {o a b K : Nat}
+    {cnt : List Instr} (hcnt : ∀ t, Ctx t B Z w N n c → WP isa (.block cnt) t fun x =>
+      (x.gpr .r8 = BitVec.ofNat 64 K ∧ x.mem = t.mem) ∧ Keep [.r8] t x)
+    (ho : o < 2 ^ 15) (ha : a < 2 ^ 15) (hb : b < 2 ^ 15) :
+    WP isa (.block (ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ cnt ++ ([.li .r9 0] : List Instr))) s fun t =>
+      Ctx t B Z w N n c ∧ t.mem = s.mem ∧ t.gpr .r5 = off B (arr w o) ∧ t.gpr .r6 = off B (arr w a) ∧
+      t.gpr .r7 = off B (arr w b) ∧ t.gpr .r8 = BitVec.ofNat 64 K ∧ t.gpr .r9 = 0 ∧
+      Keep [.r5, .r6, .r7, .r8, .r9] s t := by
+  rw [show ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ cnt ++ ([.li .r9 0] : List Instr) =
+    ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ (cnt ++ ([.li .r9 0] : List Instr)) by simp only [List.append_assoc]]
+  refine ptr3_ok h.ws ho ha hb fun t p5 p6 p7 kt mt => ?_
+  have ht := h.of_keep (kt.mono (by decide))
+  rw [WP.block_append_iff]
+  refine WP.mono (hcnt t ht) fun x ⟨⟨x8, xm⟩, kx⟩ => ?_
+  refine WP.mono (WP.keep [.r9] (Q := fun y => y.gpr .r9 = 0 ∧ y.mem = x.mem) (by prun; rfl) (by decide))
+    fun y ⟨⟨y9, ym⟩, ky⟩ => ?_
+  have k0 : Keep [.r5, .r6, .r7, .r8, .r9] s y := ((kt.trans kx).trans ky).mono (by decide)
+  refine ⟨h.of_keep (k0.mono (by decide)), ym.trans (xm.trans mt), ?_, ?_, ?_, ?_, y9, k0⟩
+  · rw [ky.gpr _ (by decide), kx.gpr _ (by decide)]; exact p5
+  · rw [ky.gpr _ (by decide), kx.gpr _ (by decide)]; exact p6
+  · rw [ky.gpr _ (by decide), kx.gpr _ (by decide)]; exact p7
+  · rw [ky.gpr _ (by decide)]; exact x8
+
+/-! ## `mac` -/
+
+/-- `[o] = [a] + k [b]` (`mac`), `K` digits, `k < 2^32` in `r11`; `o` equal to
+`a` and to `b`, or apart from them. -/
+theorem mac_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n c) {o a b K : Nat}
+    {cnt : List Instr} (hcnt : ∀ t, Ctx t B Z w N n c → WP isa (.block cnt) t fun x =>
+      (x.gpr .r8 = BitVec.ofNat 64 K ∧ x.mem = t.mem) ∧ Keep [.r8] t x)
+    (hK1 : 1 ≤ K) (hK : K ≤ n + 1) (ho : o < N) (ha : a < N) (hb : b < N) (hN : N ≤ 256)
+    (hk : (s.gpr .r11).toNat < 2 ^ 32) :
+    WP isa (mac o a b cnt) s fun t => Ctx t B Z w N n c ∧ KeyWorkspace.Keep B w [o] [] s.mem t.mem ∧
+      val32 t.mem B (arr w o) K + 2 ^ (32 * K) * (t.gpr .r9).toNat =
+        val32 s.mem B (arr w a) K + (s.gpr .r11).toNat * val32 s.mem B (arr w b) K ∧
+      (t.gpr .r9).toNat < 2 ^ 32 ∧ t.gpr .r5 = off B (arr w o + 4 * K) ∧ t.gpr .r11 = s.gpr .r11 ∧
+      Outside B (arr w o) (4 * K) s.mem t.mem ∧ Keep kRegs s t := by
+  have fo := h.ws.arr_fit ho
+  have fa := h.ws.arr_fit ha
+  have fb := h.ws.arr_fit hb
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.nw
+  have := h.ws.wle
+  rw [mac, macSetup, WP.seq_iff]
+  refine WP.mono (setup_ok h hcnt (by omega) (by omega) (by omega)) fun t1 ⟨h1, m1, p5, p6, p7, p8, p9, k1⟩ => ?_
+  have k11 : t1.gpr .r11 = s.gpr .r11 := k1.gpr _ (by decide)
+  refine WP.mono (macLoop_ok h1.ws.scr p5 p6 p7 p8 (by rw [p9]; decide) (by rw [k11]; exact hk) hK1 (by omega)
+    (by omega) (by omega) (by omega) (ahead_any w o a K (by omega)) (ahead_any w o b K (by omega)))
+    fun t2 ⟨q9, qeq, q5, out2, k2⟩ => ?_
+  have k : Keep kRegs s t2 := (k1.mono (by decide)).trans' (k2.mono (by decide))
+  rw [m1, k11, p9] at qeq
+  rw [m1] at out2
+  refine ⟨h.of_keep k, KeyWorkspace.Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using out2)
+    (by omega) (by simp), by simpa using qeq, q9, q5, (k2.gpr _ (by decide)).trans k11, out2, k⟩
+
+/-! ## `csub` -/
+
+/-- `[o] = [x] - m` where it does not borrow, else `[x]` (`csub`), `n + 1`
+digits, through `[sc]`. -/
+theorem csub_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n c) {o x sc : Nat}
+    (ho : o < N) (hx : x < N) (hsc : sc < N) (hm : aMz < N) (hN : N ≤ 256) (hsx : sc ≠ x)
+    (hsm : sc ≠ aMz) (hos : o ≠ sc) {p X : Nat} (hp : val32 s.mem B (arr w aMz) (n + 1) = p)
+    (hX : val32 s.mem B (arr w x) (n + 1) = X) :
+    WP isa (csub o x sc) s fun t => Ctx t B Z w N n c ∧ KeyWorkspace.Keep B w [o, sc] [] s.mem t.mem ∧
+      val32 t.mem B (arr w o) (n + 1) = (if p ≤ X then X - p else X) ∧ Keep kRegs s t := by
+  have fo := h.ws.arr_fit ho
+  have fx := h.ws.arr_fit hx
+  have fs := h.ws.arr_fit hsc
+  have fm := h.ws.arr_fit hm
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.nw
+  have := h.npos
+  have := h.ws.wle
+  have hnw := h.ws.nowrap
+  rw [csub]; simp only [seqs]; rw [WP.seq_iff]
+  refine WP.mono (setup_ok h (fun t ht => cntN1_ok ht) (by omega) (by omega) (by omega))
+    fun t1 ⟨h1, m1, p5, p6, p7, p8, p9, k1⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (VG.Proof.Rsa.PPC64LE.Loops.subLoop_ok h1.ws.scr p5 p6 p7 p8 (by rw [p9]; decide)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (ahead_k hsx (by omega)) (ahead_k hsm (by omega)))
+    fun t2 ⟨b9, veq, out2, k2⟩ => ?_
+  have h2 := h1.of_keep (k2.mono (by decide))
+  rw [m1, p9, show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at veq
+  rw [m1] at out2
+  rw [WP.seq_iff]
+  -- The mask of the borrow.
+  have hb2 : WP isa (.block (ptr .r5 o ++ ptr .r6 sc ++ ptr .r7 x ++ cntN1 ++
+      ([.li .r0 0, .sub .r9 .r0 .r9] : List Instr))) t2 fun t => Ctx t B Z w N n c ∧ t.mem = t2.mem ∧
+      t.gpr .r5 = off B (arr w o) ∧ t.gpr .r6 = off B (arr w sc) ∧ t.gpr .r7 = off B (arr w x) ∧
+      t.gpr .r8 = BitVec.ofNat 64 (n + 1) ∧ t.gpr .r9 = 0#64 - t2.gpr .r9 ∧ Keep kRegs t2 t := by
+    rw [show ptr .r5 o ++ ptr .r6 sc ++ ptr .r7 x ++ cntN1 ++ ([.li .r0 0, .sub .r9 .r0 .r9] : List Instr) =
+      ptr .r5 o ++ ptr .r6 sc ++ ptr .r7 x ++ (cntN1 ++ ([.li .r0 0, .sub .r9 .r0 .r9] : List Instr)) by
+        simp only [List.append_assoc]]
+    refine ptr3_ok h2.ws (by omega) (by omega) (by omega) fun t q5 q6 q7 kt mt => ?_
+    have ht := h2.of_keep (kt.mono (by decide))
+    rw [WP.block_append_iff]
+    refine WP.mono (cntN1_ok ht) fun y ⟨⟨y8, ym⟩, ky⟩ => ?_
+    have y9 : y.gpr .r9 = t2.gpr .r9 := (ky.gpr _ (by decide)).trans (kt.gpr _ (by decide))
+    refine WP.mono (WP.keep [.r0, .r9] (Q := fun z => z.gpr .r9 = 0#64 - t2.gpr .r9 ∧ z.mem = y.mem)
+      (by prun [y9]) (by decide)) fun z ⟨⟨z9, zm⟩, kz⟩ => ?_
+    have k0 : Keep kRegs t2 z := ((kt.trans ky).trans kz).mono (by decide)
+    refine ⟨h2.of_keep k0, zm.trans (ym.trans mt), ?_, ?_, ?_, ?_, z9, k0⟩
+    · rw [kz.gpr _ (by decide), ky.gpr _ (by decide)]; exact q5
+    · rw [kz.gpr _ (by decide), ky.gpr _ (by decide)]; exact q6
+    · rw [kz.gpr _ (by decide), ky.gpr _ (by decide)]; exact q7
+    · rw [kz.gpr _ (by decide)]; exact y8
+  refine WP.mono hb2 fun t3 ⟨h3, m3, r5, r6, r7, r8, r9, k3⟩ => ?_
+  have e9 : ∀ y : BitVec 64, y.toNat ≤ 1 →
+      0#64 - y = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if decide (y.toNat = 1) then 1 else 0) := by
+    intro y hy
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hy with e | e
+    · have : y = 0#64 := BitVec.eq_of_toNat_eq e
+      subst this; rfl
+    · have : y = 1#64 := BitVec.eq_of_toNat_eq e
+      subst this; rfl
+  refine WP.mono (VG.Proof.Rsa.PPC64LE.Loops.selLoop_ok (b := decide ((t2.gpr .r9).toNat = 1)) h3.ws.scr
+    r5 r6 r7 r8 (by rw [r9]; exact e9 _ b9) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (ahead_k hos (by omega)) (ahead_any w o x (n + 1) (by omega))) fun t4 ⟨seq, out4, k4⟩ => ?_
+  have k : Keep kRegs s t4 :=
+    (((k1.mono (by decide)).trans' (k2.mono (by decide))).trans' k3).trans' (k4.mono (by decide))
+  refine ⟨h.of_keep k, ?_, ?_, k⟩
+  · rw [m3] at out4
+    exact (KeyWorkspace.Keep.of_arr (o := sc) (d := 0) (by simpa only [Nat.add_zero] using out2) (by omega)
+      (by simp)).trans (KeyWorkspace.Keep.of_arr (o := o) (d := 0) (by simpa only [Nat.add_zero] using out4)
+        (by omega) (by simp))
+  · have vx : val32 t2.mem B (arr w x) (n + 1) = X := by
+      rw [out2.val32 (by have := arr_disj (w := w) hsx; omega) (by omega)]; exact hX
+    rw [seq, m3, vx]
+    have hpR := val32_lt s.mem B (arr w aMz) (n + 1)
+    have hXR := val32_lt s.mem B (arr w x) (n + 1)
+    have hSR := val32_lt t2.mem B (arr w sc) (n + 1)
+    rw [hp] at hpR veq
+    rw [hX] at hXR veq
+    generalize 2 ^ (32 * (n + 1)) = R at hpR hXR hSR veq
+    by_cases e : (t2.gpr .r9).toNat = 1
+    · rw [e] at veq; simp only [e, decide_true, ↓reduceIte]
+      have : ¬ p ≤ X := by omega
+      simp only [this, ↓reduceIte]
+    · have e0 : (t2.gpr .r9).toNat = 0 := by omega
+      rw [e0] at veq; simp only [e, decide_false, Bool.false_eq_true, ↓reduceIte]
+      have : p ≤ X := by omega
+      simp only [this, ↓reduceIte]; omega
 
 end VG.Proof.Rsa.PPC64LE.InvBatch

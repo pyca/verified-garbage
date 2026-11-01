@@ -148,6 +148,9 @@ def macBody : List Instr :=
 def macSetup (o a b : Nat) (cnt : List Instr) : List Instr :=
   ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ cnt ++ [.li .r9 0]
 
+/-- `[o] = [a] + k [b]`, `cnt` digits, the carry out in `r9`. -/
+def mac (o a b : Nat) (cnt : List Instr) : Prog isa := .seq (.block (macSetup o a b cnt)) (countLoop .r8 macBody)
+
 /-- `[o] = [x] - m` where that does not borrow, else `[x]`, `n + 1` digits:
 the difference into `[s]`, then selected by the borrow. -/
 def csub (o x s : Nat) : Prog isa := seqs [
@@ -158,12 +161,10 @@ def csub (o x s : Nat) : Prog isa := seqs [
 /-- `[o] = (t + k m) / 2^32` into `[0, m)`, for `t = [t]` (`n + 2` digits,
 signed), `k = t₀ (-m⁻¹) mod 2^32`. -/
 def mred (t o : Nat) : Prog isa := seqs [
-  .block (ptr .r5 t ++ [.load .w .r0 .r5 0] ++ ldW .r3 wIv ++ [.mul .r11 .r0 .r3, .lsr .w .r11 .r11 0] ++
-    macSetup t t aMz cntN1),
-  countLoop .r8 macBody,
+  .block (ptr .r5 t ++ ldW .r3 wIv ++ [.load .w .r0 .r5 0, .mul .r11 .r0 .r3, .lsr .w .r11 .r11 0]),
+  mac t t aMz cntN1,
   .block [.load .w .r0 .r5 0, .add .r0 .r0 .r9, .store .w .r0 .r5 0],
-  .block ([.li .r11 1] ++ ptr .r5 aT3 ++ ptr .r6 t ++ [.addi .r6 .r6 4] ++ ptr .r7 aMz ++ cntN1 ++
-    [.li .r9 0]),
+  .block (ptr .r5 aT3 ++ ptr .r6 t ++ ptr .r7 aMz ++ [.addi .r6 .r6 4, .li .r11 1] ++ cntN1 ++ [.li .r9 0]),
   countLoop .r8 macBody,
   csub aT3 aT3 t, csub o aT3 t]
 
@@ -191,8 +192,8 @@ def init : Prog isa := seqs [
   .block ([.li .r0 0, .store .w .r0 .r5 0] ++ ptr .r5 aF ++ ptr .r6 aMz ++ cntN1),
   countLoop .r8 copyBody,
   .block (ptr .r5 aX ++ [.load .w .r11 .r5 0, .lsl .r11 .r11 63, .lsr .d .r11 .r11 63, .li .r0 1,
-    .logic .xor .r11 .r11 .r0] ++ macSetup aG aX aMz cntN),
-  countLoop .r8 macBody,
+    .logic .xor .r11 .r11 .r0]),
+  mac aG aX aMz cntN,
   .block ([.store .w .r9 .r5 0] ++ ptr .r5 aA ++ cntN1 ++ [.li .r0 0]), zeros,
   .block (ptr .r5 aB ++ cntN1 ++ [.li .r0 0]), zeros,
   .block (ptr .r5 aB ++ [.li .r0 1, .store .w .r0 .r5 0] ++ ptr .r5 aW ++ [.store .d .r0 .r5 wD,
@@ -213,7 +214,7 @@ def normalize : Prog isa := seqs [
 
 /-- `a := 2 a mod m`. -/
 def double : Prog isa := seqs [
-  .block ([.li .r11 1] ++ macSetup aT3 aA aA cntN1), countLoop .r8 macBody, csub aA aT3 aT1]
+  .block [.li .r11 1], mac aT3 aA aA cntN1, csub aA aT3 aT1]
 
 /-- `6 (n + 1)` doublings, counted in `r10` above `n`. -/
 def doublings : Prog isa :=
