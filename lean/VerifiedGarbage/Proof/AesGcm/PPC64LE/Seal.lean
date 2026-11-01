@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
@@ -77,8 +79,9 @@ theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st 
 
 end
 
-theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.pre s₀) :
-    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
+theorem sealBody_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
+    (bodyCorrect : SealFused.BodyCorrect sealBody) {s₀ : State} (h : sealPPC64LE.pre s₀) :
+    WP isa (Impl.AesGcm.PPC64LE.SealFused.withBody sealBody) s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
   have h' : sealPre s₀ := h
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, fW, fsp, hR⟩ := h'
   have L₀ := oneLay fc fW dcW
@@ -115,41 +118,36 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
       rw [wr₂, hk₁.wr, hwr]; exact covers_mem (by simp)
     exact ⟨⟨covers_left hDw, (s₀.gpr .r10).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw, dcd⟩
   have h28 : s₁.gpr .r28 = BitVec.ofNat 64 (s₀.gpr .r4).toNat := by rw [h1.r28]; exact toN
-  refine WP.seq (WP.mono (WP.with_rdwr (oneCrypt_ok L oa.env h28 hR hd₂ oa.cb)) fun s₃ ⟨oc, rd₃, wr₃, _⟩ => ?_)
-  -- `oneTag 0`
-  have hH₃ : blockAt s₃.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
-    rw [blockAt_frame oc.frame (fun r hr => (ctx_crFrame L hd₂ r hr).sub_left (Lay.ctxSub (by decide)))]
-    exact oa.hH
-  have hb := Nat.mod_lt (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat ++
-    zeros (padLen (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat).length)).length (show 16 > 0 by decide)
-  have hab₃ := oa.abs.congr (blockAt_frame oc.frame (stp_crFrame L hd₂ (by decide)))
-    (bytesAt_frame oc.frame (stp_crFrame L hd₂ (by omega)) (by omega))
-  refine WP.seq (WP.mono (WP.with_rdwr (oneTag_ok L (o := 0) (.inl rfl) oc.env h28 hR hH₃
-    (length_bytesAt _ _ _).symm hab₃ (hd₂.ok.of_eq rd₃ wr₃))) fun s₄ ⟨ot, rd₄, wr₄, _⟩ => ?_)
-  -- the tag copied out
-  have hTw : Covers [⟨s₁.gpr .r20, 16⟩] s₄.wr := by
-    rw [wr₄, wr₃, wr₂, hk₁.wr, h1.r20, hwr]; exact covers_mem (by simp)
-  have hTd' : (⟨s₁.gpr .r20, 16⟩ : Region).Disjoint ⟨s₁.gpr .r31, 16⟩ := by
-    rw [h1.r20, h1.r31]; exact dtW.sub_right (Region.sub_prefix (by decide))
-  refine WP.seq (WP.mono (tagOut_ok ot.env hTw hTd') fun s₅ ⟨hb₅, hf₅, g₅, k₅⟩ => ?_)
-  have he₅ := ot.env.keep (fun r hr => g₅ r (by revert r; decide)) k₅.sp k₅.rd k₅.wr
-  have of₄ := ot.frame
-  rw [h1.r30, h1.r31] at of₄
-  have cf₃ := oc.frame
-  rw [h1.r30, h1.r31, h1.r27, h1.r23] at cf₃
+  have hab₂ : Absorbed s₂.mem (s₁.gpr .r30+16) (s₁.gpr .r30+32)
+      (ctxH s₂.mem (s₁.gpr .r29))
+      (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat ++
+        zeros (padLen (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat).length)) := by
+    rw [ctxH_eq,oa.hH]; exact oa.abs
+  refine WP.seq (WP.mono (WP.with_rdwr (bodyCorrect L oa.env hd₂ h28 hR
+    (length_bytesAt _ _ _).symm hab₂)) fun s₄ ⟨bo,rd₄,wr₄,_⟩ => ?_)
+  have hTw : Covers [⟨s₁.gpr .r20,16⟩] s₄.wr := by
+    rw [wr₄,wr₂,hk₁.wr,h1.r20,hwr]; exact covers_mem (by simp)
+  have hTd' : (⟨s₁.gpr .r20,16⟩ : Region).Disjoint ⟨s₁.gpr .r31,16⟩ := by
+    rw [h1.r20,h1.r31]; exact dtW.sub_right (Region.sub_prefix (by decide))
+  refine WP.seq (WP.mono (tagOut_ok bo.env hTw hTd') fun s₅ ⟨hb₅,hf₅,g₅,k₅⟩ => ?_)
+  have he₅ := bo.env.keep (fun r hr => g₅ r (by revert r; decide)) k₅.sp k₅.rd k₅.wr
   have jf₂ := oa.frame
-  rw [h1.r30, h1.r31] at jf₂
-  have hd₂₀ : DataW (s₀.gpr .r3) (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₂ (s₀.gpr .r9)
-      (s₀.gpr .r10).toNat := by rw [← h1.r29, ← h1.r30, ← h1.r31, ← h1.r27, ← h1.r23]; exact hd₂
-  have sv₅ : SavedAt s₅.mem (stackArg s₀ 1) s₀ :=
-    (((h1.en.saved.frame jf₂ (saved_j0Frame L₀)).frame cf₃ (saved_crFrame L₀ hd₂₀)).frame of₄
-      (saved_otFrame L₀ (.inl rfl))).frame (by rw [h1.r20] at hf₅; exact hf₅) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact (dtW.sub_right (Lay.wSub (by decide))).symm)
-  have e31 : s₅.gpr .r31 = stackArg s₀ 1 := (he₅.fr _ (by decide)).trans h1.r31
+  rw [h1.r30,h1.r31] at jf₂
+  have hd₂₀ : DataW (s₀.gpr .r3) (stackArg s₀ 1+BitVec.ofNat 64 16) (stackArg s₀ 1) s₂
+      (s₀.gpr .r9) (s₀.gpr .r10).toNat := by
+    rw [← h1.r29,← h1.r30,← h1.r31,← h1.r27,← h1.r23]; exact hd₂
+  have sv₂ : SavedAt s₂.mem (s₁.gpr .r31) s₀ := by
+    rw [h1.r31]; exact h1.en.saved.frame jf₂ (saved_j0Frame L₀)
+  have sv₄ := sv₂.frame bo.frame (SealFused.saved_bodyFrame L hd₂)
+  have sv₅ : SavedAt s₅.mem (stackArg s₀ 1) s₀ := by
+    have hs := sv₄.frame hf₅ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [h1.r31,h1.r20]; exact (dtW.sub_right (Lay.wSub (by decide))).symm)
+    rw [h1.r31] at hs; exact hs
+  have e31 : s₅.gpr .r31=stackArg s₀ 1 := (he₅.fr _ (by decide)).trans h1.r31
   refine WP.mono (restore_ok e31 (by have := he₅.perm.w; rw [h1.r31] at this; exact Covers.right this) sv₅
     he₅.sp (fun r hr => by rw [he₅.fr r (by revert hr; revert r; decide)]; exact h1.en.low r hr))
-    fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
-  -- the results
+    fun s' ⟨ga,hm,_⟩ => ⟨ga,?_⟩
   have f₂ : Frame (savedR (stackArg s₀ 1) :: j0Frame (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1))
       s₀.mem s₂.mem :=
     (f₁.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..).trans
@@ -171,8 +169,8 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
     · exact ddW.sub_right (Lay.wSub (by decide))
     · exact data_j0 hd₂₀.ok r hr
   have hc₂ := ciph_keep f₂ dc₂ hR
-  have hc₃ : ciphOf s₃.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat = ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat := by
-    rw [ciph_frame cf₃ (ctx_crFrame L₀ hd₂₀) hR, hc₂]
+  change ctxCiph s₂.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat =
+    ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat at hc₂
   have hD₂ : bytesAt s₂.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = bytesAt s₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat :=
     bytesAt_frame f₂ dD (by have := (s₀.gpr .r10).isLt; omega)
   have hiv : bytesAt s₁.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat = bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat :=
@@ -184,33 +182,42 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
     exact bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide)))
       (by have := (s₀.gpr .r8).isLt; omega)
-  have hj₃ : blockAt s₃.mem (stackArg s₀ 1 + BitVec.ofNat 64 16) =
-      j0 (ctxH s₀.mem (s₀.gpr .r3)) (bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat) := by
-    rw [blockAt_frame cf₃ (by simpa using stp_crFrame L₀ hd₂₀ (d := 0) (k := 16) (by decide)), ← hiv, ← h1.r30]
-    exact oa.j
-  have hD₃ : bytesAt s₃.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat =
-      gctr (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat)
-        (inc32 (j0 (ctxH s₀.mem (s₀.gpr .r3)) (bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat)))
-        (bytesAt s₀.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat) := by
-    have := oc.out
-    rw [h1.r27, h1.r23, h1.r29, hc₂, hD₂, hiv] at this
-    exact this
-  have hD₄ : bytesAt s₄.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = bytesAt s₃.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat := by
-    refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .r10).isLt; omega)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddW.sub_right (Lay.wSub (by decide))
-  have hD₅ : bytesAt s₅.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = bytesAt s₄.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat :=
-    bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]; exact ddt)
+  have hD₄ := bo.ciphertext
+  have hcb₂ := oa.cb
+  change blockAt s₂.mem (s₁.gpr .r30+48)=_ at hcb₂
+  rw [hcb₂,h1.r29,h1.r27,h1.r23,hc₂,hD₂,hiv] at hD₄
+  have hD₅ : bytesAt s₅.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat =
+      bytesAt s₄.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat :=
+    bytesAt_frame hf₅ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]; exact ddt)
       (by have := (s₀.gpr .r10).isLt; omega)
-  have ho := ot.out
-  rw [h1.r29, h1.r30, h1.r27, h1.r23, h1.r31, hc₃, hj₃, haad, BitVec.add_zero, ← Proof.Gcm.fullTag_eq] at ho
-  rw [h1.r31, h1.r20] at hb₅
-  simp only [sealPPC64LE, encryptWith, hm, hD₅, hD₄, hD₃, hb₅, ho]
+  have hH₂ : ctxH s₂.mem (s₁.gpr .r29)=ctxH s₀.mem (s₀.gpr .r3) := by
+    rw [ctxH_eq]; exact oa.hH
+  have ho := bo.tag
+  rw [hH₂,oa.j,h1.r29,h1.r27,h1.r23,h1.r31,hc₂,hiv,haad] at ho
+  have hfull := Proof.Gcm.fullTag_eq
+    (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat) (ctxH s₀.mem (s₀.gpr .r3))
+    (bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat)
+    (bytesAt s₀.mem (s₀.gpr .r7) (s₀.gpr .r8).toNat)
+    (bytesAt s₄.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat)
+  simp only [length_bytesAt] at hfull ho
+  rw [← hfull,hD₄] at ho
+  rw [h1.r31,h1.r20] at hb₅
+  simp only [sealPPC64LE,encryptWith,hm,hD₅,hD₄,hb₅,ho]
   refine Prod.ext rfl ?_
-  exact List.take_of_length_le (by rw [Spec.Gcm.fullTag, Proof.Gcm.length_gctr, Proof.Cmac.toBytes_length])
+  exact List.take_of_length_le (by rw [Spec.Gcm.fullTag,Proof.Gcm.length_gctr,Proof.Cmac.toBytes_length])
+
+theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.pre s₀) :
+    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
+  have hp := sealBody_wp (sealBody := .seq oneCrypt (oneTag 0))
+    (fun L he hd hR hv ha hab => SealFused.smallBody_ok L he hd hR hv ha hab) h
+  exact WP.seq (WP.mono (WP.seq_iff.mp hp) fun _ h₁ =>
+    WP.seq (WP.mono (WP.seq_iff.mp h₁) fun _ h₂ => WP.assoc h₂))
+
+theorem sealFused_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    {s₀ : State} (h : sealPPC64LE.pre s₀) :
+    WP isa Impl.AesGcm.PPC64LE.SealFused.seal s₀
+      fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' :=
+  sealBody_wp (fun L he hd hR hv ha hab => SealFused.body_ok L he hd hR hv ha hab) h
 
 end VG.Proof.AesGcm.PPC64LE
