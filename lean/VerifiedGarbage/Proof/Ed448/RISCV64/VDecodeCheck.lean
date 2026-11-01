@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 
 /-!
 # Ed448's verification on RISCV64: the checks of the candidate x-coordinate
@@ -58,15 +59,15 @@ def CQ : List Nat := [DXX, DV, DU, DY, DK, DTMP]
 section
 variable {b : Addr}
 
-theorem decodeCheck_eq : decodeCheck = opsCode [.mul DTMP DXX DXX, .mul DTMP DV DTMP]
-    (.block (Impl.X448.RISCV64.sub X2 DTMP DU ++ freeze ++ outZero ++ copy X2 DXX ++ freeze ++ outOr ++
+theorem decodeCheck_eq : decodeCheck = R64.opsCode [.mul DTMP DXX DXX, .mul DTMP DV DTMP]
+    (.block (Impl.X448.RISCV64.R64.sub X2 DTMP DU ++ freeze ++ outZero ++ copy X2 DXX ++ freeze ++ outOr ++
       ([.addi .a7 .a7 (-1), .shift .srl .d .a7 .a7 63, .load .b .a4 .a3 SIGN, .logic .and .a5 .a7 .a4] : List Instr) ++
         orBad .a5)) := rfl
 
 theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b DXX = x)
     (hv : FS s.mem b DV = v) (hu : FS s.mem b DU = u) {sg : Nat} (hsg : sg ≤ 1)
     (hs : s.mem (b + BitVec.ofNat 64 SIGN) = BitVec.ofNat 8 sg) :
-    WP isa decodeCheck s fun t => VCtx b t ∧ Rest work s t ∧
+    WP isa decodeCheck s fun t => VCtx b t ∧ Rest R64.work s t ∧
       Frame (yW b) s.mem t.mem ∧ (∀ q ∈ [DXX, DY, DK], FS t.mem b q = FS s.mem b q) ∧
       t.mem (b + BitVec.ofNat 64 SIGN) = s.mem (b + BitVec.ofNat 64 SIGN) ∧
       VG.Spec.X448.bytesAt t.mem (b + BitVec.ofNat 64 OUT) 56 = Proof.X25519.leBytes 56 x.val ∧
@@ -75,13 +76,13 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
   have hA := ACC_eq
   have hX : X2 = 56 := rfl
   have hY : Y = 896 := rfl
-  have h0 : Cur b s (s.gpr .t2) (s.gpr .t1) CQ (FS s.mem b) s := ⟨hc.ctx, Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
+  have h0 : R64.Cur b s (s.gpr .t2) (s.gpr .t1) CQ (FS s.mem b) s := ⟨hc.ctx, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
   rw [decodeCheck_eq]
-  refine ops_ok _ CQ _ s (by decide) h0 fun s1 h1 => ?_
+  refine R64.ops_ok _ CQ _ s (by decide) h0 fun s1 h1 => ?_
   simp only [outZero, copy, List.append_assoc, List.cons_append, List.nil_append]
   have hc1 : VCtx b s1 := hc.of_rest h1.stp.rest (by decide) (by decide)
   -- `v x² - u` into `X2`.
-  refine WP.append (subS (o := X2) (x := DTMP) (y := DU) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (R64.subS (o := X2) (x := DTMP) (y := DU) (by decide) (by decide) (by decide) (by decide)
     h1.ctx h1.slots) fun s2 ⟨hr2, hf2, hS2⟩ => ?_
   have hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
   have e2 : FS s2.mem b X2 = v * (x * x) - u := by
@@ -128,7 +129,7 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
   refine WP.mono (orBad_ok hc13 (r := .a5) (by decide)) fun t ⟨hrt, hft, hbt⟩ => ?_
   have hX' : DXX = 672 := rfl
   -- The registers.
-  have hrw : Rest work s t := by
+  have hrw : Rest R64.work s t := by
     refine h1.stp.rest.trans ((hr2.mono (by decide)).trans ((hr3.mono (by decide)).trans ?_))
     refine (hr4.mono (by decide)).trans ((hr5.mono (by decide)).trans ?_)
     refine ((u6.rest (ws := [.t0]) (by decide)).mono (by decide)).trans ((h7.rest.mono (by decide)).trans ?_)

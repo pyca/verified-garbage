@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
 import VerifiedGarbage.Proof.Ed448.RISCV64.VDecodeCheck
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VDecodeY
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 
 /-!
 # Ed448's verification on RISCV64: decoding a point
@@ -78,7 +79,7 @@ theorem bytes57 (m : Mem) (p : Nat) :
 
 theorem decode_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hc : VCtx b s) {p : Nat} (hp : 1064 ≤ p)
     (hp' : p + 57 ≤ 1696) (hp4 : p % 4 = 0) {xo yo : Nat} (ho : NegOut xo yo) (hd : FS s.mem b DK = Spec.Ed448.d) :
-    WP isa (decode p xo yo) s fun t => VCtx b t ∧ Rest work s t ∧ Frame (decW b xo yo) s.mem t.mem ∧
+    WP isa (decode p xo yo) s fun t => VCtx b t ∧ Rest R64.work s t ∧ Frame (decW b xo yo) s.mem t.mem ∧
       FS t.mem b DK = Spec.Ed448.d ∧
       (bad t.mem b = 0 ↔ bad s.mem b = 0 ∧
         (Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 p) 57)).isSome) ∧
