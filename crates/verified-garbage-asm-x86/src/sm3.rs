@@ -99,7 +99,7 @@ call {vg_sm3_compress}
 jne 20b
 .base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
 .p2align 6"#,
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
 
@@ -152,6 +152,10 @@ call {vg_sm3_compress}
 je 22b
 .base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCS4AAAAww=="
 .p2align 6"#,
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm3_compress.rs"]
+pub(crate) mod vg_sm3_compress;

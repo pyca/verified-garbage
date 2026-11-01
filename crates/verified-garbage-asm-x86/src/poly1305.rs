@@ -135,3 +135,7 @@ jmp 21f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_finalize_scratch.rs"]
+pub(crate) mod vg_poly1305_finalize_scratch;

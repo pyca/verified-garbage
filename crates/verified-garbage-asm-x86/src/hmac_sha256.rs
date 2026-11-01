@@ -63,7 +63,7 @@ jmp 21b
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::internal::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
     )
 }
 
@@ -159,7 +159,7 @@ jmp 21b
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
-        vg_hmac_sha256_init_scratch_shani = sym super::internal::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
+        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
     )
 }
 
@@ -194,3 +194,19 @@ call {vg_sha256_compress_shani}
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_finalize_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha256_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha256_init_scratch_shani;

@@ -143,6 +143,6 @@ j 21f
 .insn 4, 0x120aba83
 .insn 2, 0x8082
 .option pop",
-        vg_rc2_decrypt_block = sym crate::internal::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
+        vg_rc2_decrypt_block = sym crate::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )
 }

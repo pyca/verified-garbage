@@ -61,7 +61,7 @@ jmp 21b
         vg_md5_compress = sym super::md5::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init_scratch = sym super::internal::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
 
@@ -90,3 +90,11 @@ call {vg_md5_compress}
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_init_scratch.rs"]
+pub(crate) mod vg_hmac_md5_init_scratch;

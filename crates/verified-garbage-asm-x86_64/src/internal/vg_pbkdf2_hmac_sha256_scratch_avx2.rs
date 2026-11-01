@@ -72,8 +72,8 @@ jmp 24f
         vg_sha256_init = sym crate::sha256::vg_sha256_init,
         vg_sha256_update_scratch_avx2 = sym crate::sha256::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym crate::sha256::vg_sha256_finalize_scratch_avx2,
-        vg_hmac_sha256_init_scratch_avx2 = sym crate::internal::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_avx2 = sym crate::internal::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
-        vg_pbkdf2_hmac_sha256_iterate_avx2 = sym crate::internal::vg_pbkdf2_hmac_sha256_iterate_avx2::vg_pbkdf2_hmac_sha256_iterate_avx2,
+        vg_hmac_sha256_init_scratch_avx2 = sym crate::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
+        vg_hmac_sha256_finalize_scratch_avx2 = sym crate::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
+        vg_pbkdf2_hmac_sha256_iterate_avx2 = sym crate::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_iterate_avx2::vg_pbkdf2_hmac_sha256_iterate_avx2,
     )
 }

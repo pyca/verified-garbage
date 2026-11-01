@@ -22,6 +22,6 @@ b 21f
 20:
 21:
 .base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIBO""#,
-        vg_rc2_encrypt_block = sym crate::internal::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
+        vg_rc2_encrypt_block = sym crate::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
 }

@@ -45,7 +45,7 @@ b 27f
 26:
 27:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
-        vg_rc2_expand_key = sym super::internal::vg_rc2_expand_key::vg_rc2_expand_key,
+        vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
 
@@ -106,7 +106,7 @@ b 212f
 212:
 21:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
-        vg_rc2_cbc_encrypt = sym super::internal::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
+        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
     )
 }
 
@@ -167,6 +167,26 @@ b 212f
 212:
 21:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
-        vg_rc2_cbc_decrypt = sym super::internal::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
+        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_cbc_decrypt.rs"]
+pub(crate) mod vg_rc2_cbc_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_cbc_encrypt.rs"]
+pub(crate) mod vg_rc2_cbc_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_decrypt_block.rs"]
+pub(crate) mod vg_rc2_decrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_encrypt_block.rs"]
+pub(crate) mod vg_rc2_encrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_expand_key.rs"]
+pub(crate) mod vg_rc2_expand_key;

@@ -320,6 +320,10 @@ j 21f
         vg_hmac_sha1_init = sym super::hmac_sha1::vg_hmac_sha1_init,
         vg_sha1_update = sym super::sha1::vg_sha1_update,
         vg_hmac_sha1_finalize = sym super::hmac_sha1::vg_hmac_sha1_finalize,
-        vg_pbkdf2_hmac_sha1_iterate = sym super::internal::vg_pbkdf2_hmac_sha1_iterate::vg_pbkdf2_hmac_sha1_iterate,
+        vg_pbkdf2_hmac_sha1_iterate = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate::vg_pbkdf2_hmac_sha1_iterate,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha1_iterate.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha1_iterate;

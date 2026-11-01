@@ -46,7 +46,7 @@ pub unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *
         r#".base64 "ofsh+CAAwTimAgh80f8h+CAAAfg="
 bl {vg_seed_encrypt_blocks}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5YAQhOCAAgE4=""#,
-        vg_seed_encrypt_blocks = sym super::internal::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
 
@@ -66,6 +66,14 @@ pub unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *
         r#".base64 "ofsh+CAAwTimAgh80f8h+CAAAfg="
 bl {vg_seed_decrypt_blocks}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5YAQhOCAAgE4=""#,
-        vg_seed_decrypt_blocks = sym super::internal::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
+        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_seed_decrypt_blocks.rs"]
+pub(crate) mod vg_seed_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_seed_encrypt_blocks.rs"]
+pub(crate) mod vg_seed_encrypt_blocks;

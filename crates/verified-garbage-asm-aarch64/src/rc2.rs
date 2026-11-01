@@ -46,7 +46,7 @@ b 21f
 .inst 0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910903ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_rc2_expand_key = sym super::internal::vg_rc2_expand_key::vg_rc2_expand_key,
+        vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
 
@@ -113,7 +113,7 @@ b 212f
 .inst 0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910903ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_rc2_cbc_encrypt = sym super::internal::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
+        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
     )
 }
 
@@ -180,6 +180,26 @@ b 212f
 .inst 0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910903ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_rc2_cbc_decrypt = sym super::internal::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
+        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_cbc_decrypt.rs"]
+pub(crate) mod vg_rc2_cbc_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_cbc_encrypt.rs"]
+pub(crate) mod vg_rc2_cbc_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_decrypt_block.rs"]
+pub(crate) mod vg_rc2_decrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_encrypt_block.rs"]
+pub(crate) mod vg_rc2_encrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_expand_key.rs"]
+pub(crate) mod vg_rc2_expand_key;

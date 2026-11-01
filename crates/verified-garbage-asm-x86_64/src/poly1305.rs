@@ -442,3 +442,7 @@ jmp 212f
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_finalize_scratch.rs"]
+pub(crate) mod vg_poly1305_finalize_scratch;

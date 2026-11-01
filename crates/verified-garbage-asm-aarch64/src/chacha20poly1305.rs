@@ -2036,7 +2036,7 @@ b 25b
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
-        vg_poly1305_finalize_scratch = sym super::internal::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -4111,7 +4111,7 @@ b 25b
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
-        vg_poly1305_finalize_scratch = sym super::internal::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -4770,7 +4770,7 @@ bl {vg_poly1305_finalize_scratch}
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_poly1305_finalize_scratch = sym super::internal::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -5562,7 +5562,7 @@ bl {vg_poly1305_finalize_scratch}
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_poly1305_finalize_scratch = sym super::internal::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -7465,7 +7465,7 @@ b 25b
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize_scratch = sym super::internal::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -9431,7 +9431,7 @@ b 25b
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize_scratch = sym super::internal::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 

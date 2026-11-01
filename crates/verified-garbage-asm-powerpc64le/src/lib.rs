@@ -790,7 +790,3 @@ pub mod x448;
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
 pub mod zeroize;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-mod internal;

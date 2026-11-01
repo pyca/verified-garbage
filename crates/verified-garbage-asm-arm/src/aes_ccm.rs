@@ -378,7 +378,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #2592
 bx lr",
-        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -819,6 +819,6 @@ ldr r11, [r11, #156]
 add sp, sp, #2592
 bx lr",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }

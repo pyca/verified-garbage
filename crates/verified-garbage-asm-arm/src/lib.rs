@@ -794,7 +794,3 @@ pub mod x448;
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
 pub mod zeroize;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-mod internal;

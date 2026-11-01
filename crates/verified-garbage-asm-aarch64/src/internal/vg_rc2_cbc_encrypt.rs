@@ -23,6 +23,6 @@ b 21f
 21:
 .inst 0xf9408457,0xf9408858,0xf9408c5e,0xd65f03c0
 .p2align 6",
-        vg_rc2_encrypt_block = sym crate::internal::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
+        vg_rc2_encrypt_block = sym crate::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
 }

@@ -119,7 +119,7 @@ b 21f
 20:
 21:
 .base64 "AAIF6KYDCHwIAuXrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+SAEITggAIBO""#,
-        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
@@ -146,6 +146,14 @@ b 21f
 20:
 21:
 .base64 "AAIF6KYDCHwIAuXrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+SAEITggAIBO""#,
-        vg_triple_des_decrypt_block = sym super::internal::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
+        vg_triple_des_decrypt_block = sym super::triple_des::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_decrypt_block.rs"]
+pub(crate) mod vg_triple_des_decrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_encrypt_block.rs"]
+pub(crate) mod vg_triple_des_encrypt_block;

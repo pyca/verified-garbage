@@ -218,7 +218,7 @@ str r2, [r12, #568]
 str r2, [r12, #572]
 add sp, sp, #592
 bx lr",
-        vg_rc2_expand_key = sym super::internal::vg_rc2_expand_key::vg_rc2_expand_key,
+        vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
 
@@ -471,7 +471,7 @@ str r2, [r12, #568]
 str r2, [r12, #572]
 add sp, sp, #592
 bx lr",
-        vg_rc2_cbc_encrypt = sym super::internal::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
+        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
     )
 }
 
@@ -724,6 +724,26 @@ str r2, [r12, #568]
 str r2, [r12, #572]
 add sp, sp, #592
 bx lr",
-        vg_rc2_cbc_decrypt = sym super::internal::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
+        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_cbc_decrypt.rs"]
+pub(crate) mod vg_rc2_cbc_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_cbc_encrypt.rs"]
+pub(crate) mod vg_rc2_cbc_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_decrypt_block.rs"]
+pub(crate) mod vg_rc2_decrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_encrypt_block.rs"]
+pub(crate) mod vg_rc2_encrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_expand_key.rs"]
+pub(crate) mod vg_rc2_expand_key;

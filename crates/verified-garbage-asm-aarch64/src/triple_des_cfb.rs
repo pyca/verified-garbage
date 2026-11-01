@@ -53,7 +53,7 @@ b 21f
 .inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
 .inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xf901f3f1,0x910fc3ff,0xd65f03c0
 .p2align 6",
-        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
@@ -107,6 +107,6 @@ b 21f
 .inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
 .inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xf901f3f1,0x910fc3ff,0xd65f03c0
 .p2align 6",
-        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }

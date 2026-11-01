@@ -86,7 +86,7 @@ call {vg_cmac_aes_subkeys}
 .insn 2, 0x8082
 .option pop",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::internal::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -221,7 +221,7 @@ j 214f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
 
@@ -304,6 +304,18 @@ call {vg_cmac_aes_finalize}
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_finalize.rs"]
+pub(crate) mod vg_cmac_aes_finalize;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_subkeys.rs"]
+pub(crate) mod vg_cmac_aes_subkeys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update.rs"]
+pub(crate) mod vg_cmac_aes_update;

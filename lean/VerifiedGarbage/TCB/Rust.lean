@@ -65,21 +65,29 @@ only the code of artifacts calls needs no `Api`, contract or proof of its
 own, as the proof of every artifact that calls it covers its code. Each is a
 naked function of no parameters in a file of its own, `internal/<name>.rs`
 of the crate's `codeDir` (its text in `assembly/internal/<name>.s`), a
-module of the module `internal` (`internal/mod.rs`), which the crate's root
-declares private, so that only the generated code of the crate can name
-it:
+module that the file of one module calling it declares (`Internal.owner`,
+`internalOwner`: that of the algorithm the function's name starts with, so
+that changes to different algorithms change different files), `pub(crate)`,
+so that only the generated code of the crate can name it:
 
 ```rust
+// internal/<name>.rs
 #[unsafe(naked)]
 pub(crate) unsafe extern "<abi>" fn <name>() {
     core::arch::naked_asm!(…)
 }
+
+// <owner>.rs
+#[rustfmt::skip]
+#[path = "internal/<name>.rs"]
+pub(crate) mod <name>;
 ```
 
 Its name comes from code no one reviews (`Impl/`), so `files` checks that
 it is a Rust function's (`internalName`); its file, like a table's, depends
 on nothing but its name and code, so `EmitOne.lean` writes those its
-artifacts call without touching the others. Every table of constants it
+artifacts call without touching the others (but where it is declared depends
+on the modules of the artifacts calling it, all of which `Emit.lean` sees). Every table of constants it
 names is one of each artifact that calls it, or one its instructions carry
 (`checkInternalTables`): the contract of that artifact, which its proof
 assumes when it runs the internal function's code, says the memory holds
@@ -964,6 +972,8 @@ body enables and its `cfg` attribute follows, as an artifact's
 structure Internal where
   target : Target
   name : String
+  /-- The module whose file declares the internal function's (`internalOwner`). -/
+  owner : String
   code : Prog target.isa
   lines : List Line
   features : List String
@@ -974,9 +984,28 @@ structure Internal where
   tables_eq : tables = target.printer.codeTables code
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 
-/-- The internal function `name` of the target `T`, whose code is `code`. -/
-def Internal.of (T : Target) (name : String) (code : Prog T.isa) : Internal :=
-  ⟨T, name, code, _, _, _, _, rfl, rfl, rfl, rfl⟩
+/-- The internal function `name` of the target `T`, whose code is `code`, declared
+by the module `owner`. -/
+def Internal.of (T : Target) (name owner : String) (code : Prog T.isa) : Internal :=
+  ⟨T, name, owner, code, _, _, _, _, rfl, rfl, rfl, rfl⟩
+
+/-- The module whose file declares the internal function `name`: of the
+modules `modules` of its target, the longest whose name `name` starts with,
+after `vg_` and before `_` (`sha256` for `vg_sha256_compress`), or else the
+first, in order of their names, of the modules `callers` of the artifacts
+that call it. It only
+decides where the function's module is declared, so that a change to the
+internal functions of one algorithm changes the files of that algorithm's
+modules rather than a list every algorithm's changes edit; what the function
+is does not depend on it. -/
+def internalOwner (name : String) (modules callers : List String) : String :=
+  let sorted := callers.mergeSort (· ≤ ·)
+  let named := modules.filter fun m => name.startsWith s!"vg_{m}_"
+  match named.foldl (init := none) fun best m => match best with
+    | some b => if m.length > b.length then some m else some b
+    | none => some m with
+  | some m => m
+  | none => sorted.headD ""
 
 /-- The names of the functions that `calls` (`Code.calls`) calls, each once,
 in first-seen order: its first call of each. -/
@@ -997,17 +1026,24 @@ the target, once, with the code of the first call of it, in order of the
 artifacts and of their calls. `checkCalls` checks that every other call of
 it is of that code. -/
 def internalsOf (ps : List Prepared) : List Internal := Id.run do
-  let mut found : List (String × String) := []
-  let mut out : List Internal := []
+  -- Each internal function found so far: its target and name, the code of its
+  -- first call, and the modules of the artifacts that call it.
+  let mut found : List (String × String × Σ T : Target, Prog T.isa) := []
+  let mut callers : List ((String × String) × List String) := []
   for p in ps do
     let a := p.art
     let t := a.target.name
     for (n, body) in firstCalls a.code.calls do
-      if found.contains (t, n) then continue
       if ps.any fun q => q.art.target.name == t && q.art.name == n then continue
-      found := (t, n) :: found
-      out := Internal.of a.target n body :: out
-  return out.reverse
+      unless found.any (fun (t', n', _) => t' == t && n' == n) do
+        found := (t, n, ⟨a.target, body⟩) :: found
+      callers := match callers.find? (·.1 == (t, n)) with
+        | some _ => callers.map fun (k, ms) =>
+            if k == (t, n) && !ms.contains a.module then (k, a.module :: ms) else (k, ms)
+        | none => ((t, n), [a.module]) :: callers
+  return found.reverse.map fun (t, n, ⟨T, body⟩) =>
+    let modules := Rust.dedup ((ps.filter (·.art.target.name == t)).map (·.art.module))
+    Internal.of T n (internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD [])) body
 
 /-- The internal function of `hs` that a call of `name` in an artifact of the
 target `t` calls, if there is one. -/
@@ -1016,7 +1052,7 @@ def internal? (hs : List Internal) (t name : String) : Option Internal :=
 
 /-- An internal function's name is a Rust function's starting with `vg_`:
 `vg_`, then lowercase ASCII letters, digits and underscores; so it is never
-a Rust keyword, and is the name of its module (`internal::<name>`) too. Its
+a Rust keyword, and is the name of its module (`<owner>::<name>`) too. Its
 code, and so its name, is not reviewed (`Impl/`), and the emitter writes the
 name into Rust code: nothing else may be written there. -/
 def internalName (n : String) : Bool :=
@@ -1062,13 +1098,13 @@ one the internal function's instructions carry: the artifact's contract
 says where the memory holds the tables it gives (`Abi.withConsts`), which is
 what its proof, which runs the internal function's code, assumes of them,
 and every artifact with a table of a name gives the same words
-(`checkConsts`). No artifact's module is `internal`, the module of the
-internal functions. -/
+(`checkConsts`). No artifact's module is `internal`, the directory of the
+internal functions' files. -/
 def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit := do
   let a := p.art
   let t := a.target.name
   if a.module == "internal" then
-    throw s!"{t}: {a.name}'s module is `internal`, the module of the internal functions"
+    throw s!"{t}: {a.name}'s module is `internal`, the directory of the internal functions' files"
   let own := p.tables.map (·.1)
   for (n, _) in firstCalls a.code.calls do
     let some h := internal? hs t n | continue
@@ -1227,7 +1263,7 @@ crate of the workspace, compiles none of them). The `cfg` is on the
 declarations, rather than the crate (`#![cfg]`), as `#[rustfmt::skip]`
 keeps rustfmt from rewriting their attributes, which the crate's cannot
 be. -/
-def targetRoot (t cfg : String) (mods : List String) (internal : Bool := false) : String :=
+def targetRoot (t cfg : String) (mods : List String) : String :=
   header ++
   s!"//! Verified functions for `{t}`: the crate `{crateDir t}`.\n" ++
   "//!\n" ++
@@ -1236,12 +1272,21 @@ def targetRoot (t cfg : String) (mods : List String) (internal : Bool := false) 
   "//! against its contract. See `lean/README.md`.\n" ++
   "\n#![no_std]\n" ++
   symMacros ++
-  modDecls mods (fun _ => some cfg) ++
-  (if internal then s!"\n#[cfg({cfg})]\n#[rustfmt::skip]\nmod internal;\n" else "")
+  modDecls mods (fun _ => some cfg)
 
-/-- The module of the internal function `n` (`Internal`), under the crate's
-root: `internal::<n>`, the file `internal/<n>.rs` of its `codeDir`. -/
-def internalModule (n : String) : String := s!"internal::{n}"
+/-- The module of the internal function `h` (`Internal`), under the crate's
+root: `<owner>::<name>`, the file `internal/<name>.rs` of its `codeDir`, which
+the file of the module `owner` declares (`internalDecls`). -/
+def internalModule (h : Internal) : String := s!"{h.owner}::{h.name}"
+
+/-- The declarations of the modules of the internal functions `hs` in the file
+of the module that declares each (`Internal.owner`): each the file
+`internal/<name>.rs` (a `path` relative to the directory of that file,
+`codeDir`), `pub(crate)`, so that the generated code of the crate can name
+them and nothing outside it can. -/
+def internalDecls (hs : List Internal) : String :=
+  String.join (hs.map fun h =>
+    s!"\n#[rustfmt::skip]\n#[path = \"internal/{h.name}.rs\"]\npub(crate) mod {h.name};\n")
 
 /-- The documentation of every internal function. -/
 def internalDoc : String :=
@@ -1263,7 +1308,7 @@ def internalFile (h : Internal) (moduleOf : String → String) : String :=
   let T := h.target
   let gate := cfgGate (h.features.filterMap T.printer.featureCfg)
   header ++ s!"//! The internal function `{h.name}` for `{T.name}`, whose text is in\n" ++
-  s!"//! `{assemblyFile (internalModule h.name |>.replace "::" "/")}`.\n" ++
+  s!"//! `{assemblyFile s!"internal/{h.name}"}`.\n" ++
   "#![allow(dead_code)]\n\n" ++
   featuresConst h.name gate h.features "pub(crate)" "VG.Rust.Internal.features" ++
   docComment "" internalDoc ++
@@ -1271,14 +1316,6 @@ def internalFile (h : Internal) (moduleOf : String → String) : String :=
   "#[unsafe(naked)]\n" ++
   s!"pub(crate) unsafe extern \"{T.rustAbi}\" fn {h.name}() " ++ "{\n" ++
   asmOf T (bodyLines T h.features h.lines) moduleOf "crate" ++ "}\n"
-
-/-- The module of a target's internal functions `hs`, `internal/mod.rs`:
-each one's module. -/
-def internalMod (t : String) (hs : List Internal) : String :=
-  header ++ s!"//! The internal functions of the verified functions for `{t}` \
-    (`VG.Rust.Internal`).\n" ++
-  "#![allow(dead_code)]\n" ++
-  String.join (hs.map fun h => s!"\n#[rustfmt::skip]\npub(crate) mod {h.name};\n")
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
@@ -1296,18 +1333,16 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
     let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
     let src := codeDir t
-    (s!"{src}/lib.rs", targetRoot t cfg mods !hs.isEmpty) ::
+    (s!"{src}/lib.rs", targetRoot t cfg mods) ::
     (if ts.isEmpty then [] else
       (s!"{src}/consts/mod.rs", tablesMod t ts) ::
         ts.map fun (n, ws) => (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)) ++
-    (if hs.isEmpty then [] else
-      (s!"{src}/internal/mod.rs", internalMod t hs) ::
-        (hs.map fun h => Task.spawn fun _ =>
-          let m := s!"internal/{h.name}"
-          [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
-           (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
-             moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.features h.lines))]).flatMap
-          Task.get) ++
+    (hs.map fun h => Task.spawn fun _ =>
+      let m := s!"internal/{h.name}"
+      [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
+       (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
+         moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.features h.lines))]).flatMap
+      Task.get ++
     -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>
       let items := moduleItems (fun a => moduleOf a.target.name) (arts.filter (·.art.module == m))
@@ -1315,7 +1350,7 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
         header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
         s!"//! `{assemblyFile m}`.\n" ++
         "#![allow(dead_code)]\n" ++
-        moduleText items),
+        moduleText items ++ internalDecls (hs.filter (·.owner == m))),
        (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
       Task.get).flatten
   -- Each target's files on a task of their own.
@@ -1361,6 +1396,6 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   return render ps hs fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with
     | some b => b.module
-    | none => internalModule n
+    | none => ((internal? hs t n).map internalModule).getD ""
 
 end VG.Rust

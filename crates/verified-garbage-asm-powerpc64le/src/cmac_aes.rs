@@ -23,7 +23,7 @@ bl {vg_aes_expand_key_scratch}
 bl {vg_cmac_aes_subkeys}
 .base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4IACATg==""#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::internal::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -94,7 +94,7 @@ b 214f
 213:
 214:
 .base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4IACATg==""#,
-        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
 
@@ -121,6 +121,18 @@ b 21f
 21:
 bl {vg_cmac_aes_finalize}
 .base64 "iAgO6IAIzummAwh8IAkhOCAAgE4=""#,
-        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_finalize.rs"]
+pub(crate) mod vg_cmac_aes_finalize;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_subkeys.rs"]
+pub(crate) mod vg_cmac_aes_subkeys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update.rs"]
+pub(crate) mod vg_cmac_aes_update;
