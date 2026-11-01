@@ -439,7 +439,7 @@ macro_rules
       sig_simp [$ls,*] [Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, Sig.bufs_slices,
         Sig.alignedBufs_nil, Sig.alignedBufs_int, Sig.alignedBufs_array, Sig.alignedBufs_slice,
         Sig.alignedBufs_slices, Elem.align_u8, Elem.align_u16, Elem.align_u32, Elem.align_u64,
-        Elem.align_array, Nat.reduceLTLE, Nat.lt_irrefl, Nat.not_lt_zero,
+        Elem.align_array, Nat.reduceLT,
         Sig.lists_nil, Sig.lists_int, Sig.lists_array, Sig.lists_slice, Sig.lists_slices,
         Sig.descs_nil, Sig.descs_int, Sig.descs_array, Sig.descs_slice, Sig.descs_slices,
         Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons,
