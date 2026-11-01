@@ -9,9 +9,9 @@ public import VerifiedGarbage.Impl.Words.RISCV64.XorBytes
 
 `vg_aes_cbc_encrypt(schedule = a0, rounds = a1, iv = a2, data = a3, n = a4, scratch = a5)`
 and `vg_aes_cbc_decrypt` with the same arguments (see
-`VG.Spec.Cbc.aesEncryptContract` and `aesDecryptContract`), composed of calls
-of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on one
-block at a time, in place, as on PPC64LE (`VG.Impl.AesCbc.PPC64LE`).
+`VG.Spec.Cbc.aesEncryptContract` and `aesDecryptContract`), composed of a call
+of the CBC encryption chain, or of calls of the verified
+`vg_aes_decrypt_blocks` on one block at a time, in place, as on PPC64LE (`VG.Impl.AesCbc.PPC64LE`).
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of the
 block function. Above it, from `sv = scratch + 2048` rounded up to a
@@ -27,8 +27,11 @@ chaining value), `s4` (the next block), `s5` (blocks left) and `s6`
 alignment for the chaining value and the data, so blocks are XORed and
 copied a byte at a time, through `t3` and `t4`.
 
-* `encrypt`, each block: `Pⱼ ⊕ Cⱼ₋₁` in place, enciphered in place, and
-  copied to the chaining value.
+* `encrypt` calls the CBC encryption chain (`Impl.Aes.RISCV64.chain true`),
+  whose arguments are the same and which bitslices the round keys once for
+  all the blocks: each block becomes `CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, in place, and the
+  chaining value; it gives the chain the first 2048 bytes of the scratch
+  buffer, and saves its return address and `s1` above them.
 * `decrypt`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
   place, XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to
   the chaining value.

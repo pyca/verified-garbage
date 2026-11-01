@@ -29,7 +29,8 @@ encryption (`Spec.Cbc.encrypt`) from the state as the IV. Its contract,
 
 As `vg_aes_ctr32`'s proof (`Ctr32.lean`): the prologue rounds the scratch
 buffer up, saves the callee-saved registers and builds the masks
-(`Prologue.lean`), and the state's address is stored in slot `stateSlot`;
+(`Prologue.lean`), the return address is stored in slot `raSlot` and the
+state's address kept in `ra`;
 the key loop (`Keys.lean`) bitslices the round keys. Then the state is
 loaded into the registers of block 0, whose bytes (`regBlock`, `Ecb.lean`)
 are the chaining value `chainSt` before each block: the block is XORed
@@ -190,7 +191,7 @@ theorem regBlock_bytes {Q : Nat → BitVec 64} {v : Spec.Aes.State} (h : regBloc
 /-- What the loop runs with: `s₂` is the state after the round keys are
 bitsliced, `X` the scratch buffer (rounded to `b`), `D` the data (`n`
 blocks), which is written only if `out`. -/
-structure CSetup (out : Bool) (s₂ : State) (X b D : Addr) (n R : Nat) (w : List Byte) : Prop where
+structure ChSetup (out : Bool) (s₂ : State) (X b D : Addr) (n R : Nat) (w : List Byte) : Prop where
   scr : Scr s₂ X 2048
   base : s₂.gpr sb = b
   masks : MasksAt s₂.mem b allKs
@@ -226,12 +227,12 @@ section Loop
 variable {out : Bool} {m₀ : Mem} {s₂ : State} {X b D : Addr} {n R : Nat} {w : List Byte}
   {iv : Spec.Aes.State}
 
-theorem CSetup.d320 (hs : CSetup out s₂ X b D n R w) : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 320⟩ := by
+theorem ChSetup.d320 (hs : ChSetup out s₂ X b D n R w) : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 320⟩ := by
   refine hs.sep.sub_right ?_
   rw [← hs.base, hs.scr.base]
   exact Offset.sub_base X (by have := Align.pad_lt X; omega)
 
-theorem CSetup.keys_disj (hs : CSetup out s₂ X b D n R w) :
+theorem ChSetup.keys_disj (hs : ChSetup out s₂ X b D n R w) :
     ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + 1024, 960⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -241,7 +242,7 @@ theorem CSetup.keys_disj (hs : CSetup out s₂ X b D n R w) :
     rw [← hs.base]
     exact hs.scr.sub (d := 1024) (n := 960) (by omega)
 
-theorem CSetup.masks_disj (hs : CSetup out s₂ X b D n R w) : ∀ r ∈ eRegions b D n,
+theorem ChSetup.masks_disj (hs : ChSetup out s₂ X b D n R w) : ∀ r ∈ eRegions b D n,
     Region.Disjoint ⟨b + BitVec.ofNat 64 416, 48⟩ r ∧
       Region.Disjoint ⟨b + BitVec.ofNat 64 512, 96⟩ r := by
   intro r hr
@@ -256,7 +257,7 @@ theorem q04 : q 0 ≠ .a3 ∧ q 4 ≠ .a3 ∧ q 0 ≠ q 4 ∧ q 0 ≠ .t2 ∧ q 
     q 4 ≠ t0 ∧ q 4 ≠ t1 := by decide
 
 /-- One block: from after `k` blocks to after `k + 1`. -/
-theorem chainBody_ok (hs : CSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n) {s : State}
+theorem chainBody_ok (hs : ChSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n) {s : State}
     (hi : CAt out m₀ s₂ b D n R w iv k s) :
     WP isa (chainBody out) s fun s' =>
       isa.eval (.nonzero .a4) s' = some (decide (n - (k + 1) ≠ 0)) ∧
@@ -411,7 +412,7 @@ theorem chainBody_ok (hs : CSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n) 
       (by simp only [↓reduceIte]; exact hst.1)
 
 /-- The loop over the blocks. -/
-theorem chainLoop_ok (hs : CSetup out s₂ X b D n R w) (hn0 : 0 < n) {s : State}
+theorem chainLoop_ok (hs : ChSetup out s₂ X b D n R w) (hn0 : 0 < n) {s : State}
     (hi : CAt out m₀ s₂ b D n R w iv 0 s) :
     WP isa (.loop (chainBody out) (.nonzero .a4)) s (CAt out m₀ s₂ b D n R w iv n) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ CAt out m₀ s₂ b D n R w iv k s)
@@ -515,23 +516,30 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
   have hscr₂ : Scr s₂ X 2048 := ⟨by rw [wr₂]; exact hscr₁'.wr, hb₂⟩
   have k₂ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ sb → s₂.gpr r = s₀.gpr r := fun r h0 h1 h2 => by
     rw [g₂ r h0 h1, g₁', o₁ r h2]
-  -- The state's address, in its slot.
+  -- The return address in its slot, and the state's address in `ra`.
   have hslot : (⟨X, 2048⟩ : Region).Contains (b + BitVec.ofNat 64 496) 8 := by
     rw [← hb₂]; exact hscr₂.contains (by omega) (by decide)
-  refine wp_sd (t := .a2) (n := sb) (off := 8 * stateSlot) (a := b + BitVec.ofNat 64 496) (by decide)
+  refine wp_sd (t := .ra) (n := sb) (off := 8 * raSlot) (a := b + BitVec.ofNat 64 496) (by decide)
     (by rw [hb₂]; rfl) (by rw [← hb₂]; exact Align.al_add (k := 8) hscr₂.al (by decide) (by decide))
-    ⟨_, hscr₂.wr, hslot⟩ fun s₃ u₃ => WP.block_nil ?_
-  have m₃ : s₃.mem = s₂.mem.writeW (b + BitVec.ofNat 64 496) St := by
-    rw [u₃.mem, k₂ _ (by decide) (by decide) (by decide)]
-  have hscr₃ : Scr s₃ X 2048 := ⟨by rw [u₃.wr]; exact hscr₂.wr, by rw [u₃.gpr]; exact hscr₂.base⟩
+    ⟨_, hscr₂.wr, hslot⟩ fun s₃₀ u₃₀ => ?_
+  refine wp_mv fun s₃ v₃ => WP.block_nil ?_
+  have g₃ : ∀ r, r ≠ .ra → s₃.gpr r = s₂.gpr r := fun r h => by rw [v₃.other r h, u₃₀.gpr]
+  have ra₃ : s₃.gpr .ra = St := by rw [v₃.gpr, u₃₀.gpr, k₂ _ (by decide) (by decide) (by decide)]
+  have m₃ : s₃.mem = s₂.mem.writeW (b + BitVec.ofNat 64 496) (s₀.gpr .ra) := by
+    rw [v₃.mem, u₃₀.mem, k₂ _ (by decide) (by decide) (by decide)]
+  have rd₃ : s₃.rd = s₂.rd := by rw [v₃.rd, u₃₀.rd]
+  have wr₃ : s₃.wr = s₂.wr := by rw [v₃.wr, u₃₀.wr]
+  have hscr₃ : Scr s₃ X 2048 := ⟨by rw [wr₃]; exact hscr₂.wr, by rw [g₃ _ (by decide)]; exact hscr₂.base⟩
   refine keySetup_wp (s := s₃) (R := R) (by
-      rw [u₃.gpr, k₂ _ (by decide) (by decide) (by decide)]; simp [R])
+      rw [g₃ _ (by decide), k₂ _ (by decide) (by decide) (by decide)]; simp [R])
     hR14 fun s₄ a0₄ a2₄ a1₄ o₄ m₄ rd₄ wr₄ sp₄ => ?_
-  have k₄ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ sb → r ≠ .a0 → r ≠ .a2 → r ≠ .a1 → s₄.gpr r = s₀.gpr r :=
-    fun r h0 h1 h2 h3 h4 h5 => by rw [o₄ r h0 h3 h4 h5, u₃.gpr, k₂ r h0 h1 h2]
+  have k₄ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ sb → r ≠ .a0 → r ≠ .a2 → r ≠ .a1 → r ≠ .ra →
+      s₄.gpr r = s₀.gpr r :=
+    fun r h0 h1 h2 h3 h4 h5 h6 => by rw [o₄ r h0 h3 h4 h5, g₃ r h6, k₂ r h0 h1 h2]
+  have ra₄ : s₄.gpr .ra = St := by rw [o₄ _ (by decide) (by decide) (by decide) (by decide), ra₃]
   have hb₄ : s₄.gpr sb = b := by
-    rw [o₄ sb (by decide) (by decide) (by decide) (by decide), u₃.gpr]; exact hb₂
-  have hscr₄ : Scr s₄ X 2048 := ⟨by rw [wr₄, u₃.wr]; exact hscr₂.wr, hb₄⟩
+    rw [o₄ sb (by decide) (by decide) (by decide) (by decide), g₃ _ (by decide)]; exact hb₂
+  have hscr₄ : Scr s₄ X 2048 := ⟨by rw [wr₄, wr₃]; exact hscr₂.wr, hb₄⟩
   have fslot : Frame [⟨X, 2048⟩] s₂.mem s₄.mem := by
     rw [m₄, m₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hslot
   have f₀₄ : Frame [⟨X, 2048⟩] s₀.mem s₄.mem := by
@@ -555,7 +563,7 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
     { scr := hscr₄
       base := hb₄
       masks := mk₄
-      sch := List.mem_append_left _ (by rw [rd₄, u₃.rd, rd₂, rd₁', rd₁]; exact hrS)
+      sch := List.mem_append_left _ (by rw [rd₄, rd₃, rd₂, rd₁', rd₁]; exact hrS)
       sep := dSS
       rounds := hR14
       w := fun i hi => by
@@ -566,8 +574,8 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
   have hi₄ : KInv s₄ b (s₀.gpr .a0) R w R s₄ :=
     { hj := Nat.le_refl _
       a1 := a1₄
-      a0 := by rw [a0₄, u₃.gpr, k₂ _ (by decide) (by decide) (by decide)]
-      a2 := by rw [a2₄, u₃.gpr, hb₂]; simp [keyAddr, lastKey]
+      a0 := by rw [a0₄, g₃ _ (by decide), k₂ _ (by decide) (by decide) (by decide)]
+      a2 := by rw [a2₄, g₃ _ (by decide), hb₂]; simp [keyAddr, lastKey]
       rd := rfl
       wr := rfl
       sp := rfl
@@ -594,34 +602,34 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
     rcases hr with rfl | rfl
     · exact Offset.disjoint_base _ h1 (by omega)
     · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  have slot₆ : s₆.mem.readW (b + BitVec.ofNat 64 496) 64 = St := by
+  have slot₆ : s₆.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
     rw [fK.readW (Region.contains_self _ _) (kd (by omega) (by omega)) (by decide), m₄, m₃,
       Mem.readW_writeW_self64]
-  have hrd₆ : s₆.rd = s₀.rd := by rw [u₆.rd, d₅.rd, rd₄, u₃.rd, rd₂, rd₁', rd₁]
-  have hwr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, d₅.wr, wr₄, u₃.wr, wr₂, wr₁', wr₁]
+  have hrd₆ : s₆.rd = s₀.rd := by rw [u₆.rd, d₅.rd, rd₄, rd₃, rd₂, rd₁', rd₁]
+  have hwr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, d₅.wr, wr₄, wr₃, wr₂, wr₁', wr₁]
+  have ra₆ : s₆.gpr .ra = St := by rw [g₆ _ (by simp), ra₄]
   -- The state into the registers of block 0.
   unfold chainLoad
   repeat rw [WP.block_append_iff (M := isa)]
-  refine wp_ld (t := .t2) (n := sb) (off := 8 * stateSlot) (a := b + BitVec.ofNat 64 496) (by decide)
-    (by rw [hb₆]; rfl) (by rw [← hb₄]; exact Align.al_add (k := 8) hscr₄.al (by decide) (by decide))
-    ⟨_, List.mem_append_right _ (by rw [hwr₆]; exact hwS), hslot⟩ fun s₇ u₇ => WP.block_nil ?_
-  rw [slot₆] at u₇
+  obtain ⟨s₇, hs₇⟩ : ∃ s, s = s₆ := ⟨_, rfl⟩
+  have u₇ : Upd s₆ s₇ .ra St := by subst hs₇; exact ⟨ra₆, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  rw [← hs₇]
   have hT : (⟨St, 16⟩ : Region) ∈ s₇.rd ++ s₇.wr :=
     List.mem_append_right _ (by rw [u₇.wr, hwr₆]; exact hwT)
-  have hinT : ∀ d, d + 4 ≤ 16 → InRegions (s₇.rd ++ s₇.wr) (s₇.gpr .t2 + BitVec.ofNat 64 d) 4 :=
+  have hinT : ∀ d, d + 4 ≤ 16 → InRegions (s₇.rd ++ s₇.wr) (s₇.gpr .ra + BitVec.ofNat 64 d) 4 :=
     fun d hd => by rw [u₇.gpr]; exact in_off hT (by omega) (by omega)
-  refine WP.mono (Bytes.loadLE64_ok (d := q 0) (tmp := t0) (hi := t1) (n := .t2) (off := 0)
+  refine WP.mono (Bytes.loadLE64_ok (d := q 0) (tmp := t0) (hi := t1) (n := .ra) (off := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by simpa using hinT 0 (by omega)) (by simpa using hinT 4 (by omega)))
     fun s₈ ⟨e₈, g₈, m₈, rd₈, wr₈, sp₈⟩ => ?_
-  have t2₈ : s₈.gpr .t2 = St := by rw [g₈ _ (by decide) (by decide) (by decide), u₇.gpr]
-  refine WP.mono (Bytes.loadLE64_ok (d := q 4) (tmp := t0) (hi := t1) (n := .t2) (off := 8)
+  have t2₈ : s₈.gpr .ra = St := by rw [g₈ _ (by decide) (by decide) (by decide), u₇.gpr]
+  refine WP.mono (Bytes.loadLE64_ok (d := q 4) (tmp := t0) (hi := t1) (n := .ra) (off := 8)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [t2₈, rd₈, wr₈, ← u₇.gpr]; exact hinT 8 (by omega))
     (by rw [t2₈, rd₈, wr₈, ← u₇.gpr]; exact hinT 12 (by omega)))
     fun s₉ ⟨e₉, g₉, m₉, rd₉, wr₉, sp₉⟩ => ?_
   have mem₉ : s₉.mem = s₆.mem := by rw [m₉, m₈, u₇.mem]
-  have o₉ : ∀ r, r ≠ q 0 → r ≠ q 4 → r ≠ t0 → r ≠ t1 → r ≠ .t2 → s₉.gpr r = s₆.gpr r :=
+  have o₉ : ∀ r, r ≠ q 0 → r ≠ q 4 → r ≠ t0 → r ≠ t1 → r ≠ .ra → s₉.gpr r = s₆.gpr r :=
     fun r h0 h4 ht0 ht1 ht2 => by rw [g₉ r h4 ht0 ht1, g₈ r h0 ht0 ht1, u₇.other r ht2]
   -- The memory so far changed only in the scratch buffer.
   have f₀₉ : Frame [⟨X, 2048⟩] s₀.mem s₉.mem := by
@@ -642,7 +650,7 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
       rfl
   have hb₉ : s₉.gpr sb = b := by
     rw [o₉ sb (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hb₆
-  have hs : CSetup out s₉ X b D n R w :=
+  have hs : ChSetup out s₉ X b D n R w :=
     { scr := ⟨by rw [wr₉, wr₈, u₇.wr, hwr₆]; exact hwS, hb₉⟩
       base := hb₉
       masks := by rw [mem₉, u₆.mem]; exact masks_kept d₅.frame hk.masks
@@ -657,13 +665,12 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
       a0 := by rw [o₉ .a0 (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hK0 }
   have a3₉ : s₉.gpr .a3 = D := by
     rw [o₉ .a3 (by decide) (by decide) (by decide) (by decide) (by decide), g₆ _ (by simp),
-      k₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
+      k₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
   have a4₉ : s₉.gpr .a4 = s₀.gpr .a4 := by
     rw [o₉ .a4 (by decide) (by decide) (by decide) (by decide) (by decide), g₆ _ (by simp),
-      k₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
-  have ra₉ : s₉.gpr .ra = s₀.gpr .ra := by
-    rw [o₉ .ra (by decide) (by decide) (by decide) (by decide) (by decide), g₆ _ (by simp),
-      k₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
+      k₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
+  have ra₉ : s₉.gpr .ra = St := by
+    rw [g₉ _ (by decide) (by decide) (by decide), g₈ _ (by decide) (by decide) (by decide), u₇.gpr]
   have ci₀ : CAt out s₀.mem s₉ b D n R w iv 0 s₉ :=
     { hk := Nat.zero_le _
       a3 := by rw [a3₉]; simp
@@ -690,25 +697,25 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
     rcases hr with rfl | rfl
     · exact Offset.disjoint_base _ h1 (by omega)
     · exact (dDS.sub_right (scr_part X h2)).symm
-  have slot₁₀ : s₁₀.mem.readW (b + BitVec.ofNat 64 496) 64 = St := by
+  have slot₁₀ : s₁₀.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
     rw [c₁₀.frame.readW (Region.contains_self _ _) (dE (by omega) (by omega)) (by decide), mem₉, slot₆]
+  have ra₁₀ : s₁₀.gpr .ra = St :=
+    (c₁₀.keep .ra (by decide) (by decide) (by decide) (by decide)).trans ra₉
   unfold chainStore
   repeat rw [WP.block_append_iff (M := isa)]
-  refine wp_ld (t := .t2) (n := sb) (off := 8 * stateSlot) (a := b + BitVec.ofNat 64 496) (by decide)
-    (by rw [hb₁₀]; rfl) (by rw [← hb₄]; exact Align.al_add (k := 8) hscr₄.al (by decide) (by decide))
-    ⟨_, List.mem_append_right _ (by rw [c₁₀.wr, wr₉, wr₈, u₇.wr, hwr₆]; exact hwS), hslot⟩
-    fun s₁₁ u₁₁ => WP.block_nil ?_
-  rw [slot₁₀] at u₁₁
+  obtain ⟨s₁₁, hs₁₁⟩ : ∃ s, s = s₁₀ := ⟨_, rfl⟩
+  have u₁₁ : Upd s₁₀ s₁₁ .ra St := by subst hs₁₁; exact ⟨ra₁₀, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  rw [← hs₁₁]
   have hTw : (⟨St, 16⟩ : Region) ∈ s₁₁.wr := by rw [u₁₁.wr, c₁₀.wr, wr₉, wr₈, u₇.wr, hwr₆]; exact hwT
-  have hinw : ∀ {t : State} (d : Nat), t.gpr .t2 = St → t.wr = s₁₁.wr →
-      d + 4 ≤ 16 → InRegions t.wr (t.gpr .t2 + BitVec.ofNat 64 d) 4 := fun d ha hw hd => by
+  have hinw : ∀ {t : State} (d : Nat), t.gpr .ra = St → t.wr = s₁₁.wr →
+      d + 4 ≤ 16 → InRegions t.wr (t.gpr .ra + BitVec.ofNat 64 d) 4 := fun d ha hw hd => by
     rw [ha, hw]; exact in_off hTw (by omega) (by omega)
-  refine WP.mono (Bytes.storeLE64_ok (v := q 0) (tmp := t0) (hi := t1) (n := .t2) (off := 0)
+  refine WP.mono (Bytes.storeLE64_ok (v := q 0) (tmp := t0) (hi := t1) (n := .ra) (off := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (by simpa using hinw 0 u₁₁.gpr rfl (by omega)) (hinw 4 u₁₁.gpr rfl (by omega)))
     fun s₁₂ ⟨m₁₂, g₁₂, rd₁₂, wr₁₂, sp₁₂⟩ => ?_
-  have t2₁₂ : s₁₂.gpr .t2 = St := (g₁₂ _ (by decide) (by decide)).trans u₁₁.gpr
-  refine WP.mono (Bytes.storeLE64_ok (v := q 4) (tmp := t0) (hi := t1) (n := .t2) (off := 8)
+  have t2₁₂ : s₁₂.gpr .ra = St := (g₁₂ _ (by decide) (by decide)).trans u₁₁.gpr
+  refine WP.mono (Bytes.storeLE64_ok (v := q 4) (tmp := t0) (hi := t1) (n := .ra) (off := 8)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (hinw 8 t2₁₂ wr₁₂ (by omega)) (hinw 12 t2₁₂ wr₁₂ (by omega)))
     fun s₁₃ ⟨m₁₃, g₁₃, rd₁₃, wr₁₃, sp₁₃⟩ => ?_
@@ -751,11 +758,22 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
   have hscr₁₃ : Scr s₁₃ X 2048 :=
     ⟨by rw [wr₁₃, wr₁₂]; exact (u₁₁.wr ▸ c₁₀.wr ▸ hs.scr.wr),
       by rw [g₁₃ _ (by decide) (by decide), g₁₂ _ (by decide) (by decide), u₁₁.other _ (by decide), hb₁₀]⟩
+  -- The return address back from its slot.
+  have slot₁₃ : s₁₃.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
+    rw [fT.readW (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (dTb.sub_right (Offset.sub_base b (by omega))).symm) (by decide), slot₁₀]
+  refine wp_ld (t := .ra) (n := sb) (off := 8 * raSlot) (a := b + BitVec.ofNat 64 496) (by decide)
+    (by rw [hb₁₃]; rfl) (by rw [← hb₄]; exact Align.al_add (k := 8) hscr₄.al (by decide) (by decide))
+    ⟨_, List.mem_append_right _ hscr₁₃.wr, hslot⟩ fun s₁₅ u₁₅ => WP.block_nil ?_
+  rw [slot₁₃] at u₁₅
+  have hb₁₅ : s₁₅.gpr sb = b := by rw [u₁₅.other _ (by decide), hb₁₃]
+  have hscr₁₅ : Scr s₁₅ X 2048 := ⟨by rw [u₁₅.wr]; exact hscr₁₃.wr, by rw [u₁₅.other _ (by decide)]; exact hscr₁₃.base⟩
   rw [restoreRegs_eq]
-  refine WP.mono (Spill.restore_wp (B := b) (by rw [← hb₁]; exact hscr₁.al) hb₁₃ savedOffs_ho
-    savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₁₃.wr, by
-      rw [← hb₁₃]
-      exact hscr₁₃.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) sv)
+  refine WP.mono (Spill.restore_wp (B := b) (by rw [← hb₁]; exact hscr₁.al) hb₁₅ savedOffs_ho
+    savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₁₅.wr, by
+      rw [← hb₁₅]
+      exact hscr₁₅.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) (by rw [u₁₅.mem]; exact sv))
     fun s₁₄ rs₁₄ => ?_
   refine ⟨fun r hr => ?_, ?_, ?_, fun ho => ?_⟩
   · have hr' : r ∈ savedOffs.map Prod.fst := by rw [savedOffs_regs]; exact hr
@@ -763,17 +781,16 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
     have : r ∉ [sb] := by revert hr; revert r; decide
     simp only [List.mem_cons, List.not_mem_nil, or_false] at this
     rw [o₁ r this]
-  · rw [rs₁₄.other _ not_saved_ra, g₁₃ _ (by decide) (by decide), g₁₂ _ (by decide) (by decide),
-      u₁₁.other _ (by decide), c₁₀.keep .ra (by decide) (by decide) (by decide) (by decide), ra₉]
+  · rw [rs₁₄.other _ not_saved_ra, u₁₅.gpr]
   · show Spec.Aes.bytesAt s₁₄.mem St 16 = Spec.Cmac.chain _ (Spec.Aes.bytesAt s₀.mem St 16)
       (Spec.Cmac.blocksAt s₀.mem D 16 n)
-    rw [rs₁₄.mem, hm, bytesAt_writeW2 _ _ _ _ (regBlock_bytes c₁₀.st), chainSt_eq _ _ _ _ _ n (Nat.le_refl _),
+    rw [rs₁₄.mem, u₁₅.mem, hm, bytesAt_writeW2 _ _ _ _ (regBlock_bytes c₁₀.st), chainSt_eq _ _ _ _ _ n (Nat.le_refl _),
       List.take_of_length_le (by simp [Spec.Cmac.blocksAt]), AesCbc.bytesAt_toList]
   · subst ho
     have hd₁₄ : EcbInv s₀.mem s₁₄.mem D n n (chainOutF R w s₀.mem D iv) := by
       have h := c₁₀.data
       simp only [↓reduceIte] at h
-      rw [rs₁₄.mem]
+      rw [rs₁₄.mem, u₁₅.mem]
       refine ecbInv_frame fT (fun r hr => ?_) n16 h
       simp only [List.mem_singleton] at hr; subst hr; exact dDSt
     show Spec.Cbc.blocksAt s₁₄.mem D n = Spec.Cbc.encrypt _ (Spec.Aes.bytesAt s₀.mem St 16)

@@ -29,9 +29,11 @@ blocks are accessed a byte at a time.
   block (`K2`), a byte at a time (`VG.Impl.Cmac.RISCV64.dbl`): each byte shifted left by one bit,
   with the top bit of the next byte entering on the right, and the last
   byte XORed with `0x87` masked by the top bit of the first.
-* `update` is built from AES-CBC's pieces, whose arguments are the same,
-  with the chaining value at `state`: each block, the state becomes `C ⊕ Mᵢ`
-  and is enciphered in place.
+* `update` calls the CBC-MAC chain (`Impl.Aes.RISCV64.chain false`), whose
+  arguments are the same and which bitslices the round keys once for all
+  the blocks: each block, the state becomes `CIPH_K(C ⊕ Mᵢ)`. It gives the
+  chain the first 2048 bytes of the scratch buffer, and saves its return
+  address and `s1` above them, as `finalize` does.
 * `finalize` XORs the last block `Mₙ` into the state as it forms it:
   `Mₙ* ⊕ K1` for a complete block, else `Mₙ*` a byte at a time, `0x80` after
   it, and `K2`. It then enciphers the state in place, keeping only the
