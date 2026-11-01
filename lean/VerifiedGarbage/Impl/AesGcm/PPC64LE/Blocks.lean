@@ -42,16 +42,28 @@ def packEven : List Instr :=
  [.vop (.sldoi .v9 .v8 .v8 8), .vop (.sldoi T .v9 .v12 8),
   .vop (.sldoi T T T 8), .vop (.sldoi .v8 .v12 .v9 8)]
 
+def powerCopy (j : Nat) : List Instr :=
+ if (j+2)%2=0 then [.vop (.logic .or .v8 .v12 .v12)] else []
+
+def powerNext (j : Nat) : List Instr := powerCopy j ++
+ [.vop (.sldoi .v9 .v12 .v12 8)] ++ mul .v12 .v9 .v11 .v0 .v13 ++
+ [.vop (.sldoi .v12 .v12 .v12 8)]
+
+def powerSave (v : VReg) (offset : Nat) : List Instr :=
+ [.li .r11 offset,.stxvd2x v .r16 .r11]
+
+def packSave (offset : Nat) : List Instr :=
+ packEven ++ powerSave .v8 offset ++ powerSave T (offset+16)
+
+def powerOffset (j : Nat) : Nat := 128+32*(4-(j+2)/2)
+
+def powerStore (j : Nat) : List Instr :=
+ if (j+2)%2=0 then packSave (powerOffset j) else []
+
+def powerStep (j : Nat) : List Instr := powerNext j ++ powerStore j
+
 def foldSetup : List Instr := [.vop (.logic .or .v12 .v11 .v11)] ++
- (List.range 7).flatMap (fun j =>
-  let n := j+2
-  (if n%2=0 then [.vop (.logic .or .v8 .v12 .v12)] else []) ++
-  [.vop (.sldoi .v9 .v12 .v12 8)] ++ mul .v12 .v9 .v11 .v0 .v13 ++
-  [.vop (.sldoi .v12 .v12 .v12 8)] ++
-  (if n%2=0 then
-   packEven ++ [.li .r11 (128+32*(4-n/2)), .stxvd2x .v8 .r16 .r11,
-    .li .r11 (144+32*(4-n/2)), .stxvd2x T .r16 .r11]
-   else []))
+ (List.range 7).flatMap powerStep
 
 def entry : List Instr := saved.map (fun (r,o) => .store .d r .r10 o) ++
  [mov .r16 .r10, .addi .r16 .r16 128, mov .r14 .r9, .li .r15 112] ++ setup ++
@@ -141,11 +153,16 @@ def keyRounds : List Instr := roundKeyRegs.flatMap (fun k => cipherRegs false fa
 
 def firstNine : List Instr := keyReads ++ keyRounds
 
-def batch : Prog isa := .seq (.block (counters 8 ++ [.lxvd2x .v8 .r3 .r0] ++
- xorKey (rs 8) ++ firstNine ++
- [.addi .r9 .r3 160, .subi .r10 .r4 10]))
+def aesInitial : List Instr := [.lxvd2x .v8 .r3 .r0] ++ xorKey (rs 8)
+
+def aesRemaining : List Instr := [.addi .r9 .r3 160, .subi .r10 .r4 10]
+
+def aes8 : Prog isa := .seq (.block (aesInitial ++ firstNine ++ aesRemaining))
  (.seq (.ite (.zero .d .r10) (.block []) (.loop (.block (middle 8)) (.nonzero .d .r10)))
- (.block (roundRaw 8 true ++ stores ++ [.li .r21 128, .li .r22 144] ++
+ (.block (roundRaw 8 true)))
+
+def batch : Prog isa := .seq (.block (counters 8))
+ (.seq aes8 (.block (stores ++ [.li .r21 128, .li .r22 144] ++
   (List.range 4).flatMap ghPair ++ ghFinish)))
 
 def exit : List Instr := [.li .r11 12, .storeRev .w .r8 .r5 .r11] ++ store Y .r14 ++

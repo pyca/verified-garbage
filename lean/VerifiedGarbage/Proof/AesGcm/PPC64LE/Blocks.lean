@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Aes.Memory
+import VerifiedGarbage.Proof.Framework.VectorCrypto
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -14,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Rounds
 
-/-! # Polynomial arithmetic for the fused POWER8 bulk loop -/
+/-! # Component proofs for the fused POWER8 AES-GCM bulk loop -/
 
 @[expose] public section
 
@@ -1313,7 +1314,8 @@ theorem keyOffset_ok (i : Fin 8) (s : State)
       (Impl.AesGcm.PPC64LE.Blocks.keyOffset i) then
       [.li (Impl.AesGcm.PPC64LE.Blocks.keyOffset i) (16*(i+1))] else [])) s fun t =>
       t.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1)) ∧
-      VG.Proof.Aes.PPC64LE.Crypto.Local Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs [] s t := by
+      VG.Proof.Aes.PPC64LE.Crypto.Local Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs [] s t ∧
+      (∀ r, r ≠ Impl.AesGcm.PPC64LE.Blocks.keyOffset i → t.gpr r=s.gpr r) := by
   by_cases hs : Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs.contains
       (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=true
   · rw [ite_eq_left hs]
@@ -1325,10 +1327,11 @@ theorem keyOffset_ok (i : Fin 8) (s : State)
     subst t
     exact ⟨RegUpd.gpr_write_self ..,
       (VG.Proof.Aes.PPC64LE.Crypto.Local.write s _ _).weaken
-        (by simpa only [List.mem_singleton,forall_eq] using List.contains_iff_mem.mp hs) (by simp)⟩
+        (by simpa only [List.mem_singleton,forall_eq] using List.contains_iff_mem.mp hs) (by simp),
+      fun r hr => by rw [RegUpd.gpr_write,ite_eq_right hr]⟩
   · rw [ite_eq_right hs]
     exact WP.block_nil ⟨known (fun hm => hs (List.contains_iff_mem.mpr hm)),
-      VG.Proof.Aes.PPC64LE.Crypto.Local.refl _ _ _⟩
+      VG.Proof.Aes.PPC64LE.Crypto.Local.refl _ _ _,fun _ _ => rfl⟩
 
 theorem keyRead_ok (i : Fin 8) (s : State)
     (known : Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
@@ -1338,16 +1341,20 @@ theorem keyRead_ok (i : Fin 8) (s : State)
       t.vpr (Impl.AesGcm.PPC64LE.Blocks.dataReg i)=
         swapDwords (s.mem.read (s.gpr .r3+BitVec.ofNat 64 (16*(i+1))) 16) ∧
       VG.Proof.Aes.PPC64LE.Crypto.Local Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs
-        [Impl.AesGcm.PPC64LE.Blocks.dataReg i] s t := by
+        [Impl.AesGcm.PPC64LE.Blocks.dataReg i] s t ∧
+      t.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1)) ∧
+      (∀ r, r ≠ Impl.AesGcm.PPC64LE.Blocks.keyOffset i → t.gpr r=s.gpr r) := by
   rw [Impl.AesGcm.PPC64LE.Blocks.keyRead,WP.block_append_iff]
-  refine WP.mono (keyOffset_ok i s known) fun u ⟨hu,hf⟩ => ?_
+  refine WP.mono (keyOffset_ok i s known) fun u ⟨hu,hf,hothers⟩ => ?_
   have hp : u.gpr .r3=s.gpr .r3 := hf.keep.gpr (by decide)
   have hr' : InRegions (u.rd++u.wr) (u.gpr .r3+u.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)) 16 := by
     rw [hf.keep.2.1,hf.keep.2.2,hp,hu]; exact hr
   refine WP.mono (rawLoad_ok (Impl.AesGcm.PPC64LE.Blocks.dataReg i) .r3 _ u (by decide) hr')
-    fun t ⟨ht,hg⟩ => ⟨?_, ?_⟩
+    fun t ⟨ht,hg⟩ => ⟨?_, ?_, ?_, ?_⟩
   · rw [ht,hf.mem,hp,hu]
   · exact (hf.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hg)).weaken (by simp) (by simp)
+  · rw [hg.gpr]; exact hu
+  · intro r hr; rw [hg.gpr]; exact hothers r hr
 
 
 structure PreloadInv (base : State) (w : List Byte) (j : Nat) (s : State) : Prop where
@@ -1355,6 +1362,7 @@ structure PreloadInv (base : State) (w : List Byte) (j : Nat) (s : State) : Prop
     Impl.AesGcm.PPC64LE.Blocks.dataRegs base s
   keys : ∀ i < j, VG.Proof.Aes.PPC64LE.Crypto.IsKey
     (s.vpr (Impl.AesGcm.PPC64LE.Blocks.dataReg i)) (Spec.Aes.roundKey w (i+1))
+  offsets : ∀ i < j, s.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1))
 
 theorem preload_step {base : State} {nr : Nat} {w : List Byte} (cfg : RawCfg base nr w)
     (known : ∀ i < 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
@@ -1368,8 +1376,8 @@ theorem preload_step {base : State} {nr : Nat} {w : List Byte} (cfg : RawCfg bas
   have hr : InRegions (s.rd++s.wr) (s.gpr .r3+BitVec.ofNat 64 (16*(j+1))) 16 := by
     rw [hs.effects.keep.2.1,hs.effects.keep.2.2,hs.effects.keep.gpr (by decide)]
     exact cfg.reads (j+1) (by have := cfg.min; omega)
-  refine WP.mono (keyRead_ok ⟨j,hj⟩ s hk hr) fun t ⟨hv,hf⟩ => ?_
-  refine ⟨?_, ?_⟩
+  refine WP.mono (keyRead_ok ⟨j,hj⟩ s hk hr) fun t ⟨hv,hf,hoff,hothers⟩ => ?_
+  refine ⟨?_, ?_, ?_⟩
   · exact (hs.effects.trans hf).weaken (by simp) (by
       intro r hr
       rcases List.mem_append.mp hr with h | h
@@ -1387,6 +1395,14 @@ theorem preload_step {base : State} {nr : Nat} {w : List Byte} (cfg : RawCfg bas
         fun hx => he (data_injective ⟨i,by omega⟩ ⟨j,hj⟩ hx)
       rw [hf.v _ (by simpa only [List.mem_singleton] using hn)]
       exact hs.keys i (by omega)
+  · intro i hi
+    by_cases he : i=j
+    · subst i; exact hoff
+    · have inj : ∀ i j : Fin 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i =
+          Impl.AesGcm.PPC64LE.Blocks.keyOffset j → i.val=j.val := by decide
+      rw [hothers _ (fun hx => he (inj ⟨i,by omega⟩ ⟨j,hj⟩ hx))]
+      exact hs.offsets i (by omega)
+
 
 theorem preloadEight_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr w)
     (known : ∀ i < 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
@@ -1394,8 +1410,12 @@ theorem preloadEight_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg 
     WP isa (.block ((List.range 8).flatMap Impl.AesGcm.PPC64LE.Blocks.keyRead)) base (PreloadInv base w 8) := by
   exact wp_range_flatMap (M := isa) (PreloadInv base w)
     (fun j t hj hs => preload_step cfg known hj hs) 8 (Nat.le_refl _) base
-    ⟨VG.Proof.Aes.PPC64LE.Crypto.Local.refl _ _ _,fun _ hi => False.elim (by omega)⟩
+    ⟨VG.Proof.Aes.PPC64LE.Crypto.Local.refl _ _ _,fun _ hi => False.elim (by omega),
+      fun _ hi => False.elim (by omega)⟩
 
+
+def DataOffsets (s : State) : Prop :=
+  ∀ i < 8, s.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i)
 
 theorem keyReads_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr w)
     (known : ∀ i < 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
@@ -1403,7 +1423,7 @@ theorem keyReads_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base
     WP isa (.block Impl.AesGcm.PPC64LE.Blocks.keyReads) base fun t =>
       (∀ j < 9, VG.Proof.Aes.PPC64LE.Crypto.IsKey (t.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1))) ∧
       VG.Proof.Aes.PPC64LE.Crypto.Local (.r9 :: Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs)
-        (Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T]) base t := by
+        (Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T]) base t ∧ DataOffsets t := by
   rw [Impl.AesGcm.PPC64LE.Blocks.keyReads,WP.block_append_iff]
   refine WP.mono (preloadEight_ok base nr w cfg known) fun s hs => ?_
   have he : ([.addi .r9 .r3 144,.lxvd2x T .r9 .r0] : List Instr) =
@@ -1430,7 +1450,7 @@ theorem keyReads_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base
     simp only [RegUpd.mem_write,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,
       hs.effects.mem,hp,hz,BitVec.ofNat_eq_ofNat,BitVec.add_zero]
     exact cfg.keys 9 (by have := cfg.min; omega)
-  refine ⟨?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   · intro j hj
     by_cases heq : j=8
     · subst j; exact hT
@@ -1443,6 +1463,16 @@ theorem keyReads_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base
       (VG.Proof.Aes.PPC64LE.Crypto.Local.write s .r9 (s.gpr .r3+144))).trans
       (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hf)
     exact heffects.weaken (by simp [or_comm]) (by simp)
+  · intro i hi
+    have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.dataOffset i ≠ .r9 := by decide
+    rw [hf.gpr,RegUpd.gpr_write,ite_eq_right (hfree ⟨i,hi⟩)]
+    by_cases hz0 : i=0
+    · subst i; exact hz
+    · have hi' : i-1<7 := by omega
+      have hmap : ∀ j : Fin 7, Impl.AesGcm.PPC64LE.Blocks.dataOffset (j+1)=
+          Impl.AesGcm.PPC64LE.Blocks.keyOffset j := by decide
+      have hie : i=(i-1)+1 := by omega
+      rw [hie,hmap ⟨i-1,hi'⟩,hs.offsets (i-1) (by omega)]
 
 
 theorem firstNine_ok (base : State) (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State)
@@ -1454,9 +1484,9 @@ theorem firstNine_ok (base : State) (nr : Nat) (w : List Byte) (input : Nat → 
     WP isa (.block Impl.AesGcm.PPC64LE.Blocks.firstNine) base fun t =>
       (∀ i < 8, aesState (cipherAt t i)=VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 9) ∧
       VG.Proof.Aes.PPC64LE.Crypto.Local (.r9 :: Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs)
-        (Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T]++Impl.AesGcm.PPC64LE.Blocks.rs 8) base t := by
+        (Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T]++Impl.AesGcm.PPC64LE.Blocks.rs 8) base t ∧ DataOffsets t := by
   rw [Impl.AesGcm.PPC64LE.Blocks.firstNine,WP.block_append_iff]
-  refine WP.mono (keyReads_ok base nr w cfg known) fun s ⟨hk,hf⟩ => ?_
+  refine WP.mono (keyReads_ok base nr w cfg known) fun s ⟨hk,hf,hoff⟩ => ?_
   have hv : ∀ i < 8, aesState (cipherAt s i)=
       VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 0 := by
     intro i hi
@@ -1466,7 +1496,518 @@ theorem firstNine_ok (base : State) (nr : Nat) (w : List Byte) (input : Nat → 
     exact values i hi
   refine WP.mono (keyRounds_ok nr w input s hk hv) fun t ht => ?_
   exact ⟨ht.val,(hf.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector ht.effects)).weaken
-    (by simp) (by simp)⟩
+    (by simp) (by simp),by intro i hi; rw [ht.effects.gpr]; exact hoff i hi⟩
+
+
+theorem aesInitial_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr w) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.aesInitial) base fun t =>
+      (∀ i < 8, aesState (cipherAt t i)=VG.Proof.Aes.PPC64LE.Crypto.middle false nr w
+        (aesState (cipherAt base i)) 0) ∧
+      VOnly (.v8 :: Impl.AesGcm.PPC64LE.Blocks.rs 8) base t := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.aesInitial,WP.block_append_iff]
+  have hr : InRegions (base.rd++base.wr) (base.gpr .r3+base.gpr .r0) 16 := by
+    simpa only [cfg.zero,BitVec.ofNat_eq_ofNat,BitVec.add_zero,Nat.mul_zero] using cfg.reads 0 (by omega)
+  refine WP.mono (rawLoad_ok .v8 .r3 .r0 base (by decide) hr) fun s ⟨hv,hf⟩ => ?_
+  have hkey : VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr .v8) (Spec.Aes.roundKey w 0) := by
+    rw [hv]
+    simpa only [cfg.zero,BitVec.ofNat_eq_ofNat,BitVec.add_zero,Nat.mul_zero] using cfg.keys 0 (by omega)
+  refine WP.mono (vector_map (fun b => .vop (.logic .xor b b .v8)) (· ^^^ ·) .v8 (fun _ _ => rfl)
+    (Impl.AesGcm.PPC64LE.Blocks.rs 8) s (by decide) (by decide)) fun t ⟨ht,hg⟩ => ?_
+  refine ⟨?_,hf.trans hg⟩
+  intro i hi
+  have hm : Impl.AesGcm.PPC64LE.Blocks.reg i ∈ Impl.AesGcm.PPC64LE.Blocks.rs 8 :=
+    List.mem_map.mpr ⟨i,List.mem_range.mpr hi,rfl⟩
+  have hn : Impl.AesGcm.PPC64LE.Blocks.reg i ≠ .v8 := by
+    have free : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i ≠ .v8 := by decide
+    exact free ⟨i,hi⟩
+  rw [cipherAt,ht _ hm,VG.Proof.Aes.PPC64LE.Crypto.xor_state hkey,
+    hf.v _ (by simpa only [List.mem_singleton] using hn)]
+  exact (VG.Proof.Aes.PPC64LE.Crypto.middle_zero false nr w (aesState (cipherAt base i))).symm
+
+theorem RawCfg.of_local {base s : State} {nr : Nat} {w : List Byte}
+    {gs : List Reg} {vs : List VReg} (cfg : RawCfg base nr w)
+    (hs : VG.Proof.Aes.PPC64LE.Crypto.Local gs vs base s)
+    (h0 : .r0 ∉ gs) (h3 : .r3 ∉ gs) : RawCfg s nr w := by
+  refine ⟨(hs.keep.gpr h0).trans cfg.zero,cfg.min,cfg.max,?_,?_⟩
+  · intro j hj
+    rw [hs.keep.2.1,hs.keep.2.2,hs.keep.gpr h3]; exact cfg.reads j hj
+  · intro j hj
+    rw [hs.mem,hs.keep.gpr h3]; exact cfg.keys j hj
+
+theorem aesRemaining_ok (base : State) (nr : Nat) (w : List Byte)
+    (input : Nat → Spec.Aes.State) (cfg : RawCfg base nr w)
+    (hr : base.gpr .r4=BitVec.ofNat 64 nr)
+    (values : ∀ i < 8, aesState (cipherAt base i)=VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 9) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.aesRemaining) base (RawInv base nr w input 9) := by
+  have he : WP isa (.block Impl.AesGcm.PPC64LE.Blocks.aesRemaining) base
+      (· = (base.write .r9 (base.gpr .r3+160)).write .r10 (base.gpr .r4-10)) := by
+    apply WP.of_runBlock
+    simp only [Impl.AesGcm.PPC64LE.Blocks.aesRemaining,runBlock_cons,runStep_some,runBlock_nil,
+      exec_addi (n := .r3) (imm := 160) (by decide) (by decide),
+      exec_subi (n := .r4) (imm := 10) (by decide) (by decide),RegUpd.gpr_write,
+      reduceCtorEq,ite_false,Option.some.injEq,exists_eq_left']
+    rfl
+  refine WP.mono he fun t ht => ?_
+  subst t
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · exact ((VG.Proof.Aes.PPC64LE.Crypto.Local.write base .r9 (base.gpr .r3+160)).trans
+      (VG.Proof.Aes.PPC64LE.Crypto.Local.write _ .r10 (base.gpr .r4-10))).weaken (by simp) (by simp)
+  · simp only [RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true]
+    rfl
+  · simp only [RegUpd.gpr_write_self,hr]
+    change BitVec.ofNat 64 nr-BitVec.ofNat 64 10=_
+    rw [Offset.ofNat_sub_ofNat (by have := cfg.min; omega)]
+    congr 1
+  · intro i hi
+    simpa only [cipherAt,vpr_write] using values i hi
+
+
+theorem aes8_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr w)
+    (hr : base.gpr .r4=BitVec.ofNat 64 nr)
+    (known : ∀ i < 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
+      base.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1))) :
+    WP isa Impl.AesGcm.PPC64LE.Blocks.aes8 base fun t =>
+      (∀ i < 8, aesState (cipherAt t i)=Spec.Aes.cipher nr w (aesState (cipherAt base i))) ∧
+      VG.Proof.Aes.PPC64LE.Crypto.Local (([.r9,.r10] : List Reg)++Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs)
+        (.v8 :: (Impl.AesGcm.PPC64LE.Blocks.rs 8++Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T])) base t ∧ DataOffsets t := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.aes8]
+  apply WP.seq
+  rw [WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (aesInitial_ok base nr w cfg) fun s ⟨hv,hf⟩ => ?_
+  have cfgs : RawCfg s nr w := cfg.of_local (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hf) (by simp) (by simp)
+  have knowns : ∀ i < 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
+      s.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1)) := by
+    intro i hi hn
+    rw [hf.gpr]; exact known i hi hn
+  refine WP.mono (firstNine_ok s nr w (fun i => aesState (cipherAt base i)) cfgs knowns hv)
+    fun u ⟨hu,hg,hoff⟩ => ?_
+  have cfgu : RawCfg u nr w := cfgs.of_local hg (by decide) (by decide)
+  have hru : u.gpr .r4=BitVec.ofNat 64 nr :=
+    (hg.keep.gpr (by decide)).trans ((congrFun hf.gpr .r4).trans hr)
+  refine WP.mono (aesRemaining_ok u nr w (fun i => aesState (cipherAt base i)) cfgu hru hu)
+    fun v hv => ?_
+  apply WP.seq
+  refine WP.mono (remaining_ok cfgu (show 9 ≤ nr-1 by have := cfg.min; omega) hv) fun z hz => ?_
+  refine WP.mono (raw_last_ok cfgu hz) fun t ⟨ht,he⟩ => ?_
+  refine ⟨ht, ?_, ?_⟩
+  · exact (((VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hf).trans hg).trans he).weaken
+      (by simp [or_left_comm,or_comm,or_assoc]) (by simp [or_left_comm,or_comm,or_assoc])
+  · intro i hi
+    have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.dataOffset i ∉ [.r9,.r10] := by decide
+    rw [he.keep.gpr (hfree ⟨i,hi⟩)]
+    exact hoff i hi
+
+
+def ciphertextValue (base : State) (i : Nat) : BitVec 128 :=
+  cipherAt base i ^^^ rev128 (base.mem.read (base.gpr .r6+BitVec.ofNat 64 (16*i)) 16)
+
+structure StoreBatchResult (base : State) (m₀ : Mem) (D : Addr) (n k : Nat)
+    (F : Nat → Spec.Aes.State) (s : State) : Prop where
+  keep : Keep [.r6,.r7] base s
+  v : ∀ r, r ∉ mixRegs → s.vpr r=base.vpr r
+  processed : VG.Proof.Aes.Memory.Processed m₀ s.mem D n (k+8) F
+  frame : Frame [⟨D,16*n⟩] base.mem s.mem
+  values : ∀ i < 8, cipherAt s i=ciphertextValue base i
+  ptr : s.gpr .r6=base.gpr .r6+128
+  left : s.gpr .r7=base.gpr .r7-8
+
+theorem storesAdvance_ok (s : State) :
+    WP isa (.block ([.addi .r6 .r6 128,.subi .r7 .r7 8] : List Instr)) s
+      (· = (s.write .r6 (s.gpr .r6+128)).write .r7 (s.gpr .r7-8)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,
+    exec_addi (n := .r6) (imm := 128) (by decide) (by decide),
+    exec_subi (n := .r7) (imm := 8) (by decide) (by decide),RegUpd.gpr_write,
+    reduceCtorEq,ite_false,Option.some.injEq,exists_eq_left']
+  rfl
+
+theorem stores_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State)
+    (hkn : k+8 ≤ n) (hsize : 16*n ≤ 2^64)
+    (hm : base.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask)
+    (ptr : base.gpr .r6=D+BitVec.ofNat 64 (16*k))
+    (offsets : ∀ i < 8, base.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i))
+    (reads : ∀ i < 8, InRegions (base.rd++base.wr) (base.gpr .r6+BitVec.ofNat 64 (16*i)) 16)
+    (writes : ∀ i < 8, InRegions base.wr (D+BitVec.ofNat 64 (16*(k+i))) 16)
+    (values : ∀ i < 8, aesState (ciphertextValue base i)=F (k+i))
+    (processed : VG.Proof.Aes.Memory.Processed m₀ base.mem D n k F) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.stores) base (StoreBatchResult base m₀ D n k F) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.stores,WP.block_append_iff,WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (dataLoad_ok base offsets reads) fun s hs => ?_
+  have hmask : s.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask := (hs.effects.v _ (by decide)).trans hm
+  refine WP.mono (dataMix_ok s hmask) fun u hu => ?_
+  have hgp : u.gpr=base.gpr := hu.effects.gpr.trans hs.effects.gpr
+  have hmem : u.mem=base.mem := hu.effects.mem.trans hs.effects.mem
+  have hwr : u.wr=base.wr := hu.effects.wr.trans hs.effects.wr
+  have hvals : ∀ i < 8, cipherAt u i=ciphertextValue base i := by
+    intro i hi
+    have hr : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs := by decide
+    have hv := hu.val ⟨i,hi⟩
+    change cipherAt u i=if i<8 then mixValue s i else cipherAt s i at hv
+    rw [ite_eq_left hi] at hv
+    rw [hv,mixValue,hs.val i hi,VG.Proof.Aes.PPC64LE.Crypto.flip_load]
+    rw [cipherAt,hs.effects.v _ (hr ⟨i,hi⟩)]
+    rfl
+  have masku : u.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask :=
+    (hu.effects.v _ (by decide)).trans hmask
+  have processedu : VG.Proof.Aes.Memory.Processed m₀ u.mem D n k F := by rw [hmem]; exact processed
+  have ptru : u.gpr .r6=D+BitVec.ofNat 64 (16*k) := by rw [hgp]; exact ptr
+  have offu : ∀ i < 8, u.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i) := by
+    intro i hi; rw [hgp]; exact offsets i hi
+  have wru : ∀ i < 8, InRegions u.wr (D+BitVec.ofNat 64 (16*(k+i))) 16 := by
+    intro i hi; rw [hwr]; exact writes i hi
+  have valu : ∀ i < 8, aesState (cipherAt u i)=F (k+i) := by
+    intro i hi; rw [hvals i hi]; exact values i hi
+  refine WP.mono (dataWrite_ok u m₀ D n k F hkn hsize masku ptru offu wru valu processedu) fun v hv => ?_
+  have hvgp : v.gpr=base.gpr := (funext fun r => hv.keep.gpr (by simp)).trans hgp
+  refine WP.mono (storesAdvance_ok v) fun t ht => ?_
+  subst t
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · have he := ((VG.Proof.Aes.PPC64LE.Crypto.Local.write v .r6 (v.gpr .r6+128)).trans
+      (VG.Proof.Aes.PPC64LE.Crypto.Local.write _ .r7 (v.gpr .r7-8))).keep
+    exact ⟨fun r hr => (he.gpr hr).trans (congrFun hvgp r),
+      he.2.1.trans (hv.keep.2.1.trans (hu.effects.rd.trans hs.effects.rd)),
+      he.2.2.trans (hv.keep.2.2.trans hwr)⟩
+  · intro r hr
+    have hdfree : r ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs :=
+      fun hx => hr (List.mem_append_left _ hx)
+    simpa only [vpr_write] using (hv.v r hdfree).trans
+      ((hu.effects.v r hr).trans (hs.effects.v r hdfree))
+  · simpa only [RegUpd.mem_write] using hv.processed
+  · simpa only [RegUpd.mem_write,hmem] using hv.frame
+  · intro i hi
+    have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs := by decide
+    simpa only [cipherAt,vpr_write,hv.v _ (hfree ⟨i,hi⟩)] using hvals i hi
+  · simp only [RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,hvgp]
+  · simp only [RegUpd.gpr_write_self,hvgp]
+
+
+theorem cachedKey_isKey {base s : State} {count j : Nat} {w : List Byte}
+    (hs : CacheInv base count count s) (hj : j<count)
+    (hk : VG.Proof.Aes.PPC64LE.Crypto.IsKey
+      (rev128 (base.mem.read (base.gpr .r9+BitVec.ofNat 64 (16*j)) 16)) (Spec.Aes.roundKey w j)) :
+    VG.Proof.Aes.PPC64LE.Crypto.IsKey
+      (swapDwords (s.mem.read (base.gpr .r11+BitVec.ofNat 64 (16*j)) 16)) (Spec.Aes.roundKey w j) := by
+  rw [cachedKey_read hs hj,cachedKey,swapDwords_involutive]
+  exact hk
+
+theorem powerCopy_ok (j : Nat) (s : State) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.powerCopy j)) s fun t =>
+      t.vpr .v8=(if (j+2)%2=0 then s.vpr .v12 else s.vpr .v8) ∧ VOnly [.v8] s t := by
+  by_cases he : (j+2)%2=0
+  · rw [Impl.AesGcm.PPC64LE.Blocks.powerCopy,ite_eq_left he]
+    refine WP.mono (vector_step (.vop (.logic .or .v8 .v12 .v12)) .v8 _ s
+      (exec_copyVector .v8 .v12 s)) fun t ⟨hv,hf⟩ => ?_
+    exact ⟨by rw [ite_eq_left he]; exact hv,hf⟩
+  · rw [Impl.AesGcm.PPC64LE.Blocks.powerCopy,ite_eq_right he]
+    exact WP.block_nil ⟨by rw [ite_eq_right he],VOnly.refl _ _⟩
+
+theorem powerNext_ok (j : Nat) (h : BitVec 128) (s : State)
+    (hv : s.vpr .v12=VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j)
+    (hk : s.vpr .v11=h) (hc : s.vpr .v13=poly++poly) (hz : s.vpr .v0=0) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.powerNext j)) s fun t =>
+      t.vpr .v12=VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (j+1) ∧
+      t.vpr .v8=(if (j+2)%2=0 then VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j else s.vpr .v8) ∧
+      VOnly [.v8,.v9,U,LO,MID,HI,T,.v12] s t := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.powerNext,WP.block_append_iff,WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (powerCopy_ok j s) fun u ⟨hu,hf⟩ => ?_
+  refine WP.mono (vector_step (.vop (.sldoi .v9 .v12 .v12 8)) .v9 _ u
+    (VG.Proof.Gcm.PPC64LE.Vpmsum.exec_shift8 .v9 .v12 .v12 u)) fun v ⟨hval,hg⟩ => ?_
+  have ha : v.vpr .v9=VG.Proof.Gcm.Clmul.ext8 (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j)
+      (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j) := by
+    rw [hval,VG.Proof.Gcm.PPC64LE.Vpmsum.half_self,hf.v .v12 (by decide),hv]
+  have hc' : v.vpr .v13=poly++poly := ((hg.v .v13 (by decide)).trans (hf.v .v13 (by decide))).trans hc
+  have hz' : v.vpr .v0=0 := ((hg.v .v0 (by decide)).trans (hf.v .v0 (by decide))).trans hz
+  have hk' : v.vpr .v11=h := ((hg.v .v11 (by decide)).trans (hf.v .v11 (by decide))).trans hk
+  refine WP.mono (mul_ok .v12 .v9 .v11 v (by decide) (by decide) hc' hz') fun w ⟨hw,hh⟩ => ?_
+  refine WP.mono (vector_step (.vop (.sldoi .v12 .v12 .v12 8)) .v12 _ w
+    (VG.Proof.Gcm.PPC64LE.Vpmsum.exec_shift8 .v12 .v12 .v12 w)) fun t ⟨ht,hi⟩ => ?_
+  refine ⟨?_, ?_, ?_⟩
+  · rw [ht,VG.Proof.Gcm.PPC64LE.Vpmsum.half_self,hw,ha,hk']
+    rfl
+  · rw [hi.v .v8 (by decide),hh.v .v8 (by decide),hg.v .v8 (by decide),hu,hv]
+  · exact (((hf.trans hg).trans hh).trans hi).weaken (by simp [or_left_comm])
+
+
+theorem powerSave_ok (v : VReg) (offset : Nat) (s : State) (ho : offset<2^15)
+    (hw : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 offset) 16) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.powerSave v offset)) s
+      (· = {s.write .r11 (BitVec.ofNat 64 offset) with
+        mem := s.mem.write (s.gpr .r16+BitVec.ofNat 64 offset) 16 (swapDwords (s.vpr v))}) := by
+  have he : Impl.AesGcm.PPC64LE.Blocks.powerSave v offset =
+      ([.li .r11 offset] : List Instr) ++ [.stxvd2x v .r16 .r11] := rfl
+  rw [he,WP.block_append_iff]
+  have hli : WP isa (.block ([.li .r11 offset] : List Instr)) s (· = s.write .r11 (BitVec.ofNat 64 offset)) := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons,runStep_some,runBlock_nil,exec_li ho,Option.some.injEq,exists_eq_left']
+  refine WP.mono hli fun u hu => ?_
+  subst u
+  have hwr : InRegions (s.write .r11 (BitVec.ofNat 64 offset)).wr
+      ((s.write .r11 (BitVec.ofNat 64 offset)).gpr .r16+(s.write .r11 (BitVec.ofNat 64 offset)).gpr .r11) 16 := by
+    simpa only [RegUpd.wr_write,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true] using hw
+  refine WP.mono (rawStore_ok v .r16 .r11 _ (by decide) hwr) fun t ht => ?_
+  simpa only [RegUpd.mem_write,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,vpr_write] using ht
+
+def powerMem (m : Mem) (p : Addr) (offset : Nat) (a b : BitVec 128) : Mem :=
+  (m.write (p+BitVec.ofNat 64 offset) 16 (swapDwords a)).write
+    (p+BitVec.ofNat 64 (offset+16)) 16 (swapDwords b)
+
+theorem powerMem_lo (m : Mem) (p : Addr) (offset : Nat) (a b : BitVec 128)
+    (ho : offset+32 ≤ 2^64) :
+    swapDwords ((powerMem m p offset a b).read (p+BitVec.ofNat 64 offset) 16)=a := by
+  rw [powerMem,Mem.read_write_sep
+    (Offset.sep p (Or.inl (Nat.le_refl _)) (by omega) ho) (by decide),
+    VG.Proof.VectorCrypto.read_write16,swapDwords_involutive]
+
+theorem powerMem_hi (m : Mem) (p : Addr) (offset : Nat) (a b : BitVec 128) :
+    swapDwords ((powerMem m p offset a b).read (p+BitVec.ofNat 64 (offset+16)) 16)=b := by
+  rw [powerMem,VG.Proof.VectorCrypto.read_write16,swapDwords_involutive]
+
+
+theorem powerMem_frame (m : Mem) (p : Addr) (offset start len : Nat) (a b : BitVec 128)
+    (hs : start ≤ offset) (ho : offset+32 ≤ start+len) (hl : start+len < 2^64) :
+    Frame [⟨p+BitVec.ofNat 64 start,len⟩] m (powerMem m p offset a b) := by
+  exact ((Frame.refl _ m).write (List.mem_singleton_self _) _
+    (Offset.contains p (d := offset) (n := 16) (e := start) (k := len) hs (by omega) hl)).write
+      (List.mem_singleton_self _) _
+      (Offset.contains p (d := offset+16) (n := 16) (e := start) (k := len) (by omega) (by omega) hl)
+
+theorem powerMem_other (m : Mem) (p : Addr) (offset q : Nat) (a b : BitVec 128)
+    (ho : offset+32 ≤ 2^64) (hq : q+16 ≤ 2^64) (hs : q+16 ≤ offset ∨ offset+32 ≤ q) :
+    (powerMem m p offset a b).read (p+BitVec.ofNat 64 q) 16=m.read (p+BitVec.ofNat 64 q) 16 := by
+  rw [powerMem,Mem.read_write_sep
+    (Offset.sep p (d := q) (n := 16) (e := offset+16) (k := 16) (by omega) hq ho) (by decide),
+    Mem.read_write_sep (Offset.sep p (d := q) (n := 16) (e := offset) (k := 16) (by omega) hq (by omega)) (by decide)]
+
+structure PackSaveResult (base : State) (offset : Nat) (s : State) : Prop where
+  keep : Keep [.r11] base s
+  v : ∀ r, r ∉ [.v9,T,.v8] → s.vpr r=base.vpr r
+  mem : s.mem=powerMem base.mem (base.gpr .r16) offset
+    (VG.Proof.Gcm.PPC64LE.Vpmsum.lowPair (base.vpr .v12) (base.vpr .v8))
+    (VG.Proof.Gcm.PPC64LE.Vpmsum.highPair (base.vpr .v12) (base.vpr .v8))
+
+theorem packSave_ok (offset : Nat) (s : State) (ho : offset+16<2^15)
+    (hwl : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 offset) 16)
+    (hwh : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 (offset+16)) 16) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.packSave offset)) s (PackSaveResult s offset) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.packSave,WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (packEven_ok s) fun u ⟨hl,hh,hf⟩ => ?_
+  have hwl' : InRegions u.wr (u.gpr .r16+BitVec.ofNat 64 offset) 16 := by
+    simpa only [hf.wr,hf.gpr] using hwl
+  refine WP.mono (powerSave_ok .v8 offset u (by omega) hwl') fun v hv => ?_
+  subst v
+  let stored : State := {u.write .r11 (BitVec.ofNat 64 offset) with
+    mem := u.mem.write (u.gpr .r16+BitVec.ofNat 64 offset) 16 (swapDwords (u.vpr .v8))}
+  have hwh' : InRegions stored.wr (stored.gpr .r16+BitVec.ofNat 64 (offset+16)) 16 := by
+    simpa only [stored,RegUpd.wr_write,RegUpd.gpr_write,reduceCtorEq,ite_false,hf.wr,hf.gpr] using hwh
+  refine WP.mono (powerSave_ok T (offset+16) _ ho hwh') fun t ht => ?_
+  subst t
+  refine ⟨?_, ?_, ?_⟩
+  · refine ⟨?_, ?_, ?_⟩
+    · intro r hr
+      simp only [List.mem_singleton] at hr
+      simp only [RegUpd.gpr_write,hr,ite_false,hf.gpr]
+    · simp only [RegUpd.rd_write,hf.rd]
+    · simp only [RegUpd.wr_write,hf.wr]
+  · intro r hr
+    simpa only [vpr_write] using hf.v r hr
+  · simp only [RegUpd.gpr_write,reduceCtorEq,ite_false,vpr_write,hf.mem,hf.gpr,hl,hh,powerMem]
+
+
+def powerClobbers : List VReg := [.v8,.v9,U,LO,MID,HI,T,.v12]
+
+structure PowerStepResult (base : State) (h : BitVec 128) (j : Nat) (s : State) : Prop where
+  keep : Keep [.r11] base s
+  v : ∀ r, r ∉ powerClobbers → s.vpr r=base.vpr r
+  value : s.vpr .v12=VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (j+1)
+  mem : s.mem=if (j+2)%2=0 then
+    powerMem base.mem (base.gpr .r16) (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)
+      (VG.Proof.Gcm.PPC64LE.Vpmsum.lowPair (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (j+1))
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j))
+      (VG.Proof.Gcm.PPC64LE.Vpmsum.highPair (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (j+1))
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j))
+    else base.mem
+
+theorem powerStep_ok (j : Nat) (h : BitVec 128) (s : State)
+    (hv : s.vpr .v12=VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j)
+    (hk : s.vpr .v11=h) (hc : s.vpr .v13=poly++poly) (hz : s.vpr .v0=0)
+    (hwl : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)) 16)
+    (hwh : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j+16)) 16) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.powerStep j)) s (PowerStepResult s h j) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.powerStep,WP.block_append_iff]
+  refine WP.mono (powerNext_ok j h s hv hk hc hz) fun u ⟨hu,hod,hf⟩ => ?_
+  by_cases he : (j+2)%2=0
+  · rw [Impl.AesGcm.PPC64LE.Blocks.powerStore,ite_eq_left he]
+    have hwl' : InRegions u.wr (u.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)) 16 := by
+      simpa only [hf.wr,hf.gpr] using hwl
+    have hwh' : InRegions u.wr (u.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j+16)) 16 := by
+      simpa only [hf.wr,hf.gpr] using hwh
+    refine WP.mono (packSave_ok _ u (by unfold Impl.AesGcm.PPC64LE.Blocks.powerOffset; omega) hwl' hwh')
+      fun t ht => ?_
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · exact ⟨fun r hr => (ht.keep.gpr hr).trans (congrFun hf.gpr r),
+        ht.keep.2.1.trans hf.rd,ht.keep.2.2.trans hf.wr⟩
+    · intro r hr
+      have hfree : r ∉ [.v9,T,.v8] := by
+        simp only [powerClobbers,List.mem_cons,List.not_mem_nil,or_false,not_or] at hr ⊢
+        exact ⟨hr.2.1,hr.2.2.2.2.2.2.1,hr.1⟩
+      exact (ht.v r hfree).trans (hf.v r hr)
+    · exact (ht.v .v12 (by decide)).trans hu
+    · rw [ht.mem,hf.mem,hf.gpr,hu,hod,ite_eq_left he,ite_eq_left he]
+  · rw [Impl.AesGcm.PPC64LE.Blocks.powerStore,ite_eq_right he]
+    exact WP.block_nil ⟨⟨fun r _ => congrFun hf.gpr r,hf.rd,hf.wr⟩,
+      hf.v,hu,by rw [ite_eq_right he]; exact hf.mem⟩
+
+
+def pairOffset (q : Nat) : Nat := 128+32*(3-q)
+
+structure PowerInv (base : State) (h : BitVec 128) (j : Nat) (s : State) : Prop where
+  keep : Keep [.r11] base s
+  v : ∀ r, r ∉ powerClobbers → s.vpr r=base.vpr r
+  value : s.vpr .v12=VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h j
+  lo : ∀ q : Fin 4, 2*q.val+1 ≤ j →
+    swapDwords (s.mem.read (base.gpr .r16+BitVec.ofNat 64 (pairOffset q)) 16)=
+      VG.Proof.Gcm.PPC64LE.Vpmsum.lowPair
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val+1))
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val))
+  hi : ∀ q : Fin 4, 2*q.val+1 ≤ j →
+    swapDwords (s.mem.read (base.gpr .r16+BitVec.ofNat 64 (pairOffset q+16)) 16)=
+      VG.Proof.Gcm.PPC64LE.Vpmsum.highPair
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val+1))
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val))
+  frame : Frame [⟨base.gpr .r16+128,128⟩] base.mem s.mem
+
+theorem powerOffset_bounds (j : Nat) : 128 ≤ Impl.AesGcm.PPC64LE.Blocks.powerOffset j ∧
+    Impl.AesGcm.PPC64LE.Blocks.powerOffset j+32 ≤ 256 := by
+  unfold Impl.AesGcm.PPC64LE.Blocks.powerOffset
+  omega
+
+theorem powerOffset_eq (q : Fin 4) : Impl.AesGcm.PPC64LE.Blocks.powerOffset (2*q.val)=pairOffset q := by
+  unfold Impl.AesGcm.PPC64LE.Blocks.powerOffset pairOffset
+  omega
+
+theorem powerOffset_separate (j : Nat) (hj : j<7) (q : Fin 4) (hq : 2*q.val+1 ≤ j)
+    (he : (j+2)%2=0) : Impl.AesGcm.PPC64LE.Blocks.powerOffset j+32 ≤ pairOffset q := by
+  unfold Impl.AesGcm.PPC64LE.Blocks.powerOffset pairOffset
+  omega
+
+theorem powerInv_step {base : State} {h : BitVec 128}
+    (hk : base.vpr .v11=h) (hc : base.vpr .v13=poly++poly) (hz : base.vpr .v0=0)
+    (writes : ∀ j < 7, InRegions base.wr
+      (base.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)) 16 ∧
+      InRegions base.wr (base.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j+16)) 16)
+    {j : Nat} (hj : j<7) {s : State} (hs : PowerInv base h j s) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.powerStep j)) s (PowerInv base h (j+1)) := by
+  have hks : s.vpr .v11=h := (hs.v .v11 (by decide)).trans hk
+  have hcs : s.vpr .v13=poly++poly := (hs.v .v13 (by decide)).trans hc
+  have hzs : s.vpr .v0=0 := (hs.v .v0 (by decide)).trans hz
+  have hg : s.gpr .r16=base.gpr .r16 := hs.keep.gpr (by decide)
+  have hwl : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)) 16 := by
+    rw [hs.keep.2.2,hg]; exact (writes j hj).1
+  have hwh : InRegions s.wr (s.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j+16)) 16 := by
+    rw [hs.keep.2.2,hg]; exact (writes j hj).2
+  refine WP.mono (powerStep_ok j h s hs.value hks hcs hzs hwl hwh) fun t ht => ?_
+  have hlo : ∀ q : Fin 4, 2*q.val+1 ≤ j+1 →
+      swapDwords (t.mem.read (base.gpr .r16+BitVec.ofNat 64 (pairOffset q)) 16)=
+        VG.Proof.Gcm.PPC64LE.Vpmsum.lowPair (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val+1))
+          (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val)) := by
+    intro q hq
+    by_cases heq : 2*q.val=j
+    · have he : (j+2)%2=0 := by omega
+      rw [ht.mem,ite_eq_left he,hg,← heq,powerOffset_eq]
+      exact powerMem_lo _ _ _ _ _ (by unfold pairOffset; omega)
+    · have hqold : 2*q.val+1 ≤ j := by omega
+      rw [ht.mem]
+      by_cases he : (j+2)%2=0
+      · rw [ite_eq_left he,hg,powerMem_other _ _ _ _ _ _ (by have := powerOffset_bounds j; omega)
+          (by unfold pairOffset; omega) (Or.inr (powerOffset_separate j hj q hqold he))]
+        exact hs.lo q hqold
+      · rw [ite_eq_right he]; exact hs.lo q hqold
+  have hhi : ∀ q : Fin 4, 2*q.val+1 ≤ j+1 →
+      swapDwords (t.mem.read (base.gpr .r16+BitVec.ofNat 64 (pairOffset q+16)) 16)=
+        VG.Proof.Gcm.PPC64LE.Vpmsum.highPair (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val+1))
+          (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (2*q.val)) := by
+    intro q hq
+    by_cases heq : 2*q.val=j
+    · have he : (j+2)%2=0 := by omega
+      rw [ht.mem,ite_eq_left he,hg,← heq,powerOffset_eq]
+      exact powerMem_hi _ _ _ _ _
+    · have hqold : 2*q.val+1 ≤ j := by omega
+      rw [ht.mem]
+      by_cases he : (j+2)%2=0
+      · rw [ite_eq_left he,hg,powerMem_other _ _ _ _ _ _ (by have := powerOffset_bounds j; omega)
+          (by unfold pairOffset; omega) (Or.inr (by have := powerOffset_separate j hj q hqold he; omega))]
+        exact hs.hi q hqold
+      · rw [ite_eq_right he]; exact hs.hi q hqold
+  refine ⟨(hs.keep.trans ht.keep).mono (by simp),fun r hr => (ht.v r hr).trans (hs.v r hr),
+    ht.value,hlo,hhi,?_⟩
+  rw [ht.mem]
+  by_cases he : (j+2)%2=0
+  · rw [ite_eq_left he,hg]
+    exact hs.frame.trans (powerMem_frame _ _ _ 128 128 _ _ (powerOffset_bounds j).1
+      (powerOffset_bounds j).2 (by decide))
+  · rw [ite_eq_right he]; exact hs.frame
+
+
+theorem foldSetup_ok (base : State) (h : BitVec 128)
+    (hk : base.vpr .v11=h) (hc : base.vpr .v13=poly++poly) (hz : base.vpr .v0=0)
+    (writes : ∀ j < 7, InRegions base.wr
+      (base.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)) 16 ∧
+      InRegions base.wr (base.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j+16)) 16) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.foldSetup) base (PowerInv base h 7) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.foldSetup,WP.block_append_iff]
+  refine WP.mono (vector_step (.vop (.logic .or .v12 .v11 .v11)) .v12 _ base
+    (exec_copyVector .v12 .v11 base)) fun u ⟨hu,hf⟩ => ?_
+  have hk' : u.vpr .v11=h := (hf.v .v11 (by decide)).trans hk
+  have hc' : u.vpr .v13=poly++poly := (hf.v .v13 (by decide)).trans hc
+  have hz' : u.vpr .v0=0 := (hf.v .v0 (by decide)).trans hz
+  have wrs : ∀ j < 7, InRegions u.wr
+      (u.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j)) 16 ∧
+      InRegions u.wr (u.gpr .r16+BitVec.ofNat 64 (Impl.AesGcm.PPC64LE.Blocks.powerOffset j+16)) 16 := by
+    intro j hj
+    simpa only [hf.wr,hf.gpr] using writes j hj
+  have hi : PowerInv u h 0 u := ⟨Keep.refl _ _,fun _ _ => rfl,hu.trans hk,
+    fun q hq => False.elim (by omega),fun q hq => False.elim (by omega),Frame.refl _ _⟩
+  refine WP.mono (wp_range_flatMap (M := isa) (PowerInv u h)
+    (fun j t hj ht => powerInv_step hk' hc' hz' wrs hj ht) 7 (Nat.le_refl _) u hi) fun t ht => ?_
+  refine ⟨?_, ?_, ht.value, ?_, ?_, ?_⟩
+  · exact ⟨fun r hr => (ht.keep.gpr hr).trans (congrFun hf.gpr r),
+      ht.keep.2.1.trans hf.rd,ht.keep.2.2.trans hf.wr⟩
+  · intro r hr
+    have hr' : r ∉ [.v12] := by
+      intro he
+      rw [List.mem_singleton] at he
+      apply hr
+      rw [he]; decide
+    exact (ht.v r hr).trans (hf.v r hr')
+  · intro q hq
+    simpa only [hf.gpr] using ht.lo q hq
+  · intro q hq
+    simpa only [hf.gpr] using ht.hi q hq
+  · simpa only [hf.gpr,hf.mem] using ht.frame
+
+def PowersAt (m : Mem) (p : Addr) (h : BitVec 128) : Prop :=
+  ∀ j < 4,
+    swapDwords (m.read (p+BitVec.ofNat 64 (128+32*j)) 16)=
+      VG.Proof.Gcm.PPC64LE.Vpmsum.lowPair (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (7-2*j))
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (6-2*j)) ∧
+    swapDwords (m.read (p+BitVec.ofNat 64 (144+32*j)) 16)=
+      VG.Proof.Gcm.PPC64LE.Vpmsum.highPair (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (7-2*j))
+        (VG.Proof.Gcm.PPC64LE.Vpmsum.keyValue h (6-2*j))
+
+theorem PowerInv.ready {base s : State} {h : BitVec 128} (hs : PowerInv base h 7 s) :
+    PowersAt s.mem (base.gpr .r16) h := by
+  intro j hj
+  let q : Fin 4 := ⟨3-j,by omega⟩
+  have hl := hs.lo q (by dsimp only [q]; omega)
+  have hh := hs.hi q (by dsimp only [q]; omega)
+  have ho : pairOffset q=128+32*j := by
+    change 128+32*(3-(3-j))=128+32*j
+    omega
+  have hk : 2*q.val+1=7-2*j := by dsimp only [q]; omega
+  have hk' : 2*q.val=6-2*j := by dsimp only [q]; omega
+  rw [ho,hk,hk'] at hl hh
+  refine ⟨hl, ?_⟩
+  simpa only [show 128+32*j+16=144+32*j by omega] using hh
 
 
 theorem code_taint : ∃ h, (VG.Taint.check vectorTaint
