@@ -468,22 +468,22 @@ theorem packEven_ok (s : State) :
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2, ite_false]
 
-structure LoadInv (base : State) (k : Nat) (s : State) : Prop where
+structure LoadInv (base : State) (p : Reg) (k : Nat) (s : State) : Prop where
   effects : VOnly Impl.AesGcm.PPC64LE.Blocks.dataRegs base s
   val : ∀ i < k, s.vpr (Impl.AesGcm.PPC64LE.Blocks.dataReg i) =
-    swapDwords (base.mem.read (base.gpr .r6 + BitVec.ofNat 64 (16*i)) 16)
+    swapDwords (base.mem.read (base.gpr p + BitVec.ofNat 64 (16*i)) 16)
 
-theorem dataLoad_step (base : State)
+theorem dataLoad_step (base : State) (p : Reg) (hp : p≠.r0)
     (offsets : ∀ i < 8, base.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i) = BitVec.ofNat 64 (16*i))
-    (reads : ∀ i < 8, InRegions (base.rd ++ base.wr) (base.gpr .r6+BitVec.ofNat 64 (16*i)) 16)
-    {k : Nat} (hk : k < 8) (s : State) (h : LoadInv base k s) :
-    WP isa (.block [.lxvd2x (Impl.AesGcm.PPC64LE.Blocks.dataReg k) .r6
-      (Impl.AesGcm.PPC64LE.Blocks.dataOffset k)]) s (LoadInv base (k+1)) := by
+    (reads : ∀ i < 8, InRegions (base.rd ++ base.wr) (base.gpr p+BitVec.ofNat 64 (16*i)) 16)
+    {k : Nat} (hk : k < 8) (s : State) (h : LoadInv base p k s) :
+    WP isa (.block [.lxvd2x (Impl.AesGcm.PPC64LE.Blocks.dataReg k) p
+      (Impl.AesGcm.PPC64LE.Blocks.dataOffset k)]) s (LoadInv base p (k+1)) := by
   have hr : InRegions (s.rd ++ s.wr)
-      (s.gpr .r6 + s.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset k)) 16 := by
+      (s.gpr p + s.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset k)) 16 := by
     rw [h.effects.rd, h.effects.wr, h.effects.gpr, offsets k hk]
     exact reads k hk
-  refine WP.mono (rawLoad_ok _ .r6 _ s (by decide) hr) fun t ⟨hv, hf⟩ => ?_
+  refine WP.mono (rawLoad_ok _ p _ s hp hr) fun t ⟨hv, hf⟩ => ?_
   have mems : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.dataReg i ∈ Impl.AesGcm.PPC64LE.Blocks.dataRegs := by decide
   refine ⟨(h.effects.trans hf).weaken (by
     intro r hr
@@ -502,14 +502,20 @@ theorem dataLoad_step (base : State)
     rw [hf.v _ (by simpa only [List.mem_singleton] using hne)]
     exact h.val i (by omega)
 
+theorem dataLoadAt_ok (p : Reg) (hp : p≠.r0) (s : State)
+    (offsets : ∀ i < 8, s.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i) = BitVec.ofNat 64 (16*i))
+    (reads : ∀ i < 8, InRegions (s.rd ++ s.wr) (s.gpr p+BitVec.ofNat 64 (16*i)) 16) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.dataLoadAt p)) s (LoadInv s p 8) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.dataLoadAt]
+  exact wp_range_flatMap (M := isa) (LoadInv s p)
+    (fun k t hk ht => dataLoad_step s p hp offsets reads hk t ht) 8 (Nat.le_refl _) s
+    ⟨VOnly.refl _ _, fun _ hi => by omega⟩
+
 theorem dataLoad_ok (s : State)
     (offsets : ∀ i < 8, s.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i) = BitVec.ofNat 64 (16*i))
-    (reads : ∀ i < 8, InRegions (s.rd ++ s.wr) (s.gpr .r6+BitVec.ofNat 64 (16*i)) 16) :
-    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.dataLoad) s (LoadInv s 8) := by
-  rw [Impl.AesGcm.PPC64LE.Blocks.dataLoad]
-  exact wp_range_flatMap (M := isa) (LoadInv s)
-    (fun k t hk ht => dataLoad_step s offsets reads hk t ht) 8 (Nat.le_refl _) s
-    ⟨VOnly.refl _ _, fun _ hi => by omega⟩
+    (reads : ∀ i < 8, InRegions (s.rd++s.wr) (s.gpr .r6+BitVec.ofNat 64 (16*i)) 16) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.dataLoad) s (LoadInv s .r6 8) :=
+  dataLoadAt_ok .r6 (by decide) s offsets reads
 
 theorem data_separated : ∀ i j : Fin 8,
     Impl.AesGcm.PPC64LE.Blocks.reg i ≠ Impl.AesGcm.PPC64LE.Blocks.dataReg j := by decide
@@ -1759,15 +1765,18 @@ theorem aes8_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr 
 def ciphertextValue (base : State) (i : Nat) : BitVec 128 :=
   cipherAt base i ^^^ rev128 (base.mem.read (base.gpr .r6+BitVec.ofNat 64 (16*i)) 16)
 
-structure StoreBatchResult (base : State) (m₀ : Mem) (D : Addr) (n k : Nat)
-    (F : Nat → Spec.Aes.State) (s : State) : Prop where
+structure StoreBatchResultWith (base : State) (m₀ : Mem) (D : Addr) (n k : Nat)
+    (F : Nat → Spec.Aes.State) (C : Nat → BitVec 128) (s : State) : Prop where
   keep : Keep [.r6,.r7] base s
   v : ∀ r, r ∉ mixRegs → s.vpr r=base.vpr r
   processed : VG.Proof.Aes.Memory.Processed m₀ s.mem D n (k+8) F
   frame : Frame [⟨D,16*n⟩] base.mem s.mem
-  values : ∀ i < 8, cipherAt s i=ciphertextValue base i
+  values : ∀ i < 8, cipherAt s i=C i
   ptr : s.gpr .r6=base.gpr .r6+128
   left : s.gpr .r7=base.gpr .r7-8
+
+abbrev StoreBatchResult (base : State) (m₀ : Mem) (D : Addr) (n k : Nat)
+    (F : Nat → Spec.Aes.State) := StoreBatchResultWith base m₀ D n k F (ciphertextValue base)
 
 theorem storesAdvance_ok (s : State) :
     WP isa (.block ([.addi .r6 .r6 128,.subi .r7 .r7 8] : List Instr)) s
@@ -1779,34 +1788,28 @@ theorem storesAdvance_ok (s : State) :
     reduceCtorEq,ite_false,Option.some.injEq,exists_eq_left']
   rfl
 
-theorem stores_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State)
+theorem storesFinish_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State)
     (hkn : k+8 ≤ n) (hsize : 16*n ≤ 2^64)
     (hm : base.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask)
     (ptr : base.gpr .r6=D+BitVec.ofNat 64 (16*k))
     (offsets : ∀ i < 8, base.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i))
-    (reads : ∀ i < 8, InRegions (base.rd++base.wr) (base.gpr .r6+BitVec.ofNat 64 (16*i)) 16)
     (writes : ∀ i < 8, InRegions base.wr (D+BitVec.ofNat 64 (16*(k+i))) 16)
-    (values : ∀ i < 8, aesState (ciphertextValue base i)=F (k+i))
+    (values : ∀ i < 8, aesState (mixValue base i)=F (k+i))
     (processed : VG.Proof.Aes.Memory.Processed m₀ base.mem D n k F) :
-    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.stores) base (StoreBatchResult base m₀ D n k F) := by
-  rw [Impl.AesGcm.PPC64LE.Blocks.stores,WP.block_append_iff,WP.block_append_iff,WP.block_append_iff]
-  refine WP.mono (dataLoad_ok base offsets reads) fun s hs => ?_
-  have hmask : s.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask := (hs.effects.v _ (by decide)).trans hm
-  refine WP.mono (dataMix_ok s hmask) fun u hu => ?_
-  have hgp : u.gpr=base.gpr := hu.effects.gpr.trans hs.effects.gpr
-  have hmem : u.mem=base.mem := hu.effects.mem.trans hs.effects.mem
-  have hwr : u.wr=base.wr := hu.effects.wr.trans hs.effects.wr
-  have hvals : ∀ i < 8, cipherAt u i=ciphertextValue base i := by
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.storesFinish) base
+      (StoreBatchResultWith base m₀ D n k F (mixValue base)) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.storesFinish,WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (dataMix_ok base hm) fun u hu => ?_
+  have hgp : u.gpr=base.gpr := hu.effects.gpr
+  have hmem : u.mem=base.mem := hu.effects.mem
+  have hwr : u.wr=base.wr := hu.effects.wr
+  have hvals : ∀ i < 8, cipherAt u i=mixValue base i := by
     intro i hi
-    have hr : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs := by decide
     have hv := hu.val ⟨i,hi⟩
-    change cipherAt u i=if i<8 then mixValue s i else cipherAt s i at hv
-    rw [ite_eq_left hi] at hv
-    rw [hv,mixValue,hs.val i hi,VG.Proof.Aes.PPC64LE.Crypto.flip_load]
-    rw [cipherAt,hs.effects.v _ (hr ⟨i,hi⟩)]
-    rfl
+    change cipherAt u i=if i<8 then mixValue base i else cipherAt base i at hv
+    simpa only [ite_eq_left hi] using hv
   have masku : u.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask :=
-    (hu.effects.v _ (by decide)).trans hmask
+    (hu.effects.v _ (by decide)).trans hm
   have processedu : VG.Proof.Aes.Memory.Processed m₀ u.mem D n k F := by rw [hmem]; exact processed
   have ptru : u.gpr .r6=D+BitVec.ofNat 64 (16*k) := by rw [hgp]; exact ptr
   have offu : ∀ i < 8, u.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i) := by
@@ -1823,13 +1826,13 @@ theorem stores_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat �
   · have he := ((VG.Proof.Aes.PPC64LE.Crypto.Local.write v .r6 (v.gpr .r6+128)).trans
       (VG.Proof.Aes.PPC64LE.Crypto.Local.write _ .r7 (v.gpr .r7-8))).keep
     exact ⟨fun r hr => (he.gpr hr).trans (congrFun hvgp r),
-      he.2.1.trans (hv.keep.2.1.trans (hu.effects.rd.trans hs.effects.rd)),
+      he.2.1.trans (hv.keep.2.1.trans hu.effects.rd),
       he.2.2.trans (hv.keep.2.2.trans hwr)⟩
   · intro r hr
     have hdfree : r ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs :=
       fun hx => hr (List.mem_append_left _ hx)
     simpa only [vpr_write] using (hv.v r hdfree).trans
-      ((hu.effects.v r hr).trans (hs.effects.v r hdfree))
+      (hu.effects.v r hr)
   · simpa only [RegUpd.mem_write] using hv.processed
   · simpa only [RegUpd.mem_write,hmem] using hv.frame
   · intro i hi
@@ -1837,6 +1840,48 @@ theorem stores_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat �
     simpa only [cipherAt,vpr_write,hv.v _ (hfree ⟨i,hi⟩)] using hvals i hi
   · simp only [RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,hvgp]
   · simp only [RegUpd.gpr_write_self,hvgp]
+
+
+theorem stores_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State)
+    (hkn : k+8 ≤ n) (hsize : 16*n ≤ 2^64)
+    (hm : base.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask)
+    (ptr : base.gpr .r6=D+BitVec.ofNat 64 (16*k))
+    (offsets : ∀ i < 8, base.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i))
+    (reads : ∀ i < 8, InRegions (base.rd++base.wr) (base.gpr .r6+BitVec.ofNat 64 (16*i)) 16)
+    (writes : ∀ i < 8, InRegions base.wr (D+BitVec.ofNat 64 (16*(k+i))) 16)
+    (values : ∀ i < 8, aesState (ciphertextValue base i)=F (k+i))
+    (processed : VG.Proof.Aes.Memory.Processed m₀ base.mem D n k F) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.stores) base (StoreBatchResult base m₀ D n k F) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.stores,WP.block_append_iff]
+  refine WP.mono (dataLoad_ok base offsets reads) fun s hs => ?_
+  have hvals : ∀ i < 8, mixValue s i=ciphertextValue base i := by
+    intro i hi
+    have free : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs := by decide
+    rw [mixValue,hs.val i hi,VG.Proof.Aes.PPC64LE.Crypto.flip_load,
+      cipherAt,hs.effects.v _ (free ⟨i,hi⟩)]
+    rfl
+  have hmask := (hs.effects.v .v19 (by decide)).trans hm
+  have ptrs : s.gpr .r6=D+BitVec.ofNat 64 (16*k) := by rw [hs.effects.gpr]; exact ptr
+  have offs : ∀ i < 8, s.gpr (Impl.AesGcm.PPC64LE.Blocks.dataOffset i)=BitVec.ofNat 64 (16*i) := by
+    intro i hi; rw [hs.effects.gpr]; exact offsets i hi
+  have wrs : ∀ i < 8, InRegions s.wr (D+BitVec.ofNat 64 (16*(k+i))) 16 := by
+    intro i hi; rw [hs.effects.wr]; exact writes i hi
+  have vals : ∀ i < 8, aesState (mixValue s i)=F (k+i) := by
+    intro i hi; rw [hvals i hi]; exact values i hi
+  have proc : VG.Proof.Aes.Memory.Processed m₀ s.mem D n k F := by
+    rw [hs.effects.mem]; exact processed
+  refine WP.mono (storesFinish_ok s m₀ D n k F hkn hsize hmask ptrs offs wrs vals proc) fun t ht => ?_
+  refine ⟨?_,?_,ht.processed,?_,?_,?_,?_⟩
+  · exact ⟨fun r hr => (ht.keep.gpr hr).trans (congrFun hs.effects.gpr r),
+      ht.keep.2.1.trans hs.effects.rd,ht.keep.2.2.trans hs.effects.wr⟩
+  · intro r hr
+    have free : r ∉ Impl.AesGcm.PPC64LE.Blocks.dataRegs :=
+      fun hx => hr (List.mem_append_left _ hx)
+    exact (ht.v r hr).trans (hs.effects.v r free)
+  · simpa only [hs.effects.mem] using ht.frame
+  · intro i hi; exact (ht.values i hi).trans (hvals i hi)
+  · rw [ht.ptr,hs.effects.gpr]
+  · rw [ht.left,hs.effects.gpr]
 
 
 theorem cachedKey_isKey {base s : State} {count j : Nat} {w : List Byte}
@@ -3470,7 +3515,7 @@ theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hs : LoopInv base ready n nr k s) :
     WP isa Impl.AesGcm.PPC64LE.Blocks.batch s (LoopInv base ready n nr (k+8)) := by
   let cb := Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))
-  rw [Impl.AesGcm.PPC64LE.Blocks.batch]
+  rw [Impl.AesGcm.PPC64LE.Blocks.batch,Impl.AesGcm.PPC64LE.Blocks.batchWith]
   apply WP.seq
   refine WP.mono (counters_fixed base s n nr cb lay hs.fixed hmax hs.counter)
     fun ctr ⟨hc,fxc,hcf,hcb⟩ => ?_
@@ -3798,7 +3843,7 @@ theorem core_nonempty_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     have hh := congrArg BitVec.toNat he
     rw [hn,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := lay.size; omega)] at hh
     exact Nat.ne_of_gt hpos hh
-  rw [Impl.AesGcm.PPC64LE.Blocks.code]
+  rw [Impl.AesGcm.PPC64LE.Blocks.code,Impl.AesGcm.PPC64LE.Blocks.codeWith]
   refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
     Option.some.injEq,beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
   apply WP.seq
@@ -3821,7 +3866,7 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
   have hfunc : WP isa Impl.AesGcm.PPC64LE.Blocks.code base (CoreResult base n nr) := by
     by_cases hz : n=0
     · subst n
-      rw [Impl.AesGcm.PPC64LE.Blocks.code]
+      rw [Impl.AesGcm.PPC64LE.Blocks.code,Impl.AesGcm.PPC64LE.Blocks.codeWith]
       refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hn]; rfl)
         (fun _ => WP.block_nil ?_) (by simp)
       refine ⟨Frame.refl _ _,?_,rfl,?_,fun _ _ => rfl⟩

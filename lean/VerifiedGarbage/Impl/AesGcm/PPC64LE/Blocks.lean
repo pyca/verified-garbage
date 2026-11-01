@@ -164,7 +164,10 @@ def dataOffsets : List Reg := [.r0,.r20,.r21,.r22,.r23,.r24,.r18,.r11]
 def dataReg (i : Nat) : VReg := dataRegs.getD i .v8
 def dataOffset (i : Nat) : Reg := dataOffsets.getD i .r0
 
-def dataLoad : List Instr := (List.range 8).flatMap (fun i => [.lxvd2x (dataReg i) .r6 (dataOffset i)])
+def dataLoadAt (p : Reg) : List Instr :=
+ (List.range 8).flatMap (fun i => [.lxvd2x (dataReg i) p (dataOffset i)])
+
+def dataLoad : List Instr := dataLoadAt .r6
 
 def dataMix : List Instr := (List.range 8).flatMap (fun i =>
  [.vop (.perm (dataReg i) (dataReg i) (dataReg i) .v19),
@@ -172,7 +175,9 @@ def dataMix : List Instr := (List.range 8).flatMap (fun i =>
 
 def dataWrite : List Instr := (List.range 8).flatMap (fun i => storePerm (dataReg i) (reg i) .r6 (dataOffset i))
 
-def stores : List Instr := dataLoad ++ dataMix ++ dataWrite ++ [.addi .r6 .r6 128, .subi .r7 .r7 8]
+def storesFinish : List Instr := dataMix ++ dataWrite ++ [.addi .r6 .r6 128,.subi .r7 .r7 8]
+
+def stores : List Instr := dataLoad ++ storesFinish
 
 def keyOffsets : List Reg := [.r20,.r21,.r22,.r23,.r24,.r18,.r11,.r12]
 
@@ -218,16 +223,19 @@ def ghStart : List Instr := maskLoads .r21 .r22 ++ ghOffsets
 
 def ghCode : List Instr := (List.range 4).flatMap ghPair ++ ghRestore ++ ghFinish
 
-def batch : Prog isa := .seq (.block (counters 8))
- (.seq aes8 (.block (stores ++ ghStart ++ ghCode)))
+def batchWith (finish : Prog isa) : Prog isa := .seq (.block (counters 8)) (.seq aes8 finish)
+
+def batch : Prog isa := batchWith (.block (stores ++ ghStart ++ ghCode))
 
 def exit : List Instr := [.li .r11 12, .storeRev .w .r8 .r5 .r11] ++ store Y .r14 ++
  [.subi .r12 .r16 128] ++
  saved.map (fun (r,o) => .load .d r .r12 o)
 
-def code : Prog isa := .ite (.zero .d .r7) (.block [])
+def codeWith (batchBody : Prog isa) : Prog isa := .ite (.zero .d .r7) (.block [])
  (.seq (.block entry) (.seq cache
- (.seq (.loop batch (.nonzero .d .r7)) (.block exit))))
+ (.seq (.loop batchBody (.nonzero .d .r7)) (.block exit))))
+
+def code : Prog isa := codeWith batch
 /-! The existing whole-block API emits the bulk kernel once. Its callers
 reuse it with a call; short inputs and the tail use the existing primitives.
 The seven nonvolatile argument registers are outside the bulk kernel's set. -/
