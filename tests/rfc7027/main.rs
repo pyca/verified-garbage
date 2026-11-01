@@ -17,8 +17,7 @@ mod brainpoolp384r1_ecdsa;
 mod brainpoolp512r1;
 mod brainpoolp512r1_ecdsa;
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc7027/rfc7027.txt"));
+const TEXT: &str = include_str!("../../vectors/rfc7027/rfc7027.txt");
 
 /// The hex value labelled `label` (as `dA =`) in the test vectors of the
 /// curve `curve`, on the label's line and the lines after it that are only

@@ -3,7 +3,7 @@
 //! Wycheproof's vectors, in `tests/wycheproof/hmac_sha1.rs`).
 //!
 //! The RFC is vendored under `vectors/rfc2202/` (see `vectors/sources/`
-//! for where it comes from) and read at run time (`tests/vectors.rs`), so these tests
+//! for where it comes from) and compiled into the test binary, so these tests
 //! always run. Test case 5's truncated MAC is compared with the start of the
 //! computed one.
 
@@ -19,8 +19,7 @@
 use verified_garbage::hashes::md5::Md5;
 use verified_garbage::hmac::Hmac;
 
-static RFC: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc2202/rfc2202.txt"));
+const RFC: &str = include_str!("../../vectors/rfc2202/rfc2202.txt");
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");

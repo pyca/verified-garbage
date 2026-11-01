@@ -16,9 +16,7 @@
 
 use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
 
-static TEXT: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
-    crate::vectors::text("vectors/schneier-blowfish-vectors/vectors-2.txt")
-});
+const TEXT: &str = include_str!("../../vectors/schneier-blowfish-vectors/vectors-2.txt");
 
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();

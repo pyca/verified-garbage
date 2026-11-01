@@ -54,7 +54,7 @@ fn check(ctx: &SeedCbc, iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
 
 #[test]
 fn pyca_vectors() {
-    let text = crate::vectors::text("vectors/cryptography-seed-cbc/rfc-4196.txt");
+    let text = include_str!("../../vectors/cryptography-seed-cbc/rfc-4196.txt");
     let mut key_lens = Vec::new();
     for record in text.split("COUNT = ").skip(1) {
         let get = |label: &str| {

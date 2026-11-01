@@ -40,7 +40,7 @@ fn reference(key: &[u8], iv: [u8; 16], data: &[u8], encrypt: bool) -> (Vec<u8>, 
 
 #[test]
 fn openssl_vectors() {
-    let text = crate::vectors::text("vectors/cryptography-camellia-cfb/camellia-cfb.txt");
+    let text = include_str!("../../vectors/cryptography-camellia-cfb/camellia-cfb.txt");
     let mut key_lens = Vec::new();
     for record in text.split("COUNT = ").skip(1) {
         let get = |label: &str| {

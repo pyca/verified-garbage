@@ -55,7 +55,7 @@ fn check(ctx: &IdeaCbc, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
 
 #[test]
 fn pyca_vectors() {
-    let text = crate::vectors::text("vectors/cryptography-idea-cbc/idea-cbc.txt");
+    let text = include_str!("../../vectors/cryptography-idea-cbc/idea-cbc.txt");
     let mut key_lens = Vec::new();
     for record in text.split("COUNT = ").skip(1) {
         let get = |label: &str| {

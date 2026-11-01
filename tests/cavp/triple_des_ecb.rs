@@ -89,37 +89,37 @@ fn check_file(text: &str, stream: bool) -> usize {
 fn nist_ecb() {
     let files = [
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-kat/TECBsubtab.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-kat/TECBsubtab.rsp"),
             38,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-kat/TECBpermop.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-kat/TECBpermop.rsp"),
             64,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-kat/TECBvarkey.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-kat/TECBvarkey.rsp"),
             112,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-kat/TECBvartext.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-kat/TECBvartext.rsp"),
             128,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-kat/TECBinvperm.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-kat/TECBinvperm.rsp"),
             128,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-mmt/TECBMMT2.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-mmt/TECBMMT2.rsp"),
             10,
             true,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-tdes-mmt/TECBMMT3.rsp"),
+            include_str!("../../vectors/nist-cavp-tdes-mmt/TECBMMT3.rsp"),
             20,
             true,
         ),

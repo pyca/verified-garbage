@@ -51,15 +51,15 @@ fn matches(v: &[(&str, &str)], bytes: usize) -> bool {
 fn generate() {
     let files = [
         (
-            crate::vectors::text("vectors/nist-cavp/cmac-aes/CMACGenAES128.rsp"),
+            include_str!("../../vectors/nist-cavp/cmac-aes/CMACGenAES128.rsp"),
             16,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/cmac-aes/CMACGenAES192.rsp"),
+            include_str!("../../vectors/nist-cavp/cmac-aes/CMACGenAES192.rsp"),
             24,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/cmac-aes/CMACGenAES256.rsp"),
+            include_str!("../../vectors/nist-cavp/cmac-aes/CMACGenAES256.rsp"),
             32,
         ),
     ];
@@ -77,11 +77,11 @@ fn generate() {
 fn verify() {
     let files = [
         (
-            crate::vectors::text("vectors/nist-cavp/cmac-aes/CMACVerAES128.rsp"),
+            include_str!("../../vectors/nist-cavp/cmac-aes/CMACVerAES128.rsp"),
             16,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp/cmac-aes/CMACVerAES256.rsp"),
+            include_str!("../../vectors/nist-cavp/cmac-aes/CMACVerAES256.rsp"),
             32,
         ),
     ];

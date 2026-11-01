@@ -89,8 +89,8 @@ macro_rules! mldsa_tests {
 
         #[test]
         fn keygen() {
-            let json = crate::vectors::text(
-                "vectors/nist-acvp/ML-DSA-keyGen-FIPS204/internalProjection.json",
+            let json = include_str!(
+                "../../vectors/nist-acvp/ML-DSA-keyGen-FIPS204/internalProjection.json"
             );
             for g in groups::<KeyGen>(json) {
                 assert_eq!(g.tests.len(), 25);
@@ -105,8 +105,8 @@ macro_rules! mldsa_tests {
 
         #[test]
         fn sigver() {
-            let json = crate::vectors::text(
-                "vectors/nist-acvp/ML-DSA-sigVer-FIPS204/internalProjection.json",
+            let json = include_str!(
+                "../../vectors/nist-acvp/ML-DSA-sigVer-FIPS204/internalProjection.json"
             );
             let mut count = 0;
             for g in groups::<SigVer>(json) {

@@ -101,77 +101,77 @@ fn check_file(text: &str, split: bool) -> usize {
 fn nist_cfb8() {
     let files = [
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8GFSbox128.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8GFSbox128.rsp"),
             14,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8GFSbox192.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8GFSbox192.rsp"),
             12,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8GFSbox256.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8GFSbox256.rsp"),
             10,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8KeySbox128.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8KeySbox128.rsp"),
             42,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8KeySbox192.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8KeySbox192.rsp"),
             48,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8KeySbox256.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8KeySbox256.rsp"),
             32,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8VarKey128.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8VarKey128.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8VarKey192.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8VarKey192.rsp"),
             384,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8VarKey256.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8VarKey256.rsp"),
             512,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8VarTxt128.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8VarTxt128.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8VarTxt192.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8VarTxt192.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-kat-cfb8/CFB8VarTxt256.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-kat-cfb8/CFB8VarTxt256.rsp"),
             256,
             false,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-mmt/CFB8MMT128.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-mmt/CFB8MMT128.rsp"),
             20,
             true,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-mmt/CFB8MMT192.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-mmt/CFB8MMT192.rsp"),
             20,
             true,
         ),
         (
-            crate::vectors::text("vectors/nist-cavp-aes-mmt/CFB8MMT256.rsp"),
+            include_str!("../../vectors/nist-cavp-aes-mmt/CFB8MMT256.rsp"),
             20,
             true,
         ),

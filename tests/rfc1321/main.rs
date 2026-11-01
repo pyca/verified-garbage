@@ -1,7 +1,7 @@
 //! The MD5 test suite of RFC 1321 (Appendix A.5).
 //!
 //! The RFC is vendored under `vectors/rfc1321/` (see `vectors/sources/`
-//! for where it comes from) and read at run time (`tests/vectors.rs`), so these tests
+//! for where it comes from) and compiled into the test binary, so these tests
 //! always run. Every vector of the suite is checked, in one call and split
 //! into pieces at every position.
 
@@ -29,7 +29,7 @@ fn unhex(s: &str) -> Vec<u8> {
 /// test suite. The RFC wraps two of them onto a second line, so the suite's
 /// lines are joined without separators before they are split into vectors.
 fn vectors() -> Vec<(Vec<u8>, Vec<u8>)> {
-    let text = crate::vectors::text("vectors/rfc1321/rfc1321.txt");
+    let text = include_str!("../../vectors/rfc1321/rfc1321.txt");
     let suite: String = text
         .lines()
         .skip_while(|l| *l != "MD5 test suite:")

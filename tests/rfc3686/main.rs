@@ -14,8 +14,7 @@
 use verified_garbage::aes_ctr::{AesCtr, InvalidKeyLength};
 use verified_garbage::aes_ecb::AesEcb;
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc3686/rfc3686.txt"));
+const TEXT: &str = include_str!("../../vectors/rfc3686/rfc3686.txt");
 
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();

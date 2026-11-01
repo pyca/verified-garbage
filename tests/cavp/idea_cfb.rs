@@ -41,7 +41,7 @@ fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [
 
 #[test]
 fn pyca_vectors() {
-    let text = crate::vectors::text("vectors/cryptography-idea-cfb/idea-cfb.txt");
+    let text = include_str!("../../vectors/cryptography-idea-cfb/idea-cfb.txt");
     let mut key_lens = Vec::new();
     for record in text.split("COUNT = ").skip(1) {
         let get = |label: &str| {

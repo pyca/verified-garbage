@@ -14,8 +14,7 @@ mod ed448;
 
 use verified_garbage::ed25519::{Error, SigningKey, VerifyingKey};
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc8032/rfc8032.txt"));
+const TEXT: &str = include_str!("../../vectors/rfc8032/rfc8032.txt");
 
 fn hex_lines(text: &str) -> Vec<u8> {
     text.lines()

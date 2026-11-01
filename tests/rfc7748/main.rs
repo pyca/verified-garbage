@@ -1,8 +1,8 @@
 //! The X25519 test vectors of RFC 7748 (§5.2 and §6.1).
 //!
 //! The RFC is vendored under `vectors/rfc7748/` (see
-//! `vectors/sources/rfc7748.toml` for where it comes from) and read at run time
-//! (`tests/vectors.rs`), so these tests always run. Each value is the line of 64
+//! `vectors/sources/rfc7748.toml` for where it comes from) and compiled into
+//! the test binary, so these tests always run. Each value is the line of 64
 //! hex digits after its label; page breaks and prose are skipped.
 
 #![cfg(any(
@@ -18,8 +18,7 @@ mod x448;
 
 use verified_garbage::x25519::{BASE_POINT, PrivateKey, x25519};
 
-static TEXT: std::sync::LazyLock<&str> =
-    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc7748/rfc7748.txt"));
+const TEXT: &str = include_str!("../../vectors/rfc7748/rfc7748.txt");
 
 /// The values labelled `label` (a line ending with `:`) in the lines from the
 /// one starting with `from` to the next one starting with `to`, in order.

@@ -20,7 +20,7 @@ use super::unhex;
 
 #[test]
 fn rsadp_component() {
-    let text = crate::vectors::text("vectors/nist-cavp-rsadp/RSADPComponent800_56B.rsp");
+    let text = include_str!("../../vectors/nist-cavp-rsadp/RSADPComponent800_56B.rsp");
     let mut count = 0;
     for v in text.split("COUNT = ").skip(1) {
         let field = |name: &str| {
