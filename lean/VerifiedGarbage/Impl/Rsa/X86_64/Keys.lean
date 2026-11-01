@@ -191,7 +191,8 @@ def decA (j : Nat) : List Instr :=
 the width `n` read at run time: `f = m`, `g = a` or `a + m` if `a` is even
 (odd, so its first divstep swaps it below `m` if it is larger), `n + 1`
 words each in two's complement, `(a, b) = (0, 1)` reduced by one word of
-Montgomery reduction per batch (`mred`), `3 n + 2` batches (`177 n + 118`
+Montgomery reduction per batch (`mred`) modulo `m` with its low bit set (so
+that the batches run on an odd modulus whatever `m` is), `3 n + 2` batches (`177 n + 118`
 divsteps, enough for numbers below `2^(64 n + 32)`). Then `g = 0` and
 `f = ±gcd`, `x₂ = ±a 2^(5 B) mod m` by `5 B` modular doublings, and
 `v = |f|`.
@@ -255,10 +256,16 @@ def setup : List Instr :=
     .mov .r15 (.reg .r13), .mov .rsi (.reg .r13), .alu .add .rsi (.reg .r13), .alu .add .rsi (.reg .r13),
     .alu .add .rsi (.imm 2)] : List Instr) ++ base aWin .rdi
 
-/-- The start: the arrays zeroed, `m` into `aP` and `f`, `a` into `aT`,
-`g`, `(a, b) = (0, 1)`, then `setup`. -/
+/-- `m`'s low bit set in `aP`: an odd modulus for the batches whatever `m` is
+(`m` itself when it is odd). -/
+def setOdd : List Instr :=
+  ws ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .or .rax (.imm 1), .store (at0 .r8) .rax] : List Instr)
+
+/-- The start: the arrays zeroed, `m` into `aP` (made odd) and `f`, `a` into
+`aT`, `g`, `(a, b) = (0, 1)`, then `setup`. -/
 def start (iU iM : Nat) : List (Prog isa) :=
-  [zeroA aF, zeroA aG, zeroA aA, zeroA aB, zeroA aT, zeroA aS, zeroA aP, copyA aP iM, copyA aF aP, copyA aT iU] ++
+  [zeroA aF, zeroA aG, zeroA aA, zeroA aB, zeroA aT, zeroA aS, zeroA aP, copyA aP iM, .block setOdd, copyA aF aP,
+    copyA aT iU] ++
   gInit ++ [.block (setOneA aB), .block setup]
 
 /-! ### A batch (`rdi` the window, `r9` the stride, `r15` `n`) -/
