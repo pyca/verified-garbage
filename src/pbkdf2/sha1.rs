@@ -1,20 +1,9 @@
-//! PBKDF2-HMAC-SHA-1. The whole derivation is
+//! PBKDF2-HMAC-SHA-1 (RFC 8018 §5.2): one call of the verified
 //! `vg_pbkdf2_hmac_sha1` (contract `VG.Spec.Hmac.Instance.pbkdf2Contract` of
-//! `VG.Spec.Hmac.sha1I`). On x86-64 and AArch64, it is the one PBKDF2
-//! implementation for every Merkle–Damgård hash function, calling SHA-1's verified functions: its
-//! iteration calls SHA-1's verified compression function directly, twice per
-//! step. On x86-64 and x86, it follows the implementation of SHA-1 compression that
-//! `Sha1` runs on this CPU (`vg_pbkdf2_hmac_sha1_shani`: the same verified code calling
-//! `vg_sha1_compress_shani`, and, on x86, the SHA-NI streaming, HMAC and
-//! iteration functions, with the same contract).
-//!
-//! On ARMv7, x86, PPC64LE and RISC-V, the whole derivation is the one for every
-//! streaming hash function, calling SHA-1's verified streaming functions, HMAC-SHA-1's
-//! `init` and `finalize` and `vg_pbkdf2_hmac_sha1_iterate` (contract
-//! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
-//! every streaming hash function.
-//!
-//! On AArch64, the `_sha2` variants follow SHA-1 hardware dispatch.
+//! `VG.Spec.Hmac.sha1I`), which derives the whole key. Its variants, with the
+//! same contract, are chosen on CPUs with the features their `_FEATURES`
+//! constants name: on x86-64 and x86, `vg_pbkdf2_hmac_sha1_shani`; on AArch64,
+//! `vg_pbkdf2_hmac_sha1_sha2`.
 
 #![cfg(any(
     target_arch = "x86_64",
