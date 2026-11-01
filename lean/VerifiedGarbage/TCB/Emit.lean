@@ -304,18 +304,14 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
   return ok
 
 /-- The directories of generated files (`Rust.codeDir`) of the crates of
-generated code under `dir` (`Rust.crateDir`), and the `asm/` of a crate
-whose generated files are in `src/` (`Rust.codeSubdir`), which has none:
-those it deletes stale `.rs` files in, and checks. -/
+generated code under `dir` (`Rust.crateDir`): those it deletes stale `.rs`
+files in, and checks. -/
 def codeDirs (dir : FilePath) : IO (List String) := do
   unless ← dir.pathExists do return []
   let mut ds := #[]
   for e in ← dir.readDir do
     if (← e.path.isDir) && e.fileName.startsWith (Rust.crateDir "") then
-      let t := (e.fileName.drop (Rust.crateDir "").length).toString
-      ds := ds.push (Rust.codeDir t)
-      -- A target whose generated files are in `src/` has none in `asm/`.
-      if Rust.codeSubdir t == "src" then ds := ds.push (Rust.crateDir t ++ "/asm")
+      ds := ds.push (Rust.codeDir (e.fileName.drop (Rust.crateDir "").length).toString)
   return (ds.qsort (· < ·)).toList
 
 /-- Writes the files generated from `as` under the directory in `args` (by
@@ -356,8 +352,7 @@ def inTwoParts (targets : List (List (String × String))) : Option String :=
 target is in two parts (so each part generated all of its targets' files,
 from all of their artifacts), and no other crate of generated code has a
 `.rs` file in its directory of generated files (a target's that no longer
-has artifacts, or the `asm/` of a target whose files are in `src/`, which it
-no longer writes). Writes (deleting
+has artifacts). Writes (deleting
 those files) or checks, as `run`. -/
 def finish (targets : List (List (String × String))) (args : List String) : IO UInt32 := do
   let some (check, _, dir) := parseArgs args | do IO.eprintln usage; return 2

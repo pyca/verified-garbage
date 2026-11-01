@@ -1,4 +1,4 @@
-# The verified functions for `x86_64`, generated from Lean into `asm/`
+# The verified functions for `x86_64`, generated from Lean into `src/`
 # (see `lean/VerifiedGarbage/TCB/Rust.lean`): a crate of its own, so that
 # compiling the library does not compile them again with it.
 [package]
@@ -12,11 +12,9 @@ repository.workspace = true
 publish.workspace = true
 build = false
 
-# The code pre-assembled: `asm/`, the code as the emitter prints it, with
-# its machine code as data (`ci/preassemble.py`; `ci/check_preassembled.py`
-# checks that it is the same code). Stated, though it is the default, so that
-# the manifest is valid where only it is checked out (CI's jobs of the other
-# targets), as Cargo reads it for every path dependency, built or not.
+# Stated, though it is the default, so that the manifest is valid where
+# only it is checked out (CI's jobs of the other targets), as Cargo reads it
+# for every path dependency, built or not.
 [lib]
 path = "src/lib.rs"
 

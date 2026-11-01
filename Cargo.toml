@@ -36,7 +36,7 @@ getrandom = "0.4"
 verified-garbage-cpu = { path = "crates/verified-garbage-cpu" }
 
 # The verified assembly of each target, generated into
-# `crates/verified-garbage-asm-<target>/asm/`: a crate per target (see
+# `crates/verified-garbage-asm-<target>/src/`: a crate per target (see
 # `lean/VerifiedGarbage/TCB/Rust.lean`).
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64" }

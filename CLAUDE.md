@@ -45,10 +45,10 @@ own changes are rebuilt either way, on top of the restored build.
   never edit the generated crates, `crates/verified-garbage-asm-<target>/`,
   by hand. Add an entry to a registration file,
   `lean/VerifiedGarbage/Artifacts/<Alg>/<Target>.lean`, and run
-  `lake env lean --run Emit.lean` in `lean/` (each crate's `src/` is the
-  code it compiles, whose printer emits each straight-line instruction as its
-  machine code, `TCB/<ISA>/Encode.lean`; ARM's crate compiles the printed
-  text, in `asm/`).
+  `lake env lean --run Emit.lean` in `lean/`, which writes each crate's
+  `src/` (whose printer emits each straight-line instruction as its machine
+  code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
+  and Thumb, as text).
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
   `bv_decide` or new `axiom`s in anything an artifact depends on.
   `lake build` and the emitter enforce this (warnings are errors, and
@@ -216,7 +216,7 @@ should add files, not edit lists that every other PR edits too.
   never run).
 * A construction over many hash functions (HMAC, PBKDF2) gets a file per
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
-  `crates/verified-garbage-asm-<target>/asm/hmac_sha256.rs`), its registration files are
+  `crates/verified-garbage-asm-<target>/src/hmac_sha256.rs`), its registration files are
   `Artifacts/<Family><Hash>/<Target>.lean`, its Rust implementation is
   `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are

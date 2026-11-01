@@ -1,18 +1,18 @@
 """Where the generated code of each target is.
 
-The emitter writes each target's verified functions, as printed, into a
-crate of its own, `crates/verified-garbage-asm-<target>/asm/`: its root
-`lib.rs` and a file `<module>.rs` per module (and `consts/`, the tables of
-constants). Before, the crate had them in `src/`, and before that they were
-modules of the library, `src/asm/<target>/` (with root `mod.rs`), as they
-still are at older revisions, which the scripts that compare a change with
-its base read too.
+The emitter writes each target's verified functions into a crate of its
+own, `crates/verified-garbage-asm-<target>/src/`: its root `lib.rs` and a
+file `<module>.rs` per module (and `consts/`, the tables of constants). At
+older revisions, which the scripts that compare a change with its base read
+too, a crate had the printed code in `asm/` (and that code pre-assembled, or
+nothing, in `src/`), and before that they were modules of the library,
+`src/asm/<target>/` (with root `mod.rs`).
 
 So that those scripts need not know every layout, each speaks of a
 generated file by its path in the library's layout,
 `src/asm/<target>/<file>` (`logical`), and reads it wherever the tree or
-revision has it (`physical`): the printed code, which a crate keeps in
-`asm/` when it has one.
+revision has it (`physical`): the printed code, which a crate kept in
+`asm/` when it had one.
 """
 
 import pathlib
@@ -20,8 +20,8 @@ import re
 
 CRATES = "crates"
 PREFIX = "verified-garbage-asm-"
-# A crate's directories of generated code: the printed code, then where it
-# was before.
+# A crate's directories of generated code: where the printed code was when a
+# crate had both, then where it is.
 CODE_DIRS = ("asm", "src")
 
 # A file of a target's crate: its target and its path in the crate's `asm/`
@@ -53,10 +53,12 @@ def physical(path):
 
 
 def crate_code(crate):
-    """The directory of a crate's printed code: its `asm/`, or, before that,
-    its `src/`; `None` if it has neither."""
+    """The directory of a crate's printed code: its `asm/` (at a revision
+    whose crate had one), else its `src/`; `None` if it has neither. A
+    directory without the crate's root, `lib.rs`, is not it (an `asm/` left
+    empty by a checkout of a later revision)."""
     for d in CODE_DIRS:
-        if (crate / d).is_dir():
+        if (crate / d / "lib.rs").is_file():
             return crate / d
     return None
 
