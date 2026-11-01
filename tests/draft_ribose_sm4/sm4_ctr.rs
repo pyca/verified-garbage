@@ -127,8 +127,8 @@ fn unaligned_batches() {
             ctx.apply_keystream(&mut c, &mut buffer[offset..offset + len]);
             assert_eq!(&buffer[offset..offset + len], expected);
             assert_eq!(c, add(ctr, len.div_ceil(16)));
-            assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
-            assert!(buffer[offset + len..].iter().all(|&b| b == 0xa5));
+            assert!(crate::bytes::all_equal(&buffer[..offset], 0xa5));
+            assert!(crate::bytes::all_equal(&buffer[offset + len..], 0xa5));
         }
     }
 }

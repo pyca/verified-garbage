@@ -51,10 +51,7 @@ fn nessie() {
         .replace('\r', "")
         .split("\n\n")
     {
-        let fields: BTreeMap<_, _> = record
-            .lines()
-            .filter_map(|line| line.trim().split_once(" = "))
-            .collect();
+        let fields = crate::text::fields(record);
         let Some(key) = fields.get("KEY") else {
             continue;
         };
@@ -110,6 +107,6 @@ fn errors() {
         let mut buffer = vec![0xa5; len];
         assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
         assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert!(buffer.iter().all(|&b| b == 0xa5));
+        assert!(crate::bytes::all_equal(&buffer, 0xa5));
     }
 }

@@ -132,10 +132,13 @@ fn unaligned_guarded() {
                 .unwrap();
                 assert_eq!(&buffer[offset..offset + input.len()], &input);
                 assert_eq!(&chain[start..start + 16], &after);
-                assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
-                assert!(buffer[offset + input.len()..].iter().all(|&b| b == 0xa5));
-                assert!(chain[..start].iter().all(|&b| b == 0xa5));
-                assert!(chain[start + 16..].iter().all(|&b| b == 0xa5));
+                assert!(crate::bytes::all_equal(&buffer[..offset], 0xa5));
+                assert!(crate::bytes::all_equal(
+                    &buffer[offset + input.len()..],
+                    0xa5
+                ));
+                assert!(crate::bytes::all_equal(&chain[..start], 0xa5));
+                assert!(crate::bytes::all_equal(&chain[start + 16..], 0xa5));
             }
         }
     }
