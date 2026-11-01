@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.P256.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
@@ -110,7 +111,7 @@ def sign (mulName : String) (mulCode : Prog isa) : Prog isa := signWith c FN (Cf
 
 end Cfg
 
-/-- `vg_ecdsa_p256_sign`, with `[k]G` by `vg_p256_mul`. -/
-def signP256 : Prog isa := Cfg.sign p256 p256Order Spec.Weierstrass.Mul.p256.mulApi.name mulP256
+/-- `vg_ecdsa_p256_sign`, with `[k]G` by the comb, `vg_p256_mul_g`. -/
+def signP256 : Prog isa := Cfg.sign p256 p256Order Comb.mulGP256Name Comb.mulGP256
 
 end VG.Impl.Ecdsa.RISCV64.Sign

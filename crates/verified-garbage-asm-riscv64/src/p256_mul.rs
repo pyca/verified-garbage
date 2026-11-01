@@ -557,3 +557,7 @@ bnez s1, 20b
         vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_mul_g.rs"]
+pub(crate) mod vg_p256_mul_g;

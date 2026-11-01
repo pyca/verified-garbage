@@ -17,6 +17,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
   Spec.Ecdsa.Rfc6979.P256Sha384.signApi.artifact RISCV64.target {
     code := (pack h.law).c.sign
     stack := 720
+    consts := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
     verified := sign_verified h.law }]
 
 end VG.Generic.P256.RISCV64.EcdsaP256Sha384

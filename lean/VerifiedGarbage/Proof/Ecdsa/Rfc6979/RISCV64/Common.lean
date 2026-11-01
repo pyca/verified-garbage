@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Sign
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Call
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
@@ -58,6 +60,7 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK initG finG)
 open Spec.Hmac (xorPad ipad opad blockKey hmacBlockKey)
 open Spec.Sha256 (bytesAt)
+open VG.Proof.Ecdsa.RISCV64.Comb (tabRegion combWords_length)
 
 /-! ## The contract -/
 
@@ -91,6 +94,16 @@ def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧
     (result I s₁.mem (s₁.gpr .a1) (s₁.gpr .a2)).2 = (result I s₂.mem (s₂.gpr .a1) (s₂.gpr .a2)).2
+
+/-- The comb's table, which the signature with a given `k` reads. -/
+abbrev tabK : List (String × List (BitVec 64)) := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
+
+/-- `rfcR` with the comb's table (`abi.withConsts`): `rfcR` for the state
+without it, and what the table adds. -/
+def rfcRC (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
+  pre s := (rfcR I N).pre (stripConsts tabK s) ∧ ConstsOk tabK N s
+  post := (rfcR I N).post
+  pub s₁ s₂ := (rfcR I N).pub s₁ s₂ ∧ s₁.syms Impl.Ecdsa.RISCV64.Comb.p256Sym = s₂.syms Impl.Ecdsa.RISCV64.Comb.p256Sym
 
 /-- A state satisfying the precondition, for scalars of `Q` bytes and a
 digest of `D` bytes. -/
@@ -177,7 +190,7 @@ abbrev wrs (P : Rfc) (s₀ : State) : List Region := [frR s₀, outR s₀, scrR 
 
 /-- The state the frame's body starts in. -/
 structure Pre (P : Rfc) (s₀ : State) : Prop where
-  rd : s₀.rd = [dR s₀, dgR P s₀]
+  rd : s₀.rd = [dR s₀, dgR P s₀, tabRegion s₀]
   wr : s₀.wr = [frR s₀, outR s₀, scrR s₀]
   o_d : (outR s₀).Disjoint (dR s₀)
   o_g : (outR s₀).Disjoint (dgR P s₀)
@@ -200,6 +213,12 @@ structure Pre (P : Rfc) (s₀ : State) : Prop where
   ng : (dg s₀).toNat + P.c.H.D ≤ 2 ^ 64
   nc : (scr s₀).toNat + 8192 ≤ 2 ^ 64
   ca : (scr s₀).toNat % 8 = 0
+  /-- The comb's table: its words, where, apart from what the code writes. -/
+  held : ∀ i < 18944, s₀.mem.readW (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym + BitVec.ofNat 64 (8 * i)) 64 =
+    Impl.Ecdsa.RISCV64.Comb.p256CombWords.getD i 0
+  tal : (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym).toNat % 64 = 0
+  tfit : (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym).toNat + 151552 ≤ 2 ^ 64
+  t_w : ∀ r ∈ wrs P s₀, (tabRegion s₀).Disjoint r
 
 /-! ## The sizes -/
 
@@ -586,10 +605,10 @@ theorem upd_call {P : Rfc} {s : State} {st dat : Addr} {len : Nat} (h : UpdArgs 
 
 /-! ## The signature with a given `k` -/
 
-open VG.Proof.Ecdsa.RISCV64.P256 (signRV sign_rv sign_ct sg) in
+open VG.Proof.Ecdsa.RISCV64.P256 (signRV signRVC sign_rv sign_ct sg) in
 /-- What a call of the signature needs: `out` at `o`, `d`, the digest and `k`
-at `d`, `g` and `k`, and the working space at `w`. -/
-structure CoreArgs (s : State) (o d g k w : Addr) : Prop where
+at `d`, `g` and `k`, the working space at `w`, and the comb's table at `T`. -/
+structure CoreArgs (s : State) (o d g k w T : Addr) : Prop where
   a0 : s.gpr .a0 = o
   a1 : s.gpr .a1 = d
   a2 : s.gpr .a2 = g
@@ -605,32 +624,70 @@ structure CoreArgs (s : State) (o d g k w : Addr) : Prop where
   nk : k.toNat + 32 ≤ 2 ^ 64
   nw : w.toNat + 8192 ≤ 2 ^ 64
   wa : w.toNat % 8 = 0
-  hc : RISCV64.Covers ([⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩] ++ [⟨o, 64⟩, ⟨w, 8192⟩]) (s.rd ++ s.wr)
+  sy : s.syms Impl.Ecdsa.RISCV64.Comb.p256Sym = T
+  held : ∀ i < 18944, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ecdsa.RISCV64.Comb.p256CombWords.getD i 0
+  tal : T.toNat % 64 = 0
+  tfit : T.toNat + 151552 ≤ 2 ^ 64
+  t_o : Region.Disjoint ⟨T, 151552⟩ ⟨o, 64⟩
+  t_w : Region.Disjoint ⟨T, 151552⟩ ⟨w, 8192⟩
+  hc : RISCV64.Covers ([⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩, ⟨T, 151552⟩] ++ [⟨o, 64⟩, ⟨w, 8192⟩]) (s.rd ++ s.wr)
   hw : RISCV64.Covers [⟨o, 64⟩, ⟨w, 8192⟩] s.wr
 
 section
-open VG.Proof.Ecdsa.RISCV64.P256 (signRV sign_rv sign_ct sg)
+open VG.Proof.Ecdsa.RISCV64.P256 (signRV signRVC sign_rv sign_ct sg)
 
-theorem CoreArgs.pre {s : State} {o d g k w : Addr} (h : CoreArgs s o d g k w) :
-    signRV.pre (s.callEntry.withRegions [⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩] [⟨o, 64⟩, ⟨w, 8192⟩]) := by
-  simp only [signRV, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a4 ∉ linkRegs), h.a0, h.a1, h.a2, h.a3, h.a4]
-  exact ⟨trivial, trivial, h.d_ow, h.d_dw, h.d_gw, h.d_kw, h.no, h.nd, h.ng, h.nk, h.nw, h.wa⟩
+/-- The callee's regions. -/
+abbrev coreRd (d g k T : Addr) : List Region := [⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩, ⟨T, 151552⟩]
+
+theorem CoreArgs.pre {s : State} {o d g k w T : Addr} (h : CoreArgs s o d g k w T) :
+    signRVC.pre (s.callEntry.withRegions (coreRd d g k T) [⟨o, 64⟩, ⟨w, 8192⟩]) := by
+  refine ⟨?_, ?_⟩
+  · simp only [signRV, stripConsts, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+      State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
+      State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
+      State.callEntry_gpr s (by decide : Reg.a4 ∉ linkRegs), h.a0, h.a1, h.a2, h.a3, h.a4]
+    exact ⟨rfl, trivial, h.d_ow, h.d_dw, h.d_gw, h.d_kw, h.no, h.nd, h.ng, h.nk, h.nw, h.wa⟩
+  · have hl := combWords_length
+    have esy : (s.callEntry.withRegions (coreRd d g k T) [⟨o, 64⟩, ⟨w, 8192⟩]).syms
+        Impl.Ecdsa.RISCV64.Comb.p256Sym = T := h.sy
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · show List.drop (4 - 1) (coreRd d g k T) = [⟨_, 8 * Impl.Ecdsa.RISCV64.Comb.p256CombWords.length⟩]
+      dsimp only
+      rw [esy, hl]; rfl
+    · intro c hc i hi
+      simp only [Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.mem_singleton] at hc
+      subst hc
+      dsimp only
+      rw [esy]; exact h.held i (by rw [hl] at hi; exact hi)
+    · intro t ht
+      simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.map_cons,
+        List.map_nil, List.mem_singleton] at ht
+      subst ht
+      rw [esy, hl]
+      refine ⟨h.tfit, fun r hr => ?_, fun r hr => ?_⟩
+      · simp only [State.withRegions_wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact h.t_o
+        · exact h.t_w
+      · simp [RISCV64.abi, stackBelow] at hr
+    · intro t ht
+      simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.map_cons,
+        List.map_nil, List.mem_singleton] at ht
+      subst ht
+      rw [esy]; exact h.tal
 
 /-- The signature with `k` at `k`, of the digest at `g` with the key at `d`, to `o`. -/
-theorem core_call (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {nm : String} {s : State} {o d g k w : Addr}
-    (h : CoreArgs s o d g k w) {Q : State → Prop}
+theorem core_call (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {nm : String} {s : State} {o d g k w T : Addr}
+    (h : CoreArgs s o d g k w T) {Q : State → Prop}
     (hQ : ∀ s', After s [⟨o, 64⟩, ⟨w, 8192⟩] s' →
       (match sg s.mem d g k with
         | some rs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem o 64 = Spec.Ecdsa.encode Spec.P256.curve rs
         | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem o 64 = List.replicate 64 0) → Q s') :
     WP isa (.call nm Impl.Ecdsa.RISCV64.Sign.signP256) s Q := by
-  refine WP.call (k := signRV) (sign_rv hL) (rd := [⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩]) (wr := [⟨o, 64⟩, ⟨w, 8192⟩])
+  refine WP.call (k := signRVC) (sign_rv hL) (rd := coreRd d g k T) (wr := [⟨o, 64⟩, ⟨w, 8192⟩])
     h.pre h.hc h.hw ?_ Impl.Ecdsa.RISCV64.Sign.signP256_noFrames
   intro s' hrd hwr hsp' hf hcs _ hpost
-  simp only [signRV, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+  simp only [signRVC, signRV, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
     State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
     h.a0, h.a1, h.a2, h.a3] at hpost
@@ -638,21 +695,23 @@ theorem core_call (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {nm : String} 
 
 /-- Two runs of a call of the signature with the same arguments. -/
 theorem core_rel (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {nm : String} {Q : State → State → Prop}
-    {o d g k w : Addr}
-    (h : ∀ s s', Q s s' → CoreArgs s o d g k w ∧ CoreArgs s' o d g k w ∧ s.sp = s'.sp) :
+    {o d g k w T : Addr}
+    (h : ∀ s s', Q s s' → CoreArgs s o d g k w T ∧ CoreArgs s' o d g k w T ∧ s.sp = s'.sp) :
     RelCT isa Q (.call nm Impl.Ecdsa.RISCV64.Sign.signP256) fun _ _ => True := by
-  refine RelCT.call (sign_rv hL) sign_ct [⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩] [⟨o, 64⟩, ⟨w, 8192⟩] fun s s' hp => ?_
+  refine RelCT.call (sign_rv hL) sign_ct (coreRd d g k T) [⟨o, 64⟩, ⟨w, 8192⟩] fun s s' hp => ?_
   obtain ⟨a, a', e⟩ := h s s' hp
-  refine ⟨a.pre, a'.pre, ?_, a.hc, a.hw, a'.hc, a'.hw⟩
-  simp only [signRV, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
-    State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a0 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a1 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a2 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a3 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a4 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a4 ∉ linkRegs),
-    a.a0, a'.a0, a.a1, a'.a1, a.a2, a'.a2, a.a3, a'.a3, a.a4, a'.a4]
-  simp only [and_true]
-  exact e
+  refine ⟨a.pre, a'.pre, ⟨?_, ?_⟩, a.hc, a.hw, a'.hc, a'.hw⟩
+  · simp only [signRV, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+      State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a0 ∉ linkRegs),
+      State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a1 ∉ linkRegs),
+      State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a2 ∉ linkRegs),
+      State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a3 ∉ linkRegs),
+      State.callEntry_gpr s (by decide : Reg.a4 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a4 ∉ linkRegs),
+      a.a0, a'.a0, a.a1, a'.a1, a.a2, a'.a2, a.a3, a'.a3, a.a4, a'.a4]
+    simp only [and_true]
+    exact e
+  · show s.syms _ = s'.syms _
+    rw [a.sy, a'.sy]
 
 end
 

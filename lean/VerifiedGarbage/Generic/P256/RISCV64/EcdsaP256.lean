@@ -21,6 +21,7 @@ namespace VG.Generic.P256.RISCV64.EcdsaP256
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
   Spec.Ecdsa.P256.signApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.Sign.signP256
+    consts := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
     verified := Proof.Ecdsa.RISCV64.P256.sign_verified h.law },
   Spec.Ecdsa.P256.verifyApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.Verify.verifyP256

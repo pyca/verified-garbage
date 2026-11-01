@@ -85,6 +85,7 @@ structure PubEq (P : Rfc) (s₀ s₀' : State) : Prop where
   a3 : s₀.gpr .a3 = s₀'.gpr .a3
   sp : s₀.sp = s₀'.sp
   lk : (result P.I s₀.mem (dk s₀) (dg s₀)).2 = (result P.I s₀'.mem (dk s₀') (dg s₀')).2
+  sy : s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym = s₀'.syms Impl.Ecdsa.RISCV64.Comb.p256Sym
 
 variable {P : Rfc}
 
@@ -384,10 +385,11 @@ structure T1 (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop where
   cnt : t.gpr .s5 = BitVec.ofNat 64 (P.c.tries - i)
   lt : i < P.c.tries
   fails : ∀ j < i, sigI P s₀ j = none
+  sy : t.syms = s₀.syms
 
 /-- After `core`'s arguments. -/
 def T2 (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop :=
-  T1 P s₀ i t ∧ CoreArgs t (out s₀) (dk s₀) (dg s₀) (sA s₀ fV) (scr s₀)
+  T1 P s₀ i t ∧ CoreArgs t (out s₀) (dk s₀) (dg s₀) (sA s₀ fV) (scr s₀) (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym)
 
 /-- After `core`. -/
 def T3 (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop :=
@@ -403,14 +405,16 @@ variable {s₀ : State} (hp : Pre P s₀)
 include hp
 
 theorem t1_ok {i : Nat} {t : State} (h : LoopInv P s₀ i t) : WP isa P.c.hmacV t (T1 P s₀ i) :=
-  WP.mono (hmacV_ok hp h.kvh) fun _ ⟨k, pr⟩ => ⟨k, by rw [pr _ (by decide), h.cnt], h.lt, h.fails⟩
+  VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (hmacV_ok hp h.kvh) fun _ ⟨k, pr⟩ y =>
+    ⟨k, by rw [pr _ (by decide), h.cnt], h.lt, h.fails, y.trans h.sy⟩
 
 theorem t2_ok {i : Nat} {t : State} (h : T1 P s₀ i t) : WP isa (.block Cfg.coreArgs) t (T2 P s₀ i) :=
-  WP.mono (coreArgs_ok hp h.kvh) fun _ ⟨k, pr, a⟩ => ⟨⟨k, by rw [pr _ (by decide), h.cnt], h.lt, h.fails⟩, a⟩
+  VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (coreArgs_ok hp h.kvh h.sy) fun _ ⟨k, pr, a⟩ y =>
+    ⟨⟨k, by rw [pr _ (by decide), h.cnt], h.lt, h.fails, y.trans h.sy⟩, a⟩
 
 theorem t3_ok {i : Nat} {t : State} (h : T2 P s₀ i t) : WP isa (.call P.c.coreN P.c.coreC) t (T3 P s₀ i) :=
-  WP.mono (coreCall_ok hp h.1.kvh (i := i) rfl h.2) fun _ ⟨k, pr, r⟩ =>
-    ⟨⟨k, by rw [pr _ (by decide), h.1.cnt], h.1.lt, h.1.fails⟩, r⟩
+  VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (coreCall_ok hp h.1.kvh (i := i) rfl h.2) fun _ ⟨k, pr, r⟩ y =>
+    ⟨⟨k, by rw [pr _ (by decide), h.1.cnt], h.1.lt, h.1.fails, y.trans h.1.sy⟩, r⟩
 
 omit hp in
 theorem t4_ok {i : Nat} {t : State} (h : T3 P s₀ i t) : WP isa (.block Cfg.goOn) t (T4 P s₀ i) :=
@@ -438,7 +442,7 @@ theorem tryOne_rel {i : Nat} :
     refine core_rel P.law fun t t' ⟨h, h'⟩ => ⟨h.2, ?_, by rw [h.1.kvh.kr.sp, h'.1.kvh.kr.sp, hq.sp]⟩
     have a := h'.2
     rwa [hq.sA, show out s₀' = out s₀ from hq.a0.symm, show dk s₀' = dk s₀ from hq.a1.symm,
-      show dg s₀' = dg s₀ from hq.a2.symm, show scr s₀' = scr s₀ from hq.a3.symm] at a
+      show dg s₀' = dg s₀ from hq.a2.symm, show scr s₀' = scr s₀ from hq.a3.symm, ← hq.sy] at a
   have r₄ := rel_agree (P₁ := T3 P s₀ i) (P₂ := T3 P s₀' i) (G₁ := T4 P s₀ i) (G₂ := T4 P s₀' i) (rs := [.s5])
     (fun t t' h h' => ⟨by rw [h.1.kvh.kr.sp, h'.1.kvh.kr.sp, hq.sp], fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.cnt, h'.1.cnt]⟩) hc.go
@@ -490,6 +494,11 @@ end
 
 /-! ## The whole function -/
 
+/-- What follows code from a state naming the symbols as `s₀` does names them so too. -/
+theorem wp_sy {s₀ s : State} {c : Prog isa} {Q : State → Prop} (h : WP isa c s Q) (hs : s.syms = s₀.syms) :
+    WP isa c s fun t => Q t ∧ t.syms = s₀.syms :=
+  VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms h fun _ q y => ⟨q, y.trans hs⟩
+
 section
 variable {s₀ : State} (hp : Pre P s₀)
 include hp
@@ -501,10 +510,13 @@ theorem reduceKR_ok {s : State} (h : KR P s₀ s) :
 omit hp in
 /-- The candidates left: `LoopInv` before the first. -/
 theorem initCnt_ok {s : State}
-    (h : KVH P s₀ (kv0 P s₀).1 (kv0 P s₀).2 s) : WP isa (.block P.c.initCnt) s (LoopInv P s₀ 0) := by
+    (h : KVH P s₀ (kv0 P s₀).1 (kv0 P s₀).2 s) (hsy : s.syms = s₀.syms) :
+    WP isa (.block P.c.initCnt) s (LoopInv P s₀ 0) := by
   unfold Cfg.initCnt
-  refine wp_li (imm := P.c.tries) P.hT' fun s₆ u₆ => WP.block_nil ?_
-  refine ⟨P.hT, ⟨h.kr.upd (by decide) u₆, ?_, ?_, ?_⟩, by rw [u₆.gpr, Nat.sub_zero], fun j hj => absurd hj (by omega)⟩
+  refine VG.Proof.Ecdsa.RISCV64.Comb.WP.of_syms (wp_li (imm := P.c.tries) P.hT' fun s₆ u₆ =>
+    WP.block_nil fun y₆ => ?_)
+  refine ⟨P.hT, ⟨h.kr.upd (by decide) u₆, ?_, ?_, ?_⟩, by rw [u₆.gpr, Nat.sub_zero], fun j hj => absurd hj (by omega),
+    y₆.trans hsy⟩
   · rw [u₆.mem]; exact h.k
   · rw [u₆.mem]; exact h.v
   · rw [u₆.mem]; exact h.h
@@ -527,30 +539,40 @@ include hp hp' hq hc
 /-- Two runs of the frame's body. -/
 theorem main_rel : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') P.c.main fun _ _ => True := by
   unfold Cfg.main
-  have rp := rel_agree (P₁ := fun s => s = s₀) (P₂ := fun s => s = s₀') (G₁ := KR P s₀) (G₂ := KR P s₀')
+  have rp := rel_agree (P₁ := fun s => s = s₀) (P₂ := fun s => s = s₀')
+    (G₁ := fun t => KR P s₀ t ∧ t.syms = s₀.syms) (G₂ := fun t => KR P s₀' t ∧ t.syms = s₀'.syms)
     (rs := [.a0, .a1, .a2, .a3]) (fun s s' h h' => by
       subst h h'
       refine ⟨hq.sp, fun r hr => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       exacts [hq.a0, hq.a1, hq.a2, hq.a3]) hc.pro
-    (fun s h => by subst h; exact prologue_ok hp) (fun s h => by subst h; exact prologue_ok hp')
-  have rr := rel_kr hq (P₁ := KR P s₀) (P₂ := KR P s₀') (by decide) (fun _ h => h) (fun _ h => h) hc.red
-    (fun s h => reduceKR_ok hp h) (fun s h => reduceKR_ok hp' h)
-  have rk := rel_kr hq (P₁ := fun t => KR P s₀ t ∧ hOf s₀ t.mem = hSpec P s₀)
-    (P₂ := fun t => KR P s₀' t ∧ hOf s₀' t.mem = hSpec P s₀') (by decide) (fun _ h => h.1) (fun _ h => h.1) hc.kv
-    (fun s h => initKV_ok hp h.1 h.2) (fun s h => initKV_ok hp' h.1 h.2)
-  have rd : RelCT isa (fun t t' => KVH P s₀ (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1) t ∧
-        KVH P s₀' (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1) t')
+    (fun s h => by subst h; exact wp_sy (prologue_ok hp) rfl) (fun s h => by subst h; exact wp_sy (prologue_ok hp') rfl)
+  have rr := rel_kr hq (P₁ := fun t => KR P s₀ t ∧ t.syms = s₀.syms) (P₂ := fun t => KR P s₀' t ∧ t.syms = s₀'.syms)
+    (G₁ := fun t => (KR P s₀ t ∧ hOf s₀ t.mem = hSpec P s₀) ∧ t.syms = s₀.syms)
+    (G₂ := fun t => (KR P s₀' t ∧ hOf s₀' t.mem = hSpec P s₀') ∧ t.syms = s₀'.syms)
+    (by decide) (fun _ h => h.1) (fun _ h => h.1) hc.red
+    (fun s h => wp_sy (reduceKR_ok hp h.1) h.2) (fun s h => wp_sy (reduceKR_ok hp' h.1) h.2)
+  have rk := rel_kr hq (P₁ := fun t => (KR P s₀ t ∧ hOf s₀ t.mem = hSpec P s₀) ∧ t.syms = s₀.syms)
+    (P₂ := fun t => (KR P s₀' t ∧ hOf s₀' t.mem = hSpec P s₀') ∧ t.syms = s₀'.syms)
+    (G₁ := fun t => KVH P s₀ (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1) t ∧ t.syms = s₀.syms)
+    (G₂ := fun t => KVH P s₀' (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1) t ∧ t.syms = s₀'.syms)
+    (by decide) (fun _ h => h.1.1) (fun _ h => h.1.1) hc.kv
+    (fun s h => wp_sy (initKV_ok hp h.1.1 h.1.2) h.2) (fun s h => wp_sy (initKV_ok hp' h.1.1 h.1.2) h.2)
+  have rd : RelCT isa (fun t t' =>
+        (KVH P s₀ (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1) t ∧ t.syms = s₀.syms) ∧
+        (KVH P s₀' (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1) t' ∧ t'.syms = s₀'.syms))
       (.seq (P.c.rekeyFull 0) (P.c.rekeyFull 1))
-      fun t t' => KVH P s₀ (kv0 P s₀).1 (kv0 P s₀).2 t ∧ KVH P s₀' (kv0 P s₀').1 (kv0 P s₀').2 t' :=
+      fun t t' => (KVH P s₀ (kv0 P s₀).1 (kv0 P s₀).2 t ∧ t.syms = s₀.syms) ∧
+        (KVH P s₀' (kv0 P s₀').1 (kv0 P s₀').2 t' ∧ t'.syms = s₀'.syms) :=
     rel_wp (((rekeyFull_kk hp hp' hq hc (b := 0) (by decide) hc.sep0).seq
-        (rekeyFull_kk hp hp' hq hc (b := 1) (by decide) hc.sep1)).mono (fun _ _ h => ⟨h.1.kr, h.2.kr⟩)
+        (rekeyFull_kk hp hp' hq hc (b := 1) (by decide) hc.sep1)).mono (fun _ _ h => ⟨h.1.1.kr, h.2.1.kr⟩)
         fun _ _ _ => trivial)
-      (fun s h => stagesDG_ok hp h) (fun s h => stagesDG_ok hp' h)
-  have rc := rel_kr hq (P₁ := KVH P s₀ (kv0 P s₀).1 (kv0 P s₀).2) (P₂ := KVH P s₀' (kv0 P s₀').1 (kv0 P s₀').2)
-    (rs := []) (by decide) (fun _ h => h.kr) (fun _ h => h.kr) hc.cnt
-    (fun s h => initCnt_ok h) (fun s h => initCnt_ok h)
+      (fun s h => wp_sy (stagesDG_ok hp h.1) h.2) (fun s h => wp_sy (stagesDG_ok hp' h.1) h.2)
+  have rc := rel_kr hq (P₁ := fun t => KVH P s₀ (kv0 P s₀).1 (kv0 P s₀).2 t ∧ t.syms = s₀.syms)
+    (P₂ := fun t => KVH P s₀' (kv0 P s₀').1 (kv0 P s₀').2 t ∧ t.syms = s₀'.syms)
+    (rs := []) (by decide) (fun _ h => h.1.kr) (fun _ h => h.1.kr) hc.cnt
+    (fun s h => initCnt_ok h.1 h.2) (fun s h => initCnt_ok h.1 h.2)
   have rl := loop_rel hp hp' hq hc
   obtain ⟨_, hf⟩ := hc.fin
   have re : RelCT isa (fun t t' => (∃ i, Exit P s₀ i t) ∧ ∃ i, Exit P s₀' i t') (.block (Cfg.wipe ++ Cfg.restore))
@@ -587,11 +609,11 @@ theorem rel_alloc {n : Nat} {body : Prog isa} {Q : State → State → Prop}
 
 /-- The function is constant time but for the number of candidates, given
 the taint checks of its pieces. -/
-theorem ct (hc : Checks P.c) : ConstantTime isa (rfcR P.I P.N).pre (rfcR P.I P.N).pub P.c.sign := by
+theorem ct (hc : Checks P.c) : ConstantTime isa (rfcRC P.I P.N).pre (rfcRC P.I P.N).pub P.c.sign := by
   refine RelCT.constantTime (Q := fun _ _ => True) fun e e' t₁ t₂ a b ⟨h, h', hpub⟩ e₁ e₂ => ?_
   have hp := pre_alloc h; have hp' := pre_alloc h'
-  obtain ⟨qsp, q0, q1, q2, q3, qlk⟩ := hpub
-  have hq : PubEq P (allocd frB e) (allocd frB e') := ⟨q0, q1, q2, q3, by simp only [allocd, qsp], qlk⟩
+  obtain ⟨⟨qsp, q0, q1, q2, q3, qlk⟩, qsy⟩ := hpub
+  have hq : PubEq P (allocd frB e) (allocd frB e') := ⟨q0, q1, q2, q3, by simp only [allocd, qsp], qlk, qsy⟩
   revert e₁ e₂
   generalize hP : (fun x y : State => x = e ∧ y = e') = Q
   suffices hr : RelCT isa Q P.c.sign fun _ _ => True by
@@ -602,10 +624,25 @@ theorem ct (hc : Checks P.c) : ConstantTime isa (rfcR P.I P.N).pre (rfcR P.I P.N
   rintro x y ⟨u, v, ⟨rfl, rfl⟩, rfl, rfl⟩
   exact ⟨rfl, rfl⟩
 
-/-- `Verified`, for an instance whose shared contract implies `rfcR`. -/
+/-- `rfcRC` implies the shared contract with the comb's table
+(`abi.withConsts`), from `rfcR`'s implying it without, given a state
+satisfying it. -/
+theorem rfcRC_implies {I : Spec.Ecdsa.Rfc6979.Instance} {N : Nat}
+    (h : (rfcR I N).Implies (I.signContract RISCV64.abi N))
+    (hs : ∃ s, (I.signContract (RISCV64.abi.withConsts tabK) N).pre s) :
+    (rfcRC I N).Implies (I.signContract (RISCV64.abi.withConsts tabK) N) :=
+  { pre := fun _ hp => ⟨h.pre _ (pre_consts.mp hp).1, (pre_consts.mp hp).2⟩
+    post := fun s s' hp hq => post_consts.mpr (h.post (stripConsts _ s) s' (pre_consts.mp hp).1 hq)
+    pub := fun s₁ s₂ h₁ h₂ hq => ⟨h.pub (stripConsts _ s₁) (stripConsts _ s₂)
+        (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hq).1,
+      (pub_consts.mp hq).2 _ List.mem_cons_self⟩
+    sat := hs }
+
+/-- `Verified`, for an instance whose shared contract with the comb's table
+implies `rfcRC`. -/
 theorem sign_verified (hc : Checks P.c) {N : Nat} (hN : P.N = N)
-    (himp : (rfcR P.I N).Implies (P.I.signContract RISCV64.abi N)) :
-    Verified RISCV64.target P.c.sign (P.I.signContract RISCV64.abi N) := by
+    (himp : (rfcRC P.I N).Implies (P.I.signContract (RISCV64.abi.withConsts tabK) N)) :
+    Verified RISCV64.target P.c.sign (P.I.signContract (RISCV64.abi.withConsts tabK) N) := by
   subst hN
   exact Verified.of_correct (fun s h => by
     obtain ⟨t, s', he, h₁, h₂⟩ := correct h
