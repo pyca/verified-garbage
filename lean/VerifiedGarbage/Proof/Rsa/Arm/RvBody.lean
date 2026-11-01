@@ -115,7 +115,7 @@ theorem validWith_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) (work : Prog is
     · exact primesKey_none hv e.1 e.2
 
 /-- The original search supplies the same shared entry path. -/
-theorem valid_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
+theorem valid_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) :
     VP (fun σ s => True ∧ Bs P σ s) valid (Res P) := by
   refine validWith_vp hv rest ((rest_vp hv).mono (fun _ _ h => h) ?_)
   intro σ s h
@@ -152,7 +152,7 @@ theorem bodyWith_vp (checked : Prog isa)
     rw [← z]; simpa using this
 
 
-theorem body_vp : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
+theorem body_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
     (.ite .eq valid fail) (Res P) := bodyWith_vp valid valid_vp
 
 end

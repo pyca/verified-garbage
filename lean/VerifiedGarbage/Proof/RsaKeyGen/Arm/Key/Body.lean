@@ -44,7 +44,7 @@ theorem i2osp_mod (x L : Nat) : Spec.Rsa.i2osp (x % 2 ^ (8 * L)) L = Spec.Rsa.i2
 section
 variable {P : KP}
 
-theorem smv_eq {σ : State} (pre : In P σ) : smv P σ = decide (P.st = 2) := by
+theorem smv_eq [VG.Proof.Rsa.Arm.Keys.InvLaw] {σ : State} (pre : In P σ) : smv P σ = decide (P.st = 2) := by
   have := pre.st
   rw [res_spec pre] at this
   unfold resv at this
@@ -84,7 +84,7 @@ theorem oExp_eq {σ : State} (h : smv P σ = false) (i : Nat) (hi : i < 7) : oEx
       List.getD_cons_zero, List.getD_cons_succ]
 
 /-- The body after the entry. -/
-theorem body_vp : VP (fun σ s => In P σ ∧ Bk P σ s) body (Res P) := by
+theorem body_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] : VP (fun σ s => In P σ ∧ Bk P σ s) body (Res P) := by
   simp only [body, seqs]
   refine loads_vp.seq (primes_vp.seq (lcm_vp.seq (eFlags_vp.seq (dPart_vp.seq
     ((small_vp (E := In P) fun _ e => e).seq ?_)))))

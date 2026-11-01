@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
 
@@ -18,7 +19,7 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Proof.Rsa.Arm.Keys VG.Proof
 open VG.Impl.RsaKeyGen.Arm.Key (code body)
 
 /-- Two calls with the same public parameters. -/
-theorem key_ct : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) code (fun _ _ => True) := by
+theorem key_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) code (fun _ _ => True) := by
   unfold code
   apply RelCT.frame (fun _ _ h => h.2.2.1)
   intro s t tr1 tr2 u v hp e1 e2

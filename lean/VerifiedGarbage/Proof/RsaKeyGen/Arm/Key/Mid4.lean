@@ -31,7 +31,7 @@ theorem mE_eq (P : KP) (σ : State) :
   unfold mE
   by_cases h3 : lv P σ < 3 <;> by_cases ho : lv P σ % 2 = 1 <;> simp [h3, ho, b2n]
 
-theorem dEven_vp {E : State → Prop} : VP (SE P (EEven P E)) dEven (G4 P (EEven P E)) := by
+theorem dEven_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (SE P (EEven P E)) dEven (G4 P (EEven P E)) := by
   simp only [dEven, List.cons_append, List.nil_append]
   refine VP.seq (St.pbitOf bitLo_taint (by simp) (by decide)) ?_
   refine VP.assoc (VP.seq (St.pltS ltL3_taint (by simp) (by simp) (by decide) (by decide) (by decide)) ?_)

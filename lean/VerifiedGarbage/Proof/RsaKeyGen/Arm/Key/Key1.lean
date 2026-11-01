@@ -35,7 +35,7 @@ theorem qM_eq (P : KP) (σ : State) :
   unfold qM VG.Proof.RsaKeyGen.qModP
   by_cases h3 : pv P σ < 3 <;> by_cases ho : pv P σ % 2 = 1 <;> simp [h3, ho, b2n]
 
-theorem qinv_vp {E : State → Prop} : VP (G5 P E) qinvPart (KQ P E) := by
+theorem qinv_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (G5 P E) qinvPart (KQ P E) := by
   simp only [qinvPart, List.cons_append, List.nil_append]
   refine VP.seq (St.pbitOf bitPo_taint (by simp) (by decide)) ?_
   refine VP.assoc (VP.seq (St.pltS ltP3_taint (by simp) (by simp) (by decide) (by decide) (by decide)) ?_)

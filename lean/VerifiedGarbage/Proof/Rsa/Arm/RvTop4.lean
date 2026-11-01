@@ -121,7 +121,7 @@ theorem rv_okWith (body : Prog isa) (bodyProof : BodyVerified body) (h : CIn s) 
 
 end
 
-theorem rv_ok {s : State} (h : CIn s) :
+theorem rv_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s : State} (h : CIn s) :
     WP isa code s fun t => abiPreserved s t ∧
       Spec.Rsa.writtenAll t.mem [(State.addr (s.gpr .r0), (stackArg s 1).toNat),
         (State.addr (s.gpr .r2), (stackArg s 1).toNat)] (t.gpr .r0)
