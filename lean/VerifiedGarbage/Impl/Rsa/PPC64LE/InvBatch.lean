@@ -229,8 +229,8 @@ def doublings : Prog isa :=
       .add .r10 .r10 .r3])
     (.loop (.seq double (.block [.subi .r10 .r10 32768, .lsr .d .r3 .r10 15])) (.nonzero .d .r3))
 
-/-- `[j]`'s `w` digits zeroed. -/
-def zeroW (j : Nat) : Prog isa := .seq (.block (ptr .r5 j ++ [.addi .r8 .r29 0, .li .r0 0])) zeros
+/-- `[j]`'s `w + 1` digits zeroed. -/
+def zeroW (j : Nat) : Prog isa := .seq (.block (ptr .r5 j ++ [.addi .r8 .r29 1, .li .r0 0])) zeros
 
 /-- `[1] = |f|` and `[3] = a`, `w` digits each. -/
 def finish : Prog isa := seqs [

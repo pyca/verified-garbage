@@ -79,7 +79,8 @@ theorem signSel_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n
     WP isa (signSel o a b) s
       fun t => Ctx t B Z w N n c ∧ KeyWorkspace.Keep B w [o] [] s.mem t.mem ∧
         val32 t.mem B (arr w o) (n + 1) = (if sv s.mem B (arr w aF) n < 0 then val32 s.mem B (arr w b) (n + 1)
-          else val32 s.mem B (arr w a) (n + 1)) ∧ Keep kRegs s t := by
+          else val32 s.mem B (arr w a) (n + 1)) ∧ Outside B (arr w o) (4 * (n + 1)) s.mem t.mem ∧
+        Keep kRegs s t := by
   have fo := h.ws.arr_fit ho
   have fa := h.ws.arr_fit ha
   have fb := h.ws.arr_fit hb
@@ -104,7 +105,7 @@ theorem signSel_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n
     (k3.mono (by decide))).trans' (k4.mono (by decide))
   rw [m3, m2, m1] at v4 out4
   refine ⟨h.of_keep k, KeyWorkspace.Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using out4) (by omega)
-    (by simp), ?_, k⟩
+    (by simp), ?_, out4, k⟩
   rw [v4]
   simp only [sv_neg, decide_eq_true_eq]
 
@@ -147,7 +148,7 @@ theorem normalize_ok {s : State} {B : Addr} {Z w N n c p a : Nat} (h : Ctx s B Z
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b2 with e | e <;> rw [e] at v2 <;> omega
   -- `[aA] = f < 0 ? p - a : a`.
   rw [WP.seq_iff]
-  refine WP.mono (signSel_ok h2 nA nA n3 hN (by decide)) fun t3 ⟨h3, K3, v3, k3⟩ => ?_
+  refine WP.mono (signSel_ok h2 nA nA n3 hN (by decide)) fun t3 ⟨h3, K3, v3, _, k3⟩ => ?_
   rw [v2', keep_sv K2 (by omega) (by decide) (by simp) (fit _ nF),
     keep_val K2 (by omega) (by decide) (by simp) (fit _ nA), ha] at v3
   refine WP.mono (csub_ok (p := p) h3 nA nA n1 nM hN (by decide) (by decide) (by decide)
@@ -250,5 +251,163 @@ theorem doublings_ok {s : State} {B : Addr} {Z w N n p a : Nat} (h : Ctx s B Z w
   refine ⟨⟨⟨Hu.ws.of_keep ky, by rw [y10]; congr 2, h.npos, h.nw, h.room, by omega, h.wbig⟩,
     by rw [ym, vu, Divstep.doubled_next], Kt.trans (by rw [ym]; exact Ku),
     kt.trans' ((ku.mono (by decide)).trans' (ky.mono (by decide)))⟩, by rw [y3]; omega⟩
+
+/-! ## The end -/
+
+theorem val32_zero {m : Mem} {B : Addr} {d : Nat} :
+    ∀ {k : Nat}, (∀ i < k, w32 m B (d + 4 * i) = 0) → val32 m B d k = 0
+  | 0, _ => rfl
+  | k + 1, h => by
+    rw [val32_succ, val32_zero (fun i hi => h i (by omega)), h k (by omega), Nat.mul_zero]
+
+/-- `zeroW j`: `[j]`'s `w + 1` digits zeroed. -/
+theorem zeroW_ok {s : State} {B : Addr} {Z w N n c j : Nat} (h : Ctx s B Z w N n c) (hj : j < N) (hN : N ≤ 256) :
+    WP isa (zeroW j) s fun t => Ctx t B Z w N n c ∧ KeyWorkspace.Keep B w [j] [] s.mem t.mem ∧
+      Outside B (arr w j) (4 * (w + 1)) s.mem t.mem ∧ (∀ i < w + 1, w32 t.mem B (arr w j + 4 * i) = 0) ∧
+      Keep kRegs s t := by
+  have fj := h.ws.arr_fit hj
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.ws.wle
+  rw [zeroW, WP.seq_iff]
+  refine ptr_ok h.ws (by decide) (by decide) (by decide) (by omega) ?_
+  refine WP.mono (WP.keep [.r0, .r8] (Q := fun u => u.gpr .r0 = 0 ∧ u.gpr .r8 = BitVec.ofNat 64 (w + 1) ∧
+    u.gpr .r5 = off B (arr w j) ∧ u.mem = s.mem) ?_ (by decide)) fun u ⟨⟨u0, u8, u5, um⟩, ku⟩ => ?_
+  · prun [h.ws.r29, ofNat_succ]
+    rfl
+  have k1 : Keep kRegs s u := ((Keep.write _ .r5 _).trans ku).mono (by decide)
+  refine WP.mono (VG.Proof.Rsa.PPC64LE.Loops.zeroLoop_ok (h.of_keep k1).ws.scr u5 u8 u0 (by omega) (by omega)
+    (by omega)) fun t ⟨z, out, kt⟩ => ?_
+  rw [um] at out
+  exact ⟨h.of_keep (k1.trans' (kt.mono (by decide))), KeyWorkspace.Keep.of_arr (d := 0)
+    (by simpa only [Nat.add_zero] using out) (by omega) (by simp), out, z, k1.trans' (kt.mono (by decide))⟩
+
+/-- `k ≤ w + 1` digits holding `v < 2^(32 w)`, the digits after them zero to
+digit `w`: the `w` digits are `v`. -/
+theorem num_tail {m : Mem} {B : Addr} {d w k v : Nat} (hk : k ≤ w + 1) (hv : val32 m B d k = v)
+    (hz : ∀ i, k ≤ i → i < w + 1 → w32 m B (d + 4 * i) = 0) (hvw : v < 2 ^ (32 * w)) : val32 m B d w = v := by
+  have e1 := val32_append m B d k (w + 1 - k)
+  have z : val32 m B (d + 4 * k) (w + 1 - k) = 0 := val32_zero (fun i hi => by
+    rw [show d + 4 * k + 4 * i = d + 4 * (k + i) by omega]; exact hz _ (by omega) (by omega))
+  rw [show k + (w + 1 - k) = w + 1 by omega, hv, z, Nat.mul_zero, Nat.add_zero, val32_succ] at e1
+  have := val32_lt m B d w
+  rcases Nat.eq_zero_or_pos (w32 m B (d + 4 * w)) with e | e
+  · rw [e, Nat.mul_zero, Nat.add_zero] at e1; exact e1
+  · have : 2 ^ (32 * w) ≤ 2 ^ (32 * w) * w32 m B (d + 4 * w) := Nat.le_mul_of_pos_right _ e
+    omega
+
+/-- `finish`: `[1] = |f|` and `[3] = y`, `w` digits each. -/
+theorem finish_ok {s : State} {B : Addr} {Z w N n c : Nat} (h : Ctx s B Z w N n c) (hN : N ≤ 256) {f : Int} {y : Nat}
+    (hf : sv s.mem B (arr w aF) n = f) (hfr : f.natAbs < 2 ^ (32 * n))
+    (hy : val32 s.mem B (arr w aA) (n + 1) = y) (hyr : y < 2 ^ (32 * n)) :
+    WP isa finish s fun t => Ctx t B Z w N n c ∧ KeyWorkspace.Keep B w [aGcd, aT1, aY] [] s.mem t.mem ∧
+      num t.mem B w aGcd = f.natAbs ∧ num t.mem B w aY = y ∧ Keep kRegs s t := by
+  have room := h.room
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.nw
+  have := h.ws.wle
+  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
+  have fitZ : ∀ j < N, arr w j + S w ≤ Z := fun j hj => h.ws.arr_fit hj
+  have nG : aGcd < N := by unfold aGcd; omega
+  have nY : aY < N := by unfold aY; omega
+  have nA : aA < N := by unfold aA; omega
+  have nF : aF < N := by unfold aF; omega
+  have n1 : aT1 < N := by unfold aT1; omega
+  have fG := fitZ _ nG
+  have fF := fitZ _ nF
+  have f1 := fitZ _ n1
+  have fY := fitZ _ nY
+  have fA := fitZ _ nA
+  have hnw : 2 ^ (32 * n) ≤ 2 ^ (32 * w) := Nat.pow_le_pow_right (by decide) (by omega)
+  have hk1 : n + 1 ≤ w + 2 := by omega
+  have hk0 : n ≤ w + 2 := by omega
+  rw [finish]; simp only [seqs]; rw [WP.seq_iff]
+  -- `[1] = 0`.
+  refine WP.mono (zeroW_ok h nG hN) fun t1 ⟨h1, K1, out1, z1, k1⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (setup_ok h1 (fun t ht => cntN1_ok ht) (by decide) (by decide) (by decide))
+    fun t2 ⟨h2, m2, p5, p6, p7, p8, p9, k2⟩ => ?_
+  rw [WP.seq_iff]
+  -- `[aT1] = -f`.
+  refine WP.mono (subLoop_ok h2.ws.scr p5 p6 p7 p8 (by rw [p9]; decide) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (ahead_k (by decide) (by omega)) (ahead_k (by decide) (by omega)))
+    fun t3 ⟨b3, v3, out3, k3⟩ => ?_
+  have h3 := h2.of_keep (k3.mono (by decide))
+  have zG : val32 t1.mem B (arr w aGcd) (n + 1) = 0 := val32_zero (fun i hi => z1 i (by omega))
+  rw [m2, p9, show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero, zG,
+    keep_val K1 hk1 (by decide) (by simp) (fit _ nF)] at v3
+  rw [m2] at out3
+  have K3 : KeyWorkspace.Keep B w [aT1] [] t1.mem t3.mem :=
+    KeyWorkspace.Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using out3) (by omega) (by simp)
+  have hnw' := h.ws.nowrap
+  rw [WP.seq_iff]
+  refine WP.mono (signSel_ok h3 nG nF n1 hN (by decide)) fun t4 ⟨h4, K4, v4, out4, k4⟩ => ?_
+  have sF : sv t3.mem B (arr w aF) n = f := by
+    rw [keep_sv K3 hk1 (by decide) (by simp) (fit _ nF), keep_sv K1 hk1 (by decide) (by simp) (fit _ nF), hf]
+  have vF : val32 t3.mem B (arr w aF) (n + 1) = val32 s.mem B (arr w aF) (n + 1) := by
+    rw [out3.val32 (by have := arr_disj (w := w) (show aF ≠ aT1 by decide); omega) (by omega),
+      keep_val K1 hk1 (by decide) (by simp) (fit _ nF)]
+  have vT : val32 t3.mem B (arr w aT1) (n + 1) = val32 t3.mem B (arr w aT1) (n + 1) := rfl
+  rw [sF, vF] at v4
+  -- `[1] = |f|`.
+  have gcd1 : val32 t4.mem B (arr w aGcd) (n + 1) = f.natAbs := by
+    rw [v4]
+    have e := val_sv s.mem B (arr w aF) n
+    rw [hf] at e
+    have neg := sv_neg s.mem B (arr w aF) n
+    rw [hf] at neg
+    have hR := val32_lt t3.mem B (arr w aT1) (n + 1)
+    have hFR := val32_lt s.mem B (arr w aF) (n + 1)
+    split
+    · have : 2 ^ 31 ≤ w32 s.mem B (arr w aF + 4 * n) := neg.mp (by assumption)
+      simp only [this, ↓reduceIte] at e
+      have eR : (2 : Int) ^ (32 * (n + 1)) = ((2 ^ (32 * (n + 1)) : Nat) : Int) := by push_cast; rfl
+      rw [eR, Int.mul_one] at e
+      have hRn : 2 ^ (32 * n) < 2 ^ (32 * (n + 1)) := Nat.pow_lt_pow_right (by decide) (by omega)
+      generalize 2 ^ (32 * (n + 1)) = R at hR hFR v3 e hRn
+      rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b3 with b | b <;> rw [b] at v3 <;> omega
+    · have hn : ¬ f < 0 := by assumption
+      have : ¬ 2 ^ 31 ≤ w32 s.mem B (arr w aF + 4 * n) := fun x => hn (neg.mpr x)
+      simp only [this, ↓reduceIte] at e
+      omega
+  have numG : num t4.mem B w aGcd = f.natAbs := by
+    refine num_tail (k := n + 1) (by omega) gcd1 (fun i hi1 hi2 => ?_) (by omega)
+    rw [out4.w32 (by omega) (by omega), out3.w32 (by have := arr_disj (w := w) (show aGcd ≠ aT1 by decide); omega)
+      (by omega)]
+    exact z1 i hi2
+  -- `[3] = y`.
+  rw [WP.seq_iff]
+  refine WP.mono (zeroW_ok h4 nY hN) fun t5 ⟨h5, K5, out5, z5, k5⟩ => ?_
+  rw [WP.seq_iff]
+  have hb6 : WP isa (.block (ptr .r5 aY ++ ptr .r6 aA ++ cntN1)) t5 fun u => Ctx u B Z w N n c ∧ u.mem = t5.mem ∧
+      u.gpr .r5 = off B (arr w aY) ∧ u.gpr .r6 = off B (arr w aA) ∧ u.gpr .r8 = BitVec.ofNat 64 (n + 1) ∧
+      Keep kRegs t5 u := by
+    rw [List.append_assoc]
+    refine ptr_ok h5.ws (by decide) (by decide) (by decide) (by decide) ?_
+    refine ptr_ok (h5.ws.of_keep (Keep.write _ .r5 _)) (by decide) (by decide) (by decide) (by decide) ?_
+    refine WP.mono (cntN1_ok (h5.of_keep (((Keep.write _ .r5 _).trans (Keep.write _ .r6 _)).mono (by decide))))
+      fun x ⟨⟨x8, xm⟩, kx⟩ => ?_
+    have k0 : Keep kRegs t5 x := (((Keep.write _ .r5 _).trans (Keep.write _ .r6 _)).trans kx).mono (by decide)
+    refine ⟨h5.of_keep k0, xm, ?_, ?_, x8, k0⟩
+    · rw [kx.gpr _ (by decide)]; simp only [gpr_write, reduceCtorEq, ↓reduceIte]
+    · rw [kx.gpr _ (by decide)]; simp only [gpr_write, ↓reduceIte]
+  refine WP.mono hb6 fun t6 ⟨h6, m6, q5, q6, q8, k6⟩ => ?_
+  refine WP.mono (copyLoop_ok h6.ws.scr q5 q6 q8 (by omega) (by omega) (by omega) (by omega)
+    (ahead_k (by decide) (by omega))) fun t7 ⟨v7, out7, k7⟩ => ?_
+  rw [m6] at v7 out7
+  have K47 : KeyWorkspace.Keep B w [aY] [] t4.mem t7.mem := K5.trans
+    (KeyWorkspace.Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using out7) (by omega) (by simp))
+  have yA : val32 t5.mem B (arr w aA) (n + 1) = y := by
+    rw [keep_val K5 hk1 (by decide) (by simp) (fit _ nA), keep_val K4 hk1 (by decide) (by simp)
+      (fit _ nA), keep_val K3 hk1 (by decide) (by simp) (fit _ nA), keep_val K1 hk1 (by decide)
+        (by simp) (fit _ nA), hy]
+  have k : Keep kRegs s t7 := ((((((k1.trans' (k2.mono (by decide))).trans' (k3.mono (by decide))).trans' k4).trans'
+    k5).trans' k6).trans' (k7.mono (by decide)))
+  refine ⟨h.of_keep k, ?_, ?_, ?_, k⟩
+  · exact (K1.mono (by simp)).trans ((K3.mono (by simp)).trans ((K4.mono (by simp)).trans (K47.mono (by simp))))
+  · rw [show num t7.mem B w aGcd = num t4.mem B w aGcd from keep_val K47 (k := w) (by omega) (by decide) (by simp)
+      (fit _ nG), numG]
+  · refine num_tail (k := n + 1) (by omega) (by rw [v7, yA]) (fun i hi1 hi2 => ?_) (by omega)
+    rw [out7.w32 (by omega) (by omega)]
+    exact z5 i hi2
 
 end VG.Proof.Rsa.PPC64LE.InvBatch
