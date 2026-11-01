@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! ## `NafShiftWord` -/
 

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 import VerifiedGarbage.Proof.Dsa.X86.SignFinishTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming

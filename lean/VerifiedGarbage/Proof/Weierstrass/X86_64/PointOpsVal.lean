@@ -10,7 +10,7 @@ import Batteries.Logic
 # Point operations as functions on x86-64: what their bodies compute
 
 The values the bodies of `Impl/Weierstrass/X86_64/PointOps.lean` leave in
-`R`, as the formulas of `Spec/Weierstrass/PointOps.lean` of the values they
+`R`, as the formulas of `Proof/Weierstrass/PointOpsContract.lean` of the values they
 read, for any values: these are not the group law's facts (`InvJ`), which
 the joint verifier's proofs use, but the field operations' results.
 -/
@@ -25,7 +25,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 /-- `dblJMul` computes the specification's doubling. -/
 theorem dblJMulN_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
     (runOps dblJMulN e 6, runOps dblJMulN e 7, runOps dblJMulN e 8) =
-      Spec.Weierstrass.PointOps.jacDouble (e 11) (e 12) (e 13) := by
+      Impl.Weierstrass.PointOps.jacDouble (e 11) (e 12) (e 13) := by
   dsimp only [dblJMulN, dblJMul, runOps, List.foldl, FOp.run, Function.update]
   rfl
 
@@ -39,7 +39,7 @@ def JDblSpec {m : Nat} [NeZero m] (dbl : RcbSlots → Pt → Pt → List FOp)
     ∀ e : Nat → Fin m, (runOps N e 6, runOps N e 7, runOps N e 8) = sdbl (e 11) (e 12) (e 13)
 
 theorem jdblSpec_dblJMul {m : Nat} [NeZero m] :
-    JDblSpec (m := m) dblJMul Spec.Weierstrass.PointOps.jacDouble :=
+    JDblSpec (m := m) dblJMul Impl.Weierstrass.PointOps.jacDouble :=
   ⟨dblJMulN, dblJChoiceN_ok true, fun _ _ _ => rfl, dblJMulN_spec⟩
 
 /-- What the doubling's body keeps: `R`'s coordinates, distinct, are slots,

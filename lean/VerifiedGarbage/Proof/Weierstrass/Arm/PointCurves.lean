@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: the curves
 
-Each curve of `Spec.Weierstrass.Point.curves` is one the functions support:
+Each curve of `Impl.Weierstrass.Point.curves` is one the functions support:
 its prime's Montgomery functions (`ModOk`), and the functions' constant time
 by taint tracking, from the pointer's register (`r0`) public. Fermat's
 little theorem in `Fin p` follows from the curve's group law
@@ -38,7 +38,7 @@ little theorem in `Fin p` follows from the curve's group law
 
 namespace VG.Proof.Weierstrass.Arm.Point
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont Spec.Weierstrass.Point
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont Spec.Weierstrass.Point Impl.Weierstrass.Point
 
 theorem pub_agree {C : Curve} {dbl : Bool} {s₁ s₂ : State} (h : (sumArm C dbl).pub s₁ s₂) :
     ∀ r ∈ [Reg.r0], s₁.gpr r = s₂.gpr r := by

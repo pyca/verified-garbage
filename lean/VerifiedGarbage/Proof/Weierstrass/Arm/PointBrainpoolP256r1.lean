@@ -36,7 +36,7 @@ of their proofs.
 
 namespace VG.Proof.Weierstrass.Arm.Point
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont Spec.Weierstrass.Point
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont Spec.Weierstrass.Point Impl.Weierstrass.Point
 
 theorem brainpoolp256r1_add_ct :
     ConstantTime isa (sumArm brainpoolp256r1 false).pre (sumArm brainpoolp256r1 false).pub

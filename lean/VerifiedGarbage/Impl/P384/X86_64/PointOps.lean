@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.P384.X86_64.Joint
 # P-384's point operations as functions on x86-64
 
 `vg_p384_jac_add_cached` and `vg_p384_jac_add_affine`
-(`Spec/Weierstrass/PointOps.lean`), with the joint verifier's products
+(`Proof/Weierstrass/PointOpsContract.lean`), with the joint verifier's products
 (`publicJoint`), and their `_adx` forms with BMI2 and ADX's
 (`publicJointAdx`): the code the verifier calls (`PointOps.addCachedCall`,
 `addAffineCall`). The verifier's doubling stays inline: as a call it cost

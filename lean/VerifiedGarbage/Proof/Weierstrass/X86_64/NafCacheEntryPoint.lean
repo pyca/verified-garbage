@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! The exact lookup environment preserves the point and its cached powers. -/

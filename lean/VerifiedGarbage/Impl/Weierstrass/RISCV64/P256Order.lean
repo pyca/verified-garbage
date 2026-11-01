@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Word64
 /-!
 # Arithmetic modulo P-256's order, as functions, on RISC-V
 
-`vg_p256_{mul,add,sub}_mod_n(ws, o, a, b)` (`Spec/Weierstrass/Mont.lean`)
+`vg_p256_{mul,add,sub}_mod_n(ws, o, a, b)` (`Proof/Weierstrass/MontContract.lean`)
 for the group order `n = 2²⁵⁶ - 2²²⁴ + 2¹⁹² - 2¹²⁸ + n₀ + 2⁶⁴ n₁`, as the
 functions modulo `p` (`Impl/Weierstrass/RISCV64/P256Field.lean`): the same
 entry, operands and product, the same sums and differences, only the

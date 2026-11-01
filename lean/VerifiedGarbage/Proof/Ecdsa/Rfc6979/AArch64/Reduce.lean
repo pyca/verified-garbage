@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-!
 # Deterministic ECDSA on AArch64: `h = bits2octets(digest)`

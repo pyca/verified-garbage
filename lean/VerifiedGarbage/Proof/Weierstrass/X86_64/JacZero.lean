@@ -2,11 +2,12 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X25519.X86_64.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! Zero tests for canonical field elements used by public Jacobian branches. -/
 

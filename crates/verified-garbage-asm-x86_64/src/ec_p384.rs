@@ -38,9 +38,9 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_mul_base = sym super::p384_mul_base::vg_p384_mul_base,
-        vg_p384_inv_mod_p = sym super::p384_inverse::vg_p384_inv_mod_p,
-        vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
+        vg_p384_mul_base = sym super::ec_p384::vg_p384_mul_base::vg_p384_mul_base,
+        vg_p384_inv_mod_p = sym super::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
+        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
     )
 }
 
@@ -83,8 +83,32 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_mul_base_adx = sym super::p384_mul_base::vg_p384_mul_base_adx,
-        vg_p384_inv_mod_p_adx = sym super::p384_inverse::vg_p384_inv_mod_p_adx,
-        vg_p384_mul_mod_p_adx = sym super::p384_mont::vg_p384_mul_mod_p_adx,
+        vg_p384_mul_base_adx = sym super::ec_p384::vg_p384_mul_base_adx::vg_p384_mul_base_adx,
+        vg_p384_inv_mod_p_adx = sym super::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,
+        vg_p384_mul_mod_p_adx = sym super::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_inv_mod_p.rs"]
+pub(crate) mod vg_p384_inv_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_inv_mod_p_adx.rs"]
+pub(crate) mod vg_p384_inv_mod_p_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_base.rs"]
+pub(crate) mod vg_p384_mul_base;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_base_adx.rs"]
+pub(crate) mod vg_p384_mul_base_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_mod_p.rs"]
+pub(crate) mod vg_p384_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_mod_p_adx.rs"]
+pub(crate) mod vg_p384_mul_mod_p_adx;

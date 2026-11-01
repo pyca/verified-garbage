@@ -134,9 +134,9 @@ functions'), in place of each call. Summaries of the other field functions,
 called less often, cost more than they save. -/
 
 taint_summary mulPSum : taint τVTop
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p384p.k Impl.Weierstrass.Mont.p384p.m)
 taint_summary mulPPointSum : taint τVPoint
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p384p.k Impl.Weierstrass.Mont.p384p.m)
 
 /-- Constant time by taint tracking, with the summaries of the
 multiplication in place of the analysis of each of its calls. -/

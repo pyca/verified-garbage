@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): the curves
 
-Each curve of `Spec.Weierstrass.Point.curves` is one the functions support:
+Each curve of `Impl.Weierstrass.Point.curves` is one the functions support:
 its prime's Montgomery functions (`FnOk`), and the functions' constant time
 by taint tracking (`τP`: the stack pointer and the argument public, the word
 holding `ws` the base address of the writable region, the 20 bytes below
@@ -40,11 +40,11 @@ curve's group law (`fermat_of_law`), which the registration files supply.
 
 namespace VG.Proof.Weierstrass.X86.Point
 
-open VG VG.X86 VG.Impl.Weierstrass.X86.Point VG.Proof.Weierstrass.X86.Mont Spec.Weierstrass.Point
+open VG VG.X86 VG.Impl.Weierstrass.X86.Point VG.Proof.Weierstrass.X86.Mont Spec.Weierstrass.Point Impl.Weierstrass.Point
 open VG.Proof.Weierstrass.Point (Fermat)
 
 /-- The facts of a modulus's functions depend only on its `k` and `m`. -/
-theorem FnOk.of_eq {M M' : Spec.Weierstrass.Mont.Modulus} (h : FnOk M) (hk : M.k = M'.k) (hm : M.m = M'.m) :
+theorem FnOk.of_eq {M M' : Impl.Weierstrass.Mont.Modulus} (h : FnOk M) (hk : M.k = M'.k) (hm : M.m = M'.m) :
     FnOk M' := by
   obtain ⟨c, w, m, k, d⟩ := M
   obtain ⟨c', w', m', k', d'⟩ := M'
@@ -96,7 +96,7 @@ theorem agreeP {C : Curve} {dbl : Bool} {s₁ s₂ : State} (h₁ : (sumX86 C db
     exact congrArg _ a0
 
 theorem p192_fn : FnOk (modP p192) :=
-  FnOk.of_eq p192p_ok rfl (by simp only [Spec.Weierstrass.Mont.p192p, p192])
+  FnOk.of_eq p192p_ok rfl (by simp only [Impl.Weierstrass.Mont.p192p, p192])
 
 theorem p192_add_ct : ConstantTime isa (sumX86 p192 false).pre (sumX86 p192 false).pub (fn (modP p192) false) :=
   VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
@@ -113,7 +113,7 @@ theorem p192_double_verified (hF : Fermat p192.p) :
   sum_verified p192 p192_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF true p192_double_ct
 
 theorem p224_fn : FnOk (modP p224) :=
-  FnOk.of_eq p224p_ok rfl (by simp only [Spec.Weierstrass.Mont.p224p, p224])
+  FnOk.of_eq p224p_ok rfl (by simp only [Impl.Weierstrass.Mont.p224p, p224])
 
 theorem p224_add_ct : ConstantTime isa (sumX86 p224 false).pre (sumX86 p224 false).pub (fn (modP p224) false) :=
   VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
@@ -130,7 +130,7 @@ theorem p224_double_verified (hF : Fermat p224.p) :
   sum_verified p224 p224_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF true p224_double_ct
 
 theorem p256_fn : FnOk (modP p256) :=
-  FnOk.of_eq p256p_ok rfl (by simp only [Spec.Weierstrass.Mont.p256p, p256])
+  FnOk.of_eq p256p_ok rfl (by simp only [Impl.Weierstrass.Mont.p256p, p256])
 
 theorem p256_add_ct : ConstantTime isa (sumX86 p256 false).pre (sumX86 p256 false).pub (fn (modP p256) false) :=
   VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
@@ -147,7 +147,7 @@ theorem p256_double_verified (hF : Fermat p256.p) :
   sum_verified p256 p256_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF true p256_double_ct
 
 theorem p384_fn : FnOk (modP p384) :=
-  FnOk.of_eq p384p_ok rfl (by simp only [Spec.Weierstrass.Mont.p384p, p384])
+  FnOk.of_eq p384p_ok rfl (by simp only [Impl.Weierstrass.Mont.p384p, p384])
 
 theorem p384_add_ct : ConstantTime isa (sumX86 p384 false).pre (sumX86 p384 false).pub (fn (modP p384) false) :=
   VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)

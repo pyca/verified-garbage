@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract
 public import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The public signing contract with ROM is satisfiable. -/
@@ -14,8 +15,8 @@ theorem combSign_sat : combSignSpec.pre combSatState := by
   have arg := combSat_stackArg
   have held := combSat_held
   generalize eqs : combSatState=s
-  sig_pre [combSignSpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.signContract,
-    Spec.Ecdsa.Instance.signSig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+  sig_pre [combSignSpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.Instance.signContract,
+    Proof.Ecdsa.Instance.signSig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
     Loc.val,State.addr,stackArgAddr,BitVec.add_zero,secp256k1CombConsts,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,stackBelow]
   subst s

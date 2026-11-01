@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # A power-of-two modulus for the exact product of the key exponents
 

@@ -191,11 +191,6 @@ public import VerifiedGarbage.Proof.X25519.X86.Fold
 namespace VG.Generic.P256.X86.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
-  Spec.Ecdsa.P256.signApi.artifact X86.target {
-    code := Impl.Ecdsa.X86.signP256Comb
-    consts := Impl.Ecdsa.X86.p256Comb.combConsts
-    stack := 20
-    verified := Proof.Ecdsa.X86.signComb_verified h.law h.inv },
   Spec.Ecdsa.P256.verifyApi.artifact X86.target {
     code := Proof.Ecdsa.Verify.X86.vCombCode
     consts := Impl.Ecdsa.X86.p256Comb.combConsts

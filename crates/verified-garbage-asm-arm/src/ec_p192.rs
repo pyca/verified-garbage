@@ -1020,8 +1020,28 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p192_point_double = sym super::p192_point::vg_p192_point_double,
-        vg_p192_point_add = sym super::p192_point::vg_p192_point_add,
-        vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
+        vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
+        vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
+        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_add_mod_p.rs"]
+pub(crate) mod vg_p192_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_mul_mod_p.rs"]
+pub(crate) mod vg_p192_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_point_add.rs"]
+pub(crate) mod vg_p192_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_point_double.rs"]
+pub(crate) mod vg_p192_point_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_sub_mod_p.rs"]
+pub(crate) mod vg_p192_sub_mod_p;

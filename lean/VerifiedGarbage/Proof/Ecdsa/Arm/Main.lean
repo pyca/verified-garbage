@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA on 32-bit ARM: the whole function

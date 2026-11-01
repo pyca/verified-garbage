@@ -1,16 +1,16 @@
 module
 
-import VerifiedGarbage.Spec.Weierstrass.MulBase
-meta import VerifiedGarbage.Spec.Weierstrass.MulBase
+import VerifiedGarbage.Proof.Weierstrass.MulBaseContract
+meta import VerifiedGarbage.Proof.Weierstrass.MulBaseContract
 
 /-!
-# The contract of `Spec/Weierstrass/MulBase.lean`
+# The contract of `Proof/Weierstrass/MulBaseContract.lean`
 
 * `Represents` holds for the point at infinity and for small multiples of
   P-384's base point in projective coordinates scaled by factors other than
   one, and fails for the coordinates of another point or with `Z = 0` for an
   affine point;
-* the function's own working space is where the documentation says, and
+* the function's own working space is
   apart from what the caller provides (`p`, zero and `k`) and from the other
   tables of bits of the x86-64 code (`p - 2`'s and `n - 2`'s, from byte
   `bitsAt + 64 k + 8`).
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Spec.Weierstrass.MulBase
 
 namespace VG.Test.WeierstrassMulBase
 
-open Spec.Weierstrass Spec.Weierstrass.MulBase
+open Spec.Weierstrass Impl.Weierstrass.MulBase Impl.Weierstrass
 
 /-- `Represents`, as a `Bool`. -/
 def represents {W : Spec.Weierstrass.Curve} (X Y Z : Fe W) : Point W → Bool
@@ -80,13 +80,9 @@ def checkApart (C : MulBase.Curve) : Bool :=
 
 #guard curves.all checkApart
 
-#guard p384.ownDoc =
-  "Bytes 880 to 1551, 1984 to 2031, 4048 to 4095 and 2224 to 2615 of `ws`"
 #guard p384.kAt = 1552 ∧ p384.pAt = 736 ∧ p384.modAt = 64 ∧ p384.zeroAt = 208
-#guard p521.ownDoc = "Bytes 1288 to 2295, 2944 to 3015 and 3304 to 8191 of `ws`"
 #guard p521.kAt = 2296 ∧ p521.pAt = 1072 ∧ p521.modAt = 64 ∧ p521.zeroAt = 280
 #guard [p224, p256].all fun C =>
-  C.ownDoc == "Bytes 608 to 1055, 1344 to 1407, 128 to 159 and 1504 to 1767 of `ws`" &&
-    C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160
+  C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160
 
 end VG.Test.WeierstrassMulBase

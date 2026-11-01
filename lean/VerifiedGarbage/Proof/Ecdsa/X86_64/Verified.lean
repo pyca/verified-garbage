@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.LitShare
@@ -171,10 +172,10 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP256 :=
     rfl (by taint_decide)
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
+    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
   have held : ∀ i < p256W.length, satState.mem.readW (satState.syms "VG_P256_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := satMem_held
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
     Abi.withConsts, p256_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -182,7 +183,7 @@ theorem sat_spec8 :
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
-    signX86_64.Implies (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+    signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8) :=
   implies.stack8 ⟨satState, sat_spec8⟩
 
 /-- The output is apart from the calls' return address. -/
@@ -193,7 +194,7 @@ theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX8
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8).pre s)
+    (hs : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8).pre s)
     (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) :=
   post_patch s b hv u (implies8.pre s hs) (Sig.clear_of_pre_consts hs) hp
 
@@ -210,7 +211,7 @@ theorem sign_verified (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP256
-      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8) :=
   Verified.of_inline_ct (by lit_decide) (sign_x86 hL hT hI) sign_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 

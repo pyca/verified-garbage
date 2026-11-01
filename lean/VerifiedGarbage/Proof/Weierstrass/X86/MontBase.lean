@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the working space at `ebp`

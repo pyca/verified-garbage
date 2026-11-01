@@ -14,20 +14,10 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Generic.Secp256k1.Arm.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.signApi.artifact Arm.target {
-    consts := Impl.Weierstrass.Arm.secp256k1CombConsts
-    code := Impl.Ecdsa.Arm.signSecp256k1Comb
-    verified := Proof.Ecdsa.Arm.Secp256k1.combSign_verified h.law },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact Arm.target {
     consts := Impl.Weierstrass.Arm.secp256k1CombConsts
     code := Impl.Ecdsa.Arm.verifySecp256k1Comb
     verified := Proof.Ecdsa.Verify.Arm.Secp256k1.combVerify_verified h.law },
-  Spec.Ecdsa.Secp256k1.signApi.artifact Arm.target {
-    suffix := "_umaal"
-    consts := Impl.Weierstrass.Arm.secp256k1CombConsts
-    code := Impl.Ecdsa.Arm.signSecp256k1CombU
-    verified := Proof.Ecdsa.Arm.Secp256k1.combSignU_verified h.law
-    features := ["umaal"] },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact Arm.target {
     suffix := "_umaal"
     consts := Impl.Weierstrass.Arm.secp256k1CombConsts

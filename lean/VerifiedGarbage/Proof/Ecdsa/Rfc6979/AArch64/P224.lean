@@ -36,7 +36,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSou
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.P224.p224_sh
-  coreN := Spec.Ecdsa.P224.signApi.name
+  coreN := "vg_ecdsa_p224_sign"
   coreC := Impl.Ecdsa.AArch64.signP224
   coreX := Proof.Ecdsa.AArch64.P224.sign_a64 hL hI hT
   coreCT := Proof.Ecdsa.AArch64.P224.sign_ct

@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # P-384's point functions on x86-64: the shared contracts
 
 The x86-64 contracts of `PointOpsVerified.lean` imply those of
-`Spec.Weierstrass.PointOps.p384` (`sig_pre`, `sig_post` and `sig_pub`
+`Impl.Weierstrass.PointOps.p384` (`sig_pre`, `sig_post` and `sig_pub`
 evaluate them), which a working space holding `p` at slot 0 and zeros
 elsewhere satisfies (`fnSat`).
 -/
@@ -42,51 +42,51 @@ def fnSat : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_mod : C.ModOk 0x1000 satMem := by
-  unfold Spec.Weierstrass.PointOps.Curve.ModOk; decide +kernel
+  unfold Impl.Weierstrass.PointOps.Curve.ModOk; decide +kernel
 
-theorem sat_p : Spec.Weierstrass.Point.p384.Below (Spec.Weierstrass.Point.p384.pointAt satMem 0x1000 C.pAt) := by
-  unfold Spec.Weierstrass.Point.Curve.Below; decide +kernel
+theorem sat_p : Impl.Weierstrass.Point.p384.Below (Impl.Weierstrass.Point.p384.pointAt satMem 0x1000 C.pAt) := by
+  unfold Impl.Weierstrass.Point.Curve.Below; decide +kernel
 
-theorem sat_q : Spec.Weierstrass.Point.p384.Below (Spec.Weierstrass.Point.p384.pointAt satMem 0x1000 C.qAt) := by
-  unfold Spec.Weierstrass.Point.Curve.Below; decide +kernel
+theorem sat_q : Impl.Weierstrass.Point.p384.Below (Impl.Weierstrass.Point.p384.pointAt satMem 0x1000 C.qAt) := by
+  unfold Impl.Weierstrass.Point.Curve.Below; decide +kernel
 
 theorem sat_c2 : C.CoordBelow 0x1000 satMem C.zzAt := by
-  unfold Spec.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
+  unfold Impl.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
 
 theorem sat_c3 : C.CoordBelow 0x1000 satMem C.zzzAt := by
-  unfold Spec.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
+  unfold Impl.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
 
 theorem sat_ret : (⟨0x8000, 8⟩ : Region).Disjoint ⟨0x1000, 8192⟩ :=
   Region.disjoint_of_le (by decide) (by decide) (by decide)
 
 theorem addCachedK_implies : addCachedK.Implies (C.addCachedContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addCachedContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addCachedContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
       h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2⟩
   post _ _ _ h := h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.PointOps.Curve.addCachedContract, Spec.Weierstrass.PointOps.sig,
+    sig_pub [Impl.Weierstrass.PointOps.Curve.addCachedContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.2⟩, h.2.1⟩
   sat := ⟨fnSat, by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addCachedContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addCachedContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs]
     exact ⟨sat_ret, by decide, sat_mod, sat_p, sat_q, sat_c2, sat_c3⟩⟩
 
 theorem addAffineK_implies : addAffineK.Implies (C.addAffineContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addAffineContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2⟩
   post _ _ _ h := h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
+    sig_pub [Impl.Weierstrass.PointOps.Curve.addAffineContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.2⟩, h.2.1⟩
   sat := ⟨fnSat, by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addAffineContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs]
     exact ⟨sat_ret, by decide, sat_mod, sat_p, sat_q⟩⟩
 

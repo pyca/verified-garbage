@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicPre
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLength
 import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming

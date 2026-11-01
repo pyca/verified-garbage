@@ -16,13 +16,13 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
@@ -36,7 +36,7 @@ public import VerifiedGarbage.Proof.Weierstrass.CombLay
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.Weierstrass
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! A signed public lookup into the Jacobian window table. -/

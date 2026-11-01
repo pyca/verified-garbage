@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! Cache lookup addresses and exact copies of both cached field elements. -/
 

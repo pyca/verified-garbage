@@ -12,14 +12,14 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-structure NafWindowChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prop where
+structure NafWindowChecks (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prop where
   table : NafTableChecks K F
   step : NafStepChecks K F
   infinity : ScratchCT (.block (Jacobian.infinity K K.R))
   initCounter : RegCT [.esi] (.block [.mov .esi (.imm 256)])
   finish : ScratchCT (Naf.finish K F)
 
-theorem nafWindow_init_fields_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafWindow_init_fields_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} {E : Nat → Fe C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p) (hc : NafWindowChecks K F) :
@@ -45,7 +45,7 @@ theorem nafWindow_init_fields_relCT {counter : BitVec 32} {F : Spec.Weierstrass.
   exact init.mono (fun _ _ h => ⟨h,trivial,trivial⟩)
     (fun _ _ h => ⟨_,h.1.sub (fun _ hx => List.mem_append_right _ hx)⟩)
 
-theorem nafWindow_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafWindow_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} {E : Nat → Fe C} {P : Point C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hm : UnitMod C.p (2^(64*K.M.n)))

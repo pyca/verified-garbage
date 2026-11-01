@@ -1,0 +1,809 @@
+// The functions of `src/internal/vg_p521_add_mod_n.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_p521_add_mod_n:
+	mov r12, r0
+	str r4, [r12, #3960]
+	str r5, [r12, #3964]
+	str r6, [r12, #3968]
+	str r7, [r12, #3972]
+	str r8, [r12, #3976]
+	str r9, [r12, #3980]
+	str lr, [r12, #3984]
+	movw r4, #25609
+	movt r4, #37176
+	str r4, [r12, #3888]
+	movw r4, #46878
+	movt r4, #47983
+	str r4, [r12, #3892]
+	movw r4, #18350
+	movt r4, #35228
+	str r4, [r12, #3896]
+	movw r4, #51640
+	movt r4, #15285
+	str r4, [r12, #3900]
+	movw r4, #42448
+	movt r4, #63241
+	str r4, [r12, #3904]
+	movw r4, #328
+	movt r4, #32716
+	str r4, [r12, #3908]
+	movw r4, #38507
+	movt r4, #48943
+	str r4, [r12, #3912]
+	movw r4, #34691
+	movt r4, #20870
+	str r4, [r12, #3916]
+	movw r4, #65530
+	movt r4, #65535
+	str r4, [r12, #3920]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3924]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3928]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3932]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3936]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3940]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3944]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3948]
+	movw r4, #511
+	movt r4, #0
+	str r4, [r12, #3952]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3956]
+	add lr, r12, r1
+	add r1, r12, r2
+	add r2, r12, r3
+	movw r6, #65535
+	mov r3, #0
+	ldr r7, [r1, #0]
+	ldr r8, [r2, #0]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3520]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3524]
+	lsr r3, r4, #16
+	ldr r7, [r1, #4]
+	ldr r8, [r2, #4]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3528]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3532]
+	lsr r3, r4, #16
+	ldr r7, [r1, #8]
+	ldr r8, [r2, #8]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3536]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3540]
+	lsr r3, r4, #16
+	ldr r7, [r1, #12]
+	ldr r8, [r2, #12]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3544]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3548]
+	lsr r3, r4, #16
+	ldr r7, [r1, #16]
+	ldr r8, [r2, #16]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3552]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3556]
+	lsr r3, r4, #16
+	ldr r7, [r1, #20]
+	ldr r8, [r2, #20]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3560]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3564]
+	lsr r3, r4, #16
+	ldr r7, [r1, #24]
+	ldr r8, [r2, #24]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3568]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3572]
+	lsr r3, r4, #16
+	ldr r7, [r1, #28]
+	ldr r8, [r2, #28]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3576]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3580]
+	lsr r3, r4, #16
+	ldr r7, [r1, #32]
+	ldr r8, [r2, #32]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3584]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3588]
+	lsr r3, r4, #16
+	ldr r7, [r1, #36]
+	ldr r8, [r2, #36]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3592]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3596]
+	lsr r3, r4, #16
+	ldr r7, [r1, #40]
+	ldr r8, [r2, #40]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3600]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3604]
+	lsr r3, r4, #16
+	ldr r7, [r1, #44]
+	ldr r8, [r2, #44]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3608]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3612]
+	lsr r3, r4, #16
+	ldr r7, [r1, #48]
+	ldr r8, [r2, #48]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3616]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3620]
+	lsr r3, r4, #16
+	ldr r7, [r1, #52]
+	ldr r8, [r2, #52]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3624]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3628]
+	lsr r3, r4, #16
+	ldr r7, [r1, #56]
+	ldr r8, [r2, #56]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3632]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3636]
+	lsr r3, r4, #16
+	ldr r7, [r1, #60]
+	ldr r8, [r2, #60]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3640]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3644]
+	lsr r3, r4, #16
+	ldr r7, [r1, #64]
+	ldr r8, [r2, #64]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3648]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3652]
+	lsr r3, r4, #16
+	ldr r7, [r1, #68]
+	ldr r8, [r2, #68]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3656]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3660]
+	lsr r3, r4, #16
+	str r3, [r12, #3664]
+	movw r6, #65535
+	mov r3, #1
+	ldr r7, [r12, #3888]
+	ldr r5, [r12, #3520]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3524]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3816]
+	ldr r7, [r12, #3892]
+	ldr r5, [r12, #3528]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3532]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3820]
+	ldr r7, [r12, #3896]
+	ldr r5, [r12, #3536]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3540]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3824]
+	ldr r7, [r12, #3900]
+	ldr r5, [r12, #3544]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3548]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3828]
+	ldr r7, [r12, #3904]
+	ldr r5, [r12, #3552]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3556]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3832]
+	ldr r7, [r12, #3908]
+	ldr r5, [r12, #3560]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3564]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3836]
+	ldr r7, [r12, #3912]
+	ldr r5, [r12, #3568]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3572]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3840]
+	ldr r7, [r12, #3916]
+	ldr r5, [r12, #3576]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3580]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3844]
+	ldr r7, [r12, #3920]
+	ldr r5, [r12, #3584]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3588]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3848]
+	ldr r7, [r12, #3924]
+	ldr r5, [r12, #3592]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3596]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3852]
+	ldr r7, [r12, #3928]
+	ldr r5, [r12, #3600]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3604]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3856]
+	ldr r7, [r12, #3932]
+	ldr r5, [r12, #3608]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3612]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3860]
+	ldr r7, [r12, #3936]
+	ldr r5, [r12, #3616]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3620]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3864]
+	ldr r7, [r12, #3940]
+	ldr r5, [r12, #3624]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3628]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3868]
+	ldr r7, [r12, #3944]
+	ldr r5, [r12, #3632]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3636]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3872]
+	ldr r7, [r12, #3948]
+	ldr r5, [r12, #3640]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3644]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3876]
+	ldr r7, [r12, #3952]
+	ldr r5, [r12, #3648]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3652]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3880]
+	ldr r7, [r12, #3956]
+	ldr r5, [r12, #3656]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3660]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #3884]
+	ldr r5, [r12, #3664]
+	add r3, r3, r5
+	mov r4, #0
+	sub r3, r4, r3
+	ldr r5, [r12, #3520]
+	ldr r7, [r12, #3524]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3816]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #0]
+	ldr r5, [r12, #3528]
+	ldr r7, [r12, #3532]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3820]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #4]
+	ldr r5, [r12, #3536]
+	ldr r7, [r12, #3540]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3824]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #8]
+	ldr r5, [r12, #3544]
+	ldr r7, [r12, #3548]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3828]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #12]
+	ldr r5, [r12, #3552]
+	ldr r7, [r12, #3556]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3832]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #16]
+	ldr r5, [r12, #3560]
+	ldr r7, [r12, #3564]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3836]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #20]
+	ldr r5, [r12, #3568]
+	ldr r7, [r12, #3572]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3840]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #24]
+	ldr r5, [r12, #3576]
+	ldr r7, [r12, #3580]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3844]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #28]
+	ldr r5, [r12, #3584]
+	ldr r7, [r12, #3588]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3848]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #32]
+	ldr r5, [r12, #3592]
+	ldr r7, [r12, #3596]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3852]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #36]
+	ldr r5, [r12, #3600]
+	ldr r7, [r12, #3604]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3856]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #40]
+	ldr r5, [r12, #3608]
+	ldr r7, [r12, #3612]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3860]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #44]
+	ldr r5, [r12, #3616]
+	ldr r7, [r12, #3620]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3864]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #48]
+	ldr r5, [r12, #3624]
+	ldr r7, [r12, #3628]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3868]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #52]
+	ldr r5, [r12, #3632]
+	ldr r7, [r12, #3636]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3872]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #56]
+	ldr r5, [r12, #3640]
+	ldr r7, [r12, #3644]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3876]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #60]
+	ldr r5, [r12, #3648]
+	ldr r7, [r12, #3652]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3880]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #64]
+	ldr r5, [r12, #3656]
+	ldr r7, [r12, #3660]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #3884]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #68]
+	ldr r4, [r12, #3960]
+	ldr r5, [r12, #3964]
+	ldr r6, [r12, #3968]
+	ldr r7, [r12, #3972]
+	ldr r8, [r12, #3976]
+	ldr r9, [r12, #3980]
+	ldr lr, [r12, #3984]
+	bx lr

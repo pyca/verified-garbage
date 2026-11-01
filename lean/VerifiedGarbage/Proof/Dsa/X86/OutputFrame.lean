@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Impl.Dsa.X86.Bytes
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.TCB.X86.State

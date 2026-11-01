@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86
 public import VerifiedGarbage.Impl.X25519.X86
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on x86 (32-bit)
 
-`vg_<curve>_{mul,add,sub}_mod_<p|n>(ws, o, a, b)` (`Spec/Weierstrass/Mont.lean`;
+`vg_<curve>_{mul,add,sub}_mod_<p|n>(ws, o, a, b)` (`Proof/Weierstrass/MontContract.lean`;
 cdecl: the arguments at `[esp + 4]` to `[esp + 16]`) for a modulus `m` of `k`
 64-bit words (`N = 2k` 32-bit words), on the working space `ws`. The
 functions use the `64 k` bytes below byte 4096 of `ws` for themselves
@@ -61,7 +61,7 @@ def minv (m : Nat) : Nat :=
   (2 ^ 64 - inv) % 2 ^ 64
 
 /-- The start of the own working space: the accumulator, `2N + 1` words. -/
-def own (k : Nat) : Nat := Spec.Weierstrass.Mont.ownAt k
+def own (k : Nat) : Nat := Impl.Weierstrass.Mont.ownAt k
 
 /-- The temporary area, `N` words. -/
 def tmpAt (k : Nat) : Nat := own k + (16 * k + 4)
@@ -306,15 +306,15 @@ def callOp (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
     (.frame (.push [.eax, .ecx, .edx, .edi]) (.call f body) (.pop .eax 4))
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-def mulCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def mulCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "mul") (mulFn S.k S.m) o a b
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-def addCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def addCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "add") (addFn S.k S.m) o a b
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-def subCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def subCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "sub") (subFn S.k S.m) o a b
 
 end VG.Impl.Weierstrass.X86.Mont

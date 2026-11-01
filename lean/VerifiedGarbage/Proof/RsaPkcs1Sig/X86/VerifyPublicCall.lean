@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
 /-! # Calling checked public RSA retains every immutable verification input -/
 

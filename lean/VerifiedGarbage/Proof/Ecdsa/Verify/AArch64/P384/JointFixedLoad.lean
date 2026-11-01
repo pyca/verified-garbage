@@ -12,6 +12,9 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

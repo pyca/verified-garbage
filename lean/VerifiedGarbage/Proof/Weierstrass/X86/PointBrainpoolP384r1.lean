@@ -41,11 +41,11 @@ curves', so that adding it rebuilds none of their proofs.
 
 namespace VG.Proof.Weierstrass.X86.Point
 
-open VG VG.X86 VG.Impl.Weierstrass.X86.Point VG.Proof.Weierstrass.X86.Mont Spec.Weierstrass.Point
+open VG VG.X86 VG.Impl.Weierstrass.X86.Point VG.Proof.Weierstrass.X86.Mont Spec.Weierstrass.Point Impl.Weierstrass.Point
 open VG.Proof.Weierstrass.Point (Fermat)
 
 theorem brainpoolp384r1_fn : FnOk (modP brainpoolp384r1) :=
-  FnOk.of_eq brainpoolp384r1p_ok rfl (by simp only [Spec.Weierstrass.Mont.brainpoolp384r1p, brainpoolp384r1])
+  FnOk.of_eq brainpoolp384r1p_ok rfl (by simp only [Impl.Weierstrass.Mont.brainpoolp384r1p, brainpoolp384r1])
 
 theorem brainpoolp384r1_add_ct :
     ConstantTime isa (sumX86 brainpoolp384r1 false).pre (sumX86 brainpoolp384r1 false).pub

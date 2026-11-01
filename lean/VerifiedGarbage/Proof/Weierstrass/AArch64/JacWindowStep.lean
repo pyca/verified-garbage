@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! A complete five-bit iteration of the public Jacobian loop. -/
 

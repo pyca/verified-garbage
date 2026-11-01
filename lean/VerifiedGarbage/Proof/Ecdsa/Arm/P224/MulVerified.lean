@@ -36,8 +36,8 @@ namespace VG.Proof.Ecdsa.Arm.P224.Mul
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof
 
-/-- P-224's curve of `Spec/Weierstrass/Mul.lean`: the one its code has. -/
-abbrev C : Spec.Weierstrass.Mul.Curve := Spec.Weierstrass.Mul.p224
+/-- P-224's curve of `Proof/Weierstrass/MulContract.lean`: the one its code has. -/
+abbrev C : Impl.Weierstrass.Mul.Curve := Impl.Weierstrass.Mul.p224
 
 theorem C_eq : C = mulCurve p224 "p224" "P-224" := rfl
 
@@ -47,12 +47,12 @@ theorem mul_ct : ConstantTime isa (mulArm C).pre (mulArm C).pub mulP224 :=
       rw [List.mem_singleton] at hr; subst hr; exact hp.2) (by native_taint_decide)
 
 theorem sat_consts : C.ConstsOk 0x1000 (mulSatMem p224) := by
-  unfold Spec.Weierstrass.Mul.Curve.ConstsOk
+  unfold Impl.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem sat_pre (hL : Weierstrass.Law Spec.P224.curve) : (C.mulInRangeContract Arm.abi).pre (mulSatState p224) :=
   Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Weierstrass.MulBase.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, mulSatState]
+    sig_reduce [Sig.wfPre, Impl.Weierstrass.MulBase.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, mulSatState]
     exact ⟨by decide, sat_consts, mulSat_point (curve := "p224") (desc := "P-224") (saved := 1) p224_ok hL
       (by decide +kernel) (by decide +kernel)⟩)
 

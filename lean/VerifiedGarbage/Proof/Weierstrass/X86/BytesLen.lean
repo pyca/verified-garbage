@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): numbers of `len` bytes

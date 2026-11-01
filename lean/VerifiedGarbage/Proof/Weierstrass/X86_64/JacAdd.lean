@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import Batteries.Logic
 

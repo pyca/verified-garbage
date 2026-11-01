@@ -11,7 +11,7 @@ namespace VG.Impl.Ecdsa.Arm
 open VG.Arm
 
 /-- P-521 as the code has it. -/
-def p521 : Cfg := ⟨9, Spec.P521.curve, Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p521n, some Spec.Weierstrass.Mul.p521, false⟩
+def p521 : Cfg := ⟨9, Spec.P521.curve, Impl.Weierstrass.Mont.p521p, Impl.Weierstrass.Mont.p521n, some Impl.Weierstrass.Mul.p521, false⟩
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

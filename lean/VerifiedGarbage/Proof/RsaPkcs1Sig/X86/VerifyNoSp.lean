@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # Verification uses its two stack frames without changing their pointers -/
 

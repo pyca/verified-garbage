@@ -27,6 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # brainpoolP256r1 public keys on 32-bit ARM with the generator comb

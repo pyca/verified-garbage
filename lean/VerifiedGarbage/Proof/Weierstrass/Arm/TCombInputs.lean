@@ -21,8 +21,8 @@ structure Inputs (K : TCombCfg) (base T : Addr) (ws : List (BitVec 64))
   symbol : State.addr (s.syms K.tsym)=T
   zero : wordsVal s.mem base K.zero K.L.M.n=0
   bits : ∀ i<K.L.nbits,s.mem (off base (K.L.bits+i))=if k.testBit i then 1 else 0
-  coeffA : wordsVal s.mem base (Spec.Weierstrass.Point.aAt K.L.M.n) K.L.M.n=a
-  coeffB : wordsVal s.mem base (Spec.Weierstrass.Point.b3At K.L.M.n) K.L.M.n=b
+  coeffA : wordsVal s.mem base (Impl.Weierstrass.Point.aAt K.L.M.n) K.L.M.n=a
+  coeffB : wordsVal s.mem base (Impl.Weierstrass.Point.b3At K.L.M.n) K.L.M.n=b
 
 theorem Layout.zero_apart {K : TCombCfg} (h : Layout K) :
     ∀ r ∈ loopWrites K,K.zero+8*K.L.M.n≤r.1 ∨ r.1+r.2≤K.zero := by
@@ -36,20 +36,20 @@ theorem Layout.zero_apart {K : TCombCfg} (h : Layout K) :
   · exact h.zeroApart _ (by simp)
   · exact neg.symm
   · exact .inl low
-  · have below : Spec.Weierstrass.Point.oAt K.L.M.n≤Spec.Weierstrass.Point.ownAt K.L.M.n := by
+  · have below : Impl.Weierstrass.Point.oAt K.L.M.n≤Impl.Weierstrass.Point.ownAt K.L.M.n := by
       exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)
     exact .inl (Nat.le_trans low below)
 
 theorem Layout.params_apart {K : TCombCfg} (h : Layout K) :
-    ∀ x ∈ [Spec.Weierstrass.Point.aAt K.L.M.n,Spec.Weierstrass.Point.b3At K.L.M.n],
+    ∀ x ∈ [Impl.Weierstrass.Point.aAt K.L.M.n,Impl.Weierstrass.Point.b3At K.L.M.n],
       ∀ r ∈ loopWrites K,x+8*K.L.M.n≤r.1 ∨ r.1+r.2≤x := by
   have low := h.low
   simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq] at low
   intro x hx r hr
   simp only [loopWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl|rfl|rfl|rfl
-  all_goals have geom : Spec.Weierstrass.Point.oAt K.L.M.n+72*K.L.M.n≤x ∧
-      x+8*K.L.M.n≤Spec.Weierstrass.Point.ownAt K.L.M.n :=
+  all_goals have geom : Impl.Weierstrass.Point.oAt K.L.M.n+72*K.L.M.n≤x ∧
+      x+8*K.L.M.n≤Impl.Weierstrass.Point.ownAt K.L.M.n :=
     lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) x hx
   all_goals simp only <;> omega
 
@@ -65,7 +65,7 @@ theorem Inputs.keep {K : TCombCfg} {base T : Addr} {ws : List (BitVec 64)} {k a 
     (coarse.outside (o := 0) (n := 4096) bounded) (Nat.le_refl _)
   have nowrap := i.scr.nowrap
   have low := h.low K.zero (by simp)
-  have params : ∀ x ∈ [Spec.Weierstrass.Point.aAt K.L.M.n,Spec.Weierstrass.Point.b3At K.L.M.n],
+  have params : ∀ x ∈ [Impl.Weierstrass.Point.aAt K.L.M.n,Impl.Weierstrass.Point.b3At K.L.M.n],
       wordsVal t.mem base x K.L.M.n=wordsVal s.mem base x K.L.M.n := by
     intro x hx
     apply mem.wordsVal (h.params_apart x hx)

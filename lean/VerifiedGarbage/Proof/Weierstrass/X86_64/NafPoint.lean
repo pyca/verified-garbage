@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! Public table transfers preserve the selected Jacobian point. -/
 

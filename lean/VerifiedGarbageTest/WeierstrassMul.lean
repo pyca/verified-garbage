@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Spec.Weierstrass.Mul
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
-# The contract of `Spec/Weierstrass/Mul.lean`
+# The contract of `Proof/Weierstrass/MulContract.lean`
 
-* the function's own working space is where the documentation says, and
-  apart from what the caller provides (`p`, zero, the constants, `Q` and
+* the function's own working space is apart from what the caller provides (`p`, zero, the constants, `Q` and
   `k`), from the result (where `Q` is), and from the bytes past the words
   where the function keeps registers (`bitsAt + 64 k + 8 saved`): on x86-64,
   the other tables of bits (`p - 2`'s and `n - 2`'s, from byte
@@ -19,7 +18,7 @@ meta import VerifiedGarbage.Spec.Weierstrass.Mul
 
 namespace VG.Test.WeierstrassMul
 
-open Spec.Weierstrass Spec.Weierstrass.Mul
+open Spec.Weierstrass Impl.Weierstrass.Mul Impl.Weierstrass
 
 /-- Byte `i` is in the own working space, as a `Bool`. -/
 def own (C : Mul.Curve) (i : Nat) : Bool :=
@@ -58,16 +57,12 @@ def checkInputs (C : Mul.Curve) : Bool :=
 #guard curves.all checkInputs
 
 #guard [p224, p256].all fun C =>
-  C.ownDoc == "Bytes 608 to 1055, 1344 to 1375, 128 to 159 and 1504 to 8191 of `ws`" &&
-    C.kAt == 1056 && C.pAt == 512 && C.oneAt == 224 && C.aAt == 256 && C.b3At == 288
-#guard p384.ownDoc == "Bytes 880 to 1551, 1984 to 2031, 160 to 207 and 2224 to 8191 of `ws`" &&
-  p384.kAt == 1552 && p384.pAt == 736
-#guard p521.ownDoc == "Bytes 1288 to 2295, 2944 to 3015, 208 to 279 and 3304 to 8191 of `ws`" &&
-  p521.kAt == 2296 && p521.pAt == 1072
-#guard [p224, p256, p384, p521].all fun C => C.mulApi.summary.contains "for `k` in `[1, n - 1]`"
+  C.kAt == 1056 && C.pAt == 512 && C.oneAt == 224 && C.aAt == 256 && C.b3At == 288
+#guard p384.kAt == 1552 && p384.pAt == 736
+#guard p521.kAt == 2296 && p521.pAt == 1072
+#guard [p224, p256, p384, p521].all fun C => C.inRange
 #guard [p192, secp256k1].all fun C =>
-  C.ownDoc == "Bytes 608 to 1055, 128 to 159 and 1504 to 1767 of `ws`" &&
-    C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160 && C.oneAt == 224 &&
+  C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160 && C.oneAt == 224 &&
     C.aAt == 256 && C.b3At == 288 && C.qAt == 512
 
 /-- The base point in Montgomery's form is a point `PointOk` accepts: its

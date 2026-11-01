@@ -126,22 +126,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
 namespace VG.Generic.P256.X86_64.EcdsaP256
 
-/-- The function of `Spec.Ecdsa.P256.signApi`, multiplying with BMI2 and ADX
-(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
-`rsp` (`hsp`). -/
-def sign (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P256.signApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    consts := Impl.Ecdsa.X86_64.p256.combConsts
-    code
-    stack := 8
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
-
 /-- The function of `Spec.Ecdsa.P256.verifyApi`, multiplying with BMI2 and ADX
 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
 `rsp` (`hsp`). -/
@@ -159,12 +143,8 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     features := if adx then ["bmi2", "adx"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact := [
-  sign false Impl.Ecdsa.X86_64.signP256
-    (Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law) h.inv),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP256
     (Proof.Ecdsa.Verify.X86_64.jointVerify_verified h.law (Proof.P256.gtabOk9 h.law) h.inv h.prime),
-  sign true Impl.Ecdsa.X86_64.signP256Adx
-    (Proof.Ecdsa.X86_64.sign_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv),
   verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
     (Proof.Ecdsa.Verify.X86_64.jointVerify_verified_adx h.law (Proof.P256.gtabOk9 h.law) h.inv
       h.prime)]

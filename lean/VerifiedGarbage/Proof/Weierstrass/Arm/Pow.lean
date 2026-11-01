@@ -64,7 +64,7 @@ structure PowInv (P : PowCfg) (wk : Nat) (base : Addr) (size m e : Nat) [NeZero 
 
 /-- An iteration. -/
 theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
-    (hL : PowLay P size 8192) (hW : PowWk P size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk P.M wk S m)
+    (hL : PowLay P size 8192) (hW : PowWk P size wk) {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk P.M wk S m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) (hb8 : P.bits < 8192) {s₀ : State}
     (hf₀ : Far s₀ base 8192)
     (hM₀ : ModOkW P.M size m s₀.mem base) (hB : wordsVal s₀.mem base P.base P.M.n < m)
@@ -194,7 +194,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e < 2^nbits`
 whose bits are the table at `P.bits`; only `powClob` and `powWx` change. -/
 theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowLay P size 8192)
-    (hW : PowWk P size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk P.M wk S m)
+    (hW : PowWk P size wk) {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk P.M wk S m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) (hb8 : P.bits < 8192) {s : State}
     (hs : Scr s base size) (hf : Far s base 8192)
     (hM : ModOkW P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)

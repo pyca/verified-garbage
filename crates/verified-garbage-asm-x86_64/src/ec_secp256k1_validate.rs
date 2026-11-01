@@ -21,6 +21,6 @@ pub unsafe extern "sysv64" fn vg_ec_secp256k1_validate_public_key(public: *const
 call {vg_secp256k1_check_point}
 .base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_secp256k1_check_point = sym super::secp256k1_check_point::vg_secp256k1_check_point,
+        vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,
     )
 }

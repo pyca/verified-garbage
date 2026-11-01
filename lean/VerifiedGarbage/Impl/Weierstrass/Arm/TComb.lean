@@ -14,7 +14,7 @@ open Point
 
 structure TCombCfg where
  L : LadderCfg
- F : Spec.Weierstrass.Mont.Modulus
+ F : Impl.Weierstrass.Mont.Modulus
  w : Nat
  J : Nat
  tsym : String
@@ -28,9 +28,9 @@ structure TCombCfg where
 namespace TCombCfg
 variable (K : TCombCfg)
 def H : Nat := 2^(K.w-1)
-def P : Pt := ptAt K.L.M.n (Spec.Weierstrass.Point.pAt K.L.M.n)
-def Q : Pt := ptAt K.L.M.n (Spec.Weierstrass.Point.qAt K.L.M.n)
-def O : Pt := ptAt K.L.M.n (Spec.Weierstrass.Point.oAt K.L.M.n)
+def P : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.pAt K.L.M.n)
+def Q : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.qAt K.L.M.n)
+def O : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.oAt K.L.M.n)
 /-- The same Horner decoding used by the other comb backends. -/
 def hornerAt : Nat → Nat → List Instr
  | _, 0 => [.mov .r9 (.imm 0)]

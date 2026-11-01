@@ -68,7 +68,7 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
 
 /-- A numbered slot is below the point functions' slots. -/
 theorem sl_below_pt (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
-    c.sl i + 8 * c.n ≤ Spec.Weierstrass.Point.oAt c.n := by
+    c.sl i + 8 * c.n ≤ Impl.Weierstrass.Point.oAt c.n := by
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
   have := sl_lt c hi
   rw [sl_eq c 45] at this

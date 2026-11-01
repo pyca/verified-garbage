@@ -153,17 +153,17 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
 their calls (`CallTaint`), in place of each call. -/
 
 taint_summary mulSum : taint (callτ 32)
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp256r1p.k Spec.Weierstrass.Mont.brainpoolp256r1p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp256r1p.k Impl.Weierstrass.Mont.brainpoolp256r1p.m)
 taint_summary addSum : taint (callτ 32)
-  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.brainpoolp256r1p.k Spec.Weierstrass.Mont.brainpoolp256r1p.m)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp256r1p.k Impl.Weierstrass.Mont.brainpoolp256r1p.m)
 taint_summary subSum : taint (callτ 32)
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.brainpoolp256r1p.k Spec.Weierstrass.Mont.brainpoolp256r1p.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp256r1p.k Impl.Weierstrass.Mont.brainpoolp256r1p.m)
 taint_summary mulNestedSum : taint (nestedCallτ 32)
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp256r1p.k Spec.Weierstrass.Mont.brainpoolp256r1p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp256r1p.k Impl.Weierstrass.Mont.brainpoolp256r1p.m)
 taint_summary addNestedSum : taint (nestedCallτ 32)
-  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.brainpoolp256r1p.k Spec.Weierstrass.Mont.brainpoolp256r1p.m)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp256r1p.k Impl.Weierstrass.Mont.brainpoolp256r1p.m)
 taint_summary subNestedSum : taint (nestedCallτ 32)
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.brainpoolp256r1p.k Spec.Weierstrass.Mont.brainpoolp256r1p.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp256r1p.k Impl.Weierstrass.Mont.brainpoolp256r1p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP256r1 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeBrainpoolP256r1 h).isSome = true := by

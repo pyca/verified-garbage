@@ -27,7 +27,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
 open Spec.Weierstrass
 
-variable {F : Spec.Weierstrass.Mont.Modulus} {pm : Nat}
+variable {F : Impl.Weierstrass.Mont.Modulus} {pm : Nat}
 
 /-! ## The complete addition into `R` -/
 

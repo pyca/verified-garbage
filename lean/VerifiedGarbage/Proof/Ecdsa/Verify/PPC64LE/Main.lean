@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA verification on PPC64LE: the whole function

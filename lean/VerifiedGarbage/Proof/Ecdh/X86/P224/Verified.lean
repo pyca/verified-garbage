@@ -145,17 +145,17 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
 their calls (`CallTaint`), in place of each call. -/
 
 taint_summary mulSum : taint (callτ 28)
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 taint_summary addSum : taint (callτ 28)
-  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 taint_summary subSum : taint (callτ 28)
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 taint_summary mulNestedSum : taint (nestedCallτ 28)
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 taint_summary addNestedSum : taint (nestedCallτ 28)
-  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 taint_summary subNestedSum : taint (nestedCallτ 28)
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP224 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeP224 h).isSome = true := by

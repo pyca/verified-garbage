@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Words
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # Masks of comparisons on RISC-V

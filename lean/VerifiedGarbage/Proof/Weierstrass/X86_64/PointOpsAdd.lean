@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Block
 import Batteries.Logic
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-!
 # Point operations as functions on x86-64: what the cached addition computes
@@ -45,7 +46,7 @@ theorem headN_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
 
 theorem cachedN_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
     (runOps (headN ++ jacTailN) e 6, runOps (headN ++ jacTailN) e 7, runOps (headN ++ jacTailN) e 8) =
-      Spec.Weierstrass.PointOps.jacTail (e 11 * e 17) (e 12 * e 18)
+      Impl.Weierstrass.PointOps.jacTail (e 11 * e 17) (e 12 * e 18)
         (e 14 * (e 13 * e 13) - e 11 * e 17) (e 15 * e 13 * (e 13 * e 13) - e 12 * e 18)
         (e 13 * e 16) := by
   simp only [headN, jacTailN, jacTail, List.cons_append, List.nil_append, runOps, List.foldl_cons,
@@ -114,7 +115,7 @@ theorem cachedTail_val (hC : CachedLay K sel size Sl dbl) (hm : UnitMod m (2 ^ (
       (runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) E) s) :
     WP isa (ForwardField.programB K.M (jacTail K.S K.R K.E K.D)).inline s
       (Val K.M base size m Sl (rcbW K.S K.D) (cV K sel) K.D
-        (Spec.Weierstrass.PointOps.jacTail (E K.R.x * E sel) (E K.R.y * E (sel + 8 * K.M.n))
+        (Impl.Weierstrass.PointOps.jacTail (E K.R.x * E sel) (E K.R.y * E (sel + 8 * K.M.n))
           (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x * E sel)
           (E K.E.y * E K.R.z * (E K.R.z * E K.R.z) - E K.R.y * E (sel + 8 * K.M.n))
           (E K.R.z * E K.E.z)) s) := by
@@ -246,7 +247,7 @@ theorem cachedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fi
     {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (cV K sel) E s) (hds : JDblSpec dbl sdbl) :
     WP isa (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel dbl).inline s
       (Val K.M base size m Sl (rcbW K.S K.D) (cV K sel) K.D
-        (Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+        (Impl.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
           (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl) s) := by
   have hL := hC.lay
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
@@ -261,13 +262,13 @@ theorem cachedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fi
   apply fieldBranch_ok hL.lay hm hI (rV _ (by simp [jacCoords]))
   · intro a ia ka hz
     refine WP.mono (copy_val hL.lay hC.dN hC.eD dSl ia eV) fun t ht => ?_
-    simp only [Spec.Weierstrass.PointOps.jacAddCached, hz, ↓reduceIte]
+    simp only [Impl.Weierstrass.PointOps.jacAddCached, hz, ↓reduceIte]
     exact (ht.mono dW).prefix ka (by simp)
   intro a ia ka hpz
   apply fieldBranch_ok hL.lay hm ia (eV _ (by simp [jacCoords]))
   · intro b ib kb hz
     refine WP.mono (copy_val hL.lay hC.dN hC.rD dSl ib rV) fun t ht => ?_
-    simp only [Spec.Weierstrass.PointOps.jacAddCached, hpz, hz, ↓reduceIte]
+    simp only [Impl.Weierstrass.PointOps.jacAddCached, hpz, hz, ↓reduceIte]
     exact ((ht.mono dW).prefix kb (by simp)).prefix ka (by simp)
   intro b ib kb hqz
   apply WP.seq
@@ -296,37 +297,37 @@ theorem cachedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fi
         · exact hL.sl x (List.mem_append_left _ (List.mem_append_right _ (rcbR_self_mem _ _ _ hx)))
       have hR' := readsOk_mono hL.dbl fun x hx => oldV x (rV x hx)
       refine WP.mono (dblB_val hL.lay hm hdA hdSl hR' ie hds) fun t ht => ?_
-      have hs : Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+      have hs : Impl.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
           (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl = sdbl (EH K.R.x) (EH K.R.y) (EH K.R.z) := by
         rw [eh] at hH
         rw [er] at hr
         rw [hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords])]
-        simp only [Spec.Weierstrass.PointOps.jacAddCached, Spec.Weierstrass.PointOps.jacEqual, hpz, hqz,
+        simp only [Impl.Weierstrass.PointOps.jacAddCached, Impl.Weierstrass.PointOps.jacEqual, hpz, hqz,
           ↓reduceIte]
         simp only [hH, hr, ↓reduceIte]
       rw [hs]
       exact (((ht.sub oldV).prefix ke (by simp)).prefix kd (by simp)).prefix pre (fun _ h => h)
     · intro e ie ke hr
       refine WP.mono (infinity_val hL.lay dSl dW hC.dN ie hC.one hC.oneVal) fun t ht => ?_
-      have hs : Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+      have hs : Impl.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
           (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl = (0, 1, 0) := by
         rw [eh] at hH
         rw [er] at hr
-        simp only [Spec.Weierstrass.PointOps.jacAddCached, Spec.Weierstrass.PointOps.jacEqual,
-          Spec.Weierstrass.PointOps.infinity, hpz, hqz, ↓reduceIte]
+        simp only [Impl.Weierstrass.PointOps.jacAddCached, Impl.Weierstrass.PointOps.jacEqual,
+          Impl.Weierstrass.PointOps.infinity, hpz, hqz, ↓reduceIte]
         simp only [hH, hr, ↓reduceIte]
       rw [hs]
       exact (((ht.sub oldV).prefix ke (by simp)).prefix kd (by simp)).prefix pre (fun _ h => h)
   · intro d id kd hH
     refine WP.mono (cachedTail_val hL hm id) fun t ht => ?_
-    have hs : Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+    have hs : Impl.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
         (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl =
-        Spec.Weierstrass.PointOps.jacTail (E K.R.x * E sel) (E K.R.y * E (sel + 8 * K.M.n))
+        Impl.Weierstrass.PointOps.jacTail (E K.R.x * E sel) (E K.R.y * E (sel + 8 * K.M.n))
           (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x * E sel)
           (E K.E.y * E K.R.z * (E K.R.z * E K.R.z) - E K.R.y * E (sel + 8 * K.M.n))
           (E K.R.z * E K.E.z) := by
       rw [eh] at hH
-      simp only [Spec.Weierstrass.PointOps.jacAddCached, hpz, hqz, hH, ↓reduceIte]
+      simp only [Impl.Weierstrass.PointOps.jacAddCached, hpz, hqz, hH, ↓reduceIte]
     rw [hs]
     exact (ht.prefix kd (by simp)).prefix pre (fun _ h => h)
 
@@ -338,7 +339,7 @@ theorem addCachedBody_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m �
     WP isa (PointOps.addCachedBody K sel dbl).inline s fun t =>
       ProgKeep K.M base (rcbW K.S K.D ++ jacCoords K.R) s t ∧ ∃ E',
         Inv K.M base size m Sl (jacCoords K.R) E' t ∧ (E' K.R.x, E' K.R.y, E' K.R.z) =
-          Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+          Impl.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
             (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl := by
   have hL := hC.lay
   rw [PointOps.addCachedBody]

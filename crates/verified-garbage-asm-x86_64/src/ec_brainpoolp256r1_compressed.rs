@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_brainpoolp256r1_compress_public_key(out: *mu
 call {vg_brainpoolp256r1_check_point}
 .base64 "SIuPwAUAAEiLl8AEAABIg+IBSIPCAkghyogWSIuHYAQAAEghyEgPyEiJRhlIi4doBAAASCHISA/ISIlGEUiLh3AEAABIIchID8hIiUYJSIuHeAQAAEghyEgPyEiJRgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_brainpoolp256r1_check_point = sym super::brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
+        vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
     )
 }
 
@@ -53,3 +53,7 @@ jne 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_check_point.rs"]
+pub(crate) mod vg_brainpoolp256r1_check_point;

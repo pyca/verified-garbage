@@ -8,7 +8,7 @@ import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Dsa.Arm.SignCT
 import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect

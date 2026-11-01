@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.Block
 

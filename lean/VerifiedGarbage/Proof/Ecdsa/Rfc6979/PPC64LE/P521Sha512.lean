@@ -27,7 +27,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.P521Sha512
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha512K.hm, 66, Spec.P521.curve.n, 8, Spec.Ecdsa.P521.signApi.name, Impl.Ecdsa.PPC64LE.signP521⟩
+def cfg : Cfg := ⟨sha512K.hm, 66, Spec.P521.curve.n, 8, "vg_ecdsa_p521_sign", Impl.Ecdsa.PPC64LE.signP521⟩
 
 /-- The instance, for P-521's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P521.curve) : Rfc where

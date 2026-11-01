@@ -1,0 +1,293 @@
+// The functions of `src/internal/vg_p192_add_mod_n.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_p192_add_mod_n:
+	mov r12, r0
+	str r4, [r12, #4056]
+	str r5, [r12, #4060]
+	str r6, [r12, #4064]
+	str r7, [r12, #4068]
+	str r8, [r12, #4072]
+	str r9, [r12, #4076]
+	str lr, [r12, #4080]
+	movw r4, #10289
+	movt r4, #46290
+	str r4, [r12, #4032]
+	movw r4, #51633
+	movt r4, #5227
+	str r4, [r12, #4036]
+	movw r4, #63542
+	movt r4, #39390
+	str r4, [r12, #4040]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #4044]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #4048]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #4052]
+	add lr, r12, r1
+	add r1, r12, r2
+	add r2, r12, r3
+	movw r6, #65535
+	mov r3, #0
+	ldr r7, [r1, #0]
+	ldr r8, [r2, #0]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3904]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3908]
+	lsr r3, r4, #16
+	ldr r7, [r1, #4]
+	ldr r8, [r2, #4]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3912]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3916]
+	lsr r3, r4, #16
+	ldr r7, [r1, #8]
+	ldr r8, [r2, #8]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3920]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3924]
+	lsr r3, r4, #16
+	ldr r7, [r1, #12]
+	ldr r8, [r2, #12]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3928]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3932]
+	lsr r3, r4, #16
+	ldr r7, [r1, #16]
+	ldr r8, [r2, #16]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3936]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3940]
+	lsr r3, r4, #16
+	ldr r7, [r1, #20]
+	ldr r8, [r2, #20]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3944]
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r5
+	add r4, r4, r3
+	and r5, r4, r6
+	str r5, [r12, #3948]
+	lsr r3, r4, #16
+	str r3, [r12, #3952]
+	movw r6, #65535
+	mov r3, #1
+	ldr r7, [r12, #4032]
+	ldr r5, [r12, #3904]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3908]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #4008]
+	ldr r7, [r12, #4036]
+	ldr r5, [r12, #3912]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3916]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #4012]
+	ldr r7, [r12, #4040]
+	ldr r5, [r12, #3920]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3924]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #4016]
+	ldr r7, [r12, #4044]
+	ldr r5, [r12, #3928]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3932]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #4020]
+	ldr r7, [r12, #4048]
+	ldr r5, [r12, #3936]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3940]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #4024]
+	ldr r7, [r12, #4052]
+	ldr r5, [r12, #3944]
+	and r4, r7, r6
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	and r8, r5, r6
+	ldr r5, [r12, #3948]
+	lsr r4, r7, #16
+	add r5, r5, r6
+	sub r5, r5, r4
+	add r5, r5, r3
+	lsr r3, r5, #16
+	orr r8, r8, r5, lsl #16
+	str r8, [r12, #4028]
+	ldr r5, [r12, #3952]
+	add r3, r3, r5
+	mov r4, #0
+	sub r3, r4, r3
+	ldr r5, [r12, #3904]
+	ldr r7, [r12, #3908]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #4008]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #0]
+	ldr r5, [r12, #3912]
+	ldr r7, [r12, #3916]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #4012]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #4]
+	ldr r5, [r12, #3920]
+	ldr r7, [r12, #3924]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #4016]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #8]
+	ldr r5, [r12, #3928]
+	ldr r7, [r12, #3932]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #4020]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #12]
+	ldr r5, [r12, #3936]
+	ldr r7, [r12, #3940]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #4024]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #16]
+	ldr r5, [r12, #3944]
+	ldr r7, [r12, #3948]
+	orr r5, r5, r7, lsl #16
+	ldr r7, [r12, #4028]
+	eor r7, r7, r5
+	and r7, r7, r3
+	eor r5, r5, r7
+	str r5, [lr, #20]
+	ldr r4, [r12, #4056]
+	ldr r5, [r12, #4060]
+	ldr r6, [r12, #4064]
+	ldr r7, [r12, #4068]
+	ldr r8, [r12, #4072]
+	ldr r9, [r12, #4076]
+	ldr lr, [r12, #4080]
+	bx lr

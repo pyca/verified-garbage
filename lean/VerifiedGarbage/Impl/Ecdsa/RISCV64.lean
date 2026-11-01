@@ -2,19 +2,19 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64
 public import VerifiedGarbage.Spec.Weierstrass
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
 
 /-!
 # Short Weierstrass curves on RISC-V: the working space, and `vg_<curve>_mul`
 
 The layout of the working space that the RISC-V code of a curve shares (as
 PPC64LE's, `Impl/Ecdsa/PPC64LE.lean`, and the one
-`Spec/Weierstrass/Mul.lean` states): numbers of `n` 64-bit words in slots
+`Proof/Weierstrass/MulContract.lean` states): numbers of `n` 64-bit words in slots
 from byte 64 (`slot n i`), the field arithmetic's functions' own working
 space at the end of the first 4096 bytes. A curve as the code has it
 (`Cfg`): its words, its parameters, and the functions of its field.
 
-`vg_<curve>_mul(ws)`: `R = [k]Q` (`Spec/Weierstrass/Mul.lean`) by the ladder
+`vg_<curve>_mul(ws)`: `R = [k]Q` (`Proof/Weierstrass/MulContract.lean`) by the ladder
 of `Impl/Weierstrass/RISCV64.lean`, from `R = O = (0 : 1 : 0)` and the point
 at `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in `R`'s first
 two slots), over the bits of `k` at `K`'s slot. It keeps the callee-saved

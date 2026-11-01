@@ -12,20 +12,10 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Generic.P224.Arm.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := [
-  Spec.Ecdsa.P224.signApi.artifact Arm.target {
-    consts := Impl.Weierstrass.Arm.p224CombConsts
-    code := Impl.Ecdsa.Arm.signP224Comb
-    verified := Proof.Ecdsa.Arm.P224.combSign_verified h.law },
   Spec.Ecdsa.P224.verifyApi.artifact Arm.target {
     consts := Impl.Weierstrass.Arm.p224CombConsts
     code := Impl.Ecdsa.Arm.verifyP224Comb
     verified := Proof.Ecdsa.Verify.Arm.P224.combVerify_verified h.law },
-  Spec.Ecdsa.P224.signApi.artifact Arm.target {
-    suffix := "_umaal"
-    consts := Impl.Weierstrass.Arm.p224CombConsts
-    code := Impl.Ecdsa.Arm.signP224CombU
-    verified := Proof.Ecdsa.Arm.P224.combSignU_verified h.law
-    features := ["umaal"] },
   Spec.Ecdsa.P224.verifyApi.artifact Arm.target {
     suffix := "_umaal"
     consts := Impl.Weierstrass.Arm.p224CombConsts

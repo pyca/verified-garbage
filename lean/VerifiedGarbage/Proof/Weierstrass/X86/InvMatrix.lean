@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Loading the divstep matrix
 

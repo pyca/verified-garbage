@@ -74,7 +74,7 @@ jne 20b
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
+        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign::vg_ecdsa_p256_sign,
     )
 }
 
@@ -153,7 +153,7 @@ jne 20b
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_ecdsa_p256_sign_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_adx,
+        vg_ecdsa_p256_sign_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_adx::vg_ecdsa_p256_sign_adx,
     )
 }
 
@@ -232,7 +232,7 @@ jne 20b
         vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2::vg_hmac_sha384_init_scratch_avx2,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2::vg_hmac_sha384_finalize_scratch_avx2,
-        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
+        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign::vg_ecdsa_p256_sign,
     )
 }
 
@@ -311,7 +311,7 @@ jne 20b
         vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2::vg_hmac_sha384_init_scratch_avx2,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
         vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2::vg_hmac_sha384_finalize_scratch_avx2,
-        vg_ecdsa_p256_sign_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_adx,
+        vg_ecdsa_p256_sign_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_adx::vg_ecdsa_p256_sign_adx,
     )
 }
 
@@ -390,7 +390,7 @@ jne 20b
         vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani::vg_hmac_sha384_finalize_scratch_shani,
-        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
+        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign::vg_ecdsa_p256_sign,
     )
 }
 
@@ -469,6 +469,6 @@ jne 20b
         vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani::vg_hmac_sha384_finalize_scratch_shani,
-        vg_ecdsa_p256_sign_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_adx,
+        vg_ecdsa_p256_sign_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_adx::vg_ecdsa_p256_sign_adx,
     )
 }

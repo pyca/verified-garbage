@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Contract
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,6 +14,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Contract
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -74,24 +76,24 @@ def satState : State where
   wr := [⟨0x1000, 128⟩, ⟨0x8000, 8192⟩]
 
 theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified PPC64LE.target signBrainpoolP512r1 (Spec.Ecdsa.BrainpoolP512r1.inst.signContract PPC64LE.abi) :=
+    Verified PPC64LE.target signBrainpoolP512r1 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP512r1.inst PPC64LE.abi) :=
   Verified.of_correct (sign_ppc hL) sign_ct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+        sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
           Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, signPPC, sig, PPC64LE.abi, PPC64LE.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+        sig_post [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
           Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, signPPC, sig, PPC64LE.abi, PPC64LE.argRegs]
         simp only [signPPC, sig, Spec.BrainpoolP512r1.curve] at h
         revert h
         generalize Spec.Ecdsa.signWith _ _ _ _ = q
         rcases q with _ | rs <;> exact fun h => ⟨by rw [h.1]; rfl, h.2⟩
       pub := by
-        sig_implies_pub [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+        sig_implies_pub [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
           Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, signPPC, sig, PPC64LE.abi, PPC64LE.argRegs]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+        sig_implies_sat [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
           Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, signPPC, sig, PPC64LE.abi, PPC64LE.argRegs]
           [satState] using satState }
 

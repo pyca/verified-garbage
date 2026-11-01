@@ -15,6 +15,9 @@ import Mathlib.Data.Nat.Cast.Order.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

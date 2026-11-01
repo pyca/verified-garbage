@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 
 /-! Mixed public addition recovers public flags from canonical field values. -/

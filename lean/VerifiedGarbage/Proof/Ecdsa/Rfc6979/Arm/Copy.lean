@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: copying words

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! Bounds and addresses of the eight public odd-multiple table entries. -/
 

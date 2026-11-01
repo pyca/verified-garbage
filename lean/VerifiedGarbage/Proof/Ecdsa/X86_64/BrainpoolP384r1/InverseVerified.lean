@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.LitShare
 /-!
 # `vg_brainpoolp384r1_inv_mod_p` and `_n` on x86-64: `Verified`
 
-The facts of `Spec.Weierstrass.Inverse.brainpoolp384r1`'s contracts for x86-64, by name
+The facts of `Impl.Weierstrass.Inverse.brainpoolp384r1`'s contracts for x86-64, by name
 (`invK`): `ws` in `rdi`, the modulus and a number below it at their offsets.
 `invFn_ok` and `invP_ok` (`invN_ok`) give the power in `ACC`'s slot, the
 callee-saved registers restored, and every byte of `ws` kept but those of
@@ -43,8 +43,8 @@ open VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.BrainpoolP384r1
 
-/-- brainpoolP384r1's curve of `Spec/Weierstrass/Inverse.lean`. -/
-abbrev C : Spec.Weierstrass.Inverse.Curve := Spec.Weierstrass.Inverse.brainpoolp384r1
+/-- brainpoolP384r1's curve of `Proof/Weierstrass/InverseContract.lean`. -/
+abbrev C : Impl.Weierstrass.Inverse.Curve := Impl.Weierstrass.Inverse.brainpoolp384r1
 
 /-- The configuration of the functions. -/
 abbrev cfg : Cfg := brainpoolp384r1
@@ -64,7 +64,7 @@ def invK (m : Nat) [NeZero m] (modAt inAt : Nat) : Contract isa where
 
 /-- The number at an offset below `2³²` is the one `wordsVal` reads. -/
 theorem num_eq (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) : C.num ws m o = wordsVal m ws o C.k := by
-  unfold Spec.Weierstrass.Inverse.Curve.num Spec.Weierstrass.Mont.numAt
+  unfold Impl.Weierstrass.Inverse.Curve.num Impl.Weierstrass.Mont.numAt
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
   exact read_eq_wordsVal m ws C.k o
 
@@ -85,7 +85,7 @@ theorem dec_eq {m : Nat} [NeZero m] (h1 : 1 < m) (he : m - 2 < 2 ^ 400)
     clear h he hp
     generalize 2 ^ (64 * C.k) = R at hR hr ⊢
     grind
-  unfold Spec.Weierstrass.Inverse.Curve.dec toM
+  unfold Impl.Weierstrass.Inverse.Curve.dec toM
   rw [hp, this]
 
 theorem dec_eq_p (x : Nat) : C.dec Spec.BrainpoolP384r1.p x = toM Spec.BrainpoolP384r1.p (2 ^ (64 * C.k)) x :=
@@ -109,14 +109,14 @@ theorem pwW_eq : pwW cfg = [(1456, 48), (1504, 48), (4048, 48), (3400, 448)] := 
 theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (pwW cfg) m m') :
     C.Keeps ws m m' := by
   intro i hi hown hp
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
   rw [Mem.sub_ofNat_toNat ws (by omega)]
-  simp only [Spec.Weierstrass.Inverse.Curve.Own, Spec.Weierstrass.Inverse.Curve.slot,
-    Spec.Weierstrass.Inverse.Curve.tmpAt, Spec.Weierstrass.Inverse.Curve.workAt,
-    Spec.Weierstrass.Inverse.Curve.workLen, Spec.Weierstrass.Inverse.Curve.outAt, C,
-    Spec.Weierstrass.Inverse.brainpoolp384r1] at hown hp
+  simp only [Impl.Weierstrass.Inverse.Curve.Own, Impl.Weierstrass.Inverse.Curve.slot,
+    Impl.Weierstrass.Inverse.Curve.tmpAt, Impl.Weierstrass.Inverse.Curve.workAt,
+    Impl.Weierstrass.Inverse.Curve.workLen, Impl.Weierstrass.Inverse.Curve.outAt, C,
+    Impl.Weierstrass.Inverse.brainpoolp384r1] at hown hp
   rw [pwW_eq] at hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
@@ -266,38 +266,38 @@ theorem sat_n : C.num 0x1000 satMem C.nAt = Spec.BrainpoolP384r1.n ∧ C.num 0x1
 
 theorem p_implies : pK.Implies (C.invPContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.Inverse.Curve.invPContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow] at h
+    sig_pre [Impl.Weierstrass.Inverse.Curve.invPContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow] at h
     exact h
   post s s' _ h := by
-    sig_post [Spec.Weierstrass.Inverse.Curve.invPContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs]
+    sig_post [Impl.Weierstrass.Inverse.Curve.invPContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.Inverse.Curve.invPContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs] at h
+    sig_pub [Impl.Weierstrass.Inverse.Curve.invPContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs] at h
     exact h
   sat := ⟨satState, by
-    sig_pre [Spec.Weierstrass.Inverse.Curve.invPContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow]
+    sig_pre [Impl.Weierstrass.Inverse.Curve.invPContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow]
     exact ⟨Region.disjoint_of_sep (by decide), by decide, sat_p⟩⟩
 
 theorem n_implies : nK.Implies (C.invNContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.Inverse.Curve.invNContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow] at h
+    sig_pre [Impl.Weierstrass.Inverse.Curve.invNContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow] at h
     exact h
   post s s' _ h := by
-    sig_post [Spec.Weierstrass.Inverse.Curve.invNContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs]
+    sig_post [Impl.Weierstrass.Inverse.Curve.invNContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.Inverse.Curve.invNContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs] at h
+    sig_pub [Impl.Weierstrass.Inverse.Curve.invNContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs] at h
     exact h
   sat := ⟨satState, by
-    sig_pre [Spec.Weierstrass.Inverse.Curve.invNContract, Spec.Weierstrass.Inverse.Curve.invContract,
-      Spec.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow]
+    sig_pre [Impl.Weierstrass.Inverse.Curve.invNContract, Impl.Weierstrass.Inverse.Curve.invContract,
+      Impl.Weierstrass.Inverse.sig, X86_64.abi, X86_64.argRegs, stackBelow]
     exact ⟨Region.disjoint_of_sep (by decide), by decide, sat_n⟩⟩
 
 /-- `vg_brainpoolp384r1_inv_mod_p` on x86-64. -/

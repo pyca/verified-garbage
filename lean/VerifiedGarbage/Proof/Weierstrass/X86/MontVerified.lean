@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on x86 (32-bit): verified
 
-Each modulus of `Spec.Weierstrass.Mont.moduli` is one the functions support
+Each modulus of `Impl.Weierstrass.Mont.moduli` is one the functions support
 (`FnOk`), so each of its functions meets the contract of its `Api`: the
 proof against `mulX86`, `addX86` or `subX86`, which it implies, constant
 time by taint tracking (only the stack pointer and the arguments, the
@@ -39,7 +39,7 @@ pointer and the offsets, are public), and a state satisfying it (`sat`).
 
 namespace VG.Proof.Weierstrass.X86.Mont
 
-open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Spec.Weierstrass.Mont
+open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Impl.Weierstrass.Mont
 
 /-- The taint analysis starts with the stack arguments public. It needs no
 knowledge of the writable region: the functions never read a public value

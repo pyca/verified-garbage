@@ -39,7 +39,7 @@ theorem nafOther_slots (K : WinCfg) : ∀ x∈winOther K,x∈nafSlots K :=
 theorem nafRo_slots (K : WinCfg) : ∀ x∈winRo K,x∈nafSlots K :=
   fun _ hx => List.mem_append_left _ (List.mem_append_left _ hx)
 
-theorem NafStable.keep {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
+theorem NafStable.keep {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     {P : Point C} {β : Nat → BitVec 8} {s t : State}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hs : Scr s base size)
@@ -77,7 +77,7 @@ structure NafCore (K : WinCfg) (C : Curve) (base : Addr) (size : Nat)
   point : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y)
     (tmv C K.M.n base s K.R.z) (mul e P)
 
-theorem NafCore.next {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
+theorem NafCore.next {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     {P : Point C} {β : Nat → BitVec 8} {e e' : Nat} {s t : State}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hBitsWk : K.bits+260≤wk)
     (h : NafCore K C base size P β e s) {E : Nat → Fe C}
@@ -114,7 +114,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
   VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafDoubleCore_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
+theorem nafDoubleCore_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
     {β : Nat → BitVec 8} (hL : NafLay K size)
     (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hBitsWk : K.bits+260≤wk) (hJ : K.J=65)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
@@ -166,7 +166,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
-theorem nafNeg_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
+theorem nafNeg_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAcc : WkOk F K.M C.p size wk Sl)
     (hm : UnitMod C.p (2^(64*K.M.n))) {V : List Nat} {E : Nat → Fe C} {s : State}
     (hi : Inv K.M base size C.p Sl V E s)
@@ -227,7 +227,7 @@ theorem nafPrefix_keep {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s t : 
   ⟨fun r h => hk.1 r (fun h' => h (hr r h')),hk.2.2.1,hk.2.2.2,
     fun x _ => congrFun hk.2.1 x⟩
 
-theorem nafSignedEntry_of_lookup {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size wk : Nat}
+theorem nafSignedEntry_of_lookup {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size wk : Nat}
     {C : Curve} {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAcc : WkOk F K.M C.p size wk Sl)
     (hm : UnitMod C.p (2^(64*K.M.n)))
     (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
@@ -308,7 +308,7 @@ theorem nafLive_table (K : WinCfg) (hn : K.M.n=4) {a : Nat} (ha : 1≤a) (h8 : a
   · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_arith),by omega_arith⟩
   · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_arith),by omega_arith⟩
 
-theorem NafCore.of_write {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
+theorem NafCore.of_write {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
     {β : Nat → BitVec 8} {P : Point C} {s t : State} {W : List Nat}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hBitsWk : K.bits+260≤wk)
     (h : NafCore K C base size P β e s) (hk : ProgKeep K.M base wk W s t)
@@ -319,7 +319,7 @@ theorem NafCore.of_write {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
     hk.invJ hL.lay hAcc h.field.scr (fun x hx => nafOther_slots K x (hw x hx))
       (fun x hx => h.field.sl x (nafLive_R K x hx)) hn h.point⟩
 
-theorem nafEntry_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
+theorem nafEntry_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
     {β : Nat → BitVec 8} {b : BitVec 8} (hL : NafLay K size)
     (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n)))

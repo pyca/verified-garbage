@@ -31,7 +31,7 @@ that adding them rebuilds none of their proofs.
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Spec.Weierstrass.Mont
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
 
 theorem p192p_ok : ModOk p192p.k p192p.m where
   n3 := by decide

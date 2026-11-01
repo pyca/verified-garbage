@@ -251,7 +251,7 @@ theorem frame_val32P {s : State} {base : Addr} (hs : ScrP s base) {m m' : Mem}
   omega_arith
 
 section
-variable {enc : Nat → Nat} {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) {s : State} {base : Addr}
+variable {enc : Nat → Nat} {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) {s : State} {base : Addr}
   (hs : ScrP s base) {o a b : Nat}
   (ho : enc o + 8 * S.k ≤ own S.k) (ha : enc a + 8 * S.k ≤ own S.k) (hb : enc b + 8 * S.k ≤ own S.k)
 include hF hs ho ha hb

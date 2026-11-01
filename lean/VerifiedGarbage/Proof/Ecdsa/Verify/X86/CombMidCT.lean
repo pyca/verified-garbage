@@ -46,7 +46,7 @@ materialize_code vMidCode
 /-- The multiplication modulo `n`, whose analysis the summary below does once,
 in place of each call. -/
 def combMulNCode : Prog isa :=
-  Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p256n.k Spec.Weierstrass.Mont.p256n.m
+  Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p256n.k Impl.Weierstrass.Mont.p256n.m
 materialize_code combMulNCode
 taint_summary combMulNSum : taint τComb combMulNCode
 

@@ -26,8 +26,8 @@ namespace VG.Proof.Ecdsa.Verify.X86.P521
 open VG VG.X86
 
 taint_summary mulNSum : taint τVTop
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521n.k Spec.Weierstrass.Mont.p521n.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521n.k Impl.Weierstrass.Mont.p521n.m)
 taint_summary subNSum : taint τVTop
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p521n.k Spec.Weierstrass.Mont.p521n.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p521n.k Impl.Weierstrass.Mont.p521n.m)
 
 end VG.Proof.Ecdsa.Verify.X86.P521

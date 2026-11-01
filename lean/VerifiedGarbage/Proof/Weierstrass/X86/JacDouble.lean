@@ -17,7 +17,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
 /-- The doubled point stays Jacobian; there is no coordinate conversion
 between consecutive doublings. -/
-theorem jacDouble_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
+theorem jacDouble_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hW : WkOk F M C.p size wk Sl)
     (hm : UnitMod C.p (2^(64*M.n))) (hC : Law C) (ha : AM3 C)

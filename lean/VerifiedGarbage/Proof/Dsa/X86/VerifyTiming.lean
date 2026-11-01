@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallProductTiming
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming

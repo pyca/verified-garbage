@@ -249,8 +249,8 @@ call {vg_p256_mul_mod_p}
 call {vg_p256_mul_mod_p}
 .base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEi4egBAAAIcgPyIlDHIuHpAQAACHID8iJQxiLh6gEAAAhyA/IiUMUi4esBAAAIcgPyIlDEIuHsAQAACHID8iJQwyLh7QEAAAhyA/IiUMIi4e4BAAAIcgPyIlDBIuHvAQAACHID8iJA4nIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
-        vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
+        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
+        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
     )
 }

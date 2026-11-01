@@ -83,7 +83,7 @@ theorem Inv.update {M : Mod} {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Pr
       exact hI.val x hx'
 
 /-- One operation. -/
-theorem fop_ok {M : Mod} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m]
+theorem fop_ok {M : Mod} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]
     (hM : ModOk S.k S.m) (hk : S.k = M.n) {Sl : Nat → Prop} (hL : Lay M (own M.n) Sl)
     (hm : UnitMod S.m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin S.m} {s : State}
     (hI : Inv M.n base S.m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
@@ -127,7 +127,7 @@ theorem fop_ok {M : Mod} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus} [NeZe
     · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
 
 /-- A field program. -/
-theorem fprog_ok {M : Mod} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m]
+theorem fprog_ok {M : Mod} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]
     (hM : ModOk S.k S.m) (hk : S.k = M.n) {Sl : Nat → Prop} (hL : Lay M (own M.n) Sl)
     (hm : UnitMod S.m (2 ^ (64 * M.n))) :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin S.m} {s : State},
@@ -152,7 +152,7 @@ theorem fprog_ok {M : Mod} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus} [Ne
 be `q`), from a state holding `E`, in particular `p`, `q`, `a` and `3b`
 (`rcbR`): `o` holds `rcbAdd` of their values, and the slots but those `rcb`
 writes (`rcbW`) keep theirs. -/
-theorem rcb_ok {M : Mod} {base : Addr} {S' : Spec.Weierstrass.Mont.Modulus} [NeZero S'.m]
+theorem rcb_ok {M : Mod} {base : Addr} {S' : Impl.Weierstrass.Mont.Modulus} [NeZero S'.m]
     (hM : ModOk S'.k S'.m) (hk : S'.k = M.n) {Sl : Nat → Prop} (hL : Lay M (own M.n) Sl)
     (hm : UnitMod S'.m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o)

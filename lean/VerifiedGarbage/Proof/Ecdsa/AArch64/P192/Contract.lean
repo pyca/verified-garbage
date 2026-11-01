@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over p192 on AArch64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P192.inst.signContract` for AArch64, by name:
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst` for AArch64, by name:
 `vg_ecdsa_p192_sign(out = x0, d = x1, digest = x2, k = x3, scratch = x4)`,
 the result in `w0`.
 -/
@@ -50,8 +51,8 @@ def satState : State where
   rd := [⟨0x2000, 24⟩, ⟨0x3000, 24⟩, ⟨0x4000, 24⟩]
   wr := [⟨0x1000, 48⟩, ⟨0x8000, 8192⟩]
 
-theorem implies : signAArch64.Implies (Spec.Ecdsa.P192.inst.signContract AArch64.abi) := by
-  sig_implies [Spec.Ecdsa.P192.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+theorem implies : signAArch64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst AArch64.abi) := by
+  sig_implies [Spec.Ecdsa.P192.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P192.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, signAArch64, sig]
     [satState] using satState
 

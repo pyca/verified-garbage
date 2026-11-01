@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ecdsa.P256
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Sign
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
@@ -52,15 +53,15 @@ def signSat : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
 
-theorem signRV_implies : signRV.Implies (Spec.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst RISCV64.abi) :=
+theorem signRV_implies : signRV.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst RISCV64.abi) :=
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-          Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
+        sig_implies_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+          Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
           RISCV64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-          Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
+        sig_post [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+          Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
           RISCV64.argRegs]
         show match sg s.mem (s.gpr .a1) (s.gpr .a2) (s.gpr .a3) with
           | some rs => BitVec.setWidth 32 (s'.gpr .a0) = 1 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 64 =
@@ -74,19 +75,19 @@ theorem signRV_implies : signRV.Implies (Spec.Ecdsa.Instance.signContract Spec.E
         generalize sg s.mem (s.gpr .a1) (s.gpr .a2) (s.gpr .a3) = q
         rcases q with _ | rs <;> exact fun h => ⟨by rw [h.1]; rfl, h.2⟩
       pub := by
-        sig_implies_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-          Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
+        sig_implies_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+          Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
           RISCV64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-          Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
+        sig_implies_sat [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+          Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, signRV, sg, RISCV64.abi,
           RISCV64.argRegs] [signSat] using signSat }
 
 /-- A state satisfying the precondition with the table. -/
 def signSatC : State :=
   { signSat with mem := Comb.combSatMem, rd := signSat.rd ++ [⟨0x100000, 151552⟩], syms := fun _ => 0x100000 }
 
-theorem sign_sat : (Spec.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
+theorem sign_sat : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
     (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p256CombConsts)).pre signSatC := by
   have hl := Comb.combWords_length
   have held := Comb.combSatMem_held
@@ -94,7 +95,7 @@ theorem sign_sat : (Spec.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
     Impl.Ecdsa.RISCV64.Comb.p256CombWords)] from rfl]
   generalize Impl.Ecdsa.RISCV64.Comb.p256CombWords = W' at hl held ⊢
   generalize e : signSatC = s
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig, Spec.P256.curve,
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.P256.curve,
     Spec.Ecdsa.scratchWords, RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   subst e
@@ -108,7 +109,7 @@ theorem sign_sat : (Spec.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
   rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
 
 theorem signRVC_implies :
-    signRVC.Implies (Spec.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
+    signRVC.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p256CombConsts)) :=
   { pre := fun _ hs => ⟨signRV_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
     post := fun s s' hs hp => post_consts.mpr (signRV_implies.post (stripConsts _ s) s'
@@ -119,7 +120,7 @@ theorem signRVC_implies :
     sat := ⟨signSatC, sign_sat⟩ }
 
 theorem sign_verified (hL : VG.Proof.Weierstrass.Law W) :
-    Verified RISCV64.target signP256 (Spec.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
+    Verified RISCV64.target signP256 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p256CombConsts)) :=
   Verified.of_correct (sign_rv hL) sign_ct signRVC_implies
 

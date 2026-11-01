@@ -58,7 +58,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
   hHigh := true
   sh := 0
   sh_eq := Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1_sh
-  coreN := Spec.Ecdsa.BrainpoolP512r1.signApi.name
+  coreN := "vg_ecdsa_brainpoolp512r1_sign"
   coreC := Impl.Ecdsa.X86.signBrainpoolP512r1
   coreX := fun s h => Proof.Ecdsa.X86.BrainpoolP512r1.sign_x86 hL s (core_pre_brainpoolp512r1 h)
   coreCT := by

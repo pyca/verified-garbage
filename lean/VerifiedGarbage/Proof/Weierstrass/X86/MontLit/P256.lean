@@ -27,17 +27,17 @@ namespace VG.Proof.Weierstrass.X86.MontLit.P256
 open VG
 
 materialize_code pMul := Impl.Weierstrass.X86.Mont.mulFn
-  Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m
+  Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m
 materialize_code pAdd := Impl.Weierstrass.X86.Mont.addFn
-  Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m
+  Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m
 materialize_code pSub := Impl.Weierstrass.X86.Mont.subFn
-  Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m
+  Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m
 
 materialize_code nMul := Impl.Weierstrass.X86.Mont.mulFn
-  Spec.Weierstrass.Mont.p256n.k Spec.Weierstrass.Mont.p256n.m
+  Impl.Weierstrass.Mont.p256n.k Impl.Weierstrass.Mont.p256n.m
 materialize_code nAdd := Impl.Weierstrass.X86.Mont.addFn
-  Spec.Weierstrass.Mont.p256n.k Spec.Weierstrass.Mont.p256n.m
+  Impl.Weierstrass.Mont.p256n.k Impl.Weierstrass.Mont.p256n.m
 materialize_code nSub := Impl.Weierstrass.X86.Mont.subFn
-  Spec.Weierstrass.Mont.p256n.k Spec.Weierstrass.Mont.p256n.m
+  Impl.Weierstrass.Mont.p256n.k Impl.Weierstrass.Mont.p256n.m
 
 end VG.Proof.Weierstrass.X86.MontLit.P256

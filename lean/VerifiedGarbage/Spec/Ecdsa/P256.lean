@@ -4,10 +4,10 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P256
 
 /-!
-# ECDSA over P-256: the contracts, on every target
+# ECDSA over P-256: its instance
 
 **Trusted** (as every file in `Spec/`). The `Instance` of P-256
-(`Spec/P256.lean`): `vg_ecdsa_p256_sign`, in the module `ecdsa_p256`.
+(`Spec/P256.lean`), for the functions of the module `ecdsa_p256`.
 -/
 
 @[expose] public section
@@ -19,8 +19,5 @@ def inst : Instance where
   curve := Spec.P256.curve
   name := "p256"
   title := "P-256"
-
-/-- `vg_ecdsa_p256_sign` on every target. -/
-def signApi : Api := inst.signApi
 
 end VG.Spec.Ecdsa.P256

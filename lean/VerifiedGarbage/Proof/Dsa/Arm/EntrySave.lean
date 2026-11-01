@@ -6,7 +6,7 @@ import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega

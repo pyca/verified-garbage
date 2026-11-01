@@ -19,7 +19,7 @@ def zeroTest (n a : Nat) : List Instr :=
 def infinity (K : WinCfg) (o : Pt) : List Instr :=
   setConst K.M.n o.x 0 ++ setConst K.M.n o.y K.one ++ setConst K.M.n o.z 0
 
-def jacAdd (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) (p q o : Pt) : Prog isa :=
+def jacAdd (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) (p q o : Pt) : Prog isa :=
   .seq (.block (zeroTest K.M.n p.z)) <|
   .ite .e (.block (copyPt K.M.n o q)) <|
   .seq (.block (zeroTest K.M.n q.z)) <|

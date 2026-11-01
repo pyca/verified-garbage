@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! The even table entries load their already constructed half multiple. -/
 

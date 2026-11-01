@@ -3,91 +3,6 @@
 //! `assembly/ecdsa_p192.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature generation over P-192 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 24 bytes, most significant first), signs the hash at `digest`: its leftmost 24 bytes, or, for a shorter hash, the hash padded on the left with zeros to 24 bytes. Returns 1 and writes `r` then `s` (24 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
-///
-/// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `d` must be valid for reads of 24 bytes.
-/// * `digest` must be valid for reads of 24 bytes.
-/// * `k` must be valid for reads of 24 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `k` must be secret, and never be used to sign two different hashes: it must be chosen uniformly at random in `[1, n-1]` (FIPS 186-5 §A.3) or derived as RFC 6979 does.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `k` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `k` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_p192_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 24], k: *const [u8; 24], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "AADH+QgA5/umAgh8EAAH+Hgbbnx4O+N8EAAgOShMBn0oAwP5CAAgOShMBn0wAwP5AAAgOShMBn04AwP5EAAgOShMBH1AAwP5CAAgOShMBH1IAwP5AAAgOShMBH1QAwP5EAAgOShMBX1YAwP5CAAgOShMBX1gAwP5AAAgOShMBX1oAwP5//9gPf//a2FAAGOR//9gPf//a2FEAGOR//9gPf7/a2FIAGOR//9gPf//a2FMAGOR//9gPf//a2FQAGOR//9gPf//a2FUAGOR0rRgPTEoa2FYAGORaxRgPbHJa2FcAGOR3plgPTb4a2FgAGOR//9gPf//a2FkAGOR//9gPf//a2FoAGOR//9gPf//a2FsAGORAABgPQAAa2GIAGORAABgPQAAa2GMAGORAABgPQAAa2GQAGORAABgPQAAa2GUAGORAABgPQAAa2GYAGORAABgPQAAa2GcAGORAABgPQEAa2GgAGORAABgPQAAa2GkAGORAABgPQAAa2GoAGORAABgPQAAa2GsAGORAABgPQAAa2GwAGORAABgPQAAa2G0AGORAABgPQEAa2G4AGORAABgPQAAa2G8AGORAABgPQEAa2HAAGORAABgPQAAa2HEAGORAABgPQAAa2HIAGORAABgPQAAa2HMAGOR//9gPfz/a2HQAGOR//9gPf//a2HUAGOR//9gPfv/a2HYAGOR//9gPf//a2HcAGOR//9gPf//a2HgAGOR//9gPf//a2HkAGORqfRgPcmva2HoAGORjShgPROsa2HsAGORFktgPahAa2HwAGORhVdgPRZpa2H0AGORQgdgPZQTa2H4AGORWltgPVDMa2H8AGORLzNgPQiha2EAAWORjA1gPQyza2EEAWOR0XZgPQkpa2EIAWORS4pgPffTa2EMAWOR0vNgPfcYa2EQAWORTJVgPfnIa2EUAWORQh5gPYkia2EYAWOREntgPTeja2EcAWORZolgPV7wa2EgAWORIt5gPSS1a2EkAWOR7WpgPU2oa2EoAWORKWpgPYM9a2EsAWORs95gPWFZa2EwAWORZs5gPcy6a2E0AWOROrtgPe5ra2E4AWORlkZgPVvqa2E8AWORBepgPaKBa2FAAWORvihgPXdWa2FEAWORLUtgPc/Xa2FIAWORlOtgPU42a2FMAWORIWZgPckHa2FQAWORAABgPQAAa2FUAWORAABgPQAAa2FYAWORAABgPQAAa2FcAWOR//9gPf3/a2FgAWOR//9gPf//a2FkAWOR//9gPf7/a2FoAWOR//9gPf//a2FsAWOR//9gPf//a2FwAWOR//9gPf//a2F0AWOR0rRgPS8oa2F4AWORaxRgPbHJa2F8AWOR3plgPTb4a2GAAWOR//9gPf//a2GEAWOR//9gPf//a2GIAWOR//9gPf//a2GMAWORAABgPQAAa2GQAWORAABgPQAAa2GUAWORAABgPQAAa2GYAWORAABgPQAAa2GcAWORAABgPQAAa2GgAWORAABgPQAAa2GkAWORAABgPQEAa2GoAWORAABgPQAAa2GsAWORAABgPQEAa2GwAWORAABgPQAAa2G0AWORAABgPQAAa2G4AWORAABgPQAAa2G8AWORAABgPQAAa2HAAWORAABgPQAAa2HEAWORAABgPQAAa2HIAWORAABgPQAAa2HMAWORAABgPQAAa2HQAWORAABgPQAAa2HUAWORAACAOP//hDhgBIP4GADgOw=="
-20:
-.base64 "////OxT6g3woA4SIJB/lexQqo3wBAOA4ODiGfAAQxZhC+IZ4ODjGfAEQxZiC8IZ4ODjGfAIQxZjC6IZ4ODjGfAMQxZgC4YZ4ODjGfAQQxZhC2YZ4ODjGfAUQxZiC0YZ4ODjGfAYQxZjCyYZ4ODjGfAcQxZgAAD8o"
-bne %cr0, 20b
-.base64 "GADgOw=="
-21:
-.base64 "////OxT6g3xgAYSIJB/lexQqo3wBAOA4ODiGfMAQxZhC+IZ4ODjGfMEQxZiC8IZ4ODjGfMIQxZjC6IZ4ODjGfMMQxZgC4YZ4ODjGfMQQxZhC2YZ4ODjGfMUQxZiC0YZ4ODjGfMYQxZjCyYZ4ODjGfMcQxZgAAD8o"
-bne %cr0, 21b
-.base64 "GADgOw=="
-22:
-.base64 "////OxT6g3x4AYSIJB/lexQqo3wBAOA4ODiGfIARxZhC+IZ4ODjGfIERxZiC8IZ4ODjGfIIRxZjC6IZ4ODjGfIMRxZgC4YZ4ODjGfIQRxZhC2YZ4ODjGfIURxZiC0YZ4ODjGfIYRxZjCyYZ4ODjGfIcRxZgAAD8o"
-bne %cr0, 22b
-.base64 "AAGD6PgNg/gIAYPoAA6D+BABg+gIDoP4GAGD6BAOg/ggAYPoGA6D+CgBg+ggDoP4uACD6CgOg/jAAIPoMA6D+MgAg+g4DoP40ACD6EAOg/jYAIPoSA6D+OAAg+hQDoP46ACD6FgOg/jwAIPoYA6D+PgAg+hoDoP4wADgOw=="
-23:
-.base64 "////O5ABg+iwDYP4mAGD6LgNg/igAYPowA2D+KgBg+jIDYP4sAGD6NANg/i4AYPo2A2D+MABg+jgDYP4yAGD6OgNg/jQAYPo8A2D+A=="
-bl {vg_p192_point_double}
-.base64 "aA2D6LANg/hwDYPouA2D+HgNg+jADYP4gA2D6MgNg/iIDYPo0A2D+JANg+jYDYP4mA2D6OANg/igDYPo6A2D+KgNg+jwDYP4"
-bl {vg_p192_point_add}
-.base64 "FPqDfAAQhIgAAKA4UChEfbANg+hoDaPoeCKlfDhQpXx4KoR8kAGD+LgNg+hwDaPoeCKlfDhQpXx4KoR8mAGD+MANg+h4DaPoeCKlfDhQpXx4KoR8oAGD+MgNg+iADaPoeCKlfDhQpXx4KoR8qAGD+NANg+iIDaPoeCKlfDhQpXx4KoR8sAGD+NgNg+iQDaPoeCKlfDhQpXx4KoR8uAGD+OANg+iYDaPoeCKlfDhQpXx4KoR8wAGD+OgNg+igDaPoeCKlfDhQpXx4KoR8yAGD+PANg+ioDaPoeCKlfDhQpXx4KoR80AGD+AAAPyg="
-bne %cr0, 23b
-.base64 "uACD6PgCg/jAAIPoAAOD+MgAg+gIA4P4wADgOw=="
-24:
-.base64 "////O/gCgDj4AqA4+ALAOA=="
-bl {vg_p192_mul_mod_p}
-.base64 "EAOAOPgCoDjAAcA4"
-bl {vg_p192_mul_mod_p}
-.base64 "FPqDfMAQhIgAAKA4UChEffgCg+gQA6PoeCKlfDhQpXx4KoR8+AKD+AADg+gYA6PoeCKlfDhQpXx4KoR8AAOD+AgDg+ggA6PoeCKlfDhQpXx4KoR8CAOD+AAAPyg="
-bne %cr0, 24b
-.base64 "cAOAOJABoDj4AsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "iAOAOHADoDigAMA4"
-bl {vg_p192_mul_mod_p}
-.base64 "oAOAOIgDoDiIAMA4"
-bl {vg_p192_add_mod_n}
-.base64 "uAOAOCgDoDgwAcA4"
-bl {vg_p192_mul_mod_n}
-.base64 "AAAAOP//AGD//wBkAQDAOEAD44BYAAOBFALnfFA46HwUMud8IgDmeEQD44BcAAOBFALnfFA46HwUMud8IgDmeEgD44BgAAOBFALnfFA46HwUMud8IgDmeEwD44BkAAOBFALnfFA46HwUMud8IgDmeFAD44BoAAOBFALnfFA46HwUMud8IgDmeFQD44BsAAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QAOj6EgDg+h4I6V8UAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHw4SKV8YASD6DgohHxgBIP4AAAAOP//AGD//wBkAQDAOCgD44BYAAOBFALnfFA46HwUMud8IgDmeCwD44BcAAOBFALnfFA46HwUMud8IgDmeDAD44BgAAOBFALnfFA46HwUMud8IgDmeDQD44BkAAOBFALnfFA46HwUMud8IgDmeDgD44BoAAOBFALnfFA46HwUMud8IgDmeDwD44BsAAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8KAOj6DADg+h4I6V8OAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHw4SKV8YASD6DgohHxgBIP4oAOj6KgDg+h4I6V8sAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/hIAYPo+AKD+FABg+gAA4P4WAGD6AgDg/jAAOA7"
-25:
-.base64 "////O/gCgDj4AqA4+ALAOA=="
-bl {vg_p192_mul_mod_n}
-.base64 "EAOAOPgCoDi4A8A4"
-bl {vg_p192_mul_mod_n}
-.base64 "FPqDfIARhIgAAKA4UChEffgCg+gQA6PoeCKlfDhQpXx4KoR8+AKD+AADg+gYA6PoeCKlfDhQpXx4KoR8AAOD+AgDg+ggA6PoeCKlfDhQpXx4KoR8CAOD+AAAPyg="
-bne %cr0, 25b
-.base64 "0AOAOKADoDgwAcA4"
-bl {vg_p192_mul_mod_n}
-.base64 "6AOAOEADoDgwAcA4"
-bl {vg_p192_mul_mod_n}
-.base64 "AASAOFgDoDgwAcA4"
-bl {vg_p192_mul_mod_n}
-.base64 "GASAONADoDjoA8A4"
-bl {vg_p192_mul_mod_n}
-.base64 "GASAOBgEoDgABMA4"
-bl {vg_p192_add_mod_n}
-.base64 "MASAOPgCoDgYBMA4"
-bl {vg_p192_mul_mod_n}
-.base64 "SASAODAEoDigAMA4"
-bl {vg_p192_mul_mod_n}
-.base64 "SASj6FAEg+h4I6V8WASD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/hgBEPpoAOD6DhQhHwQAMA4KDWOfKgDg+g4UIR8CADAOCg1jnywA4PoOFCEfAAAwDgoNY58SASD6DhQhHwoAMA4KDWOfFAEg+g4UIR8IADAOCg1jnxYBIPoOFCEfBgAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
-        vg_p192_point_double = sym super::p192_point::vg_p192_point_double,
-        vg_p192_point_add = sym super::p192_point::vg_p192_point_add,
-        vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
-        vg_p192_add_mod_n = sym super::p192_mont::vg_p192_add_mod_n,
-        vg_p192_mul_mod_n = sym super::p192_mont::vg_p192_mul_mod_n,
-    )
-}
-
 /// ECDSA signature verification over P-192 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 24 bytes each, most significant first) of the hash at `digest` (its leftmost 24 bytes, or, for a shorter hash, the hash padded on the left with zeros to 24 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 24 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
@@ -277,12 +192,24 @@ bl {vg_p192_mul_mod_n}
 .base64 "AASAONADoDjoA8A4"
 bl {vg_p192_sub_mod_n}
 .base64 "wAGj6MgBg+h4I6V80AGD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/gABKPoCASD6HgjpXwQBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOGAEg+g4KIR8YASD+GAEQ+kBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8IACATg==""#,
-        vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::p192_mont::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::p192_mont::vg_p192_sub_mod_p,
-        vg_p192_mul_mod_n = sym super::p192_mont::vg_p192_mul_mod_n,
-        vg_p192_point_double = sym super::p192_point::vg_p192_point_double,
-        vg_p192_point_add = sym super::p192_point::vg_p192_point_add,
-        vg_p192_sub_mod_n = sym super::p192_mont::vg_p192_sub_mod_n,
+        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_mul_mod_n = sym super::ecdsa_p192::vg_p192_mul_mod_n::vg_p192_mul_mod_n,
+        vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
+        vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
+        vg_p192_sub_mod_n = sym super::ecdsa_p192::vg_p192_sub_mod_n::vg_p192_sub_mod_n,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ecdsa_p192_sign.rs"]
+pub(crate) mod vg_ecdsa_p192_sign;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_mul_mod_n.rs"]
+pub(crate) mod vg_p192_mul_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_sub_mod_n.rs"]
+pub(crate) mod vg_p192_sub_mod_n;

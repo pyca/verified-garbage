@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! Fixed-base public comb with a Jacobian accumulator. -/
 

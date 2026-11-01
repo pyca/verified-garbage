@@ -25,7 +25,7 @@ theorem nafMagnitude_byte (k j : Nat) : nafMagnitude (Naf5.byte k j)=Naf5.magnit
 theorem nafNegative_byte (k j : Nat) : nafNegative (Naf5.byte k j)=Naf5.negative k j :=
   Naf5.byte_negative k j
 
-theorem nafDigit_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat}
+theorem nafDigit_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)
@@ -88,7 +88,7 @@ theorem NafLoopKeep.trans {K : WinCfg} {base : Addr} {wk : Nat} {s t u : State}
     (h : NafLoopKeep K base wk s t) (h' : NafLoopKeep K base wk t u) :
     NafLoopKeep K base wk s u := ⟨h.keep.trans h'.keep,fun x hx => (h'.mem x hx).trans (h.mem x hx)⟩
 
-theorem nafStep_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat}
+theorem nafStep_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)
@@ -135,7 +135,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
   VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafLoop_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
+theorem nafLoop_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)
@@ -160,7 +160,7 @@ theorem nafLoop_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} 
   · decide
   · exact ⟨NafLoopKeep.refl K base wk s,h,hc⟩
 
-theorem nafRun_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
+theorem nafRun_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)
@@ -204,7 +204,7 @@ theorem nafRun_initCounter_ok (s : State) :
     Option.map_some,RegUpd.gpr_setReg,ite_true,Option.some.injEq,exists_eq_left']
   exact ⟨trivial,fun r hr => by simp only [List.mem_singleton] at hr; simp only [RegUpd.gpr_setReg,hr,ite_false],rfl,rfl,rfl⟩
 
-theorem nafWindow_init_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
+theorem nafWindow_init_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)
@@ -272,7 +272,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
   VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafWindow_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
+theorem nafWindow_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)
@@ -311,7 +311,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
   VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafFinish_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
+theorem nafFinish_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat}
     {β : Nat → BitVec 8} (hL : NafLay K size)
     (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (hOne : K.one<C.p)

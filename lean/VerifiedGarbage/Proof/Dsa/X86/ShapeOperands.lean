@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Framework.Offset

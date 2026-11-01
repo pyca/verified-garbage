@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

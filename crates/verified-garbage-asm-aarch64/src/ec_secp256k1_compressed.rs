@@ -75,7 +75,7 @@ bl {vg_secp256k1_check_point}
 .inst 0x8a030021,0xdac00c21,0x91000691,0xf9000221,0xf9400013,0xf9400414,0xf9400815,0xf9400c16
 .inst 0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_secp256k1_check_point = sym super::secp256k1_check_point::vg_secp256k1_check_point,
+        vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,
     )
 }
 
@@ -4080,3 +4080,7 @@ cbnz x19, 262b
 .p2align 6",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_check_point.rs"]
+pub(crate) mod vg_secp256k1_check_point;

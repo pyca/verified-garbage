@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! # Retain the public outer counter across the inner squaring loop -/
 

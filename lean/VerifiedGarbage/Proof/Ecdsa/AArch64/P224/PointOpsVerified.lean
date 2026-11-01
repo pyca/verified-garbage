@@ -36,11 +36,15 @@ meta import Batteries.Data.List.Lemmas
 meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+meta import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-!
 # `vg_p224_proj_add` on AArch64: `Verified`
 
-The facts of `Spec.Weierstrass.PointOps.p224`'s `projAddContract` for
+The facts of `Impl.Weierstrass.PointOps.p224`'s `projAddContract` for
 AArch64, by name (`addK`): `ws` in `x0`, `p` at slot 0, `P`, `Q` and `b`
 below it at their slots, which are P-224's ECDSA slots `RX`, `TX` and `EM`
 (`sl`). The code is Algorithm 4 on those slots into `D` (`DX`, slot 17),
@@ -61,13 +65,13 @@ open VG.Impl.Ecdsa.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P224
 
-/-- P-224's curve of `Spec/Weierstrass/PointOps.lean`. -/
-abbrev C : Spec.Weierstrass.PointOps.Curve := Spec.Weierstrass.PointOps.p224
+/-- P-224's curve of `Proof/Weierstrass/PointOpsContract.lean`. -/
+abbrev C : Impl.Weierstrass.PointOps.Curve := Impl.Weierstrass.PointOps.p224
 
 /-- The coordinate at an offset below `2³²` is the number `wordsVal` reads. -/
 theorem coordAt_eq (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
     C.coordAt m ws o = wordsVal m ws o 4 := by
-  unfold Spec.Weierstrass.Point.Curve.coordAt Spec.Weierstrass.Mont.numAt
+  unfold Impl.Weierstrass.Point.Curve.coordAt Impl.Weierstrass.Mont.numAt
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
   exact read_eq_wordsVal m ws 4 o
 
@@ -78,7 +82,7 @@ def addK : Contract isa where
     C.Below (C.pointAt s.mem (s.gpr .x0) C.qAt) ∧ C.CoordBelow (s.gpr .x0) s.mem C.bAt
   post s s' := let P := C.pt (s.gpr .x0) s.mem C.pAt
     let Q := C.pt (s.gpr .x0) s.mem C.qAt
-    C.Result C.oAt (Spec.Weierstrass.PointOps.rcbAdd (C.el (s.gpr .x0) s.mem C.bAt) P.1 P.2.1 P.2.2
+    C.Result C.oAt (Impl.Weierstrass.PointOps.rcbAdd (C.el (s.gpr .x0) s.mem C.bAt) P.1 P.2.1 P.2.2
       Q.1 Q.2.1 Q.2.2) (s.gpr .x0) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.sp = s₂.sp
 
@@ -105,15 +109,15 @@ theorem keeps_of {ws : Addr} {m m' : Mem}
       (ofs ws x < 128 ∨ 128 + 32 ≤ ofs ws x) → m' x = m x) :
     C.Keeps C.oAt ws m m' := by
   intro i hi hown ho
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine h _ (fun w hw => ?_) ?_
   all_goals
     show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
     rw [Mem.sub_ofNat_toNat ws (by omega)]
-    simp only [Spec.Weierstrass.PointOps.Curve.Own, Spec.Weierstrass.PointOps.Curve.slot,
-      Spec.Weierstrass.PointOps.Curve.tmpAt, Spec.Weierstrass.PointOps.Curve.oAt,
-      Spec.Weierstrass.PointOps.Curve.ptBytes, C, Spec.Weierstrass.PointOps.p224,
-      Spec.Weierstrass.Point.p224] at hown ho
+    simp only [Impl.Weierstrass.PointOps.Curve.Own, Impl.Weierstrass.PointOps.Curve.slot,
+      Impl.Weierstrass.PointOps.Curve.tmpAt, Impl.Weierstrass.PointOps.Curve.oAt,
+      Impl.Weierstrass.PointOps.Curve.ptBytes, C, Impl.Weierstrass.PointOps.p224,
+      Impl.Weierstrass.Point.p224] at hown ho
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
   · omega
@@ -142,7 +146,7 @@ theorem correct (hFe : Point.Fermat C.p) (hI : InvSounds) (s : State) (hs : addK
     have q1 := hQ.2.1
     have q2 := hQ.2.2
     have bb : C.coordAt s.mem base C.bAt < C.p := hb
-    simp only [Spec.Weierstrass.Point.Curve.pointAt, Spec.Weierstrass.Point.elemBytes] at b0 b1 b2 q0 q1 q2
+    simp only [Impl.Weierstrass.Point.Curve.pointAt, Impl.Weierstrass.Point.elemBytes] at b0 b1 b2 q0 q1 q2
     intro i hi
     rw [← cv i (List.mem_append_left _ hi)]
     simp only [readI, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -203,11 +207,11 @@ theorem correct (hFe : Point.Fermat C.p) (hI : InvSounds) (s : State) (hs : addK
     (by rw [tw, tt]; exact ht)⟩
   · show C.coordAt s'.mem base C.oAt < C.p
     rw [← eO, cv' DX (by simp)]; exact I'.lt _ (hD DX (by simp))
-  · show C.coordAt s'.mem base (C.oAt + Spec.Weierstrass.Point.elemBytes C.k) < C.p
-    rw [show C.oAt + Spec.Weierstrass.Point.elemBytes C.k = p224.sl DY by rw [eDY]; rfl,
+  · show C.coordAt s'.mem base (C.oAt + Impl.Weierstrass.Point.elemBytes C.k) < C.p
+    rw [show C.oAt + Impl.Weierstrass.Point.elemBytes C.k = p224.sl DY by rw [eDY]; rfl,
       cv' DY (by simp)]; exact I'.lt _ (hD DY (by simp))
-  · show C.coordAt s'.mem base (C.oAt + 2 * Spec.Weierstrass.Point.elemBytes C.k) < C.p
-    rw [show C.oAt + 2 * Spec.Weierstrass.Point.elemBytes C.k = p224.sl DZ by rw [eDZ]; rfl,
+  · show C.coordAt s'.mem base (C.oAt + 2 * Impl.Weierstrass.Point.elemBytes C.k) < C.p
+    rw [show C.oAt + 2 * Impl.Weierstrass.Point.elemBytes C.k = p224.sl DZ by rw [eDZ]; rfl,
       cv' DZ (by simp)]; exact I'.lt _ (hD DZ (by simp))
   · have el : ∀ i ∈ readI, C.dec (C.coordAt s.mem base (p224.sl i)) = E (p224.sl i) := fun i hi => by
       rw [cv i (List.mem_append_left _ hi), dq]; rfl
@@ -215,16 +219,16 @@ theorem correct (hFe : Point.Fermat C.p) (hI : InvSounds) (s : State) (hs : addK
         toM p224.C.p (2 ^ (64 * p224.n)) (wordsVal s'.mem base (p224.sl i) p224.n) := fun i hi => by
       rw [cv' i hi, dq]; rfl
     show (C.dec (C.coordAt s'.mem base C.oAt),
-      C.dec (C.coordAt s'.mem base (C.oAt + Spec.Weierstrass.Point.elemBytes C.k)),
-      C.dec (C.coordAt s'.mem base (C.oAt + 2 * Spec.Weierstrass.Point.elemBytes C.k))) =
-      Spec.Weierstrass.PointOps.rcbAdd (C.dec (C.coordAt s.mem base C.bAt))
+      C.dec (C.coordAt s'.mem base (C.oAt + Impl.Weierstrass.Point.elemBytes C.k)),
+      C.dec (C.coordAt s'.mem base (C.oAt + 2 * Impl.Weierstrass.Point.elemBytes C.k))) =
+      Impl.Weierstrass.PointOps.rcbAdd (C.dec (C.coordAt s.mem base C.bAt))
         (C.dec (C.coordAt s.mem base C.pAt))
-        (C.dec (C.coordAt s.mem base (C.pAt + Spec.Weierstrass.Point.elemBytes C.k)))
-        (C.dec (C.coordAt s.mem base (C.pAt + 2 * Spec.Weierstrass.Point.elemBytes C.k)))
+        (C.dec (C.coordAt s.mem base (C.pAt + Impl.Weierstrass.Point.elemBytes C.k)))
+        (C.dec (C.coordAt s.mem base (C.pAt + 2 * Impl.Weierstrass.Point.elemBytes C.k)))
         (C.dec (C.coordAt s.mem base C.qAt))
-        (C.dec (C.coordAt s.mem base (C.qAt + Spec.Weierstrass.Point.elemBytes C.k)))
-        (C.dec (C.coordAt s.mem base (C.qAt + 2 * Spec.Weierstrass.Point.elemBytes C.k)))
-    have e32 : Spec.Weierstrass.Point.elemBytes C.k = 32 := rfl
+        (C.dec (C.coordAt s.mem base (C.qAt + Impl.Weierstrass.Point.elemBytes C.k)))
+        (C.dec (C.coordAt s.mem base (C.qAt + 2 * Impl.Weierstrass.Point.elemBytes C.k)))
+    have e32 : Impl.Weierstrass.Point.elemBytes C.k = 32 := rfl
     rw [e32, show 2 * 32 = 64 from rfl, ← eDY, ← eDZ, ← eO, ← eb, ← eRY, ← eRZ, ← eP, ← eTY, ← eTZ, ← eQ,
       el' DX (by simp), el' DY (by simp), el' DZ (by simp), el EM (by simp), el RX (by simp),
       el RY (by simp), el RZ (by simp), el TX (by simp), el TY (by simp), el TZ (by simp)]
@@ -258,26 +262,26 @@ def satState : State where
 
 theorem sat_pre : C.ModOk 0x1000 satMem ∧ C.Below (C.pointAt satMem 0x1000 C.pAt) ∧
     C.Below (C.pointAt satMem 0x1000 C.qAt) ∧ C.CoordBelow 0x1000 satMem C.bAt :=
-  ⟨by unfold Spec.Weierstrass.PointOps.Curve.ModOk; decide +kernel,
-    by unfold Spec.Weierstrass.Point.Curve.Below; decide +kernel,
-    by unfold Spec.Weierstrass.Point.Curve.Below; decide +kernel,
-    by unfold Spec.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel⟩
+  ⟨by unfold Impl.Weierstrass.PointOps.Curve.ModOk; decide +kernel,
+    by unfold Impl.Weierstrass.Point.Curve.Below; decide +kernel,
+    by unfold Impl.Weierstrass.Point.Curve.Below; decide +kernel,
+    by unfold Impl.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel⟩
 
 theorem implies : addK.Implies (C.projAddContract AArch64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.projAddContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.projAddContract, Impl.Weierstrass.PointOps.sig,
       AArch64.abi, AArch64.argRegs, stackBelow] at h
     exact h
   post s s' _ h := by
-    sig_post [Spec.Weierstrass.PointOps.Curve.projAddContract, Spec.Weierstrass.PointOps.sig,
+    sig_post [Impl.Weierstrass.PointOps.Curve.projAddContract, Impl.Weierstrass.PointOps.sig,
       AArch64.abi, AArch64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.PointOps.Curve.projAddContract, Spec.Weierstrass.PointOps.sig,
+    sig_pub [Impl.Weierstrass.PointOps.Curve.projAddContract, Impl.Weierstrass.PointOps.sig,
       AArch64.abi, AArch64.argRegs] at h
     exact ⟨h.2, h.1⟩
   sat := ⟨satState, by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.projAddContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.projAddContract, Impl.Weierstrass.PointOps.sig,
       AArch64.abi, AArch64.argRegs, stackBelow]
     exact ⟨by decide, sat_pre⟩⟩
 

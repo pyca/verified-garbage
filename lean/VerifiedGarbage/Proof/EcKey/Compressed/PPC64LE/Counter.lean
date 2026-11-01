@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.PPC64LE.Loop
 public import VerifiedGarbage.Impl.Weierstrass.Slots
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!

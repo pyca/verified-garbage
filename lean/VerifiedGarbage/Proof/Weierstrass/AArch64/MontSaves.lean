@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Montgomery products as functions on AArch64: registers saved in vector lanes

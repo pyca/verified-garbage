@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 

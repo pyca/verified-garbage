@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 
 /-! ## `JointLayout` -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontFn
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.Words
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Mont.Words
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on PPC64LE: the contracts
 
 The contracts the proofs are written against (`mulPPC`, `addPPC`, `subPPC`),
-on the registers, which the shared contracts of `Spec/Weierstrass/Mont.lean`
+on the registers, which the shared contracts of `Proof/Weierstrass/MontContract.lean`
 imply, and the functions meet them for any modulus they support
 (`mul_ppc`, `add_ppc`, `sub_ppc`).
 -/
@@ -20,7 +20,7 @@ imply, and the functions meet them for any modulus they support
 namespace VG.Proof.Weierstrass.PPC64LE.Mont
 
 open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Mont VG.Proof.Mont
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 /-- The offset argument in `r`. -/
 abbrev ofs32 (s : State) (r : Reg) : BitVec 32 := (s.gpr r).setWidth 32
@@ -74,7 +74,7 @@ theorem pre_of {M : Modulus} {s : State} (h : ppcPre M s) : Pre M.k s := by
 theorem keeps_of_kept {k : Nat} (hk : k ≤ 9) {ws : Addr} {o : BitVec 32} {m m' : Mem}
     (h : Kept k ws o.toNat m m') : Keeps k ws o m m' := by
   intro i hi hown ho
-  simp only [Spec.Weierstrass.Mont.wsBytes] at hi
+  simp only [Impl.Weierstrass.Mont.wsBytes] at hi
   have hown' := own_le k hk
   refine h _ fun r hr => ?_
   rw [ofs_off0 ws (by omega)]

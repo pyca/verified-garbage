@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! # The canonical root's parity mismatch mask -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
-public import VerifiedGarbage.Spec.Weierstrass.Point0
+public import VerifiedGarbage.Proof.Weierstrass.Point0Contract
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Point
 public import VerifiedGarbage.Proof.Weierstrass.Env
 
@@ -115,7 +115,7 @@ theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZe
       exact hI.val x hx'
 
 /-- One operation. -/
-theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
+theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) {W : List Nat} (hL : LayR k N W σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) {V : List Nat} {E : Nat → Fin S.m} {s : State}
     (hI : InvR k N σ base S.m V E s) {op : FOp} (hW : op.out ∈ W) (hN : ∀ x ∈ op.out :: op.ins, x < N)
@@ -159,7 +159,7 @@ theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State �
   | cons p' ps' => exact WP.seq h
 
 /-- A field program. -/
-theorem fprogR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
+theorem fprogR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) {W : List Nat} (hL : LayR k N W σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin S.m} {s : State},
@@ -197,7 +197,7 @@ structure OpsOk (ops : List FOp) : Prop where
 
 /-- A formula on the slots numbered as the function numbers them, from a
 state holding `E` in the slots it reads. -/
-theorem opsR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
+theorem opsR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) {ops : List FOp} (hO : OpsOk ops)
     {E : Nat → Fin S.m} {s : State} (hI : InvR k 17 σ base S.m rIds E s) :
@@ -218,7 +218,7 @@ theorem rcbIds_apart : RcbApart sId pId qId oId := ⟨by decide, by decide⟩
 /-- `o = p + q` by `rcb` on the slots numbered as the function numbers them,
 from a state holding `E` in `p`, `q`, `a` and `3b`: `o` holds `rcbAdd` of
 their values. -/
-theorem rcbR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
+theorem rcbR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) {E : Nat → Fin S.m} {s : State}
     (hI : InvR k 17 σ base S.m rIds E s) :
@@ -247,8 +247,8 @@ theorem ops0_opsOk (dbl : Bool) : OpsOk (ops0 dbl) := by
 /-- What the formulas compute on the slots. -/
 theorem ops0_run {m : Nat} [NeZero m] (E : Nat → Fin m) (dbl : Bool) :
     (runOps (ops0 dbl) E 0, runOps (ops0 dbl) E 1, runOps (ops0 dbl) E 2) =
-      if dbl then Spec.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
-      else Spec.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) := by
+      if dbl then Impl.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+      else Impl.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) := by
   cases dbl <;> rfl
 
 end VG.Proof.Weierstrass.PPC64LE.Point

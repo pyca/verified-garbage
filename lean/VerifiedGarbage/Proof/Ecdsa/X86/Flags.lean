@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA on x86 (32-bit): the masks of the checks, and the flag

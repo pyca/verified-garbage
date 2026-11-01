@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
 /-!
 # Arithmetic modulo P-256's prime, as functions, on RISC-V
 
-`vg_p256_{mul,add,sub}_mod_p(ws, o, a, b)` (`Spec/Weierstrass/Mont.lean`;
+`vg_p256_{mul,add,sub}_mod_p(ws, o, a, b)` (`Proof/Weierstrass/MontContract.lean`;
 `ws` in `a0`, the offsets in the low words of `a1`–`a3`), for
 `p = 2²⁵⁶ - 2²²⁴ + 2¹⁹² + 2⁹⁶ - 1`, numbers of four 64-bit words:
 

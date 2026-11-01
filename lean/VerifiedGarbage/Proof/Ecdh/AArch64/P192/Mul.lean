@@ -71,7 +71,7 @@ theorem qMul_ok (hc : BaseCfgOk p192) (hC : Law p192.C)
     show P = .affine (tmv p192.C 4 base s₁ (p192.sl PX)) (tmv p192.C 4 base s₁ (p192.sl PY))
     rw [eP (i := PX) (by decide) (by decide), eP (i := PY) (by decide) (by decide)]; exact hPe
   refine WP.mono (mulAt_ok hc (.inl rfl) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
-    (name := Spec.Weierstrass.Mul.p192.mulApi.name) (px := PX) (py := PY) (by decide) (by decide)
+    (name := "vg_p192_mul") (px := PX) (py := PY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs₁ F₁ (by rw [e₁ (by decide) (by decide)]; exact hpx)
     (by rw [e₁ (by decide) (by decide)]; exact hpy) (by rw [← hPe₁]; exact hP))
     fun s' ⟨K, U, F', M, L, R⟩ => ⟨(K₁.mono (by decide)).trans K, U₁.trans U, F', M, L, ?_, ?_⟩

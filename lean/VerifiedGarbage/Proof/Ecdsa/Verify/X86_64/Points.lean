@@ -617,20 +617,20 @@ abbrev ptsMW : List Nat :=
 /-- Those slots and the table of bits. -/
 abbrev ptsMWr (c : Cfg) : List (Nat × Nat) := slW c ptsMW ++ [(bitsAt c.n 0, 64 * c.n + 8)]
 
-theorem points_eqM {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) :
+theorem points_eqM {C : Impl.Weierstrass.Mul.Curve} (hm : c.mul = some C) :
     Impl.Ecdsa.Verify.X86_64.Cfg.points c =
     .seq (.block (copy c.n (c.sl D) (c.sl K) ++ copy c.n (c.sl K) (c.sl U) ++
       copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)))
-    (.seq (.call C.mulApi.name c.mulFn) (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c))
+    (.seq (.call s!"vg_{C.curve}_mul" c.mulFn) (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c))
     (.seq (.block (copy c.n (c.sl K) (c.sl V) ++ copy c.n (c.sl RX) (c.sl PX) ++
       copy c.n (c.sl RY) (c.sl PY)))
-    (.seq (.call C.mulApi.name c.mulFn) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.sum c)
+    (.seq (.call s!"vg_{C.curve}_mul" c.mulFn) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.sum c)
       (.block (copy c.n (c.sl K) (c.sl D)))))))) := by
   unfold Impl.Ecdsa.Verify.X86_64.Cfg.points; rw [hm]
 
 /-- `[u]G + [v]Q`, into `R`, by calls of `vg_<curve>_mul`: `r` is kept in
 `D` while `K` holds `u`, then `v`. -/
-theorem pointsM_ok {C : Spec.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8)
+theorem pointsM_ok {C : Impl.Weierstrass.Mul.Curve} (hm : c.mul = some C) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8)
     (hnc : c.mulFn.noCalls = true) (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr}
     {g : Reg → BitVec 64} {s : State} (hM : Mid c s₀ base g s)
     {P : Point c.C} (hP : onCurve c.C P = true)

@@ -40,7 +40,7 @@ structure JointTablePost (c : Joint.Cfg) (C : Curve) (base : Addr) (size : Nat) 
 
 /-- The table by calls of `C'`'s functions (`Joint.tableCall`) builds the
 table, for any curve `C` whose doubling `c.dbl` is, from `Q` affine in `P`. -/
-def JointTableCallOk (c : Joint.Cfg) (C' : Spec.Weierstrass.PointOps.Curve) (size : Nat) : Prop :=
+def JointTableCallOk (c : Joint.Cfg) (C' : Impl.Weierstrass.PointOps.Curve) (size : Nat) : Prop :=
   ∀ {C : Curve} {base : Addr} {Q : Point C} {s : State},
     UnitMod C.p (2^(64*c.K.M.n)) → Law C → JDblOk C c.dbl → c.K.one<C.p → onCurve C Q=true →
     Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s →

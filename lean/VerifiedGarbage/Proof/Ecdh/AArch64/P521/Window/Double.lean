@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Ecdsa.AArch64
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJBuild
 
 /-! # Scheduled doublings retain the existing Jacobian formula -/

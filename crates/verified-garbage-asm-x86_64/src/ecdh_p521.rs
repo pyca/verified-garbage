@@ -324,9 +324,9 @@ call {vg_p521_mul_mod_p}
 call {vg_p521_mul_mod_p}
 .base64 "TInmSIuXQAkAAEgrl4gAAABIi5dICQAASBuXkAAAAEiLl1AJAABIG5eYAAAASIuXWAkAAEgbl6AAAABIi5dgCQAASBuXqAAAAEiLl2gJAABIG5ewAAAASIuXcAkAAEgbl7gAAABIi5d4CQAASBuXwAAAAEiLl4AJAABIG5fIAAAASBnASInFSIuXQAkAAEgLl0gJAABIC5dQCQAASAuXWAkAAEgLl2AJAABIC5doCQAASAuXcAkAAEgLl3gJAABIC5eACQAAuQAAAABIKdFIGdJIIepIi4egDAAASCHQSImHoAwAAEiLl8AEAABIC5fIBAAASAuX0AQAAEgLl9gEAABIC5fgBAAASAuX6AQAAEgLl/AEAABIC5f4BAAASAuXAAUAALkAAAAASCnRSBnSSIuHoAwAAEgh0EiJh6AMAABIi4+gDAAASIuHGAoAAEghyEgPyEiJRjpIi4cgCgAASCHISA/ISIlGMkiLhygKAABIIchID8hIiUYqSIuHMAoAAEghyEgPyEiJRiJIi4c4CgAASCHISA/ISIlGGkiLh0AKAABIIchID8hIiUYSSIuHSAoAAEghyEgPyEiJRgpIi4dQCgAASCHISA/ISIlGAkiLh1gKAABIIchIicJIweoIiBZIicKIVgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p521_check_point = sym super::p521_check_point::vg_p521_check_point,
-        vg_p521_mul_mod_p = sym super::p521_mont::vg_p521_mul_mod_p,
-        vg_p521_inv_mod_p = sym super::p521_inverse::vg_p521_inv_mod_p,
+        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        vg_p521_inv_mod_p = sym super::ec_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
     )
 }
 
@@ -655,8 +655,8 @@ call {vg_p521_mul_mod_p_adx}
 call {vg_p521_mul_mod_p_adx}
 .base64 "TInmSIuXQAkAAEgrl4gAAABIi5dICQAASBuXkAAAAEiLl1AJAABIG5eYAAAASIuXWAkAAEgbl6AAAABIi5dgCQAASBuXqAAAAEiLl2gJAABIG5ewAAAASIuXcAkAAEgbl7gAAABIi5d4CQAASBuXwAAAAEiLl4AJAABIG5fIAAAASBnASInFSIuXQAkAAEgLl0gJAABIC5dQCQAASAuXWAkAAEgLl2AJAABIC5doCQAASAuXcAkAAEgLl3gJAABIC5eACQAAuQAAAABIKdFIGdJIIepIi4egDAAASCHQSImHoAwAAEiLl8AEAABIC5fIBAAASAuX0AQAAEgLl9gEAABIC5fgBAAASAuX6AQAAEgLl/AEAABIC5f4BAAASAuXAAUAALkAAAAASCnRSBnSSIuHoAwAAEgh0EiJh6AMAABIi4+gDAAASIuHGAoAAEghyEgPyEiJRjpIi4cgCgAASCHISA/ISIlGMkiLhygKAABIIchID8hIiUYqSIuHMAoAAEghyEgPyEiJRiJIi4c4CgAASCHISA/ISIlGGkiLh0AKAABIIchID8hIiUYSSIuHSAoAAEghyEgPyEiJRgpIi4dQCgAASCHISA/ISIlGAkiLh1gKAABIIchIicJIweoIiBZIicKIVgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p521_check_point_adx = sym super::p521_check_point::vg_p521_check_point_adx,
-        vg_p521_mul_mod_p_adx = sym super::p521_mont::vg_p521_mul_mod_p_adx,
-        vg_p521_inv_mod_p_adx = sym super::p521_inverse::vg_p521_inv_mod_p_adx,
+        vg_p521_check_point_adx = sym super::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
+        vg_p521_mul_mod_p_adx = sym super::ec_p521::vg_p521_mul_mod_p_adx::vg_p521_mul_mod_p_adx,
+        vg_p521_inv_mod_p_adx = sym super::ec_p521::vg_p521_inv_mod_p_adx::vg_p521_inv_mod_p_adx,
     )
 }

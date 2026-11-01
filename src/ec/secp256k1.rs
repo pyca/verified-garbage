@@ -19,9 +19,9 @@ use crate::arch::ec_secp256k1::{
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_secp256k1::VG_ECDH_SECP256K1_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_secp256k1::{
-    VG_ECDSA_SECP256K1_SIGN_UMAAL_FEATURES, VG_ECDSA_SECP256K1_VERIFY_UMAAL_FEATURES,
-};
+use crate::arch::ecdsa_secp256k1::VG_ECDSA_SECP256K1_VERIFY_UMAAL_FEATURES;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_secp256k1_sha256::VG_ECDSA_SECP256K1_SHA256_SIGN_UMAAL_FEATURES;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -45,7 +45,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_SECP256K1_PUBLIC_KEY_UMAAL_FEATURES,
                     VG_ECDH_SECP256K1_UMAAL_FEATURES,
-                    VG_ECDSA_SECP256K1_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_SECP256K1_SHA256_SIGN_UMAAL_FEATURES,
                     VG_ECDSA_SECP256K1_VERIFY_UMAAL_FEATURES,
                 ])
             },

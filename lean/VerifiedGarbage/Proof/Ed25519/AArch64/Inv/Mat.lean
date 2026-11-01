@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The inversion's matrix as magnitudes and signs
 

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.Inline

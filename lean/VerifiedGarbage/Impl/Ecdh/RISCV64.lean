@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Word64
 /-!
 # The check of a public point on RISC-V
 
-`vg_<curve>_check_point(ws)` (`Spec/Weierstrass/CheckPoint.lean`), for a
+`vg_<curve>_check_point(ws)` (`Proof/Weierstrass/CheckPointContract.lean`), for a
 curve of `n` 64-bit words, on the layout of `Impl/Ecdsa/RISCV64.lean`:
 
 1. `s0` and `ra` saved in slot 2 (the function's own working space), and
@@ -55,7 +55,7 @@ namespace VG.Impl.Ecdh.RISCV64
 
 open VG.RISCV64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdsa.RISCV64
 
-/-! Slots of the check (`Spec/Weierstrass/CheckPoint.lean`). -/
+/-! Slots of the check (`Proof/Weierstrass/CheckPointContract.lean`). -/
 def CX := 33
 def CXM := 34
 def CYM := 35

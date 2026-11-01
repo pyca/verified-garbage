@@ -6,6 +6,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.P384.Prime
@@ -164,10 +165,10 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP384 :=
     rfl (by taint_decide)
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8).pre satState := by
+    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts) 8).pre satState := by
   have held : ∀ i < p384W.length, satState.mem.readW (satState.syms "VG_P384_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p384W.getD i 0 := satMem_held
-  sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+  sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384_combConsts,
     Abi.withConsts, p384_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -175,7 +176,7 @@ theorem sat_spec8 :
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
-    signX86_64.Implies (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8) :=
+    signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts) 8) :=
   implies.stack8 ⟨satState, sat_spec8⟩
 
 /-- The output is apart from the calls' return address. -/
@@ -186,7 +187,7 @@ theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX8
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8).pre s)
+    (hs : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts) 8).pre s)
     (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) :=
   post_patch s b hv u (implies8.pre s hs) (Sig.clear_of_pre_consts hs) hp
 
@@ -203,7 +204,7 @@ theorem sign_verified (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP384
-      (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts) 8) :=
   Verified.of_inline_ct sign_inlineOk (sign_x86 hL hT hI) sign_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 

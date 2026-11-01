@@ -16,7 +16,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 local macro "jmem" : tactic => `(tactic| plain_simp_names simp only [nafLive,nafTableLive,jacCoords,nafSlots,nafWrites,
                    winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
 
-theorem nafAdd_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafAdd_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} {E : Nat → Fe C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p)
@@ -45,7 +45,7 @@ theorem nafAdd_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
     (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun _ hx => List.mem_append_right _
       (List.mem_append_right _ (List.mem_append_right _ hx)))⟩)
 
-theorem nafDouble_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafDouble_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} {E : Nat → Fe C}
     (hL : NafLay K size) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n)))

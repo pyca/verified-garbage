@@ -14,8 +14,8 @@ open VG.X86
 def p192 : Cfg where
   n := 3
   C := Spec.P192.curve
-  SP := Spec.Weierstrass.Mont.p192p
-  SN := Spec.Weierstrass.Mont.p192n
+  SP := Impl.Weierstrass.Mont.p192p
+  SN := Impl.Weierstrass.Mont.p192n
 
 /-- `vg_ecdsa_p192_sign`. -/
 def signP192 : Prog isa := p192.sign

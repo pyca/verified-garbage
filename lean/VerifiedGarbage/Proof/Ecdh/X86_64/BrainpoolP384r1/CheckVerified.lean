@@ -31,7 +31,7 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_6
 open VG.Proof.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64.BrainpoolP384r1.Inverse (cfg cfg_ok)
 
-abbrev C : CP := Spec.Weierstrass.CheckPoint.brainpoolp384r1
+abbrev C : CP := Impl.Weierstrass.CheckPoint.brainpoolp384r1
 
 /-- `vg_brainpoolp384r1_check_point`. -/
 abbrev code : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody cfg)
@@ -55,7 +55,7 @@ theorem ct : ConstantTime isa (checkK C).pre (checkK C).pub code :=
   VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)
 
 theorem sat : C.pre 0x1000 (satMem C) := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.pre; decide +kernel
+  unfold Impl.Weierstrass.CheckPoint.Curve.pre; decide +kernel
 
 theorem verified (hI : InvSounds) : Verified X86_64.target code (C.checkContract X86_64.abi) :=
   Verified.of_correct (correct (cfg_ok hI) agree hv hn hmx) ct (implies C sat)

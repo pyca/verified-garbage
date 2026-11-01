@@ -41,7 +41,7 @@ namespace VG.Proof.Weierstrass.Arm.Point
 
 open VG.Impl.Secp256k1 (point)
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont Spec.Weierstrass.Point
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont Spec.Weierstrass.Point Impl.Weierstrass.Point
 
 theorem secp256k1_addU_ct :
     ConstantTime isa (sumArm point false).pre (sumArm point false).pub

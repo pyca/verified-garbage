@@ -27,17 +27,17 @@ namespace VG.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 open VG
 
 materialize_flat_code pMul := Impl.Weierstrass.X86.Mont.mulFn
-  Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m
+  Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m
 materialize_code pAdd := Impl.Weierstrass.X86.Mont.addFn
-  Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m
+  Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m
 materialize_code pSub := Impl.Weierstrass.X86.Mont.subFn
-  Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m
+  Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m
 
 materialize_flat_code nMul := Impl.Weierstrass.X86.Mont.mulFn
-  Spec.Weierstrass.Mont.brainpoolp512r1n.k Spec.Weierstrass.Mont.brainpoolp512r1n.m
+  Impl.Weierstrass.Mont.brainpoolp512r1n.k Impl.Weierstrass.Mont.brainpoolp512r1n.m
 materialize_code nAdd := Impl.Weierstrass.X86.Mont.addFn
-  Spec.Weierstrass.Mont.brainpoolp512r1n.k Spec.Weierstrass.Mont.brainpoolp512r1n.m
+  Impl.Weierstrass.Mont.brainpoolp512r1n.k Impl.Weierstrass.Mont.brainpoolp512r1n.m
 materialize_code nSub := Impl.Weierstrass.X86.Mont.subFn
-  Spec.Weierstrass.Mont.brainpoolp512r1n.k Spec.Weierstrass.Mont.brainpoolp512r1n.m
+  Impl.Weierstrass.Mont.brainpoolp512r1n.k Impl.Weierstrass.Mont.brainpoolp512r1n.m
 
 end VG.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1

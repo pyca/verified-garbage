@@ -23,7 +23,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 /-- The table by calls of `C'`'s functions (`Joint.tableCall`) is constant
 time, for any curve `C`: from states whose `P`, `a`, `3b` and zero agree to
 states whose table's fields agree. -/
-def JointTableCallCT (c : Joint.Cfg) (C' : Spec.Weierstrass.PointOps.Curve) : Prop :=
+def JointTableCallCT (c : Joint.Cfg) (C' : Impl.Weierstrass.PointOps.Curve) : Prop :=
   ∀ {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}, JointInitLayout c size →
     UnitMod C.p (2^(64*c.K.M.n)) → c.K.one<C.p →
     RelCT isa (FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E)

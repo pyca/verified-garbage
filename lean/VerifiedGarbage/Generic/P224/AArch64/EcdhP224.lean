@@ -55,7 +55,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Ecdh.Exchange
@@ -67,7 +67,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # ECDH over P-224 (SP 800-56A) on AArch64 -/
 

@@ -112,7 +112,7 @@ theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg c.SP c.C.p size c.wk where
   bits_top := by have := bitsAt_le c hc.n10 (j := 0) (by decide); exact this
 
 /-- The functions' own working space is above the slots of `l`. -/
-theorem wkOk_map (hc : CfgOk c) {F : Spec.Weierstrass.Mont.Modulus} {m : Nat}
+theorem wkOk_map (hc : CfgOk c) {F : Impl.Weierstrass.Mont.Modulus} {m : Nat}
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) {M : Mod} (hMn : M.n = c.n) {jm : Nat} (hjm : jm < 45)
     (hmo : M.mo = c.sl jm) (htmp : M.tmp = c.sl TMP) {l : List Nat} (hl : ∀ i ∈ l, i < 45) :
     WkOk F M m size c.wk (· ∈ l.map c.sl) where
@@ -162,7 +162,7 @@ theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
   powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
     (one := ONEN) (by decide) (by decide)
 
-theorem powWk_of (hc : CfgOk c) {F : Spec.Weierstrass.Mont.Modulus} {m : Nat}
+theorem powWk_of (hc : CfgOk c) {F : Impl.Weierstrass.Mont.Modulus} {m : Nat}
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {red : Red}
     {base one j : Nat}
     (hj : j < 3) (hb45 : base < 45) :

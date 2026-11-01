@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointTransfer
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
 
 /-! Exact field values after the public odd-table store. -/

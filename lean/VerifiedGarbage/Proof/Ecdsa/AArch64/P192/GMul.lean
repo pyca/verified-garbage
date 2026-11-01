@@ -65,7 +65,7 @@ theorem gMul_ok (hc : BaseCfgOk p192) (hC : Law p192.C)
       (toM _ _ (wordsVal s.mem base (p192.sl GY) p192.n)) = Point.affine _ _
     rw [F.gx, F.gy, toM_cmont hc, toM_cmont hc]
   have W := mulAt_ok hc (.inl rfl) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
-    (name := Spec.Weierstrass.Mul.p192.mulApi.name) (px := GX) (py := GY) (by decide) (by decide)
+    (name := "vg_p192_mul") (px := GX) (py := GY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs F (lt_of_eq_of_lt F.gx (hmont _))
     (lt_of_eq_of_lt F.gy (hmont _)) (by rw [eG]; exact hc.onG)
   rw [eG] at W

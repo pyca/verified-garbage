@@ -214,8 +214,20 @@ call {vg_brainpoolp512r1_mul_mod_p}
 call {vg_brainpoolp512r1_mul_mod_p}
 .base64 "WFhYWIuXQAgAACuXgAAAAIuXRAgAABuXhAAAAIuXSAgAABuXiAAAAIuXTAgAABuXjAAAAIuXUAgAABuXkAAAAIuXVAgAABuXlAAAAIuXWAgAABuXmAAAAIuXXAgAABuXnAAAAIuXYAgAABuXoAAAAIuXZAgAABuXpAAAAIuXaAgAABuXqAAAAIuXbAgAABuXrAAAAIuXcAgAABuXsAAAAIuXdAgAABuXtAAAAIuXeAgAABuXuAAAAIuXfAgAABuXvAAAABnAicOLl0AIAAALl0QIAAALl0gIAAALl0wIAAALl1AIAAALl1QIAAALl1gIAAALl1wIAAALl2AIAAALl2QIAAALl2gIAAALl2wIAAALl3AIAAALl3QIAAALl3gIAAALl3wIAAC5AAAAACnRGdIh2ouHQAsAACHQiYdACwAAi5dABAAAC5dEBAAAC5dIBAAAC5dMBAAAC5dQBAAAC5dUBAAAC5dYBAAAC5dcBAAAC5dgBAAAC5dkBAAAC5doBAAAC5dsBAAAC5dwBAAAC5d0BAAAC5d4BAAAC5d8BAAAuQAAAAAp0RnSi4dACwAAIdCJh0ALAACLj0ALAACLXCQEuAQAAAAhyIgDi4cACQAAIcgPyIlDPYuHBAkAACHID8iJQzmLhwgJAAAhyA/IiUM1i4cMCQAAIcgPyIlDMYuHEAkAACHID8iJQy2LhxQJAAAhyA/IiUMpi4cYCQAAIcgPyIlDJYuHHAkAACHID8iJQyGLhyAJAAAhyA/IiUMdi4ckCQAAIcgPyIlDGYuHKAkAACHID8iJQxWLhywJAAAhyA/IiUMRi4cwCQAAIcgPyIlDDYuHNAkAACHID8iJQwmLhzgJAAAhyA/IiUMFi4c8CQAAIcgPyIlDAYuHAAsAACHID8iJQ32LhwQLAAAhyA/IiUN5i4cICwAAIcgPyIlDdYuHDAsAACHID8iJQ3GLhxALAAAhyA/IiUNti4cUCwAAIcgPyIlDaYuHGAsAACHID8iJQ2WLhxwLAAAhyA/IiUNhi4cgCwAAIcgPyIlDXYuHJAsAACHID8iJQ1mLhygLAAAhyA/IiUNVi4csCwAAIcgPyIlDUYuHMAsAACHID8iJQ02LhzQLAAAhyA/IiUNJi4c4CwAAIcgPyIlDRYuHPAsAACHID8iJQ0GJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_brainpoolp512r1_mul_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_p,
-        vg_brainpoolp512r1_add_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_add_mod_p,
-        vg_brainpoolp512r1_sub_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_sub_mod_p,
+        vg_brainpoolp512r1_mul_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
+        vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,
+        vg_brainpoolp512r1_sub_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p::vg_brainpoolp512r1_sub_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_add_mod_p.rs"]
+pub(crate) mod vg_brainpoolp512r1_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_mul_mod_p.rs"]
+pub(crate) mod vg_brainpoolp512r1_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_sub_mod_p.rs"]
+pub(crate) mod vg_brainpoolp512r1_sub_mod_p;

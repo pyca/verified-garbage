@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Points
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # brainpoolP256r1 signature verification -/
 

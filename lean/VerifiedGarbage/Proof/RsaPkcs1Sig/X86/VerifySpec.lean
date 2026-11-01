@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyAfter
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # The byte comparison is the RFC verification procedure -/
 

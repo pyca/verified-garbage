@@ -29,7 +29,7 @@ namespace VG.Proof.Weierstrass.X86.PointLit.BrainpoolP256r1
 
 open VG VG.Impl.Weierstrass.X86.Point
 
-materialize_code add := fn (modP Spec.Weierstrass.Point.brainpoolp256r1) false
-materialize_code double := fn (modP Spec.Weierstrass.Point.brainpoolp256r1) true
+materialize_code add := fn (modP Impl.Weierstrass.Point.brainpoolp256r1) false
+materialize_code double := fn (modP Impl.Weierstrass.Point.brainpoolp256r1) true
 
 end VG.Proof.Weierstrass.X86.PointLit.BrainpoolP256r1

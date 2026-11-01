@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 
 import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming

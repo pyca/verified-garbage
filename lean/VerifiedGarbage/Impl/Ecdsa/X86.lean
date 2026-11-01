@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 public import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
@@ -34,7 +34,7 @@ curves), from the code of `Impl/Weierstrass/X86.lean`, as on x86-64
    selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
 
 The field arithmetic is calls of the functions of `p` and `n`
-(`Spec/Weierstrass/Mont.lean`, `Impl/Weierstrass/X86/Mont.lean`), which use
+(`Proof/Weierstrass/MontContract.lean`, `Impl/Weierstrass/X86/Mont.lean`), which use
 the `64 n` bytes below byte 4096 for themselves; every slot is below them,
 and the tables of bits are past byte 4096. `R = O` (impossible for `k` in
 `[1, n-1]`) gives `Z = 0`, so `x = 0` and `r = 0`, as the specification
@@ -147,13 +147,13 @@ fixed-base comb. -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
-  SP : Spec.Weierstrass.Mont.Modulus
-  SN : Spec.Weierstrass.Mont.Modulus
+  SP : Impl.Weierstrass.Mont.Modulus
+  SN : Impl.Weierstrass.Mont.Modulus
   comb : Option CombData := none
-  /-- The curve whose `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`) computes
+  /-- The curve whose `vg_<curve>_mul` (`Proof/Weierstrass/MulContract.lean`) computes
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
-  mul : Option Spec.Weierstrass.Mul.Curve := none
+  mul : Option Impl.Weierstrass.Mul.Curve := none
 
 namespace Cfg
 
@@ -368,7 +368,7 @@ def signWithMul (fixed : Prog isa) : Prog isa :=
 
 /-! ## `vg_<curve>_mul`
 
-`[k]Q` (`Spec/Weierstrass/Mul.lean`) as a function, which the signature,
+`[k]Q` (`Proof/Weierstrass/MulContract.lean`) as a function, which the signature,
 the public key, ECDH and verification call: the inline ladder (`ladder`,
 whose field operations are calls of the Montgomery functions), its point at
 `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in `R`'s first
@@ -417,9 +417,9 @@ def mulFn : Prog isa :=
 copied to `R`'s first two slots, the working space `edi` pushed as the
 argument, in a frame that `pop eax` releases, and `edi` loaded again from the
 caller's argument holding it (at `[esp + ao]`), which no store changes. -/
-def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py ao : Nat) : Prog isa :=
+def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py ao : Nat) : Prog isa :=
   .seq (.block (copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py))) <|
-  .seq (.frame (.push [.edi]) (.call C.mulApi.name c.mulFn) (.pop .eax 1)) (.block [.mov .edi (.mem (at_ .esp ao))])
+  .seq (.frame (.push [.edi]) (.call s!"vg_{C.curve}_mul" c.mulFn) (.pop .eax 1)) (.block [.mov .edi (.mem (at_ .esp ao))])
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):

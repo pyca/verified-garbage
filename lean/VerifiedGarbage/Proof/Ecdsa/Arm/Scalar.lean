@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA on 32-bit ARM: the checks, and `s = k⁻¹ (e + r d) mod n`

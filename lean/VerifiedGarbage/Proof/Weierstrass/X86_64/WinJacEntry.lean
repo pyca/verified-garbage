@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb

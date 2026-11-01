@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Middle
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA on PPC64LE: `s`

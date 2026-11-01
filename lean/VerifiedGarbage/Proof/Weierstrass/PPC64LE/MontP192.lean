@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontContract
 
 namespace VG.Proof.Weierstrass.PPC64LE.Mont
 
-open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Mont Spec.Weierstrass.Mont
+open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Mont Impl.Weierstrass.Mont
 
 theorem p192p_mul_ct : ConstantTime isa (mulPPC p192p).pre (mulPPC p192p).pub (mulFn p192p.k p192p.m) :=
   ct_zext (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])

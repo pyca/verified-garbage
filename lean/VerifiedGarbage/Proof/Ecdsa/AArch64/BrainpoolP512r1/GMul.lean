@@ -65,7 +65,7 @@ theorem gMul_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C)
       (toM _ _ (wordsVal s.mem base (brainpoolp512r1.sl GY) brainpoolp512r1.n)) = Point.affine _ _
     rw [F.gx, F.gy, toM_cmont hc, toM_cmont hc]
   have W := mulAt_ok hc (.inr (.inr rfl)) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
-    (name := Spec.Weierstrass.Mul.brainpoolp512r1.mulApi.name) (px := GX) (py := GY) (by decide) (by decide)
+    (name := "vg_brainpoolp512r1_mul") (px := GX) (py := GY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs F (lt_of_eq_of_lt F.gx (hmont _))
     (lt_of_eq_of_lt F.gy (hmont _)) (by rw [eG]; exact hc.onG)
   rw [eG] at W

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Framework.Block

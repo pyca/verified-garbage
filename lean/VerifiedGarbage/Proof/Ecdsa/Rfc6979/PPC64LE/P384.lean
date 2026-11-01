@@ -18,7 +18,7 @@ open VG VG.PPC64LE
 def p384Core (hL : Weierstrass.Law Spec.P384.curve) : Core where
   E := Spec.Ecdsa.P384.inst
   C := Impl.Ecdsa.PPC64LE.signP384
-  N := Spec.Ecdsa.P384.signApi.name
+  N := "vg_ecdsa_p384_sign"
   V := (Proof.Ecdsa.PPC64LE.P384.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.P384.sign_verified hL).2.1
   d := by decide +kernel

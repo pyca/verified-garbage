@@ -57,7 +57,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 28 - Spec.Ecdsa.nBits Spec.P224.curve = 0; rw [p224_nBits]
-  coreN := Spec.Ecdsa.P224.signApi.name
+  coreN := "vg_ecdsa_p224_sign"
   coreC := Impl.Ecdsa.X86.signP224
   coreX := fun s h => Proof.Ecdsa.X86.P224.sign_x86 hL s (core_pre_224 h)
   coreCT := by

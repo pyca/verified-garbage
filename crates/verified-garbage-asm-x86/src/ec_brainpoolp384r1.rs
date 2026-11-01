@@ -58,8 +58,28 @@ call {vg_brainpoolp384r1_mul_mod_p}
 call {vg_brainpoolp384r1_mul_mod_p}
 .base64 "WFhYWIuXQAYAACtXcIuXRAYAABtXdIuXSAYAABtXeIuXTAYAABtXfIuXUAYAABuXgAAAAIuXVAYAABuXhAAAAIuXWAYAABuXiAAAAIuXXAYAABuXjAAAAIuXYAYAABuXkAAAAIuXZAYAABuXlAAAAIuXaAYAABuXmAAAAIuXbAYAABuXnAAAABnAicOLl0AGAAALl0QGAAALl0gGAAALl0wGAAALl1AGAAALl1QGAAALl1gGAAALl1wGAAALl2AGAAALl2QGAAALl2gGAAALl2wGAAC5AAAAACnRGdIh2ouHgAgAACHQiYeACAAAi5dAAwAAC5dEAwAAC5dIAwAAC5dMAwAAC5dQAwAAC5dUAwAAC5dYAwAAC5dcAwAAC5dgAwAAC5dkAwAAC5doAwAAC5dsAwAAuQAAAAAp0RnSi4eACAAAIdCJh4AIAACLj4AIAACLXCQEuAQAAAAhyIgDi4fQBgAAIcgPyIlDLYuH1AYAACHID8iJQymLh9gGAAAhyA/IiUMli4fcBgAAIcgPyIlDIYuH4AYAACHID8iJQx2Lh+QGAAAhyA/IiUMZi4foBgAAIcgPyIlDFYuH7AYAACHID8iJQxGLh/AGAAAhyA/IiUMNi4f0BgAAIcgPyIlDCYuH+AYAACHID8iJQwWLh/wGAAAhyA/IiUMBi4dQCAAAIcgPyIlDXYuHVAgAACHID8iJQ1mLh1gIAAAhyA/IiUNVi4dcCAAAIcgPyIlDUYuHYAgAACHID8iJQ02Lh2QIAAAhyA/IiUNJi4doCAAAIcgPyIlDRYuHbAgAACHID8iJQ0GLh3AIAAAhyA/IiUM9i4d0CAAAIcgPyIlDOYuHeAgAACHID8iJQzWLh3wIAAAhyA/IiUMxiciD4AGJ+osai3IEi2oMi3oIww=="
 .p2align 6"#,
-        vg_brainpoolp384r1_point_double = sym super::brainpoolp384r1_point::vg_brainpoolp384r1_point_double,
-        vg_brainpoolp384r1_point_add = sym super::brainpoolp384r1_point::vg_brainpoolp384r1_point_add,
-        vg_brainpoolp384r1_mul_mod_p = sym super::brainpoolp384r1_mont::vg_brainpoolp384r1_mul_mod_p,
+        vg_brainpoolp384r1_point_double = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
+        vg_brainpoolp384r1_point_add = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add::vg_brainpoolp384r1_point_add,
+        vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_add_mod_p.rs"]
+pub(crate) mod vg_brainpoolp384r1_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_mul_mod_p.rs"]
+pub(crate) mod vg_brainpoolp384r1_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_point_add.rs"]
+pub(crate) mod vg_brainpoolp384r1_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_point_double.rs"]
+pub(crate) mod vg_brainpoolp384r1_point_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_sub_mod_p.rs"]
+pub(crate) mod vg_brainpoolp384r1_sub_mod_p;

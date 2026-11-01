@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -44,7 +44,7 @@ meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
 meta import VerifiedGarbage.Proof.Weierstrass.Words
 meta import VerifiedGarbage.Spec.Ecdsa.P256
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # Deterministic ECDSA on AArch64: constant time, up to the number of candidates

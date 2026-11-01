@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Short Weierstrass curves on x86-64: tables of bits, and masks of bits

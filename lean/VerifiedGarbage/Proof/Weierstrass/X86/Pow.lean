@@ -40,7 +40,7 @@ def powWx (P : PowCfg) (wk : Nat) : List (Nat × Nat) := powW P ++ [(wk, 64 * P.
 /-- The functions of `F` (`CallCfg`), with their own working space at `wk`
 above a power's slots and modulus, and below its table; and the power's
 temporary apart from the modulus's. -/
-structure PowWk (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) (m size wk : Nat) : Prop
+structure PowWk (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (m size wk : Nat) : Prop
     extends CallCfg F P.M m size wk where
   acc : P.acc + 8 * P.M.n ≤ wk
   tmp : P.tmp + 8 * P.M.n ≤ wk
@@ -64,7 +64,7 @@ structure PowInv (P : PowCfg) (wk : Nat) (base : Addr) (size m e : Nat) [NeZero 
     toM m (2 ^ (64 * P.M.n)) (wordsVal s₀.mem base P.base P.M.n) ^ (e >>> j)
 
 /-- An iteration. -/
-theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {base : Addr} {size m e : Nat}
+theorem powBody_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {base : Addr} {size m e : Nat}
     [NeZero m] (hL : PowLay P size)
     (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ : State}
     (hB : wordsVal s₀.mem base P.base P.M.n < m)
@@ -170,7 +170,7 @@ theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {
 
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e < 2^nbits`
 whose bits are the table at `P.bits`; only `powClob` and `powWx` change. -/
-theorem pow_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {base : Addr} {size m e : Nat}
+theorem pow_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {base : Addr} {size m e : Nat}
     [NeZero m] (hL : PowLay P size)
     (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hB : wordsVal s.mem base P.base P.M.n < m)

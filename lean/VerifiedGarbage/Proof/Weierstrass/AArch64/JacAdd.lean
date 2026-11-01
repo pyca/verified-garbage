@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! Jacobian addition field programs, including the header's public branch values. -/
 

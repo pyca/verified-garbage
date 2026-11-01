@@ -70,10 +70,10 @@ bl {vg_secp256k1_mul_mod_p}
 .base64 "oASAOIAEoDjAAMA4"
 bl {vg_secp256k1_mul_mod_p}
 .base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6aAEg+g4UIR8GADAOCg1jnyoBIPoOFCEfBAAwDgoNY58sASD6DhQhHwIAMA4KDWOfLgEg+g4UIR8AADAOCg1jnwBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8IACATg==""#,
-        vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
-        vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
-        vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
-        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
-        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
+        vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
+        vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
+        vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
+        vg_secp256k1_point_a0_double = sym super::ec_secp256k1::vg_secp256k1_point_a0_double::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::ec_secp256k1::vg_secp256k1_point_a0_add_affine::vg_secp256k1_point_a0_add_affine,
     )
 }

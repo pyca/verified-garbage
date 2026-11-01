@@ -14,7 +14,7 @@ a call of `vg_p192_mul`, with `3 b R mod p` at `EXPP`'s slot for the complete
 addition that may follow. -/
 def qMul : Prog isa :=
   .seq (.block (setConst 4 (p192.sl EXPP) (p192.mont (3 * p192.C.b))))
-    (p192.mulAt Spec.Weierstrass.Mul.p192.mulApi.name PX PY)
+    (p192.mulAt "vg_p192_mul" PX PY)
 
 /-- ECDH with a validated peer and the general complete ladder. -/
 def exchange : Prog isa :=

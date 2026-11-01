@@ -74,8 +74,8 @@ def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) :
 the slots: Algorithm 9 or 8 for `a0`, else Algorithm 1. -/
 def ptVal {m : Nat} [NeZero m] (a0 dbl : Bool) (E : Nat → Fin m) : Fin m × Fin m × Fin m :=
   if a0 then
-    (if dbl then Spec.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
-    else Spec.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
+    (if dbl then Impl.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+    else Impl.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
   else VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8)
 
 theorem ptOps_opsOk (a0 dbl : Bool) : OpsOk (ptOps a0 dbl) := by
@@ -90,7 +90,7 @@ theorem ptOps_run {m : Nat} [NeZero m] (E : Nat → Fin m) (a0 dbl : Bool) :
   · exact rcb_run rcbIds_apart E
   · exact ops0_run E dbl
 
-theorem fnOps_noFrames (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) (u : Bool := false) :
+theorem fnOps_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) (u : Bool := false) :
     (fnOps S dbl ops u).noFrames = true := by
   have mul : (Mont.mulFnWith u S.k S.m).noFrames = true := by
     unfold Mont.mulFnWith Mont.mulFnU Mont.mulFn
@@ -116,20 +116,20 @@ theorem fnOps_noFrames (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : L
     exact fields op
   simpa only [Impl.Weierstrass.Arm.Point.fnOps, Code.noFrames, Bool.true_and, Bool.and_true] using prog
 
-theorem fn_noFrames (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (u : Bool := false) :
+theorem fn_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (u : Bool := false) :
     (fn S dbl u).noFrames = true :=
   fnOps_noFrames S dbl _ u
 
 /-- A call of a point function, from the working space at `r12`: only
 `r0`–`r3`, `r10`, `O` and the own working space change, and `O` holds
 `ptVal` of what the constants and the operands stood for. -/
-theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm : S.m = m) (hk : S.k = k)
+theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm : S.m = m) (hk : S.k = k)
     (hM : ModOk k m) (hodd : m % 2 = 1) (hk6 : k ≤ 6) (dbl : Bool) {a0 : Bool} {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192)
     (hlt : ∀ x ∈ rIds, wordsVal s.mem base (enc k dbl x) k < m) {u : Bool} :
     WP isa (ptCall S dbl a0 u) s fun s' => Rest [.r10, .r0, .r1, .r2, .r3] s s' ∧
-      Outs base [(Spec.Weierstrass.Point.oAt k, 3 * Spec.Weierstrass.Point.elemBytes k),
-        (Spec.Weierstrass.Point.ownAt k, 4096 - Spec.Weierstrass.Point.ownAt k)] s.mem s'.mem ∧
+      Outs base [(Impl.Weierstrass.Point.oAt k, 3 * Impl.Weierstrass.Point.elemBytes k),
+        (Impl.Weierstrass.Point.ownAt k, 4096 - Impl.Weierstrass.Point.ownAt k)] s.mem s'.mem ∧
       (∀ j < 3, wordsVal s'.mem base (enc k dbl j) k < m) ∧
       (Eb k m dbl s'.mem base 0, Eb k m dbl s'.mem base 1, Eb k m dbl s'.mem base 2) =
         ptVal a0 dbl (Eb k m dbl s.mem base) := by
@@ -150,8 +150,8 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm
   have e0 : ∀ t : State, t.gpr .r0 = s.gpr .r12 → State.addr (t.gpr .r0) = base := fun t h => by
     rw [h]; exact hs.wb
   refine WP.seq (WP.callCalls (k := ⟨fun t => PrePt k' m' dbl t ∧ t.gpr .r0 = s.gpr .r12 ∧ t.mem = s.mem,
-      fun t t' => Outs (State.addr (t.gpr .r0)) [(Spec.Weierstrass.Point.oAt k', 3 * Spec.Weierstrass.Point.elemBytes k'),
-          (Spec.Weierstrass.Point.ownAt k', 4096 - Spec.Weierstrass.Point.ownAt k')] t.mem t'.mem ∧
+      fun t t' => Outs (State.addr (t.gpr .r0)) [(Impl.Weierstrass.Point.oAt k', 3 * Impl.Weierstrass.Point.elemBytes k'),
+          (Impl.Weierstrass.Point.ownAt k', 4096 - Impl.Weierstrass.Point.ownAt k')] t.mem t'.mem ∧
         t'.gpr .r12 = t.gpr .r0 ∧
         (∀ j < 3, wordsVal t'.mem (State.addr (t.gpr .r0)) (enc k' dbl j) k' < m') ∧
         (Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 0, Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 1,

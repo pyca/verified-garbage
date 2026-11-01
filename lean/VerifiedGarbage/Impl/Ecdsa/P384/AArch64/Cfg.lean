@@ -13,6 +13,6 @@ open VG.AArch64
 
 /-- P-384 as the code has it. -/
 def p384 : Cfg := ⟨6, Spec.P384.curve, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true,
-  some Spec.Weierstrass.Inverse.p384, none⟩
+  some Impl.Weierstrass.Inverse.p384, none⟩
 
 end VG.Impl.Ecdsa.AArch64

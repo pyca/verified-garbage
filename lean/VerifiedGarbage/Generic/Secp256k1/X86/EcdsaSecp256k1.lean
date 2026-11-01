@@ -119,10 +119,6 @@ public import VerifiedGarbage.Proof.X25519.X86.Fold
 namespace VG.Generic.Secp256k1.X86.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.signApi.artifact X86.target {
-    code := Impl.Ecdsa.X86.signSecp256k1
-    stack := 28
-    verified := Proof.Ecdsa.X86.Secp256k1.sign_verified h.law h.inv },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact X86.target {
     code := Impl.Ecdsa.Verify.X86.verifySecp256k1
     stack := 28

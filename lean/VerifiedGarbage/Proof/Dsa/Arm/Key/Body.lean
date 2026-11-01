@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Draw
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # DSA key generation on 32-bit ARM: the body

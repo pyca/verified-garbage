@@ -31,8 +31,8 @@ namespace VG.Proof.Ecdsa.PPC64LE.P256.Mul
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Proof.Ecdsa.PPC64LE VG.Proof
 
-/-- P-256's curve of `Spec/Weierstrass/Mul.lean`: the one its code has. -/
-abbrev C : Spec.Weierstrass.Mul.Curve := Spec.Weierstrass.Mul.p256
+/-- P-256's curve of `Proof/Weierstrass/MulContract.lean`: the one its code has. -/
+abbrev C : Impl.Weierstrass.Mul.Curve := Impl.Weierstrass.Mul.p256
 
 theorem C_eq : C = mulCurve p256 "p256" "P-256" := rfl
 
@@ -42,7 +42,7 @@ theorem mul_ct : ConstantTime isa (mulPPC C).pre (mulPPC C).pub mulP256 :=
       simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact hp.2⟩) (by taint_decide)
 
 theorem sat_consts : C.ConstsOk 0x1000 (mulSatMem p256) := by
-  unfold Spec.Weierstrass.Mul.Curve.ConstsOk
+  unfold Impl.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem sat_x : (mulCurve p256 "p256" "P-256").toPoint.coordAt (mulSatMem p256) 0x1000 (p256.sl RX) =
@@ -57,7 +57,7 @@ theorem sat_point (hL : Weierstrass.Law Spec.P256.curve) :
 
 theorem sat_pre (hL : Weierstrass.Law Spec.P256.curve) : (C.mulInRangeContract PPC64LE.abi).pre (mulSatState p256) :=
   Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Weierstrass.MulBase.sig, PPC64LE.abi, PPC64LE.argRegs, mulSatState]
+    sig_reduce [Sig.wfPre, Impl.Weierstrass.MulBase.sig, PPC64LE.abi, PPC64LE.argRegs, mulSatState]
     exact ⟨by decide, sat_consts, sat_point hL⟩)
 
 /-- `vg_p256_mul` on PPC64LE. -/

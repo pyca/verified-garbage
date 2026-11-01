@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 
 /-! Ordinary Jacobian addition retains equal public field environments in every branch. -/

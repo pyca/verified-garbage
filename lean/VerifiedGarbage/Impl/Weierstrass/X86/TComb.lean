@@ -50,7 +50,7 @@ the start `[c]G` and `R mod p`, both in Montgomery form. -/
 structure TCombCfg where
   M : Mod
   /-- The functions of the field arithmetic. -/
-  F : Spec.Weierstrass.Mont.Modulus
+  F : Impl.Weierstrass.Mont.Modulus
   /-- Four-byte scratch slot retaining the public table pointer. -/
   ptr : Nat
   S : RcbSlots

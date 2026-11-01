@@ -30,12 +30,12 @@ def tableStore (K : WinCfg) : List Instr :=
   [.mov .eax (.reg .esi)] ++ tableAddress K.tbl ++
   copyPieces 6 (fun i => sc (K.R.x+16*i)) (fun i => TCombCfg.tblAt (16*i))
 
-def tableStep (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def tableStep (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (jacAdd K F K.R (twice K) K.D) <|
     .block (copyPt 4 K.R K.D ++ tableStore K ++
       [.alu .add .esi (.imm 1),.alu .cmp .esi (.imm 8)])
 
-def table (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def table (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (fprog F (dblJMul K.S K.P (twice K))) <|
   .seq (.block (copyPt 4 (K.tblPt 1) K.P ++ copyPt 4 K.R K.P ++ [.mov .esi (.imm 1)])) <|
     .loop (tableStep K F) .b
@@ -49,31 +49,31 @@ def publicEntry (K : WinCfg) : List Instr :=
   [.mov .eax (.reg .ebx),.alu .sub .eax (.imm 1),.shift .shr .eax 1] ++ tableAddress K.tbl ++
   copyPieces 6 (fun i => TCombCfg.tblAt (16*i)) (fun i => sc (K.E.x+16*i))
 
-def signedEntry (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def signedEntry (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block [.alu .cmp .ebx (.imm 128)]) <|
     .ite .b (.block (publicEntry K)) (.seq (.block (
       [.mov .eax (.imm 256),.alu .sub .eax (.reg .ebx),.mov .ebx (.reg .eax)] ++
       publicEntry K)) (opCode F (.sub K.E.y K.zero K.E.y)))
 
-def digit (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def digit (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (digitRead K)) <|
     .ite .e (.block []) (.seq (signedEntry K F) <|
       .seq (jacAdd K F K.R K.E K.D) (.block (copyPt 4 K.R K.D)))
 
-def windowStep (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def windowStep (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block [.alu .sub .esi (.imm 1)]) <|
   .seq (fprog F (dblJMul K.S K.R K.D)) <|
   .seq (.block (copyPt 4 K.R K.D)) <|
   .seq (digit K F) (.block [.alu .test .esi (.reg .esi)])
 
 /-- The multiplication loop leaves its result in Jacobian coordinates. -/
-def window (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def window (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (table K F) <|
     .seq (.block (infinity K K.R ++ [.mov .esi (.imm 256)])) <|
       .seq (digit K F) (.loop (windowStep K F) .ne)
 
 /-- Convert once to the homogeneous coordinates consumed by verification. -/
-def finish (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def finish (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (VG.Impl.Weierstrass.X86.WinCfg.tc K F).outFix) (fprog F (VG.Impl.Weierstrass.X86.WinCfg.tc K F).outOps)
 
 end VG.Impl.Weierstrass.X86.Naf

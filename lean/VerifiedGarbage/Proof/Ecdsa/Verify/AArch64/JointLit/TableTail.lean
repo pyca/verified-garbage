@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-! The tail of the forwarded additions of P-256 verification's window table, as a
 literal (`Proof/Framework/Lit.lean`): `Forward.ArithmeticTableTail`'s. -/

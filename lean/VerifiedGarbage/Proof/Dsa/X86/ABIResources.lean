@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.SigningABI
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Logic.Function.Basic

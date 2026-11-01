@@ -91,7 +91,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.CoZTable
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Proof.EcKey.PublicKey
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
@@ -175,7 +175,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 meta import VerifiedGarbage.Proof.Weierstrass.CoZTable
 meta import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Impl.AArch64Instrs
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64

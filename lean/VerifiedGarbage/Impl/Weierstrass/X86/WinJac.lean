@@ -18,7 +18,7 @@ open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 
 structure JacWinCfg where
   M : Mod
-  F : Spec.Weierstrass.Mont.Modulus
+  F : Impl.Weierstrass.Mont.Modulus
   S : RcbSlots
   P : Pt
   R : Pt

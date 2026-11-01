@@ -104,7 +104,7 @@ cbnz x12, 20b
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-        vg_ecdsa_secp256k1_sign = sym super::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign,
+        vg_ecdsa_secp256k1_sign = sym super::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign::vg_ecdsa_secp256k1_sign,
     )
 }
 
@@ -215,6 +215,6 @@ cbnz x12, 20b
         vg_hmac_sha256_init_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_sha2::vg_hmac_sha256_init_scratch_sha2,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
         vg_hmac_sha256_finalize_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_sha2::vg_hmac_sha256_finalize_scratch_sha2,
-        vg_ecdsa_secp256k1_sign = sym super::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign,
+        vg_ecdsa_secp256k1_sign = sym super::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign::vg_ecdsa_secp256k1_sign,
     )
 }

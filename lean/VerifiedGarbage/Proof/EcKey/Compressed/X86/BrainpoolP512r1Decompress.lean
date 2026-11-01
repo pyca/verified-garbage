@@ -48,7 +48,7 @@ materialize_shared baseline := code
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 taint_summary mulCodecSum : taint (codecMulT (2 * Spec.BrainpoolP512r1.curve.len + 1))
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
 
 theorem ct : ConstantTime isa (decompressContract Spec.BrainpoolP512r1.curve Impl.EcKey.Compressed.rootThreeModFour).pre
     (decompressContract Spec.BrainpoolP512r1.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by

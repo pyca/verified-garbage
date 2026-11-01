@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The inversion's rows: one product accumulated
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.P224.Point
 import VerifiedGarbage.Proof.P224.Prime
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.LitShare
@@ -176,10 +177,10 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP224 :=
     rfl (by taint_decide)
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8).pre satState := by
+    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8).pre satState := by
   have held : ∀ i < p224W.length, satState.mem.readW (satState.syms "VG_P224_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0 := satMem_held
-  sig_pre [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+  sig_pre [Spec.Ecdsa.P224.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P224.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p224_combConsts,
     Abi.withConsts, p224_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -187,7 +188,7 @@ theorem sat_spec8 :
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
-    signX86_64.Implies (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8) :=
+    signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8) :=
   implies.stack8 ⟨satState, sat_spec8⟩
 
 /-- The output is apart from the calls' return address. -/
@@ -198,7 +199,7 @@ theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX8
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8).pre s)
+    (hs : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8).pre s)
     (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) :=
   post_patch s b hv u (implies8.pre s hs) (Sig.clear_of_pre_consts hs) hp
 
@@ -215,7 +216,7 @@ theorem sign_verified (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP224
-      (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8) :=
   Verified.of_inline_ct sign_inlineOk (sign_x86 hL hT hI) sign_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 

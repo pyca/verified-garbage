@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Impl.Weierstrass.CachedJac
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

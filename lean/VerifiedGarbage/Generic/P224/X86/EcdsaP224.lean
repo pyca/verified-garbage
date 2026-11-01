@@ -116,10 +116,6 @@ public import VerifiedGarbage.Proof.X25519.X86.Fold
 namespace VG.Generic.P224.X86.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := [
-  Spec.Ecdsa.P224.signApi.artifact X86.target {
-    code := Impl.Ecdsa.X86.signP224
-    stack := 28
-    verified := Proof.Ecdsa.X86.P224.sign_verified h.law },
   Spec.Ecdsa.P224.verifyApi.artifact X86.target {
     code := Impl.Ecdsa.Verify.X86.verifyP224
     stack := 28

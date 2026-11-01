@@ -16,6 +16,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # secp256k1's point functions on x86-64: their slots, `Verified` and contracts
@@ -23,7 +26,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 Where the functions' bodies' slots are (`fnSlots`), laid out for the field
 arithmetic, and the facts of `FnCfg`, `DoubleLay`, `CachedPts` and
 `MixedLay` about them, checked by the kernel, with the doubling for `a = 0`
-(`dblJ0`); the facts of `Spec.Weierstrass.PointOps.secp256k1`'s contracts
+(`dblJ0`); the facts of `Impl.Weierstrass.PointOps.secp256k1`'s contracts
 on x86-64 (`ws` in `rdi`, `fnPre`), which the functions meet (`fn_ok` and the
 bodies' values, their doubling `dblJ0` the specification's `jacDouble0`,
 `jdblSpec_dblJ0`), the spec's coordinates being the slots' field elements
@@ -60,9 +63,9 @@ theorem lay : Lay K.M 8192 Sl := by
     decide +kernel
   exact ⟨by decide +kernel, fun x y hx hy => h x hx y hy, by decide +kernel, by decide +kernel⟩
 
-theorem p_odd : Spec.Weierstrass.PointOps.secp256k1.p % 2 = 1 := by decide +kernel
+theorem p_odd : Impl.Weierstrass.PointOps.secp256k1.p % 2 = 1 := by decide +kernel
 
-theorem fnCfg : FnCfg K Spec.Weierstrass.PointOps.secp256k1 Sl where
+theorem fnCfg : FnCfg K Impl.Weierstrass.PointOps.secp256k1 Sl where
   n := rfl
   rx := rfl
   ry := rfl
@@ -76,9 +79,9 @@ theorem fnCfg : FnCfg K Spec.Weierstrass.PointOps.secp256k1 Sl where
     refine ⟨by decide, by decide, by decide, by decide, h, by decide +kernel, by decide +kernel⟩
   keep := by
     intro i hi hown hp
-    simp only [Spec.Weierstrass.PointOps.Curve.Own, Spec.Weierstrass.PointOps.Curve.slot,
-      Spec.Weierstrass.PointOps.Curve.tmpAt, Spec.Weierstrass.PointOps.Curve.pAt,
-      Spec.Weierstrass.PointOps.Curve.ptBytes, Spec.Weierstrass.PointOps.secp256k1] at hown hp
+    simp only [Impl.Weierstrass.PointOps.Curve.Own, Impl.Weierstrass.PointOps.Curve.slot,
+      Impl.Weierstrass.PointOps.Curve.tmpAt, Impl.Weierstrass.PointOps.Curve.pAt,
+      Impl.Weierstrass.PointOps.Curve.ptBytes, Impl.Weierstrass.PointOps.secp256k1] at hown hp
     refine ⟨fun w hw => ?_, ?_⟩
     · have hw' : w ∈ [800, 832, 864, 896, 928, 960, 608, 640, 672, 512, 544, 576] := by
         revert w; decide +kernel
@@ -110,14 +113,14 @@ theorem doubleLay : DoubleLay K 8192 Sl dblJ0 where
   accum := by decide +kernel
   copy := by decide +kernel
 
-theorem one_lt : K.one < Spec.Weierstrass.PointOps.secp256k1.p := by decide +kernel
+theorem one_lt : K.one < Impl.Weierstrass.PointOps.secp256k1.p := by decide +kernel
 
-theorem one_val : toM Spec.Weierstrass.PointOps.secp256k1.p (2 ^ (64 * K.M.n)) K.one = 1 := by
-  have h : K.one = 1 * 2 ^ (64 * K.M.n) % Spec.Weierstrass.PointOps.secp256k1.p := by decide +kernel
+theorem one_val : toM Impl.Weierstrass.PointOps.secp256k1.p (2 ^ (64 * K.M.n)) K.one = 1 := by
+  have h : K.one = 1 * 2 ^ (64 * K.M.n) % Impl.Weierstrass.PointOps.secp256k1.p := by decide +kernel
   rw [h, toM_mont (unitMod_pow_two p_odd _)]
   decide +kernel
 
-theorem cachedPts : CachedPts (m := Spec.Weierstrass.PointOps.secp256k1.p) K sel 8192 Sl dblJ0 where
+theorem cachedPts : CachedPts (m := Impl.Weierstrass.PointOps.secp256k1.p) K sel 8192 Sl dblJ0 where
   lay := {
     lay := lay
     apart := ⟨by decide +kernel, by decide +kernel⟩
@@ -160,18 +163,18 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 open VG.Proof.Weierstrass.X86_64.PointOps
 open VG.Impl.Secp256k1.X86_64.PointOps (doubleFn addCachedFn addAffineFn)
 
-/-- secp256k1's curve of `Spec/Weierstrass/PointOps.lean`. -/
-abbrev C : Spec.Weierstrass.PointOps.Curve := Spec.Weierstrass.PointOps.secp256k1
+/-- secp256k1's curve of `Proof/Weierstrass/PointOpsContract.lean`. -/
+abbrev C : Impl.Weierstrass.PointOps.Curve := Impl.Weierstrass.PointOps.secp256k1
 
 /-- `dblJ0` computes the specification's doubling for `a = 0`. -/
 theorem dblJ0N_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
     (runOps dblJ0N e 6, runOps dblJ0N e 7, runOps dblJ0N e 8) =
-      Spec.Weierstrass.PointOps.jacDouble0 (e 11) (e 12) (e 13) := by
+      Impl.Weierstrass.PointOps.jacDouble0 (e 11) (e 12) (e 13) := by
   dsimp only [dblJ0N, dblJ0, runOps, List.foldl, FOp.run, Function.update]
   rfl
 
 theorem jdblSpec_dblJ0 {m : Nat} [NeZero m] :
-    JDblSpec (m := m) dblJ0 Spec.Weierstrass.PointOps.jacDouble0 :=
+    JDblSpec (m := m) dblJ0 Impl.Weierstrass.PointOps.jacDouble0 :=
   ⟨dblJ0N, dblJ0N_ok, dblJ0_eq, dblJ0N_spec⟩
 
 /-- The spec's point at `o` is the slots' field elements. -/
@@ -179,8 +182,8 @@ theorem pt_eq (hFe : Point.Fermat C.p) (m : Mem) (ws : Addr) {o : Nat} (ho : o +
     C.pt ws m o = (env C.p 4 m ws o, env C.p 4 m ws (o + 8 * 4), env C.p 4 m ws (o + 16 * 4)) := by
   have dq := Point.dec_eq C.toCurve (by decide +kernel) hFe (unitMod_pow_two p_odd _)
   have hk : C.k = 4 := rfl
-  simp only [Spec.Weierstrass.PointOps.Curve.pt, Spec.Weierstrass.Point.Curve.decPt,
-    Spec.Weierstrass.Point.Curve.pointAt, Spec.Weierstrass.Point.elemBytes, dq, env, Spec.Weierstrass.Point.Curve.R, hk]
+  simp only [Impl.Weierstrass.PointOps.Curve.pt, Impl.Weierstrass.Point.Curve.decPt,
+    Impl.Weierstrass.Point.Curve.pointAt, Impl.Weierstrass.Point.elemBytes, dq, env, Impl.Weierstrass.Point.Curve.R, hk]
   rw [coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), hk,
     show 2 * (8 * 4) = 16 * 4 from rfl]
 
@@ -193,7 +196,7 @@ theorem below_lt {m : Mem} {ws : Addr} {o : Nat} (ho : o + 16 * 4 < 2 ^ 32)
     wordsVal m ws o 4 < C.p ∧ wordsVal m ws (o + 8 * 4) 4 < C.p ∧ wordsVal m ws (o + 16 * 4) 4 < C.p := by
   obtain ⟨h0, h1, h2⟩ := h
   have hk : C.k = 4 := rfl
-  simp only [Spec.Weierstrass.Point.Curve.pointAt, Spec.Weierstrass.Point.elemBytes, hk] at h0 h1 h2
+  simp only [Impl.Weierstrass.Point.Curve.pointAt, Impl.Weierstrass.Point.elemBytes, hk] at h0 h1 h2
   rw [coordAt_eq _ _ _ (by omega), hk] at h0 h1 h2
   exact ⟨h0, h1, h2⟩
 
@@ -201,7 +204,7 @@ theorem el_eq (hFe : Point.Fermat C.p) (m : Mem) (ws : Addr) {o : Nat} (ho : o <
     C.el ws m o = env C.p 4 m ws o := by
   have dq := Point.dec_eq C.toCurve (by decide +kernel) hFe (unitMod_pow_two p_odd _)
   have hk : C.k = 4 := rfl
-  simp only [Spec.Weierstrass.PointOps.Curve.el, dq, env, Spec.Weierstrass.Point.Curve.R, hk]
+  simp only [Impl.Weierstrass.PointOps.Curve.el, dq, env, Impl.Weierstrass.Point.Curve.R, hk]
   rw [coordAt_eq _ _ _ ho, hk]
 
 /-- The cached addition's contract on x86-64. -/
@@ -211,7 +214,7 @@ def addCachedK : Contract isa where
     C.CoordBelow (s.gpr .rdi) s.mem C.zzzAt
   post s s' := let P := C.pt (s.gpr .rdi) s.mem C.pAt
     let Q := C.pt (s.gpr .rdi) s.mem C.qAt
-    C.Result C.pAt (Spec.Weierstrass.PointOps.jacAddCached P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2
+    C.Result C.pAt (Impl.Weierstrass.PointOps.jacAddCached P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2
       (C.el (s.gpr .rdi) s.mem C.zzAt) (C.el (s.gpr .rdi) s.mem C.zzzAt) C.dbl) (s.gpr .rdi) s.mem s'.mem
   pub s₁ s₂ := fnPub s₁ s₂ ∧ C.reads true (s₁.gpr .rdi) s₁.mem = C.reads true (s₂.gpr .rdi) s₂.mem
 
@@ -228,7 +231,7 @@ def addAffineK : Contract isa where
     C.Below (C.pointAt s.mem (s.gpr .rdi) C.qAt)
   post s s' := let P := C.pt (s.gpr .rdi) s.mem C.pAt
     let Q := C.pt (s.gpr .rdi) s.mem C.qAt
-    C.Result C.pAt (Spec.Weierstrass.PointOps.jacAddAffine P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2 C.dbl)
+    C.Result C.pAt (Impl.Weierstrass.PointOps.jacAddAffine P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2 C.dbl)
       (s.gpr .rdi) s.mem s'.mem
   pub s₁ s₂ := fnPub s₁ s₂ ∧ C.reads false (s₁.gpr .rdi) s₁.mem = C.reads false (s₂.gpr .rdi) s₂.mem
 
@@ -252,8 +255,8 @@ theorem addCached_correct (hFe : Point.Fermat C.p)
   obtain ⟨t, s', he, ha, hB, hv, hK⟩ := fn_ok fnCfg
     (body := Impl.Weierstrass.X86_64.PointOps.addCachedBody K sel dblJ0)
     (V := cV K sel)
-    (r := fun E => Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z)
-      (E K.E.x) (E K.E.y) (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) Spec.Weierstrass.PointOps.jacDouble0)
+    (r := fun E => Impl.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z)
+      (E K.E.x) (E K.E.y) (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) Impl.Weierstrass.PointOps.jacDouble0)
     hok (by decide +kernel) (fun x hx => by
       simp only [cV, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with (hx | hx) | rfl | rfl
@@ -268,7 +271,7 @@ theorem addCached_correct (hFe : Point.Fermat C.p)
       simp only [cV, jacCoords, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx
       have c2 := h2
       have c3 := h3
-      simp only [Spec.Weierstrass.PointOps.Curve.CoordBelow] at c2 c3
+      simp only [Impl.Weierstrass.PointOps.Curve.CoordBelow] at c2 c3
       rw [coordAt_eq _ _ _ (by decide)] at c2 c3
       rcases hx with ((rfl | rfl | rfl) | (rfl | rfl | rfl)) | rfl | rfl
       · exact fnCfg.rx ▸ lp.1
@@ -295,7 +298,7 @@ theorem double_correct (hFe : Point.Fermat C.p)
   obtain ⟨t, s', he, ha, hB, hv, hK⟩ := fn_ok fnCfg
     (body := Impl.Weierstrass.X86_64.PointOps.doubleBody K dblJ0)
     (V := jacCoords K.R)
-    (r := fun E => Spec.Weierstrass.PointOps.jacDouble0 (E K.R.x) (E K.R.y) (E K.R.z))
+    (r := fun E => Impl.Weierstrass.PointOps.jacDouble0 (E K.R.x) (E K.R.y) (E K.R.z))
     hok (by decide +kernel) rV
     (fun s E hI => WP.mono (doubleBody_val doubleLay (unitMod_pow_two p_odd _) hI jdblSpec_dblJ0)
       fun t ⟨kt, E', it, et⟩ => ⟨kt, E', it, et⟩) s hp hmod (by
@@ -321,8 +324,8 @@ theorem addAffine_correct (hFe : Point.Fermat C.p)
   obtain ⟨t, s', he, ha, hB, hv, hK⟩ := fn_ok fnCfg
     (body := Impl.Weierstrass.X86_64.PointOps.addAffineBody K dblJ0)
     (V := mV K)
-    (r := fun E => Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z)
-      (E K.E.x) (E K.E.y) (E K.E.z) Spec.Weierstrass.PointOps.jacDouble0)
+    (r := fun E => Impl.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z)
+      (E K.E.x) (E K.E.y) (E K.E.z) Impl.Weierstrass.PointOps.jacDouble0)
     hok (by decide +kernel) (fun x hx => by
       rcases List.mem_append.mp hx with hx | hx
       · exact rV x hx
@@ -364,8 +367,8 @@ theorem mixedChecks : JacMixedChecks K K.R K.E K.D dblJ0 := nafMixedJac_checks
 theorem copyCt : ScratchCT (.block (copyPt K.M.n K.R K.D)) := joint_cached_checks.copy
 
 theorem bytes_length (ws : Addr) (m : Mem) (o n : Nat) :
-    (Spec.Weierstrass.PointOps.Curve.bytes ws m o n).length = n := by
-  simp [Spec.Weierstrass.PointOps.Curve.bytes]
+    (Impl.Weierstrass.PointOps.Curve.bytes ws m o n).length = n := by
+  simp [Impl.Weierstrass.PointOps.Curve.bytes]
 
 /-- The offsets of the numbers the additions read. -/
 def readSlots (cached : Bool) : List Nat :=
@@ -376,7 +379,7 @@ same numbers. -/
 theorem reads_wordsVal {cached : Bool} {ws : Addr} {m₁ m₂ : Mem}
     (h : C.reads cached ws m₁ = C.reads cached ws m₂) {x : Nat} (hx : x ∈ readSlots cached) :
     wordsVal m₁ ws x 4 = wordsVal m₂ ws x 4 := by
-  simp only [Spec.Weierstrass.PointOps.Curve.reads, List.append_assoc] at h
+  simp only [Impl.Weierstrass.PointOps.Curve.reads, List.append_assoc] at h
   obtain ⟨hp, h'⟩ := append_bytes h (by rw [bytes_length, bytes_length])
   obtain ⟨hq, hc⟩ := append_bytes h' (by rw [bytes_length, bytes_length])
   simp only [readSlots, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -408,7 +411,7 @@ theorem addCached_ct : ConstantTime isa addCachedK.pre addCachedK.pub addCachedF
     obtain ⟨_, _, hbp, hbq, h2, h3⟩ := hs
     have lp := below_lt (by decide) hbp
     have lq := below_lt (by decide) hbq
-    simp only [Spec.Weierstrass.PointOps.Curve.CoordBelow] at h2 h3
+    simp only [Impl.Weierstrass.PointOps.Curve.CoordBelow] at h2 h3
     rw [coordAt_eq _ _ _ (by decide)] at h2 h3
     intro x hx
     rw [K_n]
@@ -504,66 +507,66 @@ def fnSat : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_mod : C.ModOk 0x1000 satMem := by
-  unfold Spec.Weierstrass.PointOps.Curve.ModOk; decide +kernel
+  unfold Impl.Weierstrass.PointOps.Curve.ModOk; decide +kernel
 
 theorem sat_p : C.toCurve.Below (C.toCurve.pointAt satMem 0x1000 C.pAt) := by
-  unfold Spec.Weierstrass.Point.Curve.Below; decide +kernel
+  unfold Impl.Weierstrass.Point.Curve.Below; decide +kernel
 
 theorem sat_q : C.toCurve.Below (C.toCurve.pointAt satMem 0x1000 C.qAt) := by
-  unfold Spec.Weierstrass.Point.Curve.Below; decide +kernel
+  unfold Impl.Weierstrass.Point.Curve.Below; decide +kernel
 
 theorem sat_c2 : C.CoordBelow 0x1000 satMem C.zzAt := by
-  unfold Spec.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
+  unfold Impl.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
 
 theorem sat_c3 : C.CoordBelow 0x1000 satMem C.zzzAt := by
-  unfold Spec.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
+  unfold Impl.Weierstrass.PointOps.Curve.CoordBelow; decide +kernel
 
 theorem sat_ret : (⟨0x8000, 8⟩ : Region).Disjoint ⟨0x1000, 8192⟩ :=
   Region.disjoint_of_le (by decide) (by decide) (by decide)
 
 theorem addCachedK_implies : addCachedK.Implies (C.addCachedContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addCachedContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addCachedContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
       h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2⟩
   post _ _ _ h := h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.PointOps.Curve.addCachedContract, Spec.Weierstrass.PointOps.sig,
+    sig_pub [Impl.Weierstrass.PointOps.Curve.addCachedContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.2⟩, h.2.1⟩
   sat := ⟨fnSat, by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addCachedContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addCachedContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs]
     exact ⟨sat_ret, by decide, sat_mod, sat_p, sat_q, sat_c2, sat_c3⟩⟩
 
 theorem doubleK_implies : doubleK.Implies (C.doubleContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.doubleContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.doubleContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩, h.2.2.2.2.1, h.2.2.2.2.2⟩
   post _ _ _ h := h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.PointOps.Curve.doubleContract, Spec.Weierstrass.PointOps.sig,
+    sig_pub [Impl.Weierstrass.PointOps.Curve.doubleContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨h.1, h.2⟩
   sat := ⟨fnSat, by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.doubleContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.doubleContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs]
     exact ⟨sat_ret, by decide, sat_mod, sat_p⟩⟩
 
 theorem addAffineK_implies : addAffineK.Implies (C.addAffineContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addAffineContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2⟩
   post _ _ _ h := h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
+    sig_pub [Impl.Weierstrass.PointOps.Curve.addAffineContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact ⟨⟨h.1, h.2.2⟩, h.2.1⟩
   sat := ⟨fnSat, by
-    sig_pre [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
+    sig_pre [Impl.Weierstrass.PointOps.Curve.addAffineContract, Impl.Weierstrass.PointOps.sig,
       X86_64.abi, X86_64.argRegs]
     exact ⟨sat_ret, by decide, sat_mod, sat_p, sat_q⟩⟩
 

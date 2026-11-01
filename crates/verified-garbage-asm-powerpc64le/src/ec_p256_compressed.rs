@@ -37,9 +37,9 @@ bl {vg_p256_add_mod_p}
 .base64 "YAWAOOAEoDiABcA4"
 bl {vg_p256_sub_mod_p}
 .base64 "YAWj6GgFg+h4I6V8cAWD6HgjpXx4BYPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOMAFg+g4KIR8wAWD+MAFQ+lAAYPogASj6HgipXw4UKV8eCqEfAAFg/hIAYPoiASj6HgipXw4UKV8eCqEfAgFg/hQAYPokASj6HgipXw4UKV8eCqEfBAFg/hYAYPomASj6HgipXw4UKV8eCqEfBgFg/hgAYPooASj6HgipXw4UKV8eCqEfKAFg/hoAYPoqASj6HgipXw4UKV8eCqEfKgFg/hwAYPosASj6HgipXw4UKV8eCqEfLAFg/h4AYPouASj6HgipXw4UKV8eCqEfLgFg/jABUPpwASD6AEAoDg4KIR8AgCEODhQhHwAAI6YYASD6DhQhHwZAMA4KDWOfGgEg+g4UIR8EQDAOCg1jnxwBIPoOFCEfAkAwDgoNY58eASD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
-        vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
+        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
+        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
     )
 }
 
@@ -93,8 +93,8 @@ bl {vg_p256_mul_mod_p}
 .base64 "AAWAOGAFoDiABcA4"
 bl {vg_p256_sub_mod_p}
 .base64 "AAWj6AgFg+h4I6V8EAWD6HgjpXwYBYPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOMAFg+g4KIR8wAWD+MAEg+hABKPoeCKlfAEAgDg4IKV8AACAOFAgRX0BAKo4AACAOFAgpXzABYPoOCiEfMAFg/jABUPpBACAODhQhHwAAI6YYASD6DhQhHwZAMA4KDWOfGgEg+g4UIR8EQDAOCg1jnxwBIPoOFCEfAkAwDgoNY58eASD6DhQhHwBAMA4KDWOfMAEg+g4UIR8OQDAOCg1jnzIBIPoOFCEfDEAwDgoNY580ASD6DhQhHwpAMA4KDWOfNgEg+g4UIR8IQDAOCg1jnwBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8IACATg==""#,
-        vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
-        vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
+        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
+        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
     )
 }

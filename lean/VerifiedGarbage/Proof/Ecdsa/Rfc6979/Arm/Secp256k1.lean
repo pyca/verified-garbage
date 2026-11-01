@@ -46,7 +46,7 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.Secp256k1.curve = 0; rw [secp256k1_nBits]
-  coreN := Spec.Ecdsa.Secp256k1.signApi.name
+  coreN := "vg_ecdsa_secp256k1_sign"
   coreC := Impl.Ecdsa.Arm.signSecp256k1
   coreConsts := []
   coreX := by

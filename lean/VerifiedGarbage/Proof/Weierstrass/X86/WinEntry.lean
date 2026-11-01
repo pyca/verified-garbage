@@ -13,7 +13,7 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Wei
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 open Spec.Weierstrass
 
-variable {F : Spec.Weierstrass.Mont.Modulus}
+variable {F : Impl.Weierstrass.Mont.Modulus}
 
 theorem combWin_four (k i : Nat) : combWin 4 k i = nib k i := by
   unfold combWin nib; rw [Nat.pow_mul]

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # The Jacobian window method on x86-64: selecting an entry

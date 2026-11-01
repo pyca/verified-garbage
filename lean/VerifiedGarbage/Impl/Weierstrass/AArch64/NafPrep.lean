@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Point
 
 
 /-! Signed five-bit NAF recoding of a public 256-bit scalar into 257 bytes. -/

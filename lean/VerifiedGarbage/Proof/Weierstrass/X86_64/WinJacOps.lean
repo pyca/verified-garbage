@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
 

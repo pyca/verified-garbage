@@ -96,10 +96,6 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 namespace VG.Generic.P384.AArch64.EcdsaP384
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
-  Spec.Ecdsa.P384.signApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p384.combConsts
-    code := Impl.Ecdsa.AArch64.signP384
-    verified := Proof.Ecdsa.AArch64.P384.sign_verified h.law h.inv (Proof.P384.combOk7 h.law) },
   Spec.Ecdsa.P384.verifyApi.artifact AArch64.target {
     consts := Impl.Ecdsa.Verify.AArch64.P384Joint.p384v.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384

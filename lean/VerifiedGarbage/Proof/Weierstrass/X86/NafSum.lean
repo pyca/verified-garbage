@@ -30,7 +30,7 @@ local macro "jmem" : tactic => `(tactic| plain_simp_names simp only [nafLive,naf
                    winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
 
 /-- Complete Jacobian addition followed by copying the result into R. -/
-theorem nafAdd_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e e' : Nat}
+theorem nafAdd_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e e' : Nat}
     {β : Nat → BitVec 8}
     (hL : NafLay K size) (hJ : K.J=65) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hBitsWk : K.bits+260≤wk)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hOne : K.one<C.p)

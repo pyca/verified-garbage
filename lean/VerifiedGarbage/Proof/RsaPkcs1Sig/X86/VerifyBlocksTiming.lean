@@ -4,7 +4,7 @@ import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Verify
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming

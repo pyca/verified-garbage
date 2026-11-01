@@ -13,7 +13,7 @@ open VG.Arm
 /-- P-256 as the code has it, its field multiplications by
 `vg_p256_mul_mod_<p|n>_umaal` if `u`. -/
 def p256With (u : Bool) : Cfg :=
-  ⟨4, Spec.P256.curve, Spec.Weierstrass.Mont.p256p, Spec.Weierstrass.Mont.p256n, some Spec.Weierstrass.Mul.p256, u⟩
+  ⟨4, Spec.P256.curve, Impl.Weierstrass.Mont.p256p, Impl.Weierstrass.Mont.p256n, some Impl.Weierstrass.Mul.p256, u⟩
 
 /-- P-256 as the code has it. -/
 def p256 : Cfg := p256With false

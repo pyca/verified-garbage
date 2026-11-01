@@ -3,247 +3,6 @@
 //! `assembly/ecdsa_brainpoolp512r1.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature generation over brainpoolP512r1 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 64 bytes, most significant first), signs the hash at `digest`: its leftmost 64 bytes, or, for a shorter hash, the hash padded on the left with zeros to 64 bytes. Returns 1 and writes `r` then `s` (64 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
-///
-/// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 128 bytes.
-/// * `d` must be valid for reads of 64 bytes.
-/// * `digest` must be valid for reads of 64 bytes.
-/// * `k` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `k` must be secret, and never be used to sign two different hashes: it must be chosen uniformly at random in `[1, n-1]` (FIPS 186-5 §A.3) or derived as RFC 6979 does.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `k` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `k` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *const [u8; 64], digest: *const [u8; 64], k: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "AADH+QgA5/umAgh8EAAH+Hgbbnx4O+N8OAAgOShMBn0ACAP5MAAgOShMBn0ICAP5KAAgOShMBn0QCAP5IAAgOShMBn0YCAP5GAAgOShMBn0gCAP5EAAgOShMBn0oCAP5CAAgOShMBn0wCAP5AAAgOShMBn04CAP5OAAgOShMBH1ACAP5MAAgOShMBH1ICAP5KAAgOShMBH1QCAP5IAAgOShMBH1YCAP5GAAgOShMBH1gCAP5EAAgOShMBH1oCAP5CAAgOShMBH1wCAP5AAAgOShMBH14CAP5OAAgOShMBX2ACAP5MAAgOShMBX2ICAP5KAAgOShMBX2QCAP5IAAgOShMBX2YCAP5GAAgOShMBX2gCAP5EAAgOShMBX2oCAP5CAAgOShMBX2wCAP5AAAgOShMBX24CAP5OlhgPfNIa2FAAGORqihgPVZga2FEAGORgi1gPYXGa2FIAGORgShgPS//a2FMAGORo+ZgPeaAa2FQAGORza5gPSqha2FUAGORxptgPUJoa2FYAGORTX1gPQCba2FcAGORM3BgPXEIa2FgAGORY9ZgPcqca2FkAGORybNgPQ7Sa2FoAGORMMtgPbONa2FsAGORyTNgPQf8a2FwAGOR1D9gPa7ma2F0AGOR6dtgPYvEa2F4AGOR3apgPbida2F8AGORqZxgPWkAa2GAAGORh7VgPYKWa2GEAGORXQhgPd3aa2GIAGORsR1gPYHTa2GMAGORrH9gPUcQa2GQAGORhkFgPRlha2GUAGORqUxgPRkma2GYAGORPlVgPUFca2GcAGORM3BgPXAIa2GgAGORY9ZgPcqca2GkAGORybNgPQ7Sa2GoAGORMMtgPbONa2GsAGORyTNgPQf8a2GwAGOR1D9gPa7ma2G0AGOR6dtgPYvEa2G4AGOR3apgPbida2G8AGORAABgPQAAa2EAAWORAABgPQAAa2EEAWORAABgPQAAa2EIAWORAABgPQAAa2EMAWORAABgPQAAa2EQAWORAABgPQAAa2EUAWORAABgPQAAa2EYAWORAABgPQAAa2EcAWORAABgPQAAa2EgAWORAABgPQAAa2EkAWORAABgPQAAa2EoAWORAABgPQAAa2EsAWORAABgPQAAa2EwAWORAABgPQAAa2E0AWORAABgPQAAa2E4AWORAABgPQAAa2E8AWORAABgPQEAa2FAAWORAABgPQAAa2FEAWORAABgPQAAa2FIAWORAABgPQAAa2FMAWORAABgPQAAa2FQAWORAABgPQAAa2FUAWORAABgPQAAa2FYAWORAABgPQAAa2FcAWORAABgPQAAa2FgAWORAABgPQAAa2FkAWORAABgPQAAa2FoAWORAABgPQAAa2FsAWORAABgPQAAa2FwAWORAABgPQAAa2F0AWORAABgPQAAa2F4AWORAABgPQAAa2F8AWORxadgPQ23a2GAAWORVddgPamfa2GEAWORfdJgPXo5a2GIAWORftdgPdAAa2GMAWORXBlgPRl/a2GQAWORMlFgPdVea2GUAWOROWRgPb2Xa2GYAWORsoJgPf9ka2GcAWORzI9gPY73a2GgAWORnClgPTVja2GkAWORNkxgPfEta2GoAWORzzRgPUxya2GsAWORNsxgPfgDa2GwAWORK8BgPVEZa2G0AWORFiRgPXQ7a2G4AWORIlVgPUdia2G8AWOREOpgPUbEa2HAAWORH9pgPTSKa2HEAWORp69gPYPSa2HIAWOR5BRgPX2Va2HMAWORdUZgPau7a2HQAWORsEBgPXJLa2HUAWORbp5gPf+Ha2HYAWORj89gPREBa2HcAWORgD9gPcfRa2HgAWOR7KVgPcgwa2HkAWORHvRgPXiHa2HoAWORLRhgPVkPa2HsAWOR0OJgPQyFa2HwAWORO7hgPfqEa2H0AWORfSJgPYMqa2H4AWORxF5gPYfxa2H8AWORgQpgPak1a2EAAmOR0chgPWwqa2EEAmORKINgPRdIa2EIAmORUNlgPSgsa2EMAmOR8aFgPRfta2EQAmORdfVgPddLa2EUAmORoC1gPcXRa2EYAmORbNhgPbn3a2EcAmORM4pgPSlka2EgAmORPPFgPWGIa2EkAmORfZNgPUm2a2EoAmORXphgPVF5a2EsAmORV+9gPeADa2EwAmORlOxgPUBRa2E0AmORcflgPWrna2E4AmORApRgPWNla2E8AmORYVFgPdPZa2FAAmORzsRgPQmWa2FEAmORLCdgPaQCa2FIAmORPmhgPWRNa2FMAmOR9W1gPY9ea2FQAmORqzRgPRQEa2FUAmORwBRgPcgfa2FYAmORUIVgPZVTa2FcAmORXJBgPTeHa2FgAmORMyRgPW/Xa2FkAmORbfNgPfc8a2FoAmORtrJgPTfqa2FsAmORbQBgPXNFa2FwAmORHIdgPcq1a2F0AmORlAlgPYHpa2F4AmORK1pgPUyha2F8AmORBCVgPW0qa2GAAmORkC9gPSlma2GEAmORQkdgPSXza2GIAmORGHVgPW/fa2GMAmORhUxgPZCUa2GQAmORhL9gPVNVa2GUAmORjllgPT7Ma2GYAmORDjZgPXXHa2GcAmOR5o9gPdwva2GgAmORF3xgPYgLa2GkAmORnc1gPYw/a2GoAmORXVhgPXcra2GsAmORD4dgPZs/a2GwAmORXppgPdrXa2G0AmORyypgPYFya2G4AmORUIxgPdHJa2G8AmORqM1gPXEWa2HAAmORo9JgPR5oa2HEAmORKJVgPd09a2HIAmORhghgPVi3a2HMAmORtzNgPX9ia2HQAmORxj5gPdBLa2HUAmORAi9gPegHa2HYAmOR8qZgPccwa2HcAmOReTtgPeMNa2HgAmOR+ddgPSbMa2HkAmORFi9gPd+7a2HoAmORPHJgPaI3a2HsAmORSxlgPVYua2HwAmOR35VgPUwba2H0AmORhHFgPbAHa2H4AmORlKdgPWpYa2H8AmORVmNgPZf/a2EAA2OReEpgPX1pa2EEA2ORovdgPSIla2EIA2ORTuJgPX4sa2EMA2ORU4BgPbjva2EQA2OReb5gPeaea2EUA2ORVrNgPebZa2EYA2ORwapgPb6ja2EcA2ORzI9gPY/3a2EgA2ORnClgPTVja2EkA2ORNkxgPfEta2EoA2ORzzRgPUxya2EsA2ORNsxgPfgDa2EwA2ORK8BgPVEZa2E0A2ORFiRgPXQ7a2E4A2ORIlVgPUdia2E8A2OROlhgPfFIa2FAA2ORqihgPVZga2FEA2ORgi1gPYXGa2FIA2ORgShgPS//a2FMA2ORo+ZgPeaAa2FQA2ORza5gPSqha2FUA2ORxptgPUJoa2FYA2ORTX1gPQCba2FcA2ORM3BgPXEIa2FgA2ORY9ZgPcqca2FkA2ORybNgPQ7Sa2FoA2ORMMtgPbONa2FsA2ORyTNgPQf8a2FwA2OR1D9gPa7ma2F0A2OR6dtgPYvEa2F4A2OR3apgPbida2F8A2ORqZxgPWcAa2GAA2ORh7VgPYKWa2GEA2ORXQhgPd3aa2GIA2ORsR1gPYHTa2GMA2ORrH9gPUcQa2GQA2ORhkFgPRlha2GUA2ORqUxgPRkma2GYA2ORPlVgPUFca2GcA2ORM3BgPXAIa2GgA2ORY9ZgPcqca2GkA2ORybNgPQ7Sa2GoA2ORMMtgPbONa2GsA2ORyTNgPQf8a2GwA2OR1D9gPa7ma2G0A2OR6dtgPYvEa2G4A2OR3apgPbida2G8A2ORAABgPQAAa2HAA2ORAABgPQAAa2HEA2ORAABgPQAAa2HIA2ORAABgPQAAa2HMA2ORAABgPQAAa2HQA2ORAABgPQAAa2HUA2ORAABgPQAAa2HYA2ORAABgPQAAa2HcA2ORAABgPQAAa2HgA2ORAABgPQAAa2HkA2ORAABgPQAAa2HoA2ORAABgPQAAa2HsA2ORAABgPQAAa2HwA2ORAABgPQAAa2H0A2ORAABgPQAAa2H4A2ORAABgPQAAa2H8A2ORxadgPQ23a2EABGORVddgPamfa2EEBGORfdJgPXo5a2EIBGORftdgPdAAa2EMBGORXBlgPRl/a2EQBGORMlFgPdVea2EUBGOROWRgPb2Xa2EYBGORsoJgPf9ka2EcBGORzI9gPY73a2EgBGORnClgPTVja2EkBGORNkxgPfEta2EoBGORzzRgPUxya2EsBGORNsxgPfgDa2EwBGORK8BgPVEZa2E0BGORFiRgPXQ7a2E4BGORIlVgPUdia2E8BGORAABgPQAAa2FABGORAABgPQAAa2FEBGORAABgPQAAa2FIBGORAABgPQAAa2FMBGORAABgPQAAa2FQBGORAABgPQAAa2FUBGORAABgPQAAa2FYBGORAABgPQAAa2FcBGORAABgPQAAa2FgBGORAABgPQAAa2FkBGORAABgPQAAa2FoBGORAABgPQAAa2FsBGORAABgPQAAa2FwBGORAABgPQAAa2F0BGORAABgPQAAa2F4BGORAABgPQAAa2F8BGORAACAOP//hDhAC4P4QADgOw=="
-20:
-.base64 "////OxT6g3wACISIJB/lexQqo3wBAOA4ODiGfAAQxZhC+IZ4ODjGfAEQxZiC8IZ4ODjGfAIQxZjC6IZ4ODjGfAMQxZgC4YZ4ODjGfAQQxZhC2YZ4ODjGfAUQxZiC0YZ4ODjGfAYQxZjCyYZ4ODjGfAcQxZgAAD8o"
-bne %cr0, 20b
-.base64 "QADgOw=="
-21:
-.base64 "////OxT6g3xAA4SIJB/lexQqo3wBAOA4ODiGfAASxZhC+IZ4ODjGfAESxZiC8IZ4ODjGfAISxZjC6IZ4ODjGfAMSxZgC4YZ4ODjGfAQSxZhC2YZ4ODjGfAUSxZiC0YZ4ODjGfAYSxZjCyYZ4ODjGfAcSxZgAAD8o"
-bne %cr0, 21b
-.base64 "QADgOw=="
-22:
-.base64 "////OxT6g3yAA4SIJB/lexQqo3wBAOA4ODiGfAAUxZhC+IZ4ODjGfAEUxZiC8IZ4ODjGfAIUxZjC6IZ4ODjGfAMUxZgC4YZ4ODjGfAQUxZhC2YZ4ODjGfAUUxZiC0YZ4ODjGfAYUxZjCyYZ4ODjGfAcUxZgAAD8o"
-bne %cr0, 22b
-.base64 "AALgOw=="
-23:
-.base64 "////OwAGgDjAA6A4wAPAOA=="
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAaAOAAEoDgABMA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gAaAOEAEoDhABMA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wAaAOMADoDgABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAeAOMADoDgABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "wAaAOMAGoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAeAOAAGoDhABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "wAaAOMAGoDgAB8A4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "AAeAOMADoDhABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAeAOMADoDhABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAeAOAAHoDhAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAeAOAAGoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAeAOAAHoDhAB8A4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "QAeAOAAEoDhABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gASAOAAEoDhABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAeAOEAHoDiABMA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gASAOEAGoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAeAOEAHoDiABMA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "AAWAOMABoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gASAOAACoDiABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAWAOIAEoDgABcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gASAOEAGoDgABcA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "AAWAOEAGoDgABcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "wASAOIAEoDgABcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAaAOAAGoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAaAOEAGoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gAaAOMABoDiABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAeAOAACoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAaAOEAGoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gAaAOAAGoDiABsA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "gAaAOMABoDiABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAeAOAAHoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAaAOEAGoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wASAOMAEoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAaAOEAHoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gASAOMAGoDiABMA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gASAOIAEoDgABsA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "AAaAOMAGoDhABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAWAOEAHoDgABcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAWAOAAFoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAaAOIAEoDhAAsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAaAOMAEoDiAAsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gAaAOAAFoDiAAcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wAaAOIAEoDjABMA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAeAOEACoDiAAsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "wAaAOMAGoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAeAOAAGoDhABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "wAaAOMAGoDgAB8A4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "AAeAOIAEoDgABcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAeAOEACoDiAAcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAeAOAAHoDhAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAeAOAAGoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAeAOAAHoDhAB8A4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "QAeAOMAEoDgABcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAWAOIACoDiAAcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAeAOEAHoDhABcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAWAOEAGoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAeAOEAHoDhABcA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "wAWAOMABoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAWAOAACoDiABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wAWAOEAFoDjABcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAWAOEAGoDjABcA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "wAWAOEAGoDjABcA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gAWAOEAFoDjABcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAaAOAAGoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "QAaAOEAGoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gAaAOMABoDiABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAeAOAACoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAaAOEAGoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "gAaAOAAGoDiABsA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "gAaAOMABoDiABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAeAOAAHoDiABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAaAOEAGoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "gAWAOIAFoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "AAaAOEAHoDgAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAWAOMAGoDhABcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAWAOEAFoDgABsA4"
-bl {vg_brainpoolp512r1_sub_mod_p}
-.base64 "AAaAOMAGoDhABsA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wAWAOEAHoDjABcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wAWAOMAFoDgABsA4"
-bl {vg_brainpoolp512r1_add_mod_p}
-.base64 "FPqDfAAQhIgAAKA4UChEfYAEg+hABaPoeCKlfDhQpXx4KoR8wAOD+IgEg+hIBaPoeCKlfDhQpXx4KoR8yAOD+JAEg+hQBaPoeCKlfDhQpXx4KoR80AOD+JgEg+hYBaPoeCKlfDhQpXx4KoR82AOD+KAEg+hgBaPoeCKlfDhQpXx4KoR84AOD+KgEg+hoBaPoeCKlfDhQpXx4KoR86AOD+LAEg+hwBaPoeCKlfDhQpXx4KoR88AOD+LgEg+h4BaPoeCKlfDhQpXx4KoR8+AOD+MAEg+iABaPoeCKlfDhQpXx4KoR8AASD+MgEg+iIBaPoeCKlfDhQpXx4KoR8CASD+NAEg+iQBaPoeCKlfDhQpXx4KoR8EASD+NgEg+iYBaPoeCKlfDhQpXx4KoR8GASD+OAEg+igBaPoeCKlfDhQpXx4KoR8IASD+OgEg+ioBaPoeCKlfDhQpXx4KoR8KASD+PAEg+iwBaPoeCKlfDhQpXx4KoR8MASD+PgEg+i4BaPoeCKlfDhQpXx4KoR8OASD+AAFg+jABaPoeCKlfDhQpXx4KoR8QASD+AgFg+jIBaPoeCKlfDhQpXx4KoR8SASD+BAFg+jQBaPoeCKlfDhQpXx4KoR8UASD+BgFg+jYBaPoeCKlfDhQpXx4KoR8WASD+CAFg+jgBaPoeCKlfDhQpXx4KoR8YASD+CgFg+joBaPoeCKlfDhQpXx4KoR8aASD+DAFg+jwBaPoeCKlfDhQpXx4KoR8cASD+DgFg+j4BaPoeCKlfDhQpXx4KoR8eASD+AAAPyg="
-bne %cr0, 23b
-.base64 "gAGD6IAHg/iIAYPoiAeD+JABg+iQB4P4mAGD6JgHg/igAYPooAeD+KgBg+ioB4P4sAGD6LAHg/i4AYPouAeD+AAC4Ds="
-24:
-.base64 "////O4AHgDiAB6A4gAfAOA=="
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "wAeAOIAHoDhABMA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "FPqDfAAShIgAAKA4UChEfYAHg+jAB6PoeCKlfDhQpXx4KoR8gAeD+IgHg+jIB6PoeCKlfDhQpXx4KoR8iAeD+JAHg+jQB6PoeCKlfDhQpXx4KoR8kAeD+JgHg+jYB6PoeCKlfDhQpXx4KoR8mAeD+KAHg+jgB6PoeCKlfDhQpXx4KoR8oAeD+KgHg+joB6PoeCKlfDhQpXx4KoR8qAeD+LAHg+jwB6PoeCKlfDhQpXx4KoR8sAeD+LgHg+j4B6PoeCKlfDhQpXx4KoR8uAeD+AAAPyg="
-bne %cr0, 24b
-.base64 "wAiAOMADoDiAB8A4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "AAmAOMAIoDhAAcA4"
-bl {vg_brainpoolp512r1_mul_mod_p}
-.base64 "QAmAOAAJoDgAAcA4"
-bl {vg_brainpoolp512r1_add_mod_n}
-.base64 "gAmAOAAIoDjAAsA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "AAAAOP//AGD//wBkAQDAOEAI44CAAAOBFALnfFA46HwUMud8IgDmeEQI44CEAAOBFALnfFA46HwUMud8IgDmeEgI44CIAAOBFALnfFA46HwUMud8IgDmeEwI44CMAAOBFALnfFA46HwUMud8IgDmeFAI44CQAAOBFALnfFA46HwUMud8IgDmeFQI44CUAAOBFALnfFA46HwUMud8IgDmeFgI44CYAAOBFALnfFA46HwUMud8IgDmeFwI44CcAAOBFALnfFA46HwUMud8IgDmeGAI44CgAAOBFALnfFA46HwUMud8IgDmeGQI44CkAAOBFALnfFA46HwUMud8IgDmeGgI44CoAAOBFALnfFA46HwUMud8IgDmeGwI44CsAAOBFALnfFA46HwUMud8IgDmeHAI44CwAAOBFALnfFA46HwUMud8IgDmeHQI44C0AAOBFALnfFA46HwUMud8IgDmeHgI44C4AAOBFALnfFA46HwUMud8IgDmeHwI44C8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QAij6EgIg+h4I6V8UAiD6HgjpXxYCIPoeCOlfGAIg+h4I6V8aAiD6HgjpXxwCIPoeCOlfHgIg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8OEilfEALg+g4KIR8QAuD+AAAADj//wBg//8AZAEAwDgACOOAgAADgRQC53xQOOh8FDLnfCIA5ngECOOAhAADgRQC53xQOOh8FDLnfCIA5ngICOOAiAADgRQC53xQOOh8FDLnfCIA5ngMCOOAjAADgRQC53xQOOh8FDLnfCIA5ngQCOOAkAADgRQC53xQOOh8FDLnfCIA5ngUCOOAlAADgRQC53xQOOh8FDLnfCIA5ngYCOOAmAADgRQC53xQOOh8FDLnfCIA5ngcCOOAnAADgRQC53xQOOh8FDLnfCIA5nggCOOAoAADgRQC53xQOOh8FDLnfCIA5ngkCOOApAADgRQC53xQOOh8FDLnfCIA5ngoCOOAqAADgRQC53xQOOh8FDLnfCIA5ngsCOOArAADgRQC53xQOOh8FDLnfCIA5ngwCOOAsAADgRQC53xQOOh8FDLnfCIA5ng0COOAtAADgRQC53xQOOh8FDLnfCIA5ng4COOAuAADgRQC53xQOOh8FDLnfCIA5ng8COOAvAADgRQC53xQOOh8FDLnfCIA5nj//6Y4eCupfAAIo+gICIPoeCOlfBAIg+h4I6V8GAiD6HgjpXwgCIPoeCOlfCgIg+h4I6V8MAiD6HgjpXw4CIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXxAC4PoOCiEfEALg/hACaPoSAmD6HgjpXxQCYPoeCOlfFgJg+h4I6V8YAmD6HgjpXxoCYPoeCOlfHAJg+h4I6V8eAmD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxAC4PoOCiEfEALg/gAA4PogAeD+AgDg+iIB4P4EAOD6JAHg/gYA4PomAeD+CADg+igB4P4KAOD6KgHg/gwA4PosAeD+DgDg+i4B4P4AALgOw=="
-25:
-.base64 "////O4AHgDiAB6A4gAfAOA=="
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "wAeAOIAHoDiACcA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "FPqDfAAUhIgAAKA4UChEfYAHg+jAB6PoeCKlfDhQpXx4KoR8gAeD+IgHg+jIB6PoeCKlfDhQpXx4KoR8iAeD+JAHg+jQB6PoeCKlfDhQpXx4KoR8kAeD+JgHg+jYB6PoeCKlfDhQpXx4KoR8mAeD+KAHg+jgB6PoeCKlfDhQpXx4KoR8oAeD+KgHg+joB6PoeCKlfDhQpXx4KoR8qAeD+LAHg+jwB6PoeCKlfDhQpXx4KoR8sAeD+LgHg+j4B6PoeCKlfDhQpXx4KoR8uAeD+AAAPyg="
-bne %cr0, 25b
-.base64 "wAmAOEAJoDjAAsA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "AAqAOEAIoDjAAsA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "QAqAOIAIoDjAAsA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "gAqAOMAJoDgACsA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "gAqAOIAKoDhACsA4"
-bl {vg_brainpoolp512r1_add_mod_n}
-.base64 "wAqAOIAHoDiACsA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "AAuAOMAKoDhAAcA4"
-bl {vg_brainpoolp512r1_mul_mod_n}
-.base64 "AAuj6AgLg+h4I6V8EAuD6HgjpXwYC4PoeCOlfCALg+h4I6V8KAuD6HgjpXwwC4PoeCOlfDgLg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8QAuD6DgohHxAC4P4QAtD6UAJg+g4UIR8OADAOCg1jnxICYPoOFCEfDAAwDgoNY58UAmD6DhQhHwoAMA4KDWOfFgJg+g4UIR8IADAOCg1jnxgCYPoOFCEfBgAwDgoNY58aAmD6DhQhHwQAMA4KDWOfHAJg+g4UIR8CADAOCg1jnx4CYPoOFCEfAAAwDgoNY58AAuD6DhQhHx4AMA4KDWOfAgLg+g4UIR8cADAOCg1jnwQC4PoOFCEfGgAwDgoNY58GAuD6DhQhHxgAMA4KDWOfCALg+g4UIR8WADAOCg1jnwoC4PoOFCEfFAAwDgoNY58MAuD6DhQhHxIAMA4KDWOfDgLg+g4UIR8QADAOCg1jnwBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8IACATg==""#,
-        vg_brainpoolp512r1_mul_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_p,
-        vg_brainpoolp512r1_add_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_add_mod_p,
-        vg_brainpoolp512r1_sub_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_sub_mod_p,
-        vg_brainpoolp512r1_add_mod_n = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_add_mod_n,
-        vg_brainpoolp512r1_mul_mod_n = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_n,
-    )
-}
-
 /// ECDSA signature verification over brainpoolP512r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 64 bytes each, most significant first) of the hash at `digest` (its leftmost 64 bytes, or, for a shorter hash, the hash padded on the left with zeros to 64 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 64 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
@@ -745,10 +504,22 @@ bl {vg_brainpoolp512r1_mul_mod_n}
 .base64 "QAqAOMAJoDgACsA4"
 bl {vg_brainpoolp512r1_sub_mod_n}
 .base64 "QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfGAEg+h4I6V8aASD6HgjpXxwBIPoeCOlfHgEg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8QAuD6DgohHxAC4P4QAqj6EgKg+h4I6V8UAqD6HgjpXxYCoPoeCOlfGAKg+h4I6V8aAqD6HgjpXxwCoPoeCOlfHgKg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8AACAOFAgpXz//6U4QAuD6DgohHxAC4P4QAtD6QEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_brainpoolp512r1_mul_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_p,
-        vg_brainpoolp512r1_add_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_add_mod_p,
-        vg_brainpoolp512r1_sub_mod_p = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_sub_mod_p,
-        vg_brainpoolp512r1_mul_mod_n = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_mul_mod_n,
-        vg_brainpoolp512r1_sub_mod_n = sym super::brainpoolp512r1_mont::vg_brainpoolp512r1_sub_mod_n,
+        vg_brainpoolp512r1_mul_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
+        vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,
+        vg_brainpoolp512r1_sub_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p::vg_brainpoolp512r1_sub_mod_p,
+        vg_brainpoolp512r1_mul_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n::vg_brainpoolp512r1_mul_mod_n,
+        vg_brainpoolp512r1_sub_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_n::vg_brainpoolp512r1_sub_mod_n,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_mul_mod_n.rs"]
+pub(crate) mod vg_brainpoolp512r1_mul_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_sub_mod_n.rs"]
+pub(crate) mod vg_brainpoolp512r1_sub_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ecdsa_brainpoolp512r1_sign.rs"]
+pub(crate) mod vg_ecdsa_brainpoolp512r1_sign;

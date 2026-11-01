@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 
 /-! The cached addition's field programs retain the point-operation memory contract. -/

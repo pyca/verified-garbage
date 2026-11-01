@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.X86.Target
 
 /-! The original cdecl contract already reserves all input, scratch, and stack resources. -/

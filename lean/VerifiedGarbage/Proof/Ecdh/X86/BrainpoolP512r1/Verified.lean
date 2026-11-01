@@ -146,7 +146,7 @@ def τMul : VG.X86.Taint.T :=
     argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
 
 taint_summary mulSum : taint τMul
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP512r1 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeBrainpoolP512r1 h).isSome = true := by

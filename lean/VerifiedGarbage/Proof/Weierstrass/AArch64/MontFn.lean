@@ -42,7 +42,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono)
 abbrev arg (s : State) (r : Reg) : Nat := ((s.gpr r).setWidth 32).toNat
 
 /-- The function's own working space. -/
-abbrev own (n : Nat) : Nat := Spec.Weierstrass.Mont.ownAt n
+abbrev own (n : Nat) : Nat := Impl.Weierstrass.Mont.ownAt n
 
 /-- The registers the body writes. -/
 def bodyW (n : Nat) : List Reg := [.x1, .x2, .x3, .x6, .x7, .x23] ++ bRegsF n ++ mPool n ++ acc n ++ dRegs n
@@ -105,7 +105,7 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
     (ofs base x < moAt n ∨ moAt n + 8 * n ≤ ofs base x) → m' x = m x
 
 theorem own_eq {n : Nat} (h : n ≤ 9) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_arith
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_arith
 
 theorem ModOkS.n9 {n m : Nat} (h : ModOkS n m) : n ≤ 9 := by rcases h.hn with h | h <;> omega_arith
 theorem ModOkS.n4 {n m : Nat} (h : ModOkS n m) : 4 ≤ n := by rcases h.hn with h | h <;> omega_arith
@@ -513,7 +513,7 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
 
 theorem moAt_facts {n : Nat} (h : n ≤ 9) (h4 : 4 ≤ n) :
     own n ≤ moAt n ∧ moAt n + 16 * n = 4096 ∧ moAt n % 8 = 0 := by
-  simp only [own, moAt, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_arith
+  simp only [own, moAt, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_arith
 
 theorem mulFnS_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFnS n m) s Q ↔
     WP isa (.block (zextCode ++ (saveCode n ++ (ptrsCode n ++ (bodyCode n m ++ restoreCode n))))) s Q := by

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCorrect
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # The callable public-key validator satisfies its shared contract -/
 

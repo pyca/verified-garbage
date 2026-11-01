@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.P384.Point
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Impl.Ecdh.P384.AArch64
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
@@ -41,7 +41,7 @@ import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # P-384 public keys (FIPS 186-5 §A.2) on AArch64 -/
 

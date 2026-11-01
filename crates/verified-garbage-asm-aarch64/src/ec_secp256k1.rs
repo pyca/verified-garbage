@@ -195,7 +195,15 @@ bl {vg_secp256k1_inv_mod_p}
 .inst 0xf942dc01,0x8a030021,0xdac00c21,0xf90010c1,0xf9400013,0xf9400414,0xf9400815,0xf9400c16
 .inst 0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_secp256k1_mul = sym super::secp256k1_mul::vg_secp256k1_mul,
-        vg_secp256k1_inv_mod_p = sym super::secp256k1_inverse::vg_secp256k1_inv_mod_p,
+        vg_secp256k1_mul = sym super::ec_secp256k1::vg_secp256k1_mul::vg_secp256k1_mul,
+        vg_secp256k1_inv_mod_p = sym super::ec_secp256k1::vg_secp256k1_inv_mod_p::vg_secp256k1_inv_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_inv_mod_p.rs"]
+pub(crate) mod vg_secp256k1_inv_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_mul.rs"]
+pub(crate) mod vg_secp256k1_mul;

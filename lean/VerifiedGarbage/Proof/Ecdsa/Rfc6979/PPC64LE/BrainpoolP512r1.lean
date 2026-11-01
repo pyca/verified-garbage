@@ -18,7 +18,7 @@ open VG VG.PPC64LE
 def brainpoolp512r1Core (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : Core where
   E := Spec.Ecdsa.BrainpoolP512r1.inst
   C := Impl.Ecdsa.PPC64LE.signBrainpoolP512r1
-  N := Spec.Ecdsa.BrainpoolP512r1.signApi.name
+  N := "vg_ecdsa_brainpoolp512r1_sign"
   V := (Proof.Ecdsa.PPC64LE.BrainpoolP512r1.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.BrainpoolP512r1.sign_verified hL).2.1
   d := by decide +kernel

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

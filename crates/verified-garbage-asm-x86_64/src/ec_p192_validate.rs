@@ -21,6 +21,6 @@ pub unsafe extern "sysv64" fn vg_ec_p192_validate_public_key(public: *const [u8;
 call {vg_p192_check_point}
 .base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p192_check_point = sym super::p192_check_point::vg_p192_check_point,
+        vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
     )
 }

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-!
 # P-256 on x86-64: the Jacobian window method with the doubling by halving

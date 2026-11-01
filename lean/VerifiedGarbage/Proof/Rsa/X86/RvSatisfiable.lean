@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Rsa.X86.RvABI
 

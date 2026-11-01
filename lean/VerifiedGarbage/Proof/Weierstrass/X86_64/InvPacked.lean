@@ -17,6 +17,7 @@ import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps

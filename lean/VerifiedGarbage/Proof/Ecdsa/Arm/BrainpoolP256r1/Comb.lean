@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Comb
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -29,6 +30,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA over brainpoolP256r1 on 32-bit ARM with the generator comb
@@ -45,21 +48,21 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Ecdsa.Arm
 
 abbrev combSignSpec : Contract isa :=
-  Spec.Ecdsa.BrainpoolP256r1.inst.signContract (abi.withConsts brainpoolp256r1CombConsts)
+  Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst (abi.withConsts brainpoolp256r1CombConsts)
 
 def combSignPre (u : Bool) (s : State) : Prop :=
   Pre (brainpoolp256r1With u) s (constRegs brainpoolp256r1CombConsts s) ∧ ConstsOk brainpoolp256r1CombConsts 0 s
 
 theorem sign_spec_pre {u : Bool} {s : State}
-    (h : (Spec.Ecdsa.BrainpoolP256r1.inst.signContract abi).pre s) : Pre (brainpoolp256r1With u) s := by
-  sig_pre [Spec.Ecdsa.BrainpoolP256r1.inst,Spec.Ecdsa.Instance.signContract,Spec.Ecdsa.Instance.signSig,
+    (h : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst abi).pre s) : Pre (brainpoolp256r1With u) s := by
+  sig_pre [Spec.Ecdsa.BrainpoolP256r1.inst,Proof.Ecdsa.Instance.signContract,Proof.Ecdsa.Instance.signSig,
     Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr,stackArgAddr,
     BitVec.add_zero] at h
   obtain ⟨sp,rd,wr,_od,_oh,_ok,os,oa,ds,hs,ks,sa,fo,fd,fh,fk,fs⟩ := h
   exact ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
 
 theorem combSign_pre {u : Bool} {s : State} (h : combSignSpec.pre s) : combSignPre u s := by
-  have hp : (Spec.Ecdsa.BrainpoolP256r1.inst.signContract abi).pre (stripConsts brainpoolp256r1CombConsts s) ∧
+  have hp : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst abi).pre (stripConsts brainpoolp256r1CombConsts s) ∧
       ConstsOk brainpoolp256r1CombConsts 0 s := pre_consts.mp h
   have p := sign_spec_pre (u := u) hp.1
   refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.digest_sc,p.k_sc,p.out_args,p.sc_args,
@@ -96,8 +99,8 @@ theorem combSign_sat : combSignSpec.pre combSatState := by
   have arg := combSat_stackArg
   have held := combSat_held
   generalize eqs : combSatState=s
-  sig_pre [combSignSpec,Spec.Ecdsa.BrainpoolP256r1.inst,Spec.Ecdsa.Instance.signContract,
-    Spec.Ecdsa.Instance.signSig,Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+  sig_pre [combSignSpec,Spec.Ecdsa.BrainpoolP256r1.inst,Proof.Ecdsa.Instance.signContract,
+    Proof.Ecdsa.Instance.signSig,Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
     Loc.val,State.addr,stackArgAddr,BitVec.add_zero,brainpoolp256r1CombConsts,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,stackBelow]
   subst s
@@ -124,14 +127,14 @@ theorem combSignWith_verified (hC : Weierstrass.Law Spec.BrainpoolP256r1.curve) 
   · obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hC hs
     exact ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
-    sig_post [combSignSpec,Spec.Ecdsa.BrainpoolP256r1.inst,Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig,Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_post [combSignSpec,Spec.Ecdsa.BrainpoolP256r1.inst,Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig,Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,stackArgAddr,BitVec.add_zero,Abi.withConsts]
     rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
     exact post
   · intro s t _ _ pub
-    sig_pub [combSignSpec,Spec.Ecdsa.BrainpoolP256r1.inst,Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig,Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_pub [combSignSpec,Spec.Ecdsa.BrainpoolP256r1.inst,Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig,Spec.BrainpoolP256r1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,stackArgAddr,BitVec.add_zero,brainpoolp256r1CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,h0,h1,h2,h3,ha⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3,ha⟩,sy⟩

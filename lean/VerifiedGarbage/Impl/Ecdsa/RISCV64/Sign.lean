@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdh.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.P256.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
 
 /-!
 # ECDSA signatures on RISC-V

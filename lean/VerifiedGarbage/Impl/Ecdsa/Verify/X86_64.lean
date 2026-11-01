@@ -174,10 +174,10 @@ def points : Prog isa :=
   | some C =>
     .seq (.block (copy c.n (c.sl D) (c.sl K) ++ copy c.n (c.sl K) (c.sl U) ++
       copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
-    .seq (.call C.mulApi.name c.mulFn) <| .seq (.block (save c)) <|
+    .seq (.call s!"vg_{C.curve}_mul" c.mulFn) <| .seq (.block (save c)) <|
     .seq (.block (copy c.n (c.sl K) (c.sl V) ++ copy c.n (c.sl RX) (c.sl Impl.Ecdh.X86_64.PX) ++
       copy c.n (c.sl RY) (c.sl Impl.Ecdh.X86_64.PY))) <|
-    .seq (.call C.mulApi.name c.mulFn) <| .seq (sum c) (.block (copy c.n (c.sl K) (c.sl D)))
+    .seq (.call s!"vg_{C.curve}_mul" c.mulFn) <| .seq (sum c) (.block (copy c.n (c.sl K) (c.sl D)))
   | none =>
     .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul c.pubVerify) <| .seq (.block (save c)) <|
     .seq (mulV c) (sum c)

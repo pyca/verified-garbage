@@ -14,8 +14,8 @@ open VG.X86
 def p256 : Cfg where
   n := 4
   C := Spec.P256.curve
-  SP := Spec.Weierstrass.Mont.p256p
-  SN := Spec.Weierstrass.Mont.p256n
+  SP := Impl.Weierstrass.Mont.p256p
+  SN := Impl.Weierstrass.Mont.p256n
 
 /-- `vg_ecdsa_p256_sign`. -/
 def signP256 : Prog isa := p256.sign

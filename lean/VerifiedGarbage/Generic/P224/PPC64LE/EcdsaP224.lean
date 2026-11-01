@@ -19,9 +19,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P224.Lit
 namespace VG.Generic.P224.PPC64LE.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := [
-  Spec.Ecdsa.P224.signApi.artifact PPC64LE.target {
-    code := Impl.Ecdsa.PPC64LE.signP224
-    verified := Proof.Ecdsa.PPC64LE.P224.sign_verified h.law },
   Spec.Ecdsa.P224.verifyApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.verifyP224
     verified := Proof.Ecdsa.Verify.PPC64LE.P224.verify_verified h.law }]

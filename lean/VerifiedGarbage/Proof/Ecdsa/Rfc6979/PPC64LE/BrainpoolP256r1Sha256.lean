@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP256r1Sha256
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha256K.hm, 32, Spec.BrainpoolP256r1.curve.n, 128, Spec.Ecdsa.BrainpoolP256r1.signApi.name, Impl.Ecdsa.PPC64LE.signBrainpoolP256r1⟩
+def cfg : Cfg := ⟨sha256K.hm, 32, Spec.BrainpoolP256r1.curve.n, 128, "vg_ecdsa_brainpoolp256r1_sign", Impl.Ecdsa.PPC64LE.signBrainpoolP256r1⟩
 
 /-- The instance, for brainpoolP256r1's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : Rfc where

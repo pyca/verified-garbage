@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ecdh.Arm.Main
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA verification on 32-bit ARM: the whole function

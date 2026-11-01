@@ -14,7 +14,7 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86
 open VG.Impl.Weierstrass VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
 /-- A field copy updates the same environment used by arithmetic operations. -/
-theorem copyField_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem copyField_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {o a : Nat} (ho : Sl o) (ha : a ∈ V) :
@@ -37,7 +37,7 @@ theorem copyField_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
   · rw [hv]; exact hI.val a ha
 
 /-- Setting a canonical field constant also uses the arithmetic environment. -/
-theorem setField_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem setField_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {o v : Nat} (ho : Sl o) (hv : v < m)
@@ -61,7 +61,7 @@ theorem progKeep_of_op {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {o : Na
   (ProgKeep.of_op h).mono (by intro x hx; rw [List.mem_singleton.mp hx]; exact ho)
 
 /-- Copying a point retains its coordinates and the field environment. -/
-theorem copyPoint_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem copyPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     {S : RcbSlots} {p q o : Pt} (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
@@ -108,7 +108,7 @@ theorem copyPoint_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
       Function.update_of_ne (hqa q.z (by simp) o.y (by simp))]
 
 /-- The infinity branch writes a canonical nonzero y and zero z. -/
-theorem infinityPoint_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Spec.Weierstrass.Curve} {base : Addr} {size wk : Nat}
+theorem infinityPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Spec.Weierstrass.Curve} {base : Addr} {size wk : Nat}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk F K.M C.p size wk Sl)
     {o : Pt} (hSl : ∀ x ∈ [o.x,o.y,o.z], Sl x)
     {V : List Nat} {E : Nat → Fe C} {s : State}

@@ -207,7 +207,7 @@ structure LadLayR (L : LadderCfg) : Prop where
   n0 : 1 ≤ L.M.n
 
 theorem own_add (n : Nat) (h : 8 * n ≤ own n) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes] at h ⊢; omega
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at h ⊢; omega
 
 /-- A slot the ladder does not write is apart from what it writes. -/
 theorem LadLayR.apart_wx {L : LadderCfg} (hL : LadLayR L) {x : Nat} (hx : x ∈ ladSlots L)
@@ -353,7 +353,7 @@ theorem ladderBody_ok {Q : Nat → Fe C → Fe C → Fe C → Prop} {F : Field} 
     fun x hx => hI.unch.wordsVal
       (hL.apart_wx (ladR_slots L x (mem_ladRo_ladR hx)) (hL.lay.ro x hx))
       (by have := hL.lay.lay.le x (ladR_slots L x (mem_ladRo_ladR hx)); simp only [own,
-        Spec.Weierstrass.Mont.ownAt] at this; omega)
+        Impl.Weierstrass.Mont.ownAt] at this; omega)
   have hE : ∀ x ∈ ladRo L, tmv C L.M.n base s x = tmv C L.M.n base s₀ x := fun x hx => by
     rw [tmv, hro x hx]
   -- `s1 -= 1`.

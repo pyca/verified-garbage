@@ -122,10 +122,6 @@ public import VerifiedGarbage.Proof.X25519.X86.Fold
 namespace VG.Generic.BrainpoolP512r1.X86.EcdsaBrainpoolP512r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP512r1.signApi.artifact X86.target {
-    code := Impl.Ecdsa.X86.signBrainpoolP512r1
-    stack := 20
-    verified := Proof.Ecdsa.X86.BrainpoolP512r1.sign_verified h.law },
   Spec.Ecdsa.BrainpoolP512r1.verifyApi.artifact X86.target {
     code := Impl.Ecdsa.Verify.X86.verifyBrainpoolP512r1
     stack := 20

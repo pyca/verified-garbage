@@ -94,7 +94,7 @@ of `body` (`Joint.Cfg.pts`): a run of `body` (which calls nothing) is a run of
 the call, from a state the wrapper keeps the joint invariant in. -/
 theorem jointAdd_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
     {Q A B : Point C} {External : State → Prop} {V : List Nat} {E : Nat → Fe C} {s : State}
-    {body : Prog isa} {call : Spec.Weierstrass.PointOps.Curve → Prog isa} {prog : Prog isa}
+    {body : Prog isa} {call : Impl.Weierstrass.PointOps.Curve → Prog isa} {prog : Prog isa}
     (hprog : prog = match c.pts with | some C' => call C' | none => body)
     (hcall : ∀ C', (call C').inline = PointOps.wrap body)
     (hnc : ∀ C', c.pts = some C' → body.noCalls = true)
@@ -123,7 +123,7 @@ theorem jointAdd_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
 `body` is. -/
 theorem jointAdd_relCT_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat}
     {V W : List Nat} {E : Nat → Fe C}
-    {body : Prog isa} {call : Spec.Weierstrass.PointOps.Curve → Prog isa} {prog : Prog isa}
+    {body : Prog isa} {call : Impl.Weierstrass.PointOps.Curve → Prog isa} {prog : Prog isa}
     (hprog : prog = match c.pts with | some C' => call C' | none => body)
     (hcall : ∀ C', (call C').inline = PointOps.wrap body)
     (hnc : ∀ C', c.pts = some C' → body.noCalls = true)

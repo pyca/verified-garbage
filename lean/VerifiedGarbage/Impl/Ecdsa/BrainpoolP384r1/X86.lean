@@ -14,8 +14,8 @@ open VG.X86
 def brainpoolp384r1 : Cfg where
   n := 6
   C := Spec.BrainpoolP384r1.curve
-  SP := Spec.Weierstrass.Mont.brainpoolp384r1p
-  SN := Spec.Weierstrass.Mont.brainpoolp384r1n
+  SP := Impl.Weierstrass.Mont.brainpoolp384r1p
+  SN := Impl.Weierstrass.Mont.brainpoolp384r1n
 
 /-- `vg_ecdsa_brainpoolp384r1_sign`. -/
 def signBrainpoolP384r1 : Prog isa := brainpoolp384r1.sign

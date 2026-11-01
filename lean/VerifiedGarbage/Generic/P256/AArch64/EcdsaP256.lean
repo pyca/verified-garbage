@@ -257,10 +257,6 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 namespace VG.Generic.P256.AArch64.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
-  Spec.Ecdsa.P256.signApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p256.combConsts
-    code := Impl.P256.Booth.sign
-    verified := Proof.Ecdsa.AArch64.booth_sign_verified h.law h.inv (Proof.P256.combOk7 h.law) },
   Spec.Ecdsa.P256.verifyApi.artifact AArch64.target {
     consts := Impl.Ecdsa.Verify.AArch64.P256Joint.p256v.combConsts
     code := Impl.Ecdsa.Verify.AArch64.P256Allocated.verify

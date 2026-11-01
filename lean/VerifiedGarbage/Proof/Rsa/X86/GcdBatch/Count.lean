@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The fixed public batch count -/
 

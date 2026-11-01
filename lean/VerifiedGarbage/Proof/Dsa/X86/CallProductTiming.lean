@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
 import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
-import VerifiedGarbage.Spec.Weierstrass.Mont
+import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Product stages retain public layout and caller operands -/
 

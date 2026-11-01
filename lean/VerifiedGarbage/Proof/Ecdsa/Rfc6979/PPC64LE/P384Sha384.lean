@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.P384Sha384
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha384K.hm, 48, Spec.P384.curve.n, 8, Spec.Ecdsa.P384.signApi.name, Impl.Ecdsa.PPC64LE.signP384⟩
+def cfg : Cfg := ⟨sha384K.hm, 48, Spec.P384.curve.n, 8, "vg_ecdsa_p384_sign", Impl.Ecdsa.PPC64LE.signP384⟩
 
 /-- The instance, for P-384's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P384.curve) : Rfc where

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicABI
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicResources

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.P256.Linear.CorrectionValue
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 @[expose] public section
 

@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Middle
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA signatures on PPC64LE: the whole function

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 @[expose] public section
 

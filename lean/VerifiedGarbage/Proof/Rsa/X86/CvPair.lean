@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Relate CRT calls with equal public pointers, lengths, and stack position -/

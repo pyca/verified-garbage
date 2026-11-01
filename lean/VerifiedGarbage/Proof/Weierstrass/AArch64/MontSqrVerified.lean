@@ -29,7 +29,7 @@ set_option exponentiation.threshold 512
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
-open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Spec.Weierstrass.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
 open VG.Proof.Mont
 
 /-- `vg_<curve>_sqr_mod_<p|n>(ws = x0, o = w1, a = w2, b = w3)`. -/

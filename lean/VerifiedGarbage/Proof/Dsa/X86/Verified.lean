@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.X86.Target
 
 import Mathlib.Logic.Function.Basic

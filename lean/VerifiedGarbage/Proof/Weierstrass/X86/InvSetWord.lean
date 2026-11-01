@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 /-! # Setting one divstep workspace word -/
 @[expose] public section
 namespace VG.Proof.Weierstrass.X86.Inv

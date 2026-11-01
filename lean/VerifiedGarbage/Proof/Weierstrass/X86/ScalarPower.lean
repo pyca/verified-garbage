@@ -24,7 +24,7 @@ theorem p256ScalarPrefix_bound : ∀ op ∈ p256ScalarPrefixOps, powerOpBound op
     forall_eq, powerOpBound]
   decide +kernel
 
-theorem p256ScalarPower_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+theorem p256ScalarPower_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
     (hB : wordsVal s.mem base P.base P.M.n < m) (hnb : 128 ≤ P.nbits)
@@ -51,7 +51,7 @@ theorem p256ScalarPower_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {bas
   · rw [u₃.mem]; exact I₂.acc_lt
   · rw [u₃.mem]; exact I₂.acc_val
 
-theorem powScalar_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+theorem powScalar_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
     (hB : wordsVal s.mem base P.base P.M.n < m)

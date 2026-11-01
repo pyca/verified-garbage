@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # One multiply-accumulate step through pointers
 

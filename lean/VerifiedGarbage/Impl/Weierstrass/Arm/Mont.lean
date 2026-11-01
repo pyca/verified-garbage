@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Mont.Arm
 public import VerifiedGarbage.Impl.Mont.ArmPacked
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on 32-bit ARM
 
-`vg_<curve>_{mul,add,sub}_mod_<p|n>(ws, o, a, b)` (`Spec/Weierstrass/Mont.lean`;
+`vg_<curve>_{mul,add,sub}_mod_<p|n>(ws, o, a, b)` (`Proof/Weierstrass/MontContract.lean`;
 AAPCS: `ws`, `o`, `a` and `b` in `r0`–`r3`) for a modulus `m` of `n` 64-bit
 words, with the operations of `Impl/Mont/Arm.lean` on the working space `ws`:
 
@@ -46,7 +46,7 @@ def minv (m : Nat) : Nat :=
   (2 ^ 64 - inv) % 2 ^ 64
 
 /-- The start of the own working space: the accumulator. -/
-def own (n : Nat) : Nat := Spec.Weierstrass.Mont.ownAt n
+def own (n : Nat) : Nat := Impl.Weierstrass.Mont.ownAt n
 
 /-- The temporary area. -/
 def tmpAt (n : Nat) : Nat := own n + (32 * n + 8)
@@ -118,20 +118,20 @@ def callOp (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
     .seq (.call f body) (.block [.mov .lr (.reg .r10)])
 
 /-- The name of `vg_<curve>_mul_mod_<p|n>`, or with `u` of its `_umaal` variant. -/
-def mulName (u : Bool) (S : Spec.Weierstrass.Mont.Modulus) : String :=
+def mulName (u : Bool) (S : Impl.Weierstrass.Mont.Modulus) : String :=
   if u then S.fn "mul" ++ "_umaal" else S.fn "mul"
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`, or with
 `u` of `vg_<curve>_mul_mod_<p|n>_umaal`. -/
-def mulCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) (u : Bool := false) : Prog isa :=
+def mulCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) (u : Bool := false) : Prog isa :=
   callOp (mulName u S) (mulFnWith u S.k S.m) o a b
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-def addCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def addCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "add") (addFn S.k S.m) o a b
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-def subCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def subCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "sub") (subFn S.k S.m) o a b
 
 end VG.Impl.Weierstrass.Arm.Mont

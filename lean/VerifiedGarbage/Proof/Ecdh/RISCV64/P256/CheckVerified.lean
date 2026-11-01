@@ -51,19 +51,19 @@ def satState : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_check : CC.pre 0x1000 satMem := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.pre
+  unfold Impl.Weierstrass.CheckPoint.Curve.pre
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, .inl (by decide +kernel)⟩
 
 theorem check_verified : Verified RISCV64.target checkP256 (CC.checkContract RISCV64.abi) :=
   Verified.of_correct check_rv check_ct
-    { pre := by sig_implies_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+    { pre := by sig_implies_pre [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
         checkRVc, RISCV64.abi, RISCV64.argRegs]
-      post := by sig_implies_post [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      post := by sig_implies_post [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
         checkRVc, RISCV64.abi, RISCV64.argRegs]
-      pub := by sig_implies_pub [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      pub := by sig_implies_pub [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
         checkRVc, RISCV64.abi, RISCV64.argRegs]
       sat := ⟨satState, Sig.contract_pre_of_check (by decide +kernel) (by
-        sig_reduce [Sig.wfPre, Spec.Weierstrass.CheckPoint.sig, RISCV64.abi, RISCV64.argRegs, satState]
+        sig_reduce [Sig.wfPre, Impl.Weierstrass.CheckPoint.sig, RISCV64.abi, RISCV64.argRegs, satState]
         exact ⟨by decide, sat_check⟩)⟩ }
 
 end VG.Proof.Ecdh.RISCV64.P256

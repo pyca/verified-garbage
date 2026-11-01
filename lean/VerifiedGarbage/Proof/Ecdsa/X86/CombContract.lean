@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Sig
@@ -15,7 +16,7 @@ four-byte static-address frame -/
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86
 
-abbrev combSignSpec : Contract isa := Spec.Ecdsa.P256.inst.signContract (X86.abi.withConsts p256Comb.combConsts) 20
+abbrev combSignSpec : Contract isa := Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86.abi.withConsts p256Comb.combConsts) 20
 
 def combSignLocal : Contract isa where
   pre := CombSignPre p256Comb
@@ -29,8 +30,8 @@ def combSignWr (s : State) : List Region := signWr s
 
 theorem combSign_pre {s : State} (h : combSignSpec.pre s) :
     combSignLocal.pre (s.withRegions (combSignRd s) (combSignWr s)) := by
-  sig_pre [combSignSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-    Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+  sig_pre [combSignSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+    Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   obtain ⟨lo, sp, hdrop, held, fit, dw, _ret, st, -, _take, wr,

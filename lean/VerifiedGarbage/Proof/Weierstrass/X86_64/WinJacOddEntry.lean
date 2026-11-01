@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 

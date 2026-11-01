@@ -19,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
 public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-! # brainpoolP256r1 fixed-base signing: correctness, ABI and constant time
 
@@ -61,7 +62,7 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signComb :=
 theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds)
     :
     Verified AArch64.target signComb
-      (Spec.Ecdsa.BrainpoolP256r1.inst.signContract (AArch64.abi.withConsts combCfg.combConsts)) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst (AArch64.abi.withConsts combCfg.combConsts)) :=
   Verified.of_correct (sign_a64 hL hI) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb

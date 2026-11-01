@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over P-256 on AArch64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P256.inst.signContract` for AArch64, under the
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst` for AArch64, under the
 calling convention with the comb's tables (`Abi.withConsts p256.combConsts`),
 by name: `vg_ecdsa_p256_sign(out = x0, d = x1, digest = x2, k = x3,
 scratch = x4)`, the result in `w0`, and the tables at the address of the
@@ -70,15 +71,15 @@ theorem spec_pre {s : State}
     (f2 : (s.gpr .x2).toNat + 32 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 32 ≤ 2 ^ 64)
     (f4 : (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64) (ht : TblHeld s [⟨s.gpr .x0, 64⟩, ⟨s.gpr .x4, 8192⟩])
     (hal : (s.syms p256.tsym).toNat % 64 = 0) :
-    (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p256.combConsts)).pre s := by
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, h1, h2, h3, h4, h5, h6,
     h7, f0, f1, f2, f3, f4⟩
 
-theorem sat_spec : (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p256.combConsts)).pre
+theorem sat_spec : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pre
     satState := by
   have hl := p256_combWords_length
   have held : ∀ i < p256.combWords.length, satState.mem.readW (satState.syms p256.tsym +
@@ -94,20 +95,20 @@ theorem sat_spec : (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p2
     rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 theorem implies :
-    signAArch64.Implies (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p256.combConsts)) where
+    signAArch64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, h4, h5, h6, h7, h8, -, -, -, h9⟩ := h
     refine ⟨?_, hw, h4, h1, h2, h3, h5, h6, h7, h8, h9, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
-    sig_implies_post [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
+    sig_implies_post [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
       AArch64.argRegs, p256_combConsts, Abi.withConsts, signAArch64, sig]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    sig_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256_combConsts,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2, h3, h4⟩ := h

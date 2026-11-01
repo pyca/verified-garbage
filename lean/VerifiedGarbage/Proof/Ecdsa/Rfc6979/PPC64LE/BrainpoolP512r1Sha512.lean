@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP512r1Sha512
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha512K.hm, 64, Spec.BrainpoolP512r1.curve.n, 128, Spec.Ecdsa.BrainpoolP512r1.signApi.name, Impl.Ecdsa.PPC64LE.signBrainpoolP512r1⟩
+def cfg : Cfg := ⟨sha512K.hm, 64, Spec.BrainpoolP512r1.curve.n, 128, "vg_ecdsa_brainpoolp512r1_sign", Impl.Ecdsa.PPC64LE.signBrainpoolP512r1⟩
 
 /-- The instance, for brainpoolP512r1's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : Rfc where

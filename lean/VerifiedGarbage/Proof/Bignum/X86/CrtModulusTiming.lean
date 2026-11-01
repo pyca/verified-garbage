@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs

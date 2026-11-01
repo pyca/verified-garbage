@@ -64,9 +64,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 namespace VG.Generic.Secp256k1.AArch64.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.signApi.artifact AArch64.target {
-    code := Impl.Ecdsa.AArch64.signSecp256k1
-    verified := Proof.Ecdsa.AArch64.Secp256k1.sign_verified h.law h.inv },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify
     verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify_verified h.law h.inv }]

@@ -35,7 +35,7 @@ satisfying it.
 namespace VG.Proof.Weierstrass.X86_64.Mont
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64.Mont VG.Proof.Mont VG.Proof.Mont.X86_64
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus p521p)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus p521p)
 
 /-- What the precondition says of the registers. -/
 def x64Pre (M : Modulus) (s : State) : Prop :=
@@ -90,7 +90,7 @@ theorem fn9_x64 (M : Modulus) (hk : M.k = 9) (hR : M.R = (2 ^ 64) ^ 9) {code : P
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (mulX64 M).post s s' := by
   obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
   have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+  simp only [Impl.Weierstrass.Mont.Fits, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     hk] at ho ha hb
   suffices hwp : WP isa code s fun s' => gprPreserved s s' ∧ (mulX64 M).post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
@@ -107,8 +107,8 @@ theorem fn9_x64 (M : Modulus) (hk : M.k = 9) (hR : M.R = (2 ^ 64) ^ 9) {code : P
       simp only [Region.Contains, Nat.not_le] at hx
       simp only [ofs, argOf]; omega
   · intro i hi hown ho'
-    have e1 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
-    have e2 : Spec.Weierstrass.Mont.ownAt M.k = 3520 := by rw [hk]; rfl
+    have e1 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
+    have e2 : Impl.Weierstrass.Mont.ownAt M.k = 3520 := by rw [hk]; rfl
     have e3 : fnTmp = 4024 := rfl
     rw [e1] at hi
     rw [e2] at hown
@@ -227,21 +227,21 @@ def sat : State where
 
 theorem fit_zero (M : Modulus) (hk : M.k ≤ 9) : M.Fit 0 0 0 := by
   have h0 : (0 : BitVec 32).toNat = 0 := rfl
-  refine ⟨?_, ?_, ?_⟩ <;> simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt,
-    Spec.Weierstrass.Mont.ownBytes, h0] <;> omega
+  refine ⟨?_, ?_, ?_⟩ <;> simp only [Impl.Weierstrass.Mont.Fits, Impl.Weierstrass.Mont.ownAt,
+    Impl.Weierstrass.Mont.ownBytes, h0] <;> omega
 
 theorem mul_sat (M : Modulus) (hk : M.k ≤ 9) (hm : 0 < M.m) : (M.mulContract X86_64.abi).pre sat :=
   Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Weierstrass.Mont.sig, X86_64.abi, X86_64.argRegs, sat]
+    sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, X86_64.abi, X86_64.argRegs, sat]
     exact ⟨by decide, fit_zero M hk, by rw [numAt_zero]; exact hm⟩)
 
 theorem mul_implies (M : Modulus) (hk : M.k ≤ 9) (hm : 0 < M.m) :
     (mulX64 M).Implies (M.mulContract X86_64.abi) where
-  pre := by sig_implies_pre [Modulus.mulContract, Spec.Weierstrass.Mont.sig, argNum, mulX64, x64Pre,
+  pre := by sig_implies_pre [Modulus.mulContract, Impl.Weierstrass.Mont.sig, argNum, mulX64, x64Pre,
     x64Pub, X86_64.abi, X86_64.argRegs]
-  post := by sig_implies_post [Modulus.mulContract, Spec.Weierstrass.Mont.sig, argNum, mulX64, x64Pre,
+  post := by sig_implies_post [Modulus.mulContract, Impl.Weierstrass.Mont.sig, argNum, mulX64, x64Pre,
     x64Pub, X86_64.abi, X86_64.argRegs]
-  pub := by sig_implies_pub [Modulus.mulContract, Spec.Weierstrass.Mont.sig, argNum, mulX64, x64Pre,
+  pub := by sig_implies_pub [Modulus.mulContract, Impl.Weierstrass.Mont.sig, argNum, mulX64, x64Pre,
     x64Pub, X86_64.abi, X86_64.argRegs]
   sat := ⟨sat, mul_sat M hk hm⟩
 

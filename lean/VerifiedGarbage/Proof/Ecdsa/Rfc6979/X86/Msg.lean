@@ -16,7 +16,7 @@ import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the messages of steps d, f and h.3

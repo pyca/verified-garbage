@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

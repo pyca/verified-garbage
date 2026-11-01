@@ -58,13 +58,13 @@ theorem _root_.VG.Proof.Mont.ModOkW.keepArm {M M' : Mod} {m : Nat} {base : Addr}
     rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv, hM.red⟩
 
 /-- A slot, in the functions' terms. -/
-theorem slFits {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
+theorem slFits {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {i : Nat} (hi : i < 45) :
     c.sl i + 8 * S.k ≤ Impl.Weierstrass.Arm.Mont.own S.k :=
   hF.fits (by rw [hMn]; exact sl_below_wk c h7 hi)
 
 /-- `[o] = [a] [b] R⁻¹ mod m`, on slots. -/
-theorem slMul_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
+theorem slMul_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State} (hs : Scr s base size)
     (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45) (hB : sv c base s b < m) {u : Bool} :
     WP isa (Mont.mulCall S (c.sl o) (c.sl a) (c.sl b) u) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
@@ -75,7 +75,7 @@ theorem slMul_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : F
   exact ⟨.of_call hF K, lt, e⟩
 
 /-- `[o] = ([a] + [b]) mod m`, on slots. -/
-theorem slAdd_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
+theorem slAdd_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State} (hs : Scr s base size)
     (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hAB : sv c base s a + sv c base s b < 2 * m) :
@@ -87,7 +87,7 @@ theorem slAdd_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : F
   exact ⟨.of_call hF K, e⟩
 
 /-- `[o] = ([a] - [b]) mod m`, on slots. -/
-theorem slSub_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
+theorem slSub_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State} (hs : Scr s base size)
     (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hA : sv c base s a < m) (hB : sv c base s b < m) :

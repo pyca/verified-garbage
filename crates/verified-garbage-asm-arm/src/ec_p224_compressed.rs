@@ -1058,9 +1058,9 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
     )
 }
 
@@ -2498,9 +2498,9 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
     )
 }
 
@@ -3565,9 +3565,9 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_mul_mod_p_umaal = sym super::p224_mont::vg_p224_mul_mod_p_umaal,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_p_umaal = sym super::ec_p224::vg_p224_mul_mod_p_umaal::vg_p224_mul_mod_p_umaal,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
     )
 }
 
@@ -5011,8 +5011,8 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_mul_mod_p_umaal = sym super::p224_mont::vg_p224_mul_mod_p_umaal,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_p_umaal = sym super::ec_p224::vg_p224_mul_mod_p_umaal::vg_p224_mul_mod_p_umaal,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
     )
 }

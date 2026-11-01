@@ -40,7 +40,7 @@ def ladWx (L : LadderCfg) (wk : Nat) : List (Nat × Nat) := ladW L ++ [(wk, 64 *
 
 /-- The functions of `F` (`CallCfg`), with their own working space at `wk`
 above the ladder's slots and modulus, and below its table. -/
-structure LadWk (L : LadderCfg) (F : Spec.Weierstrass.Mont.Modulus) (m size wk : Nat) : Prop
+structure LadWk (L : LadderCfg) (F : Impl.Weierstrass.Mont.Modulus) (m size wk : Nat) : Prop
     extends CallCfg F L.M m size wk where
   sl : ∀ x ∈ ladSlots L, x + 8 * L.M.n ≤ wk
   mo : L.M.mo + 8 * L.M.n ≤ wk
@@ -48,7 +48,7 @@ structure LadWk (L : LadderCfg) (F : Spec.Weierstrass.Mont.Modulus) (m size wk :
   bits : wk + 64 * L.M.n ≤ L.bits
   bits_top : L.bits + L.nbits ≤ 8192
 
-theorem LadWk.wk {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk : Nat}
+theorem LadWk.wk {L : LadderCfg} {F : Impl.Weierstrass.Mont.Modulus} {m size wk : Nat}
     (h : LadWk L F m size wk) : WkOk F L.M m size wk (· ∈ ladSlots L) :=
   { h.toCallCfg with sl := h.sl, mo := h.mo, tmp := h.tmp }
 
@@ -65,7 +65,7 @@ theorem progW_ladWx {L : LadderCfg} {wk : Nat} {W : List Nat}
   · exact .inr (.inr rfl)
 
 /-- A slot the ladder does not write is apart from what it writes. -/
-theorem _root_.VG.Proof.Weierstrass.LadLay.apart_wx {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus}
+theorem _root_.VG.Proof.Weierstrass.LadLay.apart_wx {L : LadderCfg} {F : Impl.Weierstrass.Mont.Modulus}
     {m size wk : Nat} (hL : LadLay L size) (hW : LadWk L F m size wk) {x : Nat}
     (hx : x ∈ ladSlots L) (hxw : x ∉ ladWs L) :
     ∀ w ∈ ladWx L wk, x + 8 * L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
@@ -124,7 +124,7 @@ theorem ProgKeep.keeps {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' :
     (h : ProgKeep M base wk W s s') : Keeps clob s s' := ⟨h.gpr, h.rd, h.wr⟩
 
 /-- The two additions, from a state holding `E` in the slots `ladR`. -/
-theorem ladAdds_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {C : Curve} {base : Addr} {size : Nat} (hL : LadLay L size)
+theorem ladAdds_ok {L : LadderCfg} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {C : Curve} {base : Addr} {size : Nat} (hL : LadLay L size)
     (hW : LadWk L F C.p size wk) (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) E s) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', AddsPost L wk C base size E s s' → WP isa rest s' Q) :
@@ -160,7 +160,7 @@ theorem ladAdds_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat
     exact t₃.symm
 
 /-- The mask of the bit, and `R = D` or `T` by it. -/
-theorem ladSel_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk m : Nat} {base : Addr} {size : Nat} (hL : LadLay L size)
+theorem ladSel_ok {L : LadderCfg} {F : Impl.Weierstrass.Mont.Modulus} {wk m : Nat} {base : Addr} {size : Nat} (hL : LadLay L size)
     (hW : LadWk L F m size wk) {s : State} (hs : Scr s base size) {t : Nat} (ht : t < L.nbits)
     (hesi : s.gpr .esi = BitVec.ofNat 32 t)
     {c : Bool} (hc : s.mem (off base (L.bits + t)) = if c then 1 else 0) :
@@ -195,7 +195,7 @@ theorem ladSel_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk m : Na
     by rw [ex₅, hm₄], by rw [ey₅, hm₄], by rw [ez₅, hm₄]⟩
 
 /-- An iteration. -/
-theorem ladderBody_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
+theorem ladderBody_ok {L : LadderCfg} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
     {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size) (hW : LadWk L F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n)))
     {s₀ : State} (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
@@ -301,7 +301,7 @@ theorem ladderBody_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : 
 /-- `Q 0` accepts what `R` holds at the end, if `Q L.nbits` accepts what it
 holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
 whose bits are the table at `L.bits`; only `powClob` and `ladWx` change. -/
-theorem ladder_ok {L : LadderCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
+theorem ladder_ok {L : LadderCfg} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
     {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size) (hW : LadWk L F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW L.M size C.p s.mem base)

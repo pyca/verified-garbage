@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Montgomery arithmetic on AArch64: words in registers and in the working space

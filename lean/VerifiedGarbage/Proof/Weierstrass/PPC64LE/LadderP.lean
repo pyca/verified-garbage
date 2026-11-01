@@ -40,7 +40,7 @@ open VG.Impl.Weierstrass.PPC64LE.Mont VG.Impl.Weierstrass.PPC64LE.Point
 open VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass VG.Proof.Weierstrass.PPC64LE
   VG.Proof.Weierstrass.PPC64LE.Mont
 open VG.Spec.Weierstrass (Curve Fe)
-open VG.Spec.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
+open VG.Impl.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 
 /-- Apart from each of a few ranges, for numbers of the layout. -/
 tactic_template "ppc_apart" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append, List.not_mem_nil,
@@ -241,7 +241,7 @@ theorem Eb_dbl {k m : Nat} [NeZero m] (mem : Mem) (base : Addr) :
   simp only [Eb, enc_3, enc_4, enc_5, enc_6, enc_7, enc_8, ↓reduceIte, and_self]
 
 /-- An iteration. -/
-theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Impl.Weierstrass.Mont.Modulus}
     (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hM : ModOk L.M.n C.p) (hodd : C.p % 2 = 1) (hL : LadPtLay L)
     {s₀ : State} (hlt₀ : ∀ x ∈ [L.S.a, L.S.b3, L.G.x, L.G.y, L.G.z], wordsVal s₀.mem base x L.M.n < C.p)
     {a0 : Bool} (hstep : Step L C base s₀ k Q a0)
@@ -439,7 +439,7 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
 holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
 whose bits are the table at `L.bits`, by calls of the point functions; only
 `powClob` and `ladWpt` change. -/
-theorem ladderPt_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+theorem ladderPt_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Impl.Weierstrass.Mont.Modulus}
     (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hM : ModOk L.M.n C.p) (hodd : C.p % 2 = 1) (hL : LadPtLay L)
     {s : State} (hs : WsReg s base)
     (hlt : ∀ x ∈ [L.S.a, L.S.b3, L.G.x, L.G.y, L.G.z, L.R.x, L.R.y, L.R.z],
@@ -490,7 +490,7 @@ whose bits are the table at `L.bits`: by calls of the point functions for
 coordinates of at most 6 words (`ladderPt_ok`, whose slots `LadPtLay` gives),
 else by the complete addition inlined (`ladder_ok`, `LadLayI`); only
 `powClob` and `ladWp` change. -/
-theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Impl.Weierstrass.Mont.Modulus}
     (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hM : ModOk L.M.n C.p) (hodd : C.p % 2 = 1)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hP : L.M.n ≤ 6 → LadPtLay L) (hX : 6 < L.M.n → LadLayI L)
     {s : State} (hs : WsReg s base)

@@ -116,7 +116,7 @@ structure AddsPost (L : LadderCfg) (wk : Nat) (C : Curve) (base : Addr) (size : 
 
 /-- The two additions, from a state holding `E` in the slots `ladR`. -/
 theorem ladAdds_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size len : Nat} (hL : LadLay L size len)
-    (hW : LadWk L size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
+    (hW : LadWk L size wk) {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) E s) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', AddsPost L wk C base size E s s' → WP isa rest s' Q) {u : Bool} :
@@ -191,7 +191,7 @@ theorem ladSel_ok {L : LadderCfg} {wk : Nat} {base : Addr} {size len : Nat} (hL 
 /-- An iteration. -/
 theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
     {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size 8192) (hW : LadWk L size wk)
-    {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
+    {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hb8 : L.bits < 8192)
     {s₀ : State} (hf₀ : Far s₀ base 8192) (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
     (hstep : Step L C base s₀ k Q)
@@ -303,7 +303,7 @@ holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
 whose bits are the table at `L.bits`; only `powClob` and `ladWx` change. -/
 theorem ladder_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
     {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size 8192) (hW : LadWk L size wk)
-    {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
+    {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hb8 : L.bits < 8192)
     {s : State} (hs : Scr s base size) (hf : Far s base 8192) (hM : ModOkW L.M size C.p s.mem base)
     (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)

@@ -29,7 +29,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.X86.Wp
 open Spec.Weierstrass
 
-variable {F : Spec.Weierstrass.Mont.Modulus}
+variable {F : Impl.Weierstrass.Mont.Modulus}
 
 /-- Public window counter instructions. -/
 theorem winDec_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hb : s.gpr .esi = BitVec.ofNat 32 j) :

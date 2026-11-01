@@ -30,19 +30,19 @@ def callOp (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
   .seq (.block [.li .r4 o, .li .r5 a, .li .r6 b]) (.call f body)
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-def mulCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def mulCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "mul") (Mont.mulFn S.k S.m) o a b
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-def addCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def addCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "add") (Mont.addFn S.k S.m) o a b
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-def subCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
+def subCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "sub") (Mont.subFn S.k S.m) o a b
 
 /-- The code of a field operation modulo `S`: a call of its function. -/
-def opCode (S : Spec.Weierstrass.Mont.Modulus) : FOp → Prog isa
+def opCode (S : Impl.Weierstrass.Mont.Modulus) : FOp → Prog isa
   | .mul o a b => mulCall S o a b
   | .add o a b => addCall S o a b
   | .sub o a b => subCall S o a b
@@ -54,6 +54,6 @@ def progs : List (Prog isa) → Prog isa
   | p :: ps => .seq p (progs ps)
 
 /-- A straight-line sequence of field operations. -/
-def fprog (S : Spec.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa := progs (ops.map (opCode S))
+def fprog (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa := progs (ops.map (opCode S))
 
 end VG.Impl.Weierstrass.PPC64LE

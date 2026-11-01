@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Workspace geometry and tracked stages for i686 prime recovery
 

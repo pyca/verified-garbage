@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Top
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs

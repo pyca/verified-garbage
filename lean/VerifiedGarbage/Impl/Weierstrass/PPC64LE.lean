@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Call
 
 Code for any curve `y² = x³ + ax + b` over a prime field of `n` 64-bit
 words, whose Montgomery arithmetic is calls of the functions of a modulus
-(`Spec/Weierstrass/Mont.lean`, `Impl/Weierstrass/PPC64LE/Mont.lean`), which
+(`Proof/Weierstrass/MontContract.lean`, `Impl/Weierstrass/PPC64LE/Mont.lean`), which
 use the `64 n` bytes of the working space below byte 4096 for themselves.
 Field elements are in Montgomery form (`x R mod p`, `R = 2^(64 n)`) in slots
 of the working space, whose base is in `r3`, which the functions keep; a
@@ -71,25 +71,25 @@ abbrev more : Cond := .nonzero .d .r31
 
 /-- One iteration of the ladder, for the bit `t = r31 - 1`: `D = R + R`,
 `T = D + G`, then `R = T` if bit `t` is set, else `D`, modulo `S`. -/
-def ladderBody (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def ladderBody (L : LadderCfg) (S : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (fprog S (rcb L.S L.R L.R L.D)) <|
     .seq (fprog S (rcb L.S L.D L.G L.T)) <|
     .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T)
 
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
 caller (the point at infinity). -/
-def ladder (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def ladder (L : LadderCfg) (S : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block [.li .r31 L.nbits]) (.loop (ladderBody L S) more)
 
 /-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
 exponent's bit `r31 - 1` is set, modulo `S`. -/
-def powBody (P : PowCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def powBody (P : PowCfg) (S : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (mulCall S P.acc P.acc P.acc) <|
   .seq (mulCall S P.tmp P.acc P.base) <|
     .block (bitMask P.bits ++ sel P.M.n P.acc P.acc P.tmp)
 
 /-- `[acc] = [base]^e` (in Montgomery form), from the top bit of `e`. -/
-def pow (P : PowCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def pow (P : PowCfg) (S : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (copy P.M.n P.acc P.one ++ [.li .r31 P.nbits])) (.loop (powBody P S) more)
 
 /-- Byte `j` of the table for byte `r31` of the number: bit `j` of `r4`,

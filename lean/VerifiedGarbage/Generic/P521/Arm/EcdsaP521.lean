@@ -72,9 +72,6 @@ import VerifiedGarbage.Proof.X25519.Field
 namespace VG.Generic.P521.Arm.EcdsaP521
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
-  Spec.Ecdsa.P521.signApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.signP521
-    verified := Proof.Ecdsa.Arm.P521.sign_verified h.law },
   Spec.Ecdsa.P521.verifyApi.artifact Arm.target {
     code := Impl.Ecdsa.Verify.Arm.verifyP521
     verified := Proof.Ecdsa.Verify.Arm.P521.verify_verified h.law }]

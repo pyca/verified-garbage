@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

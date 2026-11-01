@@ -219,10 +219,10 @@ theorem setup_ok {s : State} (hs : EPre s) :
 /-- The check of the peer's point, by its call. -/
 theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base) (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2)
     (hf : word s.mem base FL = 0 ∨ word s.mem base FL = BitVec.allOnes 64) :
-    WP isa (wsCall Spec.Weierstrass.CheckPoint.p256.checkApi.name checkP256) s fun s' =>
+    WP isa (wsCall "vg_p256_check_point" checkP256) s fun s' =>
       Kp s s' ∧ Unch base checkKW s.mem s'.mem ∧
       word s'.mem base FL = word s.mem base FL &&&
-        Spec.Weierstrass.CheckPoint.Curve.mask (CC.Valid (sv base s CX) (sv base s CY)) ∧
+        Impl.Weierstrass.CheckPoint.Curve.mask (CC.Valid (sv base s CX) (sv base s CY)) ∧
       sv base s' CPX = (if word s'.mem base FL = 0 then sv base s GX else sv base s CX * 2 ^ 256 % W.p) ∧
       sv base s' CPY = (if word s'.mem base FL = 0 then sv base s GY else sv base s CY * 2 ^ 256 % W.p) := by
   refine wsCallR_ok checkP256_noFrames check_rv hw h3 (fun t r w a m => ?_) fun s₀ s' K mm t a m hp => ?_
@@ -358,13 +358,13 @@ theorem exchange_none {C : Curve} {d : Nat} (bs : List Byte) (h : ¬ (1 ≤ d �
     Spec.Ecdh.exchange C d bs = none := by
   unfold Spec.Ecdh.exchange; simp only [h, ↓reduceIte]
 
-theorem mask_eq (P : Prop) [Decidable P] : Spec.Weierstrass.CheckPoint.Curve.mask P = maskOf (decide P) := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.mask maskOf; by_cases h : P <;> simp [h]
+theorem mask_eq (P : Prop) [Decidable P] : Impl.Weierstrass.CheckPoint.Curve.mask P = maskOf (decide P) := by
+  unfold Impl.Weierstrass.CheckPoint.Curve.mask maskOf; by_cases h : P <;> simp [h]
 
 /-- The check's validity is the specification's, but for the first byte. -/
 theorem valid_iff (x y : Nat) :
     CC.Valid x y ↔ x < W.p ∧ y < W.p ∧ VG.Proof.Ecdh.OnCurveF W x y := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.Valid
+  unfold Impl.Weierstrass.CheckPoint.Curve.Valid
   constructor
   · rintro ⟨hx, hy, h⟩
     refine ⟨hx, hy, (VG.Proof.Ecdh.onCurve_iff hx hy).mp ?_⟩

@@ -13,7 +13,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86
 
-theorem doubleFieldPlain_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+theorem doubleFieldPlain_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2^(64*M.n)))
     {S : RcbSlots} {p o : Pt} (hSl : ∀ x∈rcbW S o++rcbR S p p,Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p,x∈V)
@@ -33,7 +33,7 @@ theorem doubleFieldPlain_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.
   · exact Or.inr (ofN_out_mem (dblJChoiceN_ok true) hx)
   · exact Or.inl hx
 
-structure JacAddChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) (p q o : Pt) : Prop where
+structure JacAddChecks (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) (p q o : Pt) : Prop where
   zeroP : ScratchCT (.block (Jacobian.zeroTest K.M.n p.z))
   zeroQ : ScratchCT (.block (Jacobian.zeroTest K.M.n q.z))
   zeroH : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t3))
@@ -45,7 +45,7 @@ structure JacAddChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) (p q o :
   double : ScratchCT (fprog F (dblJMul K.S p o))
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
-theorem jacAdd_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
+theorem jacAdd_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk F K.M m size wk Sl)
     (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt}
     (hc : JacAddChecks K F p q o) (hA : RcbApart K.S p q o)

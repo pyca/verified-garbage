@@ -4,11 +4,12 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P224
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA signatures over P-224 on PPC64LE: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P224.inst.signContract` for PPC64LE, by name:
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst` for PPC64LE, by name:
 `vg_ecdsa_p224_sign(out, d, digest, k, scratch)`, with the arguments in
 `r3`–`r7` and the result in `r3` (ELFv2).
 -/

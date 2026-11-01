@@ -121,7 +121,7 @@ theorem jacHead_readonly {F : Type _} [Lean.Grind.CommRing F]
 
 /-- A numbered program need not initialize all three output coordinates: the
 addition header only initializes temporaries, before the exceptional-case branches. -/
-theorem ofN_partial_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem ofN_partial_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp}
     (hN : ∀ op ∈ N, op.out < 9) {S : RcbSlots} {p q o : Pt}
@@ -149,7 +149,7 @@ theorem ofN_partial_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Add
 
 /-- The header computes the two public exceptional-case predicates in `t3`
 and `t5`, while retaining the operands for the doubling or copying cases. -/
-theorem jacHead_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem jacHead_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
@@ -185,7 +185,7 @@ theorem runOps_append {F : Type _} [Lean.Grind.CommRing F]
 
 /-- Once the nonzero-H branch has been selected, the tail completes the
 addition from the header's environment. -/
-theorem jacTail_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem jacTail_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
@@ -254,7 +254,7 @@ theorem JacPost.sub {M : Mod} {S : RcbSlots} {base : Addr} {size wk : Nat} {C : 
   · exact List.mem_append_left _ hx
   · exact List.mem_append_right _ (hV x hx)
 
-theorem copyPointJ_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
+theorem copyPointJ_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M C.p size wk Sl)
     {S : RcbSlots} {p q o : Pt} (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
@@ -278,7 +278,7 @@ theorem rcbR_self_mem (S : RcbSlots) (p q : Pt) {x : Nat} (h : x ∈ rcbR S p p)
   grind
 
 /-- Complete Jacobian addition on public data, including all exceptional cases. -/
-theorem jacAdd_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size wk : Nat} {C : Curve}
+theorem jacAdd_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk F K.M C.p size wk Sl)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
     {p q o : Pt} (hA : RcbApart K.S p q o)

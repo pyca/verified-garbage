@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Mont.Mod
@@ -45,7 +45,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.Weierstrass
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section

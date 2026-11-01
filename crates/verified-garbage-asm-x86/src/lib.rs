@@ -113,26 +113,6 @@ pub mod blowfish_ofb;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod brainpoolp256r1_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod brainpoolp256r1_point;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod brainpoolp384r1_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod brainpoolp384r1_point;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod brainpoolp512r1_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod camellia;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
@@ -477,50 +457,6 @@ pub mod mlkem768;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod p192_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p192_point;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p224_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p224_mul;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p224_point;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p256_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p384_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p384_mul;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p384_point;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p521_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod p521_mul;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod pbkdf2_md5;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
@@ -670,14 +606,6 @@ pub mod rsa_pss_sha512_mgf1_sha512;
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub mod scrypt;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod secp256k1_mont;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod secp256k1_point;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]

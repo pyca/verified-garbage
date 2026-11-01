@@ -35,7 +35,7 @@ def cfg : Cfg where
   hiN := Spec.Hmac.sha384I.initAnyKeyApi.name
   hfN := Spec.Hmac.sha384I.finalizeApi.name
   FN := Impl.Ecdsa.RISCV64.p256Order
-  coreN := Spec.Ecdsa.P256.signApi.name
+  coreN := "vg_ecdsa_p256_sign"
   coreC := Impl.Ecdsa.RISCV64.Sign.signP256
   tries := 8
 

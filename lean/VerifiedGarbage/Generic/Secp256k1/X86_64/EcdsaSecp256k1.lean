@@ -126,10 +126,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 namespace VG.Generic.Secp256k1.X86_64.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.signApi.artifact X86_64.target {
-    code := Impl.Ecdsa.X86_64.signSecp256k1
-    stack := 8
-    verified := Proof.Ecdsa.X86_64.Secp256k1.sign_verified h.law h.inv },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact X86_64.target {
     consts := Impl.Secp256k1.X86_64.secp256k1v.combConsts
     code := Impl.Ecdsa.Verify.X86_64.verifySecp256k1

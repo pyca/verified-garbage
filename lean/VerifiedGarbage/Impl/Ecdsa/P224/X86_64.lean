@@ -18,9 +18,9 @@ def p224 : Cfg where
   C := Spec.P224.curve
   comb := some ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false, false⟩
   fastN := true
-  mulBase := some Spec.Weierstrass.MulBase.p224
-  inverse := some Spec.Weierstrass.Inverse.p224
-  checkPoint := some Spec.Weierstrass.CheckPoint.p224
+  mulBase := some Impl.Weierstrass.MulBase.p224
+  inverse := some Impl.Weierstrass.Inverse.p224
+  checkPoint := some Impl.Weierstrass.CheckPoint.p224
 
 /-- `vg_ecdsa_p224_sign`. -/
 def signP224 : Prog isa := p224.sign

@@ -35,7 +35,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 meta import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 meta import VerifiedGarbage.Proof.Divstep.Batch
@@ -94,7 +94,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 meta import VerifiedGarbage.Proof.Weierstrass.JacMul
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Proof.Divstep.Alg
 meta import VerifiedGarbage.Proof.Divstep.Alg
 import Mathlib.Algebra.GroupWithZero.Nat

@@ -187,7 +187,7 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Wei
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 open Spec.Weierstrass
 
-variable {F : Spec.Weierstrass.Mont.Modulus}
+variable {F : Impl.Weierstrass.Mont.Modulus}
 
 /-- `R = 16 R`: `[e]P` to `[16 e]P`. -/
 theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)

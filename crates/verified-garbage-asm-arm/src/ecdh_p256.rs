@@ -1462,10 +1462,10 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
-        vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
-        vg_p256_mul = sym super::p256_mul::vg_p256_mul,
+        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
+        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
+        vg_p256_mul = sym super::ecdh_p256::vg_p256_mul::vg_p256_mul,
     )
 }
 
@@ -2934,9 +2934,25 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p256_mul_mod_p_umaal = sym super::p256_mont::vg_p256_mul_mod_p_umaal,
-        vg_p256_add_mod_p = sym super::p256_mont::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::p256_mont::vg_p256_sub_mod_p,
-        vg_p256_mul_umaal = sym super::p256_mul::vg_p256_mul_umaal,
+        vg_p256_mul_mod_p_umaal = sym super::ec_p256::vg_p256_mul_mod_p_umaal::vg_p256_mul_mod_p_umaal,
+        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
+        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
+        vg_p256_mul_umaal = sym super::ecdh_p256::vg_p256_mul_umaal::vg_p256_mul_umaal,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_mul.rs"]
+pub(crate) mod vg_p256_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_mul_umaal.rs"]
+pub(crate) mod vg_p256_mul_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_point_double.rs"]
+pub(crate) mod vg_p256_point_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_point_double_umaal.rs"]
+pub(crate) mod vg_p256_point_double_umaal;

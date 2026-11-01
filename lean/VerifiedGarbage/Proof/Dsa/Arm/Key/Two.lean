@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Copy
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Impl.Dsa.Arm.Context
 
 /-!

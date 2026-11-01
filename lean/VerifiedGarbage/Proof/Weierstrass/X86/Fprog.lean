@@ -34,7 +34,7 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Wei
 
 /-- The functions of `F` (`CallCfg`), with their own working space at `wk`
 above the slots `Sl`, the modulus and the temporary area. -/
-structure WkOk (F : Spec.Weierstrass.Mont.Modulus) (M : Mod) (m size wk : Nat) (Sl : Nat → Prop) : Prop
+structure WkOk (F : Impl.Weierstrass.Mont.Modulus) (M : Mod) (m size wk : Nat) (Sl : Nat → Prop) : Prop
     extends CallCfg F M m size wk where
   sl : ∀ x, Sl x → x + 8 * M.n ≤ wk
   mo : M.mo + 8 * M.n ≤ wk
@@ -142,7 +142,7 @@ theorem ProgKeep.wordsVal {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s
   · exact .inl hz
 
 /-- An operation writing `o`, which then holds `v`, keeps the invariant. -/
-theorem Inv.update {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem Inv.update {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     {V : List Nat} {E : Nat → Fin m} {s s' : State} (hI : Inv M base size m Sl V E s) {o : Nat}
     (ho : Sl o) (hk : ProgKeep M base wk [o] s s') (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
@@ -180,7 +180,7 @@ theorem Inv.update {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {
       exact hI.val x hx'
 
 /-- One operation. -/
-theorem fop_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem fop_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n)))
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
@@ -220,7 +220,7 @@ theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State �
   | cons p' ps' => exact WP.seq h
 
 /-- A field program. -/
-theorem fprog_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem fprog_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
       Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
@@ -244,7 +244,7 @@ theorem fprog_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {si
 be `q`), from a state holding `E`, in particular `p`, `q`, `a` and `3b`
 (`rcbR`): `o` holds `rcbAdd` of their values, and the slots but those `rcb`
 writes (`rcbW`) keep theirs. -/
-theorem rcb_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem rcb_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o)

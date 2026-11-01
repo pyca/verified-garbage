@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.P256.Linear.FortyOneCertificate
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import Mathlib.Logic.Function.Basic
 
 @[expose] public section

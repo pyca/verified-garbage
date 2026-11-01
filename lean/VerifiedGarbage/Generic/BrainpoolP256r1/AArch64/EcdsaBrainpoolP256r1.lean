@@ -64,10 +64,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 namespace VG.Generic.BrainpoolP256r1.AArch64.EcdsaBrainpoolP256r1
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP256r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP256r1.signApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts
-    code := Impl.Ecdsa.AArch64.BrainpoolP256r1.signComb
-    verified := Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_verified h.law h.inv },
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify
     verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify_verified h.law h.inv }]

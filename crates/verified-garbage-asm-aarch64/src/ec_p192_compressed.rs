@@ -76,7 +76,7 @@ bl {vg_p192_check_point}
 .inst 0x8a030021,0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819
 .inst 0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p192_check_point = sym super::p192_check_point::vg_p192_check_point,
+        vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
     )
 }
 
@@ -1724,3 +1724,7 @@ cbnz x19, 231b
 .p2align 6",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_check_point.rs"]
+pub(crate) mod vg_p192_check_point;

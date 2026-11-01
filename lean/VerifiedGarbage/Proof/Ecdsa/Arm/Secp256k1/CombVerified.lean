@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-! The generator comb satisfies the public signing API with its ROM constants. -/
 
@@ -28,14 +29,14 @@ theorem combSignWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (u : B
   · obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hC hs
     exact ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
-    sig_post [combSignSpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_post [combSignSpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,stackArgAddr,BitVec.add_zero,Abi.withConsts]
     rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
     exact post
   · intro s t _ _ pub
-    sig_pub [combSignSpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_pub [combSignSpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,stackArgAddr,BitVec.add_zero,secp256k1CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,h0,h1,h2,h3,ha⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3,ha⟩,sy⟩

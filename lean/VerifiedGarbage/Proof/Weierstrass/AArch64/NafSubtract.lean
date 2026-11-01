@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 @[expose] public section
 

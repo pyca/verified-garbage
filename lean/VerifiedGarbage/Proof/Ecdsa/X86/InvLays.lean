@@ -64,7 +64,7 @@ theorem flag_unch_pwW {l : List Nat} {base : Addr} {m m' : Mem} (hu : Unch base 
   · exact Or.inl (by omega)
   · exact Or.inr h
 
-theorem invLay_of (hc : CfgOk c) (h4 : c.n = 4) {M : Mod} {F : Spec.Weierstrass.Mont.Modulus} (hMn : M.n = c.n)
+theorem invLay_of (hc : CfgOk c) (h4 : c.n = 4) {M : Mod} {F : Impl.Weierstrass.Mont.Modulus} (hMn : M.n = c.n)
     {jm : Nat} (hmo : M.mo = c.sl jm) (hjm : jm = MP ∨ jm = MN) (htmp : M.tmp = c.sl TMP)
     {base : Nat} (hb : base = RZ ∨ base = KM) (m : Nat) :
     InvLay (InvCfg.ofMod M F (c.sl ACC) (c.sl base) (invAt c.n) m) size := by

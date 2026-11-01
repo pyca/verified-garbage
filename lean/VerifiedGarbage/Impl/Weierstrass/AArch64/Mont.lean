@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
 public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Montgomery products modulo a curve's `p` or `n`, as functions, on AArch64
 
-`vg_<curve>_mul_mod_<p|n>(ws, o, a, b)` (`Spec/Weierstrass/Mont.lean`;
+`vg_<curve>_mul_mod_<p|n>(ws, o, a, b)` (`Proof/Weierstrass/MontContract.lean`;
 AAPCS64: `ws` in `x0`, the offsets `o`, `a` and `b` in `w1`–`w3`) for a
 modulus `m` of `n` 64-bit words, word-by-word Montgomery multiplication (the
 rows of `Impl/Mont/AArch64.lean`) with every word it multiplies by in a
@@ -279,7 +279,7 @@ def sqrFn521 : Prog isa := P521Square.square
 def mulFn (n m : Nat) : Prog isa :=
   if sparseOk n m then mulFn384 else if general n m then mulFnG n m else mulFnS n m
 
-open Spec.Weierstrass.Mont in
+open Impl.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's, P-521's,
 brainpoolP384r1's and brainpoolP512r1's `p` and `n`, whose inline products are
 long. A product of four words is short enough inline that calls do not pay. -/

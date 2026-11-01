@@ -203,7 +203,7 @@ arithmetic's own working space and the point functions' slots. -/
 theorem save_le_own (h7 : c.n < 10) : c.sl 45 + 16 ≤ own c.n := by
   rw [sl_eq, own_eq]; omega_arith
 
-theorem save_le_oAt (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : c.sl 45 + 16 ≤ Spec.Weierstrass.Point.oAt c.n := by
+theorem save_le_oAt (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : c.sl 45 + 16 ≤ Impl.Weierstrass.Point.oAt c.n := by
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
   rw [sl_eq]; omega_arith
 

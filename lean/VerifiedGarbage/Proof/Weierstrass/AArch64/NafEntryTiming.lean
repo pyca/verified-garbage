@@ -14,13 +14,13 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf

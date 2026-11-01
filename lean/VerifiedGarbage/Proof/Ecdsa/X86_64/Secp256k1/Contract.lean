@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over secp256k1 on x86-64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.Secp256k1.inst.signContract` for x86-64, by name:
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.Secp256k1.inst` for x86-64, by name:
 `vg_ecdsa_secp256k1_sign(out = rdi, d = rsi, digest = rdx, k = rcx, scratch = r8)`,
 the result in `eax`.
 -/
@@ -56,8 +57,8 @@ def satState : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
 
-theorem implies : signX86_64.Implies (Spec.Ecdsa.Secp256k1.inst.signContract X86_64.abi) := by
-  sig_implies [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+theorem implies : signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.Secp256k1.inst X86_64.abi) := by
+  sig_implies [Spec.Ecdsa.Secp256k1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, signX86_64, sig]
     [satState] using satState
 

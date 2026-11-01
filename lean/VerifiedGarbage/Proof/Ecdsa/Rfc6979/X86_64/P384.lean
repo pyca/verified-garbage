@@ -66,7 +66,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P384.p384_sh
-  coreN := Spec.Ecdsa.P384.signApi.name
+  coreN := "vg_ecdsa_p384_sign"
   coreC := Impl.Ecdsa.X86_64.signP384
   coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct

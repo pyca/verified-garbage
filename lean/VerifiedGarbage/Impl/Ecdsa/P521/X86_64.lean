@@ -20,8 +20,8 @@ def p521 : Cfg where
   fastN := true
   pubVerify := true
   nbits := 521
-  inverse := some Spec.Weierstrass.Inverse.p521
-  checkPoint := some Spec.Weierstrass.CheckPoint.p521
+  inverse := some Impl.Weierstrass.Inverse.p521
+  checkPoint := some Impl.Weierstrass.CheckPoint.p521
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

@@ -24,6 +24,7 @@ import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! ## `InvSet` -/
 

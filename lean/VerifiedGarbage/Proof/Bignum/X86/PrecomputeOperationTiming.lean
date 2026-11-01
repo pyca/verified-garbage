@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeABI
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeBodyTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntryTiming

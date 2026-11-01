@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

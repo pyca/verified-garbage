@@ -18,7 +18,7 @@ open VG VG.PPC64LE
 def p192Core (hL : Weierstrass.Law Spec.P192.curve) : Core where
   E := Spec.Ecdsa.P192.inst
   C := Impl.Ecdsa.PPC64LE.signP192
-  N := Spec.Ecdsa.P192.signApi.name
+  N := "vg_ecdsa_p192_sign"
   V := (Proof.Ecdsa.PPC64LE.P192.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.P192.sign_verified hL).2.1
   d := by decide +kernel

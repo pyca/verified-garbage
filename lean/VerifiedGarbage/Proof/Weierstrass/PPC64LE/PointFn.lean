@@ -24,7 +24,7 @@ namespace VG.Proof.Weierstrass.PPC64LE.Point
 open VG VG.PPC64LE VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.PPC64LE
 open VG.Impl.Weierstrass.PPC64LE.Mont VG.Impl.Weierstrass.PPC64LE.Point
 open VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass VG.Proof.Weierstrass.PPC64LE.Mont
-open VG.Spec.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
+open VG.Impl.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 
 /-- The numbers of the layout, for `omega`. -/
 theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
@@ -75,7 +75,7 @@ temporaries (`OpsOk`): the registers but `fnClob`, `sp` and `lr` kept, the
 memory changed only at `O` and in the own working space, and `O`'s
 coordinates below the prime, standing for what `ops` computes from what the
 slots stand for. -/
-theorem fnOps_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
+theorem fnOps_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
     {dbl : Bool} {ops : List FOp} (hO : OpsOk ops) {s : State} (hp : PrePt S.k S.m dbl s) :
     WP isa (Point.fnOps S dbl ops) s fun s' => abiPreserved s s' ∧ (∀ r, r ∉ fnClob → s'.gpr r = s.gpr r) ∧
       Outs (s.gpr .r3) [(oAt S.k, 3 * elemBytes S.k), (ownAt S.k, 4096 - ownAt S.k)] s.mem s'.mem ∧
@@ -152,7 +152,7 @@ theorem fnOps_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.
 
 /-- `fnOps_ok` for the complete addition: `O`'s coordinates stand for
 `rcbAdd` of what the constants and the operands stand for. -/
-theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
+theorem fn_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
     {dbl : Bool} {s : State} (hp : PrePt S.k S.m dbl s) :
     WP isa (Point.fn S dbl) s fun s' => abiPreserved s s' ∧ (∀ r, r ∉ fnClob → s'.gpr r = s.gpr r) ∧
       Outs (s.gpr .r3) [(oAt S.k, 3 * elemBytes S.k), (ownAt S.k, 4096 - ownAt S.k)] s.mem s'.mem ∧

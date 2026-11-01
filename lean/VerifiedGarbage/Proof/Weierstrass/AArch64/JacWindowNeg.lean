@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
 public import VerifiedGarbage.Proof.Weierstrass.CombW

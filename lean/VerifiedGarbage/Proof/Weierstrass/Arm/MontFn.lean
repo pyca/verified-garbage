@@ -51,7 +51,7 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
   Outs base [(o, 8 * n), (own n, 64 * n)] m m'
 
 theorem own_le (n : Nat) (h : n ≤ 9) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_using [h]
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_using [h]
 
 theorem saves_off (n : Nat) : ∀ p ∈ saves n, saveAt n ≤ p.2 ∧ p.2 + 4 ≤ saveAt n + 32 := by
   intro p hp

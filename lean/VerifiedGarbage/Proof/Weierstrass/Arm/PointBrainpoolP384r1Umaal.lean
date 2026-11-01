@@ -35,7 +35,7 @@ so that adding them rebuilds none of their proofs.
 
 namespace VG.Proof.Weierstrass.Arm.Point
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Point Spec.Weierstrass.Point
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Point Spec.Weierstrass.Point Impl.Weierstrass.Point
 
 theorem brainpoolp384r1_addU_ct : ConstantTime isa (sumArm brainpoolp384r1 false).pre (sumArm brainpoolp384r1 false).pub (fn (modP brainpoolp384r1) false true) :=
   VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0])

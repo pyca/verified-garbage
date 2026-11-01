@@ -212,7 +212,7 @@ theorem tcLive_next (m : Nat) :
 theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoint.K.M.n)))
     (hC : Law C) (hd : JDblOk C dblJ0) (hOne : publicJoint.K.one<C.p) (hQ : onCurve C Q=true)
     (hm1 : 1≤m) (hm7 : m≤7) (h : TC C base Q s t m (2*m-1)) :
-    WP isa (Joint.tableCallStep publicJoint Spec.Weierstrass.PointOps.secp256k1).inline t
+    WP isa (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline t
       (fun u => TC C base Q s u (m+1) (2*(m+1)-1) ∧ u.cf=some (decide (m+1<8))) := by
   have hnc : (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0).noCalls=true := by
     decide +kernel
@@ -370,7 +370,7 @@ theorem cacheE_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
   · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Function.update_apply, hz1, hz2, ite_false]
 
 /-- The table by calls builds the table. -/
-theorem table_call_ok : JointTableCallOk publicJoint Spec.Weierstrass.PointOps.secp256k1 8192 := by
+theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.secp256k1 8192 := by
   intro C base Q s hm hC hd hOne hQ hi hp h1
   have hs := hi.scr
   have hi' : Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) (winRo publicJoint.K)
@@ -629,7 +629,7 @@ theorem cachedLay {size : Nat} (hL : JointInitLayout publicJoint size) :
 theorem table_step_ct {C : Curve} {base : Addr} {size m : Nat} (hL : JointInitLayout publicJoint size)
     (hm : UnitMod C.p (2^(64*publicJoint.K.M.n))) (hOne : publicJoint.K.one<C.p) (hm8 : m<8)
     :
-    RelCT isa (TP C base size m) (Joint.tableCallStep publicJoint Spec.Weierstrass.PointOps.secp256k1).inline
+    RelCT isa (TP C base size m) (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline
       (fun s t => TP C base size (m+1) s t ∧
         s.cf=some (decide (m+1<8)) ∧ t.cf=some (decide (m+1<8))) := by
   have hnc : (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0).noCalls=true := by
@@ -673,12 +673,12 @@ theorem table_step_ct {C : Curve} {base : Addr} {size m : Nat} (hL : JointInitLa
       · exact List.mem_append_right _ (List.mem_append_right _ hx)),ps.1,pt.1⟩,ps.2,pt.2⟩)
 
 /-- The table by calls is constant time. -/
-theorem table_call_ct : JointTableCallCT publicJoint Spec.Weierstrass.PointOps.secp256k1 := by
+theorem table_call_ct : JointTableCallCT publicJoint Impl.Weierstrass.PointOps.secp256k1 := by
   intro C base size E hL hm hOne
   have lay := hL.layout.lay
   have hnc : (PointOps.doubleBody publicJoint.K dblJ0).noCalls=true := by decide +kernel
   let I := fun j s t => 1≤j ∧ j≤7 ∧ TP C base size (8-j) s t
-  have step : ∀ j, RelCT isa (I j) (Joint.tableCallStep publicJoint Spec.Weierstrass.PointOps.secp256k1).inline
+  have step : ∀ j, RelCT isa (I j) (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline
       (fun s t => eval .b s=eval .b t ∧
         (eval .b s=some false → TP C base size 8 s t) ∧
         (eval .b s=some true → ∃ n<j, I n s t)) := by

@@ -40,9 +40,9 @@ call {vg_secp256k1_add_mod_p}
 call {vg_secp256k1_sub_mod_p}
 .base64 "WFhYWIuXYAUAAAuXZAUAAAuXaAUAAAuXbAUAAAuXcAUAAAuXdAUAAAuXeAUAAAuXfAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4/ABQAAi4dAAQAAi5eABAAAMcIhyjHQiYcABQAAi4dEAQAAi5eEBAAAMcIhyjHQiYcEBQAAi4dIAQAAi5eIBAAAMcIhyjHQiYcIBQAAi4dMAQAAi5eMBAAAMcIhyjHQiYcMBQAAi4dQAQAAi5eQBAAAMcIhyjHQiYcQBQAAi4dUAQAAi5eUBAAAMcIhyjHQiYcUBQAAi4dYAQAAi5eYBAAAMcIhyjHQiYcYBQAAi4dcAQAAi5ecBAAAMcIhyjHQiYccBQAAi4dgAQAAi5egBAAAMcIhyjHQiYegBQAAi4dkAQAAi5ekBAAAMcIhyjHQiYekBQAAi4doAQAAi5eoBAAAMcIhyjHQiYeoBQAAi4dsAQAAi5esBAAAMcIhyjHQiYesBQAAi4dwAQAAi5ewBAAAMcIhyjHQiYewBQAAi4d0AQAAi5e0BAAAMcIhyjHQiYe0BQAAi4d4AQAAi5e4BAAAMcIhyjHQiYe4BQAAi4d8AQAAi5e8BAAAMcIhyjHQiYe8BQAAi4/ABQAAi1wkBIuHwAQAAIPgAYPIAiHIiAOLh2AEAAAhyA/IiUMdi4dkBAAAIcgPyIlDGYuHaAQAACHID8iJQxWLh2wEAAAhyA/IiUMRi4dwBAAAIcgPyIlDDYuHdAQAACHID8iJQwmLh3gEAAAhyA/IiUMFi4d8BAAAIcgPyIlDAYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
-        vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
-        vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
+        vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
+        vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
+        vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
     )
 }
 
@@ -99,8 +99,8 @@ call {vg_secp256k1_mul_mod_p}
 call {vg_secp256k1_sub_mod_p}
 .base64 "WFhYWIuXAAUAAAuXBAUAAAuXCAUAAAuXDAUAAAuXEAUAAAuXFAUAAAuXGAUAAAuXHAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4fABAAAi49ABAAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHwAUAACHQiYfABQAAi4/ABQAAi1wkBLgEAAAAIciIA4uHYAQAACHID8iJQx2Lh2QEAAAhyA/IiUMZi4doBAAAIcgPyIlDFYuHbAQAACHID8iJQxGLh3AEAAAhyA/IiUMNi4d0BAAAIcgPyIlDCYuHeAQAACHID8iJQwWLh3wEAAAhyA/IiUMBi4fABAAAIcgPyIlDPYuHxAQAACHID8iJQzmLh8gEAAAhyA/IiUM1i4fMBAAAIcgPyIlDMYuH0AQAACHID8iJQy2Lh9QEAAAhyA/IiUMpi4fYBAAAIcgPyIlDJYuH3AQAACHID8iJQyGJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
-        vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
-        vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
+        vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
+        vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
+        vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
     )
 }

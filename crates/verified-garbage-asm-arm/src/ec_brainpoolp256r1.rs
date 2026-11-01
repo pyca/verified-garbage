@@ -1607,9 +1607,9 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_brainpoolp256r1_sub_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_sub_mod_p,
-        vg_brainpoolp256r1_point_add = sym super::brainpoolp256r1_point::vg_brainpoolp256r1_point_add,
-        vg_brainpoolp256r1_mul_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_mul_mod_p,
+        vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
+        vg_brainpoolp256r1_point_add = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_add::vg_brainpoolp256r1_point_add,
+        vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
         VG_BRAINPOOLP256R1_COMB = sym super::consts::VG_BRAINPOOLP256R1_COMB,
     )
 }
@@ -3224,9 +3224,33 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_brainpoolp256r1_sub_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_sub_mod_p,
-        vg_brainpoolp256r1_point_add_umaal = sym super::brainpoolp256r1_point::vg_brainpoolp256r1_point_add_umaal,
-        vg_brainpoolp256r1_mul_mod_p_umaal = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_mul_mod_p_umaal,
+        vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
+        vg_brainpoolp256r1_point_add_umaal = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_add_umaal::vg_brainpoolp256r1_point_add_umaal,
+        vg_brainpoolp256r1_mul_mod_p_umaal = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p_umaal::vg_brainpoolp256r1_mul_mod_p_umaal,
         VG_BRAINPOOLP256R1_COMB = sym super::consts::VG_BRAINPOOLP256R1_COMB,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_add_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_mul_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_mul_mod_p_umaal.rs"]
+pub(crate) mod vg_brainpoolp256r1_mul_mod_p_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_point_add.rs"]
+pub(crate) mod vg_brainpoolp256r1_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_point_add_umaal.rs"]
+pub(crate) mod vg_brainpoolp256r1_point_add_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_sub_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_sub_mod_p;

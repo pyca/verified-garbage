@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 public import VerifiedGarbage.Impl.P256.Booth
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
@@ -28,7 +29,7 @@ theorem booth_sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
 theorem booth_sign_verified_of_comb (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hcomb : CombCorrect p256 Impl.P256.Booth.comb) :
     Verified AArch64.target Impl.P256.Booth.sign
-      (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p256.combConsts)) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)) :=
   Verified.of_correct (booth_sign_a64 hL hI hcomb) booth_sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64

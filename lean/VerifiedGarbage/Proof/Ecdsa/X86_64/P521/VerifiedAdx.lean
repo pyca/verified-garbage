@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import VerifiedGarbage.Proof.P521.Prime
@@ -163,7 +164,7 @@ theorem sign_verified_adx (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP521Adx
-      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts) 8) :=
   Verified.of_inline_ct sign_inlineOk_adx (sign_x86_adx hL hT hI) sign_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 

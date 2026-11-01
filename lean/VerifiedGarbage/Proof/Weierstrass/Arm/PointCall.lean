@@ -101,7 +101,7 @@ theorem pre_of_callR {n m : Nat} {s : State} {base : Addr} {size : Nat} (hs : Sc
   rw [h3, hs.wb_toNat]; exact hf.nowrap
 
 section
-variable {enc : Nat → Nat} {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
+variable {enc : Nat → Nat} {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
   {size : Nat} (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat}
   (lo : enc o + 8 * S.k ≤ own S.k) (la : enc a + 8 * S.k ≤ own S.k) (lb : enc b + 8 * S.k ≤ own S.k)
 include hM hs hf lo la lb

@@ -108,7 +108,7 @@ theorem stackUse_callB {enc : Nat → Nat} {f : String} {body : Prog isa} (h : s
   simp only [callB, callOp, stackUse, frameBytes, h]; rfl
 
 /-- The point functions never write `esp` but by their calls' frames. -/
-theorem fnOps_noSp {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool) (ops : List FOp) :
+theorem fnOps_noSp {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool) (ops : List FOp) :
     NoSp (fnOps S dbl ops) := by
   intro i hi
   simp only [fnOps, instrs, List.mem_append] at hi
@@ -124,11 +124,11 @@ theorem fnOps_noSp {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool
   · simp only [restore, List.mem_cons, List.not_mem_nil, or_false] at hi
     rw [hi]; rfl
 
-theorem fn_noSp {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool) : NoSp (fn S dbl) :=
+theorem fn_noSp {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool) : NoSp (fn S dbl) :=
   fnOps_noSp hF dbl _
 
 /-- A point function's calls use 20 bytes of stack. -/
-theorem fnOps_stackUse (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) :
+theorem fnOps_stackUse (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) :
     stackUse (fnOps S dbl ops) ≤ 20 := by
   simp only [fnOps, stackUse, Nat.zero_max, Nat.max_zero]
   refine stackUse_progs_le _ fun p hp => ?_
@@ -138,7 +138,7 @@ theorem fnOps_stackUse (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : L
   | add => exact Nat.le_of_eq (stackUse_callB rfl)
   | sub => exact Nat.le_of_eq (stackUse_callB rfl)
 
-theorem fn_stackUse (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : stackUse (fn S dbl) ≤ 20 :=
+theorem fn_stackUse (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) : stackUse (fn S dbl) ≤ 20 :=
   fnOps_stackUse S dbl _
 
 /-- The 8 bytes below `esp` (a push and a return address) are past the
@@ -176,8 +176,8 @@ def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) :
 the slots: Algorithm 9 or 8 for `a0`, else Algorithm 1. -/
 def ptVal {m : Nat} [NeZero m] (a0 dbl : Bool) (E : Nat → Fin m) : Fin m × Fin m × Fin m :=
   if a0 then
-    (if dbl then Spec.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
-    else Spec.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
+    (if dbl then Impl.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+    else Impl.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
   else VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8)
 
 theorem ptOps_opsOk (a0 dbl : Bool) : OpsOk (ptOps a0 dbl) := by
@@ -202,7 +202,7 @@ is also the caller's argument at `[esp + arg]`, with 28 bytes of stack below
 `esp` apart from the working space: only `eax`, `ecx`, `edx`, `O`, the own
 working space and the stack below `esp` change, and `O` holds `rcbAdd` of
 what the constants and the operands stood for. -/
-theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF : FnOk S) (hm : S.m = m)
+theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF : FnOk S) (hm : S.m = m)
     (hk : S.k = k) (hodd : m % 2 = 1) (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) {a0 : Bool} {ao : Nat} {s : State}
     {base : Addr} (hs : Scr s base 8192) (h28 : 28 ≤ (s.gpr .esp).toNat)
     (hz : (s.gpr .esp).toNat ≤ base.toNat ∨ base.toNat + 8192 + 28 ≤ (s.gpr .esp).toNat)
@@ -212,8 +212,8 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
     (has : Region.Disjoint ⟨addr (s.gpr .esp) ao, 4⟩ (below (s.gpr .esp) 28))
     (hlt : ∀ x ∈ rIds, wordsVal s.mem base (enc k dbl x) k < m) :
     WP isa (ptCall S dbl ao a0) s fun s' => Keeps [.eax, .ecx, .edx] s s' ∧
-      Outs base [(Spec.Weierstrass.Point.oAt k, 3 * Spec.Weierstrass.Point.elemBytes k),
-        (Spec.Weierstrass.Point.ownAt k, 4096 - Spec.Weierstrass.Point.ownAt k), outW] s.mem s'.mem ∧
+      Outs base [(Impl.Weierstrass.Point.oAt k, 3 * Impl.Weierstrass.Point.elemBytes k),
+        (Impl.Weierstrass.Point.ownAt k, 4096 - Impl.Weierstrass.Point.ownAt k), outW] s.mem s'.mem ∧
       Frame [⟨base, 8192⟩, below (s.gpr .esp) 28] s.mem s'.mem ∧
       (∀ j < 3, wordsVal s'.mem base (enc k dbl j) k < m) ∧
       (Eb k m dbl s'.mem base 0, Eb k m dbl s'.mem base 1, Eb k m dbl s'.mem base 2) =
@@ -256,8 +256,8 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
   let K : Contract isa :=
     { pre := fun u => PrePt k' m' dbl u ∧ wsOf u = base ∧ Frame [below (s.gpr .esp) 8] s.mem u.mem
       post := fun u u' =>
-        Outs (wsOf u) [(Spec.Weierstrass.Point.oAt k', 3 * Spec.Weierstrass.Point.elemBytes k'),
-          (Spec.Weierstrass.Point.ownAt k', 4096 - Spec.Weierstrass.Point.ownAt k'), outW] u.mem u'.mem ∧
+        Outs (wsOf u) [(Impl.Weierstrass.Point.oAt k', 3 * Impl.Weierstrass.Point.elemBytes k'),
+          (Impl.Weierstrass.Point.ownAt k', 4096 - Impl.Weierstrass.Point.ownAt k'), outW] u.mem u'.mem ∧
         (∀ j < 3, wordsVal u'.mem (wsOf u) (enc k' dbl j) k' < m') ∧
         (toM m' (2 ^ (64 * k')) (wordsVal u'.mem (wsOf u) (enc k' dbl 0) k'),
           toM m' (2 ^ (64 * k')) (wordsVal u'.mem (wsOf u) (enc k' dbl 1) k'),

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P256.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.MulLit
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
@@ -177,9 +179,9 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified Arm.target signP256 (Spec.Ecdsa.P256.inst.signContract Arm.abi) :=
+    Verified Arm.target signP256 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst Arm.abi) :=
   Verified.of_correct (sign_arm hL) sign_ct (by
-    sig_implies [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    sig_implies [Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, signArm, sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
       [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState)

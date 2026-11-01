@@ -57,7 +57,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]
-  coreN := Spec.Ecdsa.P192.signApi.name
+  coreN := "vg_ecdsa_p192_sign"
   coreC := Impl.Ecdsa.X86.signP192
   coreX := fun s h => Proof.Ecdsa.X86.P192.sign_x86 hL s (core_pre_192 h)
   coreCT := by

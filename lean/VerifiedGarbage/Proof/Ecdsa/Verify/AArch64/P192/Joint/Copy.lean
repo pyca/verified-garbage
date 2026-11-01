@@ -7,6 +7,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! Copies through the joint table's public entry pointer. -/
 

@@ -11,7 +11,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86
 
-theorem nafTableFields_ok {FM : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {base : Addr} {size j m : Nat} [NeZero m]
+theorem nafTableFields_ok {FM : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {base : Addr} {size j m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk FM K.M m size wk Sl) (hn : K.M.n=4)
     (hy : K.R.y=K.R.x+32) (hz : K.R.z=K.R.x+64)
     {V : List Nat} {E : Nat → Fin m} {s : State}

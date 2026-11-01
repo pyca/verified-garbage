@@ -6,7 +6,7 @@ import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.GenerateKey
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateContract
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Saved
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateDerive

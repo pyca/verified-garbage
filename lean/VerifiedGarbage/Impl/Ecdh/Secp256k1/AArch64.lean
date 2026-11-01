@@ -14,7 +14,7 @@ a call of `vg_secp256k1_mul`, with `3 b R mod p` at `EXPP`'s slot for the comple
 addition that may follow. -/
 def qMul : Prog isa :=
   .seq (.block (setConst 4 (secp256k1.sl EXPP) (secp256k1.mont (3 * secp256k1.C.b))))
-    (secp256k1.mulAt Spec.Weierstrass.Mul.secp256k1.mulApi.name PX PY)
+    (secp256k1.mulAt "vg_secp256k1_mul" PX PY)
 
 /-- ECDH with a validated peer and the general complete ladder. -/
 def exchange : Prog isa :=
