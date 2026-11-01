@@ -58,7 +58,8 @@ theorem keyStart_k {s : State} (c : KCtx s) :
     WP isa (.block (entry ++ head)) s fun t => KS (keyIn s) s.mem t := by
   have hs := c.hs
   have hn := hs.nowrap
-  have hZ := c.hZ
+  have hZ26 := c.hZ
+  have hZ : slot (keyIn s).W 16 ≤ (arg s 11).toNat * 8 := Nat.le_trans (by unfold slot; omega_arith) hZ26
   have L := c.L
   have hpl : (keyIn s).pl = (s.gpr .r9).toNat := rfl
   have hpl1 := L.pl1
@@ -87,7 +88,8 @@ theorem keyStart_k {s : State} (c : KCtx s) :
     ⟨he.no, hnl, he.dd, he.pp, he.pl.trans (BitVec.eq_of_toNat_eq (by simp [keyIn])), he.qp, he.dp, he.dq, he.qi, he.e,
       he.el.trans (BitVec.eq_of_toNat_eq (by simp [keyIn])), he.saved⟩
   refine ⟨hw₂, hA₁.congr fun i hi' => hf₂.word_eq (fun r hr => ?_) (by omega_arith), c.p.congr hi hrd hwr,
-    c.q.congr hi hrd hwr, c.e.congr hi hrd hwr, hi, hwr, ?_⟩
+    c.q.congr hi hrd hwr, c.e.congr hi hrd hwr, hi, hwr, ?_, hZ26,
+    by simp only [keyIn, KIn.W]; omega_arith⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith
   · exact (k₂.gpr (by decide)).trans (he.keep.gpr (by decide))
