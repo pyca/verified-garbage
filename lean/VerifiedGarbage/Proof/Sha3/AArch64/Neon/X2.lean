@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
+public import VerifiedGarbage.Proof.Sha3.X2Contract
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Axioms
@@ -27,6 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
+meta import VerifiedGarbage.Proof.Sha3.X2Contract
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
@@ -41,7 +43,7 @@ Untrusted: everything here is checked by Lean. `code_ok`: from the states at
 working space at `x1`, the function saves `q8`–`q15` there, runs the inlined
 code's load, rounds (`roundsProg_ok`) and store, and restores `q8`–`q15`;
 it changes nothing else but `x16`, the vector registers and those two
-regions. `verified`: its contract (`Spec/Sha3/X2.lean`), from `PairAt` of the
+regions. `verified`: its contract (`Proof/Sha3/X2Contract.lean`), from `PairAt` of the
 states read as two `stateX2At`.
 -/
 
@@ -53,7 +55,8 @@ open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg save restore saveReg restoreReg)
 open VG.Impl.Sha3.AArch64.Neon.X2 (code)
 open VG.Proof.Sha3.AArch64.Sha3.Vector (exec_strq exec_ldrq read_write16 vreg_inj CoreKeep)
-open VG.Spec.Sha3 (stateX2At keccakF)
+open VG.Spec.Sha3 (keccakF)
+open VG.Proof.Sha3 (stateX2At)
 
 /-- The function's working space. -/
 def scrR (q : Addr) : Region := ⟨q, 128⟩
@@ -239,9 +242,9 @@ def satState : State where
   wr := [⟨0x1000, 400⟩, ⟨0x2000, 128⟩]
 
 theorem verified (sha3 : Bool) :
-    Verified AArch64.target (code sha3) (Spec.Sha3.permuteX2Contract AArch64.abi) :=
+    Verified AArch64.target (code sha3) (Proof.Sha3.permuteX2Contract AArch64.abi) :=
   Verified.of_correct (correct sha3) (ct sha3) (by
-    sig_implies [Spec.Sha3.permuteX2Contract, Spec.Sha3.permuteX2Sig, K, pairR, scrR,
+    sig_implies [Proof.Sha3.permuteX2Contract, Proof.Sha3.permuteX2Sig, K, pairR, scrR,
       AArch64.abi, AArch64.argRegs] [satState] using satState)
 
 

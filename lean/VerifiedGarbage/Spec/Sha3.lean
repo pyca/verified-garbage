@@ -18,11 +18,10 @@ of bits). The standard orders the bits of a byte least significant first
 is bit `k` of byte `i`, and each 64-bit lane of the state is the
 little-endian integer of 8 consecutive bytes. The rate is in bytes.
 
-The primitives implemented in assembly are the permutation (`keccakF`), and
-the sponge taken apart for streaming: absorbing message bytes into a state
-that `Repr` relates to the message absorbed so far, padding and absorbing
-the last block, and squeezing output. Their contracts are in
-`Spec/Sha3/Contract.lean`.
+The primitives implemented in assembly are the sponge taken apart for
+streaming: absorbing message bytes into a state that `Repr` relates to the
+message absorbed so far, padding and absorbing the last block, and squeezing
+output. Their contracts are in `Spec/Sha3/Contract.lean`.
 -/
 
 @[expose] public section

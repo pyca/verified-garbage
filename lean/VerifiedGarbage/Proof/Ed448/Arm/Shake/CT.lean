@@ -189,7 +189,7 @@ def padValues (sc P : Nat) : List (Reg × Value) :=
 
 theorem pad_ct {sc : Nat} (hsc : ScrAt n val sc scr) {P : Nat} (hp : P < 136) :
     RelCT isa (Two E ins outs g₁ g₂ m₁ m₂ (Slots E val (padValues sc P) [.caller sc KSCR]))
-      (.call Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad) (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) := by
+      (.call "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad) (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) := by
   have get : ∀ t, Slots E val (padValues sc P) [.caller sc KSCR] t → t.gpr .r0 = scr ∧ t.gpr .r1 = 136 ∧
       t.gpr .r2 = BitVec.ofNat 32 P ∧ stackArg t 0 = scr + BitVec.ofNat 32 KSCR := by
     intro t hs
@@ -215,7 +215,7 @@ def sqzStack (sc : Nat) : List Value := [.const 114, .caller sc KSCR]
 
 theorem sqz_ct {sc : Nat} (hsc : ScrAt n val sc scr) {d : Nat} (h8 : 8 ≤ d) (hd : d + 114 ≤ 248) :
     RelCT isa (Two E ins outs g₁ g₂ m₁ m₂ (Slots E val (sqzValues sc d) (sqzStack sc)))
-      (.call Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze)
+      (.call "vg_keccak_squeeze_scratch" Impl.Sha3.Arm.Stream.squeeze)
       (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) := by
   have get : ∀ t, Slots E val (sqzValues sc d) (sqzStack sc) t → t.gpr .r0 = scr ∧ t.gpr .r1 = 136 ∧
       t.gpr .r2 = 0 ∧ t.gpr .r3 = E + BitVec.ofNat 32 d ∧ stackArg t 0 = 114 ∧

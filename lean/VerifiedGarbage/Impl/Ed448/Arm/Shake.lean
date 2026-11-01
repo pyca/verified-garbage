@@ -65,9 +65,9 @@ def sqzArgs (sc d : Nat) : List Instr :=
 def absorb (args : List Instr) : Prog isa :=
   callWith args Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb
 
-def pad (sc : Nat) : Prog isa := callWith (padArgs sc) Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad
+def pad (sc : Nat) : Prog isa := callWith (padArgs sc) "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad
 
 def squeeze (sc d : Nat) : Prog isa :=
-  callWith (sqzArgs sc d) Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze
+  callWith (sqzArgs sc d) "vg_keccak_squeeze_scratch" Impl.Sha3.Arm.Stream.squeeze
 
 end VG.Impl.Ed448.Arm.Shake

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
@@ -7,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 meta import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Permute
@@ -491,9 +493,9 @@ theorem squeeze_ct : ConstantTime isa Proof.Sha3.squeezeX86_64.pre Proof.Sha3.sq
     (by taint_decide_weak VG.Proof.Sha3.X86_64.dropRC)
 
 theorem squeeze_verified :
-    Verified X86_64.target Impl.Sha3.X86_64.Stream.squeeze (Spec.Sha3.squeezeScratchContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.Sha3.X86_64.Stream.squeeze (Proof.Sha3.squeezeScratchContract X86_64.abi 8) :=
   Verified.of_correct squeeze_correct squeeze_ct (by
-    sig_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeX86_64,
+    sig_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Sha3.X86_64.Stream.Squeeze.sat] using
       Proof.Sha3.X86_64.Stream.Squeeze.sat)
 

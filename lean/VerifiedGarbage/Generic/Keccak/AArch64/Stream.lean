@@ -27,24 +27,12 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
       (Impl.Sha3.AArch64.Stream.padWith v.callee)
     stack := 656
     verified := Proof.Sha3.AArch64.Frame.pad_framed v },
-  Spec.Sha3.padScratchApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
-    code := Impl.Sha3.AArch64.Stream.padWith v.callee
-    stack := 16
-    verified := (Proof.Sha3.AArch64.Stream.Pad.pad_verified v) },
   Spec.Sha3.squeezeApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
     code := Impl.StackScratch.AArch64.withStackScratch 640 .x5
       (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)
     stack := 656
-    verified := Proof.Sha3.AArch64.Frame.squeeze_framed v },
-  Spec.Sha3.squeezeScratchApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
-    code := Impl.Sha3.AArch64.Stream.squeezeWith v.callee
-    stack := 16
-    verified := (Proof.Sha3.AArch64.Stream.Squeeze.squeeze_verified v) }]
+    verified := Proof.Sha3.AArch64.Frame.squeeze_framed v }]
 
 end VG.Generic.Keccak.AArch64.Stream

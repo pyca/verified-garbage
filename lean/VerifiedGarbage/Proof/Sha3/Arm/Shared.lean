@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
@@ -31,9 +32,9 @@ theorem setWidth_append32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   omega
 
 theorem permute :
-    Verified Arm.target Impl.Sha3.Arm.permute (Spec.Sha3.permuteContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.permute (Proof.Sha3.permuteContract Arm.abi) :=
   Proof.Sha3.Arm.permute_verified.of_implies (by
-    contract_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, Proof.Sha3.permuteArm,
+    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Sha3.Arm.satState] using Proof.Sha3.Arm.satState)
 
@@ -46,17 +47,17 @@ theorem absorb :
       using Proof.Sha3.Arm.Stream.Absorb.sat)
 
 theorem pad :
-    Verified Arm.target Impl.Sha3.Arm.Stream.pad (Spec.Sha3.padScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.Stream.pad (Proof.Sha3.padScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Pad.pad_verified.of_implies (by
-    contract_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padArm,
+    contract_implies [Proof.Sha3.padScratchContract, Proof.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Sha3.Arm.Stream.Pad.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Pad.sat)
 
 theorem squeeze :
-    Verified Arm.target Impl.Sha3.Arm.Stream.squeeze (Spec.Sha3.squeezeScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.Stream.squeeze (Proof.Sha3.squeezeScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Squeeze.squeeze_verified.of_implies (by
-    contract_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeArm,
+    contract_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, setWidth_append32]
       [Proof.Sha3.Arm.Stream.Squeeze.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Squeeze.sat)

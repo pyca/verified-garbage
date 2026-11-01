@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.Round
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
-public import VerifiedGarbage.Spec.Sha3.X3
 
 /-!
 # Keccak-f[1600] on three states, as a function (AArch64, SHA-3)
 
-`vg_keccak_f1600_x3_sha3(states, state, scratch)` (`Spec/Sha3/X3.lean`;
+`vg_keccak_f1600_x3_sha3(states, state, scratch)` (`Proof/Sha3/X2Contract.lean`;
 AAPCS64: `states` in `x0`, `state` in `x1`, `scratch` in `x2`) opens a frame
 of 128 bytes, in which it keeps the callee-saved general registers
 (`[sp, #16]`–`[sp, #104)`), the three pointers (`[sp, #104]`–`[sp, #128)`)
@@ -60,6 +59,6 @@ def body : List Instr := save ++ load ++ rounds 0 ++ store ++ restore
 def code : Prog isa := .frame (.alloc frameBytes) (.block body) (.free frameBytes)
 
 /-- `vg_keccak_f1600_x3_sha3`. -/
-def name : String := Spec.Sha3.permuteX3Api.name ++ "_sha3"
+def name : String := "vg_keccak_f1600_x3_sha3"
 
 end VG.Impl.Sha3.AArch64.Hybrid.X3

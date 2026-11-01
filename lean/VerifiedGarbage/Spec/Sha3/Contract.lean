@@ -6,15 +6,14 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # SHA-3 and SHAKE: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the permutation
-Keccak-f[1600] and of the streaming sponge (`absorb`/`pad`/`squeeze`, on the
-representation `Repr`), in terms of `Spec/Sha3.lean`, for any target: `A` is
-the target's calling convention. The signatures fix where the arguments are,
-the memory each function may access, disjointness, and that the pointers and
-lengths are public (see `TCB/Sig.lean`); the contracts add the
-postconditions and which other arguments are public. The state and the
-message are secret; the rate, the position within the block and the
-domain-separation suffix are public.
+**Trusted** (as every file in `Spec/`). The contracts of the streaming
+sponge (`absorb`/`pad`/`squeeze`, on the representation `Repr`), in terms of
+`Spec/Sha3.lean`, for any target: `A` is the target's calling convention.
+The signatures fix where the arguments are, the memory each function may
+access, disjointness, and that the pointers and lengths are public (see
+`TCB/Sig.lean`); the contracts add the postconditions and which other
+arguments are public. The state and the message are secret; the rate, the
+position within the block and the domain-separation suffix are public.
 
 A hash is computed from the all-zero state (which represents the empty
 message) by `vg_keccak_absorb` on each piece of the message,
@@ -31,10 +30,9 @@ pointer that an implementation's calls and frames use (`stack`, see
 may overwrite their arguments passed in memory, where the calling
 convention allows it (`writeArgs`). `scratch` is working space, sized for
 the target with the fewest registers. `vg_keccak_absorb`, `vg_keccak_pad` and
-`vg_keccak_squeeze` keep theirs on the stack; `vg_keccak_absorb_scratch`,
-`vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` are the same
-functions with theirs passed in `scratch`, for functions that call them with
-their own (ML-KEM's, ML-DSA's, Ed448's).
+`vg_keccak_squeeze` keep theirs on the stack; `vg_keccak_absorb_scratch` is
+`vg_keccak_absorb` with its working space passed in `scratch`, for
+callers that have their own (the Rust sponge on AArch64, on its stack).
 -/
 
 @[expose] public section
@@ -43,29 +41,6 @@ namespace VG.Spec.Sha3
 
 /-- The rates, in bytes, of the six functions of FIPS 202 (§6). -/
 def rates : List Nat := [72, 104, 136, 144, 168]
-
-/-- `vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64])`.
-`scratch` is working space. -/
-def permuteSig : Sig where
-  params := [("state", .array true .u64 25), ("scratch", .array true .u64 64)]
-
-/-- Applies Keccak-f[1600] to the state at `state`. The state is secret. -/
-def permuteContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  permuteSig.contract A (post := fun state _scratch m m' _ =>
-    stateAt m' state = keccakF (stateAt m state))
-    (stack := stack)
-
-/-- `vg_keccak_f1600` on every target. -/
-def permuteApi : Api where
-  module := "sha3"
-  name := "vg_keccak_f1600"
-  sig := permuteSig
-  contracts := some fun A stack => permuteContract A stack
-  summary := "The permutation Keccak-f[1600] (FIPS 202 §3.4): applies it to the state `*state` \
-    (lane `x + 5y` at index `x + 5y`).\n\n\
-    Contract: `VG.Spec.Sha3.permuteContract`. Constant time: only the pointers may affect timing, \
-    not the state."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize`.
 `rate` and `pos` are public. -/
@@ -176,34 +151,6 @@ def padApi : Api where
     `suffix` may affect timing, not the state."
   safety := ["`rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`."]
 
-/-- `vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80])`:
-`vg_keccak_pad` with its working space passed in `scratch`, for functions
-that call it with theirs. -/
-def padScratchSig : Sig where
-  params := [("state", .array true .u64 25), ("rate", .int .usize true),
-    ("pos", .int .usize true), ("suffix", .int .u32 true), ("scratch", .array true .u64 80)]
-
-/-- `padPre` and `padPost`, whatever `scratch` is. -/
-def padScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  padScratchSig.contract A
-    (pre := fun state rate pos suffix _scratch => padPre A.ptrBits state rate pos suffix)
-    (post := fun state rate pos suffix _scratch => padPost A.ptrBits state rate pos suffix)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_keccak_pad_scratch` on every target. -/
-def padScratchApi : Api where
-  module := "sha3"
-  name := "vg_keccak_pad_scratch"
-  sig := padScratchSig
-  writeArgs := true
-  contracts := some fun A stack => padScratchContract A stack
-  summary := "`vg_keccak_pad`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Sha3.padScratchContract`. Constant time: only the pointers, `rate`, `pos` \
-    and `suffix` may affect timing, not the state."
-  safety := [
-    "`rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.",
-    "The contents of `scratch` on return are unspecified."]
-
 /-- `vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize`.
 `rate` and `pos` are public. -/
 def squeezeSig : Sig where
@@ -246,37 +193,5 @@ def squeezeApi : Api where
     Contract: `VG.Spec.Sha3.squeezeContract`. Constant time: only the pointers, `rate`, `pos` and \
     `outlen` may affect timing, not the state."
   safety := ["`rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`."]
-
-/-- `vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize`:
-`vg_keccak_squeeze` with its working space passed in `scratch`, for
-functions that call it with theirs. -/
-def squeezeScratchSig : Sig where
-  params := [("state", .array true .u64 25), ("rate", .int .usize true),
-    ("pos", .int .usize true), ("out", .slice true .u8 "outlen"),
-    ("scratch", .array true .u64 80)]
-  ret := some .usize
-
-/-- `squeezePre` and `squeezePost`, whatever `scratch` is. -/
-def squeezeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  squeezeScratchSig.contract A
-    (pre := fun state rate pos out outlen _scratch =>
-      squeezePre A.ptrBits state rate pos out outlen)
-    (post := fun state rate pos out outlen _scratch =>
-      squeezePost A.ptrBits state rate pos out outlen)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_keccak_squeeze_scratch` on every target. -/
-def squeezeScratchApi : Api where
-  module := "sha3"
-  name := "vg_keccak_squeeze_scratch"
-  sig := squeezeScratchSig
-  writeArgs := true
-  contracts := some fun A stack => squeezeScratchContract A stack
-  summary := "`vg_keccak_squeeze`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Sha3.squeezeScratchContract`. Constant time: only the pointers, `rate`, \
-    `pos` and `outlen` may affect timing, not the state."
-  safety := [
-    "`rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`.",
-    "The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Sha3

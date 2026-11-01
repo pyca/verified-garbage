@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Contract
 public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -156,9 +157,9 @@ def padSat : State where
   wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
 
 theorem pad_verified :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.Stream.pad (Spec.Sha3.padScratchContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target Impl.Sha3.PPC64LE.Stream.pad (Proof.Sha3.padScratchContract PPC64LE.abi 48) :=
   Verified.of_correct pad_correct pad_ct (by
-    sig_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre,
+    sig_implies [Proof.Sha3.padScratchContract, Proof.Sha3.padScratchSig, Spec.Sha3.padPre,
       Spec.Sha3.padPost, Proof.Sha3.padPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [padSat]
       using padSat)
 
@@ -198,9 +199,9 @@ def squeezeSat : State where
 
 theorem squeeze_verified :
     Verified PPC64LE.target Impl.Sha3.PPC64LE.Stream.squeeze
-      (Spec.Sha3.squeezeScratchContract PPC64LE.abi 48) :=
+      (Proof.Sha3.squeezeScratchContract PPC64LE.abi 48) :=
   Verified.of_correct squeeze_correct squeeze_ct (by
-    sig_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre,
+    sig_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre,
       Spec.Sha3.squeezePost, Proof.Sha3.squeezePPC64LE, PPC64LE.abi, PPC64LE.argRegs] [squeezeSat]
       using squeezeSat)
 

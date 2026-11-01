@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
+public import VerifiedGarbage.Proof.Sha3.X2Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
@@ -28,6 +29,6 @@ structure X2Permutation where
   code : Prog isa
   /-- The code callers call: `Impl.Sha3.AArch64.Neon.X2.call sha3`'s. -/
   code_eq : code = Impl.Sha3.AArch64.Neon.X2.code sha3
-  verified : Verified AArch64.target code (Spec.Sha3.permuteX2Contract AArch64.abi)
+  verified : Verified AArch64.target code (Proof.Sha3.permuteX2Contract AArch64.abi)
 
 end VG.Proof.Sha3.AArch64

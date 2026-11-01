@@ -79,10 +79,10 @@ def absorb (args : List Instr) : Prog isa :=
   callWith args Spec.Sha3.absorbScratchApi.name Impl.Sha3.X86.Stream.absorb
 
 def pad (sc : Nat) : Prog isa :=
-  callWith (padArgs sc) Spec.Sha3.padScratchApi.name Impl.Sha3.X86.Stream.pad
+  callWith (padArgs sc) "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad
 
 def squeeze (sc d : Nat) : Prog isa :=
-  callWith (sqzArgs sc d) Spec.Sha3.squeezeScratchApi.name Impl.Sha3.X86.Stream.squeeze
+  callWith (sqzArgs sc d) "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze
 
 /-- Pruning (`Spec.Ed448.prune`), in place on 57 bytes of the frame at `q`:
 bits 0–1 of byte 0 cleared, bit 7 of byte 55 set, and byte 56 cleared. -/

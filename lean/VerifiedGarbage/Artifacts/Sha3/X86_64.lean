@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha3.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sha3.permuteApi.artifact X86_64.target {
-    code := Impl.Sha3.X86_64.permute
-    verified := Proof.Sha3.X86_64.permute_verified },
   Spec.Sha3.absorbApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 648 .r9 Impl.Sha3.X86_64.Stream.absorb
     stack := 656
@@ -26,17 +23,9 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 648 .r8 Impl.Sha3.X86_64.Stream.pad
     stack := 656
     verified := Proof.Sha3.X86_64.Frame.pad_framed },
-  Spec.Sha3.padScratchApi.artifact X86_64.target {
-    code := Impl.Sha3.X86_64.Stream.pad
-    stack := 8
-    verified := Proof.Sha3.X86_64.Stream.Pad.pad_verified },
   Spec.Sha3.squeezeApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 648 .r9 Impl.Sha3.X86_64.Stream.squeeze
     stack := 656
-    verified := Proof.Sha3.X86_64.Frame.squeeze_framed },
-  Spec.Sha3.squeezeScratchApi.artifact X86_64.target {
-    code := Impl.Sha3.X86_64.Stream.squeeze
-    stack := 8
-    verified := Proof.Sha3.X86_64.Stream.Squeeze.squeeze_verified }]
+    verified := Proof.Sha3.X86_64.Frame.squeeze_framed }]
 
 end VG.Artifacts.Sha3.X86_64

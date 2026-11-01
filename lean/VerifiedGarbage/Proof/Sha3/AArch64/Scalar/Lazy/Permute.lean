@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Sequence
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
@@ -9,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
 import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Sha3.Contract
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lazy
@@ -95,9 +97,9 @@ theorem permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre
     simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hr
 
 theorem permute_verified :
-    Verified AArch64.target permute (Spec.Sha3.permuteContract AArch64.abi) :=
+    Verified AArch64.target permute (Proof.Sha3.permuteContract AArch64.abi) :=
   Verified.of_correct permute_correct permute_ct (by
-    sig_implies [Spec.Sha3.permuteContract, Spec.Sha3.permuteSig, VG.Proof.Sha3.permuteAArch64,
+    sig_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, VG.Proof.Sha3.permuteAArch64,
       AArch64.abi, AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState]
       using VG.Proof.Sha3.AArch64.satState)
 
