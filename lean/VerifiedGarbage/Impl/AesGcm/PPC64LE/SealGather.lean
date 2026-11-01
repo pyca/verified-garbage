@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealFused
 public import VerifiedGarbage.Impl.Gather.PPC64LE
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 
@@ -32,7 +33,7 @@ open VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 
 /-- `vg_aes_gcm_seal`, in its frame. -/
-def sealCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.«seal»
+def sealCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
 
 /-- The arguments the gathering overwrites, and our return address, into the
 frame (`r12` its address); `tag` into the call's stack argument; `src`,
