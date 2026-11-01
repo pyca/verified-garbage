@@ -761,47 +761,83 @@ def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
 def distinct (as : List Artifact) (f : Artifact → String) : List String :=
   dedup (as.map f)
 
+/-- The names of the functions that `calls` (`Code.calls`) calls, each once,
+in first-seen order: its first call of each. -/
+def firstCalls {I C : Type} (calls : List (String × Code I C)) : List (String × Code I C) :=
+  Id.run do
+  let mut names : List String := []
+  let mut out : List (String × Code I C) := []
+  for (n, body) in calls do
+    unless names.contains n do
+      names := n :: names
+      out := (n, body) :: out
+  return out.reverse
+
 /-- The first of `calls` (`Code.calls`: the name of each function called and
-the code the model runs for it) that is not of a function `printed` gives the
-printed code of (`some (n, false)`), or whose code `P` does not print as that
-(`some (n, true)`); `none` if every call is of the code it runs.
+the code the model runs for it) that is not of a function with printed code
+(`some (n, false)`), or whose code `P` does not print as that function's
+printed code (`some (n, true)`); `none` if every call is of the code it runs.
+`first n` says it of the first call of each name `n`: `none` if `n` is not
+a function with printed code, else whether the first call's code prints as
+that code (`checkCalls` computes it once per name, `printsAs`).
 
 A function can be called hundreds of times in one artifact's `calls`, so
-only the first call of each name is printed and compared with `printed`;
-every later one is compared with the first one's code, by equal printed
-code, which `withPtrEq` returns at once if the two are the same value in
-memory, as they usually are. -/
-def badCall {M : ISA} (P : Printer M) (printed : String → Option (List Line))
+every later call of a name is compared with the first one's code, by equal
+printed code, which `withPtrEq` returns at once if the two are the same value
+in memory, as they usually are. -/
+def badCall {M : ISA} (P : Printer M) (first : String → Option Bool)
     (calls : List (String × Prog M)) : Option (String × Bool) := Id.run do
   -- The first call of each function checked so far, with its code.
-  let mut first : List (String × Prog M) := []
+  let mut seen : List (String × Prog M) := []
   for (n, body) in calls do
-    match first.find? (·.1 == n) with
+    match seen.find? (·.1 == n) with
     | some (_, body₀) =>
       unless withPtrEq body body₀ (fun _ => P.function body == P.function body₀)
           (fun h => by simp [h]) do
         return some (n, true)
     | none =>
-      match printed n with
+      match first n with
       | none => return some (n, false)
-      | some lines =>
-        unless P.function body == lines do return some (n, true)
-        first := (n, body) :: first
+      | some false => return some (n, true)
+      | some true => seen := (n, body) :: seen
   return none
 
-/-- An artifact with what the checks read of it more than once, each computed
-once: its printed code (`Printer.function`, which a call of it is checked
-against in every function that calls it, `checkCalls`) and its tables of
-constants (`tablesOf`, which every artifact of the target is checked
-against, `checkConsts`). -/
-structure Prepared where
+/-- A function's code, with the target it is code of: the value `files` shares
+(`ShareCommon.shareCommon'`, which makes equal values the same value in
+memory) for the code of every artifact and of every call, so that a call of
+an artifact's code is the same value as the artifact's (`printsAs`). -/
+abbrev Fn := (T : Target) × Prog T.isa
+
+/-- Whether the code `f` prints as `lines`, the printed code of `g`: at once if
+`f` and `g` are the same value in memory (`withPtrEq`), for then `f` prints as
+`g` does; else by printing `f`. -/
+def printsAs (f g : Fn) (lines : List Line) (h : lines = g.1.printer.function g.2) : Bool :=
+  withPtrEq f g (fun _ => f.1.printer.function f.2 == lines) (fun e => by subst e; simp [h])
+
+/-- An artifact, with its code as a `Fn`, and the first call of each function
+its code calls (`firstCalls`), each as a `Fn`: what `files` shares before it
+prepares the artifacts (`Prepared`). -/
+structure Shared where
   art : Artifact
+  fn : Fn
+  calls : List (String × Fn)
+  fn_eq : fn = ⟨art.target, art.code⟩
+  calls_eq : calls = (firstCalls art.code.calls).map fun (n, b) => (n, ⟨art.target, b⟩)
+
+def Shared.of (a : Artifact) : Shared := ⟨a, _, _, rfl, rfl⟩
+
+/-- An artifact with what the checks read of it more than once, each computed
+once: its code and its calls as `Fn`s (`Shared`), its printed code
+(`Printer.function`, which a call of it is checked against in every function
+that calls it, `checkCalls`) and its tables of constants (`tablesOf`, which
+every artifact of the target is checked against, `checkConsts`). -/
+structure Prepared extends Shared where
   lines : List Line
   tables : List (String × List (BitVec 64))
-  lines_eq : lines = art.target.printer.function art.code
+  lines_eq : lines = fn.1.printer.function fn.2
   tables_eq : tables = tablesOf art
 
-def Prepared.of (a : Artifact) : Prepared := ⟨a, _, _, rfl, rfl⟩
+def Prepared.of (s : Shared) : Prepared := ⟨s, _, _, rfl, rfl⟩
 
 /-- The functions of a module, the artifacts of `ps` in order: each with the
 text of its function after its name (`codeOf`) and the name of the function
@@ -962,33 +998,27 @@ body enables and its `cfg` attribute follows, as an artifact's
 (`bodyLines`, `gateOf`); the tables of constants its instructions carry
 (`Printer.codeTables`), and the tables its printed code names. -/
 structure Internal where
-  target : Target
+  /-- Its target and code, the `Fn` of the first call of it (`Shared.calls`). -/
+  fn : Fn
   name : String
-  code : Prog target.isa
   lines : List Line
   features : List String
   tables : List (String × List (BitVec 64))
   syms : List String
-  lines_eq : lines = target.printer.function code
-  features_eq : features = requiresDedup target.isa.requires code
-  tables_eq : tables = target.printer.codeTables code
+  lines_eq : lines = fn.1.printer.function fn.2
+  features_eq : features = requiresDedup fn.1.isa.requires fn.2
+  tables_eq : tables = fn.1.printer.codeTables fn.2
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 
-/-- The internal function `name` of the target `T`, whose code is `code`. -/
-def Internal.of (T : Target) (name : String) (code : Prog T.isa) : Internal :=
-  ⟨T, name, code, _, _, _, _, rfl, rfl, rfl, rfl⟩
+/-- The target of an internal function. -/
+abbrev Internal.target (h : Internal) : Target := h.fn.1
 
-/-- The names of the functions that `calls` (`Code.calls`) calls, each once,
-in first-seen order: its first call of each. -/
-def firstCalls {I C : Type} (calls : List (String × Code I C)) : List (String × Code I C) :=
-  Id.run do
-  let mut names : List String := []
-  let mut out : List (String × Code I C) := []
-  for (n, body) in calls do
-    unless names.contains n do
-      names := n :: names
-      out := (n, body) :: out
-  return out.reverse
+/-- The code of an internal function. -/
+abbrev Internal.code (h : Internal) : Prog h.target.isa := h.fn.2
+
+/-- The internal function `name` whose target and code are `f`. -/
+def Internal.of (name : String) (f : Fn) : Internal :=
+  ⟨f, name, _, _, _, _, rfl, rfl, rfl, rfl⟩
 
 /-- The internal functions of the artifacts of `ps` (`Internal`): of each
 target, every function the code of one of its artifacts calls (`Code.calls`,
@@ -1002,11 +1032,11 @@ def internalsOf (ps : List Prepared) : List Internal := Id.run do
   for p in ps do
     let a := p.art
     let t := a.target.name
-    for (n, body) in firstCalls a.code.calls do
+    for (n, f) in p.calls do
       if found.contains (t, n) then continue
       if ps.any fun q => q.art.target.name == t && q.art.name == n then continue
       found := (t, n) :: found
-      out := Internal.of a.target n body :: out
+      out := Internal.of n f :: out
   return out.reverse
 
 /-- The internal function of `hs` that a call of `name` in an artifact of the
@@ -1070,7 +1100,7 @@ def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit
   if a.module == "internal" then
     throw s!"{t}: {a.name}'s module is `internal`, the module of the internal functions"
   let own := p.tables.map (·.1)
-  for (n, _) in firstCalls a.code.calls do
+  for (n, _) in p.calls do
     let some h := internal? hs t n | continue
     for s in h.syms do
       unless own.contains s || (h.tables.map (·.1)).contains s do
@@ -1080,15 +1110,22 @@ def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit
 /-- Every call in the code of `p`'s artifact, and in the code of the functions
 it calls, is of an artifact of `ps` of the same target, or of an internal
 function of `hs` (`internalsOf`), whose printed code is that of the called
-code (`badCall`). -/
+code (`badCall`). The first call of each function is the `Fn` of `p.calls`,
+which `files` shared with the code of every artifact and internal function:
+so it is usually the same value in memory as the code of the function it
+calls, and `printsAs` compares it with that function's printed code without
+printing it again. -/
 def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except String Unit :=
   let a := p.art
   let t := a.target.name
-  let printed (n : String) : Option (List Line) :=
-    match ps.find? fun q => q.art.target.name == t && q.art.name == n with
-    | some q => some q.lines
-    | none => (internal? hs t n).map (·.lines)
-  match badCall a.target.printer printed a.code.calls with
+  let first (n : String) : Option Bool :=
+    match p.calls.find? (·.1 == n) with
+    | none => none
+    | some (_, f) =>
+      match ps.find? fun (q : Prepared) => q.art.target.name == t && q.art.name == n with
+      | some q => some (printsAs f q.fn q.lines q.lines_eq)
+      | none => (internal? hs t n).map fun h => printsAs f h.fn h.lines h.lines_eq
+  match badCall a.target.printer first a.code.calls with
   | none => pure ()
   | some (n, false) =>
     throw s!"{t}: {a.name} calls {n}, which is neither an artifact nor an internal function"
@@ -1183,12 +1220,12 @@ def forMPar {α : Type u} (as : List α) (check : α → Except String Unit) : E
   | some (_, e) => throw e
   | none => pure ()
 
-/-- `as.map Prepared.of`, on `tasks` tasks, each preparing a run of consecutive
+/-- `ss.map Prepared.of`, on `tasks` tasks, each preparing a run of consecutive
 artifacts. -/
-def prepareAll (as : List Artifact) : List Prepared :=
-  let size := (as.length + tasks - 1) / tasks
+def prepareAll (ss : List Shared) : List Prepared :=
+  let size := (ss.length + tasks - 1) / tasks
   let parts := (List.range tasks).map fun j =>
-    Task.spawn fun _ => ((as.drop (j * size)).take size).map Prepared.of
+    Task.spawn fun _ => ((ss.drop (j * size)).take size).map Prepared.of
   (parts.map Task.get).flatten
 
 /-- The targets of the artifacts `as`, each once, with its Rust `cfg`
@@ -1343,12 +1380,15 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
   -- of a function in an artifact is then the same value as its first call's,
   -- which `badCall` and `distinctCalls` skip at once. Most calls' code was
-  -- an equal value made again, not the same one. First, as sharing values
-  -- that tasks have read takes several times longer.
-  let as := ShareCommon.shareCommon' as
+  -- an equal value made again, not the same one. So is each artifact's `Fn`
+  -- and that of each first call of a function (`Shared`), with the same target
+  -- and code, which `checkCalls` compares by `printsAs`. First, as sharing
+  -- values that tasks have read takes several times longer.
+  let ss := ShareCommon.shareCommon' (as.map Shared.of)
+  let as := ss.map (·.art)
   forMPar as checkApi
   checkUnique as
-  let ps := prepareAll as
+  let ps := prepareAll ss
   let hs := internalsOf ps
   forMPar ps (checkCalls ps hs)
   forMPar ps (checkConsts ps)

@@ -127,7 +127,10 @@ def abi : Abi isa where
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
   sym := some fun s name => s.syms name
 
-abbrev target : Target where
+/-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
+every module that names it, which then builds a target of its own, so the emitter
+would see one per registration module rather than this one (`Rust.printsAs`). -/
+@[reducible] def target : Target where
   name := "aarch64"
   isa := isa
   printer := printer

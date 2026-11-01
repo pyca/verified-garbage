@@ -105,7 +105,10 @@ def abi : Abi isa where
   -- are 2, 4 and 8 (the RISC-V ELF psABI, "C/C++ type details").
   alignsBufs := true
 
-abbrev target : Target where
+/-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
+every module that names it, which then builds a target of its own, so the emitter
+would see one per registration module rather than this one (`Rust.printsAs`). -/
+@[reducible] def target : Target where
   name := "riscv64"
   isa := isa
   printer := printer
