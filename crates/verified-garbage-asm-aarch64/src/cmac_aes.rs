@@ -32,7 +32,7 @@ bl {vg_cmac_aes_subkeys_aes}
 .arch_extension noaes
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
-        vg_cmac_aes_subkeys_aes = sym super::internal::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
+        vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
     )
 }
 
@@ -67,7 +67,7 @@ bl {vg_cmac_aes_finalize_aes}
 .inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_cmac_aes_finalize_aes = sym super::internal::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
+        vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
     )
 }
 
@@ -94,7 +94,7 @@ bl {vg_cmac_aes_subkeys}
 .inst 0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::internal::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -123,7 +123,7 @@ b 21f
 bl {vg_cmac_aes_finalize}
 .inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
 .p2align 6",
-        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
 
@@ -203,7 +203,7 @@ b 214f
 .inst 0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_cmac_aes_update_aes = sym super::internal::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
+        vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
     )
 }
 
@@ -283,7 +283,7 @@ b 214f
 .inst 0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_cmac_aes_update_aes_cbc = sym super::internal::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
+        vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
     )
 }
 
@@ -357,6 +357,34 @@ b 214f
 .inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_finalize.rs"]
+pub(crate) mod vg_cmac_aes_finalize;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_finalize_aes.rs"]
+pub(crate) mod vg_cmac_aes_finalize_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_subkeys.rs"]
+pub(crate) mod vg_cmac_aes_subkeys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_subkeys_aes.rs"]
+pub(crate) mod vg_cmac_aes_subkeys_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update.rs"]
+pub(crate) mod vg_cmac_aes_update;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update_aes.rs"]
+pub(crate) mod vg_cmac_aes_update_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update_aes_cbc.rs"]
+pub(crate) mod vg_cmac_aes_update_aes_cbc;

@@ -2554,3 +2554,7 @@ add sp, sp, #144
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_finalize_scratch.rs"]
+pub(crate) mod vg_poly1305_finalize_scratch;

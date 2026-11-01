@@ -48,7 +48,7 @@ ldr r5, [r5, #2180]
 add sp, sp, #2304
 bx lr",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::internal::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -190,7 +190,7 @@ ldr lr, [r10, #2204]
 ldr r10, [r10, #2200]
 add sp, sp, #2320
 bx lr",
-        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
 
@@ -251,6 +251,18 @@ ldr lr, [r5, #2184]
 ldr r5, [r5, #2180]
 add sp, sp, #2320
 bx lr",
-        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_finalize.rs"]
+pub(crate) mod vg_cmac_aes_finalize;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_subkeys.rs"]
+pub(crate) mod vg_cmac_aes_subkeys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update.rs"]
+pub(crate) mod vg_cmac_aes_update;

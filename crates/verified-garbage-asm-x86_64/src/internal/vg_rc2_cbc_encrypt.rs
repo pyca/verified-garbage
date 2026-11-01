@@ -23,6 +23,6 @@ jmp 21f
 21:
 .base64 "SIuaCAEAAEiLqhABAADD"
 .p2align 6"#,
-        vg_rc2_encrypt_block = sym crate::internal::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
+        vg_rc2_encrypt_block = sym crate::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
 }

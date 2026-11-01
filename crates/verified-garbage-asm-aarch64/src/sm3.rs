@@ -127,7 +127,7 @@ b 21f
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
 
@@ -185,6 +185,10 @@ cbz x24, 20b
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm3_compress.rs"]
+pub(crate) mod vg_sm3_compress;

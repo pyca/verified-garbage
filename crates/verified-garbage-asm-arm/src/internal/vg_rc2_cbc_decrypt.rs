@@ -54,6 +54,6 @@ ldr r6, [r2, #272]
 ldr r7, [r2, #276]
 ldr lr, [r2, #280]
 bx lr",
-        vg_rc2_decrypt_block = sym crate::internal::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
+        vg_rc2_decrypt_block = sym crate::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )
 }

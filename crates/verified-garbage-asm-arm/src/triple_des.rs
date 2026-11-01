@@ -2298,7 +2298,7 @@ str r2, [r12, #1016]
 str r2, [r12, #1020]
 add sp, sp, #1024
 bx lr",
-        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
@@ -2592,6 +2592,14 @@ str r2, [r12, #1016]
 str r2, [r12, #1020]
 add sp, sp, #1024
 bx lr",
-        vg_triple_des_decrypt_block = sym super::internal::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
+        vg_triple_des_decrypt_block = sym super::triple_des::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_decrypt_block.rs"]
+pub(crate) mod vg_triple_des_decrypt_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_encrypt_block.rs"]
+pub(crate) mod vg_triple_des_encrypt_block;

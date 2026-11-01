@@ -113,7 +113,7 @@ b 21b
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_256_init_scratch = sym super::internal::vg_hmac_sha512_256_init_scratch::vg_hmac_sha512_256_init_scratch,
+        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch::vg_hmac_sha512_256_init_scratch,
     )
 }
 
@@ -268,7 +268,7 @@ b 21b
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha512_256_init_scratch_sha3 = sym super::internal::vg_hmac_sha512_256_init_scratch_sha3::vg_hmac_sha512_256_init_scratch_sha3,
+        vg_hmac_sha512_256_init_scratch_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_sha3::vg_hmac_sha512_256_init_scratch_sha3,
     )
 }
 
@@ -312,3 +312,19 @@ bl {vg_sha512_compress_sha3}
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_finalize_scratch_sha3.rs"]
+pub(crate) mod vg_hmac_sha512_256_finalize_scratch_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_scratch_sha3.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_scratch_sha3;

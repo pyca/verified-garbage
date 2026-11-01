@@ -304,6 +304,10 @@ j 21f
         vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
         vg_md5_update = sym super::md5::vg_md5_update,
         vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,
-        vg_pbkdf2_hmac_md5_iterate = sym super::internal::vg_pbkdf2_hmac_md5_iterate::vg_pbkdf2_hmac_md5_iterate,
+        vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate::vg_pbkdf2_hmac_md5_iterate,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_md5_iterate.rs"]
+pub(crate) mod vg_pbkdf2_hmac_md5_iterate;

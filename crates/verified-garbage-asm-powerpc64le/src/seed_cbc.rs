@@ -28,7 +28,7 @@ b 21f
 20:
 21:
 .base64 "eOu/f3AEBYEAAB+RdAQFgQQAH5F4BAWBCAAfkXwEBYEMAB+RUASl61gExetgBOXraAQF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+aAEITggAIBO""#,
-        vg_seed_encrypt_blocks = sym super::internal::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
 
@@ -57,6 +57,6 @@ b 21f
 20:
 21:
 .base64 "eOu/f3AEBYEAAB+RdAQFgQQAH5F4BAWBCAAfkXwEBYEMAB+RUASl61gExetgBOXraAQF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+aAEITggAIBO""#,
-        vg_seed_decrypt_blocks = sym super::internal::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
+        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }

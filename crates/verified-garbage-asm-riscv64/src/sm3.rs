@@ -222,7 +222,7 @@ j 21f
 .insn 2, 0x6149
 .insn 2, 0x8082
 .option pop",
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
 
@@ -464,6 +464,10 @@ beqz s6, 20b
 .insn 2, 0x6149
 .insn 2, 0x8082
 .option pop",
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm3_compress.rs"]
+pub(crate) mod vg_sm3_compress;

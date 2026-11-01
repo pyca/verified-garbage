@@ -624,6 +624,10 @@ j 21f
         vg_hmac_sha512_init = sym super::hmac_sha512::vg_hmac_sha512_init,
         vg_sha512_update = sym super::sha512::vg_sha512_update,
         vg_hmac_sha512_finalize = sym super::hmac_sha512::vg_hmac_sha512_finalize,
-        vg_pbkdf2_hmac_sha512_iterate = sym super::internal::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,
+        vg_pbkdf2_hmac_sha512_iterate = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha512_iterate.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate;

@@ -188,7 +188,7 @@ ldr r11, [r3, #132]
 ldr lr, [r3, #136]
 add sp, sp, #168
 bx lr",
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
 
@@ -308,6 +308,10 @@ ldr r11, [r3, #132]
 ldr lr, [r3, #136]
 add sp, sp, #168
 bx lr",
-        vg_sm3_compress = sym super::internal::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm3_compress.rs"]
+pub(crate) mod vg_sm3_compress;

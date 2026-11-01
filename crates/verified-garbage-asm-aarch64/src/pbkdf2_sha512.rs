@@ -101,9 +101,9 @@ b 25f
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_init_scratch = sym super::internal::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::internal::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
-        vg_pbkdf2_hmac_sha512_iterate = sym super::internal::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,
+        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
+        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
+        vg_pbkdf2_hmac_sha512_iterate = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,
     )
 }
 
@@ -211,8 +211,16 @@ b 25f
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha512_init_scratch_sha3 = sym super::internal::vg_hmac_sha512_init_scratch_sha3::vg_hmac_sha512_init_scratch_sha3,
-        vg_hmac_sha512_finalize_scratch_sha3 = sym super::internal::vg_hmac_sha512_finalize_scratch_sha3::vg_hmac_sha512_finalize_scratch_sha3,
-        vg_pbkdf2_hmac_sha512_iterate_sha3 = sym super::internal::vg_pbkdf2_hmac_sha512_iterate_sha3::vg_pbkdf2_hmac_sha512_iterate_sha3,
+        vg_hmac_sha512_init_scratch_sha3 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_sha3::vg_hmac_sha512_init_scratch_sha3,
+        vg_hmac_sha512_finalize_scratch_sha3 = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_sha3::vg_hmac_sha512_finalize_scratch_sha3,
+        vg_pbkdf2_hmac_sha512_iterate_sha3 = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate_sha3::vg_pbkdf2_hmac_sha512_iterate_sha3,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha512_iterate.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate;
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha512_iterate_sha3.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate_sha3;

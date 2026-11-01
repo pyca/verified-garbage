@@ -81,9 +81,9 @@ bl {vg_hmac_sha512_finalize_scratch}
 .base64 "AAAsKA=="
 bne %cr0, 20b
 .base64 "AABhOQAAgDkgAIv5KACL+TAAi/k4AIv5QACL+UgAi/lQAIv5WACL+WAAi/loAIv5cACL+XgAi/mAAIv5iACL+ZAAi/mYAIv5oACL+agAi/mwAIv5uACL+cAAi/nIAIv5AAGL+QgBi/kQAYv5GAGL+SABi/koAYv5MAGL+TgBi/lAAYv5SAGL+VABi/lYAYv5YAGL+WgBi/lwAYv5eAGL+YABi/mIAYv5kAEhOCAAAegwACE4pgMIfCAAgE4=""#,
-        vg_hmac_sha512_init_scratch = sym super::internal::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
+        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::internal::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
+        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
         vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
     )
 }

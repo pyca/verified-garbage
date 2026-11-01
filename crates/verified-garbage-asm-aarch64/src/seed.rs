@@ -177,7 +177,7 @@ bl {vg_seed_encrypt_blocks}
 .inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611
 .inst 0xa9034611,0x911103ff,0xd65f03c0
 .p2align 6",
-        vg_seed_encrypt_blocks = sym super::internal::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
 
@@ -207,6 +207,14 @@ bl {vg_seed_decrypt_blocks}
 .inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611
 .inst 0xa9034611,0x911103ff,0xd65f03c0
 .p2align 6",
-        vg_seed_decrypt_blocks = sym super::internal::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
+        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_seed_decrypt_blocks.rs"]
+pub(crate) mod vg_seed_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_seed_encrypt_blocks.rs"]
+pub(crate) mod vg_seed_encrypt_blocks;

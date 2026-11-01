@@ -42,7 +42,7 @@ b 21f
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IACATg==""#,
         vg_hmac_sha256_init = sym crate::hmac_sha256::vg_hmac_sha256_init,
         vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch,
-        vg_hmac_sha256_finalize_scratch = sym crate::internal::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-        vg_pbkdf2_hmac_sha256_iterate = sym crate::internal::vg_pbkdf2_hmac_sha256_iterate::vg_pbkdf2_hmac_sha256_iterate,
+        vg_hmac_sha256_finalize_scratch = sym crate::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+        vg_pbkdf2_hmac_sha256_iterate = sym crate::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_iterate::vg_pbkdf2_hmac_sha256_iterate,
     )
 }

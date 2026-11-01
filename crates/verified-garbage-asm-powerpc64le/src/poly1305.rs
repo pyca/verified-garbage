@@ -136,3 +136,7 @@ b 21f
 .base64 "gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9BQCHOYI2knk4oIx9FJLIfYI20nk4oM59FJLpfYI28nk4oO99FJIKfoI2Eno4oBB+FJIrfoI2Mno4oDF+//9SOnhi83w4kHN+eJqHfXhyE304kHN+eJrIfXh6M304kHN+eJrpfXiCU304kHN+eJoKfniKc304kHN+eJorfigAQ+owAGPqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehRi53wUcgh9FHopfRSCSn0Uimt9gjbyeDig53wUkgh9gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9ZNEMeRRiR37Goix5FGJSfgKjM3lkdEx5FGJzfsZFbHkUYnN+AkZgeQAARvoIAGb6AADV6QgA9ekQABXqGAA16iAAVeooAHXqMACV6jgAteqgACE4IACATg==""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_finalize_scratch.rs"]
+pub(crate) mod vg_poly1305_finalize_scratch;

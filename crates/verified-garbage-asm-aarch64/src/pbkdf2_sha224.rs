@@ -87,9 +87,9 @@ b 25f
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha224_init_scratch = sym super::internal::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
-        vg_hmac_sha224_finalize_scratch = sym super::internal::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
-        vg_pbkdf2_hmac_sha224_iterate = sym super::internal::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
+        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
+        vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
+        vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
     )
 }
 
@@ -183,8 +183,16 @@ b 25f
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
         vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
-        vg_hmac_sha224_init_scratch_sha2 = sym super::internal::vg_hmac_sha224_init_scratch_sha2::vg_hmac_sha224_init_scratch_sha2,
-        vg_hmac_sha224_finalize_scratch_sha2 = sym super::internal::vg_hmac_sha224_finalize_scratch_sha2::vg_hmac_sha224_finalize_scratch_sha2,
-        vg_pbkdf2_hmac_sha224_iterate_sha2 = sym super::internal::vg_pbkdf2_hmac_sha224_iterate_sha2::vg_pbkdf2_hmac_sha224_iterate_sha2,
+        vg_hmac_sha224_init_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_sha2::vg_hmac_sha224_init_scratch_sha2,
+        vg_hmac_sha224_finalize_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_sha2::vg_hmac_sha224_finalize_scratch_sha2,
+        vg_pbkdf2_hmac_sha224_iterate_sha2 = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_sha2::vg_pbkdf2_hmac_sha224_iterate_sha2,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha224_iterate.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha224_iterate;
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha224_iterate_sha2.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha224_iterate_sha2;

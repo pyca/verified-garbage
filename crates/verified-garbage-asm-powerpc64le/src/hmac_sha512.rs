@@ -76,7 +76,7 @@ b 21b"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_init_scratch = sym super::internal::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
+        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
     )
 }
 
@@ -106,3 +106,11 @@ bl {vg_sha512_finalize_scratch}
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_init_scratch;
