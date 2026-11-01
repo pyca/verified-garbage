@@ -16,7 +16,7 @@ jobs:
           uname -a
           lscpu
           cc --version
-          git rev-parse HEAD
+          echo "$GITHUB_SHA"
       - name: Build and verify
         run: |
           cd experiments/ghash-fold
