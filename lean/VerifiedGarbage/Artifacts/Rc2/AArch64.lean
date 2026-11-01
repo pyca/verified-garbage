@@ -23,26 +23,6 @@ def artifacts : List Artifact := [
   Spec.Rc2.cbcDecryptUpdateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.decryptUpdate
     stack := 592
-    verified := Proof.Rc2.AArch64.Stream.decryptUpdate_framed },
-  Spec.Rc2.cbcEncryptApi.artifact AArch64.target {
-    code := Impl.Rc2.AArch64.Cbc.encrypt
-    stack := 0
-    verified := Proof.Rc2.AArch64.Cbc.encrypt_verified },
-  Spec.Rc2.cbcDecryptApi.artifact AArch64.target {
-    code := Impl.Rc2.AArch64.Cbc.decrypt
-    stack := 0
-    verified := Proof.Rc2.AArch64.Cbc.decrypt_verified },
-  Spec.Rc2.expandKeyApi.artifact AArch64.target {
-    code := Impl.Rc2.AArch64.expandKey
-    stack := 0
-    verified := Proof.Rc2.AArch64.key_verified },
-  Spec.Rc2.encryptBlockApi.artifact AArch64.target {
-    code := Impl.Rc2.AArch64.encryptBlock
-    stack := 0
-    verified := Proof.Rc2.AArch64.encrypt_verified },
-  Spec.Rc2.decryptBlockApi.artifact AArch64.target {
-    code := Impl.Rc2.AArch64.decryptBlock
-    stack := 0
-    verified := Proof.Rc2.AArch64.decrypt_verified }]
+    verified := Proof.Rc2.AArch64.Stream.decryptUpdate_framed }]
 
 end VG.Artifacts.Rc2.AArch64

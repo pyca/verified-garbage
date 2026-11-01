@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Rc2.RISCV64.Key
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
@@ -12,6 +13,7 @@ import VerifiedGarbage.Proof.Rc2.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Rc2.RISCV64.Key
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -76,9 +78,9 @@ def keySat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩, ⟨0x4000, 512⟩]
 
-theorem key_verified : Verified RISCV64.target expandKey (Spec.Rc2.expandKeyContract RISCV64.abi) := by
+theorem key_verified : Verified RISCV64.target expandKey (Proof.Rc2.expandKeyContract RISCV64.abi) := by
   refine Verified.of_correct (k := keyC) (expandKey_ok (by lit_decide) (by lit_decide)) expandKey_ct ?_
-  sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, Spec.Rc2.validKey, RISCV64.abi,
+  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, Spec.Rc2.validKey, RISCV64.abi,
     RISCV64.argRegs, keyC]
     [keySat] using keySat
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,6 +14,7 @@ meta import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -71,9 +73,9 @@ def keySatState : State where
   rd := [⟨0x1000, 1⟩, ⟨0x4004, 20⟩]
   wr := [⟨0x2000, 128⟩, ⟨0x3000, 512⟩]
 
-theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract abi) := by
+theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
   refine Verified.of_correct key_body_correct expandKey_constantTime ?_
-  sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argSlots, argVal,
+  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argSlots, argVal,
     argBytes, addr32, keyContract, Spec.Rc2.validKey]
     [keySatState, arg, argAddr, Mem.readW, Mem.read] using keySatState
 

@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Body
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Rc2.Memory
@@ -17,6 +18,7 @@ import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Lit
 meta import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Body
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Rc2.Memory
@@ -164,14 +166,14 @@ def cbcSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
 
-theorem encrypt_verified : Verified target encrypt (Spec.Rc2.cbcEncryptContract abi) := by
+theorem encrypt_verified : Verified target encrypt (Proof.Rc2.cbcEncryptContract abi) := by
   refine Verified.of_correct (k := cbcC .encrypt) (cbc_ok .encrypt) encrypt_ct ?_
-  sig_implies [Spec.Rc2.cbcEncryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs, cbcC]
+  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs, cbcC]
     [cbcSat] using cbcSat
 
-theorem decrypt_verified : Verified target decrypt (Spec.Rc2.cbcDecryptContract abi) := by
+theorem decrypt_verified : Verified target decrypt (Proof.Rc2.cbcDecryptContract abi) := by
   refine Verified.of_correct (k := cbcC .decrypt) (cbc_ok .decrypt) decrypt_ct ?_
-  sig_implies [Spec.Rc2.cbcDecryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs, cbcC]
+  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs, cbcC]
     [cbcSat] using cbcSat
 
 end VG.Proof.Rc2.PPC64LE.Cbc

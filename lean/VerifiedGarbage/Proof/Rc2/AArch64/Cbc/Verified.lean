@@ -126,14 +126,14 @@ theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.x0, .x1, .x2, .x3, .x
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 := by
   simp [PublicRegs]
 
-theorem encrypt_verified : Verified target Impl.Rc2.AArch64.Cbc.encrypt (Spec.Rc2.cbcEncryptContract abi 0) := by
+theorem encrypt_verified : Verified target Impl.Rc2.AArch64.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 0) := by
   refine Verified.of_correct encrypt_correct (encrypt_constantTime _) ?_
-  sig_implies [Spec.Rc2.cbcEncryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs,
+  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
     contract, publicRegs_five] [satState] using satState
 
-theorem decrypt_verified : Verified target Impl.Rc2.AArch64.Cbc.decrypt (Spec.Rc2.cbcDecryptContract abi 0) := by
+theorem decrypt_verified : Verified target Impl.Rc2.AArch64.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 0) := by
   refine Verified.of_correct decrypt_correct (decrypt_constantTime _) ?_
-  sig_implies [Spec.Rc2.cbcDecryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs,
+  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
     contract, publicRegs_five] [satState] using satState
 
 end VG.Proof.Rc2.AArch64.Cbc

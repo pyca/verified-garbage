@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.RISCV64.Cipher
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Rc2.RISCV64.BlockIO
 import VerifiedGarbage.Proof.Framework.Contract
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Rc2.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Rc2.RISCV64.Cipher
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Rc2.RISCV64.BlockIO
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -193,16 +195,16 @@ def blockSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 256⟩]
 
-theorem encrypt_verified : Verified RISCV64.target encryptBlock (Spec.Rc2.encryptBlockContract RISCV64.abi) := by
+theorem encrypt_verified : Verified RISCV64.target encryptBlock (Proof.Rc2.encryptBlockContract RISCV64.abi) := by
   refine Verified.of_correct (k := blockC .encrypt) (block_ok .encrypt (by lit_decide) (by lit_decide))
     encrypt_ct ?_
-  sig_implies [Spec.Rc2.encryptBlockContract, Spec.Rc2.blockSig, RISCV64.abi, RISCV64.argRegs, blockC, cipher]
+  sig_implies [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, RISCV64.abi, RISCV64.argRegs, blockC, cipher]
     [blockSat] using blockSat
 
-theorem decrypt_verified : Verified RISCV64.target decryptBlock (Spec.Rc2.decryptBlockContract RISCV64.abi) := by
+theorem decrypt_verified : Verified RISCV64.target decryptBlock (Proof.Rc2.decryptBlockContract RISCV64.abi) := by
   refine Verified.of_correct (k := blockC .decrypt) (block_ok .decrypt (by lit_decide) (by lit_decide))
     decrypt_ct ?_
-  sig_implies [Spec.Rc2.decryptBlockContract, Spec.Rc2.blockSig, RISCV64.abi, RISCV64.argRegs, blockC, cipher]
+  sig_implies [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, RISCV64.abi, RISCV64.argRegs, blockC, cipher]
     [blockSat] using blockSat
 
 end VG.Proof.Rc2.RISCV64

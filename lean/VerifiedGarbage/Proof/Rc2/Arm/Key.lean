@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.Table
 public import VerifiedGarbage.Proof.Rc2.Arm.PiScan
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -21,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.Proof.Rc2.Table
 meta import VerifiedGarbage.Proof.Rc2.Arm.PiScan
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -271,8 +273,8 @@ theorem expandKey_constantTime : ConstantTime isa keyContractC.pre keyContractC.
   VG.Taint.constantTime (A := taintSym [piSym]) keyTaint (fun _ _ h₁ h₂ hp => ⟨keyTaint_agree h₁.1 h₂.1 hp.1,
     fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hp.2⟩) (by taint_decide)
 
-theorem key_implies : keyContract.Implies (Spec.Rc2.expandKeyContract abi) := by
-  sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argRegs,
+theorem key_implies : keyContract.Implies (Proof.Rc2.expandKeyContract abi) := by
+  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr, keyContract, Spec.Rc2.validKey]
     [keySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using keySatState
 
@@ -306,14 +308,14 @@ def keySatC : State :=
 theorem keySatC_arg : stackArg keySatC 0 = 0 :=
   keySatMem_readW _ (by decide)
 
-theorem key_sat : (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)).pre keySatC := by
+theorem key_sat : (Proof.Rc2.expandKeyContract (abi.withConsts piConsts)).pre keySatC := by
   have hl : piQuads.length = 32 := piQuads_length
   have held := keySatMem_held
   have a0 := keySatC_arg
   rw [piConsts_eq]
   generalize piQuads = W at hl held ⊢
   generalize e : keySatC = s at a0
-  sig_pre [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argRegs,
+  sig_pre [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
     Spec.Rc2.validKey]
   subst e
@@ -326,7 +328,7 @@ theorem key_sat : (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)).pre key
   · repeat' apply And.intro
     all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
-theorem keyC_implies : keyContractC.Implies (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)) where
+theorem keyC_implies : keyContractC.Implies (Proof.Rc2.expandKeyContract (abi.withConsts piConsts)) where
   pre _ hs := ⟨key_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
   post s s' hs hp := post_consts.mpr (key_implies.post (stripConsts piConsts s) s' (pre_consts.mp hs).1 hp)
   pub s₁ s₂ h₁ h₂ hp := ⟨key_implies.pub (stripConsts piConsts s₁) (stripConsts piConsts s₂)
@@ -334,7 +336,7 @@ theorem keyC_implies : keyContractC.Implies (Spec.Rc2.expandKeyContract (abi.wit
     symAddr_eq_iff.mp ((pub_consts.mp hp).2 _ List.mem_cons_self)⟩
   sat := ⟨keySatC, key_sat⟩
 
-theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract (abi.withConsts piConsts)) :=
+theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract (abi.withConsts piConsts)) :=
   Verified.of_correct key_correct expandKey_constantTime keyC_implies
 
 end VG.Proof.Rc2.Arm

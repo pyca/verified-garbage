@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Rc2.PPC64LE.Key
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rc2.PPC64LE.Key
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -83,9 +85,9 @@ def keySat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩, ⟨0x4000, 512⟩]
 
-theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract abi) := by
+theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
   refine Verified.of_correct (k := keyC) expandKey_ok expandKey_ct ?_
-  sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, Spec.Rc2.validKey, abi, argRegs, keyC]
+  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, Spec.Rc2.validKey, abi, argRegs, keyC]
     [keySat] using keySat
 
 end VG.Proof.Rc2.PPC64LE

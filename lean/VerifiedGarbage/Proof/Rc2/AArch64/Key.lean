@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Rc2.AArch64.KeyIO
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Rc2.AArch64.KeyBody
@@ -150,9 +151,9 @@ theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.x0, .x1, .x2, .x3, .x
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 := by
   simp [PublicRegs]
 
-theorem key_verified : Verified target expandKey (Spec.Rc2.expandKeyContract abi) := by
+theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
   refine Verified.of_correct key_correct (expandKey_constantTime _) ?_
-  sig_implies [Spec.Rc2.expandKeyContract, Spec.Rc2.expandKeySig, abi, argRegs,
+  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, abi, argRegs,
     keyContract, publicRegs_five, Spec.Rc2.validKey] [keySatState] using keySatState
 
 end VG.Proof.Rc2.AArch64

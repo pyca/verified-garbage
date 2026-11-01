@@ -3,7 +3,7 @@
 //! `assembly/rc2.s`.
 #![allow(dead_code)]
 
-/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (as `vg_rc2_expand_key`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. Effective bits are independent of the supplied key length.
+/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. Effective bits are independent of the supplied key length.
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
@@ -45,7 +45,7 @@ b 27f
 26:
 27:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
-        vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key,
+        vg_rc2_expand_key = sym super::internal::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
 
@@ -106,7 +106,7 @@ b 212f
 212:
 21:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
-        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt,
+        vg_rc2_cbc_encrypt = sym super::internal::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
     )
 }
 
@@ -167,265 +167,6 @@ b 212f
 212:
 21:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
-        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt,
-    )
-}
-
-/// RC2-CBC encryption on `n` complete 8-byte blocks at `data`, in place: `C[i] = RC2(schedule, P[i] XOR C[i-1])`, starting with `C[0] = *iv`. Writes the last ciphertext block to `*iv`; for `n = 0`, leaves `*iv` unchanged. The schedule is the 64 little-endian 16-bit words written by `vg_rc2_expand_key`. No padding is added.
-///
-/// Contract: `VG.Spec.Rc2.cbcEncryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_cbc_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfAABR/sIAWf7EAGH+xgBp/soAef7MAEH+CABx/sAAEM7AABkOwAAhTsAAKY7AADHOwAAPSg="
-beq %cr0, 20f
-22:
-.base64 "AABc6QAAe+l4Wkp9AABc+QAAejgAAJw4AAC+OA=="
-bl {vg_rc2_encrypt_block}
-.base64 "AABc6QAAW/kIAJw7//+9OwAAPSg="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIBO""#,
-        vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block,
-    )
-}
-
-/// RC2-CBC decryption on `n` complete 8-byte blocks at `data`, in place: `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]`, starting with `C[0] = *iv`. Writes the last input ciphertext block to `*iv`; for `n = 0`, leaves `*iv` unchanged. The schedule is the 64 little-endian 16-bit words written by `vg_rc2_expand_key`. No padding is removed.
-///
-/// Contract: `VG.Spec.Rc2.cbcDecryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_cbc_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfAABR/sIAWf7EAGH+xgBp/soAef7MAEH+CABx/sAAEM7AABkOwAAhTsAAKY7AADHOwAAPSg="
-beq %cr0, 20f
-22:
-.base64 "AAD86wAAejgAAJw4AAC+OA=="
-bl {vg_rc2_decrypt_block}
-.base64 "AABc6QAAe+l4Wkp9AABc+QAA+/sIAJw7//+9OwAAPSg="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIBO""#,
-        vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block,
-    )
-}
-
-/// RC2 key expansion (RFC 2268 §2): expands the `key_len` bytes at `key` with `effective_bits` effective key bits into `*schedule`, as 64 little-endian 16-bit words. Effective bits are independent of the supplied key length.
-///
-/// Contract: `VG.Spec.Rc2.expandKeyContract`. Constant time: only pointers, `key_len` and `effective_bits` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `schedule` must be valid for reads and writes of 128 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be in 1..=128.
-/// * `effective_bits` must be in 1..=1024.
-/// * The contents of `scratch` on return are unspecified.
-/// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `schedule` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_expand_key(key: *const u8, key_len: usize, effective_bits: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAHH+QgB5/m17YA9Gd2MYcYHjHn5xIxl2XiMYQAAh/nYnYA9SqCMYcYHjHn9eYxlKOmMYQgAh/lTjoA9K3aMYcYHjHk3g4xlxn6MYRAAh/n7ooA9RIuMYcYHjHlkiIxlYkyMYRgAh/lPE4A9h7OMYcYHjHlZ9YxlF5qMYSAAh/l9MoA9CYGMYcYHjHltjYxlYUWMYSgAh/l7C4A9hreMYcYHjHlA64xlvY+MYTAAh/lOgoA9XGuMYcYHjHkhIoxl8JWMYTgAh/myHIA9zmCMYcYHjHllk4xlVNaMYUAAh/nx3IA9p4yMYcYHjHnAFIxlc1aMYUgAh/nk0YA9O76MYcYHjHnKH4xlEnWMYVAAh/m2JoA9ozyMYcYHjHnUMIxlQj2MYVgAh/kHV4A9RmmMYcYHjHkO2oxlb7+MYWAAh/lDA4A9vJSMYcYHjHkdm4xlJ/KMYWgAh/k+54A9kO+MYcYHjHnH9oxl+BGMYXAAh/ke14A9yGaMYcYHjHnVL4xlBsOMYXgAh/nu94A9gFKMYcYHjHnq3oxlCOiMYYAAh/lqKoA9NU2MYcYHjHlyrIxlhKqMYYgAh/lJdIA9WhWMYcYHjHnScYxllhqMYZAAh/mk7IA9BBiMYcYHjHnQXoxlS5+MYZgAh/nLzIA9D1GMYcYHjHlBboxlwuCMYaAAh/lwOYA9ofSMYcYHjHmvUIxlJJGMYagAh/m0eoA9I7iMYcYHjHk6hYxlmXyMYbAAh/mXMYA9JVWMYcYHjHk2W4xl/AKMYbgAh/mSroA944qMYcYHjHn6mIxlLV2MYcAAh/m6yYA9Z2yMYcYHjHkpEIxlBd+MYcgAh/moLIA94Z6MYcYHjHnmz4xl0wCMYdAAh/mJqYA9WOKMYcYHjHkBP4xlYxaMYdgAh/n/sIA9qzOMYcYHjHk0G4xlDTiMYeAAh/nNLoA9ubGMYcYHjHkMX4xlu0iMYegAh/mcd4A95aWMYcYHjHnbR4xlxfOMYfAAh/nBrYA9/n+MYcYHjHkgaIxlCqaMYfgAh/kAAAA5"
-20:
-.base64 "FEIjfQAAiYkUQiZ9AACJmQEACDlQQAR8AAAgKA=="
-bne %cr0, 20b
-.base64 "gAAAOFBAAHwAACAo"
-beq %cr0, 21f
-23:
-.base64 "FEImff//KTkAAEmJUEAkfRRKJn0AAGmJFFpKfcbBSnkgRkp5AABgOfgA5zk="
-24:
-.base64 "UHgHfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAP6DhgDHx4YgB8eANrfVB4B3z4/+85AAAgKA=="
-bne %cr0, 24b
-.base64 "BvhMeeAPjHn//4w5AsBgeXgCa304YGt9eAJrfUbwTHngD4x5//+MOQKAYHl4Amt9OGBrfXgCa32G6Ex54A+Mef//jDkCAGB5eAJrfThga314Amt9xsFreSBGa3kUQiZ9AABpmQEACDmAAAA4UEAAfAAAICg="
-bne %cr0, 23b
-b 22f
-21:
-22:
-.base64 "BwDFOcLoznmAAAA5UEAOfYboqXhgHyl5/wCAOf//STkAACoo"
-beq %cr0, 25f
-b 26f
-25:
-.base64 "AQCAOQ=="
-26:
-.base64 "/v9JOQAAKig="
-beq %cr0, 27f
-b 28f
-27:
-.base64 "AwCAOQ=="
-28:
-.base64 "/f9JOQAAKig="
-beq %cr0, 29f
-b 210f
-29:
-.base64 "BwCAOQ=="
-210:
-.base64 "/P9JOQAAKig="
-beq %cr0, 211f
-b 212f
-211:
-.base64 "DwCAOQ=="
-212:
-.base64 "+/9JOQAAKig="
-beq %cr0, 213f
-b 214f
-213:
-.base64 "HwCAOQ=="
-214:
-.base64 "+v9JOQAAKig="
-beq %cr0, 215f
-b 216f
-215:
-.base64 "PwCAOQ=="
-216:
-.base64 "+f9JOQAAKig="
-beq %cr0, 217f
-b 218f
-217:
-.base64 "fwCAOQ=="
-218:
-.base64 "FEImfQAASYk4YEp9AABgOfgA5zk="
-219:
-.base64 "UHgHfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAP6DhgDHx4YgB8eANrfVB4B3z4/+85AAAgKA=="
-bne %cr0, 219b
-.base64 "BvhMeeAPjHn//4w5AsBgeXgCa304YGt9eAJrfUbwTHngD4x5//+MOQKAYHl4Amt9OGBrfXgCa32G6Ex54A+Mef//jDkCAGB5eAJrfThga314Amt9xsFreSBGa3kUQiZ9AABpmQAAKCg="
-beq %cr0, 220f
-222:
-.base64 "//8IORRCJn0BAEmJFHIofRRKJn0AAGmJeFpKfQAAYDn4AOc5"
-223:
-.base64 "UHgHfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAP6DhgDHx4YgB8eANrfVB4B3z4/+85AAAgKA=="
-bne %cr0, 223b
-.base64 "BvhMeeAPjHn//4w5AsBgeXgCa304YGt9eAJrfUbwTHngD4x5//+MOQKAYHl4Amt9OGBrfXgCa32G6Ex54A+Mef//jDkCAGB5eAJrfThga314Amt9xsFreSBGa3kUQiZ9AABpmQAAKCg="
-bne %cr0, 222b
-b 221f
-220:
-221:
-.base64 "AAHH6QgB5+kgAIBO""#,
-    )
-}
-
-/// RC2 block encryption (RFC 2268 §3): encrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
-///
-/// Contract: `VG.Spec.Rc2.encryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the mashing indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `data` must be valid for reads and writes of 8 bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "AABk6caDZnkghMZ4xgdneSCE53jkg2h5IIQIeSCEaXk4QCp9ODgrfXha63wAAIOBFGLGfBRSxnwUWsZ8xoPGeCCExnikD8B4wovGeHgDxnzGg8Z4IITGeDhIynw4QMt8eFoLfQIAg4EUYud8FFLnfBRa53zGg+d4IITneGQX4HiCk+d4eAPnfMaD53gghOd4ODDqfDhI63x4Wit9BACDgRRiCH0UUgh9FFoIfcaDCHkghAh5JB8AeUKbCHl4Awh9xoMIeSCECHk4OAp9ODALfXhay3wGAIOBFGIpfRRSKX0UWil9xoMpeSCEKXmkLiB5wqopeXgDKX3Ggyl5IIQpeThAKn04OCt9eFrrfAgAg4EUYsZ8FFLGfBRaxnzGg8Z4IITGeKQPwHjCi8Z4eAPGfMaDxngghMZ4OEjKfDhAy3x4Wgt9CgCDgRRi53wUUud8FFrnfMaD53gghOd4ZBfgeIKT53h4A+d8xoPneCCE53g4MOp8OEjrfHhaK30MAIOBFGIIfRRSCH0UWgh9xoMIeSCECHkkHwB5QpsIeXgDCH3Ggwh5IIQIeTg4Cn04MAt9eFrLfA4Ag4EUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl5OEAqfTg4K314Wut8EACDgRRixnwUUsZ8FFrGfMaDxngghMZ4pA/AeMKLxnh4A8Z8xoPGeCCExng4SMp8OEDLfHhaC30SAIOBFGLnfBRS53wUWud8xoPneCCE53hkF+B4gpPneHgD53zGg+d4IITneDgw6nw4SOt8eForfRQAg4EUYgh9FFIIfRRaCH3Ggwh5IIQIeSQfAHlCmwh5eAMIfcaDCHkghAh5ODgKfTgwC314Wst8FgCDgRRiKX0UUil9FFopfcaDKXkghCl5pC4gecKqKXl4Ayl9xoMpeSCEKXk4QCp9ODgrfXha63wYAIOBFGLGfBRSxnwUWsZ8xoPGeCCExnikD8B4wovGeHgDxnzGg8Z4IITGeDhIynw4QMt8eFoLfRoAg4EUYud8FFLnfBRa53zGg+d4IITneGQX4HiCk+d4eAPnfMaD53gghOd4ODDqfDhI63x4Wit9HACDgRRiCH0UUgh9FFoIfcaDCHkghAh5JB8AeUKbCHl4Awh9xoMIeSCECHk4OAp9ODALfXhay3weAIOBFGIpfRRSKX0UWil9xoMpeSCEKXmkLiB5wqopeXgDKX3Ggyl5IIQpeThAKn04OCt9eFrrfCAAg4EUYsZ8FFLGfBRaxnzGg8Z4IITGeKQPwHjCi8Z4eAPGfMaDxngghMZ4OEjKfDhAy3x4Wgt9IgCDgRRi53wUUud8FFrnfMaD53gghOd4ZBfgeIKT53h4A+d8xoPneCCE53g4MOp8OEjrfHhaK30kAIOBFGIIfRRSCH0UWgh9xoMIeSCECHkkHwB5QpsIeXgDCH3Ggwh5IIQIeTg4Cn04MAt9eFrLfCYAg4EUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl5RtEqeWA+SnkAAGA5eACjOA=="
-20:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 20b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRaxnzGg8Z4IITGeEbRynhgPkp5AABgOXgAozg="
-21:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 21b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRa53zGg+d4IITneEbR6nhgPkp5AABgOXgAozg="
-22:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 22b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRaCH3Ggwh5IIQIeUbRCnlgPkp5AABgOXgAozg="
-23:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 23b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRaKX3Ggyl5IIQpeThAKn04OCt9eFrrfCgAg4EUYsZ8FFLGfBRaxnzGg8Z4IITGeKQPwHjCi8Z4eAPGfMaDxngghMZ4OEjKfDhAy3x4Wgt9KgCDgRRi53wUUud8FFrnfMaD53gghOd4ZBfgeIKT53h4A+d8xoPneCCE53g4MOp8OEjrfHhaK30sAIOBFGIIfRRSCH0UWgh9xoMIeSCECHkkHwB5QpsIeXgDCH3Ggwh5IIQIeTg4Cn04MAt9eFrLfC4Ag4EUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl5OEAqfTg4K314Wut8MACDgRRixnwUUsZ8FFrGfMaDxngghMZ4pA/AeMKLxnh4A8Z8xoPGeCCExng4SMp8OEDLfHhaC30yAIOBFGLnfBRS53wUWud8xoPneCCE53hkF+B4gpPneHgD53zGg+d4IITneDgw6nw4SOt8eForfTQAg4EUYgh9FFIIfRRaCH3Ggwh5IIQIeSQfAHlCmwh5eAMIfcaDCHkghAh5ODgKfTgwC314Wst8NgCDgRRiKX0UUil9FFopfcaDKXkghCl5pC4gecKqKXl4Ayl9xoMpeSCEKXk4QCp9ODgrfXha63w4AIOBFGLGfBRSxnwUWsZ8xoPGeCCExnikD8B4wovGeHgDxnzGg8Z4IITGeDhIynw4QMt8eFoLfToAg4EUYud8FFLnfBRa53zGg+d4IITneGQX4HiCk+d4eAPnfMaD53gghOd4ODDqfDhI63x4Wit9PACDgRRiCH0UUgh9FFoIfcaDCHkghAh5JB8AeUKbCHl4Awh9xoMIeSCECHk4OAp9ODALfXhay3w+AIOBFGIpfRRSKX0UWil9xoMpeSCEKXmkLiB5wqopeXgDKX3Ggyl5IIQpeThAKn04OCt9eFrrfEAAg4EUYsZ8FFLGfBRaxnzGg8Z4IITGeKQPwHjCi8Z4eAPGfMaDxngghMZ4OEjKfDhAy3x4Wgt9QgCDgRRi53wUUud8FFrnfMaD53gghOd4ZBfgeIKT53h4A+d8xoPneCCE53g4MOp8OEjrfHhaK31EAIOBFGIIfRRSCH0UWgh9xoMIeSCECHkkHwB5QpsIeXgDCH3Ggwh5IIQIeTg4Cn04MAt9eFrLfEYAg4EUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl5OEAqfTg4K314Wut8SACDgRRixnwUUsZ8FFrGfMaDxngghMZ4pA/AeMKLxnh4A8Z8xoPGeCCExng4SMp8OEDLfHhaC31KAIOBFGLnfBRS53wUWud8xoPneCCE53hkF+B4gpPneHgD53zGg+d4IITneDgw6nw4SOt8eForfUwAg4EUYgh9FFIIfRRaCH3Ggwh5IIQIeSQfAHlCmwh5eAMIfcaDCHkghAh5ODgKfTgwC314Wst8TgCDgRRiKX0UUil9FFopfcaDKXkghCl5pC4gecKqKXl4Ayl9xoMpeSCEKXk4QCp9ODgrfXha63xQAIOBFGLGfBRSxnwUWsZ8xoPGeCCExnikD8B4wovGeHgDxnzGg8Z4IITGeDhIynw4QMt8eFoLfVIAg4EUYud8FFLnfBRa53zGg+d4IITneGQX4HiCk+d4eAPnfMaD53gghOd4ODDqfDhI63x4Wit9VACDgRRiCH0UUgh9FFoIfcaDCHkghAh5JB8AeUKbCHl4Awh9xoMIeSCECHk4OAp9ODALfXhay3xWAIOBFGIpfRRSKX0UWil9xoMpeSCEKXmkLiB5wqopeXgDKX3Ggyl5IIQpeUbRKnlgPkp5AABgOXgAozg="
-24:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 24b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRaxnzGg8Z4IITGeEbRynhgPkp5AABgOXgAozg="
-25:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 25b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRa53zGg+d4IITneEbR6nhgPkp5AABgOXgAozg="
-26:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 26b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRaCH3Ggwh5IIQIeUbRCnlgPkp5AABgOXgAozg="
-27:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 27b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreRRaKX3Ggyl5IIQpeThAKn04OCt9eFrrfFgAg4EUYsZ8FFLGfBRaxnzGg8Z4IITGeKQPwHjCi8Z4eAPGfMaDxngghMZ4OEjKfDhAy3x4Wgt9WgCDgRRi53wUUud8FFrnfMaD53gghOd4ZBfgeIKT53h4A+d8xoPneCCE53g4MOp8OEjrfHhaK31cAIOBFGIIfRRSCH0UWgh9xoMIeSCECHkkHwB5QpsIeXgDCH3Ggwh5IIQIeTg4Cn04MAt9eFrLfF4Ag4EUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl5OEAqfTg4K314Wut8YACDgRRixnwUUsZ8FFrGfMaDxngghMZ4pA/AeMKLxnh4A8Z8xoPGeCCExng4SMp8OEDLfHhaC31iAIOBFGLnfBRS53wUWud8xoPneCCE53hkF+B4gpPneHgD53zGg+d4IITneDgw6nw4SOt8eForfWQAg4EUYgh9FFIIfRRaCH3Ggwh5IIQIeSQfAHlCmwh5eAMIfcaDCHkghAh5ODgKfTgwC314Wst8ZgCDgRRiKX0UUil9FFopfcaDKXkghCl5pC4gecKqKXl4Ayl9xoMpeSCEKXk4QCp9ODgrfXha63xoAIOBFGLGfBRSxnwUWsZ8xoPGeCCExnikD8B4wovGeHgDxnzGg8Z4IITGeDhIynw4QMt8eFoLfWoAg4EUYud8FFLnfBRa53zGg+d4IITneGQX4HiCk+d4eAPnfMaD53gghOd4ODDqfDhI63x4Wit9bACDgRRiCH0UUgh9FFoIfcaDCHkghAh5JB8AeUKbCHl4Awh9xoMIeSCECHk4OAp9ODALfXhay3xuAIOBFGIpfRRSKX0UWil9xoMpeSCEKXmkLiB5wqopeXgDKX3Ggyl5IIQpeThAKn04OCt9eFrrfHAAg4EUYsZ8FFLGfBRaxnzGg8Z4IITGeKQPwHjCi8Z4eAPGfMaDxngghMZ4OEjKfDhAy3x4Wgt9cgCDgRRi53wUUud8FFrnfMaD53gghOd4ZBfgeIKT53h4A+d8xoPneCCE53g4MOp8OEjrfHhaK310AIOBFGIIfRRSCH0UWgh9xoMIeSCECHkkHwB5QpsIeXgDCH3Ggwh5IIQIeTg4Cn04MAt9eFrLfHYAg4EUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl5OEAqfTg4K314Wut8eACDgRRixnwUUsZ8FFrGfMaDxngghMZ4pA/AeMKLxnh4A8Z8xoPGeCCExng4SMp8OEDLfHhaC316AIOBFGLnfBRS53wUWud8xoPneCCE53hkF+B4gpPneHgD53zGg+d4IITneDgw6nw4SOt8eForfXwAg4EUYgh9FFIIfRRaCH3Ggwh5IIQIeSQfAHlCmwh5eAMIfcaDCHkghAh5ODgKfTgwC314Wst8fACDgT6EjFUUYil9FFIpfRRaKX3Ggyl5IIQpeaQuIHnCqil5eAMpfcaDKXkghCl55IPreHgza33GBwx5eGNrfcaDLHl4Y2t9AABk+SAAgE4=""#,
-    )
-}
-
-/// RC2 block decryption (RFC 2268 §4): decrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
-///
-/// Contract: `VG.Spec.Rc2.decryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the reverse-mashing indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `data` must be valid for reads and writes of 8 bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "AABk6caDZnkghMZ4xgdneSCE53jkg2h5IIQIeSCEaXkkXSB5QtkpeXgDKX3Ggyl5IIQpeTg4Cn04MAt9eFrLfHwAg4E+hIxVUEgsfVBIKn1QSCt9xoMpeSCEKXmkbAB5wugIeXgDCH3Ggwh5IIQIeTgw6nw4SOt8eForfXwAg4FQQAx9UEAKfVBAC33Ggwh5IIQIeWR04HiC8Od4eAPnfMaD53gghOd4OEjKfDhAy3x4Wgt9egCDgVA47HxQOOp8UDjrfMaD53gghOd4JHzAeEL4xnh4A8Z8xoPGeCCExng4QCp9ODgrfXha63x4AIOBUDDMfFAwynxQMMt8xoPGeCCExngkXSB5QtkpeXgDKX3Ggyl5IIQpeTg4Cn04MAt9eFrLfHYAg4FQSCx9UEgqfVBIK33Ggyl5IIQpeaRsAHnC6Ah5eAMIfcaDCHkghAh5ODDqfDhI63x4Wit9dACDgVBADH1QQAp9UEALfcaDCHkghAh5ZHTgeILw53h4A+d8xoPneCCE53g4SMp8OEDLfHhaC31yAIOBUDjsfFA46nxQOOt8xoPneCCE53gkfMB4QvjGeHgDxnzGg8Z4IITGeDhAKn04OCt9eFrrfHAAg4FQMMx8UDDKfFAwy3zGg8Z4IITGeCRdIHlC2Sl5eAMpfcaDKXkghCl5ODgKfTgwC314Wst8bgCDgVBILH1QSCp9UEgrfcaDKXkghCl5pGwAecLoCHl4Awh9xoMIeSCECHk4MOp8OEjrfHhaK31sAIOBUEAMfVBACn1QQAt9xoMIeSCECHlkdOB4gvDneHgD53zGg+d4IITneDhIynw4QMt8eFoLfWoAg4FQOOx8UDjqfFA463zGg+d4IITneCR8wHhC+MZ4eAPGfMaDxngghMZ4OEAqfTg4K314Wut8aACDgVAwzHxQMMp8UDDLfMaDxngghMZ4JF0geULZKXl4Ayl9xoMpeSCEKXk4OAp9ODALfXhay3xmAIOBUEgsfVBIKn1QSCt9xoMpeSCEKXmkbAB5wugIeXgDCH3Ggwh5IIQIeTgw6nw4SOt8eForfWQAg4FQQAx9UEAKfVBAC33Ggwh5IIQIeWR04HiC8Od4eAPnfMaD53gghOd4OEjKfDhAy3x4Wgt9YgCDgVA47HxQOOp8UDjrfMaD53gghOd4JHzAeEL4xnh4A8Z8xoPGeCCExng4QCp9ODgrfXha63xgAIOBUDDMfFAwynxQMMt8xoPGeCCExngkXSB5QtkpeXgDKX3Ggyl5IIQpeTg4Cn04MAt9eFrLfF4Ag4FQSCx9UEgqfVBIK33Ggyl5IIQpeaRsAHnC6Ah5eAMIfcaDCHkghAh5ODDqfDhI63x4Wit9XACDgVBADH1QQAp9UEALfcaDCHkghAh5ZHTgeILw53h4A+d8xoPneCCE53g4SMp8OEDLfHhaC31aAIOBUDjsfFA46nxQOOt8xoPneCCE53gkfMB4QvjGeHgDxnzGg8Z4IITGeDhAKn04OCt9eFrrfFgAg4FQMMx8UDDKfFAwy3zGg8Z4IITGeEbRCnlgPkp5AABgOXgAozg="
-20:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 20b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVBIK33Ggyl5IIQpeUbR6nhgPkp5AABgOXgAozg="
-21:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 21b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVBAC33Ggwh5IIQIeUbRynhgPkp5AABgOXgAozg="
-22:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 22b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVA463zGg+d4IITneEbRKnlgPkp5AABgOXgAozg="
-23:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 23b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVAwy3zGg8Z4IITGeCRdIHlC2Sl5eAMpfcaDKXkghCl5ODgKfTgwC314Wst8VgCDgVBILH1QSCp9UEgrfcaDKXkghCl5pGwAecLoCHl4Awh9xoMIeSCECHk4MOp8OEjrfHhaK31UAIOBUEAMfVBACn1QQAt9xoMIeSCECHlkdOB4gvDneHgD53zGg+d4IITneDhIynw4QMt8eFoLfVIAg4FQOOx8UDjqfFA463zGg+d4IITneCR8wHhC+MZ4eAPGfMaDxngghMZ4OEAqfTg4K314Wut8UACDgVAwzHxQMMp8UDDLfMaDxngghMZ4JF0geULZKXl4Ayl9xoMpeSCEKXk4OAp9ODALfXhay3xOAIOBUEgsfVBIKn1QSCt9xoMpeSCEKXmkbAB5wugIeXgDCH3Ggwh5IIQIeTgw6nw4SOt8eForfUwAg4FQQAx9UEAKfVBAC33Ggwh5IIQIeWR04HiC8Od4eAPnfMaD53gghOd4OEjKfDhAy3x4Wgt9SgCDgVA47HxQOOp8UDjrfMaD53gghOd4JHzAeEL4xnh4A8Z8xoPGeCCExng4QCp9ODgrfXha63xIAIOBUDDMfFAwynxQMMt8xoPGeCCExngkXSB5QtkpeXgDKX3Ggyl5IIQpeTg4Cn04MAt9eFrLfEYAg4FQSCx9UEgqfVBIK33Ggyl5IIQpeaRsAHnC6Ah5eAMIfcaDCHkghAh5ODDqfDhI63x4Wit9RACDgVBADH1QQAp9UEALfcaDCHkghAh5ZHTgeILw53h4A+d8xoPneCCE53g4SMp8OEDLfHhaC31CAIOBUDjsfFA46nxQOOt8xoPneCCE53gkfMB4QvjGeHgDxnzGg8Z4IITGeDhAKn04OCt9eFrrfEAAg4FQMMx8UDDKfFAwy3zGg8Z4IITGeCRdIHlC2Sl5eAMpfcaDKXkghCl5ODgKfTgwC314Wst8PgCDgVBILH1QSCp9UEgrfcaDKXkghCl5pGwAecLoCHl4Awh9xoMIeSCECHk4MOp8OEjrfHhaK308AIOBUEAMfVBACn1QQAt9xoMIeSCECHlkdOB4gvDneHgD53zGg+d4IITneDhIynw4QMt8eFoLfToAg4FQOOx8UDjqfFA463zGg+d4IITneCR8wHhC+MZ4eAPGfMaDxngghMZ4OEAqfTg4K314Wut8OACDgVAwzHxQMMp8UDDLfMaDxngghMZ4JF0geULZKXl4Ayl9xoMpeSCEKXk4OAp9ODALfXhay3w2AIOBUEgsfVBIKn1QSCt9xoMpeSCEKXmkbAB5wugIeXgDCH3Ggwh5IIQIeTgw6nw4SOt8eForfTQAg4FQQAx9UEAKfVBAC33Ggwh5IIQIeWR04HiC8Od4eAPnfMaD53gghOd4OEjKfDhAy3x4Wgt9MgCDgVA47HxQOOp8UDjrfMaD53gghOd4JHzAeEL4xnh4A8Z8xoPGeCCExng4QCp9ODgrfXha63wwAIOBUDDMfFAwynxQMMt8xoPGeCCExngkXSB5QtkpeXgDKX3Ggyl5IIQpeTg4Cn04MAt9eFrLfC4Ag4FQSCx9UEgqfVBIK33Ggyl5IIQpeaRsAHnC6Ah5eAMIfcaDCHkghAh5ODDqfDhI63x4Wit9LACDgVBADH1QQAp9UEALfcaDCHkghAh5ZHTgeILw53h4A+d8xoPneCCE53g4SMp8OEDLfHhaC30qAIOBUDjsfFA46nxQOOt8xoPneCCE53gkfMB4QvjGeHgDxnzGg8Z4IITGeDhAKn04OCt9eFrrfCgAg4FQMMx8UDDKfFAwy3zGg8Z4IITGeEbRCnlgPkp5AABgOXgAozg="
-24:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 24b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVBIK33Ggyl5IIQpeUbR6nhgPkp5AABgOXgAozg="
-25:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 25b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVBAC33Ggwh5IIQIeUbRynhgPkp5AABgOXgAozg="
-26:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 26b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVA463zGg+d4IITneEbRKnlgPkp5AABgOXgAozg="
-27:
-.base64 "UCgDfHgCTH3C6Ix5//+MOeAPjHn//4w5AAAF6DhgDHx4YgB8eANrfVAoA3z4/6U4AAAgKA=="
-bne %cr0, 27b
-.base64 "RvBMeeAPjHn//4w5AoBgeXgCa304YGt9eAJrfYboTHngD4x5//+MOQIAYHl4Amt9OGBrfXgCa33Gg2t5IIRreVAwy3zGg8Z4IITGeCRdIHlC2Sl5eAMpfcaDKXkghCl5ODgKfTgwC314Wst8JgCDgVBILH1QSCp9UEgrfcaDKXkghCl5pGwAecLoCHl4Awh9xoMIeSCECHk4MOp8OEjrfHhaK30kAIOBUEAMfVBACn1QQAt9xoMIeSCECHlkdOB4gvDneHgD53zGg+d4IITneDhIynw4QMt8eFoLfSIAg4FQOOx8UDjqfFA463zGg+d4IITneCR8wHhC+MZ4eAPGfMaDxngghMZ4OEAqfTg4K314Wut8IACDgVAwzHxQMMp8UDDLfMaDxngghMZ4JF0geULZKXl4Ayl9xoMpeSCEKXk4OAp9ODALfXhay3weAIOBUEgsfVBIKn1QSCt9xoMpeSCEKXmkbAB5wugIeXgDCH3Ggwh5IIQIeTgw6nw4SOt8eForfRwAg4FQQAx9UEAKfVBAC33Ggwh5IIQIeWR04HiC8Od4eAPnfMaD53gghOd4OEjKfDhAy3x4Wgt9GgCDgVA47HxQOOp8UDjrfMaD53gghOd4JHzAeEL4xnh4A8Z8xoPGeCCExng4QCp9ODgrfXha63wYAIOBUDDMfFAwynxQMMt8xoPGeCCExngkXSB5QtkpeXgDKX3Ggyl5IIQpeTg4Cn04MAt9eFrLfBYAg4FQSCx9UEgqfVBIK33Ggyl5IIQpeaRsAHnC6Ah5eAMIfcaDCHkghAh5ODDqfDhI63x4Wit9FACDgVBADH1QQAp9UEALfcaDCHkghAh5ZHTgeILw53h4A+d8xoPneCCE53g4SMp8OEDLfHhaC30SAIOBUDjsfFA46nxQOOt8xoPneCCE53gkfMB4QvjGeHgDxnzGg8Z4IITGeDhAKn04OCt9eFrrfBAAg4FQMMx8UDDKfFAwy3zGg8Z4IITGeCRdIHlC2Sl5eAMpfcaDKXkghCl5ODgKfTgwC314Wst8DgCDgVBILH1QSCp9UEgrfcaDKXkghCl5pGwAecLoCHl4Awh9xoMIeSCECHk4MOp8OEjrfHhaK30MAIOBUEAMfVBACn1QQAt9xoMIeSCECHlkdOB4gvDneHgD53zGg+d4IITneDhIynw4QMt8eFoLfQoAg4FQOOx8UDjqfFA463zGg+d4IITneCR8wHhC+MZ4eAPGfMaDxngghMZ4OEAqfTg4K314Wut8CACDgVAwzHxQMMp8UDDLfMaDxngghMZ4JF0geULZKXl4Ayl9xoMpeSCEKXk4OAp9ODALfXhay3wGAIOBUEgsfVBIKn1QSCt9xoMpeSCEKXmkbAB5wugIeXgDCH3Ggwh5IIQIeTgw6nw4SOt8eForfQQAg4FQQAx9UEAKfVBAC33Ggwh5IIQIeWR04HiC8Od4eAPnfMaD53gghOd4OEjKfDhAy3x4Wgt9AgCDgVA47HxQOOp8UDjrfMaD53gghOd4JHzAeEL4xnh4A8Z8xoPGeCCExng4QCp9ODgrfXha63wAAIOBUDDMfFAwynxQMMt8xoPGeCCExnjkg+t4eDNrfcYHDHl4Y2t9xoMseXhja30AAGT5IACATg==""#,
+        vg_rc2_cbc_decrypt = sym super::internal::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
     )
 }

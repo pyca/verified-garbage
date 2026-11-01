@@ -24,26 +24,6 @@ def artifacts : List Artifact := [
   Spec.Rc2.cbcDecryptUpdateApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r9 72 Impl.Rc2.PPC64LE.Stream.decryptUpdate
     stack := 608
-    verified := Proof.Rc2.PPC64LE.Stream.decryptUpdate_framed },
-  Spec.Rc2.cbcEncryptApi.artifact PPC64LE.target {
-    code := Impl.Rc2.PPC64LE.Cbc.encrypt
-    stack := 0
-    verified := Proof.Rc2.PPC64LE.Cbc.encrypt_verified },
-  Spec.Rc2.cbcDecryptApi.artifact PPC64LE.target {
-    code := Impl.Rc2.PPC64LE.Cbc.decrypt
-    stack := 0
-    verified := Proof.Rc2.PPC64LE.Cbc.decrypt_verified },
-  Spec.Rc2.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.Rc2.PPC64LE.expandKey
-    stack := 0
-    verified := Proof.Rc2.PPC64LE.key_verified },
-  Spec.Rc2.encryptBlockApi.artifact PPC64LE.target {
-    code := Impl.Rc2.PPC64LE.encryptBlock
-    stack := 0
-    verified := Proof.Rc2.PPC64LE.encrypt_verified },
-  Spec.Rc2.decryptBlockApi.artifact PPC64LE.target {
-    code := Impl.Rc2.PPC64LE.decryptBlock
-    stack := 0
-    verified := Proof.Rc2.PPC64LE.decrypt_verified }]
+    verified := Proof.Rc2.PPC64LE.Stream.decryptUpdate_framed }]
 
 end VG.Artifacts.Rc2.PPC64LE
