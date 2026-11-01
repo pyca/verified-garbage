@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Setup
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulVerified
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulLit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 
 /-!
@@ -113,6 +114,8 @@ structure TailConsts (base : Addr) (s : State) : Prop where
   b3p : sv base s B3P = 3 * W.b * 2 ^ 256 % W.p
   expp : sv base s EXPP = W.p - 2
 
+theorem mn_eq {base : Addr} {s : State} (h : TailConsts base s) : sv base s MN = W.n := h.mn
+
 theorem TailConsts.of_unch {base : Addr} {s s' : State} {W' : List (Nat × Nat)} (h : TailConsts base s)
     (U : Unch base W' s.mem s'.mem)
     (hW : ∀ i ∈ [MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP], ∀ w ∈ W', p256.sl i + 32 ≤ w.1 ∨ w.1 + w.2 ≤ p256.sl i) :
@@ -171,5 +174,128 @@ theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (h
     rw [← one₁]; exact e₂
   rw [toM_one_mul unit e₂']
   exact toM_mul unit e₁
+
+/-- The coordinates the multiplication's contract decodes. -/
+theorem dq (hL : VG.Proof.Weierstrass.Law W) (x : Nat) : MC.toPoint.dec x = toM W.p (2 ^ 256) x :=
+  VG.Proof.Weierstrass.Point.dec_eq MC.toPoint hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) unit x
+
+theorem coord_sv (m : Mem) (base : Addr) (i : Nat) (hi : i < 100 := by decide) :
+    MC.toPoint.coordAt m base (p256.sl i) = wordsVal m base (p256.sl i) 4 :=
+  coordAt_eq m base (by rw [sl_eq]; omega)
+
+/-- The point the multiplication's contract reads. -/
+theorem point_eq (hL : VG.Proof.Weierstrass.Law W) (m : Mem) (base : Addr) :
+    MC.point base m = .affine (toM W.p (2 ^ 256) (wordsVal m base (p256.sl RX) 4))
+      (toM W.p (2 ^ 256) (wordsVal m base (p256.sl RY) 4)) := by
+  unfold Spec.Weierstrass.Mul.Curve.point
+  rw [dq hL, dq hL]
+  show Point.affine (toM W.p (2 ^ 256) (MC.toPoint.coordAt m base (p256.sl RX)))
+    (toM W.p (2 ^ 256) (MC.toPoint.coordAt m base (p256.sl RY))) = _
+  rw [coord_sv _ _ RX, coord_sv _ _ RY]
+  rfl
+
+theorem rep_of_represents {X Y Z : Fe W} {P : Point W} (h : Spec.Weierstrass.MulBase.Represents X Y Z P) :
+    Rep W X Y Z P := by
+  cases P <;> exact h
+
+/-- What `tail` writes. -/
+abbrev tailW : List (Nat × Nat) :=
+  [(FL, 8)] ++ mulKW ++ powWx (powP p256) 4 ++
+    [(p256.sl XM, 32), (own 4, 256), (p256.sl XO, 32), (own 4, 256)]
+
+/-- `tail`: the range of `d` into the flag, `R = [d]P`, `Z^(p-2)`, and `x`. -/
+theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw : WsReg s base)
+    (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
+    (hon : Spec.Weierstrass.onCurve W (.affine (toM W.p (2 ^ 256) (sv base s RX))
+      (toM W.p (2 ^ 256) (sv base s RY))) = true) :
+    WP isa (tail p256 Spec.Weierstrass.Mul.p256.mulApi.name mulP256) s fun s' =>
+      Kc s s' ∧ Unch base tailW s.mem s'.mem ∧
+      word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s K < W.n)) &&&
+        maskOf (!decide (sv base s K = 0)) ∧
+      (1 ≤ sv base s K → sv base s K < W.n →
+        Rep W (toM W.p (2 ^ 256) (sv base s' RX)) (toM W.p (2 ^ 256) (sv base s' RY))
+          (toM W.p (2 ^ 256) (sv base s' RZ))
+          (Spec.Weierstrass.mul (sv base s K) (.affine (toM W.p (2 ^ 256) (sv base s RX))
+            (toM W.p (2 ^ 256) (sv base s RY)))) ∧
+        sv base s' RX < W.p ∧ sv base s' RY < W.p ∧ sv base s' RZ < W.p) ∧
+      sv base s' XO < W.p ∧
+      Fin.ofNat W.p (sv base s' XO) =
+        toM W.p (2 ^ 256) (sv base s' RX) * toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) := by
+  have hp0 : 0 < W.p := by decide
+  rw [tail]
+  -- The range.
+  refine WP.seq (WP.mono (range_ok hw) fun s₁ ⟨K₁, O₁, f₁⟩ => ?_)
+  have hw₁ := hw.of_kp K₁
+  have U₁ := O₁.unch
+  have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
+    sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega)
+      (by omega)
+  have hc₁ := hc.of_unch U₁ (by decide)
+  rw [mn_eq hc] at f₁
+  -- The multiplication.
+  refine WP.seq (wsCall_ok Impl.Ecdsa.RISCV64.mulP256_noFrames (mul_rv hL) hw₁ (fun t r w a m => ?_)
+    fun s₂ K₂ t a₂ m₂ hp₂ => ?_)
+  · refine ⟨r, by rw [w, a], by rw [a]; exact hw₁.nowrap, by rw [a]; exact hw₁.al, ?_, ?_⟩
+    · rw [a, m]
+      refine ⟨(coord_sv _ _ MP).trans hc₁.mp, (coord_sv _ _ ZERO).trans hc₁.zero,
+        (coord_sv _ _ ONEP).trans hc₁.onep, (coord_sv _ _ AP).trans hc₁.ap, (coord_sv _ _ B3P).trans hc₁.b3p⟩
+    · rw [a, m]
+      refine ⟨?_, ?_, ?_⟩
+      · show MC.toPoint.coordAt s₁.mem base (p256.sl RX) < W.p
+        rw [coord_sv _ _ RX]; exact Nat.lt_of_le_of_lt (Nat.le_of_eq (e₁ RX (by decide))) hx
+      · show MC.toPoint.coordAt s₁.mem base (p256.sl RY) < W.p
+        rw [coord_sv _ _ RY]; exact Nat.lt_of_le_of_lt (Nat.le_of_eq (e₁ RY (by decide))) hy
+      rw [point_eq hL]
+      show Spec.Weierstrass.onCurve W (.affine (toM _ _ (sv base s₁ RX)) (toM _ _ (sv base s₁ RY))) = true
+      rw [e₁ RX (by decide), e₁ RY (by decide)]; exact hon
+  -- What the multiplication leaves.
+  have hp₂' : MC.ResultInRange (MC.scalar base s₁.mem) (MC.point base s₁.mem) base s₁.mem s₂.mem := by
+    have := hp₂
+    simp only [mulRVc, State.withRegions_mem] at this
+    rw [a₂, m₂] at this
+    exact this
+  obtain ⟨hR, hK⟩ := hp₂'
+  have U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps hK
+  have hw₂ := hw₁.of_kp K₂
+  have hc₂ := hc₁.of_unch U₂ (by decide)
+  -- `Z^(p-2)`.
+  refine WP.seq (WP.mono (pow_ok (P := powP p256) (F := p256Field) field_ok rfl powLay unit hw₂ (by decide)
+    (by show sv base s₂ ONEP = _; rw [hc₂.onep]; rfl)
+    (by show sv base s₂ EXPP < _; rw [hc₂.expp]; decide)) fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
+  have hw₃ := hw₂.of_kc K₃
+  have hc₃ := hc₂.of_unch U₃ (by decide)
+  -- `x`.
+  refine WP.mono (affine_ok hw₃ (t := XM) (o := XO) (a := RX) (by decide) (by decide) (by decide) (by decide)
+    lt₃ hc₃.one) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => ?_
+  have e₄ : ∀ i ∈ [RX, RY, RZ], sv base s₄ i = sv base s₂ i := fun i hi => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    have h3 : sv base s₃ i = sv base s₂ i := sv_unch U₃ i (by rcases hi with rfl | rfl | rfl <;> decide)
+      (by rcases hi with rfl | rfl | rfl <;> decide)
+    rw [← h3]
+    exact sv_unch U₄ i (by rcases hi with rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl <;> decide)
+  have fl₄ : word s₄.mem base FL = word s₁.mem base FL :=
+    fl_unch ((U₂.trans U₃).trans U₄) (by decide)
+  have k₁ : MC.scalar base s₁.mem = sv base s K := by
+    rw [← e₁ K (by decide)]; exact coord_sv _ _ K
+  refine ⟨K₁.kc.trans (K₂.kc.trans (K₃.trans K₄.kc)), ((U₁.trans U₂).trans U₃).trans U₄, by rw [fl₄, f₁], ?_, lt₄, ?_⟩
+  · intro h1 hn
+    rw [k₁, point_eq hL] at hR
+    obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR h1 hn
+    simp only [Spec.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
+    have c0 : MC.toPoint.coordAt s₂.mem base MC.pAt = sv base s₂ RX := coord_sv _ _ RX
+    have c1 : MC.toPoint.coordAt s₂.mem base (MC.pAt + Spec.Weierstrass.Point.elemBytes MC.toPoint.k) =
+      sv base s₂ RY := coord_sv _ _ RY
+    have c2 : MC.toPoint.coordAt s₂.mem base (MC.pAt + 2 * Spec.Weierstrass.Point.elemBytes MC.toPoint.k) =
+      sv base s₂ RZ := coord_sv _ _ RZ
+    rw [c0, c1, c2] at hrep
+    rw [c0] at bx; rw [c1] at by'; rw [c2] at bz
+    rw [dq hL, dq hL, dq hL] at hrep
+    rw [e₄ RX (by simp), e₄ RY (by simp), e₄ RZ (by simp), ← e₁ RX (by decide), ← e₁ RY (by decide)]
+    exact ⟨rep_of_represents hrep, bx, by', bz⟩
+  · have he : wordsVal s₂.mem base (powP p256).bits p256Field.S.k = W.p - 2 := hc₂.expp
+    rw [he] at v₃
+    have v₃' : toM W.p (2 ^ 256) (sv base s₃ ACC) = toM W.p (2 ^ 256) (sv base s₂ RZ) ^ (W.p - 2) := v₃
+    rw [v₄, v₃', e₄ RX (by simp), e₄ RZ (by simp),
+      show sv base s₃ RX = sv base s₂ RX from sv_unch U₃ RX (by decide)]
 
 end VG.Proof.Ecdh.RISCV64.P256
