@@ -1,11 +1,13 @@
-//! Every test outside the library's own unit tests, in one binary: each
-//! directory here is a module, `#[path]`-declared below, whose `main.rs`
-//! documents what it tests. One binary runs all of them on one pool of
-//! threads, and starts once, rather than once per directory, in every
-//! `cargo test` (a second or more each under Intel SDE). `autotests = false`
-//! (Cargo.toml) keeps Cargo from building each directory as a binary of its
-//! own as well, so a directory that is not listed here does not run:
-//! `ci/check_arch_gates.py` checks that every one is.
+//! Every test outside the library's own unit tests but CAVP's
+//! (`tests/cavp.rs`, a binary of its own, so that the two compile in
+//! parallel), in one binary: each directory here is a module,
+//! `#[path]`-declared below, whose `main.rs` documents what it tests. One
+//! binary runs all of them on one pool of threads, and starts once, rather
+//! than once per directory, in every `cargo test` (a second or more each
+//! under Intel SDE). `autotests = false` (Cargo.toml) keeps Cargo from
+//! building each directory as a binary of its own as well, so a directory
+//! that is not listed here does not run: `ci/check_arch_gates.py` checks
+//! that every one is.
 
 mod bytes;
 mod json;
@@ -17,8 +19,6 @@ mod vectors;
 mod acvp;
 #[path = "blake2_kat/main.rs"]
 mod blake2_kat;
-#[path = "cavp/main.rs"]
-mod cavp;
 #[path = "cryptography_cast5/main.rs"]
 mod cryptography_cast5;
 #[path = "draft_ribose_sm4/main.rs"]

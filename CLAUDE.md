@@ -222,8 +222,9 @@ should add files, not edit lists that every other PR edits too.
   alone has (e.g. an x86-64 `_shani` variant) take a `#[cfg(target_arch)]`.
 * Tests of one algorithm go in a file of their own (`tests/cavp/<alg>.rs`,
   `tests/wycheproof/<alg>.rs`), declared with one `mod` line. Every test
-  directory is a module of the one test binary, `tests/main.rs`: a new one
-  adds its `#[path = "<dir>/main.rs"] mod <dir>;` line there
+  directory but `cavp/` (its own binary, `tests/cavp.rs`) is a module of
+  the test binary `tests/main.rs`: a new one adds its
+  `#[path = "<dir>/main.rs"] mod <dir>;` line there
   (`ci/check_arch_gates.py` fails a directory without it, which would
   never run).
 * A construction over many hash functions (HMAC, PBKDF2) gets a file per

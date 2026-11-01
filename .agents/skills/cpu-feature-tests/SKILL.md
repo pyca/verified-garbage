@@ -21,7 +21,8 @@ each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
 a run never repeats another: add groups to a CPU's line for those features.
 A group (`GROUPS` in `ci/cpu_tests.py`) names its tests explicitly, by the
 path of each test or of the module around it, in the library's unit tests
-and in `tests/main.rs`; a line runs exactly those tests, so a new test of a
+and in the integration tests (`tests/main.rs` and `tests/cavp.rs`, which
+holds those under `cavp::`); a line runs exactly those tests, so a new test of a
 primitive that varies by CPU feature goes into its group (or a new group),
 never into a line by matching part of its name. CI fails a path that
 selects no test on any CPU, and a group that selects none on a line's CPU.
