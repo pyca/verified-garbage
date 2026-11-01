@@ -76,15 +76,6 @@ theorem oPolyK_lt : oPoly K.k < 32768 := by offs
 
 end
 
-section
-variable {is : List Instr} {s : State} {Q : State → Prop}
-
-theorem wp_and {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
-    WP isa (.block (.logic .and d n m :: is)) s Q :=
-  Wp.WP.cons exec_logic (k _ (Upd.write _ _ _))
-
-end
-
 /-- Two polynomials' addresses. -/
 theorem addr2_ok {s : State} {P : BitVec 64} {d d' : Reg} {j j' : Nat} (hj : j + 2 < 2048) (hj' : j' + 2 < 2048)
     (hd : d ∉ preserved) (hd' : d' ∉ preserved) (hdd : d ≠ d') (h11 : s.gpr .s11 = P) :

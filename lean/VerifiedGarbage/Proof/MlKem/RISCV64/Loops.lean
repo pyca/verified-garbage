@@ -39,6 +39,19 @@ theorem wp_slli {d n : Reg} {sh : Nat} (h : sh < 64)
     WP isa (.block (.shift .sll .d d n sh :: is)) s Q :=
   Wp.WP.cons (exec_shift_d h) (k _ (Upd.write _ _ _))
 
+theorem wp_srli {d n : Reg} {sh : Nat} (h : sh < 64)
+    (k : ∀ s', Upd s s' d (s.gpr n >>> sh) → WP isa (.block is) s' Q) :
+    WP isa (.block (.shift .srl .d d n sh :: is)) s Q :=
+  Wp.WP.cons (exec_shift_d h) (k _ (Upd.write _ _ _))
+
+theorem wp_and {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .and d n m :: is)) s Q :=
+  Wp.WP.cons exec_logic (k _ (Upd.write _ _ _))
+
+theorem wp_or {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .or d n m :: is)) s Q :=
+  Wp.WP.cons exec_logic (k _ (Upd.write _ _ _))
+
 theorem wp_sw {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (al : a.toNat % 4 = 0) (hout : InRegions s.wr a 4)
     (k : ∀ s', Mupd s s' (s.mem.writeW a ((s.gpr t).setWidth 32)) → WP isa (.block is) s' Q) :
@@ -52,6 +65,13 @@ theorem wp_mul {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n * s.gpr m) → WP 
   Wp.WP.cons exec_mul (k _ (Upd.write _ _ _))
 
 end
+
+/-- A register after an update, by cases. -/
+theorem _root_.VG.RISCV64.Wp.Upd.gpr_eq {s s' : State} {d : Reg} {v : BitVec 64} (h : Upd s s' d v) (r : Reg) :
+    s'.gpr r = if r = d then v else s.gpr r := by
+  by_cases e : r = d
+  · subst e; rw [ite_eq_left rfl, h.gpr]
+  · rw [ite_eq_right e, h.other r e]
 
 /-- Two updates of the same register. -/
 theorem Upd.same {s s₁ s₂ : State} {d : Reg} {v₁ v₂ : BitVec 64} (h₁ : Upd s s₁ d v₁) (h₂ : Upd s₁ s₂ d v₂) :
