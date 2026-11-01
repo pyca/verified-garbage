@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
@@ -654,5 +655,30 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   · simpa only [hk.mem] using smallBody_ok L het hdt hR hv ha habt
   · have hbig' : (V .r23).toNat/512≠0 := by simpa using hbig
     simpa only [hk.mem] using fastBody_ok L het hdt hR hv ha (by omega) habt
+
+/-- The interface between the shared one-shot entry/return proof and the
+implementation that encrypts and authenticates the text. -/
+def BodyCorrect (sealBody : Prog isa) : Prop :=
+  ∀ {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat} {a : List Byte},
+    Lay (V .r29) (V .r30) (V .r31) → Env V sp s →
+    DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat →
+    V .r28=BitVec.ofNat 64 R → (R=10 ∨ R=12 ∨ R=14) → (V .r22).toNat=a.length →
+    Proof.Gcm.Absorbed s.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH s.mem (V .r29))
+      (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length)) →
+    WP isa sealBody s (BodyOut V sp R (Spec.Gcm.ctxH s.mem (V .r29)) a s.mem)
+
+theorem saved_bodyFrame {V : Reg → BitVec 64} {s : State}
+    (L : Lay (V .r29) (V .r30) (V .r31))
+    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
+    ∀ r ∈ bodyFrame V, (savedR (V .r31)).Disjoint r := by
+  intro r hr
+  simp only [bodyFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact (hd.ok.w.sub_right (Lay.wSub (d := 128) (n := 120) (by decide))).symm
+  · simpa only [BitVec.add_zero] using L.saved_st (d := 0) (k := 80) (by decide)
+  · simpa only [BitVec.add_zero] using saved_w (w := V .r31) (d := 0) (k := 16)
+      (by decide) (.inl (by decide))
+  · exact saved_w (by decide) (.inl (by decide))
+  · exact saved_w (by decide) (.inr (by decide))
 
 end VG.Proof.AesGcm.PPC64LE.SealFused
