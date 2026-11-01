@@ -485,4 +485,11 @@ theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length 
 
 theorem and_one (b : Bool) : maskOf b &&& BitVec.ofInt 64 1 = if b then 1 else 0 := by cases b <;> decide
 
+/-- Bytes of a region apart from the working space, from an offset. -/
+theorem sep_at' {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) (hn : p.toNat + n ≤ 2 ^ 64)
+    {off k : Nat} (hk : off + k ≤ n) :
+    ∀ i < k, ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 off + BitVec.ofNat 64 i) 1 := fun i hi => by
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  exact out_of_disj hd hn (by omega)
+
 end VG.Proof.Ecdh.RISCV64.P256

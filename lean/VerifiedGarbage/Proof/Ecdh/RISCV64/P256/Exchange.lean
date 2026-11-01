@@ -92,47 +92,42 @@ structure SetupPost (s s' : State) : Prop where
   flag : word s'.mem (s.gpr .a3) FL = maskOf (decide (s.mem (s.gpr .a2) = 4))
   consts : ∀ e ∈ consts p256, sv (s.gpr .a3) s' e.1 = e.2
 
-theorem setup_ok {s : State} (hs : EPre s) :
-    WP isa (.block (saveCode .a3 ++ loadNum p256.n (p256.sl K) .a1 0 ++ loadNum p256.n (p256.sl CX) .a2 1 ++
-      loadNum p256.n (p256.sl CY) .a2 (1 + 8 * p256.n) ++ leadMask .a2 ++ ([.store .d .a7 wb (p256.sl FLAG)] : List Instr) ++
-      constCode p256)) s fun s' => SetupPost s s' := by
-  generalize hb : s.gpr .a3 = base
-  have hwr : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr, ← hb]; simp
+/-- The peer's point read from `[q]` (`x` and `y` to the check's slots), the
+flag set to the mask of its first byte being `04`, and the constants. -/
+theorem peerLoad_ok {s : State} {base : Addr} {q : Reg} (hw : WsReg s base) (hq : q ∉ [Reg.t0, .t1, .a7])
+    (hrd : (⟨s.gpr q, 65⟩ : Region) ∈ s.rd ++ s.wr) (hdis : (⟨s.gpr q, 65⟩ : Region).Disjoint ⟨base, 8192⟩)
+    (hfit : (s.gpr q).toNat + 65 ≤ 2 ^ 64) :
+    WP isa (.block (loadNum p256.n (p256.sl CX) q 1 ++ loadNum p256.n (p256.sl CY) q (1 + 8 * p256.n) ++
+      leadMask q ++ ([.store .d .a7 wb (p256.sl FLAG)] : List Instr) ++ constCode p256)) s fun s' =>
+      WsReg s' base ∧ Rest [.t0, .t1, .a7] s s' ∧
+      Unch base ([(p256.sl CX, 8 * 4)] ++ [(p256.sl CY, 8 * 4)] ++ [(FL, 8)] ++
+        (consts p256).map fun e => (p256.sl e.1, 32)) s.mem s'.mem ∧
+      sv base s' CX = ofBytes (bytesAt s.mem (s.gpr q + BitVec.ofNat 64 1) 32) ∧
+      sv base s' CY = ofBytes (bytesAt s.mem (s.gpr q + BitVec.ofNat 64 33) 32) ∧
+      word s'.mem base FL = maskOf (decide (s.mem (s.gpr q) = 4)) ∧
+      ∀ e ∈ consts p256, sv base s' e.1 = e.2 := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   rw [show p256.n = 4 from rfl, show 1 + 8 * 4 = 33 from rfl]
   simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (save_ok hb hwr (by rw [← hb]; exact hs.fs) (by rw [← hb]; exact hs.al))
-    fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_)
-  have a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
-  have a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide) (by decide)
-  have rd1 : (⟨s.gpr .a1, 32⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hs.rd]; simp
-  have rd2 : (⟨s.gpr .a2, 65⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hs.rd]; simp
-  -- `d`.
-  refine WP.block_append (WP.mono (loadNum_ok 4 hw₁ (o := p256.sl K) (p := .a1) (off := 0) (by decide) (by decide)
-    (by decide) (by decide) (fun j hj => by rw [a1]; exact in_rd8 rd1 (by omega))
-    (fun i hi => by rw [a1]; exact out_of_disj (hb ▸ hs.d) hs.fd (by omega)))
-    fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
-  have hw₂ := hw₁.of_rest r₂
-  -- `x` and `y`.
-  refine WP.block_append (WP.mono (loadNum_ok 4 hw₂ (o := p256.sl CX) (p := .a2) (off := 1) (by decide) (by decide)
-    (by decide) (by decide) (fun j hj => by
-      have rd2' : (⟨s.gpr .a2, 65⟩ : Region) ∈ s₂.rd ++ s₂.wr := by rw [r₂.rd, r₂.wr]; exact rd2
-      rw [r₂.gpr _ (by decide), a2]; exact in_rd8 rd2' (by omega))
-    (fun i hi => by rw [r₂.gpr _ (by decide), a2]; exact out_of_disj (hb ▸ hs.peer) hs.fp (by omega)))
+  refine WP.block_append (WP.mono (loadNum_ok 4 hw (o := p256.sl CX) (p := q) (off := 1) (by simp [hq.1, hq.2.1])
+    (by decide) (by decide) (by decide) (fun j hj => in_rd8 hrd (by omega))
+    (fun i hi => out_of_disj hdis hfit (by omega)))
     fun s₃ ⟨r₃, O₃, e₃⟩ => ?_)
-  have hw₃ := hw₂.of_rest r₃
-  have r₂₃ := r₂.trans r₃
-  refine WP.block_append (WP.mono (loadNum_ok 4 hw₃ (o := p256.sl CY) (p := .a2) (off := 33) (by decide) (by decide)
-    (by decide) (by decide) (fun j hj => by
-      have rd2' : (⟨s.gpr .a2, 65⟩ : Region) ∈ s₃.rd ++ s₃.wr := by rw [r₂₃.rd, r₂₃.wr]; exact rd2
-      rw [r₂₃.gpr _ (by decide), a2]; exact in_rd8 rd2' (by omega))
-    (fun i hi => by rw [r₂₃.gpr _ (by decide), a2]; exact out_of_disj (hb ▸ hs.peer) hs.fp (by omega)))
+  have hw₃ := hw.of_rest r₃
+  have q₃ : s₃.gpr q = s.gpr q := r₃.gpr _ (by simp [hq.1, hq.2.1])
+  refine WP.block_append (WP.mono (loadNum_ok 4 hw₃ (o := p256.sl CY) (p := q) (off := 33)
+    (by simp [hq.1, hq.2.1]) (by decide) (by decide) (by decide) (fun j hj => by
+      rw [q₃, r₃.rd, r₃.wr]; exact in_rd8 hrd (by omega))
+    (fun i hi => by rw [q₃]; exact out_of_disj hdis hfit (by omega)))
     fun s₄ ⟨r₄, O₄, e₄⟩ => ?_)
   have hw₄ := hw₃.of_rest r₄
-  have r₂₄ := r₂₃.trans r₄
+  have r₃₄ := r₃.trans r₄
+  have q₄ : s₄.gpr q = s.gpr q := r₃₄.gpr _ (by simp [hq.1, hq.2.1])
   -- The first byte, and the flag.
-  refine WP.block_append (WP.mono (leadMask_ok (s := s₄) (q := .a2) (by
-      rw [r₂₄.rd, r₂₄.wr, r₂₄.gpr _ (by decide), a2]
-      exact ⟨_, rd2, by simpa using Offset.contains_base (s.gpr .a2) (d := 0) (n := 1) (k := 65) (by decide) (by decide)⟩))
+  refine WP.block_append (WP.mono (leadMask_ok (s := s₄) (q := q) (by
+      rw [r₃₄.rd, r₃₄.wr, q₄]
+      have := Offset.contains_base (s.gpr q) (d := 0) (n := 1) (k := 65) (by decide) (by decide)
+      exact ⟨_, hrd, by simpa using this⟩))
     fun s₅ ⟨r₅, m₅, g₅⟩ => ?_)
   have hw₅ := hw₄.of_rest r₅
   rw [List.singleton_append]
@@ -141,57 +136,85 @@ theorem setup_ok {s : State} (hs : EPre s) :
   -- The constants.
   rw [constCode_eq]
   refine WP.mono (consts_ok _ hw₆ consts_slots consts_nodup) fun s₇ ⟨r₇, U₇, e₇⟩ => ?_
-  -- What changed.
   have O₆ : Outside base FL 8 s₅.mem s₆.mem := by rw [u₆.mem]; exact writeW_outside _ _ _ (by decide)
-  have U₁₇ : Unch base ([(p256.sl K, 8 * 4)] ++ [(p256.sl CX, 8 * 4)] ++ [(p256.sl CY, 8 * 4)] ++ [(FL, 8)] ++
-      (consts p256).map fun e => (p256.sl e.1, 32)) s₁.mem s₇.mem :=
-    (((O₂.unch.trans O₃.unch).trans O₄.unch).trans (by rw [← m₅]; exact O₆.unch)).trans U₇
   have m₄₆ : Unch base [(FL, 8)] s₄.mem s₆.mem := by rw [← m₅]; exact O₆.unch
   have U₄₇ := m₄₆.trans U₇
   have U₃₇ := O₄.unch.trans U₄₇
-  have U₂₇ := O₃.unch.trans U₃₇
-  have m₃₁ : Unch base _ s.mem s₃.mem := (U₁.trans O₂.unch).trans O₃.unch
+  have r₇' : Rest [.t0, .t1, .a7] s s₇ :=
+    ((r₃₄.mono (by decide)).trans r₅).trans (((Kp.of_mupd u₆ |> fun _ =>
+      (⟨fun r _ => by rw [u₆.gpr], u₆.rd, u₆.wr, u₆.sp⟩ : Rest [.t0, .t1, .a7] s₅ s₆))).trans (r₇.mono (by decide)))
+  refine ⟨hw₆.of_rest r₇, r₇', ((O₃.unch.trans O₄.unch).trans m₄₆).trans U₇, ?_, ?_, ?_, ?_⟩
+  · show wordsVal _ _ _ _ = _
+    rw [sv_unch U₃₇ CX (by decide), e₃]
+  · show wordsVal _ _ _ _ = _
+    rw [sv_unch U₄₇ CY (by decide), e₄, q₃,
+      bytesAt_unch O₃.unch (by decide) (sep_at' hdis hfit (off := 33) (k := 32) (by omega))]
+  · rw [U₇.word (by decide) (by decide), u₆.mem, sl_FLAG, word_writeW_self, g₅, q₄]
+    have h1 := bytesAt_unch (O₃.unch.trans O₄.unch) (q := s.gpr q) (n := 1) (by decide)
+      (by simpa using sep_at' hdis hfit (off := 0) (k := 1) (by omega))
+    simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
+    simp only [BitVec.add_zero] at h1
+    rw [h1]
+  · intro e he
+    rw [e₇ e he, Nat.mod_eq_of_lt (consts_lt e he)]
+
+theorem setup_ok {s : State} (hs : EPre s) :
+    WP isa (.block (saveCode .a3 ++ loadNum p256.n (p256.sl K) .a1 0 ++ loadNum p256.n (p256.sl CX) .a2 1 ++
+      loadNum p256.n (p256.sl CY) .a2 (1 + 8 * p256.n) ++ leadMask .a2 ++ ([.store .d .a7 wb (p256.sl FLAG)] : List Instr) ++
+      constCode p256)) s fun s' => SetupPost s s' := by
+  generalize hb : s.gpr .a3 = base
+  have hwr : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr, ← hb]; simp
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (save_ok hb hwr (by rw [← hb]; exact hs.fs) (by rw [← hb]; exact hs.al))
+    fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_)
+  have a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
+  have a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide) (by decide)
+  have rd1 : (⟨s.gpr .a1, 32⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hs.rd]; simp
+  have rd2 : (⟨s.gpr .a2, 65⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hs.rd]; simp
+  -- `d`.
+  rw [show p256.n = 4 from rfl]
+  refine WP.block_append (WP.mono (loadNum_ok 4 hw₁ (o := p256.sl K) (p := .a1) (off := 0) (by decide) (by decide)
+    (by decide) (by decide) (fun j hj => by rw [a1]; exact in_rd8 rd1 (by omega))
+    (fun i hi => by rw [a1]; exact out_of_disj (hb ▸ hs.d) hs.fd (by omega)))
+    fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
+  have hw₂ := hw₁.of_rest r₂
+  have a2' : s₂.gpr .a2 = s.gpr .a2 := by rw [r₂.gpr _ (by decide), a2]
+  -- The peer's point, the flag and the constants.
+  simp only [← List.append_assoc]
+  refine WP.mono (peerLoad_ok hw₂ (q := .a2) (by decide) (by rw [r₂.rd, r₂.wr, a2']; exact rd2)
+    (by rw [a2']; exact hb ▸ hs.peer) (by rw [a2']; exact hs.fp)) fun s₇ ⟨hw₇, r₇, U₂₇, x₇, y₇, f₇, c₇⟩ => ?_
+  have U₁₇ := O₂.unch.trans U₂₇
+  have m₂₁ : Unch base _ s.mem s₂.mem := U₁.trans O₂.unch
   have hpres : ∀ x ∈ preserved, x ∉ [Reg.t0, .t1, .a7] := by decide
-  have hpres' : ∀ x ∈ preserved, x ∉ [Reg.t0, .t1] := by decide
+  have hpres2 : ∀ x ∈ preserved, x ∉ [Reg.t0, .t1] := by decide
   have gp : ∀ x ∈ preserved, s₇.gpr x = s₁.gpr x := fun x hx => by
-    rw [r₇.gpr _ (hpres' x hx), u₆.gpr, r₅.gpr _ (hpres x hx), r₂₄.gpr _ (hpres' x hx)]
-  have a2' : s₃.gpr .a2 = s.gpr .a2 := by rw [r₂₃.gpr _ (by decide), a2]
-  have a2'' : s₄.gpr .a2 = s.gpr .a2 := by rw [r₂₄.gpr _ (by decide), a2]
+    rw [r₇.gpr _ (hpres x hx), r₂.gpr _ (hpres2 x hx)]
   have a1' : s₁.gpr .a1 + BitVec.ofNat 64 0 = s.gpr .a1 := by rw [a1]; simp
-  have sep : ∀ {p : Addr} {n : Nat}, (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩ → p.toNat + n ≤ 2 ^ 64 →
-      ∀ {off k : Nat}, off + k ≤ n → ∀ i < k,
-        ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 off + BitVec.ofNat 64 i) 1 :=
-    fun hd hn _ _ hk i hi => by
-      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact out_of_disj hd hn (by omega)
   subst hb
-  refine ⟨hw₆.of_rest r₇, ?_, ?_, fun x h0 h2 h3 hx => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hw₇, ?_, ?_, fun x h0 h2 h3 hx => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [gp _ (by decide), o₁]
   · rw [gp _ (by decide), h3₁]
   · rw [gp _ hx, g₁ _ h0 h2 h3]
-  · rw [r₇.rd, u₆.rd, r₅.rd, r₂₄.rd, rd₁]
-  · rw [r₇.wr, u₆.wr, r₅.wr, r₂₄.wr, wr₁]
-  · rw [r₇.sp, u₆.sp, r₅.sp, r₂₄.sp, sp₁]
+  · rw [r₇.rd, r₂.rd, rd₁]
+  · rw [r₇.wr, r₂.wr, wr₁]
+  · rw [r₇.sp, r₂.sp, sp₁]
   · rw [U₁₇.word (by decide) (by decide)]; exact w0
   · rw [U₁₇.word (by decide) (by decide)]; exact w1
   · rw [U₁₇.word (by decide) (by decide)]; exact w2
   · rw [U₁₇.word (by decide) (by decide)]; exact w3
   · rw [U₁₇.word (by decide) (by decide)]; exact w4
   · show wordsVal _ _ _ _ = _
-    rw [sv_unch U₂₇ K (by decide), e₂, a1', bytesAt_unch U₁ (by decide) (by simpa using sep hs.d hs.fd (off := 0) (k := 32) (by omega))]
-  · show wordsVal _ _ _ _ = _
-    rw [sv_unch U₃₇ CX (by decide), e₃, r₂.gpr _ (by decide), a2,
-      bytesAt_unch (U₁.trans O₂.unch) (by decide) (sep hs.peer hs.fp (off := 1) (k := 32) (by omega))]
-  · show wordsVal _ _ _ _ = _
-    rw [sv_unch U₄₇ CY (by decide), e₄, a2', bytesAt_unch m₃₁ (by decide) (sep hs.peer hs.fp (off := 33) (k := 32) (by omega))]
-  · rw [U₇.word (by decide) (by decide), u₆.mem, sl_FLAG, word_writeW_self, g₅, a2'']
-    have h1 := bytesAt_unch (m₃₁.trans O₄.unch) (q := s.gpr .a2) (n := 1) (by decide)
-      (by simpa using sep hs.peer hs.fp (off := 0) (k := 1) (by omega))
+    rw [sv_unch U₂₇ K (by decide), e₂, a1',
+      bytesAt_unch U₁ (by decide) (by simpa using sep_at' hs.d hs.fd (off := 0) (k := 32) (by omega))]
+  · rw [x₇, a2', bytesAt_unch m₂₁ (by decide) (sep_at' hs.peer hs.fp (off := 1) (k := 32) (by omega))]
+  · rw [y₇, a2', bytesAt_unch m₂₁ (by decide) (sep_at' hs.peer hs.fp (off := 33) (k := 32) (by omega))]
+  · rw [f₇, a2']
+    have h1 := bytesAt_unch m₂₁ (q := s.gpr .a2) (n := 1) (by decide)
+      (by simpa using sep_at' hs.peer hs.fp (off := 0) (k := 1) (by omega))
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
     simp only [BitVec.add_zero] at h1
     rw [h1]
-  · intro e he
-    rw [e₇ e he, Nat.mod_eq_of_lt (consts_lt e he)]
+  · exact c₇
 
 /-- The check of the peer's point, by its call. -/
 theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base) (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2)
