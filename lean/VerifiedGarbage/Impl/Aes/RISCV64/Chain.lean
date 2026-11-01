@@ -15,7 +15,9 @@ place. So `chain false` is the CBC-MAC update of `vg_cmac_aes_update`, and
 It is `vg_aes_ctr32`'s code (`Ctr32.lean`) with another group loop: the
 prologue (`roundSb`, `saveRegs`, `maskInit`) and the key loop, which
 bitslices the round keys once into the scratch buffer, are the same; the
-state's address is kept in slot `stateSlot`, and the state itself, loaded
+return address is kept in slot `raSlot` and the state's address in `ra`
+(which neither the key loop nor `encrypt4` writes; a register, so that its
+taint stays public), and the state itself, loaded
 little-endian a byte at a time (its alignment, and the data's, the
 contracts do not state), in the registers of block 0 (`q 0` and `q 4`)
 across the loop. Each block is XORed into them and `encrypt4` encrypts
@@ -26,7 +28,7 @@ point: `vg_aes_encrypt_blocks` on one block costs as much as on four, plus
 that.
 
 With no blocks the function does nothing. Only `a0`, `a1` (`kp`), `a3` (the
-data), `a4` (the blocks left), `a5` and what is computed from them in `t0`
+data), `a4` (the blocks left), `a5`, `ra` (the state's address) and what is computed from them in `t0`
 for the branches hold public values; no address and no branch depends on
 anything else.
 -/
@@ -37,12 +39,11 @@ namespace VG.Impl.Aes.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
 
-/-- The slot of the state's address. -/
-def stateSlot : Nat := 62
+/-- The slot of the return address, while `ra` holds the state's address. -/
+def raSlot : Nat := 62
 
-/-- The state into the registers of block 0. -/
-def chainLoad : List Instr :=
-  [ldS .t2 stateSlot] ++ loadLE64 (q 0) t0 t1 .t2 0 ++ loadLE64 (q 4) t0 t1 .t2 8
+/-- The state (at `ra`) into the registers of block 0. -/
+def chainLoad : List Instr := loadLE64 (q 0) t0 t1 .ra 0 ++ loadLE64 (q 4) t0 t1 .ra 8
 
 /-- The data block at `a3` XORed into them. -/
 def chainXor : List Instr :=
@@ -60,17 +61,24 @@ stored over the block). -/
 def chainBody (out : Bool) : Prog isa :=
   .seq (.block chainXor) (.seq encrypt4 (.block ((if out then chainOut else []) ++ chainNext)))
 
-/-- The state stored back. -/
+/-- The state stored back (at `ra`), and the return address restored. -/
 def chainStore : List Instr :=
-  [ldS .t2 stateSlot] ++ storeLE64 (q 0) t0 t1 .t2 0 ++ storeLE64 (q 4) t0 t1 .t2 8
+  storeLE64 (q 0) t0 t1 .ra 0 ++ storeLE64 (q 4) t0 t1 .ra 8 ++ [ldS .ra raSlot]
 
 /-- The `n` blocks at `data` chained into the state, as above. -/
 def chain (out : Bool) : Prog isa :=
   .ite (.zero .a4) (.block [])
-    (.seq (.block (roundSb ++ saveRegs ++ maskInit ++ [stS stateSlot .a2] ++ keySetup))
+    (.seq (.block (roundSb ++ saveRegs ++ maskInit ++ [stS raSlot .ra, movR .ra .a2] ++ keySetup))
       (.seq (.loop (.block keyBody) (.nonzero .a1))
         (.seq (.block (keyDone ++ chainLoad))
           (.seq (.loop (chainBody out) (.nonzero .a4))
             (.block (chainStore ++ restoreRegs))))))
+
+/-- A call of the CBC-MAC chain, `vg_cmac_aes_update`'s, an internal function. -/
+def macChainCall : Prog isa := .call "vg_aes_mac_chain" (chain false)
+
+/-- A call of the CBC encryption chain, `vg_aes_cbc_encrypt`'s, an internal
+function. -/
+def cbcChainCall : Prog isa := .call "vg_aes_cbc_chain" (chain true)
 
 end VG.Impl.Aes.RISCV64

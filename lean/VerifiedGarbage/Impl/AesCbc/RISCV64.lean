@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.RISCV64.Blocks
+public import VerifiedGarbage.Impl.Aes.RISCV64.Chain
 public import VerifiedGarbage.Impl.Words.RISCV64.XorBytes
 
 /-!
@@ -89,12 +90,19 @@ def decCall : Prog isa := .call "vg_aes_decrypt_blocks" Impl.Aes.RISCV64.decrypt
 
 /-! ## `vg_aes_cbc_encrypt` -/
 
-/-- One block: `Pⱼ ⊕ Cⱼ₋₁`, enciphered, and the result the chaining value. -/
-def encBody : Prog isa :=
-  .seq (.block (xorInto .s4 .s3 ++ callArgs))
-    (.seq encCall (.block (copy .s3 .s4 ++ advance)))
+/-- The return address and `s1`, saved above the first 2048 bytes of the
+scratch buffer (with the scratch buffer in `a5`), and the scratch buffer kept in `s1`. -/
+def encSave : List Instr :=
+  savePtr .a5 ++ [.store .d .ra .t0 16, .store .d .s1 .t0 24, mov .s1 .a5]
 
-def encrypt : Prog isa := whole encBody
+/-- They restored, with the scratch buffer in `s1`. -/
+def encRestore : List Instr := savePtr .s1 ++ [.load .d .ra .t0 16, .load .d .s1 .t0 24]
+
+/-- Each block `Pⱼ ⊕ Cⱼ₋₁`, enciphered in place, the result the chaining
+value, by the CBC encryption chain (`Impl.Aes.RISCV64.chain true`), which
+takes `encrypt`'s arguments and the first 2048 bytes of its scratch buffer,
+and bitslices the round keys once for all the blocks. -/
+def encrypt : Prog isa := .seq (.block encSave) (.seq Impl.Aes.RISCV64.cbcChainCall (.block encRestore))
 
 /-! ## `vg_aes_cbc_decrypt` -/
 

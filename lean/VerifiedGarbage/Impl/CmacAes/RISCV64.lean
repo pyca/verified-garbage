@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCbc.RISCV64
 public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
 public import VerifiedGarbage.Impl.Cmac.RISCV64
+public import VerifiedGarbage.Impl.Aes.RISCV64.Chain
 
 /-!
 # AES-CMAC: RISC-V implementation
@@ -76,11 +77,19 @@ def subkeys : Prog isa := .seq (.block subkeysPre) (.seq encCall (.block subkeys
 rounds, the state, `n = 1`, and the working space. -/
 def updArgs : List Instr := [mov .a0 .s1, mov .a1 .s2, mov .a2 .s3, .li .a3 1, mov .a4 .s6]
 
-/-- One block: `C ⊕ Mᵢ` in the state (at `s3`; the block at `s4`),
-enciphered in place. -/
-def body : Prog isa := .seq (.block (xorInto .s3 .s4 ++ updArgs)) (.seq encCall (.block advance))
+/-- The return address and `s1`, saved above the first 2048 bytes of the
+scratch buffer (with the scratch buffer in `a5`), and the scratch buffer kept in `s1`. -/
+def updSave : List Instr :=
+  savePtr .a5 ++ [.store .d .ra .t0 16, .store .d .s1 .t0 24, mov .s1 .a5]
 
-def update : Prog isa := whole body
+/-- They restored, with the scratch buffer in `s1`. -/
+def updRestore : List Instr := savePtr .s1 ++ [.load .d .ra .t0 16, .load .d .s1 .t0 24]
+
+/-- The blocks chained into the state by the CBC-MAC chain
+(`Impl.Aes.RISCV64.chain false`), which takes `update`'s arguments and the
+first 2048 bytes of its scratch buffer, and bitslices the round keys once
+for all the blocks. -/
+def update : Prog isa := .seq (.block updSave) (.seq Impl.Aes.RISCV64.macChainCall (.block updRestore))
 
 /-! ## `vg_cmac_aes_finalize` -/
 
