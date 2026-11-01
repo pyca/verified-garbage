@@ -6,7 +6,9 @@ import VerifiedGarbage.Proof.X448.RISCV64.Mul
 import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Invert
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 
 /-!
 # Ed448 on RISCV64: the square root's power
@@ -62,9 +64,9 @@ def rootV (v : Nat → Fe) (n : Nat) : Nat → Fe := upd v R (VG.Proof.X448.pw (
 /-- The loop invariant of `root` from `sI`, before the step for the bit `n - 1`. -/
 structure RootInv (b : Addr) (sI : State) (a : BitVec 64) (qs : List Nat) (v : Nat → Fe) (n : Nat)
     (s : State) : Prop where
-  cur : Cur b sI a (BitVec.ofNat 64 n) qs (rootV v n) s
+  cur : R64.Cur b sI a (BitVec.ofNat 64 n) qs (rootV v n) s
 
-theorem rootStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : Sep1 R qs = true) (hR : R ∈ qs)
+theorem rootStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : R64.Sep8 R qs = true) (hR : R ∈ qs)
     (hZ : Z2 ∈ qs) {v : Nat → Fe} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 446)
     {s : State} (h : RootInv b sI a qs v n s) :
     WP isa rootStep s fun s' => RootInv b sI a qs v (n - 1) s' ∧ (s'.gpr .t1 != 0) = decide (n - 1 ≠ 0) := by
@@ -74,12 +76,12 @@ theorem rootStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : Sep1 R qs
   rw [Nat.sub_add_cancel hn] at he
   unfold rootStep
   refine WP.seq (wp_subi (by decide) fun s1 u1 => WP.block_nil ?_)
-  have h1 : Cur b sI a (BitVec.ofNat 64 (n - 1)) qs (rootV v n) s1 := by
+  have h1 : R64.Cur b sI a (BitVec.ofNat 64 (n - 1)) qs (rootV v n) s1 := by
     refine ⟨hcur.ctx.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide),
-      hcur.stp.trans (Stp.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide) u1.mem),
+      hcur.stp.trans (R64.Stp.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide) u1.mem),
       by rw [u1.other _ (by decide), hcur.t2], ?_, by rw [u1.mem]; exact hcur.slots⟩
     rw [u1.gpr, hcur.t1, ofNat_sub_one hn (by omega_using [hn'])]
-  refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) hq (by decide) hR hR h1)
+  refine WP.seq (WP.mono (R64.opMul (o := R) (x := R) (y := R) hq (by decide) hR hR h1)
     fun s2 h2 => ?_)
   have hsq : ∀ q ∈ qs, upd (rootV v n) R (rootV v n R * rootV v n R) q =
       upd v R (VG.Proof.X448.pw (v Z2) (2 * (RE >>> n))) q := by
@@ -88,8 +90,8 @@ theorem rootStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : Sep1 R qs
     · subst hq; rw [upd_self, rootV, upd_self, upd_self, Nat.two_mul, ← VG.Proof.X448.pw_mul]
     · rw [upd_of_ne _ _ hq, rootV, upd_of_ne _ _ hq, upd_of_ne _ _ hq]
   have h2' := h2.congr (qs' := qs) (fun q hq' => List.mem_cons_of_mem _ hq') hsq
-  refine WP.seq (WP.mono (cmp_ok (d := 222) (by omega_using [hn']) (by decide) h2') fun s3 ⟨h3, hz3⟩ => ?_)
-  refine WP.mono (Q := Cur b sI a (BitVec.ofNat 64 (n - 1)) qs (rootV v (n - 1))) ?_ fun s4 h4 =>
+  refine WP.seq (WP.mono (R64.cmp_ok (d := 222) (by omega_using [hn']) (by decide) h2') fun s3 ⟨h3, hz3⟩ => ?_)
+  refine WP.mono (Q := R64.Cur b sI a (BitVec.ofNat 64 (n - 1)) qs (rootV v (n - 1))) ?_ fun s4 h4 =>
     ⟨⟨h4⟩, by rw [h4.t1, ofNat_ne_zero (by omega_using [hn'])]⟩
   refine WP.ite _ hz3 (fun ht => WP.block_nil (h3.congr (fun q hq => hq) fun q _ => ?_)) (fun hf => ?_)
   · have h4 : n - 1 = 222 := by simpa using ht
@@ -97,7 +99,7 @@ theorem rootStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : Sep1 R qs
     · subst hq; rw [upd_self, rootV, upd_self, he, hb, iteT h4, Nat.add_zero]
     · rw [upd_of_ne _ _ hq, rootV, upd_of_ne _ _ hq]
   · have h4 : n - 1 ≠ 222 := by simpa using hf
-    refine WP.mono (opMul (o := R) (x := R) (y := Z2) hq (by decide) hR hZ h3)
+    refine WP.mono (R64.opMul (o := R) (x := R) (y := Z2) hq (by decide) hR hZ h3)
       fun s5 h5 => h5.congr (fun q hq' => List.mem_cons_of_mem _ hq') fun q _ => ?_
     by_cases hq : q = R
     · subst hq
@@ -105,10 +107,10 @@ theorem rootStep_ok {sI : State} {a : BitVec 64} {qs : List Nat} (hq : Sep1 R qs
         iteF h4, ← VG.Proof.X448.pw_mul, VG.Proof.X448.pw_one]
     · rw [upd_of_ne _ _ hq, upd_of_ne _ _ hq, rootV, upd_of_ne _ _ hq]
 
-theorem rootQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR' : R ∈ qs) (hZ : Z2 ∈ qs)
+theorem rootQ_ok {qs : List Nat} (hq : R64.Sep8 R qs = true) (hR' : R ∈ qs) (hZ : Z2 ∈ qs)
     {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .t2 = a) :
-    WP isa root s fun s' => Stp b s s' ∧ Ctx b s' ∧
+    WP isa root s fun s' => R64.Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (RE))) := by
   have hR : R = 840 := rfl
   unfold root
@@ -144,7 +146,7 @@ theorem rootQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR' : R ∈ qs) (hZ : 
     exact h4f.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by decide) (by decide)⟩
   have hc5 : Ctx b s5 := hc.of_rest hr5 (by decide)
-  have hst5 : Stp b s s5 := ⟨hr5.mono (by decide), hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+  have hst5 : R64.Stp b s s5 := ⟨hr5.mono (by decide), hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by decide)⟩⟩
   have hS5 : SlotsOk s5.mem b qs (rootV v 446) := by
     have hA := ACC_eq
@@ -153,13 +155,13 @@ theorem rootQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR' : R ∈ qs) (hZ : 
     · subst hqR
       rw [FS, V, val32_congr hlimb, rootV, upd_self, r446, pw_zero, val32_single _ (by decide)]
       rfl
-    · obtain ⟨h1, h3⟩ := sep1_get hq hq'
+    · obtain ⟨h1, h3⟩ := sep1_get (R64.sep8_sep1 hq) hq'
       have e := limb_frame (o := q) hf5 fun r hr k hk => by
         rw [List.mem_singleton.mp hr]
         exact Offset.disjoint _ (by omega_using [hqR, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hR])
       rw [FS, V, val32_congr e, rootV, upd_of_ne _ _ hqR]; exact hS q hq' hqR
   have h446 : RootInv b s5 a qs v 446 s5 :=
-    ⟨⟨hc5, Stp.refl _ _, by rw [hr5.gpr _ (by decide), h0], u5.gpr, hS5⟩⟩
+    ⟨⟨hc5, R64.Stp.refl _ _, by rw [hr5.gpr _ (by decide), h0], u5.gpr, hS5⟩⟩
   refine WP.mono (Q := RootInv b s5 a qs v 0) (WP.loop (M := isa)
     (fun m s' => 1 ≤ m ∧ m ≤ 446 ∧ RootInv b s5 a qs v m s') ?_ 446 s5 ⟨by decide, Nat.le_refl _, h446⟩)
     fun s' ⟨h'⟩ => ⟨hst5.trans h'.stp, h'.ctx, h'.slots.congr fun q _ => by

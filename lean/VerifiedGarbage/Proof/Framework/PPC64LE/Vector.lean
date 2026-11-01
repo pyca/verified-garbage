@@ -18,6 +18,21 @@ address operands; extracting a doubleword produces a secret GPR value.
 @[expose] public section
 namespace VG.PPC64LE
 
+theorem choice_select {n : Nat} (e f g : BitVec n) :
+    (g &&& ~~~e) ||| (f &&& e) = ((f ^^^ g) &&& e) ^^^ g := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_xor,
+    hi, decide_true, Bool.true_and]
+  cases he : e.getLsbD i <;> cases hf : f.getLsbD i <;> cases hg : g.getLsbD i <;> rfl
+
+theorem majority_xor_select {n : Nat} (a b c : BitVec n) :
+    ((c ^^^ b) &&& (a ^^^ b)) ^^^ b = ((a ||| b) &&& c) ||| (a &&& b) := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_xor]
+  cases ha : a.getLsbD i <;> cases hb : b.getLsbD i <;> cases hc : c.getLsbD i <;> rfl
+
 theorem vpr_writeV (s : State) (d : VReg) (x : BitVec 128) (r : VReg) :
     (s.writeV d x).vpr r = if r = d then x else s.vpr r := rfl
 
