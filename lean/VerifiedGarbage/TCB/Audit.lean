@@ -40,7 +40,9 @@ definitions: so they run in a module too, which sees what it imports from other
 modules without their proofs, and without the values of definitions they do not
 expose. A module of this project built without the records fails both. The
 records' own `initialize` (`TCB/AuditRecords.lean`, which registers them) is the one
-this project declares.
+this project declares: its module and `TCB/AuditBase.lean` write no records
+(`AuditRecords.unrecorded`), so it reaches no audit, and no name is exempt (a
+module may declare a constant in any namespace, `VG.AuditRecords` too).
 -/
 
 public meta section
@@ -60,7 +62,7 @@ def compilerOverrides (env : Environment) (roots : List Name) : List String :=
     else if isExtern env n then s!"@[extern] on {n}"
     else if (getExportNameFor? env n).isSome then s!"@[export] on {n}"
     else s!"@[implemented_by], @[extern] or @[export] on {n}") ++
-  ((inits.toList.filter fun n => !(`VG.AuditRecords).isPrefixOf n).map fun n => s!"@[init] on {n}") ++
+  (inits.toList.map fun n => s!"@[init] on {n}") ++
   (csimps.toList.map fun n => s!"@[csimp] {n}") ++
   AuditRecords.unrecordedIn env
 

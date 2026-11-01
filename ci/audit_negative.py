@@ -9,14 +9,16 @@ records carry them across modules, and through a private import, which hides a
 module from the modules that import the importer. It adds to a module that an
 artifact depends on (`Spec/Selftest.lean`) `axiom vg_bad : False`, a theorem proven
 from it, and `vg_bad_id`, the identity, with `@[implemented_by]` of a function that
-is not, which `add` (that the artifact's contract uses) applies; and adds a module
+is not, which `add` (that the artifact's contract uses) applies, and an `initialize`
+in the namespace of the records' own (`VG.AuditRecords`); and adds a module
 with another such axiom, `Proof/Selftest/AuditPrivate.lean`, which the self-test's
 proof imports with a plain `import`. It proves `add_correct` from both theorems, and
 checks that `EmitOne.lean --check Selftest.X86_64` fails with the axiom audit's
 `depends on non-standard axioms: [...]`, listing both `VG.Spec.Selftest.vg_bad` and
 `VG.Proof.Selftest.AuditPrivate.vg_bad`, and with the override audit's
-`@[implemented_by] on VG.Spec.Selftest.vg_bad_id` (Lean reports each command's error
-and goes on to the next, so one build checks all three).
+`@[implemented_by] on VG.Spec.Selftest.vg_bad_id` and `@[init] on
+VG.AuditRecords.vg_bad_init` (Lean reports each command's error and goes on to the
+next, so one build checks all four).
 
 It edits the files in place, after copying them to a temporary directory,
 and restores them from there (and deletes the module it added) whatever
@@ -55,12 +57,26 @@ def vg_bad_impl (x : BitVec 64) : BitVec 64 := x + 1
 
 /-- Not in the tree: compiled code runs `vg_bad_impl` in its place. -/
 @[implemented_by vg_bad_impl] def vg_bad_id (x : BitVec 64) : BitVec 64 := x
+
+end VG.Spec.Selftest
+
+namespace VG.AuditRecords
+
+/-- Not in the tree: an initializer, which runs when the emitter imports the module,
+in the namespace of the records' own. -/
+initialize vg_bad_init : Nat ← pure 0
+
+end VG.AuditRecords
+
+namespace VG.Spec.Selftest
 """
 
 # `add`'s definition, and what the test makes it.
 ADD = "def add (a b : BitVec 64) : BitVec 64 := a + b"
 ADD_BAD = "def add (a b : BitVec 64) : BitVec 64 := vg_bad_id (a + b)"
 OVERRIDE = "@[implemented_by] on VG.Spec.Selftest.vg_bad_id"
+# An initializer, though in `TCB/AuditRecords.lean`'s namespace.
+INIT = "@[init] on VG.AuditRecords.vg_bad_init"
 
 # The self-test's proof: its first theorem, proven from the axiom instead.
 CORRECT = "theorem add_correct "
@@ -159,8 +175,8 @@ REJECTED = re.compile(r"depends on non-standard axioms: \[([^\]]*)\]")
 
 
 def rejected(out: str | None) -> bool:
-    """Whether the audits rejected both axioms and the override (`out`, from
-    `emit_check`)."""
+    """Whether the audits rejected both axioms, the override and the initializer
+    (`out`, from `emit_check`)."""
     found = REJECTED.search(out or "")
     axioms = {a.strip() for a in found.group(1).split(",")} if found else set()
     ok = True
@@ -176,6 +192,12 @@ def rejected(out: str | None) -> bool:
     else:
         print(f"EmitOne.lean --check {TARGET} did not report `{OVERRIDE}`: the override "
               "audit no longer sees an override in a module", file=sys.stderr)
+        ok = False
+    if INIT in (out or ""):
+        print(f"the audit rejects an initializer in the records' namespace: `{INIT}`")
+    else:
+        print(f"EmitOne.lean --check {TARGET} did not report `{INIT}`: the override audit "
+              "exempts an initializer by its name", file=sys.stderr)
         ok = False
     if not ok:
         print(out or "", file=sys.stderr)
