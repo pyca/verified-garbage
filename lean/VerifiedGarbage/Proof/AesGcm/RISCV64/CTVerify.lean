@@ -86,7 +86,7 @@ theorem verOk_ct (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
     · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), j₁, j₂]
     · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), i₁, i₂]
     · rw [h₁.s0, h₂.s0, d₁, d₂]
-  · refine WP.mono (recv_ok he j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
+  · refine WP.mono (recv_ok he (by rw [d]; exact L.wal) j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
       (by decide)))) fun s' ⟨_, _, hg, hk⟩ => ⟨V, a, b, d, e, f, g, i, j, he.keep (fun r hr => hg r
         (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
         (by revert r; decide)) hk.sp hk.rd hk.wr, by rw [hk.rd, hk.wr]; exact hT, hTd⟩
@@ -109,13 +109,13 @@ theorem verOk_ct (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
 theorem verOk_wp (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w sp R A T Tp tl s) :
     WP isa (.seq recv (.seq (finTag 0) (cmp 0))) s fun s' => s'.gpr .s0 = w ∧ s'.sp = sp := by
   obtain ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ := h
-  refine WP.seq (WP.mono (recv_ok he j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
+  refine WP.seq (WP.mono (recv_ok he (by rw [d]; exact L.wal) j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
     (by decide)))) fun s₁ ⟨_, _, hg, hk⟩ => ?_)
   have he₁ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
   refine WP.seq (WP.mono (finTag_ok (L.v a b d) (o := 0) (.inl rfl) (a := List.replicate (A.toNat % 16) 0)
     (ct := List.replicate T.toNat 0) he₁ e hR rfl (by simp [f]) (by simp [g])) fun s₂ fo => ?_)
-  refine WP.mono (cmp_ok fo.env (o := 0) (.inl rfl) j t1 t16) fun s' ⟨_, _, hg', hk'⟩ =>
+  refine WP.mono (cmp_ok fo.env (by rw [d]; exact L.wal) (o := 0) (.inl rfl) j t1 t16) fun s' ⟨_, _, hg', hk'⟩ =>
     ⟨by rw [hg' _ (by decide) (by decide) (by decide) (by decide) (by decide), fo.env.s0, d],
       by rw [hk'.sp, fo.env.sp]⟩
 
@@ -126,8 +126,7 @@ theorem streamVerify_ct : ConstantTime isa streamVerifyRISCV64.pre streamVerifyR
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp⟩ := hq
   have h₁' : verPre σ₁ := h₁
   have L := verLay h₁'
-  have hR : (σ₁.gpr .a1).toNat = 10 ∨ (σ₁.gpr .a1).toNat = 12 ∨ (σ₁.gpr .a1).toNat = 14 :=
-    h₁'.2.2.2.2.2.2.2.2.2.2.2
+  have hR := ver_R h₁'
   let I₀ : State → Prop := fun s => verPre s ∧ s.gpr .a0 = σ₁.gpr .a0 ∧ s.gpr .a1 = σ₁.gpr .a1 ∧
     s.gpr .a2 = σ₁.gpr .a2 ∧ s.gpr .a3 = σ₁.gpr .a3 ∧ s.gpr .a4 = σ₁.gpr .a4 ∧ s.gpr .a5 = σ₁.gpr .a5 ∧
     s.gpr .a6 = σ₁.gpr .a6 ∧ s.gpr .a7 = σ₁.gpr .a7 ∧ s.sp = σ₁.sp
@@ -140,7 +139,7 @@ theorem streamVerify_ct : ConstantTime isa streamVerifyRISCV64.pre streamVerifyR
   · obtain ⟨_, hc⟩ := verEntry_taint
     exact CT.taintEq (I := I₀) _ σ₁.gpr σ₁.sp (fun s ⟨_, e3, e4, e5, e6, e7, e8, e9, e10, esp⟩ =>
       ⟨esp, by simp [e3, e4, e5, e6, e7, e8, e9, e10]⟩) hc
-  · refine WP.mono (ver1_wp (ver_W hs)) fun s₁ h1 => ?_
+  · refine WP.mono (ver1_wp (ver_W hs) (ver_al hs)) fun s₁ h1 => ?_
     have hT : Covers [⟨s.gpr .a5, (s.gpr .a6).toNat⟩] (s₁.rd ++ s₁.wr) := by
       rw [h1.en.keeps.rd, h1.en.keeps.wr, hs.1]; exact covers_mem (List.mem_append_left _ (by simp))
     have hTd : (⟨s.gpr .a5, (s.gpr .a6).toNat⟩ : Region).Disjoint ⟨s.gpr .a7, 2560⟩ := hs.2.2.2.2.2.2.1
@@ -181,7 +180,7 @@ theorem streamVerify_ct : ConstantTime isa streamVerifyRISCV64.pre streamVerifyR
   · refine WP.ite _ (ev s hs) (fun hb => ?_) (fun hb => ?_)
     · obtain ⟨⟨V, _, _, d, _, _, _, _, _, he, _⟩, _⟩ := hs
       have h₀ : WP isa (.block [.li .a0 0]) s fun s' => (∀ r, r ≠ .a0 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-        crun [Int.reduceNatCast', ]
+        crun [Int.reduceNatCast']
         exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
       exact WP.mono h₀ fun s' ⟨hg, hk⟩ => ⟨by rw [hg _ (by decide), he.s0, d], by rw [hk.sp, he.sp]⟩
     · have hok : ok = true := by cases e : ok <;> simp_all
