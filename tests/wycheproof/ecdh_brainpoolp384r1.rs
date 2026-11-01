@@ -21,7 +21,7 @@
 use verified_garbage::ecdh::{BrainpoolP384r1, Error, PrivateKey};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{CurveEncodingGroup as Group, EcdhCase as Case};
+use super::schema::{CurveEncodingGroup, EcdhCase};
 use crate::require_vectors;
 
 /// The DER encoding of a `SubjectPublicKeyInfo` up to its point (RFC 5480
@@ -53,7 +53,7 @@ fn private_key(bytes: &[u8]) -> [u8; 48] {
 #[test]
 fn ecdh_brainpoolp384r1_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ecdh_brainpoolP384r1_test.json");
+    let file = harness::load::<CurveEncodingGroup, EcdhCase>("ecdh_brainpoolP384r1_test.json");
     let (checked, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.curve, "brainpoolP384r1");

@@ -17,13 +17,18 @@
 use verified_garbage::aes_ccm::{AesCcm, Error};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{AeadCase as Case, SizesGroup as Group};
+use super::schema::{AeadCase, SizesGroup};
 use crate::require_vectors;
 
 /// Decrypts `c` under `key` with a `T`-byte tag, leaving the result in
 /// `buf`; for a valid vector, also encrypts and checks the ciphertext and
 /// tag.
-fn check<const T: usize>(key: &AesCcm, c: &Case, buf: &mut [u8], valid: bool) -> Result<(), Error> {
+fn check<const T: usize>(
+    key: &AesCcm,
+    c: &AeadCase,
+    buf: &mut [u8],
+    valid: bool,
+) -> Result<(), Error> {
     let tag: &[u8; T] = c.tag.0.as_slice().try_into().unwrap();
     let r = key.decrypt_in_place(&c.iv.0, &c.aad.0, buf, tag);
     if valid {
@@ -40,7 +45,7 @@ fn check<const T: usize>(key: &AesCcm, c: &Case, buf: &mut [u8], valid: bool) ->
 #[test]
 fn aes_ccm() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("aes_ccm_test.json");
+    let file = harness::load::<SizesGroup, AeadCase>("aes_ccm_test.json");
     let (valid, invalid) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         let c = &test.case;

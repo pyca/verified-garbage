@@ -24,17 +24,21 @@ use std::sync::Mutex;
 use verified_garbage::rsa::{Error, PrivateKey, PublicKey};
 
 use super::harness::{self, Expectation, TestFile, TestGroup};
-use super::schema::{EncryptCase as Case, RsaPrivateKeyGroup as Group};
-use crate::bytes::trim_zeros as trim;
+use super::schema::{EncryptCase, RsaPrivateKeyGroup};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 /// Checks every vector of `group`, of the file `name`; `pkcs1` if its padding
 /// is PKCS #1 v1.5's. Returns the numbers of ciphertexts decrypted and
 /// refused.
-fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usize, usize) {
+fn check_group(
+    name: &str,
+    group: &TestGroup<RsaPrivateKeyGroup, EncryptCase>,
+    pkcs1: bool,
+) -> (usize, usize) {
     let (mut done, mut refused) = (0, 0);
     let k = &group.params.private_key;
-    let n = trim(&k.modulus.0);
+    let n = trim_zeros(&k.modulus.0);
     let key = PrivateKey::from_crt(
         n,
         &k.public_exponent.0,
@@ -88,8 +92,9 @@ fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usiz
 /// groups, each with its own key, are shared among threads (`par_each`):
 /// one file (`rsa_oaep_misc_test.json`) has 128 keys.
 fn check_all(names: &[&str], pkcs1: bool) -> Vec<(usize, usize)> {
-    let files: Vec<TestFile<Group, Case>> = names.iter().map(|n| harness::load(n)).collect();
-    let groups: Vec<(usize, &TestGroup<Group, Case>)> = files
+    let files: Vec<TestFile<RsaPrivateKeyGroup, EncryptCase>> =
+        names.iter().map(|n| harness::load(n)).collect();
+    let groups: Vec<(usize, &TestGroup<RsaPrivateKeyGroup, EncryptCase>)> = files
         .iter()
         .enumerate()
         .flat_map(|(i, f)| f.test_groups.iter().map(move |g| (i, g)))

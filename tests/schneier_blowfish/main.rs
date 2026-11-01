@@ -14,7 +14,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced as unhex;
+use crate::bytes::unhex_spaced;
 use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
 
 /// The vectors' file (`crate::vectors`).
@@ -57,7 +57,7 @@ fn ecb_records() {
     for line in section("key bytes", "set_key test data") {
         let fields: Vec<&str> = line.split_whitespace().collect();
         let [key, clear, cipher]: [&str; 3] = fields.try_into().unwrap();
-        let (key, clear, cipher) = (unhex(key), unhex(clear), unhex(cipher));
+        let (key, clear, cipher) = (unhex_spaced(key), unhex_spaced(clear), unhex_spaced(cipher));
         assert_eq!(encrypt(&key, &clear), cipher);
         assert_eq!(decrypt(&key, &cipher), clear);
         count += 1;
@@ -69,13 +69,13 @@ fn ecb_records() {
 fn set_key_records() {
     let records = section("set_key test data", "chaining mode test data");
     let mut lines = records.into_iter();
-    let clear = unhex(lines.next().unwrap().strip_prefix("data[8]= ").unwrap());
+    let clear = unhex_spaced(lines.next().unwrap().strip_prefix("data[8]= ").unwrap());
     let mut count = 0;
     for line in lines.filter(|line| !line.is_empty()) {
         let (cipher, key) = line.strip_prefix("c=").unwrap().split_once(" k[").unwrap();
         let (length, key) = key.split_once("]=").unwrap();
         let length: usize = length.trim().parse().unwrap();
-        let (cipher, key) = (unhex(cipher), unhex(key));
+        let (cipher, key) = (unhex_spaced(cipher), unhex_spaced(key));
         assert_eq!(key.len(), length);
         if length < 4 {
             assert!(matches!(
@@ -103,14 +103,14 @@ fn cbc_record() {
     let text = text();
     let value = |name: &str| {
         let line = text.lines().find(|line| line.starts_with(name)).unwrap();
-        unhex(line.split_once("= ").unwrap().1.trim())
+        unhex_spaced(line.split_once("= ").unwrap().1.trim())
     };
     let key = value("key[16]");
     let iv = value("iv[8]");
     let data = text
         .lines()
         .filter(|line| line.starts_with("data[29]  = 3"))
-        .map(|line| unhex(line.split_once("= ").unwrap().1.trim()))
+        .map(|line| unhex_spaced(line.split_once("= ").unwrap().1.trim()))
         .next()
         .unwrap();
     let expected = value("cipher[32]");
@@ -165,7 +165,7 @@ fn many_blocks() {
 /// expansion each, the costliest step) serve every split in turn.
 #[test]
 fn streaming_splits() {
-    let key = unhex("0123456789ABCDEFF0E1D2C3B4A59687");
+    let key = unhex_spaced("0123456789ABCDEFF0E1D2C3B4A59687");
     let data: Vec<u8> = crate::bytes::pattern(8 * 20, 13, 5);
     let whole = encrypt(&key, &data);
     let mut cipher = BlowfishEcbEncryptor::new(&key).unwrap();

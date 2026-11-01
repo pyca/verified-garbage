@@ -15,7 +15,7 @@
     feature = "alloc"
 ))]
 
-use crate::bytes::unhex_spaced as unhex;
+use crate::bytes::unhex_spaced;
 use verified_garbage::scrypt::{Error, scrypt, verify};
 
 /// One `scrypt (P="…", S="…", N=…, r=…, p=…, dkLen=…) = <hex>` vector.
@@ -58,7 +58,7 @@ fn vectors() -> Vec<Vector> {
                 n: param(params, "N").parse().unwrap(),
                 r: param(params, "r").parse().unwrap(),
                 p: param(params, "p").parse().unwrap(),
-                dk: unhex(dk),
+                dk: unhex_spaced(dk),
             }
         })
         .collect()

@@ -19,7 +19,7 @@
 use verified_garbage::aes_cbc::AesCbc;
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{CipherCase as Case, SizesGroup as Group};
+use super::schema::{CipherCase, SizesGroup};
 use crate::require_vectors;
 
 /// `msg` with PKCS #5 padding.
@@ -41,10 +41,10 @@ fn unpad(padded: &[u8]) -> Option<&[u8]> {
 #[test]
 fn aes_cbc_pkcs5() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("aes_cbc_pkcs5_test.json");
+    let file = harness::load::<SizesGroup, CipherCase>("aes_cbc_pkcs5_test.json");
     let (valid, bad_padding) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
-        let Case { key, iv, msg, ct } = &test.case;
+        let CipherCase { key, iv, msg, ct } = &test.case;
         let id = test.tc_id;
         assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");
         assert_eq!(group.params.iv_size, Some(128), "tcId {id}");

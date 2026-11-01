@@ -13,15 +13,15 @@
 use verified_garbage::hmac::{Hmac, HmacHash};
 
 use super::harness::{self, Expectation};
-use super::schema::{MacCase as Case, SizesGroup as Group};
+use super::schema::{MacCase, SizesGroup};
 
 /// Checks every vector of `name` with `Hmac<H>`, whose `new` is passed in:
 /// a (possibly truncated) tag computed with the key must equal the expected
 /// one exactly when the test is valid.
 pub(crate) fn check<H: HmacHash>(name: &str, new: fn(&[u8]) -> Hmac<H>) {
-    let file = harness::load::<Group, Case>(name);
+    let file = harness::load::<SizesGroup, MacCase>(name);
     file.par_tests(|group, test| {
-        let Case { key, msg, tag } = &test.case;
+        let MacCase { key, msg, tag } = &test.case;
         assert_eq!(Some(key.0.len() * 8), group.params.key_size);
         let tag_size = group.params.tag_size.unwrap();
         assert!(tag_size <= H::OUTPUT_SIZE * 8);

@@ -12,13 +12,13 @@
 use verified_garbage::ed448::{Error, VerifyingKey};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{EdGroup as Group, SigCase as Case};
+use super::schema::{EdGroup, SigCase};
 use crate::require_vectors;
 
 #[test]
 fn ed448_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ed448_test.json");
+    let file = harness::load::<EdGroup, SigCase>("ed448_test.json");
     let checked = Count::default();
     file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "edwards448");

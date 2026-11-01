@@ -28,16 +28,14 @@ use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{
-    MsgCase, RsaPrivateKey as Crt, RsaPrivateKeyGroup as CrtGroup, RsaPublicKey as Public, SigCase,
-};
-use crate::bytes::trim_zeros as trim;
+use super::schema::{MsgCase, RsaPrivateKey, RsaPrivateKeyGroup, RsaPublicKey, SigCase};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 json_struct! {
     struct VerifyGroup {
         #[json(rename = "publicKey")]
-        public_key: Public,
+        public_key: RsaPublicKey,
         sha: String,
         #[json(rename = "mgfSha")]
         mgf_sha: String,
@@ -47,8 +45,8 @@ json_struct! {
 }
 
 /// The CRT key `k` of the vector file `name`, and its public key.
-fn keys(name: &str, k: &Crt) -> (PrivateKey, PublicKey) {
-    let n = trim(&k.modulus.0);
+fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
+    let n = trim_zeros(&k.modulus.0);
     let private = PrivateKey::from_crt(
         n,
         &k.public_exponent.0,
@@ -108,7 +106,7 @@ fn rsa_pss_test() {
         let (accepted, rejected) = (Count::default(), Count::default());
         let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
             let p = &group.params.public_key;
-            PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0)
+            PublicKey::new(trim_zeros(&p.modulus.0), &p.public_exponent.0)
                 .unwrap_or_else(|e| panic!("{name}: {e}"))
         };
         file.par_tests_with(keys, |group, key, test| {
@@ -158,7 +156,7 @@ fn rsa_pss_sign_test() {
         .filter(|&b| harness::rsa_bits_signed(b))
     {
         let name = format!("rsa_pkcs1_{bits}_test.json");
-        let file = harness::load::<CrtGroup, MsgCase>(&name);
+        let file = harness::load::<RsaPrivateKeyGroup, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {
             check_signatures(&name, group, &HASHES);
         });
@@ -168,11 +166,11 @@ fn rsa_pss_sign_test() {
 /// The signing checks shared by the complete suite and CI's focused checks.
 fn check_signatures(
     name: &str,
-    group: &harness::TestGroup<CrtGroup, MsgCase>,
+    group: &harness::TestGroup<RsaPrivateKeyGroup, MsgCase>,
     hashes: &[(&str, Hash)],
 ) {
     let (private, public) = keys(name, &group.params.private_key);
-    let n = trim(&group.params.private_key.modulus.0);
+    let n = trim_zeros(&group.params.private_key.modulus.0);
     for (test, (_, h)) in group.tests.iter().zip(hashes.iter()) {
         let id = test.tc_id;
         let d = digest(*h, &test.case.msg.0);
@@ -215,7 +213,7 @@ fn check_signatures(
 fn rsa_pss_every_hash() {
     require_vectors!();
     let name = "rsa_pkcs1_2048_test.json";
-    let file = harness::load::<CrtGroup, MsgCase>(name);
+    let file = harness::load::<RsaPrivateKeyGroup, MsgCase>(name);
     let group = &file.test_groups[0];
     assert!(group.tests.len() >= HASHES.len());
     check_signatures(name, group, &HASHES);
@@ -228,7 +226,7 @@ fn rsa_pss_large_keys() {
     require_vectors!();
     for bits in [3072, 4096] {
         let name = format!("rsa_pkcs1_{bits}_test.json");
-        let file = harness::load::<CrtGroup, MsgCase>(&name);
+        let file = harness::load::<RsaPrivateKeyGroup, MsgCase>(&name);
         check_signatures(&name, &file.test_groups[0], &[("SHA-256", Hash::Sha256)]);
     }
 }

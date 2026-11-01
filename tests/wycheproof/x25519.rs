@@ -19,13 +19,13 @@
 use verified_garbage::x25519::{Error, PrivateKey, x25519};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{CurveGroup as Group, EcdhCase as Case};
+use super::schema::{CurveGroup, EcdhCase};
 use crate::require_vectors;
 
 #[test]
 fn x25519_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("x25519_test.json");
+    let file = harness::load::<CurveGroup, EcdhCase>("x25519_test.json");
     let checked = Count::default();
     file.par_tests(|group, test| {
         assert_eq!(group.params.curve, "curve25519");

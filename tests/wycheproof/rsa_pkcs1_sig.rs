@@ -31,17 +31,14 @@ use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{
-    MsgCase, RsaPrivateKeyGroup as CrtGroup, RsaPublicKey as Public,
-    RsaPublicKeyGroup as VerifyGroup, SigCase,
-};
-use crate::bytes::trim_zeros as trim;
+use super::schema::{MsgCase, RsaPrivateKeyGroup, RsaPublicKey, RsaPublicKeyGroup, SigCase};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 json_struct! {
     struct GenGroup {
         #[json(rename = "privateKey")]
-        private_key: Public,
+        private_key: RsaPublicKey,
         sha: String,
     }
 }
@@ -141,11 +138,11 @@ fn rsa_signature_test() {
         .collect();
     assert_eq!(names.len(), 24);
     for name in &names {
-        let file = harness::load::<VerifyGroup, SigCase>(name);
+        let file = harness::load::<RsaPublicKeyGroup, SigCase>(name);
         let (accepted, rejected) = (Count::default(), Count::default());
-        let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
+        let keys = |group: &harness::TestGroup<RsaPublicKeyGroup, SigCase>| {
             let p = &group.params.public_key;
-            PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0).unwrap()
+            PublicKey::new(trim_zeros(&p.modulus.0), &p.public_exponent.0).unwrap()
         };
         file.par_tests_with(keys, |group, key, test| {
             let h = hash(&group.params.sha);
@@ -170,7 +167,7 @@ fn rsa_pkcs1_sig_gen_test() {
         let file = harness::load::<GenGroup, SigCase>(&name);
         let keys = |group: &harness::TestGroup<GenGroup, SigCase>| {
             let p = &group.params.private_key;
-            PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0).unwrap()
+            PublicKey::new(trim_zeros(&p.modulus.0), &p.public_exponent.0).unwrap()
         };
         file.par_tests_with(keys, |group, key, test| {
             let h = hash(&group.params.sha);
@@ -199,10 +196,10 @@ fn rsa_pkcs1_sign_test() {
         .filter(|&b| harness::rsa_bits_tested(b))
     {
         let name = format!("rsa_pkcs1_{bits}_test.json");
-        let file = harness::load::<CrtGroup, MsgCase>(&name);
+        let file = harness::load::<RsaPrivateKeyGroup, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {
             let k = &group.params.private_key;
-            let n = trim(&k.modulus.0);
+            let n = trim_zeros(&k.modulus.0);
             let private = PrivateKey::from_crt(
                 n,
                 &k.public_exponent.0,

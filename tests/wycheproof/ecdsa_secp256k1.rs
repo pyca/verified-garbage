@@ -16,13 +16,13 @@ use verified_garbage::ecdsa::{Error, Secp256k1, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{EcdsaGroup as Group, SigCase as Case};
+use super::schema::{EcdsaGroup, SigCase};
 use crate::require_vectors;
 
 #[test]
 fn ecdsa_secp256k1_sha256_p1363_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ecdsa_secp256k1_sha256_p1363_test.json");
+    let file = harness::load::<EcdsaGroup, SigCase>("ecdsa_secp256k1_sha256_p1363_test.json");
     let (verified, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "secp256k1");

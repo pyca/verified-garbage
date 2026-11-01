@@ -29,8 +29,8 @@ use verified_garbage::rsa_oaep::{Error, Hash, decrypt, encrypt};
 use verified_garbage::{rsa_pkcs1_sig, rsa_pss};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
-use super::schema::{MsgCase, RsaPrivateKey as Key, RsaPrivateKeyGroup as Pkcs1Group};
-use crate::bytes::trim_zeros as trim;
+use super::schema::{MsgCase, RsaPrivateKey, RsaPrivateKeyGroup};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 json_struct! {
@@ -39,7 +39,7 @@ json_struct! {
         #[json(rename = "mgfSha")]
         mgf_sha: String,
         #[json(rename = "privateKey")]
-        private_key: Key,
+        private_key: RsaPrivateKey,
     }
 }
 
@@ -67,8 +67,8 @@ fn hash(name: &str) -> Hash {
 }
 
 /// The private and public keys of `k`, of the file `name`.
-fn keys(name: &str, k: &Key) -> (PrivateKey, PublicKey) {
-    let n = trim(&k.modulus.0);
+fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
+    let n = trim_zeros(&k.modulus.0);
     let key = PrivateKey::from_crt(
         n,
         &k.public_exponent.0,
@@ -95,7 +95,7 @@ fn check(name: &str) -> (usize, usize, usize) {
     file.par_tests_with(keys, |group, (key, public), test| {
         let p = &group.params;
         let (h, g) = (hash(&p.sha), hash(&p.mgf_sha));
-        let n = trim(&p.private_key.modulus.0);
+        let n = trim_zeros(&p.private_key.modulus.0);
         let id = test.tc_id;
         let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
         let r = decrypt(key, ct, h, g, label);
@@ -156,7 +156,7 @@ fn rsa_oaep_every_pair() {
     let name = "rsa_oaep_2048_sha256_mgf1sha256_test.json";
     let file: TestFile<Group, Case> = harness::load(name);
     let (key, public) = keys(name, &file.test_groups[0].params.private_key);
-    let n = trim(&file.test_groups[0].params.private_key.modulus.0);
+    let n = trim_zeros(&file.test_groups[0].params.private_key.modulus.0);
     let k = public.modulus_len();
     assert_eq!(n.len(), k);
     // Each hash function with MGF1 over itself and over SHA-1.
@@ -219,7 +219,7 @@ fn rsa_shared_key_leases_smoke() {
 
 fn shared_key_leases(bits: usize, groups: usize, repetitions: usize) {
     let name = format!("rsa_pkcs1_{bits}_test.json");
-    let file = harness::load::<Pkcs1Group, MsgCase>(&name);
+    let file = harness::load::<RsaPrivateKeyGroup, MsgCase>(&name);
     harness::par_each(
         &file.test_groups[..groups.min(file.test_groups.len())],
         |group| {

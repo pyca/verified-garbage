@@ -17,7 +17,7 @@
 use verified_garbage::ecdh::{Error, P224, PrivateKey};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{CurveGroup as Group, EcdhCase as Case};
+use super::schema::{CurveGroup, EcdhCase};
 use crate::require_vectors;
 
 /// A private key of up to 29 bytes (Wycheproof writes them as signed
@@ -32,7 +32,7 @@ fn private_key(bytes: &[u8]) -> [u8; 28] {
 #[test]
 fn ecdh_secp224r1_ecpoint_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ecdh_secp224r1_ecpoint_test.json");
+    let file = harness::load::<CurveGroup, EcdhCase>("ecdh_secp224r1_ecpoint_test.json");
     let (checked, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.curve, "secp224r1");

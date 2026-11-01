@@ -28,8 +28,8 @@ use verified_garbage::hashes::{
 use verified_garbage::rsa::{Error, PublicKey};
 
 use super::harness::{self, Expectation};
-use super::schema::{RsaPublicKeyGroup as Group, SigCase as Case};
-use crate::bytes::trim_zeros as trim;
+use super::schema::{RsaPublicKeyGroup, SigCase};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 /// A hash function, to its value as bytes.
@@ -116,11 +116,11 @@ fn rsa_signature_test() {
         .collect();
     assert_eq!(names.len(), 24);
     for name in &names {
-        let file = harness::load::<Group, Case>(name);
+        let file = harness::load::<RsaPublicKeyGroup, SigCase>(name);
         let (mut accepted, mut rejected) = (0, 0);
         for group in &file.test_groups {
             let p = &group.params.public_key;
-            let key = PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0).unwrap();
+            let key = PublicKey::new(trim_zeros(&p.modulus.0), &p.public_exponent.0).unwrap();
             let k = key.modulus_len();
             let sha = &group.params.sha;
             let cases: Vec<_> = group

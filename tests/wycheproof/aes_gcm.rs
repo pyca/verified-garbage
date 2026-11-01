@@ -20,17 +20,17 @@
 use verified_garbage::aes_gcm::{AesGcm, Error};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{AeadCase as Case, SizesGroup as Group};
+use super::schema::{AeadCase, SizesGroup};
 use crate::require_vectors;
 
 /// The tag of `c`, which is 16 bytes long.
-fn tag(c: &Case) -> &[u8; 16] {
+fn tag(c: &AeadCase) -> &[u8; 16] {
     c.tag.0.as_slice().try_into().unwrap()
 }
 
 /// Streaming decryption of `c` under `key`: the plaintext, if the tag
 /// matched.
-fn stream_decrypt(key: &AesGcm, c: &Case) -> Result<Vec<u8>, Error> {
+fn stream_decrypt(key: &AesGcm, c: &AeadCase) -> Result<Vec<u8>, Error> {
     let mut d = key.decryptor(&c.iv.0)?;
     d.update_aad(&c.aad.0)?;
     let mut buf = c.ct.0.clone();
@@ -40,7 +40,7 @@ fn stream_decrypt(key: &AesGcm, c: &Case) -> Result<Vec<u8>, Error> {
 }
 
 /// Check an extension length against the prefix of a published full tag.
-fn truncated<const N: usize>(key: &AesGcm, c: &Case) {
+fn truncated<const N: usize>(key: &AesGcm, c: &AeadCase) {
     let tag: &[u8; N] = c.tag.0[..N].try_into().unwrap();
     let mut buf = c.ct.0.clone();
     key.decrypt_in_place_truncated(&c.iv.0, &c.aad.0, &mut buf, tag)
@@ -57,7 +57,7 @@ fn truncated<const N: usize>(key: &AesGcm, c: &Case) {
 #[test]
 fn aes_gcm() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("aes_gcm_test.json");
+    let file = harness::load::<SizesGroup, AeadCase>("aes_gcm_test.json");
     let (valid, invalid) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         let c = &test.case;
