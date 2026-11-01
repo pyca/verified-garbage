@@ -28,24 +28,27 @@ use verified_garbage::hashes::sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512, Sha
 /// digests: 100 checkpoints, each after 1000 iterations of hashing the
 /// previous digest.
 fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
-    monte_carlo(text, N, &|msg| digest(msg).to_vec());
+    monte_carlo(text, N, &|msg, out| out.copy_from_slice(&digest(msg)));
 }
 
-/// [`check_monte_carlo`], for `n`-byte digests; not generic, so that it is
-/// compiled once rather than for every digest length.
-fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8]) -> Vec<u8>) {
+/// [`check_monte_carlo`], for `n`-byte digests, which `digest` writes to
+/// its second argument; not generic, so that it is compiled once rather
+/// than for every digest length.
+fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
     assert!(text.contains(&format!("[L = {}]", 8 * n)));
     let fields = fields(text);
     assert_eq!(fields[0].0, "Seed");
     let mut md = unhex(fields[0].1);
     assert_eq!(md.len(), n);
+    let mut next = vec![0; n];
     let checkpoints = &fields[1..];
     assert_eq!(checkpoints.len(), 2 * 100);
     for (j, v) in checkpoints.chunks(2).enumerate() {
         assert_eq!([v[0].0, v[1].0], ["COUNT", "MD"]);
         assert_eq!(v[0].1, j.to_string());
         for _ in 0..1000 {
-            md = digest(&md);
+            digest(&md, &mut next);
+            std::mem::swap(&mut md, &mut next);
         }
         assert_eq!(md, unhex(v[1].1));
     }

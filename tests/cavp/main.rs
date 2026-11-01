@@ -124,12 +124,12 @@ fn messages(text: &str, header: &str, digest: &dyn Fn(&[u8]) -> Vec<u8>) -> usiz
 /// digests: 100 checkpoints, each after 1000 iterations of hashing the
 /// concatenation of the previous three digests.
 fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
-    monte_carlo(text, N, &|msg| digest(msg).to_vec());
+    monte_carlo(text, N, &|msg, out| out.copy_from_slice(&digest(msg)));
 }
 
-/// [`check_monte_carlo`], for `n`-byte digests; not generic, as
-/// [`messages`].
-fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8]) -> Vec<u8>) {
+/// [`check_monte_carlo`], for `n`-byte digests, which `digest` writes to
+/// its second argument; not generic, as [`messages`].
+fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
     assert!(text.contains(&format!("[L = {n}]")));
     let fields = fields(text);
     assert_eq!(fields[0].0, "Seed");
@@ -140,13 +140,13 @@ fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8]) -> Vec<u8>) {
     for (j, v) in checkpoints.chunks(2).enumerate() {
         assert_eq!([v[0].0, v[1].0], ["COUNT", "MD"]);
         assert_eq!(v[0].1, j.to_string());
-        let mut md = [seed.clone(), seed.clone(), seed];
+        // The last three digests, concatenated: what the next one hashes.
+        let mut md = seed.repeat(3);
         for _ in 3..1003 {
-            let next = digest(&md.concat());
-            md = [std::mem::take(&mut md[1]), std::mem::take(&mut md[2]), next];
+            digest(&md, &mut seed);
+            md.copy_within(n.., 0);
+            md[2 * n..].copy_from_slice(&seed);
         }
-        let [_, _, last] = md;
-        seed = last;
         assert_eq!(seed, unhex(v[1].1));
     }
 }
