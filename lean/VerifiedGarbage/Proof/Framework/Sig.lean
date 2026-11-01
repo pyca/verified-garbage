@@ -140,8 +140,8 @@ theorem Sig.forall_mem_bound_iff {n : Nat} {l : List (Region × Bool)} :
       Sig.conj (l.map fun a => a.1.base.toNat + a.1.len ≤ 2 ^ n) :=
   Sig.conj_map.symm
 
-theorem Sig.forall_mem_aligned_iff {n : Nat} {l : List Addr} :
-    (∀ p ∈ l, p.toNat % n = 0) ↔ Sig.conj (l.map fun p => p.toNat % n = 0) :=
+theorem Sig.forall_mem_aligned_iff {l : List (Addr × Nat)} :
+    (∀ p ∈ l, p.1.toNat % p.2 = 0) ↔ Sig.conj (l.map fun p => p.1.toNat % p.2 = 0) :=
   Sig.conj_map.symm
 
 /-- The facts `P i` for the public arguments `i` (from `k`) of `l`. -/
@@ -182,9 +182,9 @@ def Sig.preE {M : ISA} (A : Abi M) (sig : Sig) (pre : Curry (sig.words A.ptrBits
     Sig.conj (Sig.pairFacts all) ∧
     Sig.conj ((A.reserved stack s).flatMap fun r => all.map fun a => r.Disjoint a.1) ∧
     Sig.conj (bufs.map fun a => a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits) ∧
-    bif A.alignsU64 then
+    bif A.alignsBufs then
       Curry.apply ws pre (vals s) (A.mem s) ∧
-        Sig.conj ((Sig.u64Bufs sig.params (vals s)).map fun p => p.toNat % 8 = 0)
+        Sig.conj ((Sig.alignedBufs sig.params (vals s)).map fun p => p.1.toNat % p.2 = 0)
     else Curry.apply ws pre (vals s) (A.mem s)
 
 theorem Sig.contract_pre_iff {M : ISA} {A : Abi M} {sig : Sig}
@@ -296,7 +296,7 @@ theorem Sig.forall_mem_const_single {b : Addr} {n k : Nat} {W : List Region} :
 /-! ## The lists of a signature, one parameter at a time
 
 `sig_eval` and proofs about a concrete signature rewrite with these rather
-than unfolding `Sig.bufs`, `Sig.u64Bufs`, `Elem.isU64`, `Sig.lists` and
+than unfolding `Sig.bufs`, `Sig.alignedBufs`, `Elem.align`, `Sig.lists` and
 `Sig.descs` in `simp` (and with `Sig.conj_nil`, `Sig.conj_single` and
 `Sig.conj_cons_cons` rather than unfolding `Sig.conj`). Unfolding a
 definition in `simp` realizes its equation lemmas, and those of its `match`
@@ -319,22 +319,31 @@ theorem Sig.bufs_slice {m : Bool} {e : Elem} {len : String} :
 theorem Sig.bufs_slices {e : Elem} {c : String} :
     Sig.bufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.bufs ps vs := rfl
 
-theorem Elem.isU64_u8 : Elem.u8.isU64 = false := rfl
-theorem Elem.isU64_u16 : Elem.u16.isU64 = false := rfl
-theorem Elem.isU64_u32 : Elem.u32.isU64 = false := rfl
-theorem Elem.isU64_u64 : Elem.u64.isU64 = true := rfl
-theorem Elem.isU64_array {e : Elem} {k : Nat} : (Elem.array e k).isU64 = e.isU64 := rfl
+theorem Elem.align_u8 : Elem.u8.align = 1 := rfl
+theorem Elem.align_u16 : Elem.u16.align = 2 := rfl
+theorem Elem.align_u32 : Elem.u32.align = 4 := rfl
+theorem Elem.align_u64 : Elem.u64.align = 8 := rfl
+theorem Elem.align_array {e : Elem} {k : Nat} : (Elem.array e k).align = e.align := rfl
 
-theorem Sig.u64Bufs_nil : Sig.u64Bufs [] vs = [] := rfl
-theorem Sig.u64Bufs_int {t : IntTy} {b : Bool} :
-    Sig.u64Bufs ((n, .int t b) :: ps) (v :: vs) = Sig.u64Bufs ps vs := rfl
-theorem Sig.u64Bufs_array {m : Bool} {e : Elem} {k : Nat} : Sig.u64Bufs ((n, .array m e k) :: ps) (p :: vs) =
-    if e.isU64 then p :: Sig.u64Bufs ps vs else Sig.u64Bufs ps vs := rfl
-theorem Sig.u64Bufs_slice {m : Bool} {e : Elem} {len : String} :
-    Sig.u64Bufs ((n, .slice m e len) :: ps) (p :: l :: vs) =
-      if e.isU64 then p :: Sig.u64Bufs ps vs else Sig.u64Bufs ps vs := rfl
-theorem Sig.u64Bufs_slices {e : Elem} {c : String} :
-    Sig.u64Bufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.u64Bufs ps vs := rfl
+/-- Every element's alignment divides 8. -/
+theorem Elem.align_dvd_eight : ∀ e : Elem, e.align ∣ 8
+  | .u8 => ⟨8, rfl⟩
+  | .u16 => ⟨4, rfl⟩
+  | .u32 => ⟨2, rfl⟩
+  | .u64 => ⟨1, rfl⟩
+  | .array e _ => Elem.align_dvd_eight e
+
+theorem Sig.alignedBufs_nil : Sig.alignedBufs [] vs = [] := rfl
+theorem Sig.alignedBufs_int {t : IntTy} {b : Bool} :
+    Sig.alignedBufs ((n, .int t b) :: ps) (v :: vs) = Sig.alignedBufs ps vs := rfl
+theorem Sig.alignedBufs_array {m : Bool} {e : Elem} {k : Nat} :
+    Sig.alignedBufs ((n, .array m e k) :: ps) (p :: vs) =
+      if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs := rfl
+theorem Sig.alignedBufs_slice {m : Bool} {e : Elem} {len : String} :
+    Sig.alignedBufs ((n, .slice m e len) :: ps) (p :: l :: vs) =
+      if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs := rfl
+theorem Sig.alignedBufs_slices {e : Elem} {c : String} :
+    Sig.alignedBufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.alignedBufs ps vs := rfl
 
 theorem Sig.lists_nil {pb : Nat} {m : Mem} : Sig.lists pb m [] vs = [] := rfl
 theorem Sig.lists_int {pb : Nat} {m : Mem} {t : IntTy} {b : Bool} :
@@ -428,8 +437,9 @@ macro_rules
       -- values in it (the stack arguments' memory reads) as far as it can:
       -- seconds for some contracts.
       sig_simp [$ls,*] [Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, Sig.bufs_slices,
-        Sig.u64Bufs_nil, Sig.u64Bufs_int, Sig.u64Bufs_array, Sig.u64Bufs_slice, Sig.u64Bufs_slices,
-        Elem.isU64_u8, Elem.isU64_u16, Elem.isU64_u32, Elem.isU64_u64, Elem.isU64_array,
+        Sig.alignedBufs_nil, Sig.alignedBufs_int, Sig.alignedBufs_array, Sig.alignedBufs_slice,
+        Sig.alignedBufs_slices, Elem.align_u8, Elem.align_u16, Elem.align_u32, Elem.align_u64,
+        Elem.align_array, Nat.reduceLTLE, Nat.lt_irrefl, Nat.not_lt_zero,
         Sig.lists_nil, Sig.lists_int, Sig.lists_array, Sig.lists_slice, Sig.lists_slices,
         Sig.descs_nil, Sig.descs_int, Sig.descs_array, Sig.descs_slice, Sig.descs_slices,
         Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons,

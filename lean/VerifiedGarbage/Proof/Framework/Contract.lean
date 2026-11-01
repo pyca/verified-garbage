@@ -139,7 +139,7 @@ def Sig.check {M : ISA} (A : Abi M) (sig : Sig) (writeArgs : Bool) (stack : Nat)
       decide (A.wr s = (all.filter (·.2)).map (·.1)) && Sig.pairsSep all &&
       (A.reserved stack s).all (fun r => all.all fun a => Region.sep r a.1) &&
       bufs.all (fun a => decide (a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits)) &&
-      (!A.alignsU64 || (Sig.u64Bufs sig.params (vals s)).all (fun p => decide (p.toNat % 8 = 0)))
+      (!A.alignsBufs || (Sig.alignedBufs sig.params (vals s)).all (fun p => decide (p.1.toNat % p.2 = 0)))
 
 /-- The rest of the precondition of `sig.contract A pre post writeArgs stack`
 at `s`: `A.wf` and `pre`. -/
@@ -166,7 +166,7 @@ theorem Sig.contract_pre_of_check {M : ISA} {A : Abi M} {sig : Sig}
     obtain ⟨⟨⟨⟨⟨hrd, hwr⟩, hp⟩, hr⟩, hb⟩, ha⟩ := hc
     refine ⟨h.1, hrd, hwr, Sig.pairwise_of_pairsSep hp,
       fun r hr' a ha => Region.disjoint_of_sep (hr r hr' a ha), hb, ?_⟩
-    cases e : A.alignsU64
+    cases e : A.alignsBufs
     · exact h.2
     · simp only [e, Bool.not_true, Bool.false_or, List.all_eq_true, decide_eq_true_eq] at ha
       exact ⟨h.2, ha⟩

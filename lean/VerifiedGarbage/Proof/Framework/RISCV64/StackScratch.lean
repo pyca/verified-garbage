@@ -94,7 +94,7 @@ theorem pre_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
       (∀ r ∈ stackBelow s.sp stack, ∀ a ∈ Sig.bufs sig.params (regArgs sig s), r.Disjoint a.1) ∧
       (∀ a ∈ Sig.bufs sig.params (regArgs sig s), a.1.base.toNat + a.1.len ≤ 2 ^ 64) ∧
       Curry.apply (sig.words abi.ptrBits) pre (regArgs sig s) s.mem ∧
-      ∀ p ∈ Sig.u64Bufs sig.params (regArgs sig s), p.toNat % 8 = 0 := by
+      ∀ p ∈ Sig.alignedBufs sig.params (regArgs sig s), p.1.toNat % p.2 = 0 := by
   have hk' : (sig.words 64).length ≤ argRegs.length := by
     have : (sig.words 64).length ≤ 8 := hk
     simpa [argRegs] using this
@@ -268,11 +268,12 @@ theorem narrow_pre (hk : (sig.words abi.ptrBits).length < 8)
       ?_⟩
     intro p hp
     rw [show (sig.withScratch nm e n).params = sig.params ++ [(nm, .array true e n)] from rfl,
-      Sig.u64Bufs_append_array abi.ptrBits nm e n _ sig.params _ hlen] at hp
+      Sig.alignedBufs_append_array abi.ptrBits nm e n _ sig.params _ hlen] at hp
     rcases List.mem_append.mp hp with hp | hp
     · exact hu p hp
     · split at hp
       · simp only [List.mem_singleton] at hp; subst hp
+        refine Nat.mod_eq_zero_of_dvd (Nat.dvd_trans (Elem.align_dvd_eight e) (Nat.dvd_of_mod_eq_zero ?_))
         rw [hbase]; omega_arith
       · simp at hp
 
