@@ -89,10 +89,10 @@ macro_rules! mldsa_tests {
 
         #[test]
         fn keygen() {
-            let json = include_str!(
-                "../../vectors/nist-acvp/ML-DSA-keyGen-FIPS204/internalProjection.json"
+            let json = crate::vectors::text(
+                "vectors/nist-acvp/ML-DSA-keyGen-FIPS204/internalProjection.json",
             );
-            for g in groups::<KeyGen>(json) {
+            for g in groups::<KeyGen>(&json) {
                 assert_eq!(g.tests.len(), 25);
                 for t in &g.tests {
                     let seed: [u8; 32] = unhex(&t.seed).try_into().unwrap();
@@ -105,11 +105,11 @@ macro_rules! mldsa_tests {
 
         #[test]
         fn sigver() {
-            let json = include_str!(
-                "../../vectors/nist-acvp/ML-DSA-sigVer-FIPS204/internalProjection.json"
+            let json = crate::vectors::text(
+                "vectors/nist-acvp/ML-DSA-sigVer-FIPS204/internalProjection.json",
             );
             let mut count = 0;
-            for g in groups::<SigVer>(json) {
+            for g in groups::<SigVer>(&json) {
                 // HashML-DSA is not provided.
                 if g.pre_hash == "preHash" {
                     continue;

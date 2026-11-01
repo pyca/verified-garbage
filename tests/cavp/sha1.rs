@@ -16,7 +16,7 @@ use verified_garbage::hashes::sha1::Sha1;
 #[test]
 fn short_messages() {
     let n = check_messages(
-        include_str!("../../vectors/nist-cavp/sha1/SHA1ShortMsg.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/sha1/SHA1ShortMsg.rsp"),
         Sha1::digest,
     );
     assert_eq!(n, 65);
@@ -25,7 +25,7 @@ fn short_messages() {
 #[test]
 fn long_messages() {
     let n = check_messages(
-        include_str!("../../vectors/nist-cavp/sha1/SHA1LongMsg.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/sha1/SHA1LongMsg.rsp"),
         Sha1::digest,
     );
     assert_eq!(n, 64);
@@ -34,7 +34,7 @@ fn long_messages() {
 #[test]
 fn monte_carlo() {
     check_monte_carlo(
-        include_str!("../../vectors/nist-cavp/sha1/SHA1Monte.rsp"),
+        &crate::vectors::text("vectors/nist-cavp/sha1/SHA1Monte.rsp"),
         Sha1::digest,
     );
 }

@@ -3,7 +3,7 @@
 //! Wycheproof's vectors, in `tests/wycheproof/hmac_sha1.rs`).
 //!
 //! The RFC is vendored under `vectors/rfc2202/` (see `vectors/sources/`
-//! for where it comes from) and compiled into the test binary, so these tests
+//! for where it comes from) and read at run time (`tests/vectors.rs`), so these tests
 //! always run. Test case 5's truncated MAC is compared with the start of the
 //! computed one.
 
@@ -18,8 +18,6 @@
 
 use verified_garbage::hashes::md5::Md5;
 use verified_garbage::hmac::Hmac;
-
-const RFC: &str = include_str!("../../vectors/rfc2202/rfc2202.txt");
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
@@ -57,7 +55,8 @@ struct Case {
 /// the previous one's value; the page footers and headers are skipped.
 fn cases(start: &str, stop: &str) -> Vec<Case> {
     let mut groups: Vec<(String, Vec<(String, String)>)> = Vec::new();
-    let section = RFC
+    let text = crate::vectors::text("vectors/rfc2202/rfc2202.txt");
+    let section = text
         .lines()
         .skip_while(|l| *l != start)
         .skip(1)

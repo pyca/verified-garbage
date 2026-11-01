@@ -43,7 +43,7 @@ fn check(key: &[u8], plaintext: &[u8], ciphertext: &[u8]) {
 
 #[test]
 fn rfc2144_b1() {
-    let text = include_str!("../../vectors/rfc2144/rfc2144.txt");
+    let text = crate::vectors::text("vectors/rfc2144/rfc2144.txt");
     let section = text
         .split_once("B.1. Single Plaintext-Key-Ciphertext Sets")
         .unwrap()
@@ -81,7 +81,7 @@ fn rfc2144_b1() {
 
 #[test]
 fn botan() {
-    let text = include_str!("../../vectors/botan-cast128/cast128.vec");
+    let text = crate::vectors::text("vectors/botan-cast128/cast128.vec");
     let mut count = 0;
     for record in text.split("\n\n") {
         let field = |name: &str| {
@@ -99,7 +99,7 @@ fn botan() {
 
 #[test]
 fn cryptography_cbc() {
-    let text = include_str!("../../vectors/cryptography-cast5/cast5-cbc.txt");
+    let text = crate::vectors::text("vectors/cryptography-cast5/cast5-cbc.txt");
     let mut count = 0;
     for record in text.split("\n\n") {
         let field = |name: &str| {

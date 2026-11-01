@@ -18,9 +18,12 @@
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
-const TEXT: &str = include_str!(
-    "../../vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt"
-);
+/// The vectors' file (`crate::vectors`).
+fn text() -> String {
+    crate::vectors::text(
+        "vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt",
+    )
+}
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
@@ -154,7 +157,8 @@ fn vector(title: &str, lines: &[&str]) -> Vector {
 
 /// Each key of Appendix B, with its vectors.
 fn keys() -> Vec<(PrivateKey, PublicKey, Vec<Vector>)> {
-    let text = TEXT.split_once("\nAppendix B.  Test Vectors\n").unwrap().1;
+    let rfc = text();
+    let text = rfc.split_once("\nAppendix B.  Test Vectors\n").unwrap().1;
     let text = text.split_once("\nAuthor's Address\n").unwrap().0;
     let mut sections: Vec<(&str, Vec<&str>)> = Vec::new();
     for line in text.lines() {
@@ -234,7 +238,8 @@ fn rsa_pkcs1_lengths() {
 /// Keys whose private exponent or CRT values do not match.
 #[test]
 fn rsa_pkcs1_bad_keys() {
-    let text = TEXT.split_once("\nB.1.1.  Private key\n").unwrap().1;
+    let rfc = text();
+    let text = rfc.split_once("\nB.1.1.  Private key\n").unwrap().1;
     let lines: Vec<&str> = text.lines().map(str::trim).collect();
     let der = pem(&lines);
     let v = components(&der);
@@ -265,7 +270,8 @@ fn rsa_pkcs1_bad_keys() {
 /// either factor dominates the width, and when the modulus dominates both.
 #[test]
 fn rsa_crt_truncated_factors() {
-    let text = TEXT.split_once("\nB.1.1.  Private key\n").unwrap().1;
+    let rfc = text();
+    let text = rfc.split_once("\nB.1.1.  Private key\n").unwrap().1;
     let lines: Vec<&str> = text.lines().map(str::trim).collect();
     let der = pem(&lines);
     let v = components(&der);

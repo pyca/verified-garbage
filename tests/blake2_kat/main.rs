@@ -53,7 +53,7 @@ fn unhex(s: &str) -> Vec<u8> {
 fn vectors(hash: &str) -> Vec<Vector> {
     let raw: Vec<Raw> = crate::json::parse(
         "blake2-kat.json",
-        include_str!("../../vectors/blake2-kat/blake2-kat.json"),
+        &crate::vectors::text("vectors/blake2-kat/blake2-kat.json"),
     );
     raw.into_iter()
         .filter(|v| v.hash == hash)

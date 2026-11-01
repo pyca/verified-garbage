@@ -4,7 +4,7 @@
 //! vectors never are for SHA-384 and SHA-512.
 //!
 //! The RFC is vendored under `vectors/rfc4231/` (see `vectors/sources/`
-//! for where it comes from) and compiled into the test binary, so these tests
+//! for where it comes from) and read at run time (`tests/vectors.rs`), so these tests
 //! always run. Test case 5's truncated MAC is compared with the start of the
 //! computed one.
 
@@ -22,8 +22,6 @@ use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
 use verified_garbage::hmac::{Hmac, HmacHash};
-
-const RFC: &str = include_str!("../../vectors/rfc4231/rfc4231.txt");
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
@@ -56,7 +54,7 @@ impl Case {
 fn cases() -> Vec<Case> {
     let mut out: Vec<Case> = Vec::new();
     let mut in_case = false;
-    for l in RFC.lines() {
+    for l in crate::vectors::text("vectors/rfc4231/rfc4231.txt").lines() {
         if !l.starts_with(' ') {
             if l.starts_with("4.") && l.contains("Test Case") {
                 let n = l.rsplit(' ').next().unwrap();

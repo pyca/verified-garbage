@@ -62,13 +62,19 @@ fn digest(hash: &str, msg: &[u8]) -> [u8; 32] {
 }
 
 fn vectors() -> Vec<Vector> {
-    let text = include_str!("../../vectors/nist-cavp-ecdsa/SigVer.rsp");
+    let text = crate::vectors::text("vectors/nist-cavp-ecdsa/SigVer.rsp");
     let mut out = Vec::new();
     for section in text.split("\n[").skip(1) {
         let (header, body) = section.split_once(']').unwrap();
         let Some(hash) = header.strip_prefix("P-256,") else {
             continue;
         };
+        // The table's name for the hash, which outlives the file's text.
+        let hash = HASHES
+            .iter()
+            .map(|(name, _)| *name)
+            .find(|name| *name == hash)
+            .unwrap();
         let fields = super::fields(body);
         assert_eq!(fields.len(), 15 * 6);
         for v in fields.chunks(6) {

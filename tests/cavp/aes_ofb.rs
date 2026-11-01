@@ -100,77 +100,77 @@ fn check_file(text: &str, split: bool) -> usize {
 fn nist_ofb() {
     let files = [
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBGFSbox128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBGFSbox128.rsp"),
             14,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBGFSbox192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBGFSbox192.rsp"),
             12,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBGFSbox256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBGFSbox256.rsp"),
             10,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBKeySbox128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBKeySbox128.rsp"),
             42,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBKeySbox192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBKeySbox192.rsp"),
             48,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBKeySbox256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBKeySbox256.rsp"),
             32,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBVarKey128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBVarKey128.rsp"),
             256,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBVarKey192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBVarKey192.rsp"),
             384,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBVarKey256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBVarKey256.rsp"),
             512,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBVarTxt128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBVarTxt128.rsp"),
             256,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBVarTxt192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBVarTxt192.rsp"),
             256,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-kat-ofb/OFBVarTxt256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-kat-ofb/OFBVarTxt256.rsp"),
             256,
             false,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-mmt/OFBMMT128.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-mmt/OFBMMT128.rsp"),
             20,
             true,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-mmt/OFBMMT192.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-mmt/OFBMMT192.rsp"),
             20,
             true,
         ),
         (
-            include_str!("../../vectors/nist-cavp-aes-mmt/OFBMMT256.rsp"),
+            &crate::vectors::text("vectors/nist-cavp-aes-mmt/OFBMMT256.rsp"),
             20,
             true,
         ),

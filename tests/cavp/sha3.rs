@@ -60,8 +60,8 @@ macro_rules! cavp {
             #[test]
             fn short_messages() {
                 let n = check_messages(
-                    include_str!(concat!(
-                        "../../vectors/nist-cavp/sha3/",
+                    &crate::vectors::text(concat!(
+                        "vectors/nist-cavp/sha3/",
                         $file,
                         "ShortMsg.rsp"
                     )),
@@ -73,11 +73,7 @@ macro_rules! cavp {
             #[test]
             fn long_messages() {
                 let n = check_messages(
-                    include_str!(concat!(
-                        "../../vectors/nist-cavp/sha3/",
-                        $file,
-                        "LongMsg.rsp"
-                    )),
+                    &crate::vectors::text(concat!("vectors/nist-cavp/sha3/", $file, "LongMsg.rsp")),
                     $hash::digest,
                 );
                 assert_eq!(n, $long);
@@ -86,7 +82,7 @@ macro_rules! cavp {
             #[test]
             fn monte_carlo() {
                 check_monte_carlo(
-                    include_str!(concat!("../../vectors/nist-cavp/sha3/", $file, "Monte.rsp")),
+                    &crate::vectors::text(concat!("vectors/nist-cavp/sha3/", $file, "Monte.rsp")),
                     $hash::digest,
                 );
             }
@@ -176,8 +172,8 @@ macro_rules! shake {
             #[test]
             fn short_messages() {
                 let n = check_shake_messages(
-                    include_str!(concat!(
-                        "../../vectors/nist-cavp/shake/",
+                    &crate::vectors::text(concat!(
+                        "vectors/nist-cavp/shake/",
                         $file,
                         "ShortMsg.rsp"
                     )),
@@ -190,8 +186,8 @@ macro_rules! shake {
             #[test]
             fn long_messages() {
                 let n = check_shake_messages(
-                    include_str!(concat!(
-                        "../../vectors/nist-cavp/shake/",
+                    &crate::vectors::text(concat!(
+                        "vectors/nist-cavp/shake/",
                         $file,
                         "LongMsg.rsp"
                     )),
@@ -204,8 +200,8 @@ macro_rules! shake {
             #[test]
             fn variable_output() {
                 let n = check_shake_variable(
-                    include_str!(concat!(
-                        "../../vectors/nist-cavp/shake/",
+                    &crate::vectors::text(concat!(
+                        "vectors/nist-cavp/shake/",
                         $file,
                         "VariableOut.rsp"
                     )),
@@ -217,11 +213,7 @@ macro_rules! shake {
             #[test]
             fn monte_carlo() {
                 check_shake_monte_carlo(
-                    include_str!(concat!(
-                        "../../vectors/nist-cavp/shake/",
-                        $file,
-                        "Monte.rsp"
-                    )),
+                    &crate::vectors::text(concat!("vectors/nist-cavp/shake/", $file, "Monte.rsp")),
                     $min,
                     $max,
                     $xof::digest,
