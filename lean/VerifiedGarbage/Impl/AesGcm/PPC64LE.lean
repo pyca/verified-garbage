@@ -432,10 +432,13 @@ def oneTag (o : Nat) : Prog isa :=
   (.seq (.block [mov .r24 .r22, mov .r26 .r23])
     (tag o)))))
 
-/-- `vg_aes_gcm_seal`, with `scratch = [sp + 104]`. -/
-def «seal» : Prog isa :=
+/-- The shared entry and return of one-shot seal, with `scratch = [sp + 104]`. -/
+def sealWith (textBody : Prog isa) : Prog isa :=
   .seq (.block (oneEntry 104))
-    (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
+    (.seq oneAad (.seq textBody (.seq (.block tagOut) (.block restore))))
+
+/-- `vg_aes_gcm_seal`, with `scratch = [sp + 104]`. -/
+def «seal» : Prog isa := sealWith (.seq oneCrypt (oneTag 0))
 
 /-- The entry of `open`, with `tag_len = [sp + 104]` in `r19` and
 `scratch = [sp + 112]`. -/
