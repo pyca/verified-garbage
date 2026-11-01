@@ -15,13 +15,13 @@
 use verified_garbage::aes_gcm_siv::{AesGcmSiv, Error};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{AeadCase as Case, SizesGroup as Group};
+use super::schema::{AeadCase, SizesGroup};
 use crate::require_vectors;
 
 #[test]
 fn aes_gcm_siv() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("aes_gcm_siv_test.json");
+    let file = harness::load::<SizesGroup, AeadCase>("aes_gcm_siv_test.json");
     let (valid, invalid) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         let c = &test.case;

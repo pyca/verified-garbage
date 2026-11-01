@@ -26,10 +26,9 @@ use std::collections::BTreeMap;
 
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-use super::harness::Fields as Case;
-use super::harness::{self, Count, TestFile};
-use super::schema::{RsaAnyKeyGroup as Group, RsaAnyPrivateKey as Key};
-use crate::bytes::trim_zeros as trim;
+use super::harness::{self, Count, Fields, TestFile};
+use super::schema::{RsaAnyKeyGroup, RsaAnyPrivateKey};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 /// `key`'s operation on `x`, which must succeed.
@@ -40,8 +39,8 @@ fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
 }
 
 /// Checks the key `k` of the file `name`. Returns whether it had its primes.
-fn check_key(name: &str, k: &Key) -> bool {
-    let n = trim(&k.modulus.as_ref().unwrap().0);
+fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
+    let n = trim_zeros(&k.modulus.as_ref().unwrap().0);
     let (e, d) = (
         &k.public_exponent.0,
         &k.private_exponent.as_ref().unwrap().0,
@@ -111,12 +110,12 @@ fn check_key(name: &str, k: &Key) -> bool {
 fn rsa_keys_from_components() {
     require_vectors!();
     // Each two-prime key once, with the first file that has it.
-    let mut keys: BTreeMap<Vec<u8>, (String, Key)> = BTreeMap::new();
+    let mut keys: BTreeMap<Vec<u8>, (String, RsaAnyPrivateKey)> = BTreeMap::new();
     for name in harness::all_files().unwrap() {
         if !(name.starts_with("rsa_") && name.ends_with("_test.json")) {
             continue;
         }
-        let file: TestFile<Group, Case> = harness::load(&name);
+        let file: TestFile<RsaAnyKeyGroup, Fields> = harness::load(&name);
         for group in file.test_groups {
             let Some(k) = group.params.private_key else {
                 continue;
@@ -131,7 +130,7 @@ fn rsa_keys_from_components() {
             }
         }
     }
-    let keys: Vec<(String, Key)> = keys.into_values().collect();
+    let keys: Vec<(String, RsaAnyPrivateKey)> = keys.into_values().collect();
     let (with_primes, without_primes) = (Count::default(), Count::default());
     harness::par_each(&keys, |(name, k)| {
         if check_key(name, k) {

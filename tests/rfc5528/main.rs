@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced as unhex;
+use crate::bytes::unhex_spaced;
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
 use verified_garbage::camellia_ecb::CamelliaEcb;
 
@@ -46,7 +46,9 @@ fn fields(vector: &str) -> Vec<(String, Vec<u8>)> {
             out.push((label, value.to_string()));
         }
     }
-    out.into_iter().map(|(k, v)| (k, unhex(&v))).collect()
+    out.into_iter()
+        .map(|(k, v)| (k, unhex_spaced(&v)))
+        .collect()
 }
 
 fn get<'a>(fields: &'a [(String, Vec<u8>)], label: &str) -> &'a [u8] {

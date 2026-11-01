@@ -16,13 +16,13 @@
 use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{AeadCase as Case, SizesGroup as Group};
+use super::schema::{AeadCase, SizesGroup};
 use crate::require_vectors;
 
 #[test]
 fn chacha20_poly1305() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("chacha20_poly1305_test.json");
+    let file = harness::load::<SizesGroup, AeadCase>("chacha20_poly1305_test.json");
     let checked = Count::default();
     file.par_tests(|group, test| {
         let c = &test.case;

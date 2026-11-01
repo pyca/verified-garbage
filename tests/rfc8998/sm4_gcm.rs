@@ -1,6 +1,6 @@
 //! SM4-GCM against RFC 8998's example and a reference GCM over SM4-ECB.
 
-use crate::bytes::unhex_spaced as unhex;
+use crate::bytes::unhex_spaced;
 use verified_garbage::sm4_ecb::Sm4Ecb;
 use verified_garbage::sm4_gcm::{Error, Sm4Gcm};
 
@@ -28,7 +28,7 @@ fn field(label: &str) -> Vec<u8> {
         }
         hex.push_str(line);
     }
-    unhex(&hex)
+    unhex_spaced(&hex)
 }
 
 struct Example {

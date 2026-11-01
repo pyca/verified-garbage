@@ -18,16 +18,16 @@ use verified_garbage::cmac::InvalidKeyLength;
 use verified_garbage::cmac::aes::AesCmac;
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{MacCase as Case, SizesGroup as Group};
+use super::schema::{MacCase, SizesGroup};
 use crate::require_vectors;
 
 #[test]
 fn cmac_aes() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("aes_cmac_test.json");
+    let file = harness::load::<SizesGroup, MacCase>("aes_cmac_test.json");
     let (valid, modified, bad_keys) = (Count::default(), Count::default(), Count::default());
     file.par_tests(|group, test| {
-        let Case { key, msg, tag } = &test.case;
+        let MacCase { key, msg, tag } = &test.case;
         let id = test.tc_id;
         assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");
         assert_eq!(group.params.tag_size, Some(128), "tcId {id}");

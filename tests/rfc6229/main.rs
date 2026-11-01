@@ -9,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced as unhex;
+use crate::bytes::unhex_spaced;
 use verified_garbage::rc4::{Error, Rc4};
 
 #[test]
@@ -24,7 +24,7 @@ fn every_published_answer_and_streaming_split() {
         let key = record
             .lines()
             .find_map(|line| line.trim().strip_prefix("key: 0x"))
-            .map(unhex)
+            .map(unhex_spaced)
             .unwrap();
         assert_eq!(bits, key.len() * 8);
         let mut stream = vec![0; 4112];
@@ -40,7 +40,7 @@ fn every_published_answer_and_streaming_split() {
             }
             let (position, bytes) = line.split_once(':').unwrap();
             let offset: usize = position.split_whitespace().nth(1).unwrap().parse().unwrap();
-            let expected = unhex(bytes);
+            let expected = unhex_spaced(bytes);
             assert_eq!(expected.len(), 16);
             assert_eq!(&stream[offset..offset + 16], expected);
             let mut cipher = Rc4::new(&key).unwrap();

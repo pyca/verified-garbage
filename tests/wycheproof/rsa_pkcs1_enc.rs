@@ -27,18 +27,18 @@ use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
 use super::harness::{self, Count, Expectation, TestFile, TestGroup};
-use super::schema::{EncryptCase as Case, RsaPrivateKeyGroup as Group};
-use crate::bytes::trim_zeros as trim;
+use super::schema::{EncryptCase, RsaPrivateKeyGroup};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 /// Checks every vector of the file `name`; returns the numbers of valid
 /// vectors, of invalid paddings and of refused ciphertexts.
 fn check(name: &str) -> (usize, usize, usize) {
     let (valid, padding, refused) = (Count::default(), Count::default(), Count::default());
-    let file: TestFile<Group, Case> = harness::load(name);
-    let keys = |group: &TestGroup<Group, Case>| {
+    let file: TestFile<RsaPrivateKeyGroup, EncryptCase> = harness::load(name);
+    let keys = |group: &TestGroup<RsaPrivateKeyGroup, EncryptCase>| {
         let k = &group.params.private_key;
-        let n = trim(&k.modulus.0);
+        let n = trim_zeros(&k.modulus.0);
         let key = PrivateKey::from_crt(
             n,
             &k.public_exponent.0,
@@ -53,7 +53,7 @@ fn check(name: &str) -> (usize, usize, usize) {
         (key, PublicKey::new(n, &k.public_exponent.0).unwrap())
     };
     file.par_tests_with(keys, |group, (key, public), test| {
-        let n = trim(&group.params.private_key.modulus.0);
+        let n = trim_zeros(&group.params.private_key.modulus.0);
         let id = test.tc_id;
         let ct = &test.case.ct.0;
         let r = decrypt(key, ct);

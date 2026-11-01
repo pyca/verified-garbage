@@ -11,7 +11,7 @@
 ))]
 
 use super::harness::{self, Count, Expectation, Hex};
-use super::schema::SigCase as Case;
+use super::schema::SigCase;
 use crate::json_struct;
 use crate::require_vectors;
 use verified_garbage::dsa::PublicKey;
@@ -53,7 +53,7 @@ fn signatures() {
         ("dsa_2048_256_sha256_p1363_test.json", 32),
         ("dsa_3072_256_sha256_p1363_test.json", 32),
     ] {
-        let file = harness::load::<Group, Case>(name);
+        let file = harness::load::<Group, SigCase>(name);
         let (verified, refused) = (Count::default(), Count::default());
         file.par_tests(|group, test| {
             let k = &group.params.public_key;

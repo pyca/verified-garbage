@@ -34,11 +34,9 @@ use std::collections::BTreeMap;
 use crate::json_struct;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
-use super::harness::Fields as Case;
-use super::harness::Fields as PrimalityGroup;
-use super::harness::{self, Count, Expectation, Hex, TestFile};
-use super::schema::{RsaAnyKeyGroup as Group, RsaAnyPrivateKey as Key};
-use crate::bytes::trim_zeros as trim;
+use super::harness::{self, Count, Expectation, Fields, Hex, TestFile};
+use super::schema::{RsaAnyKeyGroup, RsaAnyPrivateKey};
+use crate::bytes::trim_zeros;
 use crate::require_vectors;
 
 json_struct! {
@@ -104,9 +102,9 @@ fn rsa_keygen_primes() {
         if !(name.starts_with("rsa_") && name.ends_with("_test.json")) {
             continue;
         }
-        let file: TestFile<Group, Case> = harness::load(&name);
+        let file: TestFile<RsaAnyKeyGroup, Fields> = harness::load(&name);
         for group in file.test_groups {
-            let Some(Key {
+            let Some(RsaAnyPrivateKey {
                 public_exponent,
                 prime1: Some(p),
                 prime2: Some(q),
@@ -115,7 +113,7 @@ fn rsa_keygen_primes() {
             else {
                 continue;
             };
-            let (p, q) = (trim(&p.0), trim(&q.0));
+            let (p, q) = (trim_zeros(&p.0), trim_zeros(&q.0));
             for (a, b) in [(p, q), (q, p)] {
                 // Every key's primes are as long as each other.
                 if candidate(a) && b.len() == a.len() {
@@ -139,13 +137,13 @@ fn rsa_keygen_primes() {
 #[test]
 fn rsa_keygen_composites() {
     require_vectors!();
-    let file: TestFile<PrimalityGroup, PrimalityCase> = harness::load("primality_test.json");
+    let file: TestFile<Fields, PrimalityCase> = harness::load("primality_test.json");
     let checked = Count::default();
     file.par_tests(|_, t| {
         let v = &t.case.value.0;
         // A negative number has its top bit set; a positive one with its
         // top bit set has a zero byte before it.
-        let x = trim(v);
+        let x = trim_zeros(v);
         if v.first() != Some(&0) || !candidate(x) {
             return;
         }
@@ -163,7 +161,7 @@ fn rsa_keygen_composites() {
 
 /// `x` in `len` bytes (big-endian).
 fn widen(x: &[u8], len: usize) -> Vec<u8> {
-    let x = trim(x);
+    let x = trim_zeros(x);
     let mut v = vec![0; len - x.len()];
     v.extend_from_slice(x);
     v
@@ -172,7 +170,7 @@ fn widen(x: &[u8], len: usize) -> Vec<u8> {
 /// Checks that `key_from_primes` makes the key `k` (of the file `name`)
 /// from its primes, in either order; returns how many of the two keys have
 /// its `d`.
-fn check_key(name: &str, k: &Key) -> usize {
+fn check_key(name: &str, k: &RsaAnyPrivateKey) -> usize {
     let [p, q, n, d, dp, dq, qinv] = [
         &k.prime1,
         &k.prime2,
@@ -183,16 +181,16 @@ fn check_key(name: &str, k: &Key) -> usize {
         &k.coefficient,
     ]
     .map(|x| &x.as_ref().unwrap().0);
-    let (p, q) = (trim(p), trim(q));
+    let (p, q) = (trim_zeros(p), trim_zeros(q));
     let len = p.len();
-    let e = trim(&k.public_exponent.0);
+    let e = trim_zeros(&k.public_exponent.0);
     // The key's `p` is the larger, as `key_from_primes` makes it.
     assert!(p > q, "{name}");
     let mut same_d = 0;
     for (a, b) in [(p, q), (q, p)] {
         let key = key_from_primes(e, a, b).unwrap();
         let [kn, ke, kd, kp, kq, kdp, kdq, kqinv] = key.components();
-        assert_eq!((kn, ke), (trim(n), e), "{name}");
+        assert_eq!((kn, ke), (trim_zeros(n), e), "{name}");
         assert_eq!((kp, kq), (p, q), "{name}");
         assert_eq!(kdp, widen(dp, len), "{name}");
         assert_eq!(kdq, widen(dq, len), "{name}");
@@ -211,17 +209,17 @@ fn rsa_keygen_keys() {
     // Each two-prime key with every CRT component whose primes
     // `key_from_primes` takes, once (by its `p`), with the first file that
     // has it.
-    let mut keys: BTreeMap<Vec<u8>, (String, Key)> = BTreeMap::new();
+    let mut keys: BTreeMap<Vec<u8>, (String, RsaAnyPrivateKey)> = BTreeMap::new();
     for name in harness::all_files().unwrap() {
         if !(name.starts_with("rsa_") && name.ends_with("_test.json")) {
             continue;
         }
-        let file: TestFile<Group, Case> = harness::load(&name);
+        let file: TestFile<RsaAnyKeyGroup, Fields> = harness::load(&name);
         for group in file.test_groups {
             let Some(k) = group.params.private_key else {
                 continue;
             };
-            let Key {
+            let RsaAnyPrivateKey {
                 public_exponent: e,
                 prime1: Some(p),
                 prime2: Some(q),
@@ -235,19 +233,19 @@ fn rsa_keygen_keys() {
             else {
                 continue;
             };
-            let (p, q) = (trim(&p.0), trim(&q.0));
+            let (p, q) = (trim_zeros(&p.0), trim_zeros(&q.0));
             let len = p.len();
             if q.len() != len
                 || !len.is_multiple_of(8)
                 || !(32..=512).contains(&len)
-                || trim(&e.0).len() > 8
+                || trim_zeros(&e.0).len() > 8
             {
                 continue;
             }
             keys.entry(p.to_vec()).or_insert((name.clone(), k));
         }
     }
-    let keys: Vec<(String, Key)> = keys.into_values().collect();
+    let keys: Vec<(String, RsaAnyPrivateKey)> = keys.into_values().collect();
     let same_d = Count::default();
     harness::par_each(&keys, |(name, k)| same_d.add_n(check_key(name, k)));
     assert!(!keys.is_empty());

@@ -13,7 +13,7 @@ use crate::json_struct;
 use verified_garbage::ecdh::{Error, PrivateKey, Secp256k1};
 
 use super::harness::{self, Count, Expectation, Hex};
-use super::schema::CurveGroup as Group;
+use super::schema::CurveGroup;
 use crate::require_vectors;
 
 json_struct! {
@@ -61,7 +61,7 @@ fn public(key: &Public) -> Vec<u8> {
 #[test]
 fn ecdh_secp256k1_webcrypto_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ecdh_secp256k1_webcrypto_test.json");
+    let file = harness::load::<CurveGroup, Case>("ecdh_secp256k1_webcrypto_test.json");
     let (checked, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.curve, "P-256K");

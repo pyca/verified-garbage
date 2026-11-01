@@ -12,7 +12,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced as unhex;
+use crate::bytes::unhex_spaced;
 use verified_garbage::cast5_ecb::{Cast5Ecb, Error};
 
 /// Encrypts `plaintext` to `ciphertext` and back, whole and a block at a
@@ -47,7 +47,7 @@ fn rfc2144_b1() {
     for record in section.split("-bit").skip(1) {
         let mut lines = record.lines().map(str::trim);
         // The key as given, then (for a short key) padded with zeros.
-        let key = unhex(
+        let key = unhex_spaced(
             lines
                 .next()
                 .unwrap()
@@ -63,7 +63,7 @@ fn rfc2144_b1() {
                 .map(str::trim)
                 .find(|l| l.starts_with(name))
                 .unwrap();
-            unhex(line.split_once('=').unwrap().1)
+            unhex_spaced(line.split_once('=').unwrap().1)
         };
         check(&key, &field("plaintext"), &field("ciphertext"));
         count += 1;
@@ -80,7 +80,7 @@ fn botan() {
             record
                 .lines()
                 .find_map(|l| l.strip_prefix(name)?.trim().strip_prefix('='))
-                .map(unhex)
+                .map(unhex_spaced)
         };
         let Some(key) = field("Key") else { continue };
         check(&key, &field("In").unwrap(), &field("Out").unwrap());
@@ -98,7 +98,7 @@ fn cryptography_cbc() {
             record
                 .lines()
                 .find_map(|l| l.strip_prefix(name)?.trim().strip_prefix('='))
-                .map(unhex)
+                .map(unhex_spaced)
         };
         let Some(key) = field("KEY") else { continue };
         let iv = field("IV").unwrap();

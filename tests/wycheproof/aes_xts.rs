@@ -17,16 +17,16 @@
 use verified_garbage::aes_xts::AesXts;
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{CipherCase as Case, SizesGroup as Group};
+use super::schema::{CipherCase, SizesGroup};
 use crate::require_vectors;
 
 #[test]
 fn aes_xts() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("aes_xts_test.json");
+    let file = harness::load::<SizesGroup, CipherCase>("aes_xts_test.json");
     let valid = Count::default();
     file.par_tests(|group, test| {
-        let Case { key, iv, msg, ct } = &test.case;
+        let CipherCase { key, iv, msg, ct } = &test.case;
         let id = test.tc_id;
         assert_eq!(test.result, Expectation::Valid, "tcId {id}");
         assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");

@@ -16,13 +16,13 @@ use verified_garbage::ecdsa::{BrainpoolP384r1, Error, VerifyingKey};
 use verified_garbage::hashes::sha384::Sha384;
 
 use super::harness::{self, Count, Expectation};
-use super::schema::{EcdsaGroup as Group, SigCase as Case};
+use super::schema::{EcdsaGroup, SigCase};
 use crate::require_vectors;
 
 #[test]
 fn ecdsa_brainpoolp384r1_sha384_p1363_test() {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ecdsa_brainpoolP384r1_sha384_p1363_test.json");
+    let file = harness::load::<EcdsaGroup, SigCase>("ecdsa_brainpoolP384r1_sha384_p1363_test.json");
     let (verified, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "brainpoolP384r1");
