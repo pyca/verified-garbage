@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
 import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
 public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The halvings of Appendix C.2 on i686
@@ -183,6 +184,43 @@ end
 
 open VG.Proof.Rsa (sub32)
 
+/-- The halvings' set-up: `u = n - 1`, `x` and `x'` copied and the count set, from `n` (`aN`), `x`
+(`aX2`, the low half of `wX`, whose wide value `x'` is `wX`'s), and zero (`aZ0`). -/
+theorem twosHead_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {n x X : Nat}
+    (h : KS g s0 A [aZ0, aX2, aN] AW [wX] V [sOkDE] u)
+    (z : A aZ0 = 0) (hn : A aN = n) (hx : A aX2 = x) (hX : AW wX = X) :
+    WP isa (.seq twosInit (.block countN)) u
+      (TwoS g s0 (upd (upd A aU 0) aX2 0) [aU, aX2, aN] (upd AW wX3 0) [wX3] V [sK, sOkDE] (32 * g.w) 0
+        (sub32 g.w n 1, x, X)) := by
+  have hn' : A 32 = n := hn
+  have hx' : A 20 = x := hx
+  unfold twosInit
+  simp only [seqs]
+  refine WP.seq (WP.seq (WP.mono (h.copy_w (o := aOneN) (a := aZ0) (by decide) (by simp) (by decide) (by decide))
+    fun u1 ⟨h1, _, _⟩ => ?_))
+  refine WP.seq (WP.mono (h1.setOne_w (j := aOneN) (by simp) (by decide)) fun u2 ⟨h2, _⟩ => ?_)
+  refine WP.seq (WP.mono (h2.subWrap (o := aU) (a := aN) (b := aOneN) (by decide) (by simp) (by simp) (by decide)
+    (by decide) (by decide)) fun u3 ⟨h3, _⟩ => ?_)
+  refine WP.mono (h3.copy_W (o := wX3) (a := wX) (by decide) (by simp) (by decide) (by decide)) fun u4 ⟨h4, _⟩ => ?_
+  refine WP.mono (h4.countN_ok) fun u5 h5 => ?_
+  have one : upd (upd A aOneN (A aZ0)) aOneN (1 + 2 ^ 32 * (upd A aOneN (A aZ0) aOneN / 2 ^ 32)) aOneN = 1 := by
+    simp [upd, z]
+  unfold TwoS
+  refine h5.mono (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩)
+    (fun d hd => ⟨by simpa using hd, ?_⟩)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl
+    · simp [upd, hn', z, aU, aOneN, aN, VG.Impl.Rsa.X86.Recover.aN, aX2]
+    · simp [upd, hx', aU, aOneN, aX2]
+    · simp [upd, hn', aU, aOneN, aX2, aN, VG.Impl.Rsa.X86.Recover.aN]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    subst hj; simp [upd, hX]
+  · simp [upd]
+
+/-- The arrays and header words the halvings track, as `TwoIdx` needs them. -/
+theorem twosIdx : TwoIdx [aU, aX2, aN] [wX3] [sK, sOkDE] :=
+  ⟨by simp, by simp, by simp, by decide, by decide, by decide, by decide, by decide, by simp⟩
+
 /-- The halvings from `n` (`aN`), `x` (`aX2`, the low half of `wX`, whose wide value `x'` is
 `wX`'s), and zero (`aZ0`). -/
 theorem twos_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {n x X : Nat}
@@ -195,33 +233,12 @@ theorem twos_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {n x X : Nat}
       AW' wX3 = ((twoStep (32 * g.W))^[32 * g.w] (sub32 g.w n 1, x, X)).2.2 ∧
       A' aN = n ∧ V' sOkDE = V sOkDE := by
   have hn' : A 32 = n := hn
-  have hx' : A 20 = x := hx
-  unfold twos twosInit
+  unfold twos
   simp only [seqs]
-  refine WP.seq (WP.seq (WP.mono (h.copy_w (o := aOneN) (a := aZ0) (by decide) (by simp) (by decide) (by decide))
-    fun u1 ⟨h1, _, _⟩ => ?_))
-  refine WP.seq (WP.mono (h1.setOne_w (j := aOneN) (by simp) (by decide)) fun u2 ⟨h2, _⟩ => ?_)
-  refine WP.seq (WP.mono (h2.subWrap (o := aU) (a := aN) (b := aOneN) (by decide) (by simp) (by simp) (by decide)
-    (by decide) (by decide)) fun u3 ⟨h3, _⟩ => ?_)
-  refine WP.mono (h3.copy_W (o := wX3) (a := wX) (by decide) (by simp) (by decide) (by decide)) fun u4 ⟨h4, _⟩ => ?_
-  refine WP.seq (WP.mono (h4.countN_ok) fun u5 h5 => ?_)
-  have one : upd (upd A aOneN (A aZ0)) aOneN (1 + 2 ^ 32 * (upd A aOneN (A aZ0) aOneN / 2 ^ 32)) aOneN = 1 := by
-    simp [upd, z]
-  refine WP.mono (twosLoop_ok (g := g) (s0 := s0) (live := [aU, aX2, aN]) (liveW := [wX3]) (ls := [sK, sOkDE])
-    (A := upd (upd A aU 0) aX2 0) (AW := upd AW wX3 0) (V := V) (st := (sub32 g.w n 1, x, X))
-    ⟨by simp, by simp, by simp, by decide, by decide, by decide, by decide, by decide, by simp⟩ ?_) fun v hv => ?_
-  · unfold TwoS
-    refine h5.mono (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩) (fun j hj => ⟨by simp at hj ⊢; omega, ?_⟩)
-      (fun d hd => ⟨by simpa using hd, ?_⟩)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl
-      · simp [upd, hn', z, aU, aOneN, aN, VG.Impl.Rsa.X86.Recover.aN, aX2]
-      · simp [upd, hx', aU, aOneN, aX2]
-      · simp [upd, hn', aU, aOneN, aX2, aN, VG.Impl.Rsa.X86.Recover.aN]
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      subst hj; simp [upd, hX]
-    · simp [upd]
-  · unfold TwoS at hv
-    refine ⟨_, _, _, hv, by simp [upd, aU, aX2], by simp [upd], by simp [upd], by simp [upd, aU, aX2, aN,
-      VG.Impl.Rsa.X86.Recover.aN, hn'], by simp [upd, sK, sOkDE]⟩
+  refine WP.assoc (WP.seq (WP.mono (twosHead_ok h z hn hx hX) fun v hv =>
+    WP.mono (twosLoop_ok twosIdx hv) fun w hw => ?_))
+  unfold TwoS at hw
+  refine ⟨_, _, _, hw, by simp [upd, aU, aX2], by simp [upd], by simp [upd], by simp [upd, aU, aX2, aN,
+    VG.Impl.Rsa.X86.Recover.aN, hn'], by simp [upd, sK, sOkDE]⟩
 
+end VG.Proof.Rsa.X86.Recover
