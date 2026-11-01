@@ -89,11 +89,6 @@
 //! others have a path for TLS records, a 12-byte nonce and at most 16 bytes
 //! of additional data, or loops that take two blocks or more).
 //!
-//! On PPC64LE, `encrypt` uses `vg_aes_gcm_seal_split` for messages of at
-//! least 512 bytes. Complete blocks of the first nonempty piece are read
-//! directly; its partial block and the remaining pieces are copied into
-//! the output suffix before the shared fused encryption and GHASH pass.
-//!
 //! On AArch64, the `_aes` instances of `seal` and `open` have
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
 //! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
@@ -120,8 +115,6 @@
 ))]
 
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-use crate::arch::gcm::vg_aes_gcm_seal_split;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
     VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES, VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN,
@@ -1385,10 +1378,6 @@ impl AesGcm {
         if let Some(p) = &self.fns.powers {
             return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
         }
-        #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-        if len >= 512 {
-            return Ok(self.seal_pieces_split(nonce, aad, plaintext, out));
-        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -1536,69 +1525,13 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Block {
-        copy_pieces(plaintext, out);
+        let mut rest = &mut *out;
+        for piece in plaintext {
+            let (dst, tail) = rest.split_at_mut(piece.len());
+            dst.copy_from_slice(piece);
+            rest = tail;
+        }
         self.seal_prepared(p, nonce, aad, out)
-    }
-}
-
-/// Copies already length-checked pieces into their shared output buffer.
-#[cfg(any(
-    target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little")
-))]
-#[inline]
-fn copy_pieces(plaintext: &[&[u8]], out: &mut [u8]) {
-    let mut rest = out;
-    for piece in plaintext {
-        let (dst, tail) = rest.split_at_mut(piece.len());
-        dst.copy_from_slice(piece);
-        rest = tail;
-    }
-}
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-impl AesGcm {
-    /// Reads the first piece's complete blocks directly and copies its
-    /// partial block and the remaining pieces into the destination suffix.
-    /// `encrypt` has checked all lengths and the text is nonempty.
-    fn seal_pieces_split(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [u8],
-    ) -> Block {
-        let first = plaintext
-            .iter()
-            .position(|piece| !piece.is_empty())
-            .unwrap();
-        let src = plaintext[first];
-        let src_len = src.len() & !15;
-        out[src_len..src.len()].copy_from_slice(&src[src_len..]);
-        copy_pieces(&plaintext[first + 1..], &mut out[src.len()..]);
-        let mut tag = [0; 16];
-        // SAFETY: the key, nonce, AAD and output satisfy the same conditions
-        // as `encrypt_in_place`. `src` is read only and the unique output
-        // borrow makes it disjoint from the output, tag and local stack.
-        // Its complete-block prefix fits the output; all later plaintext
-        // bytes were copied into the output suffix above. POWER8+ supports
-        // the instructions of this implementation.
-        unsafe {
-            vg_aes_gcm_seal_split(
-                self.ctx.as_ptr(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src.as_ptr(),
-                src_len,
-                out.as_mut_ptr(),
-                out.len(),
-                &mut tag,
-            )
-        };
-        tag
     }
 }
 
