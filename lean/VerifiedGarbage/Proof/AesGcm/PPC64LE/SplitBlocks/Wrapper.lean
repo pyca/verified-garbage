@@ -573,4 +573,21 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.Ghas
       ciphertext_split base nr count n k hkn
   · exact Blocks.wrapper_finish (restored_layout lay g) hd
 
+
+
+theorem blocks_spec (base : State) (n count : Nat) (hc : count≤n) :
+    blocks base count 0 n=Spec.Gcm.blocksAt base.mem (base.gpr .r17) count ++
+      (Spec.Gcm.blocksAt base.mem (base.gpr .r7) n).drop count := by
+  apply List.ext_getElem (by simp only [blocks,Spec.Gcm.blocksAt,List.length_map,List.length_range,
+    List.length_append,List.length_drop]; omega)
+  intro i hi hi'
+  have hi : i<n := by simpa only [blocks,List.length_map,List.length_range] using hi
+  simp only [blocks,List.getElem_map,List.getElem_range,Nat.zero_add]
+  by_cases hic : i<count
+  · rw [List.getElem_append_left (by simpa only [Spec.Gcm.blocksAt,List.length_map,List.length_range] using hic)]
+    simp only [Spec.Gcm.blocksAt,List.getElem_map,List.getElem_range,plain,ite_eq_left hic]
+  · rw [List.getElem_append_right (by simpa only [Spec.Gcm.blocksAt,List.length_map,List.length_range] using Nat.le_of_not_gt hic)]
+    simp only [Spec.Gcm.blocksAt,List.length_map,List.length_range,List.getElem_drop,List.getElem_map,
+      List.getElem_range,plain,ite_eq_right hic,Nat.add_sub_cancel' (Nat.le_of_not_gt hic)]
+
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks.Wrapper
