@@ -10,11 +10,13 @@ public import VerifiedGarbage.Spec.Ed448
 `[s]B` for the 456-bit little-endian scalar `s`, without pruning.
 
 The PPC64LE code (`Impl/Ed448/PPC64LE/ScalarBase.lean`), register for
-register as X448's port is. X448's field code on this target
-(`Impl/X448/RISCV64.lean`) does the
-arithmetic: field elements are fourteen 32-bit limbs in the 56-byte slots
-of the working space, and the operations are X448's `mul`, `add`, `sub`,
-`cswap`, `invert` and `freeze`. Points are the specification's projective
+register as X448's port is. X448's field code on this target does the
+arithmetic: field elements are seven 64-bit words (the same 56 bytes as
+fourteen 32-bit limbs) in the 56-byte slots of the working space, and the
+operations are `mul`, `add`, `sub`, `cswap` and `invert` of
+`Impl/X448/RISCV64/R64.lean` (with `mul` and `mulhu`, in the registers
+`t0`, `t3`–`t6`, `a1`, `a2`, `a4`–`a7`) and `freeze` of
+`Impl/X448/RISCV64.lean`. Points are the specification's projective
 coordinates `(X : Y : Z)`. The working space, rounded up to a multiple of 8
 (`align`), is in `a3`, as in X448; the constants' words are built with `lui`
 and `addiw`.
