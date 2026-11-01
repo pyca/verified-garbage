@@ -46,11 +46,11 @@ def mdHash (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Md.X
 def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X86.Fns where
   H := hmacHash suffix updC finC
   W := Spec.Hmac.sha1I.scratch
-  hiN := Spec.Hmac.sha1I.initScratchApi.name ++ suffix
+  hiN := "vg_hmac_sha1_init_scratch" ++ suffix
   hiC := (mdHash suffix cmpN cmpC updC finC).hmacInit
-  hfN := Spec.Hmac.sha1I.finalizeScratchApi.name ++ suffix
+  hfN := "vg_hmac_sha1_finalize_scratch" ++ suffix
   hfC := (mdHash suffix cmpN cmpC updC finC).hmacFin
-  itN := Spec.Hmac.sha1I.iterateApi.name ++ suffix
+  itN := "vg_pbkdf2_hmac_sha1_iterate" ++ suffix
   itC := (mdHash suffix cmpN cmpC updC finC).iterate
 
 end VG.Proof.Sha1.X86.Variants

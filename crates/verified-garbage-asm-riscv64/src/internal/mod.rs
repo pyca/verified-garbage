@@ -3,6 +3,30 @@
 #![allow(dead_code)]
 
 #[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_md5_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha1_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha224_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha256_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha384_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_256_iterate;
+
+#[rustfmt::skip]
+pub(crate) mod vg_pbkdf2_hmac_sha512_iterate;
+
+#[rustfmt::skip]
 pub(crate) mod vg_rc2_cbc_decrypt;
 
 #[rustfmt::skip]

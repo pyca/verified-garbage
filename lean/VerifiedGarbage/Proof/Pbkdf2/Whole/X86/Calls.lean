@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.OffsetBelow
@@ -12,8 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the calls of HMAC's functions and of `iterate`
 
 `pbkdf2` calls HMAC's `init` and `finalize` and PBKDF2's `iterate`, each
-verified against its shared contract (`VG.Spec.Hmac.initScratchContract`,
-`VG.Spec.Hmac.finalizeScratchContract`, `VG.Spec.Pbkdf2.iterateContract`) with 48
+verified against its shared contract (`Proof.Hmac.initScratchContract`,
+`Proof.Hmac.finalizeScratchContract`, `Proof.Pbkdf2.iterateContract`) with 48
 bytes of stack and some working space; what a caller uses of such a proof is
 `Sound`. Each call is in a frame of its arguments (`WP.callWith`): `hi_frame`,
 `hf_frame` and `it_frame` run one, from the state before its push, given the
@@ -199,9 +201,9 @@ theorem HiArgs.pre_of {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc :
     (a0 : arg t 0 = inn) (a1 : arg t 1 = out) (a2 : arg t 2 = k) (a3 : arg t 3 = BitVec.ofNat 32 kl)
     (a4 : arg t 4 = sc) (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64)
     (hrd : t.rd = HiArgs.rd k kl) (hwr : t.wr = HiArgs.wr S Wi (s.gpr .esp) inn out sc) :
-    (Spec.Hmac.initScratchContract S Wi X86.abi 48).pre t := by
+    (Proof.Hmac.initScratchContract S Wi X86.abi 48).pre t := by
   have e := h.sp
-  sig_pre [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi]
+  sig_pre [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi]
   simp only [argVal32, a0, a1, a2, a3, a4, hA, hsp, hrd, hwr, toNat_setWidth64, toNat_ofNat32 h.kl32,
     setWidth32_64, show argBytes [32, 32, 32, 32, 32] = 20 from rfl]
   have sA := args_sub (E := s.gpr .esp) e (n := 5) (by decide)
@@ -220,16 +222,16 @@ theorem HiArgs.pre_of {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc :
 theorem init_pub {S : StreamingHash} {Wi : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
     (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
     (a4 : arg t 4 = arg t' 4) :
-    (Spec.Hmac.initScratchContract S Wi X86.abi 48).pub t t' := by
-  sig_pub [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi]
+    (Proof.Hmac.initScratchContract S Wi X86.abi 48).pub t t' := by
+  sig_pub [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi]
   simp only [argVal32, he, a0, a1, a2, a3, a4, and_self]
 
 theorem init_post {S : StreamingHash} {Wi : Nat} {t t' : State} {inn out k : BitVec 32} {kl : Nat}
     (hkl : kl < 2 ^ 32) (a0 : arg t 0 = inn) (a1 : arg t 1 = out) (a2 : arg t 2 = k)
-    (a3 : arg t 3 = BitVec.ofNat 32 kl) (h : (Spec.Hmac.initScratchContract S Wi X86.abi 48).post t t') :
+    (a3 : arg t 3 = BitVec.ofNat 32 kl) (h : (Proof.Hmac.initScratchContract S Wi X86.abi 48).post t t') :
     S.Repr t'.mem (inn.setWidth 64) (xorPad (blockKey S.H (bytesAt t.mem (k.setWidth 64) kl)) ipad) ∧
       S.Repr t'.mem (out.setWidth 64) (xorPad (blockKey S.H (bytesAt t.mem (k.setWidth 64) kl)) opad) := by
-  sig_post [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi] at h
+  sig_post [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi] at h
   simp only [argVal32, a0, a1, a2, a3, setWidth32_64, toNat_ofNat32 hkl] at h
   exact h
 
@@ -250,13 +252,13 @@ theorem a3 : arg (pushed hi5 s).callEntry 3 = BitVec.ofNat 32 kl := by
   rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
 theorem a4 : arg (pushed hi5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
 
-theorem pre : (Spec.Hmac.initScratchContract S Wi X86.abi 48).pre
+theorem pre : (Proof.Hmac.initScratchContract S Wi X86.abi 48).pre
     ((pushed hi5 s).callEntry.withRegions (HiArgs.rd k kl) (HiArgs.wr S Wi (s.gpr .esp) inn out sc)) :=
   h.pre_of (by rw [State.withRegions_gpr, callEntry_esp']; rfl) (by rw [arg_withRegions, h.a0])
     (by rw [arg_withRegions, h.a1]) (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3])
     (by rw [arg_withRegions, h.a4]) (by rw [argAddr_withRegions, callEntry_argAddr0]; rfl) rfl rfl
 
-theorem callPre : CallPre (Spec.Hmac.initScratchContract S Wi X86.abi 48) hi5 (HiArgs.rd k kl)
+theorem callPre : CallPre (Proof.Hmac.initScratchContract S Wi X86.abi 48) hi5 (HiArgs.rd k kl)
     (HiArgs.wr S Wi (s.gpr .esp) inn out sc) s := by
   refine ⟨h.pre, ?_, ?_⟩
   · intro a n ⟨q, hq, hc⟩
@@ -281,7 +283,7 @@ theorem callPre : CallPre (Spec.Hmac.initScratchContract S Wi X86.abi 48) hi5 (H
 end HiArgs
 
 theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Spec.Hmac.initScratchContract S Wi X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
+    (hv : Sound c (Proof.Hmac.initScratchContract S Wi X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
     {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : HiArgs S Wi s inn out k sc kl) {Q : State → Prop}
     (hQ : ∀ s', After s [⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩,
         ⟨sc.setWidth 64, Wi * 8⟩] s' →
@@ -310,7 +312,7 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
   exact hQ s' ⟨rd', wr', cs', f''⟩ post'.1 post'.2
 
 theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Spec.Hmac.initScratchContract S Wi X86.abi 48)) {P : State → State → Prop}
+    (hv : Sound c (Proof.Hmac.initScratchContract S Wi X86.abi 48)) {P : State → State → Prop}
     {sp inn out k sc : BitVec 32} {kl : Nat}
     (h : ∀ s s', P s s' → HiArgs S Wi s inn out k sc kl ∧ HiArgs S Wi s' inn out k sc kl ∧
       s.gpr .esp = sp ∧ s'.gpr .esp = sp) :
@@ -382,9 +384,9 @@ theorem HfArgs.pre_of {S : StreamingHash} {Wf : Nat} {s : State} {inn ou lo hi o
     (a0 : arg t 0 = inn) (a1 : arg t 1 = ou) (a4 : arg t 4 = o) (a5 : arg t 5 = sc)
     (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64)
     (hrd : t.rd = HfArgs.rd S ou) (hwr : t.wr = HfArgs.wr S Wf (s.gpr .esp) inn o sc) :
-    (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).pre t := by
+    (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48).pre t := by
   have e := h.sp
-  sig_pre [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi]
+  sig_pre [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi]
   simp only [argVal32, a0, a1, a4, a5, hA, hsp, hrd, hwr, toNat_setWidth64,
     show argBytes [32, 32, 64, 32, 32] = 24 from rfl]
   have sA := args_sub (E := s.gpr .esp) e (n := 6) (by decide)
@@ -403,19 +405,19 @@ theorem HfArgs.pre_of {S : StreamingHash} {Wf : Nat} {s : State} {inn ou lo hi o
 theorem fin_pub {S : StreamingHash} {Wf : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
     (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
     (a4 : arg t 4 = arg t' 4) (a5 : arg t 5 = arg t' 5) :
-    (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).pub t t' := by
-  sig_pub [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi]
+    (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48).pub t t' := by
+  sig_pub [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi]
   simp only [argVal, Nat.reduceEqDiff, ↓reduceIte, he, a0, a1, a2, a3, a4, a5, and_self]
 
 theorem fin_post {S : StreamingHash} {Wf : Nat} {t t' : State} {inn ou lo hi o : BitVec 32}
     (a0 : arg t 0 = inn) (a1 : arg t 1 = ou) (a2 : arg t 2 = lo) (a3 : arg t 3 = hi) (a4 : arg t 4 = o)
-    (h : (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).post t t') :
+    (h : (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48).post t t') :
     ∀ k0 text, k0.length = S.H.blockSize → k0.length + text.length < 2 ^ 64 →
       S.Repr t.mem (inn.setWidth 64) (xorPad k0 ipad ++ text) →
       hi ++ lo = BitVec.ofNat 64 (S.H.blockSize + text.length) →
       S.Repr t.mem (ou.setWidth 64) (xorPad k0 opad) →
       bytesAt t'.mem (o.setWidth 64) S.digestBytes = hmacBlockKey S.H k0 text := by
-  sig_post [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi] at h
+  sig_post [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi] at h
   simp only [argVal, a0, a1, a2, a3, a4, ite_true] at h
   exact h
 
@@ -436,13 +438,13 @@ theorem a3 : arg (pushed hf6 s).callEntry 3 = hi := by rw [callEntry_arg h.fit n
 theorem a4 : arg (pushed hf6 s).callEntry 4 = o := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edi
 theorem a5 : arg (pushed hf6 s).callEntry 5 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
 
-theorem pre : (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).pre
+theorem pre : (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48).pre
     ((pushed hf6 s).callEntry.withRegions (HfArgs.rd S ou) (HfArgs.wr S Wf (s.gpr .esp) inn o sc)) :=
   h.pre_of (by rw [State.withRegions_gpr, callEntry_esp']; rfl) (by rw [arg_withRegions, h.a0])
     (by rw [arg_withRegions, h.a1]) (by rw [arg_withRegions, h.a4]) (by rw [arg_withRegions, h.a5])
     (by rw [argAddr_withRegions, callEntry_argAddr0]; rfl) rfl rfl
 
-theorem callPre : CallPre (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48) hf6 (HfArgs.rd S ou)
+theorem callPre : CallPre (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48) hf6 (HfArgs.rd S ou)
     (HfArgs.wr S Wf (s.gpr .esp) inn o sc) s := by
   refine ⟨h.pre, ?_, ?_⟩
   · intro a n ⟨q, hq, hc⟩
@@ -468,7 +470,7 @@ end HfArgs
 
 theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
     (hSn : S.stateBytes ≤ 2 ^ 64)
-    (hv : Sound c (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
+    (hv : Sound c (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
     {s : State} {inn ou lo hi o sc : BitVec 32} (h : HfArgs S Wf s inn ou lo hi o sc) {Q : State → Prop}
     (hQ : ∀ s', After s [⟨inn.setWidth 64, S.stateBytes⟩, ⟨o.setWidth 64, S.digestBytes⟩,
         ⟨sc.setWidth 64, Wf * 8⟩] s' →
@@ -500,7 +502,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
   · exact entry_repr hR hSn HfArgs.nesp (by decide) e h.b_u ho
 
 theorem hf_rel {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48)) {P : State → State → Prop}
+    (hv : Sound c (Proof.Hmac.finalizeScratchContract S Wf X86.abi 48)) {P : State → State → Prop}
     {sp inn ou lo hi o sc : BitVec 32}
     (h : ∀ s s', P s s' → HfArgs S Wf s inn ou lo hi o sc ∧ HfArgs S Wf s' inn ou lo hi o sc ∧
       s.gpr .esp = sp ∧ s'.gpr .esp = sp) :
@@ -557,9 +559,9 @@ theorem ItArgs.pre_of {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc 
     (a0 : arg t 0 = key) (a1 : arg t 1 = u) (a3 : arg t 3 = tt) (a4 : arg t 4 = sc)
     (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64)
     (hrd : t.rd = ItArgs.rd S key u) (hwr : t.wr = ItArgs.wr S Wt (s.gpr .esp) tt sc) :
-    (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).pre t := by
+    (Proof.Pbkdf2.iterateContract S Wt X86.abi 48).pre t := by
   have e := h.sp
-  sig_pre [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, X86.abi]
+  sig_pre [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, X86.abi]
   simp only [argVal32, a0, a1, a3, a4, hA, hsp, hrd, hwr, toNat_setWidth64,
     show argBytes [32, 32, 32, 32, 32] = 20 from rfl]
   have sA := args_sub (E := s.gpr .esp) e (n := 5) (by decide)
@@ -578,19 +580,19 @@ theorem ItArgs.pre_of {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc 
 theorem it_pub {S : StreamingHash} {Wt : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
     (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
     (a4 : arg t 4 = arg t' 4) :
-    (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).pub t t' := by
-  sig_pub [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, X86.abi]
+    (Proof.Pbkdf2.iterateContract S Wt X86.abi 48).pub t t' := by
+  sig_pub [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, X86.abi]
   simp only [argVal32, he, a0, a1, a2, a3, a4, and_self]
 
 theorem it_post {S : StreamingHash} {Wt : Nat} {t t' : State} {key u n tt : BitVec 32}
     (a0 : arg t 0 = key) (a1 : arg t 1 = u) (a2 : arg t 2 = n) (a3 : arg t 3 = tt)
-    (h : (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).post t t') :
+    (h : (Proof.Pbkdf2.iterateContract S Wt X86.abi 48).post t t') :
     ∀ k0, k0.length = S.H.blockSize → S.Repr t.mem (key.setWidth 64) (xorPad k0 ipad) →
       S.Repr t.mem (key.setWidth 64 + BitVec.ofNat 64 S.stateBytes) (xorPad k0 opad) →
       bytesAt t'.mem (tt.setWidth 64) S.digestBytes =
         Spec.Pbkdf2.iterate (hmacBlockKey S.H k0) n.toNat (bytesAt t.mem (u.setWidth 64) S.digestBytes)
           (bytesAt t.mem (tt.setWidth 64) S.digestBytes) := by
-  sig_post [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, X86.abi] at h
+  sig_post [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, X86.abi] at h
   simp only [argVal32, a0, a1, a2, a3, setWidth32_64] at h
   exact h
 
@@ -610,13 +612,13 @@ theorem a2 : arg (pushed it5 s).callEntry 2 = n := by rw [callEntry_arg h.fit ne
 theorem a3 : arg (pushed it5 s).callEntry 3 = tt := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
 theorem a4 : arg (pushed it5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
 
-theorem pre : (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).pre
+theorem pre : (Proof.Pbkdf2.iterateContract S Wt X86.abi 48).pre
     ((pushed it5 s).callEntry.withRegions (ItArgs.rd S key u) (ItArgs.wr S Wt (s.gpr .esp) tt sc)) :=
   h.pre_of (by rw [State.withRegions_gpr, callEntry_esp']; rfl) (by rw [arg_withRegions, h.a0])
     (by rw [arg_withRegions, h.a1]) (by rw [arg_withRegions, h.a3]) (by rw [arg_withRegions, h.a4])
     (by rw [argAddr_withRegions, callEntry_argAddr0]; rfl) rfl rfl
 
-theorem callPre : CallPre (Spec.Pbkdf2.iterateContract S Wt X86.abi 48) it5 (ItArgs.rd S key u)
+theorem callPre : CallPre (Proof.Pbkdf2.iterateContract S Wt X86.abi 48) it5 (ItArgs.rd S key u)
     (ItArgs.wr S Wt (s.gpr .esp) tt sc) s := by
   refine ⟨h.pre, ?_, ?_⟩
   · intro a n ⟨q, hq, hc⟩
@@ -644,7 +646,7 @@ end ItArgs
 
 theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR : ReprOK S)
     (hSn : 2 * S.stateBytes ≤ 2 ^ 32) (hDn : S.digestBytes ≤ 2 ^ 32)
-    (hv : Sound c (Spec.Pbkdf2.iterateContract S Wt X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
+    (hv : Sound c (Proof.Pbkdf2.iterateContract S Wt X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
     {s : State} {key u n tt sc : BitVec 32} (h : ItArgs S Wt s key u n tt sc) {Q : State → Prop}
     (hQ : ∀ s', After s [⟨tt.setWidth 64, S.digestBytes⟩, ⟨sc.setWidth 64, Wt * 8⟩] s' →
       (∀ k0, k0.length = S.H.blockSize → S.Repr s.mem (key.setWidth 64) (xorPad k0 ipad) →
@@ -677,7 +679,7 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
       (h.b_k.sub_right (Offset.sub_base _ (by omega_arith))) ho
 
 theorem it_rel {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa}
-    (hv : Sound c (Spec.Pbkdf2.iterateContract S Wt X86.abi 48)) {P : State → State → Prop}
+    (hv : Sound c (Proof.Pbkdf2.iterateContract S Wt X86.abi 48)) {P : State → State → Prop}
     {sp key u n tt sc : BitVec 32}
     (h : ∀ s s', P s s' → ItArgs S Wt s key u n tt sc ∧ ItArgs S Wt s' key u n tt sc ∧
       s.gpr .esp = sp ∧ s'.gpr .esp = sp) :

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
@@ -129,23 +131,23 @@ theorem sha224_finChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     HmacFin.Checks (sha224M v cmpN cmpC) :=
   finChecks_of_shape (H := sha224M v cmpN cmpC) sha224Shape_finChecks
 
-theorem sha224_iterImp : (iterW Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.iterateContract X86.abi 48) := by
+theorem sha224_iterImp : (iterW Spec.Hmac.sha224S 104).Implies (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 96 28 104
-  sig_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+  sig_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, iterW, iterG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 96 28 104
 
-theorem sha224_initImp : (initW Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.initScratchContract X86.abi 48) := by
+theorem sha224_initImp : (initW Spec.Hmac.sha224S 104).Implies (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha224I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 96 104
-  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+  sig_implies [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 96 104
 
-theorem sha224_finImp : (finW Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.finalizeScratchContract X86.abi 48) := by
+theorem sha224_finImp : (finW Spec.Hmac.sha224S 104).Implies (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha224I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 96 28 104
-  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
+  sig_implies [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 96 28 104
@@ -153,21 +155,21 @@ theorem sha224_finImp : (finW Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.
 /-- PBKDF2's iteration for SHA-224 with any backend. -/
 theorem sha224_iterate (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha224M v cmpN cmpC).iterate (Spec.Hmac.sha224I.iterateContract X86.abi 48) :=
+    Verified X86.target (sha224M v cmpN cmpC).iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I X86.abi 48) :=
   (Iterate.verifiedW (sha224Ok v cmpN hc) (sha224_iterChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 32 + 64 ≤ 8 * 104 by decide) sha224_iterImp.sat_left).of_implies sha224_iterImp
 
 /-- HMAC's `finalize` for SHA-224 with any backend. -/
 theorem sha224_finalize (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha224M v cmpN cmpC).hmacFin (Spec.Hmac.sha224I.finalizeScratchContract X86.abi 48) :=
+    Verified X86.target (sha224M v cmpN cmpC).hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha224I X86.abi 48) :=
   (HmacFin.verifiedW (sha224Ok v cmpN hc) (sha224_finChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 32 ≤ 8 * 104 by decide) sha224_finImp.sat_left).of_implies sha224_finImp
 
 /-- HMAC's `init` for SHA-224 with any backend. -/
 theorem sha224_init (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha224M v cmpN cmpC).hmacInit (Spec.Hmac.sha224I.initScratchContract X86.abi 48) :=
+    Verified X86.target (sha224M v cmpN cmpC).hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha224I X86.abi 48) :=
   (HmacInit.verifiedW (sha224Ok v cmpN hc) (sha224_initChecks v cmpN cmpC)
     (show 8 * 20 + 16 ≤ 8 * 104 by decide) sha224_initImp.sat_left).of_implies sha224_initImp
 

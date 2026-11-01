@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKey
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -263,11 +264,11 @@ structure AnyOK (C : Hash) : Prop where
 /-! ## The shared contract -/
 
 /-- `VG.Spec.Hmac.initAnyKeyContract` with its working space (`W` words) as
-an argument (as `VG.Spec.Hmac.initScratchContract` is `initContract`'s): the
+an argument (as `Proof.Hmac.initScratchContract` is `initContract`'s): the
 contract that the function allocating the working space follows from
 (`Verified.stackScratchWiped`). -/
 def anyScratchContract (S : StreamingHash) (W : Nat) : Contract isa :=
-  (Spec.Hmac.initScratchSig S W).contract AArch64.abi
+  (Proof.Hmac.initScratchSig S W).contract AArch64.abi
     (post := fun inner outer key keyLen _scratch => Spec.Hmac.initPost S AArch64.abi.ptrBits inner outer key keyLen)
     (writeArgs := true) (stack := 16)
 
@@ -275,7 +276,7 @@ def anyScratchContract (S : StreamingHash) (W : Nat) : Contract isa :=
 (`generic_implies`), given that the shared contract is satisfiable. -/
 theorem anyImp (S : StreamingHash) (W : Nat) (h : ∃ s, (anyScratchContract S W).pre s) :
     (anyG S W).Implies (anyScratchContract S W) := by
-  generic_implies [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, anyG,
+  generic_implies [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, anyG,
     VG.Proof.Pbkdf2.Md.AArch64.Calls.stk, AArch64.abi, AArch64.argRegs] using h
 
 section
@@ -284,7 +285,7 @@ include hH C A
 
 /-- `initAny`, verified against the shared contract. -/
 theorem hmacInitAny_verified
-    (hsI : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W AArch64.abi 16).pre s)
+    (hsI : ∃ s, (Proof.Hmac.initScratchContract hH.SH H.W AArch64.abi 16).pre s)
     (hsat : ∃ s, (anyScratchContract hH.SH (H.W + H.S)).pre s) :
     Verified AArch64.target H.hmacInitAny (anyScratchContract hH.SH (H.W + H.S)) :=
   (verified hH (VG.Proof.Pbkdf2.Md.AArch64.Pbk.Checks.of_core C.pbk) A.entry A.args

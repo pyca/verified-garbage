@@ -19,14 +19,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha384I) .r7
       Proof.Hmac.Stream.PPC64LE.Sha384.hash.finalize
     stack := 96 + Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha384I
-    verified := Proof.Hmac.Stream.PPC64LE.Sha384.finalize },
-  Spec.Hmac.sha384I.initScratchApi.artifact PPC64LE.target {
-    code := Proof.Hmac.Stream.PPC64LE.Sha384.hash.init
-    stack := 96
-    verified := Proof.Hmac.Stream.PPC64LE.Sha384.initScratch },
-  Spec.Hmac.sha384I.finalizeScratchApi.artifact PPC64LE.target {
-    code := Proof.Hmac.Stream.PPC64LE.Sha384.hash.finalize
-    stack := 96
-    verified := Proof.Hmac.Stream.PPC64LE.Sha384.finalizeScratch }]
+    verified := Proof.Hmac.Stream.PPC64LE.Sha384.finalize }]
 
 end VG.Artifacts.HmacSha384.PPC64LE

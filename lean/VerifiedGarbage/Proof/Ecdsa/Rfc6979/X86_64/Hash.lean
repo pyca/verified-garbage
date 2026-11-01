@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
@@ -51,8 +52,8 @@ structure RfcHash where
   ok : HashOK H
   C : CoreOK (core H)
   K : Callees H
-  satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W X86_64.abi 16).pre s
-  satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W X86_64.abi 16).pre s
+  satI : ∃ s, (Proof.Hmac.initScratchContract ok.SH H.W X86_64.abi 16).pre s
+  satF : ∃ s, (Proof.Hmac.finalizeScratchContract ok.SH H.W X86_64.abi 16).pre s
   /-- The instance is of the curve, with this hash function's HMAC and its
   output length, and tries at least one candidate, as many as a 32-bit
   immediate holds. -/

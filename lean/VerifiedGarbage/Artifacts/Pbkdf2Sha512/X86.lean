@@ -19,10 +19,6 @@ namespace VG.Artifacts.Pbkdf2Sha512.X86
 open VG.Proof.Pbkdf2.Stream.X86
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha512I.iterateApi.artifact X86.target {
-    code := Proof.Pbkdf2.Md.X86.sha512M'.iterate
-    stack := 48
-    verified := Proof.Pbkdf2.Md.X86.Instances.sha512_iterate },
   Spec.Hmac.sha512I.pbkdf2Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512I) 7
       Proof.Pbkdf2.Whole.X86.sha512F.pbkdf2

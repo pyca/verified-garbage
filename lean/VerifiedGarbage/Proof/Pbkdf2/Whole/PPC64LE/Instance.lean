@@ -34,8 +34,8 @@ def fnsOf (H : Hash) (I : Spec.Hmac.Instance) (b : Nat) (itC : Prog isa) (itW : 
   Wc := 8 * I.scratch
   hiN := I.initAnyKeyApi.name
   hiC := initCode H I b
-  hfN := I.finalizeScratchApi.name
-  itN := I.iterateApi.name
+  hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
+  itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
   itC := itC
   itW := itW
 

@@ -3,70 +3,7 @@
 //! `assembly/pbkdf2_sha384.s`.
 #![allow(dead_code)]
 
-/// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 384 bytes.
-/// * `u` must be valid for reads of 48 bytes.
-/// * `t` must be valid for reads and writes of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha384_iterate(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r".inst 0x11000042,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097,0xf9015498,0xf901589e
-.inst 0x910ae093,0x91000094,0x910be095,0x91000077,0x91000058,0xb9400029,0xb90002a9,0xb9400429
-.inst 0xb90006a9,0xb9400829,0xb9000aa9,0xb9400c29,0xb9000ea9,0xb9401029,0xb90012a9,0xb9401429
-.inst 0xb90016a9,0xb9401829,0xb9001aa9,0xb9401c29,0xb9001ea9,0xb9402029,0xb90022a9,0xb9402429
-.inst 0xb90026a9,0xb9402829,0xb9002aa9,0xb9402c29,0xb9002ea9,0xd2801009,0xb90032a9,0xd2800009
-.inst 0xb90036a9,0xb9003aa9,0xb9003ea9,0xb90042a9,0xb90046a9,0xb9004aa9,0xb9004ea9,0xb90052a9
-.inst 0xb90056a9,0xb9005aa9,0xb9005ea9,0xb90062a9,0xb90066a9,0xb9006aa9,0xb9006ea9,0xd2801616
-.inst 0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29,0xf9005e69
-.inst 0x91000016
-cbz x24, 20f
-22:
-.inst 0xb94002c9,0xb9000269,0xb94006c9,0xb9000669,0xb9400ac9,0xb9000a69,0xb9400ec9,0xb9000e69
-.inst 0xb94012c9,0xb9001269,0xb94016c9,0xb9001669,0xb9401ac9,0xb9001a69,0xb9401ec9,0xb9001e69
-.inst 0xb94022c9,0xb9002269,0xb94026c9,0xb9002669,0xb9402ac9,0xb9002a69,0xb9402ec9,0xb9002e69
-.inst 0xb94032c9,0xb9003269,0xb94036c9,0xb9003669,0xb9403ac9,0xb9003a69,0xb9403ec9,0xb9003e69
-.inst 0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress}
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xd2801009,0xb90032a9,0xd2800009,0xb90036a9,0xb9003aa9,0xb9003ea9,0xb940c2c9,0xb9000269
-.inst 0xb940c6c9,0xb9000669,0xb940cac9,0xb9000a69,0xb940cec9,0xb9000e69,0xb940d2c9,0xb9001269
-.inst 0xb940d6c9,0xb9001669,0xb940dac9,0xb9001a69,0xb940dec9,0xb9001e69,0xb940e2c9,0xb9002269
-.inst 0xb940e6c9,0xb9002669,0xb940eac9,0xb9002a69,0xb940eec9,0xb9002e69,0xb940f2c9,0xb9003269
-.inst 0xb940f6c9,0xb9003669,0xb940fac9,0xb9003a69,0xb940fec9,0xb9003e69,0x910002a1,0x91000260
-.inst 0xd2800022,0x91000283
-bl {vg_sha512_compress}
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xd2801009,0xb90032a9,0xd2800009,0xb90036a9,0xb9003aa9,0xb9003ea9,0xb94002a9,0xb94002ea
-.inst 0xca0a0129,0xb90002e9,0xb94006a9,0xb94006ea,0xca0a0129,0xb90006e9,0xb9400aa9,0xb9400aea
-.inst 0xca0a0129,0xb9000ae9,0xb9400ea9,0xb9400eea,0xca0a0129,0xb9000ee9,0xb94012a9,0xb94012ea
-.inst 0xca0a0129,0xb90012e9,0xb94016a9,0xb94016ea,0xca0a0129,0xb90016e9,0xb9401aa9,0xb9401aea
-.inst 0xca0a0129,0xb9001ae9,0xb9401ea9,0xb9401eea,0xca0a0129,0xb9001ee9,0xb94022a9,0xb94022ea
-.inst 0xca0a0129,0xb90022e9,0xb94026a9,0xb94026ea,0xca0a0129,0xb90026e9,0xb9402aa9,0xb9402aea
-.inst 0xca0a0129,0xb9002ae9,0xb9402ea9,0xb9402eea,0xca0a0129,0xb9002ee9,0xd1000718
-cbnz x24, 22b
-b 21f
-20:
-21:
-.inst 0xf9415a9e,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xd65f03c0
-.p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
+/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -163,85 +100,16 @@ b 25f
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
-        vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate,
-    )
-}
-
-/// The CPU features `vg_pbkdf2_hmac_sha384_iterate_sha3` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA384_ITERATE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 384 bytes.
-/// * `u` must be valid for reads of 48 bytes.
-/// * `t` must be valid for reads and writes of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha384_iterate_sha3(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0x11000042,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097,0xf9015498,0xf901589e
-.inst 0x910ae093,0x91000094,0x910be095,0x91000077,0x91000058,0xb9400029,0xb90002a9,0xb9400429
-.inst 0xb90006a9,0xb9400829,0xb9000aa9,0xb9400c29,0xb9000ea9,0xb9401029,0xb90012a9,0xb9401429
-.inst 0xb90016a9,0xb9401829,0xb9001aa9,0xb9401c29,0xb9001ea9,0xb9402029,0xb90022a9,0xb9402429
-.inst 0xb90026a9,0xb9402829,0xb9002aa9,0xb9402c29,0xb9002ea9,0xd2801009,0xb90032a9,0xd2800009
-.inst 0xb90036a9,0xb9003aa9,0xb9003ea9,0xb90042a9,0xb90046a9,0xb9004aa9,0xb9004ea9,0xb90052a9
-.inst 0xb90056a9,0xb9005aa9,0xb9005ea9,0xb90062a9,0xb90066a9,0xb9006aa9,0xb9006ea9,0xd2801616
-.inst 0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29,0xf9005e69
-.inst 0x91000016
-cbz x24, 20f
-22:
-.inst 0xb94002c9,0xb9000269,0xb94006c9,0xb9000669,0xb9400ac9,0xb9000a69,0xb9400ec9,0xb9000e69
-.inst 0xb94012c9,0xb9001269,0xb94016c9,0xb9001669,0xb9401ac9,0xb9001a69,0xb9401ec9,0xb9001e69
-.inst 0xb94022c9,0xb9002269,0xb94026c9,0xb9002669,0xb9402ac9,0xb9002a69,0xb9402ec9,0xb9002e69
-.inst 0xb94032c9,0xb9003269,0xb94036c9,0xb9003669,0xb9403ac9,0xb9003a69,0xb9403ec9,0xb9003e69
-.inst 0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xd2801009,0xb90032a9,0xd2800009,0xb90036a9,0xb9003aa9,0xb9003ea9,0xb940c2c9,0xb9000269
-.inst 0xb940c6c9,0xb9000669,0xb940cac9,0xb9000a69,0xb940cec9,0xb9000e69,0xb940d2c9,0xb9001269
-.inst 0xb940d6c9,0xb9001669,0xb940dac9,0xb9001a69,0xb940dec9,0xb9001e69,0xb940e2c9,0xb9002269
-.inst 0xb940e6c9,0xb9002669,0xb940eac9,0xb9002a69,0xb940eec9,0xb9002e69,0xb940f2c9,0xb9003269
-.inst 0xb940f6c9,0xb9003669,0xb940fac9,0xb9003a69,0xb940fec9,0xb9003e69,0x910002a1,0x91000260
-.inst 0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xd2801009,0xb90032a9,0xd2800009,0xb90036a9,0xb9003aa9,0xb9003ea9,0xb94002a9,0xb94002ea
-.inst 0xca0a0129,0xb90002e9,0xb94006a9,0xb94006ea,0xca0a0129,0xb90006e9,0xb9400aa9,0xb9400aea
-.inst 0xca0a0129,0xb9000ae9,0xb9400ea9,0xb9400eea,0xca0a0129,0xb9000ee9,0xb94012a9,0xb94012ea
-.inst 0xca0a0129,0xb90012e9,0xb94016a9,0xb94016ea,0xca0a0129,0xb90016e9,0xb9401aa9,0xb9401aea
-.inst 0xca0a0129,0xb9001ae9,0xb9401ea9,0xb9401eea,0xca0a0129,0xb9001ee9,0xb94022a9,0xb94022ea
-.inst 0xca0a0129,0xb90022e9,0xb94026a9,0xb94026ea,0xca0a0129,0xb90026e9,0xb9402aa9,0xb9402aea
-.inst 0xca0a0129,0xb9002ae9,0xb9402ea9,0xb9402eea,0xca0a0129,0xb9002ee9,0xd1000718
-cbnz x24, 22b
-b 21f
-20:
-21:
-.inst 0xf9415a9e,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xd65f03c0
-.arch_extension nosha3
-.p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+        vg_hmac_sha384_init_scratch = sym super::internal::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_finalize_scratch = sym super::internal::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
+        vg_pbkdf2_hmac_sha384_iterate = sym super::internal::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
     )
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_sha3` requires (`Artifact.features`).
 pub const VG_PBKDF2_HMAC_SHA384_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
+/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -341,8 +209,8 @@ b 25f
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha384_init_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_sha3,
-        vg_hmac_sha384_finalize_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_sha3,
-        vg_pbkdf2_hmac_sha384_iterate_sha3 = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_sha3,
+        vg_hmac_sha384_init_scratch_sha3 = sym super::internal::vg_hmac_sha384_init_scratch_sha3::vg_hmac_sha384_init_scratch_sha3,
+        vg_hmac_sha384_finalize_scratch_sha3 = sym super::internal::vg_hmac_sha384_finalize_scratch_sha3::vg_hmac_sha384_finalize_scratch_sha3,
+        vg_pbkdf2_hmac_sha384_iterate_sha3 = sym super::internal::vg_pbkdf2_hmac_sha384_iterate_sha3::vg_pbkdf2_hmac_sha384_iterate_sha3,
     )
 }

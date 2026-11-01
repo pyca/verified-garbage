@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha512.X86_64.OneShot
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -60,9 +62,9 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   initC := Impl.Sha512.X86_64.Stream.init iv
   updN := Spec.Sha512.updateScratchApi.name ++ v.suffix
   finN := Spec.Sha512.finalizeScratchApi.name ++ v.suffix
-  hmacInitN := I.initScratchApi.name ++ v.suffix
-  hmacFinN := I.finalizeScratchApi.name ++ v.suffix
-  iterN := I.iterateApi.name ++ v.suffix
+  hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
+  hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.suffix
+  iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.suffix
 
 /-- A member of the family without the functions it calls, the same for
 every `v`. -/
@@ -278,26 +280,26 @@ def stream512_224 (v : Compress) : List StreamFn := [
 
 /-! ## SHA-384 -/
 
-theorem sha384_satI : ∃ s, (Spec.Hmac.sha384I.initScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha384I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem sha384_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha384I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha384_satF : ∃ s, (Spec.Hmac.sha384I.finalizeScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha384I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using finSat 192 48 234
+theorem sha384_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha384I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using finSat 192 48 234
 
-theorem sha384_satT : ∃ s, (Spec.Hmac.sha384I.iterateContract X86_64.abi 8).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha384I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using
+theorem sha384_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha384I X86_64.abi 8).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha384I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 192 48 234
 
 theorem sha384_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha384I.S Spec.Hmac.sha384I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 426
 
-theorem sha384_satP : ∃ s, (Spec.Hmac.sha384I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi,
+theorem sha384_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha384I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi,
     X86_64.argRegs] using pbkSat 426
 
 theorem sha384_satPF :
@@ -359,26 +361,26 @@ def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
 
 /-! ## SHA-512 -/
 
-theorem sha512_satI : ∃ s, (Spec.Hmac.sha512I.initScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha512I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem sha512_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha512_satF : ∃ s, (Spec.Hmac.sha512I.finalizeScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using finSat 192 64 234
+theorem sha512_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using finSat 192 64 234
 
-theorem sha512_satT : ∃ s, (Spec.Hmac.sha512I.iterateContract X86_64.abi 8).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha512I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using
+theorem sha512_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512I X86_64.abi 8).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha512I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 192 64 234
 
 theorem sha512_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha512I.S Spec.Hmac.sha512I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 426
 
-theorem sha512_satP : ∃ s, (Spec.Hmac.sha512I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi,
+theorem sha512_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi,
     X86_64.argRegs] using pbkSat 426
 
 theorem sha512_satPF :
@@ -424,26 +426,26 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
 
 /-! ## SHA-512/224 -/
 
-theorem sha512_224_satI : ∃ s, (Spec.Hmac.sha512_224I.initScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_224I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem sha512_224_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_224I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha512_224_satF : ∃ s, (Spec.Hmac.sha512_224I.finalizeScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_224I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using finSat 192 28 234
+theorem sha512_224_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_224I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using finSat 192 28 234
 
-theorem sha512_224_satT : ∃ s, (Spec.Hmac.sha512_224I.iterateContract X86_64.abi 8).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha512_224I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using
+theorem sha512_224_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512_224I X86_64.abi 8).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha512_224I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 192 28 234
 
 theorem sha512_224_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha512_224I.S Spec.Hmac.sha512_224I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 426
 
-theorem sha512_224_satP : ∃ s, (Spec.Hmac.sha512_224I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi,
+theorem sha512_224_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_224I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi,
     X86_64.argRegs] using pbkSat 426
 
 theorem sha512_224_satPF :
@@ -478,26 +480,26 @@ def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
 
 /-! ## SHA-512/256 -/
 
-theorem sha512_256_satI : ∃ s, (Spec.Hmac.sha512_256I.initScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_256I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem sha512_256_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_256I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha512_256_satF : ∃ s, (Spec.Hmac.sha512_256I.finalizeScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_256I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using finSat 192 32 234
+theorem sha512_256_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_256I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using finSat 192 32 234
 
-theorem sha512_256_satT : ∃ s, (Spec.Hmac.sha512_256I.iterateContract X86_64.abi 8).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha512_256I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using
+theorem sha512_256_satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha512_256I X86_64.abi 8).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha512_256I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 192 32 234
 
 theorem sha512_256_satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha512_256I.S Spec.Hmac.sha512_256I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 426
 
-theorem sha512_256_satP : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi,
+theorem sha512_256_satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha512_256I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi,
     X86_64.argRegs] using pbkSat 426
 
 theorem sha512_256_satPF :

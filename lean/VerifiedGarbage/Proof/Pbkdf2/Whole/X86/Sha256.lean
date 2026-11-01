@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Md5.X86.Lit
@@ -87,14 +88,14 @@ theorem sha256Shape_checks : Checks sha256Shape := by
 
 theorem sha256_checks (v : Backend) : Checks v.F := checks_of_shape (F := v.F) sha256Shape_checks
 
-theorem sha256_sat : ∃ s, (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+theorem sha256_sat : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76).pre s := by
+  sig_implies_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes] [pbkSat, pbkMem] using pbkSat 200
 
 /-- `pbkdf2` for SHA-256 with the backend `v`, verified. -/
 theorem sha256_verified (v : Backend) :
-    Verified X86.target v.F.pbkdf2 (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76) :=
+    Verified X86.target v.F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86.abi 76) :=
   verified (sha256OKF v) (sha256_checks v) rfl rfl sha256_sat
 
 end VG.Proof.Pbkdf2.Whole.X86

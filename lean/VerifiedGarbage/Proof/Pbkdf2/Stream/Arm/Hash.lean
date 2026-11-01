@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -103,7 +105,7 @@ scratch space. -/
 
 variable (S : StreamingHash) (W : Nat)
 
-/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initScratchContract`. -/
+/-- `init(inner, outer, key, key_len, scratch)`: `Proof.Hmac.initScratchContract`. -/
 def initG : Contract isa where
   pre s :=
     let inner : Region := ⟨State.addr (s.gpr .r0), S.stateBytes⟩
@@ -128,7 +130,7 @@ def initG : Contract isa where
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
 
-/-- `finalize(inner, outer, count, out, scratch)`: `VG.Spec.Hmac.finalizeScratchContract`. -/
+/-- `finalize(inner, outer, count, out, scratch)`: `Proof.Hmac.finalizeScratchContract`. -/
 def finG : Contract isa where
   pre s :=
     let inner : Region := ⟨State.addr (s.gpr .r0), S.stateBytes⟩
@@ -155,7 +157,7 @@ def finG : Contract isa where
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧
     stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
 
-/-- `iterate(key, u, n, t, scratch)`: `VG.Spec.Pbkdf2.iterateContract`. -/
+/-- `iterate(key, u, n, t, scratch)`: `Proof.Pbkdf2.iterateContract`. -/
 def iterG : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), 2 * S.stateBytes⟩

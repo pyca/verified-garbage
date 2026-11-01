@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Hmac.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
@@ -41,8 +42,8 @@ structure RfcHash where
   H : Impl.Pbkdf2.Md.AArch64.Hash
   ok : HashOK H
   C : CoreOK (core H)
-  satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W AArch64.abi 16).pre s
-  satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W AArch64.abi 16).pre s
+  satI : ∃ s, (Proof.Hmac.initScratchContract ok.SH H.W AArch64.abi 16).pre s
+  satF : ∃ s, (Proof.Hmac.finalizeScratchContract ok.SH H.W AArch64.abi 16).pre s
   /-- The instance is of the curve, with this hash function's HMAC, its
   output length, and tries at least one candidate, as many as a 16-bit
   immediate holds. -/

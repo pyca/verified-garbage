@@ -3,40 +3,7 @@
 //! `assembly/pbkdf2_sha384.s`.
 #![allow(dead_code)]
 
-/// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
-///
-/// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 384 bytes.
-/// * `u` must be valid for reads of 48 bytes.
-/// * `t` must be valid for reads and writes of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha384_iterate(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfMYHpXgiAKV4sABH+7gAZ/vAAIf7yACn+9AAx/vYAOf74AAH+OgARzsAAGc7KAGHOwAAxjsAAOU7AAAEgQAAHJEEAASBBAAckQgABIEIAByRDAAEgQwAHJEQAASBEAAckRQABIEUAByRGAAEgRgAHJEcAASBHAAckSAABIEgAByRJAAEgSQAHJEoAASBKAAckSwABIEsAByRgAAAOTAAHJEAAAA5NAAckTgAHJE8AByRQAAckUQAHJFIAByRTAAckVAAHJFUAByRWAAckVwAHJFgAByRZAAckWgAHJFsAByRsACgO2AfqHuwAGA5KF0afRTqHX0UQgh9FEIIfbgAYDkoXRp9AACjOwAAPyg="
-beq %cr0, 20f
-22:
-.base64 "AAAdgQAAGpEEAB2BBAAakQgAHYEIABqRDAAdgQwAGpEQAB2BEAAakRQAHYEUABqRGAAdgRgAGpEcAB2BHAAakSAAHYEgABqRJAAdgSQAGpEoAB2BKAAakSwAHYEsABqRMAAdgTAAGpE0AB2BNAAakTgAHYE4ABqRPAAdgTwAGpEAAJw4AAB6OAEAoDgAANs4"
-bl {vg_sha512_compress}
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9wAAdgQAAGpHEAB2BBAAakcgAHYEIABqRzAAdgQwAGpHQAB2BEAAakdQAHYEUABqR2AAdgRgAGpHcAB2BHAAakeAAHYEgABqR5AAdgSQAGpHoAB2BKAAakewAHYEsABqR8AAdgTAAGpH0AB2BNAAakfgAHYE4ABqR/AAdgTwAGpEAAJw4AAB6OAEAoDgAANs4"
-bl {vg_sha512_compress}
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9AAAcgQAAPoF4Sgh9AAAekQQAHIEEAD6BeEoIfQQAHpEIAByBCAA+gXhKCH0IAB6RDAAcgQwAPoF4Sgh9DAAekRAAHIEQAD6BeEoIfRAAHpEUAByBFAA+gXhKCH0UAB6RGAAcgRgAPoF4Sgh9GAAekRwAHIEcAD6BeEoIfRwAHpEgAByBIAA+gXhKCH0gAB6RJAAcgSQAPoF4Sgh9JAAekSgAHIEoAD6BeEoIfSgAHpEsAByBLAA+gXhKCH0sAB6R////OwAAPyg="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "4AAb6LAAW+vAAJvryAC769AA2+vYAPvruAB766YDCHwgAIBO""#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
+/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
@@ -82,7 +49,7 @@ b 21f
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8cA0hOCAAgE4=""#,
         vg_hmac_sha384_init = sym super::hmac_sha384::vg_hmac_sha384_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
-        vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate,
+        vg_hmac_sha384_finalize_scratch = sym super::internal::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
+        vg_pbkdf2_hmac_sha384_iterate = sym super::internal::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
     )
 }

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Sha256
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 public import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -44,10 +45,10 @@ theorem checks : Checks F := by
   taint_decide_all
 
 theorem scratch : Verified PPC64LE.target F.pbkdf2
-    (Spec.Hmac.sha256I.pbkdf2ScratchContract PPC64LE.abi (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I + 144)) :=
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I PPC64LE.abi (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.sha256I + 144)) :=
   VG.Proof.Pbkdf2.Whole.PPC64LE.scratch okF checks rfl (by decide) (by
-    inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract,
-      Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256,
+    inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract,
+      Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256,
       Proof.Hmac.Stream.PPC64LE.hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using pbkSat (8 * Spec.Hmac.sha256I.pbkdf2Scratch))
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Calls
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
@@ -115,7 +116,7 @@ theorem scr_sub (hL : L.Ok) : Region.Sub ⟨L.scr, 200 * 8⟩ L.SC :=
 /-! ## Step 1 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
@@ -275,7 +276,7 @@ theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa romixLoo
 /-! ## Step 3 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
@@ -350,7 +351,7 @@ theorem ne_cs {r d : Reg} (hr : r ∈ calleeSaved) (hd : d ∉ calleeSaved) : r 
 
 
 section
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
@@ -585,7 +586,7 @@ theorem loop_ct :
 /-! ## The whole function -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
@@ -706,7 +707,7 @@ theorem scrypt_implies :
           _root_.List.range, _root_.List.range.loop, List.append_eq, satState] [satState] using satState }
 
 section
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
@@ -741,10 +742,10 @@ variable (c : Proof.Sha256.X86_64.Compress)
 abbrev pbkOf : Prog isa := (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).pbkdf2
 
 /-- Its name. -/
-abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2ScratchApi.name ++ c.suffix
+abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch" ++ c.suffix
 
 theorem pbk_verified :
-    Verified X86_64.target (pbkOf c) (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24) :=
+    Verified X86_64.target (pbkOf c) (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24) :=
   (Proof.Pbkdf2.Md.X86_64.Sha256.variant c).pbkdf2
 
 theorem pbk_nosp : NoSp (pbkOf c) :=

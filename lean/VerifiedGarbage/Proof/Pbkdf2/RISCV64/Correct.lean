@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.IterateMain
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -79,9 +80,9 @@ theorem pre_of {P : It} {Wi : Nat} {S : Spec.Hmac.StreamingHash} (hS : S.stateBy
   simp only [hS, hD] at *
   exact ⟨h0, h1, h2, h3, h4, h5, h6⟩
 
-theorem iterImp {I : Spec.Hmac.Instance} (hs : ∃ s, (I.iterateContract RISCV64.abi 0).pre s) :
-    (iterK I.S (8 * I.scratch)).Implies (I.iterateContract RISCV64.abi 0) := by
-  generic_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+theorem iterImp {I : Spec.Hmac.Instance} (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0).pre s) :
+    (iterK I.S (8 * I.scratch)).Implies (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0) := by
+  generic_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     iterK, RISCV64.abi, RISCV64.argRegs] using hs
 
 /-- `iterate` against the shared contract of an instance `I` of the hash
@@ -90,8 +91,8 @@ time. -/
 theorem verified {P : It} {Wi L : Nat} {H : Md P.B P.N L} {iv : H.HV} {I : Spec.Hmac.Instance}
     (ho : HashOk P Wi I.S H iv) (hf : CalleeOk H P.CW P.cmpC) (hfit : Wi ≤ 8 * I.scratch)
     (ct : ConstantTime isa (iterK I.S Wi).pre (iterK I.S Wi).pub P.iterate)
-    (hs : ∃ s, (I.iterateContract RISCV64.abi 0).pre s) :
-    Verified RISCV64.target P.iterate (I.iterateContract RISCV64.abi 0) := by
+    (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0).pre s) :
+    Verified RISCV64.target P.iterate (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0) := by
   have imp := iterImp hs
   have hS : I.S.stateBytes = P.N + P.B := ho.link.hS
   have hD : I.S.digestBytes = P.D := ho.link.hD

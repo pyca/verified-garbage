@@ -42,7 +42,7 @@ def shaHash : Impl.Hmac.Stream.PPC64LE.Hash where
   updC := Impl.Sha512.PPC64LE.Stream.update
   finN := Spec.Sha512.finalizeScratchApi.name
   finC := Impl.Sha512.PPC64LE.Stream.finalize
-  hmacInitN := Spec.Hmac.sha512I.initScratchApi.name
+  hmacInitN := "vg_hmac_sha512_init_scratch"
 
 /-- What the proofs need of SHA-512's streaming functions: HMAC's facts about them
 (`Proof.Hmac.Stream.PPC64LE.Sha512.ok`), whose states are SHA-512's and whose digest is SHA-512's.

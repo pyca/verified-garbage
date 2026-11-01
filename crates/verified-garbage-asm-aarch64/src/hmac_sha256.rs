@@ -91,7 +91,7 @@ b 21b
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_init_scratch = sym super::internal::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
     )
 }
 
@@ -123,91 +123,6 @@ bl {vg_sha256_finalize_scratch}
 bl {vg_sha256_compress}
 .inst 0x91000315,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf94052f3
 .inst 0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910d03ff,0xd65f03c0
-.p2align 6",
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// `vg_hmac_sha256_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads and writes of 96 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
-.inst 0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
-bl {vg_sha256_init}
-.inst 0x910002a0
-bl {vg_sha256_init}
-.inst 0x5286c6ce,0x72a6c6ce,0xb900226e,0xb900266e,0xb9002a6e,0xb9002e6e,0xb900326e,0xb900366e
-.inst 0xb9003a6e,0xb9003e6e,0xb900426e,0xb900466e,0xb9004a6e,0xb9004e6e,0xb900526e,0xb900566e
-.inst 0xb9005a6e,0xb9005e6e,0xd280000a
-cbz x24, 20f
-22:
-.inst 0x8b0a02cd,0x394001a9,0xca0e0129,0x8b0a026c,0x39008189,0x9100054a,0xcb0a030b
-cbnz x11, 22b
-b 21f
-20:
-21:
-.inst 0x528d4d4f,0x72ad4d4f,0xb9402269,0xca0f0129,0xb90022a9,0xb9402669,0xca0f0129,0xb90026a9
-.inst 0xb9402a69,0xca0f0129,0xb9002aa9,0xb9402e69,0xca0f0129,0xb9002ea9,0xb9403269,0xca0f0129
-.inst 0xb90032a9,0xb9403669,0xca0f0129,0xb90036a9,0xb9403a69,0xca0f0129,0xb9003aa9,0xb9403e69
-.inst 0xca0f0129,0xb9003ea9,0xb9404269,0xca0f0129,0xb90042a9,0xb9404669,0xca0f0129,0xb90046a9
-.inst 0xb9404a69,0xca0f0129,0xb9004aa9,0xb9404e69,0xca0f0129,0xb9004ea9,0xb9405269,0xca0f0129
-.inst 0xb90052a9,0xb9405669,0xca0f0129,0xb90056a9,0xb9405a69,0xca0f0129,0xb9005aa9,0xb9405e69
-.inst 0xca0f0129,0xb9005ea9,0x91008261,0x91000260,0xd2800022,0x91000283
-bl {vg_sha256_compress}
-.inst 0x910002b3,0x910082a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha256_compress}
-.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
-.p2align 6",
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// `vg_hmac_sha256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
-.inst 0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
-bl {vg_sha256_finalize_scratch}
-.inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
-.inst 0xb9401289,0xb9001269,0xb9401689,0xb9001669,0xb9401a89,0xb9001a69,0xb9401e89,0xb9001e69
-.inst 0xb940dae9,0xb9002269,0xb940dee9,0xb9002669,0xb940e2e9,0xb9002a69,0xb940e6e9,0xb9002e69
-.inst 0xb940eae9,0xb9003269,0xb940eee9,0xb9003669,0xb940f2e9,0xb9003a69,0xb940f6e9,0xb9003e69
-.inst 0x910002b8,0x91008275,0x910002f4,0xd2801009,0xb90022a9,0xd2800009,0xb90026a9,0xb9002aa9
-.inst 0xb9002ea9,0xb90032a9,0xb90036a9,0xd2800c16,0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29
-.inst 0xf9002e69,0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha256_compress}
-.inst 0x91000315,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf94052f3
-.inst 0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
 .p2align 6",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
@@ -308,7 +223,7 @@ b 21b
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
         vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
-        vg_hmac_sha256_init_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_sha2,
+        vg_hmac_sha256_init_scratch_sha2 = sym super::internal::vg_hmac_sha256_init_scratch_sha2::vg_hmac_sha256_init_scratch_sha2,
     )
 }
 
@@ -345,103 +260,6 @@ bl {vg_sha256_finalize_scratch_sha2}
 bl {vg_sha256_compress_sha2}
 .inst 0x91000315,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf94052f3
 .inst 0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910d03ff,0xd65f03c0
-.arch_extension nosha2
-.p2align 6",
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
-        vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
-    )
-}
-
-/// The CPU features `vg_hmac_sha256_init_scratch_sha2` requires (`Artifact.features`).
-pub const VG_HMAC_SHA256_INIT_SCRATCH_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
-/// `vg_hmac_sha256_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads and writes of 96 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha2` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_init_scratch_sha2(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
-.inst 0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
-bl {vg_sha256_init}
-.inst 0x910002a0
-bl {vg_sha256_init}
-.inst 0x5286c6ce,0x72a6c6ce,0xb900226e,0xb900266e,0xb9002a6e,0xb9002e6e,0xb900326e,0xb900366e
-.inst 0xb9003a6e,0xb9003e6e,0xb900426e,0xb900466e,0xb9004a6e,0xb9004e6e,0xb900526e,0xb900566e
-.inst 0xb9005a6e,0xb9005e6e,0xd280000a
-cbz x24, 20f
-22:
-.inst 0x8b0a02cd,0x394001a9,0xca0e0129,0x8b0a026c,0x39008189,0x9100054a,0xcb0a030b
-cbnz x11, 22b
-b 21f
-20:
-21:
-.inst 0x528d4d4f,0x72ad4d4f,0xb9402269,0xca0f0129,0xb90022a9,0xb9402669,0xca0f0129,0xb90026a9
-.inst 0xb9402a69,0xca0f0129,0xb9002aa9,0xb9402e69,0xca0f0129,0xb9002ea9,0xb9403269,0xca0f0129
-.inst 0xb90032a9,0xb9403669,0xca0f0129,0xb90036a9,0xb9403a69,0xca0f0129,0xb9003aa9,0xb9403e69
-.inst 0xca0f0129,0xb9003ea9,0xb9404269,0xca0f0129,0xb90042a9,0xb9404669,0xca0f0129,0xb90046a9
-.inst 0xb9404a69,0xca0f0129,0xb9004aa9,0xb9404e69,0xca0f0129,0xb9004ea9,0xb9405269,0xca0f0129
-.inst 0xb90052a9,0xb9405669,0xca0f0129,0xb90056a9,0xb9405a69,0xca0f0129,0xb9005aa9,0xb9405e69
-.inst 0xca0f0129,0xb9005ea9,0x91008261,0x91000260,0xd2800022,0x91000283
-bl {vg_sha256_compress_sha2}
-.inst 0x910002b3,0x910082a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha256_compress_sha2}
-.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
-.arch_extension nosha2
-.p2align 6",
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
-    )
-}
-
-/// The CPU features `vg_hmac_sha256_finalize_scratch_sha2` requires (`Artifact.features`).
-pub const VG_HMAC_SHA256_FINALIZE_SCRATCH_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
-/// `vg_hmac_sha256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha2` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_finalize_scratch_sha2(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
-.inst 0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
-bl {vg_sha256_finalize_scratch_sha2}
-.inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
-.inst 0xb9401289,0xb9001269,0xb9401689,0xb9001669,0xb9401a89,0xb9001a69,0xb9401e89,0xb9001e69
-.inst 0xb940dae9,0xb9002269,0xb940dee9,0xb9002669,0xb940e2e9,0xb9002a69,0xb940e6e9,0xb9002e69
-.inst 0xb940eae9,0xb9003269,0xb940eee9,0xb9003669,0xb940f2e9,0xb9003a69,0xb940f6e9,0xb9003e69
-.inst 0x910002b8,0x91008275,0x910002f4,0xd2801009,0xb90022a9,0xd2800009,0xb90026a9,0xb9002aa9
-.inst 0xb9002ea9,0xb90032a9,0xb90036a9,0xd2800c16,0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29
-.inst 0xf9002e69,0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha256_compress_sha2}
-.inst 0x91000315,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf94052f3
-.inst 0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
 .arch_extension nosha2
 .p2align 6",
         vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,

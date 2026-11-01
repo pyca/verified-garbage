@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
@@ -20,7 +21,7 @@ section
 # scrypt on x86-64: PBKDF2-HMAC-SHA256 as a callee
 
 `vg_pbkdf2_hmac_sha256_scratch` (any implementation of it) is verified against the
-shared contract `VG.Spec.Hmac.sha256I.pbkdf2ScratchContract`; its caller works with
+shared contract `(Proof.Pbkdf2.Instance.pbkdf2ScratchContract VG.Spec.Hmac.sha256I)`; its caller works with
 the same contract spelt out (`pbkG`, the contract its proof is written
 against): `pbk_correct` and `pbk_ct` are its correctness and constant time
 under `pbkG`, from its `Verified` proof.
@@ -37,34 +38,34 @@ abbrev pbkK : Contract isa := pbkG Spec.Hmac.sha256S 200
 theorem map_range2 {α : Type} (f : Nat → α) : List.map f (List.range 2) = [f 0, f 1] := rfl
 
 theorem pbk_pre {s : State} (h : pbkK.pre s) :
-    (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
-  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24).pre s := by
+  simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pre [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
-  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+  sig_pre [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
   simp only [pbkK, pbkG, Spec.Hmac.sha256S] at h
   sig_split h
   sig_and_intros
   all_goals with_reducible assumption
 
-theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).post s s') :
+theorem pbk_post {s s' : State} (h : (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24).post s s') :
     pbkK.post s s' := by
-  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch] at h
-  sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+  simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch] at h
+  sig_post [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
   exact h
 
 theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) :
-    (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).pub s₁ s₂ := by
-  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24).pub s₁ s₂ := by
+  simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pub [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero]
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h9, h1, h2, h3, h4, h5, h6, h7, h8⟩
 
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
 include hv
 
 theorem pbk_correct (s : State) (h : pbkK.pre s) :
@@ -257,7 +258,7 @@ theorem pbk_wsub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : B
   · exact hr.ow
   · exact hL.scr_in
 
-theorem pbk_call (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
+theorem pbk_call (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
     (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String) (hL : L.Ok) {t : State}
     (hc : Ctx L g m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :

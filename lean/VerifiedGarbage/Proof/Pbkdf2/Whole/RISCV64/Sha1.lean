@@ -29,7 +29,7 @@ def F : Impl.Pbkdf2.Whole.RISCV64.Fns where
   H := Proof.Hmac.Stream.RISCV64.Sha1.hash
   hiN := Spec.Hmac.sha1I.initAnyKeyApi.name
   hfN := Spec.Hmac.sha1I.finalizeApi.name
-  itN := Spec.Hmac.sha1I.iterateApi.name
+  itN := "vg_pbkdf2_hmac_sha1_iterate"
   itC := Impl.Pbkdf2.Sha1.RISCV64.iterate
   itW := 240
 

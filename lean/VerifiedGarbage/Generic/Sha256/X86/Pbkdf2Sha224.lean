@@ -28,13 +28,6 @@ import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 namespace VG.Generic.Sha256.X86.Pbkdf2Sha224
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  Spec.Hmac.sha224I.iterateApi.artifact X86.target {
-    suffix := v.suffix
-    code := v.M224.iterate
-    stack := 48
-    verified := v.iterate224
-    spSafe := v.iter224Sp
-    features := v.features },
   Spec.Hmac.sha224I.pbkdf2Api.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2

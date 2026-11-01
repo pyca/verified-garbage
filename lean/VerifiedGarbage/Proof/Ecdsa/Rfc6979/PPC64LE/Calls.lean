@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Spec.Hmac.Generic
@@ -40,14 +41,14 @@ structure Kit where
   /-- The stack the contracts of HMAC's functions give them. -/
   kI : Nat
   kF : Nat
-  initV : ∀ s, (I.initScratchContract PPC64LE.abi (kI + 1)).pre s → ∃ t s', Exec isa initC s t s' ∧
-    abiPreserved s s' ∧ (I.initScratchContract PPC64LE.abi (kI + 1)).post s s'
-  finV : ∀ s, (I.finalizeScratchContract PPC64LE.abi (kF + 1)).pre s → ∃ t s', Exec isa finC s t s' ∧
-    abiPreserved s s' ∧ (I.finalizeScratchContract PPC64LE.abi (kF + 1)).post s s'
-  initCT : ConstantTime isa (I.initScratchContract PPC64LE.abi (kI + 1)).pre
-    (I.initScratchContract PPC64LE.abi (kI + 1)).pub initC
-  finCT : ConstantTime isa (I.finalizeScratchContract PPC64LE.abi (kF + 1)).pre
-    (I.finalizeScratchContract PPC64LE.abi (kF + 1)).pub finC
+  initV : ∀ s, (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi (kI + 1)).pre s → ∃ t s', Exec isa initC s t s' ∧
+    abiPreserved s s' ∧ (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi (kI + 1)).post s s'
+  finV : ∀ s, (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi (kF + 1)).pre s → ∃ t s', Exec isa finC s t s' ∧
+    abiPreserved s s' ∧ (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi (kF + 1)).post s s'
+  initCT : ConstantTime isa (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi (kI + 1)).pre
+    (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi (kI + 1)).pub initC
+  finCT : ConstantTime isa (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi (kF + 1)).pre
+    (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi (kF + 1)).pub finC
   updCT : ConstantTime isa (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pre
     (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pub H.updC
   hkI : kI + 1 ≤ 96
@@ -66,7 +67,7 @@ variable (P : Kit)
 
 /-- The code's HMAC. -/
 def hm : Impl.Ecdsa.Rfc6979.PPC64LE.Hm :=
-  ⟨P.H.B, P.H.D, P.I.initScratchApi.name, P.initC, P.H.updN, P.H.updC, P.I.finalizeScratchApi.name, P.finC⟩
+  ⟨P.H.B, P.H.D, s!"vg_hmac_{P.I.rust}_init_scratch", P.initC, P.H.updN, P.H.updC, s!"vg_hmac_{P.I.rust}_finalize_scratch", P.finC⟩
 
 theorem hStates : P.I.S.stateBytes = P.H.S := by rw [P.hIS]; exact P.hH.hS
 
@@ -87,12 +88,12 @@ theorem initPre (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
     (k₃ : (below s.sp 96).Disjoint ⟨key, kl⟩) (k₄ : (below s.sp 96).Disjoint ⟨scr, P.I.scratch * 8⟩)
     (n₁ : inner.toNat + P.H.S ≤ 2 ^ 64) (n₂ : outer.toNat + P.H.S ≤ 2 ^ 64) (n₃ : key.toNat + kl ≤ 2 ^ 64)
     (n₄ : scr.toNat + P.I.scratch * 8 ≤ 2 ^ 64)
-    : (P.I.initScratchContract PPC64LE.abi (P.kI + 1)).pre (s.callEntry.withRegions [⟨key, kl⟩]
+    : (Proof.Hmac.Instance.initScratchContract P.I PPC64LE.abi (P.kI + 1)).pre (s.callEntry.withRegions [⟨key, kl⟩]
       [⟨inner, P.H.S⟩, ⟨outer, P.H.S⟩, ⟨scr, P.I.scratch * 8⟩]) := by
   have hS := P.hStates
   have hk := P.hkI
-  sig_pre [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract,
-    Spec.Hmac.initScratchSig, Spec.Hmac.initPre, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
+  sig_pre [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
+    Proof.Hmac.initScratchSig, Spec.Hmac.initPre, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
   simp only [h3, h4, h5, h6, h7, hS]
   have kb : ∀ {r : Region}, (below s.sp 96).Disjoint r →
       Region.Disjoint ⟨s.sp - BitVec.ofNat 64 (P.kI + 1), P.kI + 1⟩ r := fun h =>
@@ -127,13 +128,13 @@ theorem initCall (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
     WP isa (.call P.hm.initN P.hm.initC) s Q := by
   have hS := P.hStates
   have hk := P.hkI
-  refine WP.callAny (k := P.I.initScratchContract PPC64LE.abi (P.kI + 1)) P.initV (rd := [⟨key, kl⟩])
+  refine WP.callAny (k := Proof.Hmac.Instance.initScratchContract P.I PPC64LE.abi (P.kI + 1)) P.initV (rd := [⟨key, kl⟩])
     (wr := [⟨inner, P.H.S⟩, ⟨outer, P.H.S⟩, ⟨scr, P.I.scratch * 8⟩])
     (initPre P h3 h4 h5 h6 h7 hkl d₁ d₂ d₃ d₄ d₅ d₆ hsp k₁ k₂ k₃ k₄ n₁ n₂ n₃ n₄) hc hw ?_
     (by have := P.dI; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
-    sig_post [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract,
-      Spec.Hmac.initScratchSig, Spec.Hmac.initPost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
+    sig_post [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
+      Proof.Hmac.initScratchSig, Spec.Hmac.initPost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h5, h6] at hpost
     exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dI; omega_arith) (by omega_arith)) hcs hpost.1 hpost.2
 
@@ -149,13 +150,13 @@ theorem finPre (P : Kit) {s : State} {inner outer out scr : Addr}
     (k₃ : (below s.sp 96).Disjoint ⟨out, P.H.D⟩) (k₄ : (below s.sp 96).Disjoint ⟨scr, P.I.scratch * 8⟩)
     (n₁ : inner.toNat + P.H.S ≤ 2 ^ 64) (n₂ : outer.toNat + P.H.S ≤ 2 ^ 64) (n₃ : out.toNat + P.H.D ≤ 2 ^ 64)
     (n₄ : scr.toNat + P.I.scratch * 8 ≤ 2 ^ 64)
-    : (P.I.finalizeScratchContract PPC64LE.abi (P.kF + 1)).pre (s.callEntry.withRegions [⟨outer, P.H.S⟩]
+    : (Proof.Hmac.Instance.finalizeScratchContract P.I PPC64LE.abi (P.kF + 1)).pre (s.callEntry.withRegions [⟨outer, P.H.S⟩]
       [⟨inner, P.H.S⟩, ⟨out, P.H.D⟩, ⟨scr, P.I.scratch * 8⟩]) := by
   have hS := P.hStates
   have hD := P.hDigest
   have hk := P.hkF
-  sig_pre [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
+  sig_pre [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
   simp only [h3, h4, h6, h7, hS, hD]
   have kb : ∀ {r : Region}, (below s.sp 96).Disjoint r →
       Region.Disjoint ⟨s.sp - BitVec.ofNat 64 (P.kF + 1), P.kF + 1⟩ r := fun h =>
@@ -190,13 +191,13 @@ theorem finCall (P : Kit) {s : State} {inner outer out scr : Addr}
   have hS := P.hStates
   have hD := P.hDigest
   have hk := P.hkF
-  refine WP.callAny (k := P.I.finalizeScratchContract PPC64LE.abi (P.kF + 1)) P.finV (rd := [⟨outer, P.H.S⟩])
+  refine WP.callAny (k := Proof.Hmac.Instance.finalizeScratchContract P.I PPC64LE.abi (P.kF + 1)) P.finV (rd := [⟨outer, P.H.S⟩])
     (wr := [⟨inner, P.H.S⟩, ⟨out, P.H.D⟩, ⟨scr, P.I.scratch * 8⟩])
     (finPre P h3 h4 h6 h7 d₁ d₂ d₃ d₄ d₅ d₆ hsp k₁ k₂ k₃ k₄ n₁ n₂ n₃ n₄) hc hw ?_
     (by have := P.dF; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
-    sig_post [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
-      Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
+    sig_post [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
+      Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h6, hD] at hpost
     exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dF; omega_arith) (by omega_arith)) hcs hpost
 

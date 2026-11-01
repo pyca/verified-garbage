@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
@@ -91,12 +93,12 @@ theorem sha256_iterChecks : Iterate.Checks sha256Md :=
 theorem sha256_finChecks : Fin.Checks sha256Md :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem sha256_iterImp : (iterG Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.iterateContract Arm.abi 16) :=
+theorem sha256_iterImp : (iterG Spec.Hmac.sha256S 104).Implies (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha256I Arm.abi 16) :=
   iterImp Spec.Hmac.sha256S 104 (by
-    inst_sat [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, Spec.Hmac.sha256S, Spec.Hmac.sha256, iterG,
+    inst_sat [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha256S, Spec.Hmac.sha256, iterG,
       below, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using iterSat 96 32 104)
 
-theorem sha256_iterate : Verified Arm.target sha256Md.iterate (Spec.Hmac.sha256I.iterateContract Arm.abi 16) :=
+theorem sha256_iterate : Verified Arm.target sha256Md.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha256I Arm.abi 16) :=
   (Iterate.verified sha256MdOK sha256_iterChecks (by decide) sha256_iterImp.sat_left).of_implies sha256_iterImp
 
 theorem sha256_initChecks : HmacInit.Checks sha256Md :=
@@ -105,20 +107,20 @@ theorem sha256_initChecks : HmacInit.Checks sha256Md :=
     rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩⟩
 
-theorem sha256_initImp : (initG Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.initScratchContract Arm.abi 16) :=
+theorem sha256_initImp : (initG Spec.Hmac.sha256S 104).Implies (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha256I Arm.abi 16) :=
   initImp Spec.Hmac.sha256S 104 (by
-    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, initG, below,
+    inst_sat [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 96 104)
 
-theorem sha256_finImp : (finG Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.finalizeScratchContract Arm.abi 16) :=
+theorem sha256_finImp : (finG Spec.Hmac.sha256S 104).Implies (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha256I Arm.abi 16) :=
   finImp Spec.Hmac.sha256S 104 (by
-    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha256S, Spec.Hmac.sha256, finG,
+    inst_sat [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha256S, Spec.Hmac.sha256, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 96 32 104)
 
-theorem sha256_init : Verified Arm.target sha256Md.hmacInit (Spec.Hmac.sha256I.initScratchContract Arm.abi 16) :=
+theorem sha256_init : Verified Arm.target sha256Md.hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha256I Arm.abi 16) :=
   (HmacInit.verified sha256MdOK sha256_initChecks (by decide) sha256_initImp.sat_left).of_implies sha256_initImp
 
-theorem sha256_finalize : Verified Arm.target sha256Md.hmacFin (Spec.Hmac.sha256I.finalizeScratchContract Arm.abi 16) :=
+theorem sha256_finalize : Verified Arm.target sha256Md.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha256I Arm.abi 16) :=
   (Fin.verified sha256MdOK sha256_finChecks (by decide) sha256_finImp.sat_left).of_implies
     sha256_finImp
 

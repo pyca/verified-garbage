@@ -52,11 +52,11 @@ def mdHash (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Md.X
 def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X86.Fns where
   H := hmacHash suffix updC finC
   W := Spec.Hmac.sha256I.scratch
-  hiN := Spec.Hmac.sha256I.initScratchApi.name ++ suffix
+  hiN := "vg_hmac_sha256_init_scratch" ++ suffix
   hiC := (mdHash suffix cmpN cmpC updC finC).hmacInit
-  hfN := Spec.Hmac.sha256I.finalizeScratchApi.name ++ suffix
+  hfN := "vg_hmac_sha256_finalize_scratch" ++ suffix
   hfC := (mdHash suffix cmpN cmpC updC finC).hmacFin
-  itN := Spec.Hmac.sha256I.iterateApi.name ++ suffix
+  itN := "vg_pbkdf2_hmac_sha256_iterate" ++ suffix
   itC := (mdHash suffix cmpN cmpC updC finC).iterate
 
 /-- SHA-224's streaming functions: SHA-224's `init`, and a backend's SHA-256
@@ -79,11 +79,11 @@ def mdHash224 (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.M
 def fns224 (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X86.Fns where
   H := hmacHash224 suffix updC finC
   W := Spec.Hmac.sha224I.scratch
-  hiN := Spec.Hmac.sha224I.initScratchApi.name ++ suffix
+  hiN := "vg_hmac_sha224_init_scratch" ++ suffix
   hiC := (mdHash224 suffix cmpN cmpC updC finC).hmacInit
-  hfN := Spec.Hmac.sha224I.finalizeScratchApi.name ++ suffix
+  hfN := "vg_hmac_sha224_finalize_scratch" ++ suffix
   hfC := (mdHash224 suffix cmpN cmpC updC finC).hmacFin
-  itN := Spec.Hmac.sha224I.iterateApi.name ++ suffix
+  itN := "vg_pbkdf2_hmac_sha224_iterate" ++ suffix
   itC := (mdHash224 suffix cmpN cmpC updC finC).iterate
 
 end VG.Proof.Sha256.X86.Variants

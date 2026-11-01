@@ -76,7 +76,7 @@ b 21b"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_init_scratch = sym super::internal::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
     )
 }
 
@@ -102,98 +102,6 @@ bl {vg_sha256_update_scratch}
 .base64 "AAB0OGAAgDjQALU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
 .base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5HsABWBHAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfGADITggAIBO""#,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-    )
-}
-
-/// `vg_hmac_sha256_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads and writes of 96 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4oACH+qgAp/qwAMf6uADn+sAAB/vIACf7AACDOgAApzoAAMQ6AADlOgAABjs="
-bl {vg_sha256_init}
-.base64 "AAB2OA=="
-bl {vg_sha256_init}
-.base64 "NgCAOQAAIDsAADc5AABYOQAAKig="
-beq %cr0, 20f
-22:
-.base64 "AAAJiXhiCH0UynZ9IAALmQEAKTkBADk7//9KOQAAKig="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QABAOVBQWX0AACoo"
-beq %cr0, 23f
-25:
-.base64 "FMp2fSAAi5kBADk7//9KOQAAKig="
-bne %cr0, 25b
-b 24f
-23:
-24:
-.base64 "AAB0OAAAgDggALY4QADAOAAA9Tg="
-bl {vg_sha256_update_scratch}
-.base64 "XACAOQAAIDsAADc5AABYOQAAKig="
-beq %cr0, 26f
-28:
-.base64 "AAAJiXhiCH0UynR9IAALmQEAKTkBADk7//9KOQAAKig="
-bne %cr0, 28b
-b 27f
-26:
-27:
-.base64 "QABAOVBQWX0AACoo"
-beq %cr0, 29f
-211:
-.base64 "FMp0fSAAi5kBADk7//9KOQAAKig="
-bne %cr0, 211b
-b 210f
-29:
-210:
-.base64 "AAB2OAAAgDggALQ4QADAOAAA9Tg="
-bl {vg_sha256_update_scratch}
-.base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh8IACATg==""#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-    )
-}
-
-/// `vg_hmac_sha256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 832 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha256_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4oACH+qgAp/qwAMf6uADn+sAAB/vIACf7AACDOgAApzoAAMQ6AADmOgAAhTjQAKc4AADHOA=="
-bl {vg_sha256_finalize_scratch}
-.base64 "AAAWgQAAFJEEABaBBAAUkQgAFoEIABSRDAAWgQwAFJEQABaBEAAUkRQAFoEUABSRGAAWgRgAFJEcABaBHAAUkQAAdDhAAIA40AC1OCAAwDgAAPU4"
-bl {vg_sha256_update_scratch}
-.base64 "AAB0OGAAgDjQALU4AADVOA=="
-bl {vg_sha256_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5HsABWBHAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfCAAgE4=""#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
     )

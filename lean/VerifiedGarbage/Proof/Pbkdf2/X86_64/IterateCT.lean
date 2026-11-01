@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -262,10 +263,10 @@ theorem verified {P : Params} {D W : Nat} {S : StreamingHash} {H : Md P.B P.N P.
 
 /-- `iterK` implies the shared contract, for any hash function and scratch
 space, given that the shared contract is satisfiable. -/
-theorem iterImp (S : StreamingHash) (W : Nat) (h : ∃ s, (Spec.Pbkdf2.iterateContract S W X86_64.abi 8).pre s) :
-    (iterK S W).Implies (Spec.Pbkdf2.iterateContract S W X86_64.abi 8) := by
+theorem iterImp (S : StreamingHash) (W : Nat) (h : ∃ s, (Proof.Pbkdf2.iterateContract S W X86_64.abi 8).pre s) :
+    (iterK S W).Implies (Proof.Pbkdf2.iterateContract S W X86_64.abi 8) := by
   generic_implies [
-    Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, iterK, X86_64.abi, X86_64.argRegs] using h
+    Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, iterK, X86_64.abi, X86_64.argRegs] using h
 
 /-- A state satisfying `iterate`'s precondition, with states of `S` bytes, a
 digest of `D` bytes and `8 W` bytes of scratch space. -/

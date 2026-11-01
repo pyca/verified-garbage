@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Correct
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
@@ -239,7 +240,7 @@ theorem save_ct : RelCT isa Entered (.block saveArgs) (Two fun L _ t => Entry L 
   exact hlk
 
 section
-variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
   (hd : pbk.aarch64Depth ≤ 1) (name : String)
 include hv hd
 
@@ -354,7 +355,7 @@ theorem scrypt_implies :
           _root_.List.range, _root_.List.range.loop, List.append_eq, satState] [satState] using satState }
 
 section
-variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
   (hd : pbk.aarch64Depth ≤ 1) (name : String)
 include hv hd
 
@@ -385,10 +386,10 @@ variable (c : Proof.Sha256.AArch64.Compress)
 abbrev pbkOf : Prog isa := (Proof.Pbkdf2.Md.AArch64.Sha256.hash c).pbkdf2
 
 /-- Its name. -/
-abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2ScratchApi.name ++ c.suffix
+abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch" ++ c.suffix
 
 theorem pbk_verified :
-    Verified AArch64.target (pbkOf c) (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16) :=
+    Verified AArch64.target (pbkOf c) (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16) :=
   (Proof.Pbkdf2.Md.AArch64.Sha256.variant c).pbkdf2
 
 theorem pbk_depth : (pbkOf c).aarch64Depth ≤ 1 :=

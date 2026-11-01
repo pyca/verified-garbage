@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -42,7 +43,7 @@ theorem sha224_anyChecks : AnyChecks Whole.Arm.sha224F := by
   taint_decide_all
 
 theorem sha224_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha224I.S Spec.Hmac.sha224I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 96 200
 
@@ -77,7 +78,7 @@ theorem sha256_anyChecks : AnyChecks Whole.Arm.sha256F := by
   taint_decide_all
 
 theorem sha256_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha256I.S Spec.Hmac.sha256I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha256I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha256I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 96 200
 

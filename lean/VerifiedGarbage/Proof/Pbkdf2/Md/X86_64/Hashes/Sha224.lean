@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
@@ -52,9 +54,9 @@ def hash (v : Compress) : Hash where
   initC := Impl.Sha256.X86_64.Stream.init224
   updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
   finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
-  hmacInitN := Spec.Hmac.sha224I.initScratchApi.name ++ v.suffix
-  hmacFinN := Spec.Hmac.sha224I.finalizeScratchApi.name ++ v.suffix
-  iterN := Spec.Hmac.sha224I.iterateApi.name ++ v.suffix
+  hmacInitN := "vg_hmac_sha224_init_scratch" ++ v.suffix
+  hmacFinN := "vg_hmac_sha224_finalize_scratch" ++ v.suffix
+  iterN := "vg_pbkdf2_hmac_sha224_iterate" ++ v.suffix
 
 /-- `hash v` without the functions it calls, the same for every `v`. -/
 def coreH : Hash := ⟨Impl.Sha256.X86_64.Stream.params, 28, 104, "", .block [], "", .block [], "", "", "", "",
@@ -162,26 +164,26 @@ def ok : HashOK (hash v) where
   updDepth := Callees.updD (callees v) coreOK
   finDepth := Callees.finD (callees v) coreOK
 
-theorem satI : ∃ s, (Spec.Hmac.sha224I.initScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha224I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha224I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using initSat 96 104
 
-theorem satF : ∃ s, (Spec.Hmac.sha224I.finalizeScratchContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha224I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using finSat 96 28 104
+theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha224I X86_64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha224I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using finSat 96 28 104
 
-theorem satT : ∃ s, (Spec.Hmac.sha224I.iterateContract X86_64.abi 8).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha224I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using
+theorem satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I X86_64.abi 8).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha224I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 96 28 104
 
 theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha224I.S Spec.Hmac.sha224I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using initSat 96 200
 
-theorem satP : ∃ s, (Spec.Hmac.sha224I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi,
+theorem satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha224I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi,
     X86_64.argRegs] using pbkSat 200
 
 theorem satPF :

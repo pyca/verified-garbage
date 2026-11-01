@@ -104,14 +104,14 @@ def sha256 : Impl.Hmac.Stream.PPC64LE.Hash where
   updC := Impl.Sha256.PPC64LE.Stream.update
   finN := Spec.Sha256.finalizeScratchApi.name
   finC := Impl.Sha256.PPC64LE.Stream.finalize
-  hmacInitN := Spec.Hmac.sha256I.initScratchApi.name
+  hmacInitN := "vg_hmac_sha256_init_scratch"
 
 def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
 def initCall : Prog isa := .call Spec.Sha256.initApi.name Impl.Sha256.PPC64LE.Stream.init
 def updCall : Prog isa := .call Spec.Sha256.updateScratchApi.name Impl.Sha256.PPC64LE.Stream.update
 def finCall : Prog isa := .call Spec.Sha256.finalizeScratchApi.name Impl.Sha256.PPC64LE.Stream.finalize
-def macInitCall : Prog isa := .call Spec.Hmac.sha256I.initScratchApi.name sha256.init
-def macFinCall : Prog isa := .call Spec.Hmac.sha256I.finalizeScratchApi.name sha256.finalize
+def macInitCall : Prog isa := .call "vg_hmac_sha256_init_scratch" sha256.init
+def macFinCall : Prog isa := .call "vg_hmac_sha256_finalize_scratch" sha256.finalize
 
 /-- `d ← scratch + a`, through the frame at `r12`. -/
 def scr (d : Reg) (a : Nat) : List Instr := [.load .d d .r12 oScr, .addi d d a]

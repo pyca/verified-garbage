@@ -86,7 +86,7 @@ b 21b
         vg_md5_compress = sym super::md5::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_init_scratch = sym super::internal::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
 
@@ -117,90 +117,6 @@ bl {vg_md5_compress}
 .inst 0x91000315,0xb9400269,0xb90002a9,0xb9400669,0xb90006a9,0xb9400a69,0xb9000aa9,0xb9400e69
 .inst 0xb9000ea9,0xf9403af3,0xf9403ef4,0xf94042f5,0xf94046f6,0xf9404af8,0xf9404efe,0xf94052f7
 .inst 0x910603ff,0xd65f03c0
-.p2align 6",
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
-
-/// `vg_hmac_md5_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 80 bytes.
-/// * `outer` must be valid for reads and writes of 80 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 384 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004898,0xf9004c9e,0xf9005097,0x91000013
-.inst 0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
-bl {vg_md5_init}
-.inst 0x910002a0
-bl {vg_md5_init}
-.inst 0x5286c6ce,0x72a6c6ce,0xb900126e,0xb900166e,0xb9001a6e,0xb9001e6e,0xb900226e,0xb900266e
-.inst 0xb9002a6e,0xb9002e6e,0xb900326e,0xb900366e,0xb9003a6e,0xb9003e6e,0xb900426e,0xb900466e
-.inst 0xb9004a6e,0xb9004e6e,0xd280000a
-cbz x24, 20f
-22:
-.inst 0x8b0a02cd,0x394001a9,0xca0e0129,0x8b0a026c,0x39004189,0x9100054a,0xcb0a030b
-cbnz x11, 22b
-b 21f
-20:
-21:
-.inst 0x528d4d4f,0x72ad4d4f,0xb9401269,0xca0f0129,0xb90012a9,0xb9401669,0xca0f0129,0xb90016a9
-.inst 0xb9401a69,0xca0f0129,0xb9001aa9,0xb9401e69,0xca0f0129,0xb9001ea9,0xb9402269,0xca0f0129
-.inst 0xb90022a9,0xb9402669,0xca0f0129,0xb90026a9,0xb9402a69,0xca0f0129,0xb9002aa9,0xb9402e69
-.inst 0xca0f0129,0xb9002ea9,0xb9403269,0xca0f0129,0xb90032a9,0xb9403669,0xca0f0129,0xb90036a9
-.inst 0xb9403a69,0xca0f0129,0xb9003aa9,0xb9403e69,0xca0f0129,0xb9003ea9,0xb9404269,0xca0f0129
-.inst 0xb90042a9,0xb9404669,0xca0f0129,0xb90046a9,0xb9404a69,0xca0f0129,0xb9004aa9,0xb9404e69
-.inst 0xca0f0129,0xb9004ea9,0x91004261,0x91000260,0xd2800022,0x91000283
-bl {vg_md5_compress}
-.inst 0x910002b3,0x910042a1,0x91000260,0xd2800022,0x91000283
-bl {vg_md5_compress}
-.inst 0xf9403af3,0xf9403ef4,0xf94042f5,0xf94046f6,0xf9404af8,0xf9404efe,0xf94052f7,0xd65f03c0
-.p2align 6",
-        vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
-
-/// `vg_hmac_md5_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 80 bytes.
-/// * `outer` must be valid for reads of 80 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 384 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004898,0xf9004c9e,0xf9005097,0x91000013
-.inst 0x91000034,0x91000075,0x91000097,0x91000041,0x9102a2e2,0x910002e3
-bl {vg_md5_finalize_scratch}
-.inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
-.inst 0xb940aae9,0xb9001269,0xb940aee9,0xb9001669,0xb940b2e9,0xb9001a69,0xb940b6e9,0xb9001e69
-.inst 0x910002b8,0x91004275,0x910002f4,0xd2801009,0xb90012a9,0xd2800009,0xb90016a9,0xb9001aa9
-.inst 0xb9001ea9,0xb90022a9,0xb90026a9,0xb9002aa9,0xb9002ea9,0xb90032a9,0xb90036a9,0xd2800a16
-.inst 0x8b1602c9,0x8b090129,0x8b090129,0xf9002669,0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_md5_compress}
-.inst 0x91000315,0xb9400269,0xb90002a9,0xb9400669,0xb90006a9,0xb9400a69,0xb9000aa9,0xb9400e69
-.inst 0xb9000ea9,0xf9403af3,0xf9403ef4,0xf94042f5,0xf94046f6,0xf9404af8,0xf9404efe,0xf94052f7
-.inst 0xd65f03c0
 .p2align 6",
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,

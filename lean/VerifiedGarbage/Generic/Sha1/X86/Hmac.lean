@@ -25,20 +25,6 @@ def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
     verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin Proof.Hmac.sha1_local Proof.Pbkdf2.Md.X86.sha1_finFrameSat
       (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
     spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp
-    features := v.features },
-  Spec.Hmac.sha1I.initScratchApi.artifact X86.target {
-    suffix := v.suffix
-    code := v.M.hmacInit
-    stack := 48
-    verified := v.hmacInit
-    spSafe := v.initSp
-    features := v.features },
-  Spec.Hmac.sha1I.finalizeScratchApi.artifact X86.target {
-    suffix := v.suffix
-    code := v.M.hmacFin
-    stack := 48
-    verified := v.hmacFin
-    spSafe := v.finSp
     features := v.features }]
 
 end VG.Generic.Sha1.X86.Hmac

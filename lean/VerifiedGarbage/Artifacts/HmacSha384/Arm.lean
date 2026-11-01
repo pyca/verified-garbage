@@ -18,14 +18,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1 Proof.Pbkdf2.Md.Arm.sha384Md.hmacFin
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I
     verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize
-      Proof.Hmac.sha384_local Proof.Pbkdf2.Md.Arm.sha384_finFrameSat },
-  Spec.Hmac.sha384I.initScratchApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Md.Arm.sha384Md.hmacInit
-    stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha384_init },
-  Spec.Hmac.sha384I.finalizeScratchApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Md.Arm.sha384Md.hmacFin
-    stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize }]
+      Proof.Hmac.sha384_local Proof.Pbkdf2.Md.Arm.sha384_finFrameSat }]
 
 end VG.Artifacts.HmacSha384.Arm

@@ -38,11 +38,11 @@ open VG.Proof.Pbkdf2.Md.X86
 def fnsOf (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.X86.Hash) : Fns where
   H := M.st
   W := I.scratch
-  hiN := I.initScratchApi.name
+  hiN := s!"vg_hmac_{I.rust}_init_scratch"
   hiC := M.hmacInit
-  hfN := I.finalizeScratchApi.name
+  hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
   hfC := M.hmacFin
-  itN := I.iterateApi.name
+  itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
   itC := M.iterate
 
 def md5F : Fns := fnsOf Spec.Hmac.md5I md5M

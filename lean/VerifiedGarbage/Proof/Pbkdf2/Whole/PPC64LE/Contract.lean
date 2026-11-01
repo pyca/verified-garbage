@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: the contract
 
 Untrusted: the contract `pbkdf2` is proved against, which implies the shared
-`VG.Spec.Pbkdf2.pbkdf2ScratchContract` (`Shared.lean`). `SH` is a streaming
+`Proof.Pbkdf2.pbkdf2ScratchContract` (`Shared.lean`). `SH` is a streaming
 hash function, `Wi` the bytes of scratch space and `F` the bytes of stack
 below the stack pointer the code and its callees use. `c` is the low 32 bits
 of `r7`.

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
@@ -47,9 +49,9 @@ def hash : Hash where
   updC := Impl.Md5.AArch64.Stream.update
   finN := Spec.Md5.finalizeScratchApi.name
   finC := Impl.Md5.AArch64.Stream.finalize
-  hmacInitN := Spec.Hmac.md5I.initScratchApi.name
-  hmacFinN := Spec.Hmac.md5I.finalizeScratchApi.name
-  iterN := Spec.Hmac.md5I.iterateApi.name
+  hmacInitN := "vg_hmac_md5_init_scratch"
+  hmacFinN := "vg_hmac_md5_finalize_scratch"
+  iterN := "vg_pbkdf2_hmac_md5_iterate"
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Md5.AArch64.Stream.params, 16, 48, "", .block [], "",
@@ -138,26 +140,26 @@ def ok : HashOK hash where
   hPad := by decide
   L816 := by decide
 
-theorem satI : ∃ s, (Spec.Hmac.md5I.initScratchContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I AArch64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using initSat 80 48
 
-theorem satF : ∃ s, (Spec.Hmac.md5I.finalizeScratchContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.md5I, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using finSat 80 16 48
+theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I AArch64.abi 16).pre s := by
+  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.md5I, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using finSat 80 16 48
 
-theorem satT : ∃ s, (Spec.Hmac.md5I.iterateContract AArch64.abi).pre s := by
-  inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.md5I, Spec.Pbkdf2.iterateContract,
-    Spec.Pbkdf2.iterateSig, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs]
+theorem satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.md5I AArch64.abi).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.md5I, Proof.Pbkdf2.iterateContract,
+    Proof.Pbkdf2.iterateSig, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs]
     using Pbkdf2.AArch64.iterSat 80 16 48
 
 theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.md5I.S Spec.Hmac.md5I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Spec.Hmac.initScratchSig,
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using initSat 80 128
 
-theorem satP : ∃ s, (Spec.Hmac.md5I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
-    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
+theorem satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I AArch64.abi 16).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
     AArch64.argRegs] using pbkSat 128
 
 theorem satPF :

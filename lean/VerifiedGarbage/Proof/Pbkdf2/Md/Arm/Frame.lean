@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Hmac.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
@@ -31,7 +32,7 @@ a multiple of 32. -/
 def frame (I : Spec.Hmac.Instance) : Nat := (4 + 8 + 8 * I.scratch + 31) / 32 * 32
 
 theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
-    (h : Verified Arm.target c (I.initScratchContract Arm.abi 16))
+    (h : Verified Arm.target c (Proof.Hmac.Instance.initScratchContract I Arm.abi 16))
     (hsat : ∃ s, (I.initContract Arm.abi (16 + bytes)).pre s)
     (hb : Fits 0 bytes .u64 I.scratch := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 0 c)
@@ -43,7 +44,7 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
-    (h : Verified Arm.target c (I.finalizeScratchContract Arm.abi 16))
+    (h : Verified Arm.target c (Proof.Hmac.Instance.finalizeScratchContract I Arm.abi 16))
     (hR : Hmac.ReprLocal I.S)
     (hsat : ∃ s, (I.finalizeContract Arm.abi (16 + bytes)).pre s)
     (hb : Fits 1 bytes .u64 I.scratch := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :

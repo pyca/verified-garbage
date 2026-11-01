@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
@@ -516,8 +517,8 @@ theorem verifiedN (hF : FnsOK F) (hc : Checks F) (hsat : ∃ s, (pbkN hF.hH.SH (
 /-- `pbkdf2` is verified against the shared contract, given the taint checks
 and a state satisfying the shared contract. -/
 theorem verified (hF : FnsOK F) (hc : Checks F) {S : Spec.Hmac.StreamingHash} {W : Nat} (hS : hF.hH.SH = S)
-    (hW : F.W + F.H.S = W) (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76).pre s) :
-    Verified X86.target F.pbkdf2 (Spec.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76) := by
+    (hW : F.W + F.H.S = W) (hsat : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76).pre s) :
+    Verified X86.target F.pbkdf2 (Proof.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76) := by
   subst hS hW
   have imp := pbkImp hF.hH.SH (F.W + F.H.S) hsat
   have gsat : ∃ s, (pbkG hF.hH.SH (F.W + F.H.S)).pre s := hsat.elim fun s h => ⟨s, imp.pre s h⟩

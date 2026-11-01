@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKey
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Hmac.Scratch
@@ -316,11 +317,11 @@ def anyG : Contract isa where
   pub := (anyN S W).pub
 
 /-- `VG.Spec.Hmac.initAnyKeyContract` with its working space (`W` words) as
-an argument (as `VG.Spec.Hmac.initScratchContract` is `initContract`'s), and
+an argument (as `Proof.Hmac.initScratchContract` is `initContract`'s), and
 76 bytes of stack: the contract that the function allocating the working
 space follows from (`Verified.stackScratchWiped`). -/
 def anyScratchContract : Contract isa :=
-  (Spec.Hmac.initScratchSig S W).contract X86.abi
+  (Proof.Hmac.initScratchSig S W).contract X86.abi
     (post := fun inner outer key keyLen _scratch => Spec.Hmac.initPost S X86.abi.ptrBits inner outer key keyLen)
     (writeArgs := true) (stack := 76)
 
@@ -330,7 +331,7 @@ theorem anyImp (h : ∃ s, (anyScratchContract S W).pre s) : (anyG S W).Implies 
   exact
     { pre := by
         intro s h
-        sig_pre [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi] at h
+        sig_pre [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi] at h
         simp only [argVal32, toNat_setWidth64, show argBytes [32, 32, 32, 32, 32] = 20 from rfl] at h
         obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
           h21, h22, h23, h24, h25, h26, h27⟩ := h
@@ -338,12 +339,12 @@ theorem anyImp (h : ∃ s, (anyScratchContract S W).pre s) : (anyG S W).Implies 
           h21, h22, h23, h24, h25, h26, h27⟩
       post := by
         rintro s s' - h
-        sig_post [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi]
+        sig_post [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi]
         simp only [argVal32, setWidth32_64]
         exact h
       pub := by
         rintro s₁ s₂ - - h
-        sig_pub [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi] at h
+        sig_pub [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi] at h
         simp only [argVal32] at h
         obtain ⟨e, a0, a1, a2, a3, a4⟩ := h
         refine ⟨e, fun i hi => ?_⟩

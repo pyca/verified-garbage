@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.RISCV64
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -19,7 +20,7 @@ Untrusted: the contracts the proof is written against.
   contracts imply it (`CalleeOk`).
 * `OutOk H D out` is what the iteration needs of the code writing the digest
   (`It.out`).
-* `iterK S Wi` is the iteration's: `VG.Spec.Pbkdf2.iterateContract` of the
+* `iterK S Wi` is the iteration's: `Proof.Pbkdf2.iterateContract` of the
   streaming hash function `S` with `Wi` bytes of scratch space, on RISC-V,
   with no stack.
 -/

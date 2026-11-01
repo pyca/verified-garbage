@@ -1,0 +1,173 @@
+// The functions of `src/internal/vg_hmac_sha512_224_finalize_scratch.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_hmac_sha512_224_finalize_scratch:
+	ldr r12, [sp, #4]
+	str r4, [r12, #272]
+	str r5, [r12, #276]
+	str r6, [r12, #280]
+	str r7, [r12, #284]
+	str r8, [r12, #288]
+	str r9, [r12, #292]
+	str r10, [r12, #296]
+	str lr, [r12, #300]
+	str r11, [r12, #304]
+	mov r5, r1
+	ldr r7, [sp, #0]
+	mov r11, r12
+	movw r12, #372
+	add r1, r11, r12
+	mov r12, r11
+	push {r1, r12}
+	bl {vg_sha512_finalize_scratch}
+	ldr r1, [sp], #8
+	mov r3, r11
+	movw r12, #308
+	add r0, r11, r12
+	movw r12, #372
+	add r6, r11, r12
+	ldr r12, [r5, #0]
+	str r12, [r0, #0]
+	ldr r12, [r5, #4]
+	str r12, [r0, #4]
+	ldr r12, [r5, #8]
+	str r12, [r0, #8]
+	ldr r12, [r5, #12]
+	str r12, [r0, #12]
+	ldr r12, [r5, #16]
+	str r12, [r0, #16]
+	ldr r12, [r5, #20]
+	str r12, [r0, #20]
+	ldr r12, [r5, #24]
+	str r12, [r0, #24]
+	ldr r12, [r5, #28]
+	str r12, [r0, #28]
+	ldr r12, [r5, #32]
+	str r12, [r0, #32]
+	ldr r12, [r5, #36]
+	str r12, [r0, #36]
+	ldr r12, [r5, #40]
+	str r12, [r0, #40]
+	ldr r12, [r5, #44]
+	str r12, [r0, #44]
+	ldr r12, [r5, #48]
+	str r12, [r0, #48]
+	ldr r12, [r5, #52]
+	str r12, [r0, #52]
+	ldr r12, [r5, #56]
+	str r12, [r0, #56]
+	ldr r12, [r5, #60]
+	str r12, [r0, #60]
+	mov r12, #128
+	str r12, [r6, #28]
+	mov r12, #0
+	str r12, [r6, #32]
+	str r12, [r6, #36]
+	str r12, [r6, #40]
+	str r12, [r6, #44]
+	str r12, [r6, #48]
+	str r12, [r6, #52]
+	str r12, [r6, #56]
+	str r12, [r6, #60]
+	str r12, [r6, #64]
+	str r12, [r6, #68]
+	str r12, [r6, #72]
+	str r12, [r6, #76]
+	str r12, [r6, #80]
+	str r12, [r6, #84]
+	str r12, [r6, #88]
+	str r12, [r6, #92]
+	str r12, [r6, #96]
+	str r12, [r6, #100]
+	str r12, [r6, #104]
+	str r12, [r6, #108]
+	movw r12, #0
+	movt r12, #0
+	str r12, [r6, #112]
+	movw r12, #0
+	movt r12, #0
+	str r12, [r6, #116]
+	movw r12, #0
+	movt r12, #0
+	str r12, [r6, #120]
+	movw r12, #0
+	movt r12, #57348
+	str r12, [r6, #124]
+	mov r1, r6
+	mov r2, #1
+	bl {vg_sha512_compress}
+	ldr r9, [r0, #0]
+	ldr r10, [r0, #4]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #0]
+	str r9, [r6, #4]
+	ldr r9, [r0, #8]
+	ldr r10, [r0, #12]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #8]
+	str r9, [r6, #12]
+	ldr r9, [r0, #16]
+	ldr r10, [r0, #20]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #16]
+	str r9, [r6, #20]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #24]
+	str r9, [r6, #28]
+	ldr r9, [r0, #32]
+	ldr r10, [r0, #36]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #32]
+	str r9, [r6, #36]
+	ldr r9, [r0, #40]
+	ldr r10, [r0, #44]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #40]
+	str r9, [r6, #44]
+	ldr r9, [r0, #48]
+	ldr r10, [r0, #52]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #48]
+	str r9, [r6, #52]
+	ldr r9, [r0, #56]
+	ldr r10, [r0, #60]
+	rev r10, r10
+	rev r9, r9
+	str r10, [r6, #56]
+	str r9, [r6, #60]
+	ldr r12, [r6, #0]
+	str r12, [r7, #0]
+	ldr r12, [r6, #4]
+	str r12, [r7, #4]
+	ldr r12, [r6, #8]
+	str r12, [r7, #8]
+	ldr r12, [r6, #12]
+	str r12, [r7, #12]
+	ldr r12, [r6, #16]
+	str r12, [r7, #16]
+	ldr r12, [r6, #20]
+	str r12, [r7, #20]
+	ldr r12, [r6, #24]
+	str r12, [r7, #24]
+	ldr r4, [r11, #272]
+	ldr r5, [r11, #276]
+	ldr r6, [r11, #280]
+	ldr r7, [r11, #284]
+	ldr r8, [r11, #288]
+	ldr r9, [r11, #292]
+	ldr r10, [r11, #296]
+	ldr lr, [r11, #300]
+	ldr r11, [r11, #304]
+	bx lr

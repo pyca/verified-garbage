@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -38,7 +39,7 @@ theorem md5_anyChecks : AnyChecks Whole.Arm.md5F := by
   taint_decide_all
 
 theorem md5_anySat : ∃ s, (anyScratchContract Spec.Hmac.md5I.S Spec.Hmac.md5I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 80 128
 
@@ -73,7 +74,7 @@ theorem sha1_anyChecks : AnyChecks Whole.Arm.sha1F := by
   taint_decide_all
 
 theorem sha1_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha1I.S Spec.Hmac.sha1I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 84 140
 
@@ -108,7 +109,7 @@ theorem sha384_anyChecks : AnyChecks Whole.Arm.sha384F := by
   taint_decide_all
 
 theorem sha384_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha384I.S Spec.Hmac.sha384I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 192 426
 
@@ -143,7 +144,7 @@ theorem sha512_anyChecks : AnyChecks Whole.Arm.sha512F := by
   taint_decide_all
 
 theorem sha512_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha512I.S Spec.Hmac.sha512I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 192 426
 
@@ -178,7 +179,7 @@ theorem sha512_224_anyChecks : AnyChecks Whole.Arm.sha512_224F := by
   taint_decide_all
 
 theorem sha512_224_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha512_224I.S Spec.Hmac.sha512_224I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 192 426
 
@@ -213,7 +214,7 @@ theorem sha512_256_anyChecks : AnyChecks Whole.Arm.sha512_256F := by
   taint_decide_all
 
 theorem sha512_256_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha512_256I.S Spec.Hmac.sha512_256I.initAnyKeyScratch).pre s := by
-  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Spec.Hmac.initScratchSig,
+  inst_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] using Md.Arm.Instances.initSat 192 426
 

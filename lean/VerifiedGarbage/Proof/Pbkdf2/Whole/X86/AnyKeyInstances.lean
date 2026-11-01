@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
@@ -61,7 +62,7 @@ theorem md5_anyChecks : AnyChecks md5F := by
   taint_decide_all
 
 theorem md5_anySat : ∃ s, (anyScratchContract Spec.Hmac.md5I.S Spec.Hmac.md5I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 80 128
 
@@ -115,7 +116,7 @@ theorem sha384_anyChecks : AnyChecks sha384F := by
   taint_decide_all
 
 theorem sha384_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha384I.S Spec.Hmac.sha384I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 192 426
 
@@ -169,7 +170,7 @@ theorem sha512_anyChecks : AnyChecks sha512F := by
   taint_decide_all
 
 theorem sha512_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha512I.S Spec.Hmac.sha512I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 192 426
 
@@ -223,7 +224,7 @@ theorem sha512_224_anyChecks : AnyChecks sha512_224F := by
   taint_decide_all
 
 theorem sha512_224_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha512_224I.S Spec.Hmac.sha512_224I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 192 426
 
@@ -277,7 +278,7 @@ theorem sha512_256_anyChecks : AnyChecks sha512_256F := by
   taint_decide_all
 
 theorem sha512_256_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha512_256I.S Spec.Hmac.sha512_256I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 192 426
 

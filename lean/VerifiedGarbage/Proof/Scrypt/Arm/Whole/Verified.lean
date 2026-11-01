@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Calls
 import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
 import VerifiedGarbage.Proof.Scrypt.Whole
@@ -142,7 +143,7 @@ theorem entry_E {s : State} (h : Proof.Scrypt.scryptArm.pre s) : E (lay s) s.gpr
 /-! ## Step 1 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -262,7 +263,7 @@ theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa romixLoo
 /-! ## Step 3 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -321,7 +322,7 @@ theorem body_post (hL : L.Ok) {m : Mem} {out : List Byte}
     rw [X_of hL h1 hk, Whole.chunk_bytesAt _ _ (blk_le' hL hk)]
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -674,7 +675,7 @@ theorem restore_ct : RelCT isa (Two (C fun _ _ _ => True)) (.block restore) fun 
     fun _ _ _ => trivial
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -784,7 +785,7 @@ theorem scrypt_implies :
           using satState }
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -823,7 +824,7 @@ theorem pbk_stack : armStack pbkC ≤ 24 :=
 
 /-- `vg_scrypt`. -/
 theorem scrypt_verified :
-    Verified Arm.target (scrypt Spec.Hmac.sha256I.pbkdf2ScratchApi.name pbkC) (Spec.Scrypt.scryptContract Arm.abi 40) :=
+    Verified Arm.target (scrypt "vg_pbkdf2_hmac_sha256_scratch" pbkC) (Spec.Scrypt.scryptContract Arm.abi 40) :=
   scrypt_verified_of Proof.Pbkdf2.Whole.Arm.sha256 pbk_stack _
 
 end VG.Proof.Scrypt.Arm.Whole

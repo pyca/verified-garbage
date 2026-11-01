@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
@@ -48,7 +49,7 @@ theorem sha256Shape_anyNoEsp :
   decide +kernel
 
 theorem sha256_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha256I.S Spec.Hmac.sha256I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha256I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha256I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 96 200
 
@@ -106,7 +107,7 @@ theorem sha224Shape_anyNoEsp :
   decide +kernel
 
 theorem sha224_anySat : ∃ s, (anyScratchContract Spec.Hmac.sha224I.S Spec.Hmac.sha224I.initAnyKeyScratch).pre s := by
-  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Spec.Hmac.initScratchSig,
+  sig_implies_sat [anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Proof.Hmac.initScratchSig,
     Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Md.X86.Instances.initSat, Md.X86.Instances.initMem] using Md.X86.Instances.initSat 96 200
 

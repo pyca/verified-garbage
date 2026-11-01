@@ -61,7 +61,7 @@ jmp 21b
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_init_scratch = sym super::internal::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
     )
 }
 
@@ -85,74 +85,6 @@ call {vg_sha512_finalize_scratch}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYEiJ3UiDxUC4gAAAAGZID27I8w9/TTBmD+/A8w9/RUDzD39FUPMPf0VgQbywAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
 call {vg_sha512_compress}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEPMPb0Ug80EPf0UgSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAASI2kJFgHAADD"
-.p2align 6"#,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_hmac_sha384_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads and writes of 192 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * `key_len` must be at most 128.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha384_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha384_init}
-.base64 "TInn"
-call {vg_sha384_init}
-.base64 "uDY2NjaJQ0CJQ0SJQ0iJQ0yJQ1CJQ1SJQ1iJQ1yJQ2CJQ2SJQ2iJQ2yJQ3CJQ3SJQ3iJQ3yJg4AAAACJg4QAAACJg4gAAACJg4wAAACJg5AAAACJg5QAAACJg5gAAACJg5wAAACJg6AAAACJg6QAAACJg6gAAACJg6wAAACJg7AAAACJg7QAAACJg7gAAACJg7wAAABBvgAAAABNhe0="
-je 20f
-22:
-.base64 "Qg+2RDUAg/A2QohEM0BJg8YBTTnu"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0NANWpqampBiUQkQItDRDVqampqQYlEJESLQ0g1ampqakGJRCRIi0NMNWpqampBiUQkTItDUDVqampqQYlEJFCLQ1Q1ampqakGJRCRUi0NYNWpqampBiUQkWItDXDVqampqQYlEJFyLQ2A1ampqakGJRCRgi0NkNWpqampBiUQkZItDaDVqampqQYlEJGiLQ2w1ampqakGJRCRsi0NwNWpqampBiUQkcItDdDVqampqQYlEJHSLQ3g1ampqakGJRCR4i0N8NWpqampBiUQkfIuDgAAAADVqampqQYmEJIAAAACLg4QAAAA1ampqakGJhCSEAAAAi4OIAAAANWpqampBiYQkiAAAAIuDjAAAADVqampqQYmEJIwAAACLg5AAAAA1ampqakGJhCSQAAAAi4OUAAAANWpqampBiYQklAAAAIuDmAAAADVqampqQYmEJJgAAACLg5wAAAA1ampqakGJhCScAAAAi4OgAAAANWpqampBiYQkoAAAAIuDpAAAADVqampqQYmEJKQAAACLg6gAAAA1ampqakGJhCSoAAAAi4OsAAAANWpqampBiYQkrAAAAIuDsAAAADVqampqQYmEJLAAAACLg7QAAAA1ampqakGJhCS0AAAAi4O4AAAANWpqampBiYQkuAAAAIuDvAAAADVqampqQYmEJLwAAABIid5Ig8ZASInfugEAAABMifk="
-call {vg_sha512_compress}
-.base64 "SIn7SYnPTInjTInmSIPGQEiJ37oBAAAATIn5"
-call {vg_sha512_compress}
-.base64 "SIn7SYnPSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
-.p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_hmac_sha384_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha384_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAUAAEyJ+Q=="
-call {vg_sha512_finalize_scratch}
-.base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYEiJ3UiDxUC4gAAAAGZID27I8w9/TTBmD+/A8w9/RUDzD39FUPMPf0VgQbywAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
-call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEPMPb0Ug80EPf0UgSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
 .p2align 6"#,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -221,7 +153,7 @@ jmp 21b
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2,
+        vg_hmac_sha384_init_scratch_avx2 = sym super::internal::vg_hmac_sha384_init_scratch_avx2::vg_hmac_sha384_init_scratch_avx2,
     )
 }
 
@@ -249,82 +181,6 @@ call {vg_sha512_finalize_scratch_avx2}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYEiJ3UiDxUC4gAAAAGZID27I8w9/TTBmD+/A8w9/RUDzD39FUPMPf0VgQbywAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEPMPb0Ug80EPf0UgSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAASI2kJFgHAADD"
-.p2align 6"#,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_hmac_sha384_init_scratch_avx2` requires (`Artifact.features`).
-pub const VG_HMAC_SHA384_INIT_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// `vg_hmac_sha384_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads and writes of 192 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * `key_len` must be at most 128.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha384_init_scratch_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha384_init}
-.base64 "TInn"
-call {vg_sha384_init}
-.base64 "uDY2NjaJQ0CJQ0SJQ0iJQ0yJQ1CJQ1SJQ1iJQ1yJQ2CJQ2SJQ2iJQ2yJQ3CJQ3SJQ3iJQ3yJg4AAAACJg4QAAACJg4gAAACJg4wAAACJg5AAAACJg5QAAACJg5gAAACJg5wAAACJg6AAAACJg6QAAACJg6gAAACJg6wAAACJg7AAAACJg7QAAACJg7gAAACJg7wAAABBvgAAAABNhe0="
-je 20f
-22:
-.base64 "Qg+2RDUAg/A2QohEM0BJg8YBTTnu"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0NANWpqampBiUQkQItDRDVqampqQYlEJESLQ0g1ampqakGJRCRIi0NMNWpqampBiUQkTItDUDVqampqQYlEJFCLQ1Q1ampqakGJRCRUi0NYNWpqampBiUQkWItDXDVqampqQYlEJFyLQ2A1ampqakGJRCRgi0NkNWpqampBiUQkZItDaDVqampqQYlEJGiLQ2w1ampqakGJRCRsi0NwNWpqampBiUQkcItDdDVqampqQYlEJHSLQ3g1ampqakGJRCR4i0N8NWpqampBiUQkfIuDgAAAADVqampqQYmEJIAAAACLg4QAAAA1ampqakGJhCSEAAAAi4OIAAAANWpqampBiYQkiAAAAIuDjAAAADVqampqQYmEJIwAAACLg5AAAAA1ampqakGJhCSQAAAAi4OUAAAANWpqampBiYQklAAAAIuDmAAAADVqampqQYmEJJgAAACLg5wAAAA1ampqakGJhCScAAAAi4OgAAAANWpqampBiYQkoAAAAIuDpAAAADVqampqQYmEJKQAAACLg6gAAAA1ampqakGJhCSoAAAAi4OsAAAANWpqampBiYQkrAAAAIuDsAAAADVqampqQYmEJLAAAACLg7QAAAA1ampqakGJhCS0AAAAi4O4AAAANWpqampBiYQkuAAAAIuDvAAAADVqampqQYmEJLwAAABIid5Ig8ZASInfugEAAABMifk="
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPTInjTInmSIPGQEiJ37oBAAAATIn5"
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
-.p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_hmac_sha384_finalize_scratch_avx2` requires (`Artifact.features`).
-pub const VG_HMAC_SHA384_FINALIZE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// `vg_hmac_sha384_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha384_finalize_scratch_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAUAAEyJ+Q=="
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYEiJ3UiDxUC4gAAAAGZID27I8w9/TTBmD+/A8w9/RUDzD39FUPMPf0VgQbywAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEPMPb0Ug80EPf0UgSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
 .p2align 6"#,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
@@ -393,7 +249,7 @@ jmp 21b
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani,
+        vg_hmac_sha384_init_scratch_shani = sym super::internal::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
     )
 }
 
@@ -421,82 +277,6 @@ call {vg_sha512_finalize_scratch_shani}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYEiJ3UiDxUC4gAAAAGZID27I8w9/TTBmD+/A8w9/RUDzD39FUPMPf0VgQbywAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEPMPb0Ug80EPf0UgSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAASI2kJFgHAADD"
-.p2align 6"#,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha384_init_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA384_INIT_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// `vg_hmac_sha384_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads and writes of 192 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * `key_len` must be at most 128.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha384_init_scratch_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha384_init}
-.base64 "TInn"
-call {vg_sha384_init}
-.base64 "uDY2NjaJQ0CJQ0SJQ0iJQ0yJQ1CJQ1SJQ1iJQ1yJQ2CJQ2SJQ2iJQ2yJQ3CJQ3SJQ3iJQ3yJg4AAAACJg4QAAACJg4gAAACJg4wAAACJg5AAAACJg5QAAACJg5gAAACJg5wAAACJg6AAAACJg6QAAACJg6gAAACJg6wAAACJg7AAAACJg7QAAACJg7gAAACJg7wAAABBvgAAAABNhe0="
-je 20f
-22:
-.base64 "Qg+2RDUAg/A2QohEM0BJg8YBTTnu"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0NANWpqampBiUQkQItDRDVqampqQYlEJESLQ0g1ampqakGJRCRIi0NMNWpqampBiUQkTItDUDVqampqQYlEJFCLQ1Q1ampqakGJRCRUi0NYNWpqampBiUQkWItDXDVqampqQYlEJFyLQ2A1ampqakGJRCRgi0NkNWpqampBiUQkZItDaDVqampqQYlEJGiLQ2w1ampqakGJRCRsi0NwNWpqampBiUQkcItDdDVqampqQYlEJHSLQ3g1ampqakGJRCR4i0N8NWpqampBiUQkfIuDgAAAADVqampqQYmEJIAAAACLg4QAAAA1ampqakGJhCSEAAAAi4OIAAAANWpqampBiYQkiAAAAIuDjAAAADVqampqQYmEJIwAAACLg5AAAAA1ampqakGJhCSQAAAAi4OUAAAANWpqampBiYQklAAAAIuDmAAAADVqampqQYmEJJgAAACLg5wAAAA1ampqakGJhCScAAAAi4OgAAAANWpqampBiYQkoAAAAIuDpAAAADVqampqQYmEJKQAAACLg6gAAAA1ampqakGJhCSoAAAAi4OsAAAANWpqampBiYQkrAAAAIuDsAAAADVqampqQYmEJLAAAACLg7QAAAA1ampqakGJhCS0AAAAi4O4AAAANWpqampBiYQkuAAAAIuDvAAAADVqampqQYmEJLwAAABIid5Ig8ZASInfugEAAABMifk="
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPTInjTInmSIPGQEiJ37oBAAAATIn5"
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
-.p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha384_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA384_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// `vg_hmac_sha384_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 1872 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha384_finalize_scratch_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48], scratch: *mut [u64; 234]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAUAAEyJ+Q=="
-call {vg_sha512_finalize_scratch_shani}
-.base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYEiJ3UiDxUC4gAAAAGZID27I8w9/TTBmD+/A8w9/RUDzD39FUPMPf0VgQbywAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEPMPb0Ug80EPf0UgSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
 .p2align 6"#,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,

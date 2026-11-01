@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
@@ -46,7 +47,7 @@ open VG.Spec.Hmac (StreamingHash xorPad ipad opad hmacBlockKey)
 
 /-! ## The contract -/
 
-/-- The contract the proof is written against: `VG.Spec.Pbkdf2.iterateContract`
+/-- The contract the proof is written against: `Proof.Pbkdf2.iterateContract`
 of the streaming hash function `S` with `W` words of scratch space, on
 AArch64. The function uses no stack. -/
 def iterK (S : StreamingHash) (W : Nat) : Contract isa where

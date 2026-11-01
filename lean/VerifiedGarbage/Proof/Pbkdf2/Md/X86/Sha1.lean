@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
@@ -136,25 +138,25 @@ theorem sha1_finChecks (v : Sha1Stream) (cmpN : String) (cmpC : Prog isa) :
     HmacFin.Checks (sha1M v cmpN cmpC) :=
   finChecks_of_shape (H := sha1M v cmpN cmpC) sha1Shape_finChecks
 
-theorem sha1_iterImp : (iterW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.iterateContract X86.abi 48) := by
+theorem sha1_iterImp : (iterW Spec.Hmac.sha1S 56).Implies (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 84 20 56
-  sig_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
+  sig_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, iterW, iterG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 84 20 56
 
-theorem sha1_finImp : (finW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) := by
+theorem sha1_finImp : (finW Spec.Hmac.sha1S 56).Implies (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha1I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 84 20 56
-  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
-    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
+  sig_implies [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
+    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 84 20 56
 
-theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initScratchContract X86.abi 48) := by
+theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha1I X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 84 56
-  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract,
-    Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
+  sig_implies [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
+    Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 84 56
@@ -162,7 +164,7 @@ theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initS
 /-- PBKDF2's iteration for SHA-1 with any backend. -/
 theorem sha1_iterate (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha1.md 112 cmpC) :
-    Verified X86.target (sha1M v cmpN cmpC).iterate (Spec.Hmac.sha1I.iterateContract X86.abi 48) :=
+    Verified X86.target (sha1M v cmpN cmpC).iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I X86.abi 48) :=
   (Iterate.verifiedW (sha1Ok v cmpN hc) (sha1_iterChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 20 + 64 ≤ 8 * 56 by decide)
     sha1_iterImp.sat_left).of_implies sha1_iterImp
@@ -170,7 +172,7 @@ theorem sha1_iterate (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa}
 /-- HMAC's `finalize` for SHA-1 with any backend. -/
 theorem sha1_finalize (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha1.md 112 cmpC) :
-    Verified X86.target (sha1M v cmpN cmpC).hmacFin (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) :=
+    Verified X86.target (sha1M v cmpN cmpC).hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha1I X86.abi 48) :=
   (HmacFin.verifiedW (sha1Ok v cmpN hc) (sha1_finChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 20 ≤ 8 * 56 by decide)
     sha1_finImp.sat_left).of_implies sha1_finImp
@@ -178,7 +180,7 @@ theorem sha1_finalize (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa}
 /-- HMAC's `init` for SHA-1 with any backend. -/
 theorem sha1_init (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha1.md 112 cmpC) :
-    Verified X86.target (sha1M v cmpN cmpC).hmacInit (Spec.Hmac.sha1I.initScratchContract X86.abi 48) :=
+    Verified X86.target (sha1M v cmpN cmpC).hmacInit (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha1I X86.abi 48) :=
   (HmacInit.verifiedW (sha1Ok v cmpN hc) (sha1_initChecks v cmpN cmpC)
     (show 8 * 20 + 16 ≤ 8 * 56 by decide)
     sha1_initImp.sat_left).of_implies sha1_initImp

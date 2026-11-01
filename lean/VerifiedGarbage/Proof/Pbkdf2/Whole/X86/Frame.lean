@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Sha512.X86.Lit
@@ -33,7 +34,7 @@ argument slots and the working space. -/
 def pbkFrame (I : Spec.Hmac.Instance) : Nat := 8 + 28 + 8 * I.pbkdf2Scratch
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa}
-    (h : Verified X86.target c (I.pbkdf2ScratchContract X86.abi 76))
+    (h : Verified X86.target c (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I X86.abi 76))
     (hsat : ∃ s, (I.pbkdf2Contract X86.abi (76 + pbkFrame I)).pre s)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
     (hd : stackUse c ≤ 76 := by lit_decide)

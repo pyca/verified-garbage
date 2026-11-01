@@ -19,10 +19,6 @@ namespace VG.Artifacts.Pbkdf2Sha384.X86
 open VG.Proof.Pbkdf2.Stream.X86
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha384I.iterateApi.artifact X86.target {
-    code := Proof.Pbkdf2.Md.X86.sha384M.iterate
-    stack := 48
-    verified := Proof.Pbkdf2.Md.X86.Instances.sha384_iterate },
   Spec.Hmac.sha384I.pbkdf2Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha384I) 7
       Proof.Pbkdf2.Whole.X86.sha384F.pbkdf2

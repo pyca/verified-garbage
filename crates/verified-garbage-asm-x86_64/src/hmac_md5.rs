@@ -61,7 +61,7 @@ jmp 21b
         vg_md5_compress = sym super::md5::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_init_scratch = sym super::internal::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
 
@@ -85,74 +85,6 @@ call {vg_md5_finalize_scratch}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYuHoAAAAIlDEEGLh6QAAACJQxRBi4eoAAAAiUMYQYuHrAAAAIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
 call {vg_md5_compress}
 .base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19wSYtveE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAABIjaQkiAEAAMM="
-.p2align 6"#,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
-
-/// `vg_hmac_md5_init`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 80 bytes.
-/// * `outer` must be valid for reads and writes of 80 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 384 bytes.
-/// * `key_len` must be at most 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_md5_init}
-.base64 "TInn"
-call {vg_md5_init}
-.base64 "uDY2NjaJQxCJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0xBvgAAAABNhe0="
-je 20f
-22:
-.base64 "Qg+2RDUAg/A2QohEMxBJg8YBTTnu"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0MQNWpqampBiUQkEItDFDVqampqQYlEJBSLQxg1ampqakGJRCQYi0McNWpqampBiUQkHItDIDVqampqQYlEJCCLQyQ1ampqakGJRCQki0MoNWpqampBiUQkKItDLDVqampqQYlEJCyLQzA1ampqakGJRCQwi0M0NWpqampBiUQkNItDODVqampqQYlEJDiLQzw1ampqakGJRCQ8i0NANWpqampBiUQkQItDRDVqampqQYlEJESLQ0g1ampqakGJRCRIi0NMNWpqampBiUQkTEiJ3kiDxhBIid+6AQAAAEyJ+Q=="
-call {vg_md5_compress}
-.base64 "SIn7SYnPTInjTInmSIPGEEiJ37oBAAAATIn5"
-call {vg_md5_compress}
-.base64 "SIn7SYnPSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAAww=="
-.p2align 6"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-    )
-}
-
-/// `vg_hmac_md5_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 80 bytes.
-/// * `outer` must be valid for reads of 80 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 384 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0SYnNTYnHSInWTIn6SIHCoAAAAEyJ+Q=="
-call {vg_md5_finalize_scratch}
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYuHoAAAAIlDEEGLh6QAAACJQxRBi4eoAAAAiUMYQYuHrAAAAIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
-call {vg_md5_compress}
-.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19wSYtveE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAADD"
 .p2align 6"#,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,

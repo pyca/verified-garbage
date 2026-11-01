@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Correct
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -168,10 +169,10 @@ def IA (P : Rfc) : Pred P := fun L _ _ _ u =>
 
 theorem init_pub {L : Lay P.I.hashLen} {g₁ g₂ : Reg → BitVec 64} {lr₁ lr₂ : Addr} {m₁ m₂ : Mem}
     {u₁ u₂ : State} (h : TwoAt P (IA P) L g₁ g₂ lr₁ lr₂ m₁ m₂ u₁ u₂) (rd wr : List Region) :
-    (P.K.I.initScratchContract PPC64LE.abi (P.K.kI + 1)).pub (u₁.callEntry.withRegions rd wr)
+    (Proof.Hmac.Instance.initScratchContract P.K.I PPC64LE.abi (P.K.kI + 1)).pub (u₁.callEntry.withRegions rd wr)
       (u₂.callEntry.withRegions rd wr) := by
-  sig_pub [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract,
-    Spec.Hmac.initScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
+  sig_pub [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
+    Proof.Hmac.initScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
   exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [h.f₁.1, h.f₂.1], by rw [h.f₁.2.1, h.f₂.2.1],
     by rw [h.f₁.2.2.1, h.f₂.2.2.1], by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2, h.f₂.2.2.2.2]⟩
 
@@ -184,7 +185,7 @@ abbrev initWr (P : Rfc) (L : Lay P.I.hashLen) : List Region :=
     ⟨L.scr + BitVec.ofNat 64 384, P.K.I.scratch * 8⟩]
 
 theorem initAt {L : Lay P.I.hashLen} (hL : L.Ok) {u : State} (hcu : Ctx L g lr m₀ u) (ha : IA P L g lr m₀ u) :
-    (P.K.I.initScratchContract PPC64LE.abi (P.K.kI + 1)).pre (u.callEntry.withRegions (initRd P L) (initWr P L)) ∧
+    (Proof.Hmac.Instance.initScratchContract P.K.I PPC64LE.abi (P.K.kI + 1)).pre (u.callEntry.withRegions (initRd P L) (initWr P L)) ∧
       Covers (initRd P L ++ initWr P L) (u.rd ++ u.wr) ∧ Covers (initWr P L) u.wr := by
   obtain ⟨h3, h4, h5, h6, h7⟩ := ha
   have hnB := hL.nB
@@ -300,7 +301,7 @@ abbrev finWr (P : Rfc) (dst : Nat) (L : Lay P.I.hashLen) : List Region :=
 
 theorem finAt {len dst : Nat} (hdst : 32 ≤ dst ∧ dst + 64 ≤ 216) {L : Lay P.I.hashLen} (hL : L.Ok) {u : State}
     (hcu : Ctx L g lr m₀ u) (ha : FA P len dst L g lr m₀ u) :
-    (P.K.I.finalizeScratchContract PPC64LE.abi (P.K.kF + 1)).pre
+    (Proof.Hmac.Instance.finalizeScratchContract P.K.I PPC64LE.abi (P.K.kF + 1)).pre
         (u.callEntry.withRegions (finRd P L) (finWr P dst L)) ∧
       Covers (finRd P L ++ finWr P dst L) (u.rd ++ u.wr) ∧ Covers (finWr P dst L) u.wr := by
   obtain ⟨h3, h4, -, h6, h7⟩ := ha
@@ -345,8 +346,8 @@ theorem fin_ct {len dst : Nat} (hdst : 32 ≤ dst ∧ dst + 64 ≤ 216) :
     RelCT isa (Two P (FA P len dst)) (.call P.K.hm.finN P.K.hm.finC) fun _ _ => True :=
   two_call P.K.finV P.K.finCT (finRd P) (finWr P dst) (fun _ _ _ _ _ hL _ hc ha => finAt hdst hL hc ha)
     fun _ _ _ _ _ _ _ u₁ u₂ h => by
-      sig_pub [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
-        Spec.Hmac.finalizeScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
+      sig_pub [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
+        Proof.Hmac.finalizeScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
       exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [h.f₁.1, h.f₂.1], by rw [h.f₁.2.1, h.f₂.2.1],
         by rw [h.f₁.2.2.1, h.f₂.2.2.1], by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2, h.f₂.2.2.2.2]⟩
 

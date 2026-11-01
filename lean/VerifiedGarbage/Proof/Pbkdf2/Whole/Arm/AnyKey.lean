@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.Arm
+public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
@@ -41,11 +42,11 @@ open Spec.Hmac (StreamingHash blockKey xorPad ipad opad)
 /-! ## The contract -/
 
 /-- `VG.Spec.Hmac.initAnyKeyContract` with its working space (`W` words) as
-an argument (as `VG.Spec.Hmac.initScratchContract` is `initContract`'s), and
+an argument (as `Proof.Hmac.initScratchContract` is `initContract`'s), and
 24 bytes of stack: the contract that the function allocating the working
 space follows from (`Verified.stackScratchWiped`). -/
 def anyScratchContract (S : StreamingHash) (W : Nat) : Contract isa :=
-  (Spec.Hmac.initScratchSig S W).contract Arm.abi
+  (Proof.Hmac.initScratchSig S W).contract Arm.abi
     (post := fun inner outer key keyLen _scratch => Spec.Hmac.initPost S Arm.abi.ptrBits inner outer key keyLen)
     (writeArgs := true) (stack := 24)
 
@@ -111,7 +112,7 @@ structure Pre (F : Fns) (s₀ : State) : Prop where
 
 theorem pre_of (hF : FnsOK F) {s₀ : State}
     (h : (anyScratchContract hF.hH.SH (F.W + F.H.S)).pre s₀) : Pre F s₀ := by
-  sig_pre [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
+  sig_pre [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
     h21⟩ := h
@@ -818,7 +819,7 @@ theorem correct : WP isa F.hmacInitAny s₀ fun s' =>
     (by rw [k₄.wr]; exact sc_mem hp) (show 8 * F.W + 36 ≤ F.L8 by omega_arith) hp.nsc)
     fun s' ⟨hm, _, _, hsp, hg⟩ => ⟨⟨fun r hr => hg r (Pbkdf2.Stream.Arm.preserved_saved r hr), by rw [hsp, k₄.sp]⟩,
       ?_⟩
-  sig_post [anyScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
+  sig_post [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val]
   rw [hm]; exact ⟨r0, r1⟩
 
