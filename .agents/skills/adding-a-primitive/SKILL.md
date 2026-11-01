@@ -24,6 +24,13 @@ instructions in an ISA model) go in their own PR before either.
    `Sig.layoutDoc`). Choose
    `pub` honestly: only lengths and pointers are public unless the algorithm
    says otherwise.
+   Only functions the Rust code calls get an `Api`. A function only other
+   verified functions call (a compression function, a field
+   multiplication, a block function under a mode) needs no `Api`, contract
+   or registration: the emitter emits it as an internal function
+   (`Rust.Internal`, `internal/<name>.rs`) from the code its callers' proofs
+   run, and the contract its proof uses, which their proofs compose, is in
+   `Proof/`, untrusted. Name it as a Rust function starting with `vg_`.
 2. `Impl/<Alg>/<Target>.lean`: the code.
 3. `Proof/<Alg>/…`: the proof of `Verified`. A proof may be written against a
    simpler per-target contract of its own and moved to the shared one with
@@ -124,4 +131,8 @@ variants all do its work themselves), some implementation of each caller
 calls every implementation of its callee whose features the caller has
 but the one it calls lacks (a variant chosen by hand, such as a field
 naming the callee, still follows the features), and each variant is used by the
-Rust code outside its tests (never emit one only a test calls).
+Rust code outside its tests (never emit one only a test calls). An internal
+function has no signature: its variants are the internal functions of its
+name and a suffix made of the words of other variants' suffixes
+(`vg_sha256_compress_shani`), and its CPU features are in the `_FEATURES`
+constant of its file.

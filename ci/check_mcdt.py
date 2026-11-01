@@ -4,7 +4,9 @@ MXCSR-configuration-dependent timing (MCDT) under Intel's mitigation, from
 the assembly files of the generated code of `crates/verified-garbage-asm-x86_64/`
 and `crates/verified-garbage-asm-x86/`, `assembly/<module>.s`: the text of
 each instruction of `src/<module>.rs`, whose machine code that file holds
-(the emitter writes both from the same printed code, `TCB/Rust.lean`).
+(the emitter writes both from the same printed code, `TCB/Rust.lean`), and
+`assembly/internal/<name>.s`, of each internal function's
+`src/internal/<name>.rs`.
 
 On some Intel processors, a few vector multiplies (Intel's list, "MCDT Data
 Operand Independent Timing Instructions": `pmuludq`, `pmullw`, `pmulhw`,
@@ -223,12 +225,13 @@ def main():
     regions = 0
     for target_name in TARGETS:
         src = asm_layout.target_dir(ROOT, target_name)
-        for path in sorted(src.glob("*.rs")):
-            # Every naked function is checked: each is in its module's assembly file,
+        for path in sorted(src.glob("*.rs")) + sorted(src.glob("internal/vg_*.rs")):
+            # Every naked function is checked: each is in its module's assembly file
+            # (an internal function's, `internal/<name>.rs`, in `internal/<name>.s`),
             # which must be read in full, and this not pass on a function left
             # unread.
             naked = path.read_text().count("#[unsafe(naked)]")
-            assembly = src.parent / "assembly" / f"{path.stem}.s"
+            assembly = (src.parent / "assembly" / path.relative_to(src)).with_suffix(".s")
             if not assembly.is_file():
                 if naked:
                     errors.append(f"{path.relative_to(ROOT)}: has no assembly file {assembly.relative_to(ROOT)}")

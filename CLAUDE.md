@@ -189,7 +189,9 @@ its own file.
 This takes at least two PRs (see "One kind of change per PR"): the spec
 (`Spec/<Alg>.lean` and `Spec/<Alg>/Contract.lean`) alone, then the
 implementation, its proof, its registration, the regenerated crates,
-the Rust API, its tests and its benchmark together. Any TCB additions the
+the Rust API, its tests and its benchmark together. Only what the Rust code
+calls has a spec: a function only verified code calls is emitted as an
+internal function, with no `Api` and its contract in `Proof/`. Any TCB additions the
 primitive needs (e.g. new instructions in an ISA model) go in their own PR
 before either. Registration files (`Artifacts/`, `Generic/`) and variant
 files (`Variants/`) are reviewed by hand, so they only bind

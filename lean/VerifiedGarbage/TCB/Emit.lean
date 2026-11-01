@@ -50,7 +50,9 @@ of it agree, which elaboration checks. Nothing here needs trusting beyond
 the files found: every artifact carries its own proof, and
 the emitter checks its calls and features (`Rust.files`) as for any other.
 A variant's own functions (e.g. the implementation itself) are listed in a
-registration file as usual.
+registration file as usual, if the Rust code calls them; if only its callers
+do, they are internal functions, which the emitter writes from the code of
+their calls (`Rust.Internal`).
 
 `Emit.lean` finds the registration, variant and generic files
 (`registrations`, `grouped`, `genericGroups`), writes a program that

@@ -56,9 +56,34 @@ compared, so that every file is a function of its own artifacts alone
 
 A call (`Code.call name body`) is a call instruction whose operand is the
 symbol of the Rust function `name` (a `sym` operand). The model runs `body`
-for it, so `files` checks that `name` is an artifact of the same target
-whose printed code is exactly that of `body`, for every call, including the
-calls in `body` itself; otherwise nothing is emitted.
+for it, so `files` checks that the function emitted as `name` has printed
+code exactly that of `body`, for every call, including the calls in `body`
+itself; otherwise nothing is emitted. That function is the artifact `name`
+of the same target, if there is one, and otherwise an *internal function*
+(`Internal`), which the emitter writes from `body` itself: a function that
+only the code of artifacts calls needs no `Api`, contract or proof of its
+own, as the proof of every artifact that calls it covers its code. Each is a
+naked function of no parameters in a file of its own, `internal/<name>.rs`
+of the crate's `codeDir` (its text in `assembly/internal/<name>.s`), a
+module of the module `internal` (`internal/mod.rs`), which the crate's root
+declares private, so that only the generated code of the crate can name
+it:
+
+```rust
+#[unsafe(naked)]
+pub(crate) unsafe extern "<abi>" fn <name>() {
+    core::arch::naked_asm!(…)
+}
+```
+
+Its name comes from code no one reviews (`Impl/`), so `files` checks that
+it is a Rust function's (`internalName`); its file, like a table's, depends
+on nothing but its name and code, so `EmitOne.lean` writes those its
+artifacts call without touching the others. Every table of constants it
+names is one of each artifact that calls it, or one its instructions carry
+(`checkInternalTables`): the contract of that artifact, which its proof
+assumes when it runs the internal function's code, says the memory holds
+its tables (`Abi.withConsts`), as an artifact the artifact calls must.
 
 The documentation of each function is its `doc`, with what its contract
 requires of the memory each buffer is valid for and of where its buffers are
@@ -419,13 +444,16 @@ def featureConst (f : String) : String :=
   f.toUpper.map fun c => if c.isAlphanum then c else '_'
 
 /-- The constant of the CPU features `fs` that the function `name`
-requires: the union of their bits (`featureConst`); nothing if there are
+requires: the union of their bits (`featureConst`), of visibility `vis`, its
+documentation naming the field `field` that gives them; nothing if there are
 none. -/
-def featuresConst (name gate : String) : List String → String
+def featuresConst (name gate : String) (fs : List String) (vis : String := "pub")
+    (field : String := "Artifact.features") : String :=
+  match fs with
   | [] => ""
   | fs =>
-    s!"/// The CPU features `{name}` requires (`Artifact.features`).\n" ++ gate ++
-    s!"pub const {name.toUpper}_FEATURES: verified_garbage_cpu::Features = \
+    s!"/// The CPU features `{name}` requires (`{field}`).\n" ++ gate ++
+    s!"{vis} const {name.toUpper}_FEATURES: verified_garbage_cpu::Features = \
       verified_garbage_cpu::Features(" ++
     " | ".intercalate (fs.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}") ++ ");\n\n"
 
@@ -630,30 +658,41 @@ def funcOptions : String → List String × List String
 `Printer.featureCfg` of its features). -/
 def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
 
-/-- The lines of `a`'s function, given its printed code `lines`: the target's
-opening `funcOptions`, the directives enabling its features, `lines`, the
-directives disabling them, the printer's `funcAlign`, and the closing
-`funcOptions`. -/
+/-- The lines of a function on the target `T` whose code needs the CPU
+features `features`, given its printed code `lines`: the target's opening
+`funcOptions`, the directives enabling its features, `lines`, the directives
+disabling them, the printer's `funcAlign`, and the closing `funcOptions`. -/
+def bodyLines (T : Target) (features : List String) (lines : List Line) : List Line :=
+  let P := T.printer
+  let (start, stop) := funcOptions T.name
+  start.map .text ++ (features.flatMap P.enableFeature).map .text ++ lines ++
+    (features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
+
+/-- The lines of `a`'s function, given its printed code `lines` (`bodyLines`
+of its features). -/
 def bodyOf (a : Artifact) (lines : List Line) : List Line :=
-  let P := a.target.printer
-  let (start, stop) := funcOptions a.target.name
-  start.map .text ++ (a.features.flatMap P.enableFeature).map .text ++ lines ++
-    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
+  bodyLines a.target a.features lines
+
+/-- The `naked_asm!` of a function of the target `T` whose lines are `body`:
+its template, then the `sym` operand of each function it calls, at the path
+`<root>::<module>::<name>` (`moduleOf` gives the module), and of each table
+of constants it names, at `<root>::consts::<name>`; `root` is the path of the
+crate's root from the function's file. -/
+def asmOf (T : Target) (body : List Line) (moduleOf : String → String) (root : String) :
+    String :=
+  let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
+  let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
+  "    core::arch::naked_asm!(\n" ++
+  template T.printer.call body ++
+  String.join (callees.map fun n => s!"        {n} = sym {root}::{moduleOf n}::{n},\n") ++
+  String.join (syms.map fun n => s!"        {n} = sym {root}::consts::{n},\n") ++
+  "    )\n"
 
 /-- The text of `a`'s function after its name, given `a`'s printed code
 `lines`: its signature and its body, the `naked_asm!` of its code
-(`function`). -/
+(`function`, `asmOf`). -/
 def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
-  let body := bodyOf a lines
-  let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
-  let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
-  s!"{a.sig.rust} " ++ "{\n" ++
-  "    core::arch::naked_asm!(\n" ++
-  template a.target.printer.call body ++
-  String.join (callees.map fun n => s!"        {n} = sym super::{moduleOf n}::{n},\n") ++
-  String.join (syms.map fun n => s!"        {n} = sym super::consts::{n},\n") ++
-  "    )\n" ++
-  "}\n"
+  s!"{a.sig.rust} " ++ "{\n" ++ asmOf a.target (bodyOf a lines) moduleOf "super" ++ "}\n"
 
 /-- Clippy's `missing_safety_doc`, which asks every `pub unsafe fn` for a
 `# Safety` section, allowed for a function whose documentation `doc` has
@@ -721,10 +760,6 @@ def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
 /-- The distinct values of `f` over `as`, in first-seen order. -/
 def distinct (as : List Artifact) (f : Artifact → String) : List String :=
   dedup (as.map f)
-
-/-- The artifact that a call of `name` in `a` calls. -/
-def callee (as : List Artifact) (a : Artifact) (name : String) : Option Artifact :=
-  as.find? fun b => b.target.name == a.target.name && b.name == name
 
 /-- The first of `calls` (`Code.calls`: the name of each function called and
 the code the model runs for it) that is not of a function `printed` gives the
@@ -799,11 +834,15 @@ its lines (`assembly`), each indented but its labels; each other as a line
 naming the function it is. -/
 def moduleAssembly (items : List (Prepared × String × String)) : String :=
   String.join (items.map fun (p, _, c) =>
-    if c == p.art.name then
-      s!"\n{p.art.name}:\n" ++ String.join ((assembly p.art.target.printer.call
-        (bodyOf p.art p.lines)).map fun l =>
-          if l.endsWith ":" && !l.contains ' ' then l ++ "\n" else "\t" ++ l ++ "\n")
+    if c == p.art.name then functionAssembly p.art.target p.art.name (bodyOf p.art p.lines)
     else s!"\n// {p.art.name}: the function `{c}`\n")
+where
+  /-- The function `name` of the target `T`, whose lines are `body`, in an
+  assembly file: its name, then its lines (`assembly`), each indented but its
+  labels. -/
+  functionAssembly (T : Target) (name : String) (body : List Line) : String :=
+    s!"\n{name}:\n" ++ String.join ((assembly T.printer.call body).map fun l =>
+      if l.endsWith ":" && !l.contains ' ' then l ++ "\n" else "\t" ++ l ++ "\n")
 
 /-- `p`'s artifact declares exactly the CPU features its code requires
 (`featureCheck`). -/
@@ -820,19 +859,6 @@ def checkEncodable (p : Prepared) : Except String Unit :=
   match firstSome? a.target.printer.unencodable a.code with
   | none => pure ()
   | some e => throw s!"{a.target.name}: {a.name}: {e}"
-
-/-- Every call in the code of `p`'s artifact, and in the code of the functions
-it calls, is of an artifact of `ps` of the same target whose printed code is
-that of the called code (`badCall`). -/
-def checkCalls (ps : List Prepared) (p : Prepared) : Except String Unit :=
-  let a := p.art
-  match badCall a.target.printer
-      (fun n => (ps.find? fun q => q.art.target.name == a.target.name && q.art.name == n).map
-        (·.lines)) a.code.calls with
-  | none => pure ()
-  | some (n, false) => throw s!"{a.target.name}: {a.name} calls {n}, which is not an artifact"
-  | some (n, true) =>
-    throw s!"{a.target.name}: {a.name} calls {n}, whose code is not what the call runs"
 
 /-- The artifact carries the contract of the `Api` it is made from
 (`Artifact.contracts`), which it is proven against (`Artifact.ofApi`): so its
@@ -917,6 +943,158 @@ def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
       throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have \
         (`Artifact.consts`) or carry"
 
+/-! ## Internal functions -/
+
+/-- An *internal function* of a target: a function that the code of an
+artifact calls (`Code.call name body`), or the code of a function it calls,
+that is not an artifact of the target. It needs no `Api`, contract or proof
+of its own: it is only ever run by a call in the code of an artifact (it is
+`pub(crate)` in a module of its own of the target's crate, which has no other
+code, and nothing outside the crate can name it), for which the model runs
+its code, so the artifact's proof covers it, as it covers the code of every
+function the artifact calls. `files` checks that every call of `name` runs the
+code the function is emitted with (`checkCalls`).
+
+Its fields are what the emitter reads of it: its target, name and code, its
+printed code (`Printer.function`), the CPU features its code, and that of
+the functions it calls, requires (`requiresDedup`), which its function's
+body enables and its `cfg` attribute follows, as an artifact's
+(`bodyLines`, `gateOf`); the tables of constants its instructions carry
+(`Printer.codeTables`), and the tables its printed code names. -/
+structure Internal where
+  target : Target
+  name : String
+  code : Prog target.isa
+  lines : List Line
+  features : List String
+  tables : List (String × List (BitVec 64))
+  syms : List String
+  lines_eq : lines = target.printer.function code
+  features_eq : features = requiresDedup target.isa.requires code
+  tables_eq : tables = target.printer.codeTables code
+  syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
+
+/-- The internal function `name` of the target `T`, whose code is `code`. -/
+def Internal.of (T : Target) (name : String) (code : Prog T.isa) : Internal :=
+  ⟨T, name, code, _, _, _, _, rfl, rfl, rfl, rfl⟩
+
+/-- The names of the functions that `calls` (`Code.calls`) calls, each once,
+in first-seen order: its first call of each. -/
+def firstCalls {I C : Type} (calls : List (String × Code I C)) : List (String × Code I C) :=
+  Id.run do
+  let mut names : List String := []
+  let mut out : List (String × Code I C) := []
+  for (n, body) in calls do
+    unless names.contains n do
+      names := n :: names
+      out := (n, body) :: out
+  return out.reverse
+
+/-- The internal functions of the artifacts of `ps` (`Internal`): of each
+target, every function the code of one of its artifacts calls (`Code.calls`,
+those in the code of the functions it calls too) that is not an artifact of
+the target, once, with the code of the first call of it, in order of the
+artifacts and of their calls. `checkCalls` checks that every other call of
+it is of that code. -/
+def internalsOf (ps : List Prepared) : List Internal := Id.run do
+  let mut found : List (String × String) := []
+  let mut out : List Internal := []
+  for p in ps do
+    let a := p.art
+    let t := a.target.name
+    for (n, body) in firstCalls a.code.calls do
+      if found.contains (t, n) then continue
+      if ps.any fun q => q.art.target.name == t && q.art.name == n then continue
+      found := (t, n) :: found
+      out := Internal.of a.target n body :: out
+  return out.reverse
+
+/-- The internal function of `hs` that a call of `name` in an artifact of the
+target `t` calls, if there is one. -/
+def internal? (hs : List Internal) (t name : String) : Option Internal :=
+  hs.find? fun h => h.target.name == t && h.name == name
+
+/-- An internal function's name is a Rust function's starting with `vg_`:
+`vg_`, then lowercase ASCII letters, digits and underscores; so it is never
+a Rust keyword, and is the name of its module (`internal::<name>`) too. Its
+code, and so its name, is not reviewed (`Impl/`), and the emitter writes the
+name into Rust code: nothing else may be written there. -/
+def internalName (n : String) : Bool :=
+  match n.toList with
+  | 'v' :: 'g' :: '_' :: c :: cs => (c :: cs).all fun c =>
+      ('a' ≤ c && c ≤ 'z') || c.isDigit || c == '_'
+  | _ => false
+
+/-- The internal function `h` (of `hs`, of the artifacts of `ps`) is named as
+`internalName` requires; the tables of constants its instructions carry are
+named as `tableName` requires, and every artifact and every other internal
+function of its target with a table of one of their names gives the same
+words (`consistent`); and its target's code can name a `static`
+(`Abi.sym`), if it names any. -/
+def checkInternal (ps : List Prepared) (hs : List Internal) (h : Internal) :
+    Except String Unit := do
+  let t := h.target.name
+  unless internalName h.name do
+    throw s!"{t}: the internal function {h.name} is not named as a Rust function starting \
+      with `vg_` (lowercase letters, digits and underscores)"
+  unless h.syms.isEmpty || h.target.abi.sym.isSome do
+    throw s!"{t}: the internal function {h.name} reads tables of constants, which its target's \
+      code cannot name"
+  for (n, _) in h.tables do
+    unless tableName n do
+      throw s!"{t}: the internal function {h.name}'s table of constants {n} is not named as a \
+        Rust constant starting with `VG_`"
+  unless consistent h.tables h.tables do
+    throw s!"{t}: the internal function {h.name} gives a table of constants two lists of words"
+  for q in ps do
+    unless q.art.target.name != t || consistent h.tables q.tables do
+      throw s!"{t}: the internal function {h.name} and {q.art.name} give a table of constants \
+        different words"
+  for g in hs do
+    unless g.target.name != t || consistent h.tables g.tables do
+      throw s!"{t}: the internal functions {h.name} and {g.name} give a table of constants \
+        different words"
+
+/-- Every table of constants that an internal function the code of `p`'s
+artifact calls names is one of the artifact's (`Prepared.tables`: those its
+contract gives it, `Artifact.consts`, and those its instructions carry) or
+one the internal function's instructions carry: the artifact's contract
+says where the memory holds the tables it gives (`Abi.withConsts`), which is
+what its proof, which runs the internal function's code, assumes of them,
+and every artifact with a table of a name gives the same words
+(`checkConsts`). No artifact's module is `internal`, the module of the
+internal functions. -/
+def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit := do
+  let a := p.art
+  let t := a.target.name
+  if a.module == "internal" then
+    throw s!"{t}: {a.name}'s module is `internal`, the module of the internal functions"
+  let own := p.tables.map (·.1)
+  for (n, _) in firstCalls a.code.calls do
+    let some h := internal? hs t n | continue
+    for s in h.syms do
+      unless own.contains s || (h.tables.map (·.1)).contains s do
+        throw s!"{t}: {a.name} calls the internal function {n}, which names the table {s}, \
+          which {a.name} does not have (`Artifact.consts`) or carry"
+
+/-- Every call in the code of `p`'s artifact, and in the code of the functions
+it calls, is of an artifact of `ps` of the same target, or of an internal
+function of `hs` (`internalsOf`), whose printed code is that of the called
+code (`badCall`). -/
+def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except String Unit :=
+  let a := p.art
+  let t := a.target.name
+  let printed (n : String) : Option (List Line) :=
+    match ps.find? fun q => q.art.target.name == t && q.art.name == n with
+    | some q => some q.lines
+    | none => (internal? hs t n).map (·.lines)
+  match badCall a.target.printer printed a.code.calls with
+  | none => pure ()
+  | some (n, false) =>
+    throw s!"{t}: {a.name} calls {n}, which is neither an artifact nor an internal function"
+  | some (n, true) =>
+    throw s!"{t}: {a.name} calls {n}, whose code is not what the call runs"
+
 /-- The macros that write the page of a static's address and its offset in
 the page in the syntax of the object format (`Line.sym`): Mach-O's on
 Apple's platforms, ELF's (which COFF's is too) elsewhere. -/
@@ -932,9 +1110,11 @@ def symMacros : String :=
   "#[cfg(not(target_vendor = \"apple\"))]\n#[allow(unused_macros)]\n" ++
   "macro_rules! vg_sym_pageoff {\n    ($s:literal) => {\n        concat!(\":lo12:\", $s)\n    };\n}\n"
 
-/-- The tables of constants of the artifacts `arts`, by name, each once. -/
-def tables (arts : List Artifact) : List (String × List (BitVec 64)) :=
-  let all := arts.flatMap tablesOf
+/-- The tables of constants of the artifacts `arts`, and those the
+instructions of the internal functions `hs` carry (`Internal.tables`), by
+name, each once. -/
+def tables (arts : List Artifact) (hs : List Internal := []) : List (String × List (BitVec 64)) :=
+  let all := arts.flatMap tablesOf ++ hs.flatMap (·.tables)
   ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.1 == n)
 
 /-- The byte `b < 256` as an escape of a Rust byte string literal, `\xHH`. -/
@@ -1047,7 +1227,7 @@ crate of the workspace, compiles none of them). The `cfg` is on the
 declarations, rather than the crate (`#![cfg]`), as `#[rustfmt::skip]`
 keeps rustfmt from rewriting their attributes, which the crate's cannot
 be. -/
-def targetRoot (t cfg : String) (mods : List String) : String :=
+def targetRoot (t cfg : String) (mods : List String) (internal : Bool := false) : String :=
   header ++
   s!"//! Verified functions for `{t}`: the crate `{crateDir t}`.\n" ++
   "//!\n" ++
@@ -1056,29 +1236,81 @@ def targetRoot (t cfg : String) (mods : List String) : String :=
   "//! against its contract. See `lean/README.md`.\n" ++
   "\n#![no_std]\n" ++
   symMacros ++
-  modDecls mods (fun _ => some cfg)
+  modDecls mods (fun _ => some cfg) ++
+  (if internal then s!"\n#[cfg({cfg})]\n#[rustfmt::skip]\nmod internal;\n" else "")
+
+/-- The module of the internal function `n` (`Internal`), under the crate's
+root: `internal::<n>`, the file `internal/<n>.rs` of its `codeDir`. -/
+def internalModule (n : String) : String := s!"internal::{n}"
+
+/-- The documentation of every internal function. -/
+def internalDoc : String :=
+  "An internal function of the verified functions of this crate (`VG.Rust.Internal`): code \
+  that they call, which is not itself an artifact. It has no contract of its own: the proof of \
+  each function that calls it covers its code, which the model runs for the call \
+  (`Code.call`), and the emitter checks that every call of it is of this code.\n\n\
+  # Safety\n\n\
+  * Only the verified functions of this crate may call it, as their code does: it is not \
+  visible outside the crate."
+
+/-- The file of the internal function `h`, `internal/<name>.rs`: the constant of
+the CPU features its code needs (`featuresConst`, for the checks of the
+generated code, `ci/check_variants.py`), and the function, a naked function
+of no parameters, `pub(crate)`, with the `cfg` attribute of those features
+(`Printer.featureCfg`), whose body enables them (`bodyLines`); `moduleOf` gives the module of each function it calls,
+from the crate's root (`internalModule` for an internal function). -/
+def internalFile (h : Internal) (moduleOf : String → String) : String :=
+  let T := h.target
+  let gate := cfgGate (h.features.filterMap T.printer.featureCfg)
+  header ++ s!"//! The internal function `{h.name}` for `{T.name}`, whose text is in\n" ++
+  s!"//! `{assemblyFile (internalModule h.name |>.replace "::" "/")}`.\n" ++
+  "#![allow(dead_code)]\n\n" ++
+  featuresConst h.name gate h.features "pub(crate)" "VG.Rust.Internal.features" ++
+  docComment "" internalDoc ++
+  gate ++
+  "#[unsafe(naked)]\n" ++
+  s!"pub(crate) unsafe extern \"{T.rustAbi}\" fn {h.name}() " ++ "{\n" ++
+  asmOf T (bodyLines T h.features h.lines) moduleOf "crate" ++ "}\n"
+
+/-- The module of a target's internal functions `hs`, `internal/mod.rs`:
+each one's module. -/
+def internalMod (t : String) (hs : List Internal) : String :=
+  header ++ s!"//! The internal functions of the verified functions for `{t}` \
+    (`VG.Rust.Internal`).\n" ++
+  "#![allow(dead_code)]\n" ++
+  String.join (hs.map fun h => s!"\n#[rustfmt::skip]\npub(crate) mod {h.name};\n")
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
 (`Prepared.lines`). -/
-def render (ps : List Prepared) (moduleOf : Artifact → String → String) : List (String × String) :=
+def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → String → String) :
+    List (String × String) :=
   let as := ps.map (·.art)
   let targets := distinct as (·.target.name)
   let perTarget (t : String) : List (String × String) :=
     let arts := ps.filter (·.art.target.name == t)
-    -- In order of their names, wherever their artifacts come in the list.
+    -- In order of their names, wherever their artifacts or calls come in the lists.
+    let hs := (hs.filter (·.target.name == t)).mergeSort (·.name ≤ ·.name)
     let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
-    let ts := tables (arts.map (·.art))
+    let ts := tables (arts.map (·.art)) hs
     let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
     let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
     let src := codeDir t
-    (s!"{src}/lib.rs", targetRoot t cfg mods) ::
+    (s!"{src}/lib.rs", targetRoot t cfg mods !hs.isEmpty) ::
     (if ts.isEmpty then [] else
       (s!"{src}/consts/mod.rs", tablesMod t ts) ::
         ts.map fun (n, ws) => (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)) ++
+    (if hs.isEmpty then [] else
+      (s!"{src}/internal/mod.rs", internalMod t hs) ::
+        (hs.map fun h => Task.spawn fun _ =>
+          let m := s!"internal/{h.name}"
+          [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
+           (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
+             moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.features h.lines))]).flatMap
+          Task.get) ++
     -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>
-      let items := moduleItems moduleOf (arts.filter (·.art.module == m))
+      let items := moduleItems (fun a => moduleOf a.target.name) (arts.filter (·.art.module == m))
       [(s!"{src}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
         s!"//! `{assemblyFile m}`.\n" ++
@@ -1090,11 +1322,13 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
   ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
 /-- The generated files, as paths relative to `crates/` and their contents:
-for each target, its crate's `lib.rs` and one `<module>.rs` per module, in
-its `codeDir`; an error if an artifact is not made from an `Api` with a
+for each target, its crate's `lib.rs`, one `<module>.rs` per module and one
+`internal/<name>.rs` per internal function (`internalsOf`), in its `codeDir`;
+an error if an artifact is not made from an `Api` with a
 contract (`checkApi`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
-tables of constants are not as `checkConsts` requires, an
+tables of constants, or an internal function's name or tables, are not as
+`checkConsts`, `checkInternal` and `checkInternalTables` require, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`), its doc has no `# Safety` section at its end for what
@@ -1115,12 +1349,18 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar as checkApi
   checkUnique as
   let ps := prepareAll as
-  forMPar ps (checkCalls ps)
+  let hs := internalsOf ps
+  forMPar ps (checkCalls ps hs)
   forMPar ps (checkConsts ps)
+  forMPar hs (checkInternal ps hs)
+  forMPar ps (checkInternalTables hs)
   forMPar ps checkFeatures
   forMPar ps checkEncodable
   forMPar as checkLayout
   forMPar as checkWritten
-  return render ps fun a n => ((callee as a n).map (·.module)).getD ""
+  return render ps hs fun t n =>
+    match as.find? fun b => b.target.name == t && b.name == n with
+    | some b => b.module
+    | none => internalModule n
 
 end VG.Rust

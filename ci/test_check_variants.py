@@ -119,6 +119,51 @@ class Flow(unittest.TestCase):
         self.assertEqual(len(check_variants.check(fns(calls), "vg_g vg_g_s")), 1)
 
 
+class Internal(unittest.TestCase):
+    # Internal functions (`fn <name>()`, no signature): `vg_f` with the variant
+    # `vg_f_s`, whose suffix a function with a signature has (`vg_g_s`), and
+    # `vg_f_mod`, whose suffix none has.
+    def targets(self, calls):
+        out = {}
+        for name, callees in calls.items():
+            sig = check_variants.INTERNAL if name.startswith("vg_f") else SIG
+            out[name] = (sig, set(callees))
+        return {"x": out}
+
+    def test_variants(self):
+        t = self.targets({"vg_f": [], "vg_f_s": [], "vg_f_mod": [], "vg_g": ["vg_f", "vg_f_mod"],
+                          "vg_g_s": ["vg_f_s", "vg_f_mod"]})["x"]
+        self.assertEqual(check_variants.variants(t), {"vg_g_s": ("vg_g", "s"), "vg_f_s": ("vg_f", "s")})
+
+    def test_flow(self):
+        calls = {"vg_f": [], "vg_f_s": [], "vg_g": ["vg_f"], "vg_g_s": ["vg_f"], "vg_h": [],
+                 "vg_h_s": []}
+        errors = check_variants.check(self.targets(calls), "vg_g vg_g_s vg_h vg_h_s")
+        self.assertEqual(len(errors), 2)
+        self.assertIn("vg_g_s, the variant of vg_g for vg_f_s, calls the baseline vg_f", errors[0])
+        self.assertIn("the variant vg_f_s is neither called", errors[1])
+        calls["vg_g_s"] = ["vg_f_s"]
+        self.assertEqual(check_variants.check(self.targets(calls), "vg_g vg_g_s vg_h vg_h_s"), [])
+
+    def test_read(self):
+        text = """// @generated
+pub(crate) const VG_F_S_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA);
+
+/// An internal function.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_f_s() {
+    core::arch::naked_asm!(
+        r"ret",
+        vg_k = sym crate::internal::vg_k::vg_k,
+    )
+}
+"""
+        fs = check_variants.functions([("x", text)])["x"]
+        self.assertEqual(fs, {"vg_f_s": (check_variants.INTERNAL, {"vg_k"})})
+        self.assertEqual(check_variants.features([("x", text)]), {"x": {"vg_f_s": frozenset({"sha"})}})
+        self.assertEqual(check_variants.unread([("x", text)]), [])
+
+
 class Aliases(unittest.TestCase):
     TEXT = (
         'pub(crate) unsafe extern "C" fn vg_g(out: *mut u8) {\n'
