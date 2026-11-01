@@ -14,25 +14,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::json_struct;
 use verified_garbage::ecdh::{Error, P521, PrivateKey};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{CurveGroup as Group, EcdhCase as Case};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        curve: String,
-    }
-}
-
-json_struct! {
-    struct Case {
-        public: Hex,
-        private: Hex,
-        shared: Hex,
-    }
-}
 
 /// A private key of up to 67 bytes (Wycheproof writes them as signed
 /// integers), as 66.

@@ -20,14 +20,8 @@ use crate::json_struct;
 use verified_garbage::aes_siv::{AesSiv, Error};
 
 use super::harness::{self, Count, Expectation, Hex};
+use super::schema::{AeadCase, SizesGroup};
 use crate::require_vectors;
-
-json_struct! {
-    struct DaeadGroup {
-        #[json(rename = "keySize")]
-        key_size: usize,
-    }
-}
 
 json_struct! {
     struct DaeadCase {
@@ -35,26 +29,6 @@ json_struct! {
         aad: Hex,
         msg: Hex,
         ct: Hex,
-    }
-}
-
-json_struct! {
-    struct AeadGroup {
-        #[json(rename = "keySize")]
-        key_size: usize,
-        #[json(rename = "tagSize")]
-        tag_size: usize,
-    }
-}
-
-json_struct! {
-    struct AeadCase {
-        key: Hex,
-        iv: Hex,
-        aad: Hex,
-        msg: Hex,
-        ct: Hex,
-        tag: Hex,
     }
 }
 
@@ -90,12 +64,12 @@ fn check(
 #[test]
 fn aes_siv_cmac() {
     require_vectors!();
-    let file = harness::load::<DaeadGroup, DaeadCase>("aes_siv_cmac_test.json");
+    let file = harness::load::<SizesGroup, DaeadCase>("aes_siv_cmac_test.json");
     let (valid, invalid) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
-        assert_eq!(group.params.key_size, 8 * c.key.0.len(), "tcId {id}");
+        assert_eq!(group.params.key_size, Some(8 * c.key.0.len()), "tcId {id}");
         let (tag, ct) = c.ct.0.split_at(16);
         check(id, test.result, &c.key.0, &[&c.aad.0], &c.msg.0, tag, ct);
         if test.result == Expectation::Valid {
@@ -110,13 +84,13 @@ fn aes_siv_cmac() {
 #[test]
 fn aead_aes_siv_cmac() {
     require_vectors!();
-    let file = harness::load::<AeadGroup, AeadCase>("aead_aes_siv_cmac_test.json");
+    let file = harness::load::<SizesGroup, AeadCase>("aead_aes_siv_cmac_test.json");
     let (valid, invalid) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
-        assert_eq!(group.params.key_size, 8 * c.key.0.len(), "tcId {id}");
-        assert_eq!(group.params.tag_size, 128, "tcId {id}");
+        assert_eq!(group.params.key_size, Some(8 * c.key.0.len()), "tcId {id}");
+        assert_eq!(group.params.tag_size, Some(128), "tcId {id}");
         check(
             id,
             test.result,

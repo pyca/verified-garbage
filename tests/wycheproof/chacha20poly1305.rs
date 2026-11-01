@@ -13,29 +13,11 @@
     target_arch = "riscv64"
 ))]
 
-use crate::json_struct;
 use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{AeadCase as Case, SizesGroup as Group};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "ivSize")]
-        iv_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        iv: Hex,
-        aad: Hex,
-        msg: Hex,
-        ct: Hex,
-        tag: Hex,
-    }
-}
 
 #[test]
 fn chacha20_poly1305() {
@@ -44,7 +26,7 @@ fn chacha20_poly1305() {
     let checked = Count::default();
     file.par_tests(|group, test| {
         let c = &test.case;
-        if group.params.iv_size != 96 {
+        if group.params.iv_size != Some(96) {
             assert_ne!(c.iv.0.len(), 12);
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;

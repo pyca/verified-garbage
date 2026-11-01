@@ -20,7 +20,6 @@
     feature = "alloc"
 ))]
 
-use crate::json_struct;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::{
     sha3::Sha3_224, sha3::Sha3_256, sha3::Sha3_384, sha3::Sha3_512, sha224::Sha224, sha256::Sha256,
@@ -28,32 +27,10 @@ use verified_garbage::hashes::{
 };
 use verified_garbage::rsa::{Error, PublicKey};
 
-use super::harness::{self, Expectation, Hex};
+use super::harness::{self, Expectation};
+use super::schema::{RsaPublicKeyGroup as Group, SigCase as Case};
 use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
-
-json_struct! {
-    struct Public {
-        modulus: Hex,
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-    }
-}
-
-json_struct! {
-    struct Group {
-        #[json(rename = "publicKey")]
-        public_key: Public,
-        sha: String,
-    }
-}
-
-json_struct! {
-    struct Case {
-        msg: Hex,
-        sig: Hex,
-    }
-}
 
 /// A hash function, to its value as bytes.
 type Digest = fn(&[u8]) -> Vec<u8>;

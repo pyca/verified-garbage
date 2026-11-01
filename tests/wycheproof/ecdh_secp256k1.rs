@@ -13,13 +13,8 @@ use crate::json_struct;
 use verified_garbage::ecdh::{Error, PrivateKey, Secp256k1};
 
 use super::harness::{self, Count, Expectation, Hex};
+use super::schema::CurveGroup as Group;
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        curve: String,
-    }
-}
 
 json_struct! {
     struct Public {

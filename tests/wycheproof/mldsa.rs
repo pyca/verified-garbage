@@ -18,57 +18,60 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use super::harness::Hex;
+use crate::json_struct;
+
+json_struct! {
+    pub struct SignGroup {
+        #[json(rename = "privateSeed")]
+        pub private_seed: Hex,
+        #[json(rename = "publicKey", default)]
+        pub public_key: Option<Hex>,
+    }
+}
+
+json_struct! {
+    pub struct Sign {
+        #[json(default)]
+        pub msg: Option<Hex>,
+        #[json(default)]
+        pub ctx: Option<Hex>,
+        #[json(default)]
+        pub mu: Option<Hex>,
+        #[json(default)]
+        pub rnd: Option<Hex>,
+        #[json(default)]
+        pub sig: Option<Hex>,
+    }
+}
+
+json_struct! {
+    pub struct VerifyGroup {
+        #[json(rename = "publicKey")]
+        pub public_key: Hex,
+    }
+}
+
+json_struct! {
+    pub struct Verify {
+        pub msg: Hex,
+        #[json(default)]
+        pub ctx: Option<Hex>,
+        pub sig: Hex,
+    }
+}
+
 /// Defines the tests of the parameter set `$n` (`"44"`), of the module
 /// `$module` and its key types.
 macro_rules! mldsa_tests {
     ($n:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
-        use crate::json_struct;
+        use super::mldsa::{Sign, SignGroup, Verify, VerifyGroup};
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
-        use super::harness::{self, Expectation, Hex};
+        use super::harness::{self, Expectation};
         use crate::require_vectors;
 
         type Sig = [u8; $VerifyingKey::SIGNATURE_SIZE];
-
-        json_struct! {
-            struct SignGroup {
-                #[json(rename = "privateSeed")]
-                private_seed: Hex,
-                #[json(rename = "publicKey", default)]
-                public_key: Option<Hex>,
-            }
-        }
-
-        json_struct! {
-            struct Sign {
-                #[json(default)]
-                msg: Option<Hex>,
-                #[json(default)]
-                ctx: Option<Hex>,
-                #[json(default)]
-                mu: Option<Hex>,
-                #[json(default)]
-                rnd: Option<Hex>,
-                #[json(default)]
-                sig: Option<Hex>,
-            }
-        }
-
-        json_struct! {
-            struct VerifyGroup {
-                #[json(rename = "publicKey")]
-                public_key: Hex,
-            }
-        }
-
-        json_struct! {
-            struct Verify {
-                msg: Hex,
-                #[json(default)]
-                ctx: Option<Hex>,
-                sig: Hex,
-            }
-        }
 
         #[test]
         fn sign_seed() {

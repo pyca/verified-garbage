@@ -16,29 +16,11 @@
     target_arch = "riscv64"
 ))]
 
-use crate::json_struct;
 use verified_garbage::aes_cbc::AesCbc;
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{CipherCase as Case, SizesGroup as Group};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "keySize")]
-        key_size: usize,
-        #[json(rename = "ivSize")]
-        iv_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        iv: Hex,
-        msg: Hex,
-        ct: Hex,
-    }
-}
 
 /// `msg` with PKCS #5 padding.
 fn pad(msg: &[u8]) -> Vec<u8> {
@@ -64,8 +46,8 @@ fn aes_cbc_pkcs5() {
     file.par_tests(|group, test| {
         let Case { key, iv, msg, ct } = &test.case;
         let id = test.tc_id;
-        assert_eq!(key.0.len() * 8, group.params.key_size, "tcId {id}");
-        assert_eq!(group.params.iv_size, 128, "tcId {id}");
+        assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");
+        assert_eq!(group.params.iv_size, Some(128), "tcId {id}");
         assert_eq!(ct.0.len() % 16, 0, "tcId {id}");
         let ctx = AesCbc::new(&key.0).unwrap();
         let iv: [u8; 16] = iv.0[..].try_into().unwrap();

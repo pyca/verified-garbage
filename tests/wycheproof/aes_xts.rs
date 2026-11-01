@@ -14,29 +14,11 @@
     target_arch = "riscv64"
 ))]
 
-use crate::json_struct;
 use verified_garbage::aes_xts::AesXts;
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{CipherCase as Case, SizesGroup as Group};
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "keySize")]
-        key_size: usize,
-        #[json(rename = "ivSize")]
-        iv_size: usize,
-    }
-}
-
-json_struct! {
-    struct Case {
-        key: Hex,
-        iv: Hex,
-        msg: Hex,
-        ct: Hex,
-    }
-}
 
 #[test]
 fn aes_xts() {
@@ -47,8 +29,8 @@ fn aes_xts() {
         let Case { key, iv, msg, ct } = &test.case;
         let id = test.tc_id;
         assert_eq!(test.result, Expectation::Valid, "tcId {id}");
-        assert_eq!(key.0.len() * 8, group.params.key_size, "tcId {id}");
-        assert_eq!(iv.0.len() * 8, group.params.iv_size, "tcId {id}");
+        assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");
+        assert_eq!(Some(iv.0.len() * 8), group.params.iv_size, "tcId {id}");
         let ctx = AesXts::new(&key.0).unwrap();
         let mut i = [0; 16];
         i[..iv.0.len()].copy_from_slice(&iv.0);

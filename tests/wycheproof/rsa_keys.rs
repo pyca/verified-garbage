@@ -24,41 +24,13 @@
 
 use std::collections::BTreeMap;
 
-use crate::json_struct;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-use super::harness::{self, Count, Hex, TestFile};
+use super::harness::Fields as Case;
+use super::harness::{self, Count, TestFile};
+use super::schema::{RsaAnyKeyGroup as Group, RsaAnyPrivateKey as Key};
 use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
-
-json_struct! {
-    #[derive(Clone)]
-    struct Key {
-        modulus: Hex,
-        #[json(rename = "privateExponent")]
-        private_exponent: Hex,
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-        prime1: Option<Hex>,
-        prime2: Option<Hex>,
-        exponent1: Option<Hex>,
-        exponent2: Option<Hex>,
-        coefficient: Option<Hex>,
-        #[json(rename = "otherPrimeInfos")]
-        other_prime_infos: Option<serde_json::Value>,
-    }
-}
-
-json_struct! {
-    struct Group {
-        #[json(rename = "privateKey")]
-        private_key: Option<Key>,
-    }
-}
-
-json_struct! {
-    struct Case {}
-}
 
 /// `key`'s operation on `x`, which must succeed.
 fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
@@ -69,8 +41,11 @@ fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
 
 /// Checks the key `k` of the file `name`. Returns whether it had its primes.
 fn check_key(name: &str, k: &Key) -> bool {
-    let n = trim(&k.modulus.0);
-    let (e, d) = (&k.public_exponent.0, &k.private_exponent.0);
+    let n = trim(&k.modulus.as_ref().unwrap().0);
+    let (e, d) = (
+        &k.public_exponent.0,
+        &k.private_exponent.as_ref().unwrap().0,
+    );
     let len = n.len();
     let public = PublicKey::new(n, e).unwrap();
     // 2, and `n` with its top byte halved, both below `n`.
@@ -143,11 +118,16 @@ fn rsa_keys_from_components() {
         }
         let file: TestFile<Group, Case> = harness::load(&name);
         for group in file.test_groups {
-            if let Some(k) = group.params.private_key
-                && k.other_prime_infos.is_none()
-                && harness::rsa_key_tested(&k.modulus.0)
-            {
-                keys.entry(k.modulus.0.clone()).or_insert((name.clone(), k));
+            let Some(k) = group.params.private_key else {
+                continue;
+            };
+            assert!(
+                k.modulus.is_some() && k.private_exponent.is_some(),
+                "{name}"
+            );
+            let n = &k.modulus.as_ref().unwrap().0;
+            if k.other_prime_infos.is_none() && harness::rsa_key_tested(n) {
+                keys.entry(n.clone()).or_insert((name.clone(), k));
             }
         }
     }

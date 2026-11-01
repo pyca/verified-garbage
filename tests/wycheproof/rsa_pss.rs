@@ -27,17 +27,12 @@ use verified_garbage::hashes::{
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 
-use super::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation};
+use super::schema::{
+    MsgCase, RsaPrivateKey as Crt, RsaPrivateKeyGroup as CrtGroup, RsaPublicKey as Public, SigCase,
+};
 use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
-
-json_struct! {
-    struct Public {
-        modulus: Hex,
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-    }
-}
 
 json_struct! {
     struct VerifyGroup {
@@ -48,41 +43,6 @@ json_struct! {
         mgf_sha: String,
         #[json(rename = "sLen")]
         s_len: usize,
-    }
-}
-
-json_struct! {
-    struct SigCase {
-        msg: Hex,
-        sig: Hex,
-    }
-}
-
-json_struct! {
-    struct Crt {
-        modulus: Hex,
-        #[json(rename = "privateExponent")]
-        private_exponent: Hex,
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-        prime1: Hex,
-        prime2: Hex,
-        exponent1: Hex,
-        exponent2: Hex,
-        coefficient: Hex,
-    }
-}
-
-json_struct! {
-    struct CrtGroup {
-        #[json(rename = "privateKey")]
-        private_key: Crt,
-    }
-}
-
-json_struct! {
-    struct MsgCase {
-        msg: Hex,
     }
 }
 

@@ -20,15 +20,9 @@ use crate::json_struct;
 use verified_garbage::chacha20::ChaCha20;
 
 use super::harness::{self, Count, Expectation};
+use super::schema::SizesGroup as Group;
 use crate::bytes::unhex;
 use crate::require_vectors;
-
-json_struct! {
-    struct Group {
-        #[json(rename = "ivSize")]
-        iv_size: usize,
-    }
-}
 
 json_struct! {
     struct Case {
@@ -45,7 +39,7 @@ fn chacha20_poly1305_ciphertexts() {
     let file = harness::load::<Group, Case>("chacha20_poly1305_test.json");
     let checked = Count::default();
     file.par_tests(|group, test| {
-        if group.params.iv_size != 96 || test.result != Expectation::Valid {
+        if group.params.iv_size != Some(96) || test.result != Expectation::Valid {
             return;
         }
         let key: [u8; 32] = unhex(&test.case.key).try_into().unwrap();

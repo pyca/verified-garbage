@@ -15,78 +15,80 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::json_struct;
+
+json_struct! {
+    pub struct File<T> {
+        #[json(rename = "testGroups")]
+        pub groups: Vec<Group<T>>,
+    }
+}
+
+json_struct! {
+    pub struct Group<T> {
+        #[json(rename = "parameterSet")]
+        pub parameter_set: String,
+        #[json(rename = "signatureInterface", default)]
+        pub interface: String,
+        #[json(rename = "preHash", default)]
+        pub pre_hash: String,
+        #[json(rename = "externalMu", default)]
+        pub external_mu: bool,
+        pub tests: Vec<T>,
+    }
+}
+
+json_struct! {
+    pub struct KeyGen {
+        pub seed: String,
+        pub pk: String,
+    }
+}
+
+json_struct! {
+    pub struct SigVer {
+        pub pk: String,
+        #[json(default)]
+        pub message: String,
+        #[json(default)]
+        pub context: String,
+        #[json(default)]
+        pub mu: String,
+        pub signature: String,
+        #[json(rename = "testPassed")]
+        pub passed: bool,
+    }
+}
+
+/// The groups of the parameter set `name` in the vendored file `json`.
+pub fn groups<T: crate::json::FromJson>(name: &str, json: &str) -> Vec<Group<T>> {
+    let file: File<T> = crate::json::parse(name, json);
+    let groups: Vec<Group<T>> = file
+        .groups
+        .into_iter()
+        .filter(|g| g.parameter_set == name)
+        .collect();
+    assert!(!groups.is_empty());
+    groups
+}
+
 /// Defines the tests of the parameter set named `$name` (`"ML-DSA-44"`), of
 /// the module `$module` (`verified_garbage::mldsa44`, `verified_garbage::mldsa65`,
 /// `verified_garbage::mldsa87`) and its key types.
 macro_rules! mldsa_tests {
     ($name:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
-        use crate::json_struct;
+        use super::mldsa::{KeyGen, SigVer, groups};
         use verified_garbage::hashes::sha3::Shake256;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
-        json_struct! {
-            struct File<T> {
-                #[json(rename = "testGroups")]
-                groups: Vec<Group<T>>,
-            }
-        }
-
-        json_struct! {
-            struct Group<T> {
-                #[json(rename = "parameterSet")]
-                parameter_set: String,
-                #[json(rename = "signatureInterface", default)]
-                interface: String,
-                #[json(rename = "preHash", default)]
-                pre_hash: String,
-                #[json(rename = "externalMu", default)]
-                external_mu: bool,
-                tests: Vec<T>,
-            }
-        }
-
-        json_struct! {
-            struct KeyGen {
-                seed: String,
-                pk: String,
-            }
-        }
-
-        json_struct! {
-            struct SigVer {
-                pk: String,
-                #[json(default)]
-                message: String,
-                #[json(default)]
-                context: String,
-                #[json(default)]
-                mu: String,
-                signature: String,
-                #[json(rename = "testPassed")]
-                passed: bool,
-            }
-        }
-
         use crate::bytes::unhex;
-
-        /// The groups of the parameter set in the vendored file `json`.
-        fn groups<T: crate::json::FromJson>(json: &str) -> Vec<Group<T>> {
-            let file: File<T> = crate::json::parse($name, json);
-            let groups: Vec<Group<T>> = file
-                .groups
-                .into_iter()
-                .filter(|g| g.parameter_set == $name)
-                .collect();
-            assert!(!groups.is_empty());
-            groups
-        }
 
         #[test]
         fn keygen() {
             let json = crate::vectors::text(
                 "vectors/nist-acvp/ML-DSA-keyGen-FIPS204/internalProjection.json",
             );
-            for g in groups::<KeyGen>(&json) {
+            for g in groups::<KeyGen>($name, &json) {
                 assert_eq!(g.tests.len(), 25);
                 for t in &g.tests {
                     let seed: [u8; 32] = unhex(&t.seed).try_into().unwrap();
@@ -103,7 +105,7 @@ macro_rules! mldsa_tests {
                 "vectors/nist-acvp/ML-DSA-sigVer-FIPS204/internalProjection.json",
             );
             let mut count = 0;
-            for g in groups::<SigVer>(&json) {
+            for g in groups::<SigVer>($name, &json) {
                 // HashML-DSA is not provided.
                 if g.pre_hash == "preHash" {
                     continue;

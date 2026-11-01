@@ -34,41 +34,12 @@ use std::collections::BTreeMap;
 use crate::json_struct;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
+use super::harness::Fields as Case;
+use super::harness::Fields as PrimalityGroup;
 use super::harness::{self, Count, Expectation, Hex, TestFile};
+use super::schema::{RsaAnyKeyGroup as Group, RsaAnyPrivateKey as Key};
 use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
-
-json_struct! {
-    struct Key {
-        #[json(rename = "publicExponent")]
-        public_exponent: Hex,
-        prime1: Option<Hex>,
-        prime2: Option<Hex>,
-        modulus: Option<Hex>,
-        #[json(rename = "privateExponent")]
-        private_exponent: Option<Hex>,
-        exponent1: Option<Hex>,
-        exponent2: Option<Hex>,
-        coefficient: Option<Hex>,
-        #[json(rename = "otherPrimeInfos")]
-        other_prime_infos: Option<serde_json::Value>,
-    }
-}
-
-json_struct! {
-    struct Group {
-        #[json(rename = "privateKey")]
-        private_key: Option<Key>,
-    }
-}
-
-json_struct! {
-    struct Case {}
-}
-
-json_struct! {
-    struct PrimalityGroup {}
-}
 
 json_struct! {
     struct PrimalityCase {
