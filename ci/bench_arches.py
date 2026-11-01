@@ -337,19 +337,16 @@ ALL = None
 @functools.lru_cache(None)
 def read(path, revision=None, root="."):
     """The text of `path` at `revision` (or in the tree), None if it has none;
-    a generated file's wherever the revision has it (`asm_layout.physical`)."""
-    for candidate in asm_layout.physical(path):
-        if revision:
-            result = subprocess.run(["git", "show", f"{revision}:{candidate}"], cwd=root,
-                                    capture_output=True, text=True, check=False)
-            if result.returncode == 0:
-                return result.stdout
-            continue
-        try:
-            return (pathlib.Path(root) / candidate).read_text()
-        except FileNotFoundError:
-            continue
-    return None
+    a generated file's from its crate (`asm_layout.physical`)."""
+    path = asm_layout.physical(path)
+    if revision:
+        result = subprocess.run(["git", "show", f"{revision}:{path}"], cwd=root,
+                                capture_output=True, text=True, check=False)
+        return result.stdout if result.returncode == 0 else None
+    try:
+        return (pathlib.Path(root) / path).read_text()
+    except FileNotFoundError:
+        return None
 
 
 def bench_uses(path, revision=None, root="."):

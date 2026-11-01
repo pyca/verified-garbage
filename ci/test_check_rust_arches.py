@@ -31,12 +31,12 @@ def job(name):
 
 class Arches(unittest.TestCase):
     def test_one_architecture(self):
-        self.assertEqual(rust_arches.arches(["src/asm/x86_64/md5.rs"]), ["x86_64"])
-        self.assertEqual(rust_arches.arches(["src/asm/x86/md5.rs"]), ["x86"])
-        self.assertEqual(rust_arches.arches(["src/asm/powerpc64le/sha256.rs"]), ["powerpc64"])
-        self.assertEqual(rust_arches.arches(["src/asm/riscv64/chacha20.rs"]), ["riscv64"])
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-x86_64/src/md5.rs"]), ["x86_64"])
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-x86/src/md5.rs"]), ["x86"])
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-powerpc64le/src/sha256.rs"]), ["powerpc64"])
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-riscv64/src/chacha20.rs"]), ["riscv64"])
         self.assertEqual(
-            rust_arches.arches(["src/asm/arm/md5.rs", "src/asm/aarch64/sha256.rs", "lean/X.lean"]),
+            rust_arches.arches(["crates/verified-garbage-asm-arm/src/md5.rs", "crates/verified-garbage-asm-aarch64/src/sha256.rs", "lean/X.lean"]),
             ["aarch64", "arm"],
         )
 
@@ -53,7 +53,7 @@ class Arches(unittest.TestCase):
     def test_shared(self):
         for path in [
             "src/asm/mod.rs",
-            "src/asm/mips64/md5.rs",
+            "crates/verified-garbage-asm-mips64/src/md5.rs",
             "src/md5.rs",
             "src/cpu.rs",
             "tests/main.rs",
@@ -67,7 +67,7 @@ class Arches(unittest.TestCase):
             "something/new",
         ]:
             with self.subTest(path=path):
-                self.assertEqual(rust_arches.arches(["src/asm/x86/md5.rs", path]), ALL)
+                self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-x86/src/md5.rs", path]), ALL)
 
     def test_not_rust(self):
         self.assertEqual(
@@ -103,7 +103,7 @@ def run(event, stdin=""):
 
 class Output(unittest.TestCase):
     def test_one_architecture(self):
-        out = run("pull_request", "src/asm/arm/md5.rs\n\nlean/A.lean\n")
+        out = run("pull_request", "crates/verified-garbage-asm-arm/src/md5.rs\n\nlean/A.lean\n")
         self.assertEqual(out["arches"], ["arm"])
         self.assertIs(out["all"], False)
         self.assertEqual([e["name"] for e in out["rust"]], ["Linux, ARMv7"])
@@ -116,7 +116,7 @@ class Output(unittest.TestCase):
                          ["armv7-unknown-linux-gnueabihf", "thumbv7neon-unknown-linux-gnueabihf"])
 
     def test_x86_64_takes_the_sde_chips(self):
-        out = run("pull_request", "src/asm/x86_64/md5.rs\n")
+        out = run("pull_request", "crates/verified-garbage-asm-x86_64/src/md5.rs\n")
         self.assertEqual(out["thumb"], [])
         self.assertEqual({e.get("arch", "x86_64") for e in out["cpu"]}, {"x86_64"})
         self.assertIn("icx", {e["chip"] for e in out["cpu"]})

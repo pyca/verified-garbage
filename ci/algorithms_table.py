@@ -7,7 +7,7 @@ is a row:
   family   the table it goes in, one of FAMILIES
   specs    its Lean specs, lean/VerifiedGarbage/Spec/<spec>.lean
   modules  the Rust modules of its public API
-  asm      the generated modules, src/asm/<arch>/<asm>.rs, whose functions
+  asm      the generated modules, crates/verified-garbage-asm-<arch>/src/<asm>.rs, whose functions
            it runs
 
 and nothing else: a row describes no optimizations by hand.
@@ -50,7 +50,7 @@ ARCHES = {
     "riscv64": "RISC-V",
 }
 
-# The directory of an architecture's generated modules, src/asm/<dir>/, where
+# The crate of an architecture's generated modules, verified-garbage-asm-<dir>, where
 # it is not the architecture's name (the verified code is little-endian only).
 ASM_DIRS = {"powerpc64": "powerpc64le"}
 

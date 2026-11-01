@@ -2,8 +2,8 @@
 """The Rust jobs a CI run starts: the entries of ci/rust_matrix.toml's
 matrices for the architectures it tests (see `rust-arches` in ci.yml).
 
-The verified functions of each architecture are its own generated files,
-`src/asm/<target>/`, which only that architecture compiles, and the Lean
+The verified functions of each architecture are its own crate of generated
+code, `crates/verified-garbage-asm-<target>/`, which only that architecture compiles, and the Lean
 proofs reach the Rust code only through them (CI checks that they are what
 the emitter writes). So a pull request runs the Rust jobs of an
 architecture only when it changes that architecture's files or anything else
@@ -47,8 +47,8 @@ import bench_arches
 MATRIX = Path(__file__).resolve().parent / "rust_matrix.toml"
 JOBS = ("rust", "thumb", "cpu")
 
-# `src/asm/<target>/`'s target, and the architecture (`target_arch`) it is
-# compiled for.
+# The target of a crate of generated code, `crates/verified-garbage-asm-<target>/`,
+# and the architecture (`target_arch`) it is compiled for.
 ARCHES = {
     "aarch64": "aarch64",
     "arm": "arm",
@@ -59,7 +59,7 @@ ARCHES = {
 }
 
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
-# `src/asm/`), the benchmarks (a crate of their own, which only `rust-lint`
+# the crates of generated code), the benchmarks (a crate of their own, which only `rust-lint`
 # builds, for every target: see `output`), documentation (agents' skills
 # too), and the workflows and actions of the Lean build and the benchmarks.
 NOT_RUST_PREFIXES = (
@@ -109,11 +109,6 @@ def arches_of(path):
     # A target's crate of generated code (`asm_layout`), its manifest too.
     if m := re.match(rf"{asm_layout.CRATES}/{asm_layout.PREFIX}([a-z0-9_]+)/", path):
         return {ARCHES[m[1]]} if m[1] in ARCHES else set(ARCHES.values())
-    if path.startswith("src/asm/"):
-        target = path.split("/")[2]
-        if target in ARCHES and path.count("/") > 2:
-            return {ARCHES[target]}
-        return set(ARCHES.values())  # src/asm/mod.rs, or a new target
     if path.startswith(NOT_RUST_PREFIXES) or path in NOT_RUST_FILES:
         return set()
     if path.startswith("ci/") and path.count("/") == 1 and path not in RUST_CI:
