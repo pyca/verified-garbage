@@ -73,6 +73,21 @@ theorem unch_of_checkKeeps {base : Addr} {m m' : Mem} (h : CC.Keeps base m m') :
 
 theorem not_mask (b : Bool) : maskOf b ^^^ BitVec.ofInt 64 (-1) = maskOf (!b) := by cases b <;> decide
 
+/-- A call on the working space, then `s0` from `s3`. -/
+theorem wsCallR_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {K : Contract isa}
+    (hK : Meets body K) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
+    (hpre : ∀ t : State, t.rd = [] → t.wr = [⟨base, 8192⟩] → t.gpr .a0 = base → t.mem = s.mem → K.pre t)
+    {Q : State → Prop}
+    (hQ : ∀ s' s'' : State, Kp s s'' → s''.mem = s'.mem → ∀ t : State, t.gpr .a0 = base → t.mem = s.mem →
+      K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s'') :
+    WP isa (Cfg.wsCall f body) s Q := by
+  rw [Cfg.wsCall]
+  refine WP.seq (wsCall_ok hn hK hw hpre fun s' K' t a m hp => wp_mv fun s'' u => WP.block_nil ?_)
+  refine hQ s' s'' ⟨fun r hr => ?_, by rw [u.rd, K'.rd], by rw [u.wr, K'.wr], by rw [u.sp, K'.sp]⟩ u.mem t a m hp
+  by_cases h : r = .s0
+  · subst h; rw [u.gpr, K'.gpr _ (by decide), h3, hw.s0]
+  · rw [u.other _ h, K'.gpr _ hr]
+
 /-- The masks of `d < n` and `d ≠ 0` into the flag. -/
 theorem range_ok {s : State} {base : Addr} (hw : WsReg s base) :
     WP isa (.block (rangeCode p256)) s fun s' =>
@@ -205,7 +220,7 @@ abbrev tailW : List (Nat × Nat) :=
 
 /-- `tail`: the range of `d` into the flag, `R = [d]P`, `Z^(p-2)`, and `x`. -/
 theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw : WsReg s base)
-    (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
+    (h3 : s.gpr .s3 = base) (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
     (hon : Spec.Weierstrass.onCurve W (.affine (toM W.p (2 ^ 256) (sv base s RX))
       (toM W.p (2 ^ 256) (sv base s RY))) = true) :
     WP isa (tail p256 Spec.Weierstrass.Mul.p256.mulApi.name mulP256) s fun s' =>
@@ -233,8 +248,9 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
   have hc₁ := hc.of_unch U₁ (by decide)
   rw [mn_eq hc] at f₁
   -- The multiplication.
-  refine WP.seq (wsCall_ok Impl.Ecdsa.RISCV64.mulP256_noFrames (mul_rv hL) hw₁ (fun t r w a m => ?_)
-    fun s₂ K₂ t a₂ m₂ hp₂ => ?_)
+  refine WP.seq (wsCallR_ok Impl.Ecdsa.RISCV64.mulP256_noFrames (mul_rv hL) hw₁
+    (by rw [K₁.gpr _ (by decide)]; exact h3) (fun t r w a m => ?_)
+    fun s₂' s₂ K₂ mm₂ t a₂ m₂ hp₂ => ?_)
   · refine ⟨r, by rw [w, a], by rw [a]; exact hw₁.nowrap, by rw [a]; exact hw₁.al, ?_, ?_⟩
     · rw [a, m]
       refine ⟨(coord_sv _ _ MP).trans hc₁.mp, (coord_sv _ _ ZERO).trans hc₁.zero,
@@ -252,7 +268,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
   have hp₂' : MC.ResultInRange (MC.scalar base s₁.mem) (MC.point base s₁.mem) base s₁.mem s₂.mem := by
     have := hp₂
     simp only [mulRVc, State.withRegions_mem] at this
-    rw [a₂, m₂] at this
+    rw [a₂, m₂, ← mm₂] at this
     exact this
   obtain ⟨hR, hK⟩ := hp₂'
   have U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps hK

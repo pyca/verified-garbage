@@ -69,14 +69,14 @@ theorem sd_reg {s : State} {base : Addr} {is : List Instr} {Q : State → Prop} 
   wp_sd (by omega) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
     ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
 
-/-- The saves, `s0 = r` and `s2 = a0`. -/
+/-- The saves, `s0 = s3 = r` and `s2 = a0`. -/
 theorem save_ok {s : State} {r : Reg} {base : Addr} (h0 : s.gpr r = base)
     (hwr : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : base.toNat + 8192 ≤ 2 ^ 64) (hal : base.toNat % 8 = 0) :
-    WP isa (.block (saveCode r)) s fun s' => WsReg s' base ∧ s'.gpr .s2 = s.gpr .a0 ∧
-      (∀ x, x ≠ .s0 → x ≠ .s2 → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      Unch base [(0, 32)] s.mem s'.mem ∧
+    WP isa (.block (saveCode r)) s fun s' => WsReg s' base ∧ s'.gpr .s3 = base ∧ s'.gpr .s2 = s.gpr .a0 ∧
+      (∀ x, x ≠ .s0 → x ≠ .s2 → x ≠ .s3 → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp ∧ Unch base [(0, 40)] s.mem s'.mem ∧
       word s'.mem base 0 = s.gpr .s0 ∧ word s'.mem base 8 = s.gpr .s1 ∧ word s'.mem base 16 = s.gpr .s2 ∧
-      word s'.mem base 24 = s.gpr .ra := by
+      word s'.mem base 24 = s.gpr .ra ∧ word s'.mem base 32 = s.gpr .s3 := by
   rw [saveCode]
   refine sd_reg h0 hwr hal (d := 0) (by decide) (by decide) fun s₁ u₁ => ?_
   refine sd_reg (by rw [u₁.gpr]; exact h0) (by rw [u₁.wr]; exact hwr) hal (d := 8) (by decide) (by decide)
@@ -84,31 +84,42 @@ theorem save_ok {s : State} {r : Reg} {base : Addr} (h0 : s.gpr r = base)
   refine sd_reg (by rw [u₂.gpr, u₁.gpr]; exact h0) (by rw [u₂.wr, u₁.wr]; exact hwr) hal (d := 16) (by decide)
     (by decide) fun s₃ u₃ => ?_
   refine sd_reg (by rw [u₃.gpr, u₂.gpr, u₁.gpr]; exact h0) (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hwr) hal (d := 24)
-    (by decide) (by decide) fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_mv fun s₆ u₆ => WP.block_nil ?_
-  have g₄ : ∀ x, s₄.gpr x = s.gpr x := fun x => by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
-  have m₄ : s₄.mem = (((s.mem.writeW (off base 0) (s.gpr .s0)).writeW (off base 8) (s.gpr .s1)).writeW
-      (off base 16) (s.gpr .s2)).writeW (off base 24) (s.gpr .ra) := by
-    simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr]
-  have m₆ : s₆.mem = s₄.mem := by rw [u₆.mem, u₅.mem]
-  have O : ∀ {d} {m : Mem} {v : BitVec 64}, d ≤ 24 → Outside base d 8 m (m.writeW (off base d) v) :=
+    (by decide) (by decide) fun s₄ u₄ => ?_
+  refine sd_reg (by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact h0) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr)
+    hal (d := 32) (by decide) (by decide) fun s₅ u₅ =>
+    wp_mv fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => WP.block_nil ?_
+  have g₅ : ∀ x, s₅.gpr x = s.gpr x := fun x => by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
+  have m₅ : s₅.mem = ((((s.mem.writeW (off base 0) (s.gpr .s0)).writeW (off base 8) (s.gpr .s1)).writeW
+      (off base 16) (s.gpr .s2)).writeW (off base 24) (s.gpr .ra)).writeW (off base 32) (s.gpr .s3) := by
+    simp only [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
+  have m₈ : s₈.mem = s₅.mem := by rw [u₈.mem, u₇.mem, u₆.mem]
+  have O : ∀ {d} {m : Mem} {v : BitVec 64}, d ≤ 32 → Outside base d 8 m (m.writeW (off base d) v) :=
     fun h => writeW_outside _ _ _ (by omega)
-  have hw₆ : WsReg s₆ base := by
-    refine ⟨by rw [u₆.other _ (by decide), u₅.gpr, g₄, h0], ?_, hn, hal⟩
-    rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr
-  have w0 : ∀ {d e} {m : Mem} {v : BitVec 64}, d ≤ 24 → e ≤ 24 → d + 8 ≤ e ∨ e + 8 ≤ d →
+  have hw₈ : WsReg s₈ base := by
+    refine ⟨by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g₅, h0], ?_, hn, hal⟩
+    rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr
+  have w0 : ∀ {d e} {m : Mem} {v : BitVec 64}, d ≤ 32 → e ≤ 32 → d + 8 ≤ e ∨ e + 8 ≤ d →
       word (m.writeW (off base e) v) base d = word m base d :=
     fun hd he h => (O he).word h (by omega)
-  refine ⟨hw₆, by rw [u₆.gpr, u₅.other _ (by decide), g₄], fun x h1 h2 => by
-      rw [u₆.other _ h2, u₅.other _ h1, g₄], by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
-    by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr], by rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], ?_,
-    ?_, ?_, ?_, ?_⟩
-  · rw [m₆, m₄]
-    exact ((((O (by decide)).unch.trans (O (by decide)).unch).trans (O (by decide)).unch).trans
-      (O (by decide)).unch).cover (by decide)
-  · rw [m₆, m₄, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide),
+  have e₆ : s₆.gpr r = s₅.gpr r := by
+    by_cases h : r = .s0
+    · subst h; exact u₆.gpr
+    · exact u₆.other _ h
+  refine ⟨hw₈, by rw [u₈.other _ (by decide), u₇.gpr, e₆, g₅, h0],
+    by rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), g₅], fun x h1 h2 h3 => by
+      rw [u₈.other _ h2, u₇.other _ h3, u₆.other _ h1, g₅],
+    by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
+    by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [m₈, m₅]
+    exact (((((O (by decide)).unch.trans (O (by decide)).unch).trans (O (by decide)).unch).trans
+      (O (by decide)).unch).trans (O (by decide)).unch).cover (by decide)
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide),
+      w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide),
       w0 (by decide) (by decide) (by decide), word_writeW_self]
-  · rw [m₆, m₄, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide), word_writeW_self]
-  · rw [m₆, m₄, w0 (by decide) (by decide) (by decide), word_writeW_self]
-  · rw [m₆, m₄, word_writeW_self]
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, w0 (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [m₈, m₅, word_writeW_self]
 
 end VG.Proof.Ecdh.RISCV64.P256

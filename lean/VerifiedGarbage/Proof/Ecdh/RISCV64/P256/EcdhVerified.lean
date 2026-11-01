@@ -38,7 +38,7 @@ theorem ecdh_ct : ConstantTime isa ecdhRV.pre ecdhRV.pub ecdhP256 :=
       · exact h3⟩) (by taint_decide)
 
 /-- A state satisfying the precondition. -/
-def satState : State where
+def ecdhSat : State where
   gpr r := match r with
     | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 0x8000 | _ => 0
   sp := 0x20000
@@ -58,9 +58,15 @@ theorem ecdh_verified (hL : VG.Proof.Weierstrass.Law W) :
         sig_post [Spec.EcKey.P256.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P256.curve, Spec.EcKey.scratchWords, ecdhRV, ex, RISCV64.abi,
           RISCV64.argRegs]
-        simp only [ecdhRV, ex, Spec.P256.curve] at h
-        revert h
-        generalize Spec.Ecdh.exchange _ _ _ = q
+        show match ex s.mem (s.gpr .a1) (s.gpr .a2) with
+          | some z => BitVec.setWidth 32 (s'.gpr .a0) = 1 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 32 = z
+          | none => BitVec.setWidth 32 (s'.gpr .a0) = 0 ∧
+            Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 32 = List.replicate 32 0
+        have h' : match ex s.mem (s.gpr .a1) (s.gpr .a2) with
+            | some z => s'.gpr .a0 = 1 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 32 = z
+            | none => s'.gpr .a0 = 0 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 32 = List.replicate 32 0 := h
+        revert h'
+        generalize ex s.mem (s.gpr .a1) (s.gpr .a2) = q
         rcases q with _ | z <;> exact fun h => ⟨by rw [h.1]; rfl, h.2⟩
       pub := by
         sig_implies_pub [Spec.EcKey.P256.inst, Spec.Ecdh.Instance.exchangeContract,
@@ -69,6 +75,6 @@ theorem ecdh_verified (hL : VG.Proof.Weierstrass.Law W) :
       sat := by
         sig_implies_sat [Spec.EcKey.P256.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P256.curve, Spec.EcKey.scratchWords, ecdhRV, ex, RISCV64.abi,
-          RISCV64.argRegs] [satState] using satState }
+          RISCV64.argRegs] [ecdhSat] using ecdhSat }
 
 end VG.Proof.Ecdh.RISCV64.P256

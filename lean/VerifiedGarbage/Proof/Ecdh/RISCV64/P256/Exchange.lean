@@ -57,7 +57,14 @@ structure EPre (s : State) : Prop where
   al : (s.gpr .a3).toNat % 8 = 0
 
 def ecdhRV : Contract isa where
-  pre := EPre
+  pre s :=
+    let out : Region := ⟨s.gpr .a0, 32⟩
+    let d : Region := ⟨s.gpr .a1, 32⟩
+    let peer : Region := ⟨s.gpr .a2, 65⟩
+    let scratch : Region := ⟨s.gpr .a3, 8192⟩
+    s.rd = [d, peer] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ d.Disjoint scratch ∧
+      peer.Disjoint scratch ∧ (s.gpr .a0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 32 ≤ 2 ^ 64 ∧
+      (s.gpr .a2).toNat + 65 ≤ 2 ^ 64 ∧ (s.gpr .a3).toNat + 8192 ≤ 2 ^ 64 ∧ (s.gpr .a3).toNat % 8 = 0
   post s s' :=
     match ex s.mem (s.gpr .a1) (s.gpr .a2) with
     | some z => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (s.gpr .a0) 32 = z
@@ -80,7 +87,8 @@ theorem in_rd8 {rs : List Region} {p : Addr} {n : Nat} (hr : (⟨p, n⟩ : Regio
 structure SetupPost (s s' : State) : Prop where
   ws : WsReg s' (s.gpr .a3)
   s2 : s'.gpr .s2 = s.gpr .a0
-  regs : ∀ x, x ≠ .s0 → x ≠ .s2 → x ∈ preserved → s'.gpr x = s.gpr x
+  s3 : s'.gpr .s3 = s.gpr .a3
+  regs : ∀ x, x ≠ .s0 → x ≠ .s2 → x ≠ .s3 → x ∈ preserved → s'.gpr x = s.gpr x
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
@@ -88,6 +96,7 @@ structure SetupPost (s s' : State) : Prop where
   sv1 : word s'.mem (s.gpr .a3) 8 = s.gpr .s1
   sv2 : word s'.mem (s.gpr .a3) 16 = s.gpr .s2
   sv3 : word s'.mem (s.gpr .a3) 24 = s.gpr .ra
+  sv4 : word s'.mem (s.gpr .a3) 32 = s.gpr .s3
   k : sv (s.gpr .a3) s' K = ofBytes (bytesAt s.mem (s.gpr .a1) 32)
   x : sv (s.gpr .a3) s' CX = ofBytes (bytesAt s.mem (s.gpr .a2 + BitVec.ofNat 64 1) 32)
   y : sv (s.gpr .a3) s' CY = ofBytes (bytesAt s.mem (s.gpr .a2 + BitVec.ofNat 64 33) 32)
@@ -116,9 +125,9 @@ theorem setup_ok {s : State} (hs : EPre s) :
   rw [show p256.n = 4 from rfl, show 1 + 8 * 4 = 33 from rfl]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (save_ok hb hwr (by rw [← hb]; exact hs.fs) (by rw [← hb]; exact hs.al))
-    fun s₁ ⟨hw₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3⟩ => ?_)
-  have a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide)
-  have a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide)
+    fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_)
+  have a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
+  have a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide) (by decide)
   have rd1 : (⟨s.gpr .a1, 32⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hs.rd]; simp
   have rd2 : (⟨s.gpr .a2, 65⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hs.rd]; simp
   -- `d`.
@@ -180,9 +189,10 @@ theorem setup_ok {s : State} (hs : EPre s) :
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact out_of_disj hd hn (by omega)
   subst hb
-  refine ⟨hw₆.of_rest r₇, ?_, fun x h0 h2 hx => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hw₆.of_rest r₇, ?_, ?_, fun x h0 h2 h3 hx => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [gp _ (by decide), o₁]
-  · rw [gp _ hx, g₁ _ h0 h2]
+  · rw [gp _ (by decide), h3₁]
+  · rw [gp _ hx, g₁ _ h0 h2 h3]
   · rw [r₇.rd, u₆.rd, r₅.rd, r₂₄.rd, rd₁]
   · rw [r₇.wr, u₆.wr, r₅.wr, r₂₄.wr, wr₁]
   · rw [r₇.sp, u₆.sp, r₅.sp, r₂₄.sp, sp₁]
@@ -190,6 +200,7 @@ theorem setup_ok {s : State} (hs : EPre s) :
   · rw [U₁₇.word (by decide) (by decide)]; exact w1
   · rw [U₁₇.word (by decide) (by decide)]; exact w2
   · rw [U₁₇.word (by decide) (by decide)]; exact w3
+  · rw [U₁₇.word (by decide) (by decide)]; exact w4
   · show wordsVal _ _ _ _ = _
     rw [sv_unch U₂₇ K (by decide), e₂, a1', bytesAt_unch U₁ (by decide) (by simpa using sep hs.d hs.fd (off := 0) (k := 32) (by omega))]
   · show wordsVal _ _ _ _ = _
@@ -212,7 +223,7 @@ theorem const_at {base : Addr} {s : State} (hc : ∀ e ∈ consts p256, sv base 
   hc _ (List.getElem_mem hk)
 
 /-- The check of the peer's point, by its call. -/
-theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2)
+theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base) (hc : ∀ e ∈ consts p256, sv base s e.1 = e.2)
     (hf : word s.mem base FL = 0 ∨ word s.mem base FL = BitVec.allOnes 64) :
     WP isa (wsCall Spec.Weierstrass.CheckPoint.p256.checkApi.name checkP256) s fun s' =>
       Kp s s' ∧ Unch base checkKW s.mem s'.mem ∧
@@ -220,7 +231,7 @@ theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (hc : ∀ e ∈ c
         Spec.Weierstrass.CheckPoint.Curve.mask (CC.Valid (sv base s CX) (sv base s CY)) ∧
       sv base s' CPX = (if word s'.mem base FL = 0 then sv base s GX else sv base s CX * 2 ^ 256 % W.p) ∧
       sv base s' CPY = (if word s'.mem base FL = 0 then sv base s GY else sv base s CY * 2 ^ 256 % W.p) := by
-  refine wsCall_ok checkP256_noFrames check_rv hw (fun t r w a m => ?_) fun s' K t a m hp => ?_
+  refine wsCallR_ok checkP256_noFrames check_rv hw h3 (fun t r w a m => ?_) fun s₀ s' K mm t a m hp => ?_
   · refine ⟨r, by rw [w, a], by rw [a]; exact hw.nowrap, by rw [a]; exact hw.al, ?_⟩
     rw [a, m]
     refine ⟨(num_eq _ _ MP).trans (const_at hc 0), (num_eq _ _ R2P).trans (const_at hc 10),
@@ -229,7 +240,7 @@ theorem check_ok {s : State} {base : Addr} (hw : WsReg s base) (hc : ∀ e ∈ c
   · have hp' : CC.post base s.mem s'.mem := by
       have := hp
       simp only [checkRVc, State.withRegions_mem] at this
-      rw [a, m] at this
+      rw [a, m, ← mm] at this
       exact this
     obtain ⟨hF, -, -, hx, hy, hK⟩ := hp'
     have ex : CC.num base s.mem CC.xAt = sv base s CX := num_eq _ _ CX
@@ -266,8 +277,8 @@ theorem fin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s2
       s'.gpr .a0 = (if c && !decide (sv base s RZ = 0) then 1 else 0) ∧
       bytesAt s'.mem out 32 = toBytes 32 (if c && !decide (sv base s RZ = 0) then sv base s XO else 0) ∧
       s'.gpr .s0 = word s.mem base 0 ∧ s'.gpr .s1 = word s.mem base 8 ∧ s'.gpr .s2 = word s.mem base 16 ∧
-      s'.gpr .ra = word s.mem base 24 ∧
-      (∀ r ∈ preserved, r ≠ .s0 → r ≠ .s1 → r ≠ .s2 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
+      s'.gpr .ra = word s.mem base 24 ∧ s'.gpr .s3 = word s.mem base 32 ∧
+      (∀ r ∈ preserved, r ≠ .s0 → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
   rw [zCode, retCode, restoreCode, show p256.n = 4 from rfl]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (zeroMask_ok hw (n := 4) (a := p256.sl RZ) (by decide) (by decide))
@@ -320,33 +331,37 @@ theorem fin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s2
   refine ld_ws hw₇ (d := 8) (by decide) (by decide) fun s₈ u₈ => ?_
   have hw₈ : WsReg s₈ base := ⟨by rw [u₈.other _ (by decide)]; exact hw₇.s0, by rw [u₈.wr]; exact hw₇.wr,
     hw₇.nowrap, hw₇.al⟩
-  refine ld_ws hw₈ (d := 0) (by decide) (by decide) fun s₉ u₉ => WP.block_nil ?_
-  have m₉ : s₉.mem = s₄.mem := by rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅'.mem, u₅.mem]
+  refine ld_ws hw₈ (d := 32) (by decide) (by decide) fun s₈' u₈' => ?_
+  have hw₈' : WsReg s₈' base := ⟨by rw [u₈'.other _ (by decide)]; exact hw₈.s0, by rw [u₈'.wr]; exact hw₈.wr,
+    hw₈.nowrap, hw₈.al⟩
+  refine ld_ws hw₈' (d := 0) (by decide) (by decide) fun s₉ u₉ => WP.block_nil ?_
+  have m₉ : s₉.mem = s₄.mem := by rw [u₉.mem, u₈'.mem, u₈.mem, u₇.mem, u₆.mem, u₅'.mem, u₅.mem]
   have fl₄ : word s₄.mem base FL = maskOf (c && !decide (sv base s RZ = 0)) := by
     rw [U₄.word (by decide) (by decide), u₃.mem, hb]
   have np : ∀ r ∈ preserved, r ∉ [Reg.t0, .t1, .t3, .t4, .a7, .a0, .ra] := by decide
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅'.gpr,
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [u₉.other _ (by decide), u₈'.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅'.gpr,
       u₅.gpr, sl_FLAG, fl₄, and_one]
   · have hl : (toBytes 32 (if (c && !decide (sv base s RZ = 0)) = true then sv base s XO else 0)).length = 32 :=
       VG.Proof.Weierstrass.length_toBytes _ _
     rw [m₉, m₄, q₃, BitVec.add_zero, xo]
     have := bytesAt_writeBytes s₃.mem out _ (by rw [hl]; decide)
     rwa [hl] at this
-  · rw [u₉.gpr, u₈.mem, u₇.mem, u₆.mem, u₅'.mem, u₅.mem,
+  · rw [u₉.gpr, u₈'.mem, u₈.mem, u₇.mem, u₆.mem, u₅'.mem, u₅.mem,
       wd 0 (by decide) (by decide)]
-  · rw [u₉.other _ (by decide), u₈.gpr, u₇.mem, u₆.mem, u₅'.mem, u₅.mem, wd 8 (by decide) (by decide)]
-  · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.mem, u₅'.mem, u₅.mem,
+  · rw [u₉.other _ (by decide), u₈'.other _ (by decide), u₈.gpr, u₇.mem, u₆.mem, u₅'.mem, u₅.mem, wd 8 (by decide) (by decide)]
+  · rw [u₉.other _ (by decide), u₈'.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.mem, u₅'.mem, u₅.mem,
       wd 16 (by decide) (by decide)]
-  · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅'.mem, u₅.mem,
-      wd 24 (by decide) (by decide)]
-  · intro r hr h0 h1 h2'
+  · rw [u₉.other _ (by decide), u₈'.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr,
+      u₅'.mem, u₅.mem, wd 24 (by decide) (by decide)]
+  · rw [u₉.other _ (by decide), u₈'.gpr, u₈.mem, u₇.mem, u₆.mem, u₅'.mem, u₅.mem, wd 32 (by decide) (by decide)]
+  · intro r hr h0 h1 h2' h3'
     have hn := np r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-    rw [u₉.other _ h0, u₈.other _ h1, u₇.other _ h2', u₆.other _ hn.2.2.2.2.2.2, u₅'.other _ hn.2.2.2.2.2.1,
+    rw [u₉.other _ h0, u₈'.other _ h3', u₈.other _ h1, u₇.other _ h2', u₆.other _ hn.2.2.2.2.2.2, u₅'.other _ hn.2.2.2.2.2.1,
       u₅.other _ hn.2.2.2.2.2.1, r₄.gpr _ (by simp [hn.1, hn.2.1]), u₃.other _ hn.2.2.2.2.1,
       r₂.gpr _ (by simp [hn.1]), r₁'.gpr _ (by simp [hn.2.2.1, hn.2.2.2.1, hn.2.2.2.2.1])]
-  · rw [u₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅'.sp, u₅.sp, r₄.sp, u₃.sp, r₂.sp, r₁'.sp]
+  · rw [u₉.sp, u₈'.sp, u₈.sp, u₇.sp, u₆.sp, u₅'.sp, u₅.sp, r₄.sp, u₃.sp, r₂.sp, r₁'.sp]
 
 /-- The peer's key: `04`, `x` and `y`. -/
 theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
@@ -385,12 +400,12 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
   have hp0 : 0 < W.p := by decide
   rw [ecdhP256, Cfg.ecdhFn]
   refine WP.seq (WP.mono (setup_ok hs) fun s₁ S => ?_)
-  obtain ⟨hw₁, S2, Sregs, Srd, Swr, Ssp, Ssv0, Ssv1, Ssv2, Ssv3, Sk, Sx, Sy, Sflag, Scs⟩ := S
-  generalize hb : s.gpr .a3 = base at hw₁ Ssv0 Ssv1 Ssv2 Ssv3 Sk Sx Sy Sflag Scs
+  obtain ⟨hw₁, S2, S3, Sregs, Srd, Swr, Ssp, Ssv0, Ssv1, Ssv2, Ssv3, Ssv4, Sk, Sx, Sy, Sflag, Scs⟩ := S
+  generalize hb : s.gpr .a3 = base at hw₁ S3 Ssv0 Ssv1 Ssv2 Ssv3 Ssv4 Sk Sx Sy Sflag Scs
   -- The check.
   have hf₁ : word s₁.mem base FL = 0 ∨ word s₁.mem base FL = BitVec.allOnes 64 := by
     rw [Sflag]; unfold maskOf; split <;> simp
-  refine WP.seq (WP.mono (check_ok hw₁ Scs hf₁) fun s₂ ⟨K₂, U₂, f₂, px₂, py₂⟩ => ?_)
+  refine WP.seq (WP.mono (check_ok hw₁ S3 Scs hf₁) fun s₂ ⟨K₂, U₂, f₂, px₂, py₂⟩ => ?_)
   have hw₂ := hw₁.of_kp K₂
   -- The point to `R`.
   rw [show p256.n = 4 from rfl]
@@ -435,7 +450,9 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
       exact VG.Proof.P256.onCurve_G
     · rw [ite_eq_right h0, ite_eq_right h0, toM_mont unit, toM_mont unit]
       exact (hval h0).2.2
-  refine WP.seq (WP.mono (tail_ok hL hw₄ tc₄ lt_rx lt_ry hon) fun s₅ ⟨Kc₅, U₅, f₅, rep₅, xolt, xoeq⟩ => ?_)
+  have h3₄ : s₄.gpr .s3 = base := by
+    rw [r₄.gpr _ (by decide), r₃.gpr _ (by decide), K₂.gpr _ (by decide), S3]
+  refine WP.seq (WP.mono (tail_ok hL hw₄ h3₄ tc₄ lt_rx lt_ry hon) fun s₅ ⟨Kc₅, U₅, f₅, rep₅, xolt, xoeq⟩ => ?_)
   have hw₅ := hw₄.of_kc Kc₅
   have h2 : s₅.gpr .s2 = s.gpr .a0 := by
     rw [Kc₅.gpr _ (by decide) (by decide), r₄.gpr _ (by decide), r₃.gpr _ (by decide), K₂.gpr _ (by decide), S2]
@@ -454,7 +471,7 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
     (c := (((decide (s.mem (s.gpr .a2) = 4) && decide (CC.Valid x y)) &&
       decide (ofBytes (bytesAt s.mem (s.gpr .a1) 32) < W.n)) && !decide (ofBytes (bytesAt s.mem (s.gpr .a1) 32) = 0)))
     (by rw [f₅, fl₄, f₂, Sflag, mask_eq, k₄, maskOf_and, maskOf_and, maskOf_and]))
-    fun s' ⟨a0', bytes', s0', s1', s2', ra', regs', sp'⟩ => ?_
+    fun s' ⟨a0', bytes', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
   have U₁₅ := U₁₄.trans U₅
   -- The registers.
   refine ⟨⟨fun r hr => ?_, by rw [sp', Kc₅.sp, r₄.sp, r₃.sp, K₂.sp, Ssp],
@@ -465,8 +482,10 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
     · subst h1; rw [s1', U₁₅.word (by decide) (by decide), Ssv1]
     by_cases h2' : r = .s2
     · subst h2'; rw [s2', U₁₅.word (by decide) (by decide), Ssv2]
+    by_cases h3' : r = .s3
+    · subst h3'; rw [s3', U₁₅.word (by decide) (by decide), Ssv4]
     have ht : r ∉ [Reg.t0] := by rintro h; simp only [List.mem_singleton] at h; subst h; exact absurd hr (by decide)
-    rw [regs' r hr h0 h1 h2', Kc₅.gpr r hr h1, r₄.gpr r ht, r₃.gpr r ht, K₂.gpr r hr, Sregs r h0 h2' hr]
+    rw [regs' r hr h0 h1 h2' h3', Kc₅.gpr r hr h1, r₄.gpr r ht, r₃.gpr r ht, K₂.gpr r hr, Sregs r h0 h2' h3' hr]
   -- The specification.
   generalize hD : ofBytes (bytesAt s.mem (s.gpr .a1) 32) = D at k₄ a0' bytes'
   generalize hb0 : s.mem (s.gpr .a2) = b0 at a0' bytes' Sflag
@@ -530,7 +549,8 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
 
 theorem ecdh_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : ecdhRV.pre s) :
     ∃ t s', Exec isa ecdhP256 s t s' ∧ abiPreserved s s' ∧ ecdhRV.post s s' := by
-  obtain ⟨t, s', he, h⟩ := ecdh_ok hL hs
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hs
+  obtain ⟨t, s', he, h⟩ := ecdh_ok hL ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
   exact ⟨t, s', he, h⟩
 
 end VG.Proof.Ecdh.RISCV64.P256

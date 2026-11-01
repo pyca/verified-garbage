@@ -28,8 +28,10 @@ field functions, on their pointers: the function is constant time.
 `vg_ec_<curve>_public_key(out, d, scratch)` share their pieces (`ecdhFn`,
 `publicKeyFn`):
 
-1. `s0`, `s1`, `s2` and `ra` saved in the working space's first 32 bytes,
-   its base to `s0` and `out` to `s2`;
+1. `s0`–`s3` and `ra` saved in the working space's first 40 bytes, its
+   base to `s0` and `s3` and `out` to `s2` (after each call, `s0` is set
+   from `s3` again: the callees restore `s0` from memory, which the taint
+   analysis takes for a secret, and write neither `s2` nor `s3`);
 2. `d` read big-endian into `K`'s slot (`loadNum`: a doubleword at a time,
    a byte at a time, as the arguments' alignment is not known), the
    constants stored (`setConst`, from immediates);
@@ -178,14 +180,15 @@ def consts : List (Nat × Nat) :=
 
 def constCode : List Instr := (consts c).flatMap fun (i, x) => setConst c.n (c.sl i) x
 
-/-- The saves, at `[a]`, and `out` (`a0`) to `s2`, the working space to `s0`. -/
+/-- The saves, at `[a]`, and `out` (`a0`) to `s2`, the working space to `s0`
+and `s3`. -/
 def saveCode (a : Reg) : List Instr :=
-  [.store .d .s0 a 0, .store .d .s1 a 8, .store .d .s2 a 16, .store .d .ra a 24, .addi .s0 a 0,
-    .addi .s2 .a0 0]
+  [.store .d .s0 a 0, .store .d .s1 a 8, .store .d .s2 a 16, .store .d .ra a 24, .store .d .s3 a 32,
+    .addi .s0 a 0, .addi .s3 a 0, .addi .s2 .a0 0]
 
 /-- The registers restored. -/
 def restoreCode : List Instr :=
-  [.load .d .ra .s0 24, .load .d .s2 .s0 16, .load .d .s1 .s0 8, .load .d .s0 .s0 0]
+  [.load .d .ra .s0 24, .load .d .s2 .s0 16, .load .d .s1 .s0 8, .load .d .s3 .s0 32, .load .d .s0 .s0 0]
 
 /-- `d` in `[1, n-1]`: the flag `&=` the masks of `d < n` and `d ≠ 0`. -/
 def rangeCode : List Instr :=
@@ -195,8 +198,11 @@ def rangeCode : List Instr :=
 /-- The power `Z^(p-2)`, into `ACC`. -/
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, c.sl EXPP, 64 * c.n⟩
 
-/-- A call of `f`, whose code is `body`, on the working space. -/
-def wsCall (f : String) (body : Prog isa) : Prog isa := .seq (.block [.addi .a0 wb 0]) (.call f body)
+/-- A call of `f`, whose code is `body`, on the working space, then `s0`
+from `s3`: the callees restore `s0` from memory, which the taint analysis
+takes for a secret, and write no `s3`. -/
+def wsCall (f : String) (body : Prog isa) : Prog isa :=
+  .seq (.seq (.block [.addi .a0 wb 0]) (.call f body)) (.block [.addi wb .s3 0])
 
 /-- `[o] = [a] Z^(p-2)` out of Montgomery's form, through `t`. -/
 def affineCoord (t o a : Nat) : Prog isa :=
