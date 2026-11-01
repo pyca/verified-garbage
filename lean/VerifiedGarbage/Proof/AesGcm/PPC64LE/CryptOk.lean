@@ -299,6 +299,7 @@ structure TailKs (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (P 
   env : Env V sp s
   r24 : s.gpr .r24 = D + BitVec.ofNat 64 j
   r25 : s.gpr .r25 = BitVec.ofNat 64 (n - j)
+  r26 : s.gpr .r26 = s₀.gpr .r26
   ks : blockAt s.mem (V .r30 + BitVec.ofNat 64 64) =
     ciphOf m₀ (V .r29) R (blockAt s₀.mem (V .r30 + BitVec.ofNat 64 48))
   cb : blockAt s.mem (V .r30 + BitVec.ofNat 64 48) =
@@ -329,11 +330,13 @@ theorem tailKs_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ :
   refine WP.mono (ctr_call (ctrTail_mk L he₂ a3 a4 a5 a6 a7 a8 h.rounds)) fun s₃ g => ?_
   have gout := g.out; have gctr := g.ctr; have gframe := g.frame
   rw [blocksAt_one, blocksAt_one, hKS0, Proof.Cmac.ctr32_one, List.cons.injEq] at gout
-  refine ⟨h, he₂.of_saved g.saved g.sp g.rd g.wr, ?_, ?_, ?_, ?_, ?_, by rw [g.rd, hk₂.rd], by rw [g.wr, hk₂.wr]⟩
+  refine ⟨h, he₂.of_saved g.saved g.sp g.rd g.wr, ?_, ?_, ?_, ?_, ?_, ?_, by rw [g.rd, hk₂.rd], by rw [g.wr, hk₂.wr]⟩
   · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), h.r24]
   · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), h.r25]
+  · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide)]
   · rw [gout.1, ← hc₂, hCB]
   · rw [gctr, hCB]; rfl
   · refine (fz.sub fun r hr => ?_).trans (gframe.sub fun r hr => ?_)
