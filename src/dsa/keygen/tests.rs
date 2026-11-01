@@ -216,18 +216,17 @@ fn imported_private_components() {
         *even_q.last_mut().unwrap() &= !1;
         let zero_g = vec![0; p_len];
         let zero_q = vec![0; q_len];
-        for (p, q, g, case) in [
-            (&p, &q, &zero_g, "g = 0"),
-            (&p, &q, &one, "g = 1"),
-            (&p, &q, &p, "g = p"),
-            (&even_p, &q, &g, "even p"),
-            (&p, &even_q, &g, "even q"),
-            (&p, &zero_q, &g, "zero q"),
+        for (p, q, g) in [
+            (&p, &q, &zero_g),
+            (&p, &q, &one),
+            (&p, &q, &p),
+            (&even_p, &q, &g),
+            (&p, &even_q, &g),
+            (&p, &zero_q, &g),
         ] {
-            let error = PrivateKey::from_private_components(p, q, g, &x).unwrap_err();
             assert_eq!(
-                (p_len, q_len, case, error),
-                (p_len, q_len, case, Error::InvalidKeyOrNonce)
+                PrivateKey::from_private_components(p, q, g, &x).unwrap_err(),
+                Error::InvalidKeyOrNonce
             );
         }
         for (p, q, g, x) in [
