@@ -212,20 +212,25 @@ theorem wsCallR_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {K
   · subst h; rw [u.gpr, K'.gpr _ (by decide), h3, hw.s0]
   · rw [u.other _ h, K'.gpr _ hr]
 
-/-- The masks of `d < n` and `d ≠ 0` into the flag. -/
-theorem range_ok {s : State} {base : Addr} (hw : WsReg s base) :
-    WP isa (.block (rangeCode p256)) s fun s' =>
+/-- A slot below the flag's. -/
+theorem sl_lt {i : Nat} (hi : i < 44) : p256.sl i % 8 = 0 ∧ p256.sl i + 8 * 4 ≤ 2048 ∧ p256.sl i + 8 * 4 ≤ FL := by
+  simp only [Cfg.sl, slot, show p256.n = 4 from rfl, FL]; omega
+
+/-- The masks of `x < n` and `x ≠ 0` into the flag, for `x` at slot `i`. -/
+theorem rangeOf_ok {i : Nat} (hi : i < 44) {s : State} {base : Addr} (hw : WsReg s base) :
+    WP isa (.block (rangeOf p256 i)) s fun s' =>
       Kp s s' ∧ Outside base FL 8 s.mem s'.mem ∧
-      word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s K < sv base s MN)) &&&
-        maskOf (!decide (sv base s K = 0)) := by
-  rw [rangeCode, show p256.n = 4 from rfl]
+      word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s i < sv base s MN)) &&&
+        maskOf (!decide (sv base s i = 0)) := by
+  obtain ⟨a8, a2, aF⟩ := sl_lt hi
+  rw [rangeOf, show p256.n = 4 from rfl]
   simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (ltMask_ok hw (n := 4) (a := p256.sl K) (m := p256.sl MN) (by decide)
-    (by decide) (by decide) (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
+  refine WP.block_append (WP.mono (ltMask_ok hw (n := 4) (a := p256.sl i) (m := p256.sl MN) a8
+    (by decide) a2 (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
   have hw₁ := hw.of_rest r₁
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
-  refine WP.block_append (WP.mono (zeroMask_ok hw₂ (n := 4) (a := p256.sl K) (by decide) (by decide))
+  refine WP.block_append (WP.mono (zeroMask_ok hw₂ (n := 4) (a := p256.sl i) a8 a2)
     fun s₃ ⟨r₃, m₃, g₃⟩ => ?_)
   refine WP.cons (exec_logicImm (by decide)) ?_
   have hw₃' := (hw₂.of_rest r₃).of_kp (Kp.of_upd (Upd.write s₃ .a7 (s₃.gpr .a7 ^^^ BitVec.ofInt 64 (-1))))
@@ -233,14 +238,22 @@ theorem range_ok {s : State} {base : Addr} (hw : WsReg s base) :
   · exact (Kp.of_rest r₁).trans ((Kp.of_rest r₂).trans ((Kp.of_rest r₃).trans
       ((Kp.of_upd (Upd.write s₃ .a7 _)).trans (Kp.of_rest r₄))))
   · rw [← m₁]; exact O₂.trans (by rw [← m₃]; exact O₄)
-  · have k₂ : sv base s₂ K = sv base s K := by
+  · have k₂ : sv base s₂ i = sv base s i := by
       show wordsVal _ _ _ _ = _
-      rw [O₂.wordsVal (by decide) (by decide), m₁]
+      rw [O₂.wordsVal (.inl aF) (by omega), m₁]
     rw [f₄]
     simp only [State.write, ↓reduceIte]
     rw [m₃, f₂, m₁, g₁, g₃, not_mask]
     simp only [sv] at k₂
     rw [k₂]
+
+/-- The masks of `d < n` and `d ≠ 0` into the flag. -/
+theorem range_ok {s : State} {base : Addr} (hw : WsReg s base) :
+    WP isa (.block (rangeCode p256)) s fun s' =>
+      Kp s s' ∧ Outside base FL 8 s.mem s'.mem ∧
+      word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s K < sv base s MN)) &&&
+        maskOf (!decide (sv base s K = 0)) :=
+  rangeOf_ok (by decide) hw
 
 /-- The constants `tail` reads. -/
 structure TailConsts (base : Addr) (s : State) : Prop where
