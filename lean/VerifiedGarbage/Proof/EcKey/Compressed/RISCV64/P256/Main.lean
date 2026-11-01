@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Exchange
 public import VerifiedGarbage.Impl.EcKey.Compressed.P256.RISCV64
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 import VerifiedGarbage.Proof.EcKey.Compressed.Encode
+import VerifiedGarbage.Proof.EcKey.Compressed.Decode
+import VerifiedGarbage.Impl.EcKey.Compressed.Root
+import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.PublicKey
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckVerified
@@ -730,5 +733,178 @@ theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s
     r₅.gpr _ (by simp [hn.1, hn.2.1, hn.2.2.2.2]), r₄.gpr _ (by simp [hn.1, hn.2.1]),
     r₃.gpr _ (by simp [hn.1, hn.2.1, hn.2.2.2.2]), r₂.gpr _ (by simp [hn.1]),
     r₁.gpr _ (by simp [hn.2.2.1, hn.2.2.2.1, hn.2.2.2.2])]
+
+/-! ### The whole decompression -/
+
+theorem sqrtLay : PowLayR (Cfg.sqrtP p256) 4 where
+  acc := by decide
+  tmp := by decide
+  base := by decide
+  one := by decide
+  short := by decide
+  nbits := by decide
+  k1 := by decide
+  acc_tmp := by decide
+  acc_one := by decide
+  base_acc := by decide
+  base_tmp := by decide
+  bits_w := by decide
+  acc8 := by decide
+  tmp8 := by decide
+  one8 := by decide
+  bits8 := by decide
+
+theorem par_bit (b : BitVec 8) : (b.setWidth 64 &&& BitVec.ofInt 64 1).toNat % 2 = b.toNat % 2 := by
+  revert b; decide
+
+theorem neg_ofNat {v : Nat} (hv : v < W.p) : Fin.ofNat W.p ((W.p - v) % W.p) = -Fin.ofNat W.p v := by
+  apply Fin.ext
+  rw [Fin.val_ofNat, Fin.neg_def, Fin.val_ofNat, Nat.mod_eq_of_lt hv, Nat.mod_mod]
+
+/-- `vg_ec_p256_decompress_public_key`'s postcondition, by register. -/
+def DPostC (s s' : State) : Prop :=
+  let bs := bytesAt s.mem (s.gpr .a1) 33
+  (s'.gpr .a0 = 1 ∧ ∃ Q, Spec.EcKey.matchesCompressedPublicKey Spec.P256.curve bs Q ∧
+      bytesAt s'.mem (s.gpr .a0) 65 = Spec.EcKey.encodePoint Q) ∨
+    (s'.gpr .a0 = 0 ∧ (¬ ∃ Q, Spec.EcKey.matchesCompressedPublicKey Spec.P256.curve bs Q) ∧
+      bytesAt s'.mem (s.gpr .a0) 65 = List.replicate 65 0)
+
+/-- `vg_ec_p256_decompress_public_key` by register. -/
+theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s) :
+    WP isa decompressP256 s fun s' => abiPreserved s s' ∧ DPostC s s' := by
+  have hp0 : 0 < W.p := by decide
+  have hs' := hs
+  obtain ⟨hrd, hwr, hpo, hpw, how, hfo, hfp, hfs, hal⟩ := hs'
+  rw [decompressP256, Cfg.decompressFn]
+  refine WP.seq (WP.mono (dsetup_ok hs) fun s₁ S => ?_)
+  obtain ⟨hw₁, S2, S3, Sregs, Srd, Swr, Ssp, Ssv0, Ssv1, Ssv2, Ssv3, Ssv4, Sx, Spar, Sflag, Scs, Sexps⟩ := S
+  generalize hb : s.gpr .a2 = base at hw₁ S3 Ssv0 Ssv1 Ssv2 Ssv3 Ssv4 Sx Spar Sflag Scs Sexps hwr hpw how
+  -- `rhs`.
+  refine WP.seq (WP.mono (rhs_ok hw₁ (const_at Scs 10) (const_at Scs 5) (const_at Scs 11))
+    fun s₂ ⟨K₂, U₂, lt₂, v₂⟩ => ?_)
+  have hw₂ := hw₁.of_kp K₂
+  have one₂ : sv base s₂ ONEP = 2 ^ 256 % W.p := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₂ ONEP (by decide)]
+    exact const_at Scs 4
+  have exps₂ : sv base s₂ EXPS = (W.p + 1) / 4 := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₂ EXPS (by decide)]; exact Sexps
+  -- The root.
+  refine WP.seq (WP.mono (pow_ok (P := Cfg.sqrtP p256) (F := p256Field) field_ok rfl sqrtLay unit hw₂ hp0
+    one₂ (by show sv base s₂ EXPS < _; rw [exps₂]; decide)) fun s₃ ⟨Kc₃, U₃, lt₃, v₃⟩ => ?_)
+  have hw₃ := hw₂.of_kc Kc₃
+  have rhs₃ : sv base s₃ RHS = sv base s₂ RHS := sv_unch U₃ RHS (by decide)
+  have one₃ : sv base s₃ ONE = 1 := by
+    show wordsVal _ _ _ _ = _
+    rw [sv_unch U₃ ONE (by decide), sv_unch U₂ ONE (by decide)]; exact const_at Scs 3
+  have zero₃ : sv base s₃ ZERO = 0 := by
+    show wordsVal _ _ _ _ = _
+    rw [sv_unch U₃ ZERO (by decide), sv_unch U₂ ZERO (by decide)]; exact const_at Scs 2
+  -- The root's checks.
+  refine WP.seq (WP.mono (root_ok hw₃ lt₃ (by rw [rhs₃]; exact lt₂) one₃ zero₃)
+    fun s₄ ⟨K₄, U₄, ltd₄, vd₄, lty₄, vy₄, y2₄⟩ => ?_)
+  have hw₄ := hw₃.of_kp K₄
+  have U₁₄ := (U₂.trans U₃).trans U₄
+  have hF : word s₄.mem base FL = maskOf (decide (s.mem (s.gpr .a1) = 2 ∨ s.mem (s.gpr .a1) = 3) &&
+      decide (ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 32) < W.p)) := by
+    rw [U₁₄.word (by decide) (by decide)]; exact Sflag
+  have hpr : (word s₄.mem base (p256.sl PAR)).toNat % 2 = (s.mem (s.gpr .a1)).toNat % 2 := by
+    rw [U₁₄.word (by decide) (by decide), Spar, par_bit]
+  have cx₄ : sv base s₄ CX = ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 32) := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₁₄ CX (by decide)]; exact Sx
+  have h2₄ : s₄.gpr .s2 = s.gpr .a0 := by
+    rw [K₄.gpr _ (by decide), Kc₃.gpr _ (by decide) (by decide), K₂.gpr _ (by decide), S2]
+  have wr₄ : s₄.wr = s.wr := by rw [K₄.wr, Kc₃.wr, K₂.wr, Swr]
+  refine WP.mono (dfin_ok hw₄ h2₄ hfo (fun i hi => by
+      rw [wr₄, hwr]
+      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 65) (by omega)
+        (by omega)⟩) how hF hpr)
+    fun s' ⟨a0', b', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
+  -- The registers.
+  refine ⟨⟨fun r hr => ?_, by rw [sp', K₄.sp, Kc₃.sp, K₂.sp, Ssp],
+    by rw [ra', U₁₄.word (by decide) (by decide), Ssv3]⟩, ?_⟩
+  · by_cases h0 : r = .s0
+    · subst h0; rw [s0', U₁₄.word (by decide) (by decide), Ssv0]
+    by_cases h1 : r = .s1
+    · subst h1; rw [s1', U₁₄.word (by decide) (by decide), Ssv1]
+    by_cases h2' : r = .s2
+    · subst h2'; rw [s2', U₁₄.word (by decide) (by decide), Ssv2]
+    by_cases h3' : r = .s3
+    · subst h3'; rw [s3', U₁₄.word (by decide) (by decide), Ssv4]
+    rw [regs' r hr h0 h1 h2' h3', K₄.gpr r hr, Kc₃.gpr r hr h1, K₂.gpr r hr, Sregs r h0 h2' h3' hr]
+  -- The values.
+  have x₁ : sv base s₁ CX = ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 32) := Sx
+  rw [cx₄] at b'
+  generalize hx : ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 32) = x at x₁ a0' b' hF
+  generalize htag : s.mem (s.gpr .a1) = tag at a0' b' hF hpr
+  rw [x₁] at v₂
+  have v₃' : toM W.p (2 ^ 256) (sv base s₃ ACC) = toM W.p (2 ^ 256) (sv base s₂ RHS) ^ ((W.p + 1) / 4) := by
+    have := v₃; rw [show wordsVal s₂.mem base (Cfg.sqrtP p256).bits p256Field.S.k = (W.p + 1) / 4 from exps₂] at this
+    exact this
+  rw [rhs₃] at vd₄
+  generalize hxf : (Fin.ofNat W.p x : Fe W) = xf at v₂
+  generalize hrhs : xf * xf * xf + Fin.ofNat W.p W.a * xf + Fin.ofNat W.p W.b = rhsF at v₂
+  rw [v₂] at v₃' vd₄
+  rw [v₃'] at vy₄ vd₄
+  generalize hr : rhsF ^ ((W.p + 1) / 4) = r at vy₄ vd₄
+  have hy1 : r.val = sv base s₄ Y1 := by rw [← vy₄, Fin.val_ofNat, Nat.mod_eq_of_lt lty₄]
+  generalize hyN : (if sv base s₄ Y1 % 2 ≠ tag.toNat % 2 then sv base s₄ Y2 else sv base s₄ Y1) = yN at a0' b'
+  have hyNlt : yN < W.p := by
+    rw [← hyN]; split
+    · rw [y2₄]; exact Nat.mod_lt _ hp0
+    · exact lty₄
+  have hch : VG.Impl.EcKey.Compressed.chooseRoot r (tag.toNat % 2) = Fin.ofNat W.p yN := by
+    unfold VG.Impl.EcKey.Compressed.chooseRoot
+    rw [hy1, ← hyN]
+    by_cases h : sv base s₄ Y1 % 2 = tag.toNat % 2
+    · rw [ite_eq_left h, ite_eq_right (fun h' => h' h), vy₄]
+    · rw [ite_eq_right h, ite_eq_left h, y2₄, neg_ofNat lty₄, vy₄]
+  have hval : (Fin.ofNat W.p yN : Fe W).val = yN := by rw [Fin.val_ofNat, Nat.mod_eq_of_lt hyNlt]
+  have hsq : VG.Impl.EcKey.Compressed.chooseRoot r (tag.toNat % 2) * VG.Impl.EcKey.Compressed.chooseRoot r (tag.toNat % 2) =
+      r * r := by
+    unfold VG.Impl.EcKey.Compressed.chooseRoot; split
+    · rfl
+    · grind
+  have hdif : sv base s₄ DIF = 0 ↔ r * r = rhsF := by
+    rw [← toM_eq_zero_iff unit ltd₄, vd₄]
+    constructor <;> intro h <;> grind
+  -- The specification's decoding.
+  have hsplit : bytesAt s.mem (s.gpr .a1) 33 = tag :: bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 32 := by
+    have h1 : bytesAt s.mem (s.gpr .a1) 1 = [tag] := by
+      simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, BitVec.add_zero, htag]
+    rw [show (33 : Nat) = 1 + 32 from rfl, VG.Proof.Weierstrass.bytesAt_add, h1]; rfl
+  have hlen : (bytesAt s.mem (s.gpr .a1) 33).length = W.len + 1 := VG.Proof.Weierstrass.length_bytesAt _ _ _
+  have hhd : (bytesAt s.mem (s.gpr .a1) 33).head? = some tag := by rw [hsplit]; rfl
+  have hxv : ofBytes ((bytesAt s.mem (s.gpr .a1) 33).drop 1) = x := by
+    rw [hsplit, List.drop_one, List.tail_cons]; exact hx
+  have hdec := VG.Proof.EcKey.Compressed.decode_checked_eq (C := W) VG.Impl.EcKey.Compressed.rootThreeModFour hlen
+    hhd hxv
+  simp only [] at hdec
+  rw [hxf, hrhs, VG.Impl.EcKey.Compressed.rootThreeModFour, VG.Proof.Weierstrass.pow_eq_npow, hr, hch] at hdec
+  rw [hch] at hsq
+  rw [hval] at hdec
+  generalize hB : (((decide (tag = 2 ∨ tag = 3) && decide (x < W.p)) && decide (sv base s₄ DIF = 0)) &&
+    decide (yN % 2 = tag.toNat % 2)) = B at a0' b'
+  have key : B = true ↔ ((tag = 2 ∨ tag = 3) ∧ x < W.p) ∧
+      (Fin.ofNat W.p yN * Fin.ofNat W.p yN = rhsF ∧ yN % 2 = tag.toNat % 2) := by
+    rw [← hB, hsq, ← hdif]
+    simp only [Bool.and_eq_true, decide_eq_true_eq, and_assoc]
+  have hroot := VG.Proof.Weierstrass.rootFacts_three_mod_four hL (by decide)
+  unfold DPostC
+  simp only []
+  cases B
+  · have hn : ¬ (((tag = 2 ∨ tag = 3) ∧ x < W.p) ∧
+        (Fin.ofNat W.p yN * Fin.ofNat W.p yN = rhsF ∧ yN % 2 = tag.toNat % 2)) := fun h =>
+      Bool.false_ne_true (key.mpr h)
+    rw [ite_eq_right hn] at hdec
+    refine Or.inr ⟨a0', (VG.Proof.EcKey.Compressed.decode_none_iff hroot _).mp hdec, ?_⟩
+    rw [b', ite_eq_right Bool.false_ne_true, ite_eq_right Bool.false_ne_true, ite_eq_right Bool.false_ne_true]
+    decide
+  · have hc := key.mp rfl
+    rw [ite_eq_left hc] at hdec
+    refine Or.inl ⟨a0', _, VG.Proof.EcKey.Compressed.decode_sound hdec, ?_⟩
+    rw [b']
+    show _ = 4 :: (toBytes 32 xf.val ++ toBytes 32 (Fin.ofNat W.p yN : Fe W).val)
+    rw [hval, ← hxf, Fin.val_ofNat, Nat.mod_eq_of_lt hc.1.2]
+    rfl
 
 end VG.Proof.EcKey.Compressed.RISCV64.P256
