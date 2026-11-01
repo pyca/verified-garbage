@@ -348,8 +348,10 @@ stopped when the connection drops, and checks the download against the
 layer's digest, and `ci/lean_cache.py unpack`, which extracts `files.tar`
 with `tar` in the background and unpacks the archives with the toolchain's
 `leantar` as they arrive. Install the toolchain in `lean/lean-toolchain`
-first (with elan, `lean --version` in `lean/` installs it). Then, with
-`python3`, `tar` and `zstd` installed, from the repository root:
+first (with elan, `lean --version` in `lean/` installs it), and the `zstd`
+command if you do not have it (`apt-get install zstd`, `dnf install zstd`,
+`brew install zstd`). Then, with `python3`, `tar` and `zstd` installed, from
+the repository root:
 
 ```sh
 set -o pipefail
@@ -369,8 +371,8 @@ recorded that `ci/lean_profile.py` reads, are not in the modules' `.trace`
 files but in one file, which `unpack --logs` writes
 (`ci/lean_cache.py unpack --logs lean`, to `lean/.lake/ltar/logs.json.gz`).
 
-Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
-with
+Only where you cannot install the `zstd` command, `pip install zstandard`
+and replace `zstd -dc` with
 `python3 -c 'import sys, zstandard; zstandard.ZstdDecompressor().copy_stream(sys.stdin.buffer, sys.stdout.buffer)'`.
 
 The cache holds the C (`.c`) only of the modules the build compiles, those
@@ -403,6 +405,7 @@ audit records instead (the `lean-modules` skill), work as before. CI
 restores this way.
 
 ```sh
+set -o pipefail
 python3 ci/fetch_lean_cache.py | zstd -dc | python3 ci/lean_cache.py unpack lean --empty-private
 ```
 
