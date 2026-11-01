@@ -66,6 +66,13 @@ theorem pOf_lt {m n : Nat} (hn : 1 ≤ n) (hm : m < 2 ^ (64 * n)) : pOf m < 2 ^ 
       rw [← Nat.pow_succ']; congr 1; omega
     omega
 
+theorem keep_drop {rs : List Reg} {r : Reg} {s t : State} (k : Keep (r :: rs) s t) (h : t.gpr r = s.gpr r) :
+    Keep rs s t :=
+  ⟨fun x hx => by
+    by_cases e : x = r
+    · subst e; exact h
+    · exact k.1 x (by simp [e, hx]), k.2⟩
+
 theorem finish_eq (iV iX₂ : Nat) : finish iV iX₂ = fin1L ++ fin2L ++ fin3L iV iX₂ := rfl
 
 /-- The inverse at the width `n` in `r13`: from `a` in `[u]` and `m` in `[m]`, both below
@@ -76,7 +83,7 @@ theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws 
     (hu : wv s.mem B (slot w iU) w < 2 ^ (64 * n)) (hm : wv s.mem B (slot w iM) w < 2 ^ (64 * n)) :
     WP isa (inverseN iU iV iX₂ iM) s fun t => t.gpr .rdi = B ∧
       Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
-      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
       (wv s.mem B (slot w iM) w % 2 = 1 →
         wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w) ∧
         ((wv s.mem B (slot w iM) w : Nat) : Int) ∣
@@ -143,7 +150,8 @@ theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws 
   refine WP.mono (fin2_ok h₃ r12₃ T₃ ht₁ z₃ P₃ hpn (f := I.f) (by rw [F₃]; exact hb₂.f) hf1 hf2)
     fun s₄ ⟨h₄, _, x₂, T₄, hx₂, c₄, z₄, _, F₄, Fr₄, k₄⟩ => ?_
   refine WP.mono (fin3_ok h₄ hV hX hVX T₄ hx₂ z₄ hpn (f := I.f) (by rw [F₄, F₃]; exact hb₂.f) hf1 hf2)
-    fun t ⟨dt, vt, xt, Frt, kt⟩ => ⟨dt, ?_, ((((k₁.trans k₂).trans k₃).trans k₄).trans kt).mono (by decide), ?_⟩
+    fun t ⟨dt, vt, xt, Frt, kt⟩ => ⟨dt, ?_, keep_drop (r := .rdi)
+      (((((k₁.trans k₂).trans k₃).trans k₄).trans kt).mono (by decide)) (dt.trans h.rdi.symm), ?_⟩
   · exact ((Fr₃.trans Fr₄).mono (by simp)).trans Frt
   · intro hmo
     have hpm : p = m := by rw [← hp]; unfold pOf; simp [hmo]
@@ -172,7 +180,7 @@ theorem inverse_ok {s : State} {B : Addr} {Z w iU iV iX₂ iM : Nat} (h : Ws s B
     (hw20 : w < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16) (hVX : iV ≠ iX₂) :
     WP isa (inverse iU iV iX₂ iM) s fun t => t.gpr .rdi = B ∧
       Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
-      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
       (wv s.mem B (slot w iM) w % 2 = 1 →
         wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w) ∧
         ((wv s.mem B (slot w iM) w : Nat) : Int) ∣
@@ -185,7 +193,8 @@ theorem inverse_ok {s : State} {B : Addr} {Z w iU iV iX₂ iM : Nat} (h : Ws s B
   have hm : s₂.mem = s.mem := by rw [m₂, m₁]
   have h₂ : Ws s₂ B Z w := h.congr (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k₁.trans k₂) (by decide)
   refine WP.mono (inverseN_ok h₂ hZ ((k₂.gpr (by decide)).trans h9₁) r13₂ (by have := h.w1; omega) (Nat.le_refl _) hw20 hU hV hX hM hVX (wv_lt _ _ _ _) (wv_lt _ _ _ _))
-    fun t ⟨dt, ft, kt, ht⟩ => ⟨dt, by rw [← hm]; exact ft, ((k₁.trans k₂).trans kt).mono (by decide), by
+    fun t ⟨dt, ft, kt, ht⟩ => ⟨dt, by rw [← hm]; exact ft, keep_drop (r := .rdi) (((k₁.trans k₂).trans kt).mono
+      (by decide)) (dt.trans h.rdi.symm), by
       rw [← hm]; exact ht⟩
 
 end VG.Proof.Rsa.X86_64.InvB
