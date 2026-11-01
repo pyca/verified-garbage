@@ -197,6 +197,29 @@ theorem ctr32_getD (ciph : Block → Block) (icb : Block) (xs : List Block) {q :
     (ctr32 ciph icb xs).getD q 0 = xs.getD q 0 ^^^ ciph (Nat.repeat inc32 q icb) := by
   simp [ctr32, keystream, List.getD_eq_getElem?_getD, hq]
 
+/-- Ciphertext blocks from any plaintext block list, as bytes. This also
+covers a list assembled from several input buffers. -/
+theorem ctr_blocks {m : Mem} {cb ks dp : Addr} {ciph : Block → Block} {icb : Block}
+    {bs : List Block} {nb : Nat} (hl : bs.length=nb)
+    (hd : blocksAt m dp nb=ctr32 ciph icb bs)
+    (hc : blockAt m cb=Nat.repeat inc32 nb icb) :
+    bytesAt m dp (16*nb)=gctr ciph icb (bs.flatMap toBytes) ∧ Ctr m cb ks ciph icb (16*nb) := by
+  rw [gctr_eq]
+  refine ⟨?_,?_,fun h => absurd (by omega) h⟩
+  · refine list_ext (by simp only [Cmac.bytesAt_length,length_xorKs,length_flatMap_toBytes,hl]) fun k hk => ?_
+    simp only [Cmac.bytesAt_length] at hk
+    rw [getD_xorKs _ _ _ _ (by rw [length_flatMap_toBytes,hl]; exact hk),
+      getD_bytesAt' _ _ hk,getD_flatMap_toBytes bs k (by rw [hl]; exact hk)]
+    have hq : k/16<nb := by omega
+    have he := congrArg (fun L => L.getD (k/16) 0) hd
+    rw [blocksAt_getD _ _ _ hq,ctr32_getD _ _ _ (by rw [hl]; exact hq)] at he
+    have ea : dp+BitVec.ofNat 64 k=dp+BitVec.ofNat 64 (16*(k/16))+BitVec.ofNat 64 (k%16) := by
+      rw [BitVec.add_assoc,← BitVec.ofNat_add]; congr 2; omega
+    rw [ea,bytes_toBytes_blockAt m _ (by omega),he,Proof.Aes.toBytes_xor _ _ (by omega),ksByte,Nat.zero_add]
+  · rw [hc]
+    congr 1
+    omega
+
 /-- Whole blocks, from a whole number of blocks: `vg_aes_ctr32`. -/
 theorem ctr_whole {m m' : Mem} {cb ks dp : Addr} {ciph : Block → Block} {icb : Block} {n nb : Nat}
     (h : Ctr m cb ks ciph icb n) (h0 : n % 16 = 0)
