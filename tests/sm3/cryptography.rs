@@ -5,7 +5,7 @@ use super::{check, unhex};
 
 #[test]
 fn oscca() {
-    let text = include_str!("../../vectors/cryptography-sm3/oscca.txt");
+    let text = crate::vectors::text("vectors/cryptography-sm3/oscca.txt");
     let lines: Vec<&str> = text
         .lines()
         .map(str::trim)

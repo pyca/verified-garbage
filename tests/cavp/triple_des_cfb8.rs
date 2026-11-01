@@ -98,14 +98,14 @@ fn check_file(text: &str) -> usize {
 #[test]
 fn cavp_mmt() {
     assert_eq!(
-        check_file(include_str!(
-            "../../vectors/nist-cavp-tdes-mmt/TCFB8MMT2.rsp"
+        check_file(crate::vectors::text(
+            "vectors/nist-cavp-tdes-mmt/TCFB8MMT2.rsp"
         )),
         10
     );
     assert_eq!(
-        check_file(include_str!(
-            "../../vectors/nist-cavp-tdes-mmt/TCFB8MMT3.rsp"
+        check_file(crate::vectors::text(
+            "vectors/nist-cavp-tdes-mmt/TCFB8MMT3.rsp"
         )),
         20
     );

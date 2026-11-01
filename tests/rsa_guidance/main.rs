@@ -18,9 +18,11 @@
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
-const TEXT: &str = include_str!(
-    "../../vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt"
-);
+static TEXT: std::sync::LazyLock<&str> = std::sync::LazyLock::new(|| {
+    crate::vectors::text(
+        "vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt",
+    )
+});
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");

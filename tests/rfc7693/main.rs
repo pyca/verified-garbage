@@ -4,8 +4,8 @@
 //! sizes, and checks a hash of all the digests.
 //!
 //! The RFC is vendored under `vectors/rfc7693/` (see
-//! `vectors/sources/rfc7693.toml` for where it comes from) and compiled into
-//! the test binary, so these tests always run. The expected values and the
+//! `vectors/sources/rfc7693.toml` for where it comes from) and read at run time
+//! (`tests/vectors.rs`), so these tests always run. The expected values and the
 //! self-test's parameter sets are read from the RFC's text; the self-test's
 //! data generator, `selftest_seq`, is transcribed from its C source.
 
@@ -24,7 +24,8 @@ mod blake2s;
 /// A keyed hash function of one digest size: `(key, data)` to the digest.
 type Keyed = fn(&[u8], &[u8]) -> Vec<u8>;
 
-const TEXT: &str = include_str!("../../vectors/rfc7693/rfc7693.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc7693/rfc7693.txt"));
 
 /// The digest `label = ...` of an example: the hex bytes after it, up to the
 /// next blank line.

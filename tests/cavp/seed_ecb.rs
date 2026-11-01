@@ -63,7 +63,7 @@ fn check_ecb(key: &[u8], plaintext: &[u8], ciphertext: &[u8]) {
 
 #[test]
 fn rfc4269() {
-    let text = include_str!("../../vectors/rfc4269/rfc4269.txt");
+    let text = crate::vectors::text("vectors/rfc4269/rfc4269.txt");
     let appendix = text.split("Appendix B.  Test Vectors").nth(1).unwrap();
     let hexline = |line: &str| unhex(&line.split(':').nth(1).unwrap().replace(' ', ""));
     let mut count = 0;
@@ -96,8 +96,8 @@ fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
 #[test]
 fn cryptography_cbc() {
     let mut count = 0;
-    for f in records(include_str!(
-        "../../vectors/cryptography-seed-cbc/rfc-4196.txt"
+    for f in records(crate::vectors::text(
+        "vectors/cryptography-seed-cbc/rfc-4196.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
         let plaintext = unhex(f["PLAINTEXT"]);
@@ -122,8 +122,8 @@ fn cryptography_cbc() {
 #[test]
 fn cryptography_ofb() {
     let mut count = 0;
-    for f in records(include_str!(
-        "../../vectors/cryptography-seed-ofb/seed-ofb.txt"
+    for f in records(crate::vectors::text(
+        "vectors/cryptography-seed-ofb/seed-ofb.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
         let mut stream = unhex(f["IV"]);
@@ -141,8 +141,8 @@ fn cryptography_ofb() {
 #[test]
 fn cryptography_cfb() {
     let mut count = 0;
-    for f in records(include_str!(
-        "../../vectors/cryptography-seed-cfb/seed-cfb.txt"
+    for f in records(crate::vectors::text(
+        "vectors/cryptography-seed-cfb/seed-cfb.txt",
     )) {
         let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
         let mut chain = unhex(f["IV"]);

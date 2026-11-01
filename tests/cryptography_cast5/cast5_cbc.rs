@@ -9,11 +9,12 @@
 
 use verified_garbage::cast5_cbc::{Cast5Cbc, Error};
 
-const VECTORS: &str = include_str!("../../vectors/cryptography-cast5/cast5-cbc.txt");
+static VECTORS: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/cryptography-cast5/cast5-cbc.txt"));
 
 #[test]
 fn vectors() {
-    let records = super::records(VECTORS);
+    let records = super::records(*VECTORS);
     assert_eq!(records.len(), 20);
     for (key, iv, plaintext, ciphertext) in records {
         let cipher = Cast5Cbc::new(&key).unwrap();

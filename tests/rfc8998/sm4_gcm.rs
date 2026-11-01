@@ -3,7 +3,8 @@
 use verified_garbage::sm4_ecb::Sm4Ecb;
 use verified_garbage::sm4_gcm::{Error, Sm4Gcm};
 
-const TEXT: &str = include_str!("../../vectors/rfc8998/rfc8998.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc8998/rfc8998.txt"));
 
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();

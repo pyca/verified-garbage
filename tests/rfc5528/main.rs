@@ -13,7 +13,8 @@
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
 use verified_garbage::camellia_ecb::CamelliaEcb;
 
-const TEXT: &str = include_str!("../../vectors/rfc5528/rfc5528.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc5528/rfc5528.txt"));
 
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();

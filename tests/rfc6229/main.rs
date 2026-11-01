@@ -11,7 +11,8 @@
 
 use verified_garbage::rc4::{Error, Rc4};
 
-const TEXT: &str = include_str!("../../vectors/rfc6229/rfc6229.txt");
+static TEXT: std::sync::LazyLock<&str> =
+    std::sync::LazyLock::new(|| crate::vectors::text("vectors/rfc6229/rfc6229.txt"));
 
 fn unhex(text: &str) -> Vec<u8> {
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
