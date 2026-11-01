@@ -23,6 +23,20 @@ namespace VG.Proof.Rsa.X86_64.InvB
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Inv
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
+/-- A sequence of two nonempty sequences. -/
+theorem seqs_append_iff : ∀ (cs ds : List (Prog isa)), cs ≠ [] → ds ≠ [] → ∀ (s : State) (Q : State → Prop),
+    WP isa (seqs (cs ++ ds)) s Q ↔ WP isa (seqs cs) s fun t => WP isa (seqs ds) t Q
+  | [], _, h, _, _, _ => absurd rfl h
+  | [c], d :: ds, _, _, s, Q => by
+    show WP isa (.seq c (seqs (d :: ds))) s Q ↔ _
+    rw [WP.seq_iff]; rfl
+  | c :: c' :: cs, ds, _, hd, s, Q => by
+    show WP isa (.seq c (seqs (c' :: cs ++ ds))) s Q ↔ WP isa (.seq c (seqs (c' :: cs))) s _
+    rw [WP.seq_iff, WP.seq_iff]
+    exact ⟨fun h => WP.mono h fun t ht => (seqs_append_iff (c' :: cs) ds (by simp) hd t Q).mp ht,
+      fun h => WP.mono h fun t ht => (seqs_append_iff (c' :: cs) ds (by simp) hd t Q).mpr ht⟩
+  | [_], [], _, hd, _, _ => absurd rfl hd
+
 /-- `wa k r`: `r := rdi + k · r9`, from `rdi` at array `j`'s base: array `j + k`'s. -/
 theorem wa_ok {s : State} {B : Addr} {w j : Nat} (k : Nat) {r : Reg} (hr' : r ≠ .r9)
     (hdi : s.gpr .rdi = off B (slot w j)) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))) :
