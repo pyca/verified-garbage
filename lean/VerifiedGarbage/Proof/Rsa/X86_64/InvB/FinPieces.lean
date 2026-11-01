@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.NormNum
@@ -207,5 +208,169 @@ theorem selN_ok {s : State} {B : Addr} {Z w n N : Nat} (h : FS B Z w n s) {mk : 
     fun t ⟨hv, o, kt⟩ => ?_
   rw [m₂, m₁] at hv o
   exact ⟨hv, o, ((k₁.trans k₂).trans kt).mono (by decide)⟩
+
+/-- A change to an array from 16 on, as a frame of the private arrays. -/
+theorem frW {m m' : Mem} {B : Addr} {w j L : Nat} (o : Outside B (slot w j) L m m') (hj : 16 ≤ j) (hj' : j < 26)
+    (hL : L ≤ 8 * (w + 2)) : Frm B [(slot w 16, 80 * (w + 2))] m m' := fun x hx => o x (by
+  have := hx _ (List.mem_singleton.mpr rfl)
+  dsimp only at this
+  have e := slot_eq w j; have e16 := slot_eq w 16
+  have h1 : 16 * (8 * (w + 2)) ≤ j * (8 * (w + 2)) := Nat.mul_le_mul_right _ hj
+  have h2 : (j + 1) * (8 * (w + 2)) ≤ 26 * (8 * (w + 2)) := Nat.mul_le_mul_right _ hj'
+  rw [Nat.succ_mul] at h2
+  omega)
+
+/-- `csubT`: `[t] := [t] - m` if `[t] ≥ m`, over `N` words. -/
+theorem csubT_ok {s : State} {B : Addr} {Z w n N : Nat} (h : FS B Z w n s) (h12 : s.gpr .r12 = BitVec.ofNat 64 N)
+    (hN : 1 ≤ N) (hNw : N ≤ w + 2) {t p : Nat} (ht : wv s.mem B (slot w aT) N = t)
+    (hp : wv s.mem B (slot w aP) N = p) :
+    WP isa (seqs csubT) s fun u =>
+      wv u.mem B (slot w aT) N = (if t < p then t else t - p) ∧
+      Frm B [(slot w aT, 8 * N), (slot w aS, 8 * N)] s.mem u.mem ∧
+      Frm B [(slot w 16, 80 * (w + 2))] s.mem u.mem ∧
+      Keep [.rax, .rbp, .r14, .r8, .r10, .rsi, .rdx] s u := by
+  have hn := h.ws.scr.nowrap
+  have zT := h.sl (show aT < 26 by decide); have zS := h.sl (show aS < 26 by decide)
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  have hw := h.ws.w2
+  rw [show csubT = [.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aT .r8 ++ base aP .r10 ++ base aS .rsi),
+    wordLoop 0 subBody] ++ [wordLoop 0 selBody] from rfl, seqs_append_iff _ _ (by simp) (by simp)]
+  refine WP.mono (subN_ok h (a := aT) (b := aP) (c := aS) (by decide) (by decide) (by decide) (by decide)
+    (by decide) h12 hN hNw) fun s₁ ⟨cb, bp₁, hv, h8, hsi, o₁, k₁⟩ => ?_
+  have hs₁ := h.ws.scr.congr k₁.2.2
+  have ht₁ : wv s₁.mem B (slot w aT) N = t := by
+    rw [o₁.wv (Or.inl (by omega)) (by omega), ht]
+  have hSlt := wv_lt s₁.mem B (slot w aS) N
+  refine WP.mono (sel_ok hs₁ h8 hsi bp₁ ((k₁.gpr (by decide)).trans h12) hN (by omega) (by omega) (by omega)
+    (by omega)) fun u ⟨hu, o₂, k₂⟩ => ⟨?_, ?_, ?_, (k₁.trans k₂).mono (by decide)⟩
+  · rw [hu, ht₁]
+    rw [hp] at hv
+    cases cb
+    · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero, Bool.false_eq_true, ↓reduceIte] at hv ⊢
+      split <;> omega
+    · simp only [Bool.toNat_true, Nat.mul_one, ↓reduceIte] at hv ⊢
+      split <;> omega
+  · intro x hx
+    rw [o₂ x (hx (slot w aT, 8 * N) (by simp)), o₁ x (hx (slot w aS, 8 * N) (by simp))]
+  · exact (frW o₁ (by decide) (by decide) (by omega)).trans (frW o₂ (by decide) (by decide) (by omega))
+
+theorem decR11_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
+    (hb : s.gpr .r11 = BitVec.ofNat 64 j) :
+    WP isa (.block [.alu .sub .r11 (.imm 1)]) s fun s' =>
+      s'.gpr .r11 = BitVec.ofNat 64 (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) ∧ s'.mem = s.mem ∧
+        Keep [.r11] s s' := by
+  have e := VG.Proof.X25519.X86_64.ofNat_sub_one hj hj'
+  have ez := VG.Proof.X25519.X86_64.ofNat_eq_zero (j := j - 1) (by omega)
+  refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = BitVec.ofNat 64 (j - 1) ∧
+    t.zf = some (decide (j - 1 = 0)) ∧ t.mem = s.mem) ?_ rfl) fun t ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, c, k⟩
+  have e' : BitVec.ofNat 64 j - 1 = BitVec.ofNat 64 (j - 1) := e
+  xrun [hb]
+  rw [e']; exact ⟨rfl, ez⟩
+
+/-- `dbl`: `[t] := 2 [t]`, less `m` if not below it, over `N` words, and the count less one. -/
+theorem dbl_ok {s : State} {B : Addr} {Z w n N : Nat} (h : FS B Z w n s) (h12 : s.gpr .r12 = BitVec.ofNat 64 N)
+    (hN : 1 ≤ N) (hNw : N ≤ w + 2) {t p c : Nat} (ht : wv s.mem B (slot w aT) N = t)
+    (hp : wv s.mem B (slot w aP) N = p) (h2t : 2 * t < 2 ^ (64 * N))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 c) (hc : 1 ≤ c) (hc' : c < 2 ^ 64) :
+    WP isa dbl s fun u =>
+      wv u.mem B (slot w aT) N = (if 2 * t < p then 2 * t else 2 * t - p) ∧
+      u.gpr .r11 = BitVec.ofNat 64 (c - 1) ∧ u.zf = some (decide (c - 1 = 0)) ∧
+      Frm B [(slot w aT, 8 * N), (slot w aS, 8 * N)] s.mem u.mem ∧
+      Frm B [(slot w 16, 80 * (w + 2))] s.mem u.mem ∧
+      Keep [.rax, .rbp, .r14, .r8, .r10, .rsi, .rdx, .rbx, .r11] s u := by
+  have hn := h.ws.scr.nowrap
+  have zT := h.sl (show aT < 26 by decide)
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  have hw := h.ws.w2
+  unfold dbl
+  rw [seqs_append_iff _ _ (by simp) (by simp), seqs_append_iff _ _ (by simp) (by simp [csubT])]
+  simp only [seqs]
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = mask false ∧
+    t.mem = s.mem) (by xrun) rfl) fun s₁ ⟨⟨bp₁, m₁⟩, k₁⟩ =>
+    WP.mono (base_ok aT (r := .rbx) (by decide) ((k₁.gpr (by decide)).trans h.ws.rdi)
+      ((k₁.gpr (by decide)).trans h.r9)) fun s₂ ⟨bx, m₂, k₂⟩ => ?_))
+  refine WP.mono (shl_ok (h.ws.scr.congr (k₁.trans k₂).2.2) bx (((k₁.trans k₂).gpr (by decide)).trans h12)
+    ((k₂.gpr (by decide)).trans bp₁) hN (by omega) (by omega)) fun s₃ ⟨c₃, _, hv₃, o₃, k₃⟩ => ?_
+  rw [m₂, m₁, ht] at hv₃
+  rw [m₂, m₁] at o₃
+  have hc₃ : c₃ = false := by
+    cases c₃
+    · rfl
+    · have := wv_lt s₃.mem B (slot w aT) N
+      simp at hv₃; omega
+  subst hc₃
+  simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hv₃
+  have k13 := (k₁.trans k₂).trans k₃
+  have h₃ : FS B Z w n s₃ := h.of_out o₃ k13 (by decide) (by decide) (by decide)
+  have hp₃ : wv s₃.mem B (slot w aP) N = p := by
+    have eP : slot w aP = 256 + 25 * (8 * (w + 2)) := slot_eq w 25
+    have := h.sl (show aP < 26 by decide)
+    rw [o₃.wv (Or.inr (by omega)) (by omega), hp]
+  refine WP.mono (csubT_ok h₃ ((k13.gpr (by decide)).trans h12) hN hNw hv₃ hp₃)
+    fun s₄ ⟨hv₄, f₄, F₄, k₄⟩ => ?_
+  refine WP.mono (decR11_ok s₄ hc hc' (((k13.trans k₄).gpr (by decide)).trans h11))
+    fun u ⟨r11u, zu, mu, ku⟩ => ⟨by rw [mu]; exact hv₄, r11u, zu, ?_, ?_, ((k13.trans k₄).trans ku).mono (by decide)⟩
+  · rw [mu]; exact (Frm.of_outside o₃ (by simp)).trans f₄
+  · rw [mu]; exact (frW o₃ (by decide) (by decide) (by omega)).trans F₄
+
+/-- `K` doublings modulo `p` of `[t] = t₀ ≤ p` (`n + 1` words, `p < 2^(64 n)`): `[t] ≤ p`,
+`[t] ≡ t₀ 2^K`. -/
+theorem dblLoop_ok {s : State} {B : Addr} {Z w n : Nat} (h : FS B Z w n s)
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 (n + 1)) {t₀ p K : Nat} (ht : wv s.mem B (slot w aT) (n + 1) = t₀)
+    (hp : wv s.mem B (slot w aP) (n + 1) = p) (htp : t₀ ≤ p) (hpn : p < 2 ^ (64 * n))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 K) (hK : 1 ≤ K) (hK' : K < 2 ^ 64) :
+    WP isa (.loop dbl .ne) s fun u => FS B Z w n u ∧ u.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧
+      wv u.mem B (slot w aT) (n + 1) ≤ p ∧
+      (wv u.mem B (slot w aT) (n + 1) : Int) ≡ t₀ * 2 ^ K [ZMOD p] ∧
+      Frm B [(slot w aT, 8 * (n + 1)), (slot w aS, 8 * (n + 1))] s.mem u.mem ∧
+      Frm B [(slot w 16, 80 * (w + 2))] s.mem u.mem ∧
+      Keep [.rax, .rbp, .r14, .r8, .r10, .rsi, .rdx, .rbx, .r11] s u := by
+  have hn := h.ws.scr.nowrap
+  have hnw := h.nw
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  have eP : slot w aP = 256 + 25 * (8 * (w + 2)) := slot_eq w 25
+  have zP := h.sl (show aP < 26 by decide)
+  have hM : 2 * p < 2 ^ (64 * (n + 1)) := by
+    rw [show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add]
+    have : 2 ≤ 2 ^ 64 := by decide
+    have := Nat.mul_le_mul_left (2 ^ (64 * n)) this
+    omega
+  refine VG.Proof.X25519.X86_64.cntLoop_ok (n := K)
+    (Inv := fun j u => FS B Z w n u ∧ u.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧ u.gpr .r11 = BitVec.ofNat 64 j ∧
+      wv u.mem B (slot w aT) (n + 1) ≤ p ∧
+      (wv u.mem B (slot w aT) (n + 1) : Int) ≡ t₀ * 2 ^ (K - j) [ZMOD p] ∧
+      wv u.mem B (slot w aP) (n + 1) = p ∧
+      Frm B [(slot w aT, 8 * (n + 1)), (slot w aS, 8 * (n + 1))] s.mem u.mem ∧
+      Frm B [(slot w 16, 80 * (w + 2))] s.mem u.mem ∧
+      Keep [.rax, .rbp, .r14, .r8, .r10, .rsi, .rdx, .rbx, .r11] s u)
+    (fun j u hj1 hjK ⟨hu, u12, u11, tle, tc, up, f₁, F₁, ku⟩ => ?_)
+    (fun u ⟨hu, u12, _, tle, tc, _, f₁, F₁, ku⟩ => ⟨hu, u12, tle, by simpa using tc, f₁, F₁, ku⟩) hK
+    ⟨h, h12, h11, by rw [ht]; exact htp, by rw [ht, Nat.sub_self, pow_zero, Int.mul_one], hp,
+      Frm.refl _ _ _, Frm.refl _ _ _, Keep.refl _ _⟩
+  refine WP.mono (dbl_ok hu u12 (by omega) (by omega) rfl up (by omega) u11 hj1 (by omega))
+    fun v ⟨hv, v11, vz, f₂, F₂, kv⟩ => ⟨⟨?_, (kv.gpr (by decide)).trans u12, v11, ?_, ?_, ?_, f₁.trans f₂,
+      F₁.trans F₂, (ku.trans kv).mono (by decide)⟩, vz⟩
+  · refine ⟨hu.ws.congr f₂ (fun r hr => ?_) kv (by decide), hu.z, (kv.gpr (by decide)).trans hu.r9,
+      (kv.gpr (by decide)).trans hu.r13, hu.n1, hu.nw⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Mut.ofSlot _ _ _
+  · rw [hv]; split <;> omega
+  · rw [hv, show K - (j - 1) = (K - j) + 1 by omega, pow_succ]
+    split
+    · push_cast
+      have := tc.mul_left 2
+      rw [show (2 : Int) * (t₀ * 2 ^ (K - j)) = t₀ * (2 ^ (K - j) * 2) by ring] at this
+      exact this
+    · rw [Nat.cast_sub (by omega)]
+      push_cast
+      have := tc.mul_left 2
+      rw [show (2 : Int) * (t₀ * 2 ^ (K - j)) = t₀ * (2 ^ (K - j) * 2) by ring] at this
+      exact (Int.modEq_iff_dvd.mpr ⟨1, by ring⟩).trans this
+  · rw [f₂.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega), up]
 
 end VG.Proof.Rsa.X86_64.InvB
