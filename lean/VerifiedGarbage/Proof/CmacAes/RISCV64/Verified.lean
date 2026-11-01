@@ -34,19 +34,22 @@ theorem subkeys_correct (s : State) (hs : subkeysRISCV64.pre s) :
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hp⟩
 
 /-- `update`'s precondition, the chain's (with the scratch buffer of 2176 bytes). -/
-theorem update_wpre {s : State} (hs : updateRISCV64.pre s) : Proof.AesCbc.RISCV64.WPre false s :=
+theorem update_wpre {s : State} (hs : updateRISCV64.pre s) :
+    Proof.AesCbc.RISCV64.WPre false (16 * ·) s :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k⟩ := hs
   ⟨a, b, c, d, e, f, g, h, i, j, k⟩
 
 theorem update_correct (s : State) (hs : updateRISCV64.pre s) :
     ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ updateRISCV64.post s s' := by
   obtain ⟨t, s', he, hg, hra, hsp, hp, -⟩ :=
-    Proof.AesCbc.RISCV64.wrap_wp (name := "vg_aes_mac_chain") (update_wpre hs)
+    Proof.AesCbc.RISCV64.wrap_wp (Proof.AesCbc.RISCV64.chain_k false) (name := "vg_aes_mac_chain")
+      (update_wpre hs)
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hp⟩
 
 theorem update_ct : ConstantTime isa updateRISCV64.pre updateRISCV64.pub update :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
-    Proof.AesCbc.RISCV64.wrap_ct "vg_aes_mac_chain" false _ _ _ _ _ _ (update_wpre h₁) (update_wpre h₂) hq e₁ e₂
+    Proof.AesCbc.RISCV64.wrap_ct (Proof.AesCbc.RISCV64.chain_k false) "vg_aes_mac_chain" _ _ _ _ _ _
+      (update_wpre h₁) (update_wpre h₂) hq e₁ e₂
 
 theorem finalize_correct (s : State) (hs : finalizeRISCV64.pre s) :
     ∃ t s', Exec isa finalize s t s' ∧ abiPreserved s s' ∧ finalizeRISCV64.post s s' := by

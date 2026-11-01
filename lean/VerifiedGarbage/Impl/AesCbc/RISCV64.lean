@@ -102,11 +102,16 @@ def encSave : List Instr :=
 /-- They restored, with the scratch buffer in `s1`. -/
 def encRestore : List Instr := savePtr .s1 ++ [.load .d .ra .t0 16, .load .d .s1 .t0 24]
 
+/-- A call `c` of a chaining function (`Impl/Aes/RISCV64/Chain.lean`), which
+takes our arguments and the first 2048 bytes of the scratch buffer, between
+`encSave` and `encRestore`. -/
+def chainWrapped (c : Prog isa) : Prog isa := .seq (.block encSave) (.seq c (.block encRestore))
+
 /-- Each block `Pⱼ ⊕ Cⱼ₋₁`, enciphered in place, the result the chaining
 value, by the CBC encryption chain (`Impl.Aes.RISCV64.chain true`), which
 takes `encrypt`'s arguments and the first 2048 bytes of its scratch buffer,
 and bitslices the round keys once for all the blocks. -/
-def encrypt : Prog isa := .seq (.block encSave) (.seq Impl.Aes.RISCV64.cbcChainCall (.block encRestore))
+def encrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cbcChainCall
 
 /-! ## `vg_aes_cbc_decrypt` -/
 
