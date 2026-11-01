@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintUnpackMain
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintUnpack
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintUnpackMain
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintUnpack
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintCT
 meta import VerifiedGarbage.TCB.Artifact
 meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem

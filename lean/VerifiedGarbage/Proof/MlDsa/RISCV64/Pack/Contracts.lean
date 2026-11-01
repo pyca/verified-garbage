@@ -142,7 +142,7 @@ theorem mov2_ok {a b : Reg} (hb10 : b ≠ .a7) (s : State) :
 
 /-- As `mov2_ok`, then `q` in `a4`. -/
 theorem mov2Q_ok {a b : Reg} (hb10 : b ≠ .a7) (s : State) :
-    WP isa (.block ([.addi .a7 a 0, .addi .t1 b 0] ++ loadQ)) s
+    WP isa (.block (([.addi .a7 a 0, .addi .t1 b 0] : List Instr) ++ loadQ)) s
       fun s' => (s'.gpr .a7 = s.gpr a ∧ s'.gpr .t1 = s.gpr b ∧ s'.gpr .a4 = BitVec.ofNat 64 q ∧
         s'.mem = s.mem) ∧ Keep [.a7, .t1, .a4] s s' := by
   rw [WP.block_append_iff]
