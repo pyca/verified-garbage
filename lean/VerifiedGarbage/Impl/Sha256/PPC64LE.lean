@@ -21,10 +21,10 @@ namespace VG.Impl.Sha256.PPC64LE
 open VG.PPC64LE
 open VG.Spec.Sha256 (K)
 
-/-- The registers holding the working variables. -/
+/-- Scalar destinations used when adding the final vector state into the hash value. -/
 def work : List Reg := [.r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15]
 
-/-- The register holding working variable `k` (`a = 0, …, h = 7`) at the start of round `t`. -/
+/-- The output register for a working word; extraction uses the rotation at `t = 0`. -/
 def var (t k : Nat) : Reg := work.getD ((k + 8 - t % 8) % 8) .r7
 
 /-- Volatile vector registers hold the working state throughout the rounds. -/
@@ -47,7 +47,7 @@ def save : List Instr := (List.range 5).flatMap fun i => [.store .d (saved i) .r
 /-- Restore them. -/
 def restore : List Instr := (List.range 5).flatMap fun i => [.load .d (saved i) .r6 (64 + 8 * i)]
 
-/-- The offset of `W[i mod 16]` in the scratch buffer. -/
+/-- Offsets used by the scratch-region frame lemmas. -/
 def slot (i : Nat) : Nat := 4 * (i % 16)
 
 def movImm32 (d : Reg) (v : BitVec 32) : List Instr :=
