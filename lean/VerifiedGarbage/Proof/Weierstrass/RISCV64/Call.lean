@@ -216,3 +216,29 @@ theorem subCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
   exact ⟨⟨K, outs_of_keeps (h32 o ho) v3 Fr hk⟩, v1⟩
 
 end VG.Proof.Weierstrass.RISCV64
+
+namespace VG.Proof.Weierstrass.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Steps
+
+/-- A call of `body`, which meets the contract `K` by register, on the
+working space in `s0` (`a0 = s0`, then the call). -/
+theorem wsCall_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {K : Contract isa}
+    (hK : Meets body K) {s : State} {base : Addr} (hw : WsReg s base)
+    (hpre : ∀ t : State, t.rd = [] → t.wr = [⟨base, 8192⟩] → t.gpr .a0 = base → t.mem = s.mem → K.pre t)
+    {Q : State → Prop}
+    (hQ : ∀ s', Kp s s' → ∀ t : State, t.gpr .a0 = base → t.mem = s.mem →
+      K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s') :
+    WP isa (.seq (.block [.addi .a0 .s0 0]) (.call f body)) s Q := by
+  refine WP.seq (wp_mv fun s₁ u₁ => WP.block_nil ?_)
+  have K₁ : Kp s s₁ := Kp.of_upd u₁
+  have hcov : Covers [⟨base, 8192⟩] s₁.wr := Covers.of_mem fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; rw [K₁.wr]; exact hw.wr
+  let e := s₁.callEntry.withRegions [] [⟨base, 8192⟩]
+  have e0 : e.gpr .a0 = base := by
+    simp only [e, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), u₁.gpr, hw.s0]
+  have em : e.mem = s.mem := by simp only [e, State.withRegions_mem, State.callEntry_mem, u₁.mem]
+  refine WP.call hK (rd := []) (wr := [⟨base, 8192⟩]) (hpre e rfl (by simp only [e, State.withRegions_wr]) e0 em)
+    (Covers.right hcov) hcov (fun s' r' w' p' _ G _ hp => hQ s' (K₁.trans ⟨G, r', w', p'⟩) e e0 em hp) hn
+
+end VG.Proof.Weierstrass.RISCV64
