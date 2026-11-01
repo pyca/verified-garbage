@@ -122,23 +122,32 @@ def printedFG : String → Option (List Line)
   | "k" => some (printer.function (.call "g" (.block [.mov .rax (.imm 2)])))
   | _ => none
 
+/-- `Rust.badCall` on `calls`, whose first call of each function is compared
+with `printedFG` by printing it (as `Rust.printsAs` does unless it is the same
+value as the function's code). -/
+def badCallFG (calls : List (String × Prog isa)) : Option (String × Bool) :=
+  Rust.badCall printer (fun n => (printedFG n).map fun ls =>
+    match calls.find? (·.1 == n) with
+    | some (_, b) => printer.function b == ls
+    | none => true) calls
+
 -- The same code written twice is two values in memory: the later call of
 -- `f` is compared by its printed code.
-#guard Rust.badCall printer printedFG
+#guard badCallFG
   [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 2)]),
    ("f", .block [.mov .rax (.imm 1)])] == none
-#guard Rust.badCall printer printedFG [("h", .block [])] == some ("h", false)
-#guard Rust.badCall printer printedFG
+#guard badCallFG [("h", .block [])] == some ("h", false)
+#guard badCallFG
   [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 1)])] == some ("g", true)
 -- A later call of a function whose first call is of its code.
-#guard Rust.badCall printer printedFG
+#guard badCallFG
   [("f", .block [.mov .rax (.imm 1)]), ("f", .block [.mov .rax (.imm 2)])] == some ("f", true)
 -- Calls nested in a call's code are in `Code.calls`: `k` prints as it should,
 -- but the code its call of `g` runs does not.
-#guard Rust.badCall printer printedFG
+#guard badCallFG
   (Code.calls (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
     (.call "f" (.block [.mov .rax (.imm 1)])) : Prog isa)) == none
-#guard Rust.badCall printer printedFG
+#guard badCallFG
   (Code.calls (.call "k" (.call "g" (.block [.mov .rax (.imm 3)])) : Prog isa)) ==
   some ("g", true)
 
