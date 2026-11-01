@@ -108,6 +108,16 @@ structure SealAccess (s : State) : Prop where
   reads : Covers (sealReads s++sealWrites s) (s.rd++s.wr)
   writes : Covers (sealWrites s) s.wr
 
+
+theorem SealAccess.of_pre {s : State} (h : sealPre s) : SealAccess s := by
+  have hr : sealReads s=s.rd := h.1.symm
+  have hw : sealWrites s=s.wr := h.2.1.symm
+  refine ⟨?_,?_,?_⟩
+  · rw [hr,hw,State.withRegions_self]; exact h
+  · rw [hr,hw]; exact Covers.refl _
+  · rw [hw]; exact Covers.refl _
+
+
 theorem oneAad_entry_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₁ : State}
     (h : SealAccess s₀) (h1 : SO1 (stackArg s₀ 1) (stackArg s₀ 0) s₀ s₁) :
     WP isa oneAad s₁ (OA s₁.gpr s₀.sp (ctxH s₀.mem (s₀.gpr .r3))
@@ -282,13 +292,7 @@ theorem sealBody_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
     WP isa (Impl.AesGcm.PPC64LE.SealFused.withBody sealBody) s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
   have h' : sealPre s₀ := h
   obtain ⟨hrd,hwr,dcd,dcW,dnd,dnW,dad,daW,ddt,ddW,ddA,dtW,dWA,fc,fn,fa,fd,fW,fsp,hR⟩ := h'
-  have access : SealAccess s₀ := by
-    have hr : sealReads s₀=s₀.rd := hrd.symm
-    have hw : sealWrites s₀=s₀.wr := hwr.symm
-    refine ⟨?_,?_,?_⟩
-    · rw [hr,hw,State.withRegions_self]; exact h
-    · rw [hr,hw]; exact Covers.refl _
-    · rw [hw]; exact Covers.refl _
+  have access := SealAccess.of_pre h
   exact sealStages_wp access (extra := []) (by simp) (fun s₁ s₂ h1 oa _ _ L hd h28 hv hab => by
     refine WP.mono (bodyCorrect L oa.env hd h28 hv (length_bytesAt _ _ _).symm hab) fun t bo => ?_
     have hf := h1.aadFrame oa

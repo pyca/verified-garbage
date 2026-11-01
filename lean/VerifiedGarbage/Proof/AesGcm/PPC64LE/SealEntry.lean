@@ -1,21 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Entry
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Entry
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
--- separate module: the shared seal entry on the split caller's additional permissions.
+-- separate module: the shared seal entry and return on caller-provided permissions.
 /-! # Constant time of the shared seal entry with extended permissions -/
 
 @[expose] public section
-namespace VG.Proof.AesGcm.PPC64LE.SealSplit.CTEntry
+namespace VG.Proof.AesGcm.PPC64LE.SealEntry
 open VG VG.PPC64LE VG.Impl.AesGcm.PPC64LE
 open VG.Spec.Aes (bytesAt)
 
@@ -66,6 +66,16 @@ theorem entry_wp {s : State} (h : SealAccess s) :
     (args_in hA (by decide) (i := 0) (by decide)) rfl
     ((dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).sub_right
       (Region.sub_prefix (by decide : 8≤8*2))).symm
+
+
+theorem oneHead_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [])
+    (.block [.addSp .r12 0, .load .d .r12 .r12 104]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem oneRest_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
+    (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12])
+    (.block (save .r12 ++ ([mov .r29 .r3, mov .r28 .r4, .addi .r30 .r31 16, mov .r24 .r5, mov .r25 .r6,
+      mov .r18 .r6, mov .r21 .r7, mov .r22 .r8, mov .r27 .r9, mov .r23 .r10, .addSp .r12 0,
+      .load .d .r20 .r12 96] : List Instr))) h).isSome = true := ⟨_, by taint_decide⟩
 
 
 def entryRegs : List Reg := [.r3,.r4,.r5,.r6,.r7,.r8,.r9,.r10]
@@ -128,4 +138,4 @@ theorem return_ct {W T sp : Addr} (hTW : (⟨T,16⟩ : Region).Disjoint ⟨W,16�
     exact CT.taintEq _ (fun _ => W) sp (fun _ hs => ⟨hs.2,by simp [hs.1]⟩) hc
 
 
-end VG.Proof.AesGcm.PPC64LE.SealSplit.CTEntry
+end VG.Proof.AesGcm.PPC64LE.SealEntry

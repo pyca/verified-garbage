@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealEntry
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFusedCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
@@ -56,37 +57,9 @@ theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
         (s₀.gpr .r8) (s₀.gpr .r9) (s₀.gpr .r10) s₁ ∧
       s₁.gpr .r24 = s₀.gpr .r5 ∧ s₁.gpr .r25 = BitVec.ofNat 64 (s₀.gpr .r6).toNat ∧
       s₁.gpr .r20 = stackArg s₀ 0 ∧ Covers [⟨stackArg s₀ 0, 16⟩] s₁.wr := by
-  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, fW, fsp, hR⟩ := h
-  have hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hW : Covers [⟨stackArg s₀ 1, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  have hA : Covers [args s₀ 2] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR (stackArg s₀ 1)) :=
-    ((dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).sub_right
-      (Region.sub_prefix (show 8 ≤ 8 * 2 by decide))).symm
-  refine WP.mono (one1_wp (off := 104) (W := stackArg s₀ 1) (T := stackArg s₀ 0) (.inl rfl) hW
-    (args_in hA (by decide) (i := 1) (by decide)) rfl (args_in hA (by decide) (i := 0) (by decide)) rfl hTd)
-    fun s₁ h1 => ?_
-  have hk₁ := h1.en.keeps
-  have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
-  have hDw : Covers [⟨s₀.gpr .r9, (s₀.gpr .r10).toNat⟩] s₁.wr := by
-    rw [hk₁.wr, hwr]; exact covers_mem (by simp)
-  refine ⟨⟨s₁.gpr, h1.r29, h1.r30, h1.r31, by rw [h1.r28]; exact toN, by rw [h1.r18]; exact toN, h1.r21,
-    h1.r22, h1.r27, h1.r23, one_env h1 hC hW, ?_, ?_, ⟨⟨covers_left hDw, (s₀.gpr .r10).isLt, fd,
-      ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw, dcd⟩⟩, h1.r24, by rw [h1.r25]; exact toN, h1.r20, ?_⟩
-  · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
-      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
-  · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
-      (s₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
-  · rw [hk₁.wr, hwr]; exact covers_mem (by simp)
+  exact WP.mono (SealEntry.entry_wp (SealAccess.of_pre h)) fun _ h1 =>
+    SealEntry.entry_ready (SealAccess.of_pre h) h1
 
-theorem oneHead_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [])
-    (.block [.addSp .r12 0, .load .d .r12 .r12 104]) h).isSome = true := ⟨_, by taint_decide⟩
-
-theorem oneRest_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
-    (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12])
-    (.block (save .r12 ++ ([mov .r29 .r3, mov .r28 .r4, .addi .r30 .r31 16, mov .r24 .r5, mov .r25 .r6,
-      mov .r18 .r6, mov .r21 .r7, mov .r22 .r8, mov .r27 .r9, mov .r23 .r10, .addSp .r12 0,
-      .load .d .r20 .r12 96] : List Instr))) h).isSome = true := ⟨_, by taint_decide⟩
 
 section
 variable {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D Ln T : BitVec 64}
@@ -137,19 +110,7 @@ theorem sealWithBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
     exact WP.mono (WP.with_rdwr (bodyCorrect (L.v a b d) he hd e hR (by rw [i]; exact hl) hab'))
       fun s' ⟨bo,_,wr,_⟩ => ⟨V,d,(he.fr _ (by decide)).symm.trans hT.2.1,bo.env,
         by rw [wr]; exact hT.2.2⟩
-  -- the tag copied out
-  refine CT.seq (J := fun s => s.gpr .r31 = W ∧ s.sp = sp) ?_
-    (fun s ⟨V, d, i, he, hT⟩ => WP.mono (tagOut_ok he (by rw [i]; exact hT) (by rw [i, d]; exact hTW))
-      fun s' ⟨_, _, hg, hk⟩ => ⟨by rw [hg _ (by decide), he.r31, d], by rw [hk.sp, he.sp]⟩) ?_
-  · obtain ⟨_, hc⟩ := tagOut_taint
-    refine CT.taint _ (fun s₁ s₂ ⟨_, d₁, i₁, h₁, _⟩ ⟨_, d₂, i₂, h₂, _⟩ =>
-      ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_⟩) hc
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), i₁, i₂]
-    · rw [h₁.r31, h₂.r31, d₁, d₂]
-  obtain ⟨_, hc⟩ := restore_taint
-  exact CT.taintEq _ (fun _ => W) sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
+  exact SealEntry.return_ct hTW
 
 end
 
@@ -175,27 +136,13 @@ theorem sealWith_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
     (fun s ⟨hs, e3, e4, e5, e6, e7, e8, e9, e10, esp, ea0, ea1⟩ => ?_)
     (sealWithBody_ct (oneLay fc fW dcW) hR (dtW.sub_right (Region.sub_prefix (by decide)))
       bodyCorrect (bodyCT (oneLay fc fW dcW) hR))
-  · -- the entry: its head loads `W` from a public address, the rest saves through it
-    let v : Reg → BitVec 64 := fun r => if r = .r12 then stackArg σ₁ 1 else σ₁.gpr r
-    have hl : oneEntry 104 = [.addSp .r12 0, .load .d .r12 .r12 104] ++ (save .r12 ++
-        ([mov .r29 .r3, mov .r28 .r4, .addi .r30 .r31 16, mov .r24 .r5, mov .r25 .r6, mov .r18 .r6,
-          mov .r21 .r7, mov .r22 .r8, mov .r27 .r9, mov .r23 .r10, .addSp .r12 0, .load .d .r20 .r12 96] :
-          List Instr)) := by
-      rw [oneEntry, List.append_assoc]
-    rw [hl]
-    refine RelCT.block_append (CT.seq (J := fun s => s.sp = σ₁.sp ∧
-      ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12], s.gpr r = v r) ?_ ?_ ?_)
-    · obtain ⟨_, hc⟩ := oneHead_taint
-      exact CT.taintEq _ σ₁.gpr σ₁.sp (fun s ⟨_, _, _, _, _, _, _, _, _, esp, _⟩ => ⟨esp, by simp⟩) hc
-    · intro s ⟨hs, e3, e4, e5, e6, e7, e8, e9, e10, esp, _, ea1⟩
-      have hA : Covers [args s 2] (s.rd ++ s.wr) := covers_mem (List.mem_append_left _ (by rw [hs.1]; simp))
-      refine WP.mono (oneA_ok (W := stackArg s 1) (.inl rfl) (args_in hA (by decide) (i := 1) (by decide)) rfl)
-        fun sA ⟨a12, gA, kA⟩ => ⟨kA.sp.trans esp, fun r hr => ?_⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp [v, a12, ea1, e3, e4, e5, e6, e7, e8, e9, e10, gA]
-    · obtain ⟨_, hc⟩ := oneRest_taint
-      exact CT.taintEq _ v σ₁.sp (fun s h => h) hc
+  · exact SealEntry.entry_ct (I := I₀) (v := σ₁.gpr) (sp := σ₁.sp) (W := stackArg σ₁ 1)
+      (fun s hs => SealAccess.of_pre hs.1)
+      (fun s ⟨_,e3,e4,e5,e6,e7,e8,e9,e10,esp,_,ea1⟩ => ⟨esp,by
+        intro r hr
+        simp only [SealEntry.entryRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption,ea1⟩)
+
   · have := sealEntry_wp hs
     rw [ea0, ea1, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
     exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT⟩ => ⟨⟨hO, h20, hT⟩, h24, h25⟩
