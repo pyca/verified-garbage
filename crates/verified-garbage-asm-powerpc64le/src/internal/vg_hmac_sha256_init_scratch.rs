@@ -53,6 +53,6 @@ b 210f
 bl {vg_sha256_update_scratch}
 .base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh8IACATg==""#,
         vg_sha256_init = sym crate::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch,
+        vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
     )
 }

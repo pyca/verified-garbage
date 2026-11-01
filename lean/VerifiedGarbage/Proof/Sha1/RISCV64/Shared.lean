@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha1.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 public import VerifiedGarbage.Proof.Sha1.RISCV64.Compress
@@ -55,9 +56,9 @@ theorem compressWide_verified :
       Region.disjoint_of_sep (by decide)⟩
 
 theorem compress :
-    Verified RISCV64.target Impl.Sha1.RISCV64.compress (Spec.Sha1.compressContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Sha1.RISCV64.compress (Proof.Sha1.compressContract RISCV64.abi) :=
   compressWide_verified.of_implies (by
-    contract_implies [Spec.Sha1.compressContract, Spec.Sha1.compressSig, compressWide,
+    contract_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig, compressWide,
       Proof.Sha1.compressRISCV64, RISCV64.abi, RISCV64.argRegs]
       [compressSat, Proof.Sha1.RISCV64.satState] using compressSat)
 

@@ -76,8 +76,8 @@ jmp 24f
 .base64 "ieiLmIABAACLsIQBAACLuIgBAACLqIwBAACNpCQkBAAAww=="
 .p2align 6"#,
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
         vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch::vg_hmac_md5_finalize_scratch,
         vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate::vg_pbkdf2_hmac_md5_iterate,

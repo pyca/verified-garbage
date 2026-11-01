@@ -740,7 +740,7 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -1816,7 +1816,7 @@ ldr r12, [sp], #56
 bx lr",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -2563,7 +2563,7 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
         vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal,
     )
 }
@@ -3645,6 +3645,6 @@ ldr r12, [sp], #56
 bx lr",
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

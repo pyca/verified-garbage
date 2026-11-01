@@ -12829,8 +12829,8 @@ jne 2270b
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -13902,8 +13902,8 @@ jne 2270b
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -14979,8 +14979,8 @@ jne 2270b
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -16056,8 +16056,8 @@ jne 2270b
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -17175,8 +17175,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -18350,8 +18350,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -19465,8 +19465,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -20636,8 +20636,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -21755,8 +21755,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -22930,8 +22930,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -24049,8 +24049,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -25224,8 +25224,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -26343,8 +26343,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -27518,8 +27518,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -28637,8 +28637,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )
@@ -29812,8 +29812,8 @@ jmp 21f
 .base64 "SI2kJCgBAABIixwkSItsJAhMi2QkEEyLbCQYTIt0JCBMi3wkKEiNZCQwww=="
 .p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_generation_check_parameters = sym super::dsa::vg_dsa_generation_check_parameters,
     )

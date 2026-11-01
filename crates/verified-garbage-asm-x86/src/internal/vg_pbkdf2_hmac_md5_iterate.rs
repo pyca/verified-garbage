@@ -25,6 +25,6 @@ jmp 21f
 21:
 .base64 "ieiLWHCLcHSLeHiLaHzD"
 .p2align 6"#,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

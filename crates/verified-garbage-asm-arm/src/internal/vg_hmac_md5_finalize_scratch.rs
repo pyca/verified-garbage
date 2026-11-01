@@ -83,7 +83,7 @@ ldr r10, [r11, #136]
 ldr lr, [r11, #140]
 ldr r11, [r11, #144]
 bx lr",
-        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

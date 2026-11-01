@@ -284,7 +284,7 @@ theorem init_step {s t : State} (h : Facts s) (hc : Ctx s t) :
 
 theorem update_step {s t : State} (h : Facts s) (hc : Ctx s t)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem ((arg s 2).setWidth 64) []) :
-    WP isa (callWith updateArgs Spec.Sha512.updateScratchApi.name Impl.Sha512.X86.Stream.update) t
+    WP isa (callWith updateArgs "vg_sha512_update_scratch" Impl.Sha512.X86.Stream.update) t
       fun u => Ctx s u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem ((arg s 2).setWidth 64)
         (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) := by
   refine WP.seq (WP.mono (setup_ok h hc
@@ -338,7 +338,7 @@ theorem digest_addr {s : State} (h : Facts s) :
 theorem finalize_step {s t : State} (h : Facts s) (hc : Ctx s t)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem ((arg s 2).setWidth 64)
       (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)) :
-    WP isa (callWith finalizeArgs Spec.Sha512.finalizeScratchApi.name Impl.Sha512.X86.Stream.finalize) t
+    WP isa (callWith finalizeArgs "vg_sha512_finalize_scratch" Impl.Sha512.X86.Stream.finalize) t
       fun u => Ctx s u ∧ Spec.Sha512.bytesAt u.mem ((esp s).setWidth 64 + 192) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) := by
   refine WP.seq (WP.mono (setup_ok h hc

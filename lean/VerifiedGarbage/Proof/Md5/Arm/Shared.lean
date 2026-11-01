@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.Arm.Stream.Init
 import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
@@ -30,9 +31,9 @@ in a frame that allocates it (`Verified.stackScratch`).
 namespace VG.Proof.Md5.Arm.Shared
 
 theorem compress :
-    Verified Arm.target Impl.Md5.Arm.compress (Spec.Md5.compressContract Arm.abi) :=
+    Verified Arm.target Impl.Md5.Arm.compress (Proof.Md5.compressContract Arm.abi) :=
   Proof.Md5.Arm.compress_verified.of_implies (by
-    sig_implies [Spec.Md5.compressContract, Spec.Md5.compressSig,
+    sig_implies [Proof.Md5.compressContract, Proof.Md5.compressSig,
       Proof.Md5.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Md5.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
       Mem.read] using Proof.Md5.Arm.satState)
@@ -45,17 +46,17 @@ theorem init : Verified Arm.target Impl.Md5.Arm.Stream.init (Spec.Md5.initContra
       Mem.read] using Proof.Md5.Arm.Stream.initSat)
 
 theorem updateScratch :
-    Verified Arm.target Impl.Md5.Arm.Stream.update (Spec.Md5.updateScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Md5.Arm.Stream.update (Proof.Md5.updateScratchContract Arm.abi) :=
   Proof.Md5.Arm.Stream.Update.update_verified.of_implies (by
-    sig_implies [Spec.Md5.updateScratchContract, Spec.Md5.updateScratchSig, Proof.Md5.updateArm,
+    sig_implies [Proof.Md5.updateScratchContract, Proof.Md5.updateScratchSig, Proof.Md5.updateArm,
       Proof.Md5.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Md5.Arm.Stream.Update.sat, MdStream.Arm.Update.sat, Impl.Md5.Arm.Stream.params, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
       Mem.read] using Proof.Md5.Arm.Stream.Update.sat)
 
 theorem finalizeScratch :
-    Verified Arm.target Impl.Md5.Arm.Stream.finalize (Spec.Md5.finalizeScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Md5.Arm.Stream.finalize (Proof.Md5.finalizeScratchContract Arm.abi) :=
   Proof.Md5.Arm.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Md5.finalizeScratchContract, Spec.Md5.finalizeScratchSig,
+    contract_implies [Proof.Md5.finalizeScratchContract, Proof.Md5.finalizeScratchSig,
       Proof.Md5.finalizeArm, Proof.Md5.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, Arm.State.addr]
       [Proof.Md5.Arm.Stream.Finalize.sat, MdStream.Arm.Finalize.sat, MdStream.Arm.Finalize.satBase,

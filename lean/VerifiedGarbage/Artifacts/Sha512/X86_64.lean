@@ -13,19 +13,6 @@ import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 namespace VG.Artifacts.Sha512.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sha512.compressApi.artifact X86_64.target {
-    code := Impl.Sha512.X86_64.Rolled.compress
-    verified := Proof.Sha512.X86_64.Shared.compress },
-  Spec.Sha512.compressApi.artifact X86_64.target {
-    suffix := "_avx2"
-    code := Impl.Sha512.X86_64.Avx2Rolled.compress
-    verified := Proof.Sha512.X86_64.Shared.compress_avx2
-    features := ["avx", "avx2", "bmi1", "bmi2"] },
-  Spec.Sha512.compressApi.artifact X86_64.target {
-    suffix := "_shani"
-    code := Impl.Sha512.X86_64.ShaNi.compress
-    verified := Proof.Sha512.X86_64.Shared.compress_shani
-    features := ["avx", "avx2", "sha512"] },
   Spec.Sha512.init384Api.artifact X86_64.target {
     code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_384 },

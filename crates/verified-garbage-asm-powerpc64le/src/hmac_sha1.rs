@@ -74,8 +74,8 @@ bl {vg_hmac_sha1_init_scratch}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPmwASE4"
 b 21b"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
@@ -102,8 +102,8 @@ bl {vg_sha1_update_scratch}
 .base64 "AAB0OFQAgDjQALU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
 .base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfOABITggAIBO""#,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
     )
 }
 

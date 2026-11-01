@@ -85,8 +85,8 @@ b 25f
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
         vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
         vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
@@ -181,8 +181,8 @@ b 25f
 .arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
+        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_hmac_sha224_init_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_sha2::vg_hmac_sha224_init_scratch_sha2,
         vg_hmac_sha224_finalize_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_sha2::vg_hmac_sha224_finalize_scratch_sha2,
         vg_pbkdf2_hmac_sha224_iterate_sha2 = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_sha2::vg_pbkdf2_hmac_sha224_iterate_sha2,

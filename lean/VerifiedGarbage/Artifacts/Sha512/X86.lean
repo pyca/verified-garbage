@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Sha512.X86.Lit
 namespace VG.Artifacts.Sha512.X86
 
 def artifacts : List Artifact := [
-  Spec.Sha512.compressApi.artifact X86.target {
-    code := Impl.Sha512.X86.compress
-    verified := Proof.Sha512.X86.Shared.compress },
   Spec.Sha512.init384Api.artifact X86.target {
     code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_384 },
@@ -34,14 +31,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 1400 4 Impl.Sha512.X86.Stream.finalize
     stack := 20 + 1400
     verified := Proof.Sha512.X86.Shared.finalize },
-  Spec.Sha512.updateScratchApi.artifact X86.target {
-    code := Impl.Sha512.X86.Stream.update
-    stack := 20
-    verified := Proof.Sha512.X86.Shared.updateScratch },
-  Spec.Sha512.finalizeScratchApi.artifact X86.target {
-    code := Impl.Sha512.X86.Stream.finalize
-    stack := 20
-    verified := Proof.Sha512.X86.Shared.finalizeScratch },
   Spec.Sha512.finalize384Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 1400 4
       (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params384)

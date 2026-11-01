@@ -59,45 +59,7 @@ bl {vg_sha256_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
 .base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
-
-/// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha256_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 70]) {
-    core::arch::naked_asm!(
-        r#".base64 "CABG+qYCCHw="
-bcl 20, 31, 2f
-2:
-mflr %r18
-addis %r18, %r18, ({VG_SHA256_PPC64LE_K} - 2b)@ha
-addi %r18, %r18, ({VG_SHA256_PPC64LE_K} - 2b)@l
-.base64 "pgMIfEAAxvlIAOb5UAAG+lgAJvpgAGb6AAAlKA=="
-beq %cr0, 20f
-22:
-.base64 "AAAjgmcBkXwEACOCZwGxfAgAI4JnAdF8DAAjgmcB8XwQACOCZwERfRQAI4JnATF9GAAjgmcBUX0cACOCZwFxfYpCAD6YLxBiZwGQfYBgaxEIAGA6AAAAOCwEBH4EAAA4LAQkfmcBEHxnAZF9LAIAECxiABCEBOARmZ7SfQgAczqCrogRKkqqEYBwShGChsQRgHjrEYBo7xGAYO8RgHjnEMQshBEqM4URgGDOEYBwbxEsAuARmZ7SfQgAczqCrocR6kGpEYBwKRGChssRgHjqEYBo7xGAYO8RgHjGEMQkixEqK4QRgGDOEYBwTxEIAAA4LAQEfgwAADgsBCR+ZwEwfGcBkX0sCiEQLGIhEIQM4RGZntJ9CABzOoKuhhGqOagRgHAIEYKGyhGAeOkRgGjvEYBg7xGAeKUQxFyKESojixGAYM4RgHAvESwK4RGZntJ9CABzOoKuhRFqMacRgHDnEIKGyRGAeOgRgGjvEYBg7xGAeIQQxFSJESpbihGAYM4RgHAPERAAADgsBAR+FAAAOCwEJH5nAVB8ZwGRfSwSQhAsYkIQhBTiEZme0n0IAHM6gq6EESopphGAcMYQgobIEYB45xGAaO8RgGDvEYB4axHETIgRKlOJEYBgzhGAcO8QLBLiEZme0n0IAHM6gq6LEeoipRGAcKUQgobHEYB45hGAaO8RgGDvEYB4ShHERIcRKkuIEYBgzhGAcM8QGAAAOCwEBH4cAAA4LAQkfmcBcHxnAZF9LBpjECxiYxCEHOMRmZ7SfQgAczqCrooRqlqkEYBwhBCChsYRgHjlEYBo7xGAYO8RgHgpEcQ8hhEqQ4cRgGDOEYBwrxAsGuMRmZ7SfQgAczqCrokRalKrEYBwaxGChsURgHjkEYBo7xGAYO8RgHgIEcQ0hREqO4YRgGDOEYBwjxAgAAA4LAQEfiQAADgsBCR+ZwEQfmcBkX0sghASLGIQEoSE8BGZntJ9CABzOoKuiBEqSqoRgHBKEYKGxBGAeOsRgGjvEYBg7xGAeOcQxCyEESozhRGAYM4RgHBvESyC8BGZntJ9CABzOoKuhxHqQakRgHApEYKGyxGAeOoRgGjvEYBg7xGAeMYQxCSLESorhBGAYM4RgHBPESgAADgsBAR+LAAAOCwEJH5nATB+ZwGRfSyKMRIsYjEShIzxEZme0n0IAHM6gq6GEao5qBGAcAgRgobKEYB46RGAaO8RgGDvEYB4pRDEXIoRKiOLEYBgzhGAcC8RLIrxEZme0n0IAHM6gq6FEWoxpxGAcOcQgobJEYB46BGAaO8RgGDvEYB4hBDEVIkRKluKEYBgzhGAcA8RMAAAOCwEBH40AAA4LAQkfmcBUH5nAZF9LJJSEixiUhKElPIRmZ7SfQgAczqCroQRKimmEYBwxhCChsgRgHjnEYBo7xGAYO8RgHhrEcRMiBEqU4kRgGDOEYBw7xAskvIRmZ7SfQgAczqCrosR6iKlEYBwpRCChscRgHjmEYBo7xGAYO8RgHhKEcREhxEqS4gRgGDOEYBwzxA4AAA4LAQEfjwAADgsBCR+ZwFwfmcBkX0smnMSLGJzEoSc8xGZntJ9CABzOoKuihGqWqQRgHCEEIKGxhGAeOURgGjvEYBg7xGAeCkRxDyGESpDhxGAYM4RgHCvECya8xGZntJ9CABzOoKuiRFqUqsRgHBrEYKGxRGAeOQRgGjvEYBg7xGAeAgRxDSFESo7hhGAYM4RgHCPEAMAwDk="
-23:
-.base64 "gi6TESwKoBGCBq0RLIrQEYAAjBGAaIwRgHAMEIQE4BGZntJ9CABzOoKuiBEqSqoRgHBKEYKGxBGAeOsRgGjvEYBg7xGAeOcQxCyEESozhRGAYM4RgHBvESwC4BGZntJ9CABzOoKuhxHqQakRgHApEYKGyxGAeOoRgGjvEYBg7xGAeMYQxCSLESorhBGAYM4RgHBPEYIugBEsEqERggatESyS0RGACIwRgGiMEYBwLBCEDOERmZ7SfQgAczqCroYRqjmoEYBwCBGChsoRgHjpEYBo7xGAYO8RgHilEMRcihEqI4sRgGDOEYBwLxEsCuERmZ7SfQgAczqCroURajGnEYBw5xCChskRgHjoEYBo7xGAYO8RgHiEEMRUiREqW4oRgGDOEYBwDxGCLoERLBqiEYIGrREsmtIRgBCMEYBojBGAcEwQhBTiEZme0n0IAHM6gq6EESopphGAcMYQgobIEYB45xGAaO8RgGDvEYB4axHETIgRKlOJEYBgzhGAcO8QLBLiEZme0n0IAHM6gq6LEeoipRGAcKUQgobHEYB45hGAaO8RgGDvEYB4ShHERIcRKkuIEYBgzhGAcM8Qgi6CESyCoxGCBq0RLALTEYAYjBGAaIwRgHBsEIQc4xGZntJ9CABzOoKuihGqWqQRgHCEEIKGxhGAeOURgGjvEYBg7xGAeCkRxDyGESpDhxGAYM4RgHCvECwa4xGZntJ9CABzOoKuiRFqUqsRgHBrEYKGxRGAeOQRgGjvEYBg7xGAeAgRxDSFESo7hhGAYM4RgHCPEIIugxEsirARggatESwKwBGAgIwRgGiMEYBwDBKEhPARmZ7SfQgAczqCrogRKkqqEYBwShGChsQRgHjrEYBo7xGAYO8RgHjnEMQshBEqM4URgGDOEYBwbxEsgvARmZ7SfQgAczqCrocR6kGpEYBwKRGChssRgHjqEYBo7xGAYO8RgHjGEMQkixEqK4QRgGDOEYBwTxGCLpARLJKxEYIGrREsEsERgIiMEYBojBGAcCwShIzxEZme0n0IAHM6gq6GEao5qBGAcAgRgobKEYB46RGAaO8RgGDvEYB4pRDEXIoRKiOLEYBgzhGAcC8RLIrxEZme0n0IAHM6gq6FEWoxpxGAcOcQgobJEYB46BGAaO8RgGDvEYB4hBDEVIkRKluKEYBgzhGAcA8Rgi6RESyashGCBq0RLBrCEYCQjBGAaIwRgHBMEoSU8hGZntJ9CABzOoKuhBEqKaYRgHDGEIKGyBGAeOcRgGjvEYBg7xGAeGsRxEyIESpTiRGAYM4RgHDvECyS8hGZntJ9CABzOoKuixHqIqURgHClEIKGxxGAeOYRgGjvEYBg7xGAeEoRxESHESpLiBGAYM4RgHDPEIIukhEsArMRggatESyCwxGAmIwRgGiMEYBwbBKEnPMRmZ7SfQgAczqCrooRqlqkEYBwhBCChsYRgHjlEYBo7xGAYO8RgHgpEcQ8hhEqQ4cRgGDOEYBwrxAsmvMRmZ7SfQgAczqCrokRalKrEYBwaxGChsURgHjkEYBo7xGAYO8RgHgIEcQ0hREqO4YRgGDOEYBwjxD//845AAAuKA=="
-bne %cr0, 23b
-.base64 "ZwCHfGcAqHxnAMl8ZwDqfGcAC31nACx9ZwBOfWcAb30AAAOCBAAjgggAA4AMAGOCFILnfBSKCH0UAil9FJpKfRAAA4IUACOCGAADgBwAY4IUgmt9FIqMfRQCzn0Umu99AADjkAQAA5EIACORDABDkRAAY5EUAIORGADDkRwA45FAAIQ4//+lOAAAJSg="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QADG6UgA5ulQAAbqWAAm6mAAZuoIAEbqIACATg==""#,
-        VG_SHA256_PPC64LE_K = sym super::consts::VG_SHA256_PPC64LE_K,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
@@ -198,7 +160,7 @@ b 21f
 20:
 21:
 .base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
@@ -243,141 +205,18 @@ bl {vg_sha256_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
 .base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
-/// `vg_sha256_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha256.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 96 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 608 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha256_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 76]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4cABH+3gAZ/uAAIf7iACn+5AAx/uYAOf7AABDOwAAZzsAAIU7AACmOz8AADk4QJ58AAA9KA=="
-beq %cr0, 20f
-22:
-.base64 "AAAgOQAAPig="
-beq %cr0, 23f
-.base64 "QABAOVBQXn2C0ah7AAAoKA=="
-beq %cr0, 25f
-b 26f
-25:
-.base64 "FPIdfYLRCHkAACgo"
-beq %cr0, 27f
-b 28f
-27:
-.base64 "AABdOQ=="
-28:
-26:
-.base64 "UOiqfw=="
-29:
-.base64 "AAAciRTyen0gAAuZAQCcOwEA3jv//0o5AAAqKA=="
-bne %cr0, 29b
-.base64 "wP8eOQAAKCg="
-beq %cr0, 210f
-b 211f
-210:
-.base64 "IACaOAAAwDsBACA5"
-211:
-b 24f
-23:
-.base64 "gtGoewAAKCg="
-beq %cr0, 212f
-.base64 "AACcOEAAnDvA/707AQAgOQ=="
-b 213f
-212:
-.base64 "QABAOVBQXn2C0ah7AAAoKA=="
-beq %cr0, 214f
-b 215f
-214:
-.base64 "FPIdfYLRCHkAACgo"
-beq %cr0, 216f
-b 217f
-216:
-.base64 "AABdOQ=="
-217:
-215:
-.base64 "UOiqfw=="
-218:
-.base64 "AAAciRTyen0gAAuZAQCcOwEA3jv//0o5AAAqKA=="
-bne %cr0, 218b
-.base64 "wP8eOQAAKCg="
-beq %cr0, 219f
-b 220f
-219:
-.base64 "IACaOAAAwDsBACA5"
-220:
-213:
-24:
-.base64 "AAApKA=="
-beq %cr0, 221f
-.base64 "AAB6OAEAoDgAANs4"
-bl {vg_sha256_compress}
-b 222f
-221:
-222:
-.base64 "AAA9KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8IACATg==""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_compress.rs"]
+pub(crate) mod vg_sha256_compress;
 
-/// `vg_sha256_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha256.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 608 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha256_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4cABG+3gAZvuAAIb7iACm+5AAxvuYAOb7AABDOwAAZjsAAIU7AACkOz8AADk4QL5/gAAAORTyen0gAAuZAQDeOwcA/juC0f97"
-20:
-.base64 "QABAOQAAPyg="
-beq %cr0, 21f
-b 22f
-21:
-.base64 "OABAOQ=="
-22:
-.base64 "AAAAOVBQXn0AACoo"
-beq %cr0, 23f
-25:
-.base64 "FPJ6fSAAC5kBAN47//9KOQAAKig="
-bne %cr0, 25b
-b 24f
-23:
-24:
-.base64 "AAA/KA=="
-beq %cr0, 26f
-b 27f
-26:
-.base64 "FOodfRRCCH0UQgh9WABgOShdGn0="
-27:
-.base64 "IACaOAAAejgBAKA4AADbOA=="
-bl {vg_sha256_compress}
-.base64 "AADAO////zsAAD8o"
-beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8IACATg==""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_scratch.rs"]
+pub(crate) mod vg_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_scratch.rs"]
+pub(crate) mod vg_sha256_update_scratch;

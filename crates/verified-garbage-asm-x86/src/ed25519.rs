@@ -56,8 +56,8 @@ call {vg_ed25519_scalar_base}
 .base64 "uAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
     )
 }
@@ -194,8 +194,8 @@ call {vg_ed25519_scalar_mul_add}
 .base64 "uAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add,
@@ -404,8 +404,8 @@ call {vg_ed25519_verify_equation}
 .base64 "WlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWsM="
 .p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation,
     )

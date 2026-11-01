@@ -123,7 +123,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -382,7 +382,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -510,7 +510,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 
@@ -773,7 +773,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 

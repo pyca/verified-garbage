@@ -8094,12 +8094,12 @@ bne %cr0, 2588b
 2586:
 21:
 .base64 "eAAc6KYDCHyQAFzomADc6aAA/OmoABzqsAA86rgAXOrAAHzqyACc6tAAvOrYANzq4AD86ugAHOvwADzr+ABc6wABfOsIAbzrEAHc6xgB/OsgAZzrIACATg==""#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256,
         vg_dsa_probable_prime_3072 = sym super::dsa::vg_dsa_probable_prime_3072,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters,
         vg_dsa_probable_prime_2048 = sym super::dsa::vg_dsa_probable_prime_2048,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
         vg_dsa_probable_prime_160 = sym super::dsa::vg_dsa_probable_prime_160,
         vg_dsa_probable_prime_1024 = sym super::dsa::vg_dsa_probable_prime_1024,
     )

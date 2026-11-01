@@ -485,9 +485,9 @@ str r2, [r12, #1020]
 add sp, sp, #1056
 b 21b",
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
+        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
@@ -588,8 +588,8 @@ ldr lr, [r11, #140]
 ldr r11, [r11, #144]
 add sp, sp, #416
 bx lr",
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
 

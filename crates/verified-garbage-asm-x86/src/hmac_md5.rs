@@ -60,9 +60,9 @@ call {vg_hmac_md5_init_scratch}
 jmp 21b
 .p2align 6"#,
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
+        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
@@ -90,8 +90,8 @@ call {vg_md5_finalize_scratch}
 call {vg_md5_compress}
 .base64 "WFhYWIn4iwuJCItLBIlIBItLCIlICItLDIlIDInoi1hwi3B0i3h4i2h8jaQknAEAAMM="
 .p2align 6"#,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
 

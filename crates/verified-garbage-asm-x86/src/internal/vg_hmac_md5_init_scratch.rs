@@ -30,6 +30,6 @@ call {vg_md5_compress}
 .base64 "WFhYWInoi1hwi3B0i3h4i2h8ww=="
 .p2align 6"#,
         vg_md5_init = sym crate::md5::vg_md5_init,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

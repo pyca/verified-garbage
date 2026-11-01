@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha256.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sha256.compressApi.artifact Arm.target {
-    code := Impl.Sha256.Arm.compress
-    verified := Proof.Sha256.Arm.Shared.compress },
   Spec.Sha256.initApi.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.init
     verified := Proof.Sha256.Arm.Shared.init },
@@ -23,12 +20,6 @@ def artifacts : List Artifact := [
   Spec.Sha256.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
     stack := 624
-    verified := Proof.Sha256.Arm.Shared.finalize },
-  Spec.Sha256.updateScratchApi.artifact Arm.target {
-    code := Impl.Sha256.Arm.Stream.update
-    verified := Proof.Sha256.Arm.Shared.updateScratch },
-  Spec.Sha256.finalizeScratchApi.artifact Arm.target {
-    code := Impl.Sha256.Arm.Stream.finalize
-    verified := Proof.Sha256.Arm.Shared.finalizeScratch }]
+    verified := Proof.Sha256.Arm.Shared.finalize }]
 
 end VG.Artifacts.Sha256.Arm

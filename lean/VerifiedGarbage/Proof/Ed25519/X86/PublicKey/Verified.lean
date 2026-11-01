@@ -133,7 +133,7 @@ theorem init_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
   exact ⟨congrArg (· - 4) he, hj 0 (by decide)⟩
 
 theorem update_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) :
-    RelCT isa (Two s₁ s₂ (Slots updateValues)) (.call Spec.Sha512.updateScratchApi.name Impl.Sha512.X86.Stream.update)
+    RelCT isa (Two s₁ s₂ (Slots updateValues)) (.call "vg_sha512_update_scratch" Impl.Sha512.X86.Stream.update)
       (Two s₁ s₂ fun _ _ => True) := by
   apply call_ct h₁ h₂ pub (by decide : updateValues.length ≤ 6) (Whole.valid_all (by decide))
     Proof.Sha512.X86.Stream.Update.update_verified.1 Proof.Sha512.X86.Stream.Update.update_verified.2.1
@@ -142,7 +142,7 @@ theorem update_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s�
   exact ⟨congrArg (· - 4) he, hj⟩
 
 theorem finalize_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) :
-    RelCT isa (Two s₁ s₂ (Slots finalizeValues)) (.call Spec.Sha512.finalizeScratchApi.name Impl.Sha512.X86.Stream.finalize)
+    RelCT isa (Two s₁ s₂ (Slots finalizeValues)) (.call "vg_sha512_finalize_scratch" Impl.Sha512.X86.Stream.finalize)
       (Two s₁ s₂ fun _ _ => True) := by
   apply call_ct h₁ h₂ pub (by decide : finalizeValues.length ≤ 6) (Whole.valid_all (by decide))
     Proof.Sha512.X86.Stream.Finalize.finalize_verified.1 Proof.Sha512.X86.Stream.Finalize.finalize_verified.2.1

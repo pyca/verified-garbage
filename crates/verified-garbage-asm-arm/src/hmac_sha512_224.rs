@@ -1145,9 +1145,9 @@ str r2, [r12, #3404]
 add sp, sp, #3424
 b 21b",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha512_224_init_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch::vg_hmac_sha512_224_init_scratch,
     )
 }
@@ -1342,8 +1342,8 @@ ldr lr, [r11, #300]
 ldr r11, [r11, #304]
 add sp, sp, #1888
 bx lr",
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 

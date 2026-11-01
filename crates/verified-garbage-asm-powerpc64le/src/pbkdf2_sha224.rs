@@ -48,7 +48,7 @@ b 21f
 21:
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8YAYhOCAAgE4=""#,
         vg_hmac_sha224_init = sym super::hmac_sha224::vg_hmac_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
         vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
     )

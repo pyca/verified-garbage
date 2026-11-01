@@ -27,7 +27,7 @@ bl {vg_sha512_compress}
 .inst 0xf9001ea9,0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym crate::sha512::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

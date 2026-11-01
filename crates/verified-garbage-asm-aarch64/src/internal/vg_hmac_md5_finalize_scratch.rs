@@ -24,7 +24,7 @@ bl {vg_md5_compress}
 .inst 0xb9000ea9,0xf9403af3,0xf9403ef4,0xf94042f5,0xf94046f6,0xf9404af8,0xf9404efe,0xf94052f7
 .inst 0xd65f03c0
 .p2align 6",
-        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

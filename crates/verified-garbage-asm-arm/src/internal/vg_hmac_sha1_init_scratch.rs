@@ -134,6 +134,6 @@ ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 bx lr",
         vg_sha1_init = sym crate::sha1::vg_sha1_init,
-        vg_sha1_compress = sym crate::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }

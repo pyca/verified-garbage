@@ -115,8 +115,8 @@ bne %cr0, 215b
 21:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6wABITggAIBO""#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -233,7 +233,7 @@ bne %cr0, 213b
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6wABITggAIBO""#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
 }

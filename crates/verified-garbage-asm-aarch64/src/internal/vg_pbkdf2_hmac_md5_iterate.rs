@@ -35,6 +35,6 @@ b 21f
 21:
 .inst 0xf9403a9e,0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xd65f03c0
 .p2align 6",
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

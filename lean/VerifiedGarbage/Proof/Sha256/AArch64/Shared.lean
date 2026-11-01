@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
@@ -111,9 +112,9 @@ def finalizeSat : State :=
   { Proof.Sha256.AArch64.Stream.Finalize.sat with wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩, ⟨0x3000, 608⟩] }
 
 theorem compress_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha256.compressAArch64) :
-    Verified AArch64.target code (Spec.Sha256.compressContract AArch64.abi) := by
-  have hi : compressWide.Implies (Spec.Sha256.compressContract AArch64.abi) := by
-    contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig, compressWide,
+    Verified AArch64.target code (Proof.Sha256.compressContract AArch64.abi) := by
+  have hi : compressWide.Implies (Proof.Sha256.compressContract AArch64.abi) := by
+    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig, compressWide,
       Proof.Sha256.compressAArch64, AArch64.abi, AArch64.argRegs]
       [compressSat, Proof.Sha256.AArch64.satState] using compressSat
   exact (compressWide_of hv hi.sat_left).of_implies hi
@@ -133,25 +134,25 @@ theorem init224 :
       [Proof.Sha256.AArch64.Stream.initSat] using Proof.Sha256.AArch64.Stream.initSat)
 
 theorem updateScratch_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha256.updateAArch64) :
-    Verified AArch64.target code (Spec.Sha256.updateScratchContract AArch64.abi 16) := by
-  have hi : updateWide.Implies (Spec.Sha256.updateScratchContract AArch64.abi 16) := by
-    contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, updateWide,
+    Verified AArch64.target code (Proof.Sha256.updateScratchContract AArch64.abi 16) := by
+  have hi : updateWide.Implies (Proof.Sha256.updateScratchContract AArch64.abi 16) := by
+    contract_implies [Proof.Sha256.updateScratchContract, Proof.Sha256.updateScratchSig, updateWide,
       Proof.Sha256.updateAArch64, AArch64.abi, AArch64.argRegs]
       [updateSat, Proof.Sha256.AArch64.Stream.Update.sat, MdStream.AArch64.Update.sat,
         Impl.Sha256.AArch64.Stream.params] using updateSat
   exact (updateWide_of hv hi.sat_left).of_implies hi
 
 theorem finalizeScratch_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha256.finalizeAArch64) :
-    Verified AArch64.target code (Spec.Sha256.finalizeScratchContract AArch64.abi 16) := by
-  have hi : finalizeWide.Implies (Spec.Sha256.finalizeScratchContract AArch64.abi 16) := by
-    contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig, finalizeWide,
+    Verified AArch64.target code (Proof.Sha256.finalizeScratchContract AArch64.abi 16) := by
+  have hi : finalizeWide.Implies (Proof.Sha256.finalizeScratchContract AArch64.abi 16) := by
+    contract_implies [Proof.Sha256.finalizeScratchContract, Proof.Sha256.finalizeScratchSig, finalizeWide,
       Proof.Sha256.finalizeAArch64, AArch64.abi, AArch64.argRegs]
       [finalizeSat, Proof.Sha256.AArch64.Stream.Finalize.sat, MdStream.AArch64.Finalize.sat,
         Impl.Sha256.AArch64.Stream.params] using finalizeSat
   exact (finalizeWide_of hv hi.sat_left).of_implies hi
 
 theorem compress :
-    Verified AArch64.target Impl.Sha256.AArch64.compress (Spec.Sha256.compressContract AArch64.abi) :=
+    Verified AArch64.target Impl.Sha256.AArch64.compress (Proof.Sha256.compressContract AArch64.abi) :=
   compress_of Proof.Sha256.AArch64.compress_verified
 
 /-- `update`: `updateScratch_of` with its working space in a frame of its own. -/

@@ -38,7 +38,7 @@ open VG.X86
 space and a 32-byte digest. -/
 def hmacHash (suffix : String) (updC finC : Prog isa) : Impl.Pbkdf2.Stream.X86.Hash :=
   ⟨64, 96, 32, 32, 20, Spec.Sha256.initApi.name, Impl.Sha256.X86.Stream.init,
-    Spec.Sha256.updateScratchApi.name ++ suffix, updC, Spec.Sha256.finalizeScratchApi.name ++ suffix,
+    "vg_sha256_update_scratch" ++ suffix, updC, "vg_sha256_finalize_scratch" ++ suffix,
     finC⟩
 
 /-- SHA-256 as a Merkle–Damgård hash function, with a backend's compression
@@ -65,7 +65,7 @@ def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X
 32 bytes `finalize` writes. -/
 def hmacHash224 (suffix : String) (updC finC : Prog isa) : Impl.Pbkdf2.Stream.X86.Hash :=
   ⟨64, 96, 28, 32, 20, Spec.Sha256.init224Api.name, Impl.Sha256.X86.Stream.init224,
-    Spec.Sha256.updateScratchApi.name ++ suffix, updC, Spec.Sha256.finalizeScratchApi.name ++ suffix,
+    "vg_sha256_update_scratch" ++ suffix, updC, "vg_sha256_finalize_scratch" ++ suffix,
     finC⟩
 
 /-- SHA-224 as a Merkle–Damgård hash function, with a backend's SHA-256

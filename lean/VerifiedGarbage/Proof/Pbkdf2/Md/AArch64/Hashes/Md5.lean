@@ -41,13 +41,13 @@ def hash : Hash where
   P := Impl.Pbkdf2.AArch64.ofMd Impl.Md5.AArch64.Stream.params
   D := 16
   W := Spec.Hmac.md5I.scratch
-  compN := Spec.Md5.compressApi.name
+  compN := "vg_md5_compress"
   compC := Impl.Md5.AArch64.compress
   initN := Spec.Md5.initApi.name
   initC := Impl.Md5.AArch64.Stream.init
-  updN := Spec.Md5.updateScratchApi.name
+  updN := "vg_md5_update_scratch"
   updC := Impl.Md5.AArch64.Stream.update
-  finN := Spec.Md5.finalizeScratchApi.name
+  finN := "vg_md5_finalize_scratch"
   finC := Impl.Md5.AArch64.Stream.finalize
   hmacInitN := "vg_hmac_md5_init_scratch"
   hmacFinN := "vg_hmac_md5_finalize_scratch"

@@ -57672,12 +57672,12 @@ ldr r11, [sp, #28]
 ldr lr, [sp, #32]
 add sp, sp, #128
 bx lr",
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime,
         vg_dsa_pow_48_89 = sym super::dsa::vg_dsa_pow_48_89,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters,
         vg_dsa_pow_32_57 = sym super::dsa::vg_dsa_pow_32_57,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
         vg_dsa_pow_16_28 = sym super::dsa::vg_dsa_pow_16_28,
     )
 }
@@ -68500,12 +68500,12 @@ ldr r11, [sp, #28]
 ldr lr, [sp, #32]
 add sp, sp, #128
 bx lr",
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime_umaal = sym super::dsa::vg_dsa_probable_prime_umaal,
         vg_dsa_pow_48_89 = sym super::dsa::vg_dsa_pow_48_89,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters,
         vg_dsa_pow_32_57 = sym super::dsa::vg_dsa_pow_32_57,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
         vg_dsa_pow_16_28 = sym super::dsa::vg_dsa_pow_16_28,
     )
 }

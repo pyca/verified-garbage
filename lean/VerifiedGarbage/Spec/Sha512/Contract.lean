@@ -6,10 +6,10 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # SHA-512: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the compression
-function and of streaming SHA-384, SHA-512, SHA-512/224 and SHA-512/256
-(`init`/`update`/`finalize`, on the representation `Repr`), in terms of
-`Spec/Sha512.lean`, for any target: `A` is the target's calling convention.
+**Trusted** (as every file in `Spec/`). The contracts of streaming SHA-384,
+SHA-512, SHA-512/224 and SHA-512/256 (`init`/`update`/`finalize`, on the
+representation `Repr`), in terms of `Spec/Sha512.lean`, for any target:
+`A` is the target's calling convention.
 `finalize` writes the final hash value, from any initial hash value; the
 `finalize` of SHA-384, SHA-512/224 and SHA-512/256 (`finalizeDigestApi`)
 writes the algorithm's digest, the whole result of FIPS 180-4. `digest`
@@ -23,44 +23,12 @@ arguments are public.
 `update`, `finalize` and `digest` take the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
 one that uses none: it depends on the target, and on which functions the
-implementation calls. They keep their working space there; `update_scratch`
-and `finalize_scratch` are the same functions with their working space
-passed in `scratch`, for functions that call them with theirs (HMAC's,
-PBKDF2's, Ed25519's).
+implementation calls. They keep their working space there.
 -/
 
 @[expose] public section
 
 namespace VG.Spec.Sha512
-
-/-- `vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166])`.
-`scratch` is working space, sized for the tightest target: x86-64 with AVX2
-keeps the message schedules of two blocks in it (1280 bytes), and saves six
-callee-saved registers. The other SHA-512 functions, and the HMAC and PBKDF2
-functions of the SHA-512 family, pass theirs to it, so theirs have room for
-it and for what they keep across its calls. -/
-def compressSig : Sig where
-  params := [("state", .array true .u64 8), ("blocks", .slice false (.array .u8 128) "n"),
-    ("scratch", .array true .u64 166)]
-
-/-- Updates the hash value at `state` with the `n` 128-byte blocks at
-`blocks`. The hash value and the blocks are secret. -/
-def compressContract {M : ISA} (A : Abi M) : Contract M :=
-  compressSig.contract A (post := fun state blocks n _scratch m m' _ =>
-    stateAt m' state = compressBlocks (stateAt m state) m blocks n.toNat)
-
-/-- `vg_sha512_compress` on every target. -/
-def compressApi : Api where
-  module := "sha512"
-  name := "vg_sha512_compress"
-  sig := compressSig
-  contracts := some fun A _ => compressContract A
-  summary := "The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, \
-    SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks \
-    starting at `blocks`, in order.\n\n\
-    Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may \
-    affect timing, not the hash value or the blocks."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_<alg>_init(state: *mut [u8; 192])`. -/
 def initSig : Sig where
@@ -121,31 +89,6 @@ def updateApi : Api where
     Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` \
     may affect timing, not the state or the data."
   safety := []
-
-/-- `vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172])`:
-`vg_sha512_update` with its working space passed in `scratch`, for functions
-that call it with theirs (HMAC's, PBKDF2's, Ed25519's): 1376 bytes, room for
-the compression function's scratch (`compressSig`, 1328 bytes) and the
-function's own spills (48 bytes: six saved registers). -/
-def updateScratchSig : Sig where
-  params := [("state", .array true .u8 192), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 172)]
-
-/-- `updatePost`, whatever `scratch` is. The state and the data are secret. -/
-def updateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateScratchSig.contract A (post := fun state count data len _scratch => updatePost A.ptrBits state count data len)
-    (stack := stack)
-
-/-- `vg_sha512_update_scratch` on every target. -/
-def updateScratchApi : Api where
-  module := "sha512"
-  name := "vg_sha512_update_scratch"
-  sig := updateScratchSig
-  contracts := some fun A stack => updateScratchContract A stack
-  summary := "`vg_sha512_update`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` \
-    and `len` may affect timing, not the state or the data."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64])`.
 `count` is public; `state` is left unspecified. -/
@@ -234,34 +177,6 @@ def finalize512_224Api : Api :=
 def finalize512_256Api : Api :=
   finalizeDigestApi "SHA-512/256" "vg_sha512_256_finalize" "vg_sha512_256_init" "H0_512_256" "sha512_256"
     H0_512_256 32 sha512_256
-
-/-- `vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172])`:
-`vg_sha512_finalize` with its working space passed in `scratch` (1376 bytes,
-as for `updateScratchSig`), for functions that call it with theirs (HMAC's,
-PBKDF2's, Ed25519's). -/
-def finalizeScratchSig : Sig where
-  params := [("state", .array true .u8 192), ("count", .int .u64 true),
-    ("out", .array true .u8 64), ("scratch", .array true .u64 172)]
-
-/-- `finalizePost`, whatever `scratch` is. The state is secret. -/
-def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeScratchSig.contract A (post := fun state count out _scratch => finalizePost A.ptrBits state count out)
-    (stack := stack)
-
-/-- `vg_sha512_finalize_scratch` on every target. -/
-def finalizeScratchApi : Api where
-  module := "sha512"
-  name := "vg_sha512_finalize_scratch"
-  sig := finalizeScratchSig
-  contracts := some fun A stack => finalizeScratchContract A stack
-  summary := "`vg_sha512_finalize`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and \
-    `count` may affect timing, not the state."
-  safety := [
-    "`count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not \
-      supported.",
-    "The contents of `state` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
 
 /-- `vg_<alg>_digest(data: *const u8, len: usize, out: *mut [u8; D])`, for a
 member of the family with a `D`-byte digest: the whole computation in one

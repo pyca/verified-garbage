@@ -39,6 +39,6 @@ bl {vg_md5_compress}
 .inst 0xf9403af3,0xf9403ef4,0xf94042f5,0xf94046f6,0xf9404af8,0xf9404efe,0xf94052f7,0xd65f03c0
 .p2align 6",
         vg_md5_init = sym crate::md5::vg_md5_init,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

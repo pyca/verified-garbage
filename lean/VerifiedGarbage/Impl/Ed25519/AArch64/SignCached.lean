@@ -32,9 +32,9 @@ def finalizeArgs (prefixLen : Nat) (withMessage : Bool) : List Instr :=
 def init : Prog isa := callWith initArgs Spec.Sha512.init512Api.name
   (Sha512.AArch64.Stream.init Spec.Sha512.H0_512)
 def update (compress : Prog isa) (suffix : String) (args : List Instr) : Prog isa :=
-  callWith args (Spec.Sha512.updateScratchApi.name ++ suffix) (Sha512.AArch64.Stream.updateWith suffix compress)
+  callWith args ("vg_sha512_update_scratch" ++ suffix) (Sha512.AArch64.Stream.updateWith suffix compress)
 def finalize (compress : Prog isa) (suffix : String) (n : Nat) (b : Bool) : Prog isa :=
-  callWith (finalizeArgs n b) (Spec.Sha512.finalizeScratchApi.name ++ suffix)
+  callWith (finalizeArgs n b) ("vg_sha512_finalize_scratch" ++ suffix)
     (Sha512.AArch64.Stream.finalizeWith suffix compress)
 
 def hashSeed (compress : Prog isa) (suffix : String) : Prog isa :=

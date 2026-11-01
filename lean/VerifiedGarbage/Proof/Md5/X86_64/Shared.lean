@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
@@ -29,9 +30,9 @@ in a frame that allocates it (`Verified.stackScratch`).
 namespace VG.Proof.Md5.X86_64.Shared
 
 theorem compress :
-    Verified X86_64.target Impl.Md5.X86_64.compress (Spec.Md5.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Md5.X86_64.compress (Proof.Md5.compressContract X86_64.abi) :=
   Proof.Md5.X86_64.compress_verified.of_implies (by
-    sig_implies [Spec.Md5.compressContract, Spec.Md5.compressSig,
+    sig_implies [Proof.Md5.compressContract, Proof.Md5.compressSig,
       Proof.Md5.compressX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Md5.X86_64.satState] using Proof.Md5.X86_64.satState)
 
@@ -43,17 +44,17 @@ theorem init :
       [Proof.Md5.X86_64.Stream.initSat] using Proof.Md5.X86_64.Stream.initSat)
 
 theorem updateScratch :
-    Verified X86_64.target Impl.Md5.X86_64.Stream.update (Spec.Md5.updateScratchContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.Md5.X86_64.Stream.update (Proof.Md5.updateScratchContract X86_64.abi 8) :=
   Proof.Md5.X86_64.Stream.Update.update_verified.of_implies (by
-    sig_implies [Spec.Md5.updateScratchContract, Spec.Md5.updateScratchSig, Proof.Md5.updateX86_64,
+    sig_implies [Proof.Md5.updateScratchContract, Proof.Md5.updateScratchSig, Proof.Md5.updateX86_64,
       X86_64.abi, X86_64.argRegs]
       [Proof.Md5.X86_64.Stream.Update.sat,
         MdStream.X86_64.Update.sat, Impl.Md5.X86_64.Stream.params] using Proof.Md5.X86_64.Stream.Update.sat)
 
 theorem finalizeScratch :
-    Verified X86_64.target Impl.Md5.X86_64.Stream.finalize (Spec.Md5.finalizeScratchContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.Md5.X86_64.Stream.finalize (Proof.Md5.finalizeScratchContract X86_64.abi 8) :=
   Proof.Md5.X86_64.Stream.Finalize.finalize_verified.of_implies (by
-    sig_implies [Spec.Md5.finalizeScratchContract, Spec.Md5.finalizeScratchSig,
+    sig_implies [Proof.Md5.finalizeScratchContract, Proof.Md5.finalizeScratchSig,
       Proof.Md5.finalizeX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Md5.X86_64.Stream.Finalize.sat,
         MdStream.X86_64.Finalize.sat, Impl.Md5.X86_64.Stream.params] using Proof.Md5.X86_64.Stream.Finalize.sat)

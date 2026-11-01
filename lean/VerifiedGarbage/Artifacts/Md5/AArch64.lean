@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Md5.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Md5.compressApi.artifact AArch64.target {
-    code := Impl.Md5.AArch64.compress
-    verified := Proof.Md5.AArch64.Shared.compress },
   Spec.Md5.initApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.init
     verified := Proof.Md5.AArch64.Shared.init },
@@ -23,14 +20,6 @@ def artifacts : List Artifact := [
   Spec.Md5.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
     stack := 16 + 112
-    verified := Proof.Md5.AArch64.Shared.finalize },
-  Spec.Md5.updateScratchApi.artifact AArch64.target {
-    code := Impl.Md5.AArch64.Stream.update
-    stack := 16
-    verified := Proof.Md5.AArch64.Shared.updateScratch },
-  Spec.Md5.finalizeScratchApi.artifact AArch64.target {
-    code := Impl.Md5.AArch64.Stream.finalize
-    stack := 16
-    verified := Proof.Md5.AArch64.Shared.finalizeScratch }]
+    verified := Proof.Md5.AArch64.Shared.finalize }]
 
 end VG.Artifacts.Md5.AArch64

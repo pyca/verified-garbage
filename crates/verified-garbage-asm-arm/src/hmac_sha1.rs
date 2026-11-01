@@ -509,9 +509,9 @@ str r2, [r12, #1116]
 add sp, sp, #1152
 b 21b",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
@@ -620,8 +620,8 @@ ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 add sp, sp, #480
 bx lr",
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 

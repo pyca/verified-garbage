@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
@@ -113,9 +114,9 @@ def finalizeSat : State :=
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
 
 theorem compress :
-    Verified PPC64LE.target Impl.Sha512.PPC64LE.compress (Spec.Sha512.compressContract PPC64LE.abi) := by
-  have hi : compressWide.Implies (Spec.Sha512.compressContract PPC64LE.abi) := by
-    contract_implies [Spec.Sha512.compressContract, Spec.Sha512.compressSig, compressWide,
+    Verified PPC64LE.target Impl.Sha512.PPC64LE.compress (Proof.Sha512.compressContract PPC64LE.abi) := by
+  have hi : compressWide.Implies (Proof.Sha512.compressContract PPC64LE.abi) := by
+    contract_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
       Proof.Sha512.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [compressSat, Proof.Sha512.PPC64LE.satState] using compressSat
   exact (compressWide_verified hi.sat_left).of_implies hi
@@ -128,17 +129,17 @@ theorem init (iv : Spec.Sha512.HashValue) :
       [Proof.Sha512.PPC64LE.Stream.initSat] using Proof.Sha512.PPC64LE.Stream.initSat)
 
 theorem updateScratch : Verified PPC64LE.target Impl.Sha512.PPC64LE.Stream.update
-    (Spec.Sha512.updateScratchContract PPC64LE.abi) := by
-  have hi : updateWide.Implies (Spec.Sha512.updateScratchContract PPC64LE.abi) := by
-    contract_implies [Spec.Sha512.updateScratchContract, Spec.Sha512.updateScratchSig, updateWide,
+    (Proof.Sha512.updateScratchContract PPC64LE.abi) := by
+  have hi : updateWide.Implies (Proof.Sha512.updateScratchContract PPC64LE.abi) := by
+    contract_implies [Proof.Sha512.updateScratchContract, Proof.Sha512.updateScratchSig, updateWide,
       Proof.Sha512.updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [updateSat, Proof.Sha512.PPC64LE.Stream.Update.sat] using updateSat
   exact (updateWide_verified hi.sat_left).of_implies hi
 
 theorem finalizeScratch : Verified PPC64LE.target Impl.Sha512.PPC64LE.Stream.finalize
-    (Spec.Sha512.finalizeScratchContract PPC64LE.abi) := by
-  have hi : finalizeWide.Implies (Spec.Sha512.finalizeScratchContract PPC64LE.abi) := by
-    contract_implies [Spec.Sha512.finalizeScratchContract, Spec.Sha512.finalizeScratchSig,
+    (Proof.Sha512.finalizeScratchContract PPC64LE.abi) := by
+  have hi : finalizeWide.Implies (Proof.Sha512.finalizeScratchContract PPC64LE.abi) := by
+    contract_implies [Proof.Sha512.finalizeScratchContract, Proof.Sha512.finalizeScratchSig,
       finalizeWide,
       Proof.Sha512.finalizePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [finalizeSat, Proof.Sha512.PPC64LE.Stream.Finalize.sat] using finalizeSat

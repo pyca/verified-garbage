@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
@@ -117,9 +118,9 @@ def finalizeSat : State :=
   { Proof.Sha256.PPC64LE.Stream.Finalize.sat with wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩, ⟨0x3000, 608⟩] }
 
 theorem compress :
-    Verified PPC64LE.target Impl.Sha256.PPC64LE.compress (Spec.Sha256.compressContract PPC64LE.abi) := by
-  have hi : compressWide.Implies (Spec.Sha256.compressContract PPC64LE.abi) := by
-    contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig, compressWide,
+    Verified PPC64LE.target Impl.Sha256.PPC64LE.compress (Proof.Sha256.compressContract PPC64LE.abi) := by
+  have hi : compressWide.Implies (Proof.Sha256.compressContract PPC64LE.abi) := by
+    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig, compressWide,
       Proof.Sha256.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [compressSat, Proof.Sha256.PPC64LE.satState] using compressSat
   exact (compressWide_verified hi.sat_left).of_implies hi
@@ -133,18 +134,18 @@ theorem init :
 
 theorem updateScratch :
     Verified PPC64LE.target Impl.Sha256.PPC64LE.Stream.update
-      (Spec.Sha256.updateScratchContract PPC64LE.abi 48) := by
-  have hi : updateWide.Implies (Spec.Sha256.updateScratchContract PPC64LE.abi 48) := by
-    contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, updateWide,
+      (Proof.Sha256.updateScratchContract PPC64LE.abi 48) := by
+  have hi : updateWide.Implies (Proof.Sha256.updateScratchContract PPC64LE.abi 48) := by
+    contract_implies [Proof.Sha256.updateScratchContract, Proof.Sha256.updateScratchSig, updateWide,
       Proof.Sha256.updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [updateSat, Proof.Sha256.PPC64LE.Stream.Update.sat] using updateSat
   exact (updateWide_verified hi.sat_left).of_implies hi
 
 theorem finalizeScratch :
     Verified PPC64LE.target Impl.Sha256.PPC64LE.Stream.finalize
-      (Spec.Sha256.finalizeScratchContract PPC64LE.abi 48) := by
-  have hi : finalizeWide.Implies (Spec.Sha256.finalizeScratchContract PPC64LE.abi 48) := by
-    contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig, finalizeWide,
+      (Proof.Sha256.finalizeScratchContract PPC64LE.abi 48) := by
+  have hi : finalizeWide.Implies (Proof.Sha256.finalizeScratchContract PPC64LE.abi 48) := by
+    contract_implies [Proof.Sha256.finalizeScratchContract, Proof.Sha256.finalizeScratchSig, finalizeWide,
       Proof.Sha256.finalizePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [finalizeSat, Proof.Sha256.PPC64LE.Stream.Finalize.sat] using finalizeSat
   exact (finalizeWide_verified hi.sat_left).of_implies hi

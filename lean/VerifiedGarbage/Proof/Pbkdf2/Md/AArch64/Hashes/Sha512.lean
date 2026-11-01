@@ -54,9 +54,9 @@ def hash (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv 
   compC := v.code
   initN := initN
   initC := Impl.Sha512.AArch64.Stream.init iv
-  updN := Spec.Sha512.updateScratchApi.name ++ v.suffix
+  updN := "vg_sha512_update_scratch" ++ v.suffix
   updC := v.update
-  finN := Spec.Sha512.finalizeScratchApi.name ++ v.suffix
+  finN := "vg_sha512_finalize_scratch" ++ v.suffix
   finC := v.finalize
   hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
   hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.suffix
@@ -177,8 +177,7 @@ end
 /-- Streaming wrappers shared by all four digest sizes. The SHA-512 member
 emits them once per backend through `MdHash`; the other members call them:
 `update` and `finalize`, which keep their working space in a frame of their
-own, and `update_scratch` and `finalize_scratch`, which HMAC's, PBKDF2's and
-Ed25519's code calls with theirs. -/
+own. -/
 def stream (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.updateApi
     code := Impl.StackScratch.AArch64.withStackScratch 1376 .x4 v.update
@@ -191,18 +190,6 @@ def stream (v : Compress) : List StreamFn := [
     contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 1376)
     stack := 16 + 1376
     verified := Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha512.updateScratchApi
-    code := v.update
-    contract := Spec.Sha512.updateScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Sha512.AArch64.Shared.updateScratch_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha512.finalizeScratchApi
-    code := v.finalize
-    contract := Spec.Sha512.finalizeScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Sha512.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha512.digest512Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 8) H0_512 v.suffix v.code

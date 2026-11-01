@@ -138,11 +138,11 @@ cbnz x12, 213b
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
 }
 
@@ -287,11 +287,11 @@ cbnz x12, 213b
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
     )
 }
 
@@ -436,11 +436,11 @@ cbnz x12, 213b
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
+        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
 }
 
@@ -585,11 +585,11 @@ cbnz x12, 213b
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
+        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
     )
 }
 
@@ -719,11 +719,11 @@ cbnz x12, 215b
 .inst 0x910443ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -860,11 +860,11 @@ cbnz x12, 215b
 .arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -1001,11 +1001,11 @@ cbnz x12, 215b
 .arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
+        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -1142,11 +1142,11 @@ cbnz x12, 215b
 .arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
+        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }

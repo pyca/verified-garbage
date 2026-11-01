@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
@@ -187,14 +188,14 @@ def finalizeSat : State :=
   { Proof.Sha512.X86.Stream.Finalize.sat with
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
 
-theorem compressWide_implies : compressWide.Implies (Spec.Sha512.compressContract X86.abi) := by
-  sig_implies [Spec.Sha512.compressContract, Spec.Sha512.compressSig, compressWide,
+theorem compressWide_implies : compressWide.Implies (Proof.Sha512.compressContract X86.abi) := by
+  sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
     Proof.Sha512.compressX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [compressSat, Proof.Sha512.X86.Compress.satState, Proof.Sha512.X86.Compress.satMem, X86.arg,
       X86.argAddr, Mem.readW, Mem.read] using compressSat
 
 theorem compress :
-    Verified X86.target Impl.Sha512.X86.compress (Spec.Sha512.compressContract X86.abi) :=
+    Verified X86.target Impl.Sha512.X86.compress (Proof.Sha512.compressContract X86.abi) :=
   (compressWide_verified compressWide_implies.sat_left).of_implies compressWide_implies
 
 theorem init (iv : Spec.Sha512.HashValue) :
@@ -205,24 +206,24 @@ theorem init (iv : Spec.Sha512.HashValue) :
       [Proof.Sha512.X86.Stream.initSat, Proof.Sha512.X86.Stream.initSatMem, X86.arg, X86.argAddr, Mem.readW,
       Mem.read] using Proof.Sha512.X86.Stream.initSat)
 
-theorem updateWide_implies : updateWide.Implies (Spec.Sha512.updateScratchContract X86.abi 20) := by
-  sig_implies [Spec.Sha512.updateScratchContract, Spec.Sha512.updateScratchSig, updateWide, Proof.Sha512.updateX86,
+theorem updateWide_implies : updateWide.Implies (Proof.Sha512.updateScratchContract X86.abi 20) := by
+  sig_implies [Proof.Sha512.updateScratchContract, Proof.Sha512.updateScratchSig, updateWide, Proof.Sha512.updateX86,
     Proof.Sha512.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, Proof.Sha512.X86.Stream.Update.sat, MdStream.X86.Update.sat, MdStream.X86.Update.sat₀,
       MdStream.X86.Update.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
 theorem updateScratch :
-    Verified X86.target Impl.Sha512.X86.Stream.update (Spec.Sha512.updateScratchContract X86.abi 20) :=
+    Verified X86.target Impl.Sha512.X86.Stream.update (Proof.Sha512.updateScratchContract X86.abi 20) :=
   (updateWide_verified updateWide_implies.sat_left).of_implies updateWide_implies
 
-theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha512.finalizeScratchContract X86.abi 20) := by
-  contract_implies [Spec.Sha512.finalizeScratchContract, Spec.Sha512.finalizeScratchSig, finalizeWide,
+theorem finalizeWide_implies : finalizeWide.Implies (Proof.Sha512.finalizeScratchContract X86.abi 20) := by
+  contract_implies [Proof.Sha512.finalizeScratchContract, Proof.Sha512.finalizeScratchSig, finalizeWide,
     Proof.Sha512.finalizeX86, Proof.Sha512.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finalizeSat, Proof.Sha512.X86.Stream.Finalize.sat, MdStream.X86.Finalize.satR, MdStream.X86.Finalize.sat₀,
       MdStream.X86.Finalize.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeSat
 
 theorem finalizeScratch :
-    Verified X86.target Impl.Sha512.X86.Stream.finalize (Spec.Sha512.finalizeScratchContract X86.abi 20) :=
+    Verified X86.target Impl.Sha512.X86.Stream.finalize (Proof.Sha512.finalizeScratchContract X86.abi 20) :=
   (finalizeWide_verified finalizeWide_implies.sat_left).of_implies finalizeWide_implies
 
 /-- A state satisfying `update`'s precondition. -/

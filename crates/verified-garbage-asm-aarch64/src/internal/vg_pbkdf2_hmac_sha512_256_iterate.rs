@@ -52,6 +52,6 @@ b 21f
 21:
 .inst 0xf9415a9e,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym crate::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

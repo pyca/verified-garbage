@@ -17,7 +17,7 @@ call {vg_md5_finalize_scratch}
 call {vg_md5_compress}
 .base64 "WFhYWIn4iwuJCItLBIlIBItLCIlICItLDIlIDInoi1hwi3B0i3h4i2h8ww=="
 .p2align 6"#,
-        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch,
-        vg_md5_compress = sym crate::md5::vg_md5_compress,
+        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

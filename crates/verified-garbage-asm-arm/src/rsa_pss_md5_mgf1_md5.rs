@@ -646,7 +646,7 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -1581,7 +1581,7 @@ ldr r12, [sp], #56
 bx lr",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
 
@@ -2234,7 +2234,7 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
         vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal,
     )
 }
@@ -3175,6 +3175,6 @@ ldr r12, [sp], #56
 bx lr",
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal,
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }

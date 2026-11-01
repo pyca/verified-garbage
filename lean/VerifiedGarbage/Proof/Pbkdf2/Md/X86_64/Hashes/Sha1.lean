@@ -56,8 +56,8 @@ def hash (v : Compress) : Hash where
   compC := v.callee.code
   initN := Spec.Sha1.initApi.name
   initC := Impl.Sha1.X86_64.Stream.init
-  updN := Spec.Sha1.updateScratchApi.name ++ v.suffix
-  finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
+  updN := "vg_sha1_update_scratch" ++ v.suffix
+  finN := "vg_sha1_finalize_scratch" ++ v.suffix
   hmacInitN := "vg_hmac_sha1_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha1_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha1_iterate" ++ v.suffix
@@ -197,9 +197,7 @@ theorem satPF :
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, `update_scratch` and
-`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, and the
-one-shot `digest`. -/
+working space in a frame of their own, and the one-shot `digest`. -/
 def stream : List StreamFn := [
   { api := Spec.Sha1.updateApi
     code := Impl.StackScratch.X86_64.withStackScratch 168 .r8 (Impl.Sha1.X86_64.Stream.update v.callee)
@@ -215,18 +213,6 @@ def stream : List StreamFn := [
     verified := Proof.Sha1.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
       (Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe) },
-  { api := Spec.Sha1.updateScratchApi
-    code := Impl.Sha1.X86_64.Stream.update v.callee
-    contract := Spec.Sha1.updateScratchContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha1.X86_64.Shared.updateScratch v.ok v.mxcsr
-    spSafe := Proof.Sha1.X86_64.Shared.update_spSafe v.spSafe },
-  { api := Spec.Sha1.finalizeScratchApi
-    code := Impl.Sha1.X86_64.Stream.finalize v.callee
-    contract := Spec.Sha1.finalizeScratchContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha1.X86_64.Shared.finalizeScratch v.ok v.mxcsr
-    spSafe := Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe },
   { api := Spec.Sha1.digestApi
     code := Proof.Sha1.X86_64.OneShot.digest v.callee
     contract := Spec.Sha1.digestContract X86_64.abi (8 + Proof.Sha1.X86_64.OneShot.frame)

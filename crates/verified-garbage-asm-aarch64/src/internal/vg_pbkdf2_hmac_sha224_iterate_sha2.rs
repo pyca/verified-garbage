@@ -44,6 +44,6 @@ b 21f
 .inst 0xf940529e,0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xd65f03c0
 .arch_extension nosha2
 .p2align 6",
-        vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2,
+        vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
 }

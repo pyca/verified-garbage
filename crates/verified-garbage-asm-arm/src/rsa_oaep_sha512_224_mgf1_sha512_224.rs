@@ -602,8 +602,8 @@ ldr r12, [sp], #56
 bx lr",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
 }
 
@@ -1051,8 +1051,8 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -1662,8 +1662,8 @@ ldr r12, [sp], #56
 bx lr",
         vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
 }
 
@@ -2117,8 +2117,8 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal,
     )
 }

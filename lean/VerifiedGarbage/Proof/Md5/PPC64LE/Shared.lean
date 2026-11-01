@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 import VerifiedGarbage.Proof.Md5.Scratch
@@ -29,9 +30,9 @@ frame's 32-byte header.
 namespace VG.Proof.Md5.PPC64LE.Shared
 
 theorem compress :
-    Verified PPC64LE.target Impl.Md5.PPC64LE.compress (Spec.Md5.compressContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Md5.PPC64LE.compress (Proof.Md5.compressContract PPC64LE.abi) :=
   Proof.Md5.PPC64LE.compress_verified.of_implies (by
-    contract_implies [Spec.Md5.compressContract, Spec.Md5.compressSig,
+    contract_implies [Proof.Md5.compressContract, Proof.Md5.compressSig,
       Proof.Md5.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Md5.PPC64LE.satState] using Proof.Md5.PPC64LE.satState)
 
@@ -43,17 +44,17 @@ theorem init :
       [Proof.Md5.PPC64LE.Stream.initSat] using Proof.Md5.PPC64LE.Stream.initSat)
 
 theorem updateScratch :
-    Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.update (Spec.Md5.updateScratchContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.update (Proof.Md5.updateScratchContract PPC64LE.abi 48) :=
   Proof.Md5.PPC64LE.Stream.Update.update_verified.of_implies (by
-    contract_implies [Spec.Md5.updateScratchContract, Spec.Md5.updateScratchSig, Proof.Md5.updatePPC64LE,
+    contract_implies [Proof.Md5.updateScratchContract, Proof.Md5.updateScratchSig, Proof.Md5.updatePPC64LE,
       PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Md5.PPC64LE.Stream.Update.sat,
         MdStream.PPC64LE.Update.sat, Impl.Md5.PPC64LE.Stream.params] using Proof.Md5.PPC64LE.Stream.Update.sat)
 
 theorem finalizeScratch :
-    Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.finalize (Spec.Md5.finalizeScratchContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.finalize (Proof.Md5.finalizeScratchContract PPC64LE.abi 48) :=
   Proof.Md5.PPC64LE.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Md5.finalizeScratchContract, Spec.Md5.finalizeScratchSig,
+    contract_implies [Proof.Md5.finalizeScratchContract, Proof.Md5.finalizeScratchSig,
       Proof.Md5.finalizePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Md5.PPC64LE.Stream.Finalize.sat,
         MdStream.PPC64LE.Finalize.satD, Impl.Md5.PPC64LE.Stream.params]

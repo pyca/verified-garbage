@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha1.Contract
 import VerifiedGarbage.Proof.Sha1.Arm.Stream.Init
 import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
@@ -30,9 +31,9 @@ in a frame that allocates it (`Verified.stackScratch`).
 namespace VG.Proof.Sha1.Arm.Shared
 
 theorem compress :
-    Verified Arm.target Impl.Sha1.Arm.compress (Spec.Sha1.compressContract Arm.abi) :=
+    Verified Arm.target Impl.Sha1.Arm.compress (Proof.Sha1.compressContract Arm.abi) :=
   Proof.Sha1.Arm.compress_verified.of_implies (by
-    sig_implies [Spec.Sha1.compressContract, Spec.Sha1.compressSig,
+    sig_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
       Proof.Sha1.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Sha1.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
       Mem.read] using Proof.Sha1.Arm.satState)
@@ -45,17 +46,17 @@ theorem init : Verified Arm.target Impl.Sha1.Arm.Stream.init (Spec.Sha1.initCont
       Mem.read] using Proof.Sha1.Arm.Stream.initSat)
 
 theorem updateScratch :
-    Verified Arm.target Impl.Sha1.Arm.Stream.update (Spec.Sha1.updateScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha1.Arm.Stream.update (Proof.Sha1.updateScratchContract Arm.abi) :=
   Proof.Sha1.Arm.Stream.Update.update_verified.of_implies (by
-    sig_implies [Spec.Sha1.updateScratchContract, Spec.Sha1.updateScratchSig, Proof.Sha1.updateArm,
+    sig_implies [Proof.Sha1.updateScratchContract, Proof.Sha1.updateScratchSig, Proof.Sha1.updateArm,
       Proof.Sha1.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Sha1.Arm.Stream.Update.sat, MdStream.Arm.Update.sat, Impl.Sha1.Arm.Stream.params, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
       Mem.read] using Proof.Sha1.Arm.Stream.Update.sat)
 
 theorem finalizeScratch :
-    Verified Arm.target Impl.Sha1.Arm.Stream.finalize (Spec.Sha1.finalizeScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha1.Arm.Stream.finalize (Proof.Sha1.finalizeScratchContract Arm.abi) :=
   Proof.Sha1.Arm.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Sha1.finalizeScratchContract, Spec.Sha1.finalizeScratchSig,
+    contract_implies [Proof.Sha1.finalizeScratchContract, Proof.Sha1.finalizeScratchSig,
       Proof.Sha1.finalizeArm, Proof.Sha1.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, Arm.State.addr]
       [Proof.Sha1.Arm.Stream.Finalize.sat, MdStream.Arm.Finalize.sat, MdStream.Arm.Finalize.satBase,

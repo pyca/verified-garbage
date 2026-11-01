@@ -51,8 +51,8 @@ def hash (v : Compress) : Hash where
   compC := v.callee.code
   initN := Spec.Sha256.initApi.name
   initC := Impl.Sha256.X86_64.Stream.init
-  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
-  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
+  updN := "vg_sha256_update_scratch" ++ v.suffix
+  finN := "vg_sha256_finalize_scratch" ++ v.suffix
   hmacInitN := "vg_hmac_sha256_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ v.suffix
@@ -194,9 +194,7 @@ theorem satPF :
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, and `update_scratch` and
-`finalize_scratch`, which HMAC's, PBKDF2's and ECDSA's code calls with
-theirs. -/
+working space in a frame of their own, and the one-shot `digest`. -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.updateApi
     code := Impl.StackScratch.X86_64.withStackScratch 616 .r8 (Impl.Sha256.X86_64.Stream.update v.callee)
@@ -212,18 +210,6 @@ def stream : List StreamFn := [
     verified := Proof.Sha256.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
       (Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe) },
-  { api := Spec.Sha256.updateScratchApi
-    code := Impl.Sha256.X86_64.Stream.update v.callee
-    contract := Spec.Sha256.updateScratchContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha256.X86_64.Shared.updateScratch v.ok v.mxcsr
-    spSafe := Proof.Sha256.X86_64.Shared.update_spSafe v.spSafe },
-  { api := Spec.Sha256.finalizeScratchApi
-    code := Impl.Sha256.X86_64.Stream.finalize v.callee
-    contract := Spec.Sha256.finalizeScratchContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha256.X86_64.Shared.finalizeScratch v.ok v.mxcsr
-    spSafe := Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe },
   { api := Spec.Sha256.digest256Api
     code := Proof.Sha256.X86_64.OneShot.digest (Impl.MdStream.X86_64.out32 8 true) Spec.Sha256.H0 v.callee
     contract := Spec.Sha256.digestContract X86_64.abi 32 Spec.Sha256.hash (8 + Proof.Sha256.X86_64.OneShot.frame)

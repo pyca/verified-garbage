@@ -76,8 +76,8 @@ jmp 24f
 .base64 "ieiLmFAHAACLsFQHAACLuFgHAACLqFwHAACNpCR0DQAAww=="
 .p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
         vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
         vg_pbkdf2_hmac_sha512_iterate = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,

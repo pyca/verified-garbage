@@ -6,14 +6,14 @@ import VerifiedGarbage.Spec.Hmac.Generic
 meta import VerifiedGarbage.Spec.Hmac.Generic
 import VerifiedGarbage.Spec.Pbkdf2.Generic
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Spec.Sha256.Contract
-meta import VerifiedGarbage.Spec.Sha256.Contract
-import VerifiedGarbage.Spec.Sha1.Contract
-meta import VerifiedGarbage.Spec.Sha1.Contract
-import VerifiedGarbage.Spec.Md5.Contract
-meta import VerifiedGarbage.Spec.Md5.Contract
-import VerifiedGarbage.Spec.Sha512.Contract
-meta import VerifiedGarbage.Spec.Sha512.Contract
+import VerifiedGarbage.Proof.Sha256.Contract
+meta import VerifiedGarbage.Proof.Sha256.Contract
+import VerifiedGarbage.Proof.Sha1.Contract
+meta import VerifiedGarbage.Proof.Sha1.Contract
+import VerifiedGarbage.Proof.Md5.Contract
+meta import VerifiedGarbage.Proof.Md5.Contract
+import VerifiedGarbage.Proof.Sha512.Contract
+meta import VerifiedGarbage.Proof.Sha512.Contract
 
 /-!
 # Known-answer tests for HMAC, and SHA-256's functions
@@ -214,19 +214,20 @@ example : Spec.Pbkdf2.pbkdf2Hmac Spec.Hmac.sha256S = Spec.Pbkdf2.pbkdf2HmacSha25
 /-! ## The instances -/
 
 open Spec.Hmac in
-/-- Each instance, with its Lean name and the `Api` of the `update` its code
-calls: the hash's `update`, or, for a hash whose `update` keeps its working
-space in a frame of its own (MD5's, SHA-1's, SHA-256's, SHA-512's), the same
-function with its working space as an argument (`_scratch`), which HMAC's code
-passes its own. -/
-def instances : List (Spec.Hmac.Instance × String × Api) :=
-  [(sha256I, "sha256I", Spec.Sha256.updateScratchApi),
-    (sha224I, "sha224I", Spec.Sha256.updateScratchApi),
-    (sha1I, "sha1I", Spec.Sha1.updateScratchApi), (md5I, "md5I", Spec.Md5.updateScratchApi),
-    (sha384I, "sha384I", Spec.Sha512.updateScratchApi),
-    (sha512I, "sha512I", Spec.Sha512.updateScratchApi),
-    (sha512_224I, "sha512_224I", Spec.Sha512.updateScratchApi),
-    (sha512_256I, "sha512_256I", Spec.Sha512.updateScratchApi)]
+/-- Each instance, with its Lean name and the name and signature of the
+`update` its code calls: the hash's `update`, or, for a hash whose `update`
+keeps its working space in a frame of its own (MD5's, SHA-1's, SHA-256's,
+SHA-512's), the same function with its working space as an argument
+(`_scratch`), an internal function, which HMAC's code passes its own. -/
+def instances : List (Spec.Hmac.Instance × String × String × Sig) :=
+  [(sha256I, "sha256I", "vg_sha256_update_scratch", Proof.Sha256.updateScratchSig),
+    (sha224I, "sha224I", "vg_sha256_update_scratch", Proof.Sha256.updateScratchSig),
+    (sha1I, "sha1I", "vg_sha1_update_scratch", Proof.Sha1.updateScratchSig),
+    (md5I, "md5I", "vg_md5_update_scratch", Proof.Md5.updateScratchSig),
+    (sha384I, "sha384I", "vg_sha512_update_scratch", Proof.Sha512.updateScratchSig),
+    (sha512I, "sha512I", "vg_sha512_update_scratch", Proof.Sha512.updateScratchSig),
+    (sha512_224I, "sha512_224I", "vg_sha512_update_scratch", Proof.Sha512.updateScratchSig),
+    (sha512_256I, "sha512_256I", "vg_sha512_update_scratch", Proof.Sha512.updateScratchSig)]
 
 /-- The number of 64-bit words of the last parameter of `sig`, if it is an
 array of them (the working space). -/
@@ -236,32 +237,35 @@ def scratchWords (sig : Sig) : Option Nat :=
   | _ => none
 
 run_cmd do
-  for (I, lean, update) in instances do
+  for (I, lean, update, sig) in instances do
     unless I.lean == lean do throwError "{lean} calls itself {I.lean}"
-    unless I.update == update.name.replace "_scratch" "" do
-      throwError "{lean}: `update` is {update.name}, not {I.update}"
-    let some w := scratchWords update.sig | throwError "{update.name} has no working space"
-    unless w ≤ I.scratch do throwError "{lean}: {update.name} needs {w} words of working space"
-  let names := instances.flatMap fun (I, _, _) =>
+    unless I.update == update.replace "_scratch" "" do
+      throwError "{lean}: `update` is {update}, not {I.update}"
+    let some w := scratchWords sig | throwError "{update} has no working space"
+    unless w ≤ I.scratch do throwError "{lean}: {update} needs {w} words of working space"
+  let names := instances.flatMap fun (I, _, _, _) =>
     [I.initApi.name, I.finalizeApi.name, I.pbkdf2Api.name]
   unless names.eraseDups.length == names.length do throwError "duplicate names: {names}"
 
 /-! ## `init` for a key of any length -/
 
 open Spec.Hmac in
-/-- Each instance, with the `Api` of the `finalize` its code calls (as for
-`instances`). -/
-def finalizes : List (Spec.Hmac.Instance × Api) :=
-  [(sha256I, Spec.Sha256.finalizeScratchApi), (sha224I, Spec.Sha256.finalizeScratchApi),
-    (sha1I, Spec.Sha1.finalizeScratchApi),
-    (md5I, Spec.Md5.finalizeScratchApi), (sha384I, Spec.Sha512.finalizeScratchApi),
-    (sha512I, Spec.Sha512.finalizeScratchApi), (sha512_224I, Spec.Sha512.finalizeScratchApi),
-    (sha512_256I, Spec.Sha512.finalizeScratchApi)]
+/-- Each instance, with the name and signature of the `finalize` its code
+calls (as for `instances`). -/
+def finalizes : List (Spec.Hmac.Instance × String × Sig) :=
+  [(sha256I, "vg_sha256_finalize_scratch", Proof.Sha256.finalizeScratchSig),
+    (sha224I, "vg_sha256_finalize_scratch", Proof.Sha256.finalizeScratchSig),
+    (sha1I, "vg_sha1_finalize_scratch", Proof.Sha1.finalizeScratchSig),
+    (md5I, "vg_md5_finalize_scratch", Proof.Md5.finalizeScratchSig),
+    (sha384I, "vg_sha512_finalize_scratch", Proof.Sha512.finalizeScratchSig),
+    (sha512I, "vg_sha512_finalize_scratch", Proof.Sha512.finalizeScratchSig),
+    (sha512_224I, "vg_sha512_finalize_scratch", Proof.Sha512.finalizeScratchSig),
+    (sha512_256I, "vg_sha512_finalize_scratch", Proof.Sha512.finalizeScratchSig)]
 
 run_cmd do
   unless finalizes.map (·.1.lean) == instances.map (·.1.lean) do
     throwError "`finalizes` does not list the instances"
-  for (I, finalize) in finalizes do
+  for (I, finalize, sig) in finalizes do
     -- `initAnyKeyApi` replaces `initApi`: the same Rust function, with the
     -- same arguments, which keeps more working space on its stack
     -- (`initAnyKeyScratch`).
@@ -271,9 +275,9 @@ run_cmd do
       throwError "{a.module}::{a.name} is not {b.module}::{b.name}"
     unless a.sig.params == b.sig.params do
       throwError "{a.name}: the arguments differ from `initApi`'s"
-    let some w := scratchWords finalize.sig | throwError "{finalize.name} has no working space"
-    unless w ≤ I.scratch do throwError "{I.lean}: {finalize.name} needs {w} words of working space"
-    unless (finalize.name.replace "_scratch" "").replace "_finalize" "_update" == I.update do
-      throwError "{I.lean}: {finalize.name} is not the `finalize` of {I.update}"
+    let some w := scratchWords sig | throwError "{finalize} has no working space"
+    unless w ≤ I.scratch do throwError "{I.lean}: {finalize} needs {w} words of working space"
+    unless (finalize.replace "_scratch" "").replace "_finalize" "_update" == I.update do
+      throwError "{I.lean}: {finalize} is not the `finalize` of {I.update}"
 
 end VG.Test.Hmac

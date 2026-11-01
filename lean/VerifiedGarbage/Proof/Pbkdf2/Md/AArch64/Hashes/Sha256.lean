@@ -47,9 +47,9 @@ def hash (v : Compress) : Hash where
   compC := v.code
   initN := Spec.Sha256.initApi.name
   initC := Impl.Sha256.AArch64.Stream.init
-  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
+  updN := "vg_sha256_update_scratch" ++ v.suffix
   updC := v.update
-  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
+  finN := "vg_sha256_finalize_scratch" ++ v.suffix
   finC := v.finalize
   hmacInitN := "vg_hmac_sha256_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ v.suffix
@@ -198,8 +198,7 @@ theorem satPF :
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, and `update_scratch` and
-`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, which
+working space in a frame of their own, which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.updateApi
@@ -213,18 +212,6 @@ def stream : List StreamFn := [
     contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 608)
     stack := 16 + 608
     verified := Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha256.updateScratchApi
-    code := v.update
-    contract := Spec.Sha256.updateScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Sha256.AArch64.Shared.updateScratch_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha256.finalizeScratchApi
-    code := v.finalize
-    contract := Spec.Sha256.finalizeScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Sha256.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha256.digest256Api
     code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.out256 Spec.Sha256.H0 v.name v.code

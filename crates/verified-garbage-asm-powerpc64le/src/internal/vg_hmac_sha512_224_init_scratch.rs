@@ -53,6 +53,6 @@ b 210f
 bl {vg_sha512_update_scratch}
 .base64 "4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8IACATg==""#,
         vg_sha512_224_init = sym crate::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch,
+        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
     )
 }

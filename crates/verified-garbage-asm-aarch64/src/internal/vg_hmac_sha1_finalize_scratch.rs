@@ -25,7 +25,7 @@ bl {vg_sha1_compress}
 .inst 0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
 .p2align 6",
-        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_compress = sym crate::sha1::vg_sha1_compress,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }

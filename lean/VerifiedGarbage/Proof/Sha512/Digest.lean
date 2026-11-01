@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.Md
 import VerifiedGarbage.Proof.Sha512.Word64
 public import VerifiedGarbage.Spec.Sha512.Contract
@@ -101,13 +102,13 @@ theorem digest_take28_halves (mem : Mem) (p : Addr) :
 /-! ## The contract with the working space as an argument
 
 Each target's `finalize` of the truncated digests takes its working space in
-`scratch`, as `Spec.Sha512.finalizeScratchSig` does, and is emitted in a frame
+`scratch`, as `Proof.Sha512.finalizeScratchSig` does, and is emitted in a frame
 of its own allocating it (`Verified.stackScratch`): it is verified against
 this contract first. -/
 
 /-- `vg_<alg>_finalize` with its working space in `scratch`
 (`Spec.Sha512.finalizeDigestSig` and the scratch of
-`Spec.Sha512.finalizeScratchSig`). -/
+`Proof.Sha512.finalizeScratchSig`). -/
 def finalizeDigestScratchSig (D : Nat) : Sig where
   params := [("state", .array true .u8 192), ("count", .int .u64 true),
     ("out", .array true .u8 D), ("scratch", .array true .u64 172)]

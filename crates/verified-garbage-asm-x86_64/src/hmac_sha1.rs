@@ -58,9 +58,9 @@ call {vg_hmac_sha1_init_scratch}
 jmp 21b
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
@@ -86,8 +86,8 @@ call {vg_sha1_finalize_scratch}
 call {vg_sha1_compress}
 .base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADD"
 .p2align 6"#,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
@@ -150,9 +150,9 @@ call {vg_hmac_sha1_init_scratch_shani}
 jmp 21b
 .p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani::vg_hmac_sha1_init_scratch_shani,
     )
 }
@@ -182,8 +182,8 @@ call {vg_sha1_finalize_scratch_shani}
 call {vg_sha1_compress_shani}
 .base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADD"
 .p2align 6"#,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 

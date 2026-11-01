@@ -30,6 +30,6 @@ call {vg_sha1_compress}
 .base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAAww=="
 .p2align 6"#,
         vg_sha1_init = sym crate::sha1::vg_sha1_init,
-        vg_sha1_compress = sym crate::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }

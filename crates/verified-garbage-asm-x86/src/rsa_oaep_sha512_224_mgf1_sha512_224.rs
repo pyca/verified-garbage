@@ -108,8 +108,8 @@ jne 212b
 .base64 "jaQkkAAAAIs8JIt0JASLbCQIW1tbW8M="
 .p2align 6"#,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
@@ -229,7 +229,7 @@ jne 213b
 .p2align 6"#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
 }

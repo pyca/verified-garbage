@@ -50,9 +50,9 @@ def hash : Hash where
   W := 160
   initN := Spec.Sha256.initApi.name
   initC := Impl.Sha256.PPC64LE.Stream.init
-  updN := Spec.Sha256.updateScratchApi.name
+  updN := "vg_sha256_update_scratch"
   updC := Impl.Sha256.PPC64LE.Stream.update
-  finN := Spec.Sha256.finalizeScratchApi.name
+  finN := "vg_sha256_finalize_scratch"
   finC := Impl.Sha256.PPC64LE.Stream.finalize
   hmacInitN := "vg_hmac_sha256_init_scratch"
 

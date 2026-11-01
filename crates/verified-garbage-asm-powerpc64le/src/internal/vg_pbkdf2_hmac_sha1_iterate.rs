@@ -24,6 +24,6 @@ b 21f
 20:
 21:
 .base64 "oAAb6HAAW+uAAJvriAC765AA2+uYAPvreAB766YDCHwgAIBO""#,
-        vg_sha1_compress = sym crate::sha1::vg_sha1_compress,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }

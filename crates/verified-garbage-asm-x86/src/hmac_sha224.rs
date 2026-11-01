@@ -60,9 +60,9 @@ call {vg_hmac_sha224_init_scratch}
 jmp 21b
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
     )
 }
@@ -90,8 +90,8 @@ call {vg_sha256_finalize_scratch}
 call {vg_sha256_compress}
 .base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkXAMAAMM="
 .p2align 6"#,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
@@ -156,9 +156,9 @@ call {vg_hmac_sha224_init_scratch_shani}
 jmp 21b
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani::vg_hmac_sha224_init_scratch_shani,
     )
 }
@@ -190,8 +190,8 @@ call {vg_sha256_finalize_scratch_shani}
 call {vg_sha256_compress_shani}
 .base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkXAMAAMM="
 .p2align 6"#,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
 

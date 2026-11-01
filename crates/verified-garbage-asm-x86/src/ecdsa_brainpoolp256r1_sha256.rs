@@ -78,7 +78,7 @@ jne 20b
 .base64 "uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAi5wktAAAAIu0JLgAAACLvCS8AAAAi6wkwAAAAI2kJMQAAADD"
 .p2align 6"#,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
         vg_ecdsa_brainpoolp256r1_sign = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign,
     )
@@ -163,7 +163,7 @@ jne 20b
 .base64 "uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAi5wktAAAAIu0JLgAAACLvCS8AAAAi6wkwAAAAI2kJMQAAADD"
 .p2align 6"#,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani::vg_hmac_sha256_finalize_scratch_shani,
         vg_ecdsa_brainpoolp256r1_sign = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign,
     )

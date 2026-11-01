@@ -108,7 +108,7 @@ theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : Re
 theorem update_ct (v : Whole.Backend) (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁)
     (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L updateValues))
-      (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) v.update)
+      (.call ("vg_sha512_update_scratch" ++ v.suffix) v.update)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb v.update_verified.1 v.update_verified.2.1 (Whole.update_depth v)
     (fun _ hsp _ _ h => update_ready hL h32 hsp h)
@@ -120,7 +120,7 @@ theorem update_ct (v : Whole.Backend) (hL : L.Ok) (h32 : L.seedLen = 32) (ha : A
 
 theorem finalize_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L finalizeValues))
-      (.call (Spec.Sha512.finalizeScratchApi.name ++ v.suffix) v.finalize)
+      (.call ("vg_sha512_finalize_scratch" ++ v.suffix) v.finalize)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb v.finalize_verified.1 v.finalize_verified.2.1 (Whole.finalize_depth v)
     (fun _ hsp _ _ h => finalize_ready hL hsp h)

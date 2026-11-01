@@ -32,8 +32,8 @@ def mov (d n : Reg) : Instr := .addi d n 0
 
 def shaInit : Prog isa :=
   .call Spec.Sha512.init512Api.name (Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512)
-def shaUpdate : Prog isa := .call Spec.Sha512.updateScratchApi.name Impl.Sha512.PPC64LE.Stream.update
-def shaFinalize : Prog isa := .call Spec.Sha512.finalizeScratchApi.name Impl.Sha512.PPC64LE.Stream.finalize
+def shaUpdate : Prog isa := .call "vg_sha512_update_scratch" Impl.Sha512.PPC64LE.Stream.update
+def shaFinalize : Prog isa := .call "vg_sha512_finalize_scratch" Impl.Sha512.PPC64LE.Stream.finalize
 
 /-- The slots at `o(F)` of the registers of `rs` and, after them, of the link register (from `r0`). -/
 def slots (o : Nat) (rs : List Reg) : List (Reg × Nat) :=

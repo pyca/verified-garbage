@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.X86_64.Shared
 meta import VerifiedGarbage.Proof.Md5.X86_64.Shared
 import VerifiedGarbage.Proof.Md5.AArch64.Shared
@@ -33,7 +34,7 @@ def updateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
 
 -- The contract with the scratch argument is `Sig.scratchContract` of the one
 -- without it.
-example : Spec.Md5.updateScratchContract X86_64.abi 8 =
+example : Proof.Md5.updateScratchContract X86_64.abi 8 =
     Sig.scratchContract X86_64.abi updateSig "scratch" .u64 14 (Curry.const (fun _ => True) _)
       (fun state count data len m m' _ =>
         ∀ msg, Spec.Md5.Repr m state msg → count = BitVec.ofNat 64 msg.length →

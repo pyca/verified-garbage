@@ -1970,8 +1970,8 @@ bl {vg_ed25519_scalar_mul_add}
 .inst 0xf90079ee,0x910003ef,0xd280000e,0xf9007dee,0x910503ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add,
@@ -2013,8 +2013,8 @@ bl {vg_ed25519_verify_equation}
 .inst 0x910503ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation,
     )
@@ -2092,8 +2092,8 @@ bl {vg_ed25519_scalar_mul_add}
 .arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
+        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add,
@@ -2141,8 +2141,8 @@ bl {vg_ed25519_verify_equation}
 .arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
+        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation,
     )

@@ -3,133 +3,6 @@
 //! `assembly/sha512.s`.
 #![allow(dead_code)]
 
-/// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 1328 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASIXS"
-je 20f
-22:
-.base64 "SIsHSItfCEiLbxBMi0cYTItPIEyLVyhMi18wTItnOEiJsbAAAABIiZG4AAAASIny"
-lea rsi, [rip + {VG_SHA512_K}]
-.base64 "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"
-23:
-.base64 "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"
-jne 23b
-.base64 "SIuxsAAAAEiLkbgAAABIAwdIA18ISANvEEwDRxhMA08gTANXKEwDXzBMA2c4SIkHSIlfCEiJbxBMiUcYTIlPIEyJVyhMiV8wTIlnOEiBxoAAAABIg+oB"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SIuZgAAAAEiLqYgAAABMi6GQAAAATIupmAAAAEyLsaAAAABMi7moAAAAww=="
-.p2align 6"#,
-        VG_SHA512_K = sym super::consts::VG_SHA512_K,
-    )
-}
-
-/// The CPU features `vg_sha512_compress_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_COMPRESS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 1328 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZAAUAAEiJqQgFAABMiaEQBQAATImpGAUAAMRB+W72xEH5bv9IuAcGBQQDAgEAxGH5buBIuA8ODQwLCgkIxGH5bujEQRls5cRDHTjkAUiF0g=="
-je 20f
-22:
-.base64 "SYn3SIP6AQ=="
-je 23f
-.base64 "SYHHgAAAAA=="
-jmp 24f
-23:
-24:
-.base64 "xfpvBsRBem8vxMN9OMUBxMJ9AMTF/n8BxfpvThDEQXpvbxDEw3U4zQHEwnUAzMX+f0kgxfpvViDEQXpvbyDEw2041QHEwm0A1MX+f1FAxfpvXjDEQXpvbzDEw2U43QHEwmUA3MX+f1lgxfpvZkDEQXpvb0DEw1045QHEwl0A5MX+f6GAAAAAxfpvblDEQXpvb1DEw1U47QHEwlUA7MX+f6mgAAAAxfpvdmDEQXpvb2DEw0049QHEwk0A9MX+f7HAAAAAxfpvfnDEQXpvb3DEw0U4/QHEwkUA/MX+f7ngAAAASIsHSItfCEiLbxBMi0cYTItPIEyLVyhMi18wTItnOEmJ3Ukx7UiJsSAFAABIiZEoBQAA"
-lea rsi, [rip + {VG_SHA512_K}]
-.base64 "SMfCAAAAAA=="
-25:
-.base64 "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"
-jne 25b
-.base64 "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"
-je 26f
-.base64 "SYndSTHtSImxIAUAAEiJkSgFAAA="
-lea rsi, [rip + {VG_SHA512_K}]
-.base64 "SMfCAAAAAA=="
-28:
-.base64 "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"
-jne 28b
-.base64 "SIuxIAUAAEiLkSgFAABIAwdIA18ISANvEEwDRxhMA08gTANXKEwDXzBMA2c4SIkHSIlfCEiJbxBMiUcYTIlPIEyJVyhMiV8wTIlnOEiBxgABAABIg+oC"
-jmp 27f
-26:
-.base64 "SIHGgAAAAEiD6gE="
-27:
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SIuZAAUAAEiLqQgFAABMi6EQBQAATIupGAUAAMX4d2ZND372Zk0Pfv/D"
-.p2align 6"#,
-        VG_SHA512_K = sym super::consts::VG_SHA512_K,
-    )
-}
-
-/// The CPU features `vg_sha512_compress_shani` requires (`Artifact.features`).
-pub const VG_SHA512_COMPRESS_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
-///
-/// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 1328 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_compress_shani(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
-    core::arch::naked_asm!(
-        r#".base64 "SLgHBgUEAwIBAMRh+W7ASLgPDg0MCwoJCMRh+W7YxEE5bMPEQz04wAE="
-lea rax, [rip + {VG_SHA512_K}]
-.base64 "xf5vD8X+b1cgxONtRvkgxONtRtExxOP9AM+xxOP9ANKxSIXS"
-je 20f
-22:
-.base64 "xX1vycV9b9LF/m8exMJlANjF/m8Axf3Uw8Tid8vQxON9OcABxOJvy8jF/m9mIMTCXQDgxf5vQCDF/dTExOJ3y9DE4305wAHE4m/LyMX+b25AxMJVAOjF/m9AQMX91MXE4nfL0MTjfTnAAcTib8vIxf5vdmDEwk0A8MX+b0Bgxf3UxsTid8vQxON9OcABxOJvy8jE4n/M3MTjVUb+IcTjRQ/9CMXl1N/E4n/N3sX+b4CAAAAAxf3Uw8Tid8vQxON9OcABxOJvy8jE4n/M5cTjTUb7IcTjRQ/+CMXd1OfE4n/N48X+b4CgAAAAxf3UxMTid8vQxON9OcABxOJvy8jE4n/M7sTjZUb8IcTjRQ/7CMXV1O/E4n/N7MX+b4DAAAAAxf3UxcTid8vQxON9OcABxOJvy8jE4n/M88TjXUb9IcTjRQ/8CMXN1PfE4n/N9cX+b4DgAAAAxf3UxsTid8vQxON9OcABxOJvy8jE4n/M3MTjVUb+IcTjRQ/9CMXl1N/E4n/N3sX+b4AAAQAAxf3Uw8Tid8vQxON9OcABxOJvy8jE4n/M5cTjTUb7IcTjRQ/+CMXd1OfE4n/N48X+b4AgAQAAxf3UxMTid8vQxON9OcABxOJvy8jE4n/M7sTjZUb8IcTjRQ/7CMXV1O/E4n/N7MX+b4BAAQAAxf3UxcTid8vQxON9OcABxOJvy8jE4n/M88TjXUb9IcTjRQ/8CMXN1PfE4n/N9cX+b4BgAQAAxf3UxsTid8vQxON9OcABxOJvy8jE4n/M3MTjVUb+IcTjRQ/9CMXl1N/E4n/N3sX+b4CAAQAAxf3Uw8Tid8vQxON9OcABxOJvy8jE4n/M5cTjTUb7IcTjRQ/+CMXd1OfE4n/N48X+b4CgAQAAxf3UxMTid8vQxON9OcABxOJvy8jE4n/M7sTjZUb8IcTjRQ/7CMXV1O/E4n/N7MX+b4DAAQAAxf3UxcTid8vQxON9OcABxOJvy8jE4n/M88TjXUb9IcTjRQ/8CMXN1PfE4n/N9cX+b4DgAQAAxf3UxsTid8vQxON9OcABxOJvy8jE4n/M3MTjVUb+IcTjRQ/9CMXl1N/E4n/N3sX+b4AAAgAAxf3Uw8Tid8vQxON9OcABxOJvy8jE4n/M5cTjTUb7IcTjRQ/+CMXd1OfE4n/N48X+b4AgAgAAxf3UxMTid8vQxON9OcABxOJvy8jE4n/M7sTjZUb8IcTjRQ/7CMXV1O/E4n/N7MX+b4BAAgAAxf3UxcTid8vQxON9OcABxOJvy8jE4n/M88TjXUb9IcTjRQ/8CMXN1PfE4n/N9cX+b4BgAgAAxf3UxsTid8vQxON9OcABxOJvy8jFtdTJxa3U0kiBxoAAAABIg+oB"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "xOP9AMmxxOP9ANKxxON1RvoxxON1Rsogxf5/P8X+f08gxfh3ww=="
-.p2align 6"#,
-        VG_SHA512_K = sym super::consts::VG_SHA512_K,
-    )
-}
-
 /// Starts a SHA-384 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-384 (`VG.Spec.Sha512.H0_384`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
@@ -270,7 +143,7 @@ call {vg_sha512_compress}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkaAUAAMM="
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -342,7 +215,7 @@ call {vg_sha512_compress}
 call {vg_sha512_compress}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAMM="
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -426,7 +299,7 @@ call {vg_sha512_compress_avx2}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkaAUAAMM="
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -502,7 +375,7 @@ call {vg_sha512_compress_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAMM="
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -586,7 +459,7 @@ call {vg_sha512_compress_shani}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkaAUAAMM="
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -662,7 +535,7 @@ call {vg_sha512_compress_shani}
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAMM="
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -760,7 +633,7 @@ call {vg_sha512_compress}
 jne 20b
 .base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -840,189 +713,7 @@ call {vg_sha512_compress}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_sha512_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAASIn7TYnHSInVSYnMSYn1SYPlfw=="
-20:
-.base64 "TYXt"
-je 21f
-.base64 "uIAAAABMKehJOcQ="
-jb 23f
-jmp 24f
-23:
-.base64 "TIng"
-24:
-.base64 "SSnESIP4CA=="
-jb 25f
-27:
-.base64 "TItNAE6JTCtASIPFCEmDxQhIg+gISIP4CA=="
-jae 27b
-jmp 26f
-25:
-26:
-.base64 "SIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "Qb4AAAAASYH9gAAAAA=="
-je 211f
-jmp 212f
-211:
-.base64 "SIneSIPGQEG9AAAAAEG+AQAAAA=="
-212:
-jmp 22f
-21:
-.base64 "SYH8gAAAAA=="
-jae 213f
-.base64 "uIAAAABMKehJOcQ="
-jb 215f
-jmp 216f
-215:
-.base64 "TIng"
-216:
-.base64 "SSnESIP4CA=="
-jb 217f
-219:
-.base64 "TItNAE6JTCtASIPFCEmDxQhIg+gISIP4CA=="
-jae 219b
-jmp 218f
-217:
-218:
-.base64 "SIXA"
-je 220f
-222:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "Qb4AAAAASYH9gAAAAA=="
-je 223f
-jmp 224f
-223:
-.base64 "SIneSIPGQEG9AAAAAEG+AQAAAA=="
-224:
-jmp 214f
-213:
-.base64 "SInuTIngSIPgf02J5kkpxkwB9UmJxEnB7gc="
-214:
-22:
-.base64 "TYX2"
-jne 225f
-jmp 226f
-225:
-.base64 "SInfTInyTIn5"
-call {vg_sha512_compress}
-.base64 "SIn7SYnP"
-226:
-.base64 "TYX2"
-jne 20b
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-    )
-}
-
-/// `vg_sha512_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZMAUAAEiJqTgFAABMiaFABQAATImpSAUAAEyJsVAFAABMiblYBQAASIn7SYnPSInVSYn0SYn1SYPlf0G5gAAAAEG+AAAAAEmD/XA="
-jae 20f
-jmp 21f
-20:
-.base64 "Qb4BAAAA"
-21:
-22:
-.base64 "TInoSIPgDw=="
-je 23f
-.base64 "RohMK0BJg8UBuIAAAABNhfY="
-je 25f
-jmp 26f
-25:
-.base64 "uHAAAAA="
-26:
-.base64 "QbkAAAAATCnoSIP4CA=="
-jb 27f
-29:
-.base64 "TolMK0BJg8UISIPoCEiD+Ag="
-jae 29b
-jmp 28f
-27:
-28:
-.base64 "SIXA"
-je 210f
-212:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "TYX2"
-je 213f
-jmp 214f
-213:
-.base64 "TIngSMHoPUgPyEiJg7AAAABMieBIAcBIAcBIAcBID8hIiYO4AAAA"
-214:
-jmp 24f
-23:
-.base64 "ZkkPbsFJg/1w"
-jae 215f
-217:
-.base64 "80IPf0QrQGYP78BJg8UQSYP9cA=="
-jb 217b
-jmp 216f
-215:
-216:
-.base64 "TYX2"
-je 218f
-jmp 219f
-218:
-.base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+GYP68c="
-219:
-.base64 "8w9/g7AAAAA="
-24:
-.base64 "SIneSIPGQEiJ37oBAAAATIn5"
-call {vg_sha512_compress}
-.base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
-je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -1094,7 +785,7 @@ call {vg_sha512_compress}
 call {vg_sha512_compress}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -1196,7 +887,7 @@ call {vg_sha512_compress_avx2}
 jne 20b
 .base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -1280,197 +971,7 @@ call {vg_sha512_compress_avx2}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_sha512_update_scratch_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// `vg_sha512_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAASIn7TYnHSInVSYnMSYn1SYPlfw=="
-20:
-.base64 "TYXt"
-je 21f
-.base64 "uIAAAABMKehJOcQ="
-jb 23f
-jmp 24f
-23:
-.base64 "TIng"
-24:
-.base64 "SSnESIP4CA=="
-jb 25f
-27:
-.base64 "TItNAE6JTCtASIPFCEmDxQhIg+gISIP4CA=="
-jae 27b
-jmp 26f
-25:
-26:
-.base64 "SIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "Qb4AAAAASYH9gAAAAA=="
-je 211f
-jmp 212f
-211:
-.base64 "SIneSIPGQEG9AAAAAEG+AQAAAA=="
-212:
-jmp 22f
-21:
-.base64 "SYH8gAAAAA=="
-jae 213f
-.base64 "uIAAAABMKehJOcQ="
-jb 215f
-jmp 216f
-215:
-.base64 "TIng"
-216:
-.base64 "SSnESIP4CA=="
-jb 217f
-219:
-.base64 "TItNAE6JTCtASIPFCEmDxQhIg+gISIP4CA=="
-jae 219b
-jmp 218f
-217:
-218:
-.base64 "SIXA"
-je 220f
-222:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "Qb4AAAAASYH9gAAAAA=="
-je 223f
-jmp 224f
-223:
-.base64 "SIneSIPGQEG9AAAAAEG+AQAAAA=="
-224:
-jmp 214f
-213:
-.base64 "SInuTIngSIPgf02J5kkpxkwB9UmJxEnB7gc="
-214:
-22:
-.base64 "TYX2"
-jne 225f
-jmp 226f
-225:
-.base64 "SInfTInyTIn5"
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnP"
-226:
-.base64 "TYX2"
-jne 20b
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_sha512_finalize_scratch_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// `vg_sha512_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZMAUAAEiJqTgFAABMiaFABQAATImpSAUAAEyJsVAFAABMiblYBQAASIn7SYnPSInVSYn0SYn1SYPlf0G5gAAAAEG+AAAAAEmD/XA="
-jae 20f
-jmp 21f
-20:
-.base64 "Qb4BAAAA"
-21:
-22:
-.base64 "TInoSIPgDw=="
-je 23f
-.base64 "RohMK0BJg8UBuIAAAABNhfY="
-je 25f
-jmp 26f
-25:
-.base64 "uHAAAAA="
-26:
-.base64 "QbkAAAAATCnoSIP4CA=="
-jb 27f
-29:
-.base64 "TolMK0BJg8UISIPoCEiD+Ag="
-jae 29b
-jmp 28f
-27:
-28:
-.base64 "SIXA"
-je 210f
-212:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "TYX2"
-je 213f
-jmp 214f
-213:
-.base64 "TIngSMHoPUgPyEiJg7AAAABMieBIAcBIAcBIAcBID8hIiYO4AAAA"
-214:
-jmp 24f
-23:
-.base64 "ZkkPbsFJg/1w"
-jae 215f
-217:
-.base64 "80IPf0QrQGYP78BJg8UQSYP9cA=="
-jb 217b
-jmp 216f
-215:
-216:
-.base64 "TYX2"
-je 218f
-jmp 219f
-218:
-.base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+GYP68c="
-219:
-.base64 "8w9/g7AAAAA="
-24:
-.base64 "SIneSIPGQEiJ37oBAAAATIn5"
-call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
-je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -1546,7 +1047,7 @@ call {vg_sha512_compress_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -1648,7 +1149,7 @@ call {vg_sha512_compress_shani}
 jne 20b
 .base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -1732,197 +1233,7 @@ call {vg_sha512_compress_shani}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-    )
-}
-
-/// The CPU features `vg_sha512_update_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// `vg_sha512_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_update_scratch_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYMAUAAEmJqDgFAABNiaBABQAATYmoSAUAAE2JsFAFAABNibhYBQAASIn7TYnHSInVSYnMSYn1SYPlfw=="
-20:
-.base64 "TYXt"
-je 21f
-.base64 "uIAAAABMKehJOcQ="
-jb 23f
-jmp 24f
-23:
-.base64 "TIng"
-24:
-.base64 "SSnESIP4CA=="
-jb 25f
-27:
-.base64 "TItNAE6JTCtASIPFCEmDxQhIg+gISIP4CA=="
-jae 27b
-jmp 26f
-25:
-26:
-.base64 "SIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "Qb4AAAAASYH9gAAAAA=="
-je 211f
-jmp 212f
-211:
-.base64 "SIneSIPGQEG9AAAAAEG+AQAAAA=="
-212:
-jmp 22f
-21:
-.base64 "SYH8gAAAAA=="
-jae 213f
-.base64 "uIAAAABMKehJOcQ="
-jb 215f
-jmp 216f
-215:
-.base64 "TIng"
-216:
-.base64 "SSnESIP4CA=="
-jb 217f
-219:
-.base64 "TItNAE6JTCtASIPFCEmDxQhIg+gISIP4CA=="
-jae 219b
-jmp 218f
-217:
-218:
-.base64 "SIXA"
-je 220f
-222:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "Qb4AAAAASYH9gAAAAA=="
-je 223f
-jmp 224f
-223:
-.base64 "SIneSIPGQEG9AAAAAEG+AQAAAA=="
-224:
-jmp 214f
-213:
-.base64 "SInuTIngSIPgf02J5kkpxkwB9UmJxEnB7gc="
-214:
-22:
-.base64 "TYX2"
-jne 225f
-jmp 226f
-225:
-.base64 "SInfTInyTIn5"
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnP"
-226:
-.base64 "TYX2"
-jne 20b
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-    )
-}
-
-/// The CPU features `vg_sha512_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// `vg_sha512_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 1376 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha512_finalize_scratch_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZMAUAAEiJqTgFAABMiaFABQAATImpSAUAAEyJsVAFAABMiblYBQAASIn7SYnPSInVSYn0SYn1SYPlf0G5gAAAAEG+AAAAAEmD/XA="
-jae 20f
-jmp 21f
-20:
-.base64 "Qb4BAAAA"
-21:
-22:
-.base64 "TInoSIPgDw=="
-je 23f
-.base64 "RohMK0BJg8UBuIAAAABNhfY="
-je 25f
-jmp 26f
-25:
-.base64 "uHAAAAA="
-26:
-.base64 "QbkAAAAATCnoSIP4CA=="
-jb 27f
-29:
-.base64 "TolMK0BJg8UISIPoCEiD+Ag="
-jae 29b
-jmp 28f
-27:
-28:
-.base64 "SIXA"
-je 210f
-212:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "TYX2"
-je 213f
-jmp 214f
-213:
-.base64 "TIngSMHoPUgPyEiJg7AAAABMieBIAcBIAcBIAcBID8hIiYO4AAAA"
-214:
-jmp 24f
-23:
-.base64 "ZkkPbsFJg/1w"
-jae 215f
-217:
-.base64 "80IPf0QrQGYP78BJg8UQSYP9cA=="
-jb 217b
-jmp 216f
-215:
-216:
-.base64 "TYX2"
-je 218f
-jmp 219f
-218:
-.base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+GYP68c="
-219:
-.base64 "8w9/g7AAAAA="
-24:
-.base64 "SIneSIPGQEiJ37oBAAAATIn5"
-call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
-je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAAww=="
-.p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -1998,7 +1309,7 @@ call {vg_sha512_compress_shani}
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -2078,7 +1389,7 @@ call {vg_sha512_compress}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -2150,7 +1461,7 @@ call {vg_sha512_compress}
 call {vg_sha512_compress}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -2234,7 +1545,7 @@ call {vg_sha512_compress_avx2}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -2310,7 +1621,7 @@ call {vg_sha512_compress_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -2394,7 +1705,7 @@ call {vg_sha512_compress_shani}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -2470,7 +1781,7 @@ call {vg_sha512_compress_shani}
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -2550,7 +1861,7 @@ call {vg_sha512_compress}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -2622,7 +1933,7 @@ call {vg_sha512_compress}
 call {vg_sha512_compress}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
 .p2align 6"#,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
@@ -2706,7 +2017,7 @@ call {vg_sha512_compress_avx2}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -2782,7 +2093,7 @@ call {vg_sha512_compress_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
 .p2align 6"#,
-        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
+        vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }
 
@@ -2866,7 +2177,7 @@ call {vg_sha512_compress_shani}
 je 22b
 .base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
 
@@ -2942,6 +2253,42 @@ call {vg_sha512_compress_shani}
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
 .p2align 6"#,
-        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
+        vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress.rs"]
+pub(crate) mod vg_sha512_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress_avx2.rs"]
+pub(crate) mod vg_sha512_compress_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress_shani.rs"]
+pub(crate) mod vg_sha512_compress_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch.rs"]
+pub(crate) mod vg_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch_avx2.rs"]
+pub(crate) mod vg_sha512_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch_shani.rs"]
+pub(crate) mod vg_sha512_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch.rs"]
+pub(crate) mod vg_sha512_update_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch_avx2.rs"]
+pub(crate) mod vg_sha512_update_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch_shani.rs"]
+pub(crate) mod vg_sha512_update_scratch_shani;

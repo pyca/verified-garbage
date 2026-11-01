@@ -74,8 +74,8 @@ bl {vg_hmac_md5_init_scratch}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+XABITg="
 b 21b"#,
         vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
@@ -102,8 +102,8 @@ bl {vg_md5_update_scratch}
 .base64 "AAB0OFAAgDigALU4AADVOA=="
 bl {vg_md5_finalize_scratch}
 .base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHygASE4IACATg==""#,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
     )
 }
 

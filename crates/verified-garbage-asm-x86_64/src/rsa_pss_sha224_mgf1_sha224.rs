@@ -123,7 +123,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
@@ -382,7 +382,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 
@@ -510,7 +510,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2,
+        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
     )
 }
 
@@ -773,7 +773,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2,
+        vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
     )
 }
 
@@ -901,7 +901,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
 
@@ -1164,7 +1164,7 @@ jmp 24f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
 

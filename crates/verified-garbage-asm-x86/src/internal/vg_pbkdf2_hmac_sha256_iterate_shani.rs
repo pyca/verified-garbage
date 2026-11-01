@@ -28,6 +28,6 @@ jmp 21f
 21:
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAADD"
 .p2align 6"#,
-        vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani,
+        vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }

@@ -20,7 +20,7 @@ call {vg_sha1_finalize_scratch_shani}
 call {vg_sha1_compress_shani}
 .base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAMM="
 .p2align 6"#,
-        vg_sha1_finalize_scratch_shani = sym crate::sha1::vg_sha1_finalize_scratch_shani,
-        vg_sha1_compress_shani = sym crate::sha1::vg_sha1_compress_shani,
+        vg_sha1_finalize_scratch_shani = sym crate::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
+        vg_sha1_compress_shani = sym crate::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
@@ -157,14 +158,14 @@ def updateSat : State := { Proof.Sha256.Arm.Stream.Update.sat with wr := [⟨0x1
 def finalizeSat : State :=
   { Proof.Sha256.Arm.Stream.Finalize.sat with wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩, ⟨0x3000, 608⟩] }
 
-theorem compressWide_implies : compressWide.Implies (Spec.Sha256.compressContract Arm.abi) := by
-  contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig, compressWide,
+theorem compressWide_implies : compressWide.Implies (Proof.Sha256.compressContract Arm.abi) := by
+  contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig, compressWide,
     Proof.Sha256.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [compressSat, Proof.Sha256.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
     Mem.read] using compressSat
 
 theorem compress :
-    Verified Arm.target Impl.Sha256.Arm.compress (Spec.Sha256.compressContract Arm.abi) :=
+    Verified Arm.target Impl.Sha256.Arm.compress (Proof.Sha256.compressContract Arm.abi) :=
   (compressWide_verified compressWide_implies.sat_left).of_implies compressWide_implies
 
 theorem init : Verified Arm.target Impl.Sha256.Arm.Stream.init (Spec.Sha256.initContract Arm.abi) :=
@@ -181,8 +182,8 @@ theorem init224 : Verified Arm.target Impl.Sha256.Arm.Stream.init224 (Spec.Sha25
       [Proof.Sha256.Arm.Stream.initSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
       Mem.read] using Proof.Sha256.Arm.Stream.initSat)
 
-theorem updateWide_implies : updateWide.Implies (Spec.Sha256.updateScratchContract Arm.abi) := by
-  contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, updateWide,
+theorem updateWide_implies : updateWide.Implies (Proof.Sha256.updateScratchContract Arm.abi) := by
+  contract_implies [Proof.Sha256.updateScratchContract, Proof.Sha256.updateScratchSig, updateWide,
     Proof.Sha256.updateArm, Proof.Sha256.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [updateSat, Proof.Sha256.Arm.Stream.Update.sat, MdStream.Arm.Update.sat,
@@ -190,11 +191,11 @@ theorem updateWide_implies : updateWide.Implies (Spec.Sha256.updateScratchContra
     Mem.read] using updateSat
 
 theorem updateScratch :
-    Verified Arm.target Impl.Sha256.Arm.Stream.update (Spec.Sha256.updateScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha256.Arm.Stream.update (Proof.Sha256.updateScratchContract Arm.abi) :=
   (updateWide_verified updateWide_implies.sat_left).of_implies updateWide_implies
 
-theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha256.finalizeScratchContract Arm.abi) := by
-  contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig, finalizeWide,
+theorem finalizeWide_implies : finalizeWide.Implies (Proof.Sha256.finalizeScratchContract Arm.abi) := by
+  contract_implies [Proof.Sha256.finalizeScratchContract, Proof.Sha256.finalizeScratchSig, finalizeWide,
     Proof.Sha256.finalizeArm, Proof.Sha256.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [finalizeSat, Proof.Sha256.Arm.Stream.Finalize.sat, MdStream.Arm.Finalize.sat,
@@ -202,7 +203,7 @@ theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha256.finalizeScratch
     Mem.read] using finalizeSat
 
 theorem finalizeScratch :
-    Verified Arm.target Impl.Sha256.Arm.Stream.finalize (Spec.Sha256.finalizeScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha256.Arm.Stream.finalize (Proof.Sha256.finalizeScratchContract Arm.abi) :=
   (finalizeWide_verified finalizeWide_implies.sat_left).of_implies finalizeWide_implies
 
 /-- A state satisfying `update`'s precondition. -/
