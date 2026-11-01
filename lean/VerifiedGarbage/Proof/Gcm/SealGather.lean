@@ -46,6 +46,30 @@ theorem streamRepr_padded {m : Mem} {p : Addr} {ciph : Block → Block} {h : Blo
   rw [ghashInput_padded a hc] at hr
   exact hr
 
+/-- Split a list of descriptors into its first slice and its suffix. -/
+theorem listed_cons (m : Mem) (p : Addr) (n : Nat) :
+    Sig.listed 64 m .u8 p (n+1)=
+      ⟨m.readW p 64,(m.readW (p+8) 64).toNat⟩::Sig.listed 64 m .u8 (p+16) n := by
+  simp only [Sig.listed,List.range_succ_eq_map,List.map_cons,List.map_map,Elem.size,Nat.mul_one,
+    BitVec.setWidth_eq,Nat.zero_mul,BitVec.add_zero]
+  refine congrArg _ (List.map_congr_left fun i _ => ?_)
+  have e : BitVec.ofNat 64 ((i+1)*(2*(64/8)))=16#64+BitVec.ofNat 64 (i*(2*(64/8))) := by
+    rw [← BitVec.ofNat_add]
+    congr 1
+    omega
+  simp only [Function.comp_apply,Nat.succ_eq_add_one,e,BitVec.add_assoc]
+  rfl
+
+
+theorem gathered_cons (m : Mem) (p : Addr) (n : Nat) :
+    gathered 64 m p (n+1)=bytesAt m (m.readW p 64) (m.readW (p+8) 64).toNat++gathered 64 m (p+16) n := by
+  simp only [gathered,listed_cons,List.flatMap_cons]
+
+
+theorem gatheredLen_cons (m : Mem) (p : Addr) (n : Nat) :
+    gatheredLen 64 m p (n+1)=(m.readW (p+8) 64).toNat+gatheredLen 64 m (p+16) n := by
+  simp only [gatheredLen,listed_cons,List.map_cons,List.sum_cons]
+
 /-- The slices `n + 1` descriptors list: those of the first `n`, then the
 last. -/
 theorem listed_succ (pb : Nat) (m : Mem) (e : Elem) (p : Addr) (n : Nat) :

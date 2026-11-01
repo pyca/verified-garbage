@@ -216,9 +216,9 @@ theorem rest_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
 end
 
 /-- `gatherLoop`: the `cnt ≥ 1` slices copied to `Dst`. -/
-theorem gatherLoop_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L)
+theorem gatherLoop_advance_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L)
     (hpos : 1 ≤ cnt) :
-    WP isa gatherLoop t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' := by
+    WP isa gatherLoop t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' ∧ t'.gpr .r7=Src+BitVec.ofNat 64 (16*cnt) := by
   have hc := h.hcnt
   refine WP.loop (M := isa) (c := .nonzero .d .r8)
     (fun (w : Nat) (u : State) => ∃ i, w = cnt - i ∧ i < cnt ∧ GInv t u Src Dst cnt i) ?_ (cnt - 0) _
@@ -228,18 +228,30 @@ theorem gatherLoop_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre 
   have ev := eval_nonzero (r := .r8) (a := cnt - (i + 1)) h₃.r8 (by omega)
   by_cases he : i + 1 = cnt
   · left
-    exact ⟨by rw [ev]; simp [he], by rw [h₃.mem, he], h₃.keep⟩
+    exact ⟨by rw [ev]; simp [he], by rw [h₃.mem, he], h₃.keep,by rw [h₃.r7,he]⟩
   · right
     exact ⟨by rw [ev]; simp; omega, cnt - (i + 1), by omega, i + 1, rfl, by omega, h₃⟩
 
 /-- `gather`: the `cnt` slices copied to `Dst`. -/
-theorem gather_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
-    WP isa gather t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' := by
+theorem gather_advance_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
+    WP isa gather t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' ∧ t'.gpr .r7=Src+BitVec.ofNat 64 (16*cnt) := by
   refine WP.ite (decide (cnt = 0)) (eval_zero h.r8 h.hcnt) (fun ht => ?_) (fun hf => ?_)
   · have h0 : cnt = 0 := by simpa using ht
     subst h0
-    exact WP.block_nil ⟨by simp [gathered, Sig.listed, writeBytes_nil], GKeeps.refl t⟩
+    exact WP.block_nil ⟨by simp [gathered, Sig.listed, writeBytes_nil], GKeeps.refl t,by change t.gpr .r7=Src+0#64; rw [BitVec.add_zero]; exact h.r7⟩
   · have h0 : cnt ≠ 0 := by simpa using hf
-    exact gatherLoop_wp t h (by omega)
+    exact gatherLoop_advance_wp t h (by omega)
+
+
+/-- `gatherLoop`, forgetting the final descriptor pointer. -/
+theorem gatherLoop_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L)
+    (hpos : 1≤cnt) :
+    WP isa gatherLoop t fun t' => t'.mem=writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' :=
+  WP.mono (gatherLoop_advance_wp t h hpos) fun _ ht => ⟨ht.1,ht.2.1⟩
+
+/-- `gather`, forgetting the final descriptor pointer. -/
+theorem gather_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
+    WP isa gather t fun t' => t'.mem=writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' :=
+  WP.mono (gather_advance_wp t h) fun _ ht => ⟨ht.1,ht.2.1⟩
 
 end VG.Proof.Gather.PPC64LE
