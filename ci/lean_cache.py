@@ -324,11 +324,32 @@ def stored_files(source):
     return source / STORED if (source / STORED).is_file() else source / FILES
 
 
+def tar_end(f, start):
+    """Where the end-of-archive blocks of the tar at `start` in `f` begin: each
+    header's size field (octal, or base-256 when its first byte has the high
+    bit set) says how many blocks of contents follow it. PAX and GNU long-name
+    headers are entries with a size too, so the walk needs no other case."""
+    pos = start
+    while True:
+        f.seek(pos)
+        header = f.read(512)
+        if len(header) < 512 or not any(header):
+            return pos
+        field = header[124:136]
+        if field[0] & 0x80:
+            size = int.from_bytes(field[1:], "big")
+        else:
+            size = int(field.rstrip(b"\0 ").strip() or b"0", 8)
+        pos += 512 + -(-size // 512) * 512
+
+
 def bundle(lean, archive_dirs, out):
     """Publish existing caches without unpacking or repacking any module.
 
-    The caches must cover disjoint modules. Copy their tar members into one
-    files.tar without extracting the small files or requiring GNU tar.
+    The caches must cover disjoint modules. Their files.tar archives,
+    decompressed, are concatenated as GNU `tar --concatenate` does, but with no
+    external tar (BSD tar has no such option): each but the last is cut at its
+    end-of-archive blocks (`tar_end`), so no member is extracted or re-encoded.
     Only indexed modules are included; leftover archives are ignored.
     """
     index, logs, archives = {}, {}, []
@@ -356,15 +377,15 @@ def bundle(lean, archive_dirs, out):
     # file holds only miscellaneous files, never expanded module outputs.
     with tempfile.TemporaryDirectory(prefix="lean-cache-bundle-") as tmp:
         files = Path(tmp) / FILES
-        with tarfile.open(files, mode="w") as combined:
-            for directory in archive_dirs:
-                with tarfile.open(stored_files(lean / directory), mode="r|*") as source:
-                    for member in source:
-                        if member.isfile():
-                            with source.extractfile(member) as data:
-                                combined.addfile(member, data)
-                        else:
-                            combined.addfile(member)
+        with open(files, "w+b") as g:
+            for i, directory in enumerate(archive_dirs):
+                start = g.tell()
+                source = stored_files(lean / directory)
+                with gzip.open(source) if source.name == STORED else open(source, "rb") as f:
+                    shutil.copyfileobj(f, g, 1 << 20)
+                if i < len(archive_dirs) - 1:  # the last keeps its end-of-archive blocks
+                    g.seek(tar_end(g, start))
+                    g.truncate()
         with tarfile.open(fileobj=out, mode="w|", dereference=True) as tar:
             tar.add(files, arcname=str(LTAR / FILES))
             for name, data in ((INDEX, json.dumps(index, sort_keys=True).encode()), (LOGS, logs_bytes(logs))):
